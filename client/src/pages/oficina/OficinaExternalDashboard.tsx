@@ -1151,250 +1151,287 @@ export default function OficinaExternalDashboard() {
           setIsCarFormOpen(false);
           setEditingReception(null);
         }}>
-          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingReception ? `Editar Recepção - ${editingReception.vehiclePlate}` : 'Receber Veículo para Manutenção'}
               </DialogTitle>
             </DialogHeader>
             
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="plate" className="text-right">Placa</Label>
-                <Input
-                  id="plate"
-                  value={carFormData.vehiclePlate}
-                  onChange={(e) => setCarFormData(prev => ({ ...prev, vehiclePlate: e.target.value }))}
-                  className="col-span-3"
-                  placeholder="ABC1234"
-                  disabled={!!editingReception}
-                />
+            <div className="grid gap-6 py-4">
+              {/* Seção 1: Dados do Veículo */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 border-b pb-2">
+                  <Car className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-gray-800">Dados do Veículo</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="plate">Placa do Veículo</Label>
+                    <Input
+                      id="plate"
+                      value={carFormData.vehiclePlate}
+                      onChange={(e) => setCarFormData(prev => ({ ...prev, vehiclePlate: e.target.value }))}
+                      placeholder="ABC1234"
+                      disabled={!!editingReception}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="model">Modelo</Label>
+                    <Input
+                      id="model"
+                      value={carFormData.vehicleModel}
+                      onChange={(e) => setCarFormData(prev => ({ ...prev, vehicleModel: e.target.value }))}
+                      placeholder="Ex: Mercedes Sprinter"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="type">Tipo de Veículo</Label>
+                    <Select 
+                      value={carFormData.vehicleType} 
+                      onValueChange={(value) => setCarFormData(prev => ({ ...prev, vehicleType: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="carro">Carro</SelectItem>
+                        <SelectItem value="van">Van</SelectItem>
+                        <SelectItem value="caminhao">Caminhão</SelectItem>
+                        <SelectItem value="moto">Moto</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="km">Quilometragem Atual (km)</Label>
+                    <Input
+                      id="km"
+                      type="number"
+                      value={carFormData.currentKm}
+                      onChange={(e) => setCarFormData(prev => ({ ...prev, currentKm: e.target.value }))}
+                      placeholder="0"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="project">Projeto</Label>
+                    <Select 
+                      value={carFormData.projectId} 
+                      onValueChange={handleProjectChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o projeto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projects.map((project) => (
+                          <SelectItem key={project.id} value={project.id.toString()}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="base">Base</Label>
+                    <Select 
+                      value={carFormData.baseId} 
+                      onValueChange={(value) => setCarFormData(prev => ({ ...prev, baseId: value }))}
+                      disabled={!carFormData.projectId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Primeiro selecione um projeto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectedProjectBases.map((base) => (
+                          <SelectItem key={base.id} value={base.id.toString()}>
+                            {base.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="model" className="text-right">Modelo</Label>
-                <Input
-                  id="model"
-                  value={carFormData.vehicleModel}
-                  onChange={(e) => setCarFormData(prev => ({ ...prev, vehicleModel: e.target.value }))}
-                  className="col-span-3"
-                  placeholder="Ford Ka"
-                />
+              {/* Seção 2: Serviço e Status */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 border-b pb-2">
+                  <Settings className="h-5 w-5 text-orange-600" />
+                  <h3 className="text-lg font-semibold text-gray-800">Detalhes do Serviço</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Descrição do Serviço</Label>
+                    <Textarea
+                      id="description"
+                      value={carFormData.serviceDescription}
+                      onChange={(e) => setCarFormData(prev => ({ ...prev, serviceDescription: e.target.value }))}
+                      rows={3}
+                      placeholder="Descreva o que será feito no veículo..."
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="status">Status</Label>
+                    <Select 
+                      value={carFormData.status} 
+                      onValueChange={(value) => setCarFormData(prev => ({ ...prev, status: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="recebido">Recebido</SelectItem>
+                        <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                        <SelectItem value="concluido">Concluído</SelectItem>
+                        <SelectItem value="entregue">Entregue</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="deadline">Prazo de Entrega</Label>
+                    <Input
+                      id="deadline"
+                      type="date"
+                      value={carFormData.deliveryDeadline}
+                      onChange={(e) => setCarFormData(prev => ({ ...prev, deliveryDeadline: e.target.value }))}
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="type" className="text-right">Tipo</Label>
-                <Select 
-                  value={carFormData.vehicleType} 
-                  onValueChange={(value) => setCarFormData(prev => ({ ...prev, vehicleType: value }))}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Selecione o tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="carro">Carro</SelectItem>
-                    <SelectItem value="van">Van</SelectItem>
-                    <SelectItem value="caminhao">Caminhão</SelectItem>
-                    <SelectItem value="moto">Moto</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="km" className="text-right">KM Atual</Label>
-                <Input
-                  id="km"
-                  type="number"
-                  value={carFormData.currentKm}
-                  onChange={(e) => setCarFormData(prev => ({ ...prev, currentKm: e.target.value }))}
-                  className="col-span-3"
-                  placeholder="50000"
-                />
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="project" className="text-right">Projeto</Label>
-                <Select 
-                  value={carFormData.projectId} 
-                  onValueChange={handleProjectChange}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Selecione o projeto" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects.map((project) => (
-                      <SelectItem key={project.id} value={project.id.toString()}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="base" className="text-right">Base</Label>
-                <Select 
-                  value={carFormData.baseId} 
-                  onValueChange={(value) => setCarFormData(prev => ({ ...prev, baseId: value }))}
-                  disabled={!carFormData.projectId}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Selecione a base" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {selectedProjectBases.map((base) => (
-                      <SelectItem key={base.id} value={base.id.toString()}>
-                        {base.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="description" className="text-right">Descrição do Serviço</Label>
-                <Textarea
-                  id="description"
-                  value={carFormData.serviceDescription}
-                  onChange={(e) => setCarFormData(prev => ({ ...prev, serviceDescription: e.target.value }))}
-                  className="col-span-3"
-                  rows={3}
-                  placeholder="Descreva o problema ou serviço solicitado..."
-                />
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="status" className="text-right">Status</Label>
-                <Select 
-                  value={carFormData.status} 
-                  onValueChange={(value) => setCarFormData(prev => ({ ...prev, status: value }))}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="recebido">Recebido</SelectItem>
-                    <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                    <SelectItem value="concluido">Concluído</SelectItem>
-                    <SelectItem value="entregue">Entregue</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="deadline" className="text-right">Previsão Entrega</Label>
-                <Input
-                  id="deadline"
-                  type="date"
-                  value={carFormData.deliveryDeadline}
-                  onChange={(e) => setCarFormData(prev => ({ ...prev, deliveryDeadline: e.target.value }))}
-                  className="col-span-3"
-                />
-              </div>
-
-              {/* Seção de Peças e Valores */}
-              <div className="grid gap-4 col-span-4">
-                <div className="flex items-center gap-2">
-                  <Car className="h-4 w-4" />
-                  <h3 className="text-lg font-semibold">Peças e Valores</h3>
+              {/* Seção 3: Peças e Valores */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 border-b pb-2">
+                  <Wrench className="h-5 w-5 text-green-600" />
+                  <h3 className="text-lg font-semibold text-gray-800">Peças e Valores</h3>
                 </div>
                 
                 {/* Adicionar nova peça */}
-                <div className="grid grid-cols-7 items-center gap-2">
-                  <Label className="text-sm">Nome da Peça</Label>
-                  <Input
-                    placeholder="Nome da peça"
-                    value={newPartName}
-                    onChange={(e) => setNewPartName(e.target.value)}
-                    className="col-span-3"
-                  />
-                  <Label className="text-sm">Valor (R$)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={newPartPrice}
-                    onChange={(e) => setNewPartPrice(e.target.value)}
-                    className="col-span-1"
-                  />
-                  <Button
-                    type="button"
-                    onClick={addPart}
-                    size="sm"
-                    className="col-span-1"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Adicionar
-                  </Button>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-7 gap-3 items-end">
+                    <div className="md:col-span-3 space-y-2">
+                      <Label className="text-sm font-medium">Nome da Peça</Label>
+                      <Input
+                        placeholder="Nome da peça"
+                        value={newPartName}
+                        onChange={(e) => setNewPartName(e.target.value)}
+                      />
+                    </div>
+                    <div className="md:col-span-2 space-y-2">
+                      <Label className="text-sm font-medium">Valor (R$)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0,00"
+                        value={newPartPrice}
+                        onChange={(e) => setNewPartPrice(e.target.value)}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Button
+                        type="button"
+                        onClick={addPart}
+                        className="w-full"
+                        size="default"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adicionar
+                      </Button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Lista de peças adicionadas */}
                 {parts.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Peças Adicionadas:</h4>
-                    {parts.map((part, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <span>{part.name}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">R$ {parseFloat(part.price).toFixed(2)}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removePart(index)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-gray-700">Peças Adicionadas:</h4>
+                    <div className="grid gap-2">
+                      {parts.map((part, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
+                          <span className="font-medium">{part.name}</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-lg font-semibold text-green-600">R$ {parseFloat(part.price).toFixed(2)}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removePart(index)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
+
+                {/* Resumo de custos */}
+                <div className="bg-blue-50 p-4 rounded-lg space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="laborCost">Custo Mão de Obra (R$)</Label>
+                      <Input
+                        id="laborCost"
+                        type="number"
+                        step="0.01"
+                        value={carFormData.laborCost}
+                        onChange={(e) => setCarFormData(prev => ({ ...prev, laborCost: e.target.value }))}
+                        placeholder="0"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Custo das Peças</Label>
+                      <Input
+                        type="text"
+                        value={`R$ ${calculateTotalParts().toFixed(2)}`}
+                        disabled
+                        className="bg-gray-100 font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-blue-200">
+                    <div className="flex justify-between items-center">
+                      <Label className="text-lg font-semibold">Total Estimado</Label>
+                      <div className="text-2xl font-bold text-green-600">
+                        R$ {calculateTotalEstimated().toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="laborCost" className="text-right">Custo Mão de Obra (R$)</Label>
-                <Input
-                  id="laborCost"
-                  type="number"
-                  step="0.01"
-                  value={carFormData.laborCost}
-                  onChange={(e) => setCarFormData(prev => ({ ...prev, laborCost: e.target.value }))}
-                  className="col-span-3"
-                  placeholder="0"
-                />
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Custo das Peças</Label>
-                <Input
-                  type="text"
-                  value={`R$ ${calculateTotalParts().toFixed(2)} (calculado automaticamente)`}
-                  disabled
-                  className="col-span-3 bg-gray-100"
-                />
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right font-semibold">Total Estimado</Label>
-                <Input
-                  type="text"
-                  value={`R$ ${calculateTotalEstimated().toFixed(2)}`}
-                  disabled
-                  className="col-span-3 bg-green-50 font-semibold"
-                />
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="notes" className="text-right">Observações</Label>
-                <Textarea
-                  id="notes"
-                  value={carFormData.notes}
-                  onChange={(e) => setCarFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  className="col-span-3"
-                  rows={3}
-                  placeholder="Observações adicionais..."
-                />
+              {/* Seção 4: Observações */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 border-b pb-2">
+                  <FileText className="h-5 w-5 text-purple-600" />
+                  <h3 className="text-lg font-semibold text-gray-800">Observações Adicionais</h3>
+                </div>
+                
+                <div className="space-y-2">
+                  <Textarea
+                    id="notes"
+                    value={carFormData.notes}
+                    onChange={(e) => setCarFormData(prev => ({ ...prev, notes: e.target.value }))}
+                    rows={4}
+                    placeholder="Observações sobre o estado do veículo ou outros detalhes..."
+                  />
+                </div>
               </div>
             </div>
 
