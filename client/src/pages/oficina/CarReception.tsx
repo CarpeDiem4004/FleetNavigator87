@@ -380,18 +380,34 @@ function CarReception() {
         });
       }
       
-      // Limpar localStorage e redirecionar
+      // Limpar localStorage
       localStorage.removeItem('editingReception');
       
       if (isExternalAccess && externalToken) {
-        // Se é acesso externo, mostrar mensagem de sucesso e opção de novo registro
+        // Para acesso externo, limpar formulário e permitir novo registro
+        form.reset({
+          vehiclePlate: "",
+          vehicleModel: "",
+          currentKm: 0,
+          serviceDescription: "",
+          replacedParts: "",
+          laborCost: 0,
+          partsCost: 0,
+          notes: "",
+        });
+        
+        // Limpar peças adicionadas
+        setParts([]);
+        
+        // Mostrar opção de novo registro ou voltar ao dashboard
         setTimeout(() => {
-          if (confirm("Deseja registrar outro veículo?")) {
-            window.location.reload();
-          } else {
-            window.close();
+          const choice = confirm("Veículo registrado com sucesso!\n\nDeseja registrar outro veículo?");
+          if (!choice) {
+            // Voltar para dashboard da oficina
+            window.location.href = `/oficina/external?token=${externalToken}`;
           }
-        }, 2000);
+          // Se escolher sim, o formulário já foi limpo e está pronto para novo registro
+        }, 1000);
       } else {
         setLocation('/maintenance/dashboard-oficina');
       }
