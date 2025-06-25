@@ -44,9 +44,11 @@ interface MaintenanceRequest {
 interface CarReception {
   id: number;
   vehiclePlate: string;
-  customerName: string;
-  receptionDate: string;
+  vehicleModel: string;
+  serviceDescription: string;
   status: string;
+  created_at: string;
+  workshopId: number;
 }
 
 export default function OficinaExternalDashboard() {
@@ -109,10 +111,12 @@ export default function OficinaExternalDashboard() {
       }
 
       // Carregar recepções de carros com token externo
-      const receptionResponse = await fetch(`/api/oficina/car-receptions?token=${token}&workshop=${workshopId}`);
+      const receptionResponse = await fetch(`/api/oficina/car-receptions?token=${token}`);
       if (receptionResponse.ok) {
         const receptionData = await receptionResponse.json();
-        setCarReceptions(receptionData.receptions || []);
+        console.log('Dados de recepção recebidos:', receptionData);
+        // A API retorna um array diretamente, não um objeto com propriedade receptions
+        setCarReceptions(Array.isArray(receptionData) ? receptionData : []);
       }
     } catch (err) {
       console.error('Erro ao carregar dados da oficina:', err);
@@ -521,13 +525,13 @@ export default function OficinaExternalDashboard() {
                     <div key={reception.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
                       <div>
                         <p className="font-medium">{reception.vehiclePlate}</p>
-                        <p className="text-sm text-muted-foreground">{reception.customerName}</p>
+                        <p className="text-sm text-muted-foreground">{reception.vehicleModel} - {reception.serviceDescription}</p>
                       </div>
                       <div className="text-right">
                         <Badge variant="outline">
-                          {new Date(reception.receptionDate).toLocaleDateString()}
+                          {new Date(reception.created_at).toLocaleDateString('pt-BR')}
                         </Badge>
-                        <p className="text-xs text-muted-foreground mt-1">{reception.status}</p>
+                        <p className="text-xs text-muted-foreground mt-1 capitalize">{reception.status}</p>
                       </div>
                     </div>
                   ))}
