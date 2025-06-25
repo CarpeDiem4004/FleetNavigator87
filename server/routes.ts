@@ -7606,11 +7606,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log(`[OFICINA-UPDATE] Recepção ${id} atualizada com sucesso`);
-      res.json({ 
-        success: true, 
-        data: updated,
-        message: 'Recepção atualizada com sucesso' 
-      });
     } catch (error) {
       console.error("[OFICINA-UPDATE] Erro ao atualizar recebimento:", error);
       res.status(500).json({ 
