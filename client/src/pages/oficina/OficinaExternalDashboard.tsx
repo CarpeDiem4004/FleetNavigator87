@@ -66,6 +66,15 @@ export default function OficinaExternalDashboard() {
     priority: 'media',
     estimatedCost: ''
   });
+  const [editingOrder, setEditingOrder] = useState<MaintenanceRequest | null>(null);
+  const [editForm, setEditForm] = useState({
+    status: '',
+    data_previsao_entrega: '',
+    valor_mao_obra: '',
+    valor_total_pecas: '',
+    observacoes_oficina: '',
+    km_veiculo: ''
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -582,20 +591,30 @@ export default function OficinaExternalDashboard() {
                 <>
                   {maintenanceRequests.slice(0, 3).map((request) => (
                     <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
-                      <div>
-                        <p className="font-medium">OS #{request.id} - {request.vehiclePlate}</p>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-medium">OS #{request.id} - {request.vehiclePlate}</p>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditOrder(request)}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Editar
+                            </Button>
+                            <Badge 
+                              variant={
+                                request.status === 'concluida' ? 'default' :
+                                request.status === 'em_andamento' ? 'secondary' : 'outline'
+                              }
+                            >
+                              {request.status === 'pendente' ? 'Pendente' :
+                               request.status === 'em_andamento' ? 'Em Andamento' : 'Concluída'}
+                            </Badge>
+                          </div>
+                        </div>
                         <p className="text-sm text-muted-foreground">{request.description}</p>
-                      </div>
-                      <div className="text-right">
-                        <Badge 
-                          variant={
-                            request.status === 'concluida' ? 'default' :
-                            request.status === 'em_andamento' ? 'secondary' : 'outline'
-                          }
-                        >
-                          {request.status === 'pendente' ? 'Pendente' :
-                           request.status === 'em_andamento' ? 'Em Andamento' : 'Concluída'}
-                        </Badge>
                         <p className="text-xs text-muted-foreground mt-1">
                           {new Date(request.entryDate).toLocaleDateString()}
                         </p>
