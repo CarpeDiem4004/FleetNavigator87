@@ -85,6 +85,24 @@ export default function OficinaExternalDashboard() {
     currentKm: '',
     replacedParts: ''
   });
+  const [isCarFormOpen, setIsCarFormOpen] = useState(false);
+  const [carFormData, setCarFormData] = useState({
+    vehiclePlate: '',
+    vehicleModel: '',
+    vehicleType: 'carro',
+    currentKm: '',
+    baseId: '',
+    projectId: '',
+    serviceDescription: '',
+    replacedParts: '',
+    laborCost: '',
+    partsCost: '',
+    deliveryDeadline: '',
+    status: 'recebido',
+    notes: ''
+  });
+  const [projects, setProjects] = useState<any[]>([]);
+  const [selectedProjectBases, setSelectedProjectBases] = useState<any[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -675,17 +693,17 @@ export default function OficinaExternalDashboard() {
                                 setCarFormData({
                                   vehiclePlate: reception.vehiclePlate,
                                   vehicleModel: reception.vehicleModel,
-                                  vehicleType: reception.vehicleType,
-                                  currentKm: reception.currentKm?.toString() || '',
-                                  baseId: reception.baseId?.toString() || '',
-                                  projectId: reception.projectId?.toString() || '',
+                                  vehicleType: (reception as any).vehicleType || 'carro',
+                                  currentKm: (reception as any).currentKm?.toString() || '',
+                                  baseId: (reception as any).baseId?.toString() || '',
+                                  projectId: (reception as any).projectId?.toString() || '',
                                   serviceDescription: reception.serviceDescription,
-                                  replacedParts: reception.replacedParts || '',
-                                  laborCost: reception.laborCost?.toString() || '',
-                                  partsCost: reception.partsCost?.toString() || '',
-                                  deliveryDeadline: reception.deliveryDeadline ? new Date(reception.deliveryDeadline).toISOString().split('T')[0] : '',
+                                  replacedParts: (reception as any).replacedParts || '',
+                                  laborCost: (reception as any).laborCost?.toString() || '',
+                                  partsCost: (reception as any).partsCost?.toString() || '',
+                                  deliveryDeadline: (reception as any).deliveryDeadline ? new Date((reception as any).deliveryDeadline).toISOString().split('T')[0] : '',
                                   status: reception.status || 'recebido',
-                                  notes: reception.notes || ''
+                                  notes: (reception as any).notes || ''
                                 });
                                 setIsCarFormOpen(true);
                               }}
@@ -1011,7 +1029,218 @@ export default function OficinaExternalDashboard() {
         </Dialog>
       )}
 
+      {/* Formulário completo de recepção de veículo */}
+      {isCarFormOpen && (
+        <Dialog open={isCarFormOpen} onOpenChange={() => {
+          setIsCarFormOpen(false);
+          setEditingReception(null);
+        }}>
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {editingReception ? `Editar Recepção - ${editingReception.vehiclePlate}` : 'Receber Veículo para Manutenção'}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="plate" className="text-right">Placa</Label>
+                <Input
+                  id="plate"
+                  value={carFormData.vehiclePlate}
+                  onChange={(e) => setCarFormData(prev => ({ ...prev, vehiclePlate: e.target.value }))}
+                  className="col-span-3"
+                  placeholder="ABC1234"
+                  disabled={!!editingReception}
+                />
+              </div>
 
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="model" className="text-right">Modelo</Label>
+                <Input
+                  id="model"
+                  value={carFormData.vehicleModel}
+                  onChange={(e) => setCarFormData(prev => ({ ...prev, vehicleModel: e.target.value }))}
+                  className="col-span-3"
+                  placeholder="Ford Ka"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="type" className="text-right">Tipo</Label>
+                <Select 
+                  value={carFormData.vehicleType} 
+                  onValueChange={(value) => setCarFormData(prev => ({ ...prev, vehicleType: value }))}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="carro">Carro</SelectItem>
+                    <SelectItem value="van">Van</SelectItem>
+                    <SelectItem value="caminhao">Caminhão</SelectItem>
+                    <SelectItem value="moto">Moto</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="km" className="text-right">KM Atual</Label>
+                <Input
+                  id="km"
+                  type="number"
+                  value={carFormData.currentKm}
+                  onChange={(e) => setCarFormData(prev => ({ ...prev, currentKm: e.target.value }))}
+                  className="col-span-3"
+                  placeholder="50000"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="project" className="text-right">Projeto</Label>
+                <Select 
+                  value={carFormData.projectId} 
+                  onValueChange={handleProjectChange}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Selecione o projeto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.id.toString()}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="base" className="text-right">Base</Label>
+                <Select 
+                  value={carFormData.baseId} 
+                  onValueChange={(value) => setCarFormData(prev => ({ ...prev, baseId: value }))}
+                  disabled={!carFormData.projectId}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Selecione a base" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedProjectBases.map((base) => (
+                      <SelectItem key={base.id} value={base.id.toString()}>
+                        {base.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">Descrição do Serviço</Label>
+                <Textarea
+                  id="description"
+                  value={carFormData.serviceDescription}
+                  onChange={(e) => setCarFormData(prev => ({ ...prev, serviceDescription: e.target.value }))}
+                  className="col-span-3"
+                  rows={3}
+                  placeholder="Descreva o problema ou serviço solicitado..."
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="status" className="text-right">Status</Label>
+                <Select 
+                  value={carFormData.status} 
+                  onValueChange={(value) => setCarFormData(prev => ({ ...prev, status: value }))}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recebido">Recebido</SelectItem>
+                    <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                    <SelectItem value="concluido">Concluído</SelectItem>
+                    <SelectItem value="entregue">Entregue</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="deadline" className="text-right">Previsão Entrega</Label>
+                <Input
+                  id="deadline"
+                  type="date"
+                  value={carFormData.deliveryDeadline}
+                  onChange={(e) => setCarFormData(prev => ({ ...prev, deliveryDeadline: e.target.value }))}
+                  className="col-span-3"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="laborCost" className="text-right">Valor Mão de Obra</Label>
+                <Input
+                  id="laborCost"
+                  type="number"
+                  step="0.01"
+                  value={carFormData.laborCost}
+                  onChange={(e) => setCarFormData(prev => ({ ...prev, laborCost: e.target.value }))}
+                  className="col-span-3"
+                  placeholder="150.00"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="partsCost" className="text-right">Valor Peças</Label>
+                <Input
+                  id="partsCost"
+                  type="number"
+                  step="0.01"
+                  value={carFormData.partsCost}
+                  onChange={(e) => setCarFormData(prev => ({ ...prev, partsCost: e.target.value }))}
+                  className="col-span-3"
+                  placeholder="300.00"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="parts" className="text-right">Peças Substituídas</Label>
+                <Textarea
+                  id="parts"
+                  value={carFormData.replacedParts}
+                  onChange={(e) => setCarFormData(prev => ({ ...prev, replacedParts: e.target.value }))}
+                  className="col-span-3"
+                  rows={2}
+                  placeholder="Lista das peças substituídas..."
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="notes" className="text-right">Observações</Label>
+                <Textarea
+                  id="notes"
+                  value={carFormData.notes}
+                  onChange={(e) => setCarFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  className="col-span-3"
+                  rows={3}
+                  placeholder="Observações adicionais..."
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => {
+                setIsCarFormOpen(false);
+                setEditingReception(null);
+              }}>
+                Cancelar
+              </Button>
+              <Button onClick={handleCarSubmit}>
+                {editingReception ? 'Atualizar Recepção' : 'Registrar Veículo'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
