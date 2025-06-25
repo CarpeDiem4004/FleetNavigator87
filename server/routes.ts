@@ -5210,6 +5210,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Rota para atualizar ordem de serviço via token da oficina
+  app.put('/oficina/external/ordens-servico/:id', async (req, res) => {
+    try {
+      const token = req.query.token as string;
+      const osId = parseInt(req.params.id);
+      
+      if (!token) {
+        return res.status(400).json({ error: 'Token é obrigatório' });
+      }
+
+      if (!osId || isNaN(osId)) {
+        return res.status(400).json({ error: 'ID da ordem de serviço inválido' });
+      }
+
+      // Buscar oficina pelo token
+      const oficinaResult = await pool.query(
+        'SELECT * FROM oficinas WHERE external_token = $1',
+        [token]
+      );
+
+      if (oficinaResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Oficina não encontrada' });
+      }
+
+      const oficina = oficinaResult.rows[0];
+
+      // Verificar se a ordem pertence à oficina
+      const osResult = await pool.query(
+        'SELECT * FROM maintenance_orders WHERE id = $1 AND oficina_id = $2',
+        [osId, oficina.id]
+      );
+
+      if (osResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Ordem de serviço não encontrada' });
+      }
+
+      const {
+        status,
+        data_previsao_entrega,
+        valor_mao_obra,
+        valor_total_pecas,
+        observacoes_oficina,
+        km_veiculo
+      } = req.body;
+
+      // Atualizar ordem de serviço
+      const updateQuery = `
+        UPDATE maintenance_orders 
+        SET 
+          status = COALESCE($1, status),
+          data_previsao_entrega = COALESCE($2, data_previsao_entrega),
+          valor_mao_obra = COALESCE($3, valor_mao_obra),
+          valor_total_pecas = COALESCE($4, valor_total_pecas),
+          observacoes_oficina = COALESCE($5, observacoes_oficina),
+          km_veiculo = COALESCE($6, km_veiculo),
+          updated_at = NOW()
+        WHERE id = $7 AND oficina_id = $8
+        RETURNING *
+      `;
+
+      const updateResult = await pool.query(updateQuery, [
+        status,
+        data_previsao_entrega,
+        valor_mao_obra,
+        valor_total_pecas,
+        observacoes_oficina,
+        km_veiculo,
+        osId,
+        oficina.id
+      ]);
+
+      console.log(`Ordem ${osId} atualizada pela oficina ${oficina.name}`);
+
+      res.json({
+        success: true,
+        message: 'Ordem de serviço atualizada com sucesso',
+        order: updateResult.rows[0]
+      });
+
+    } catch (error) {
+      console.error('Erro ao atualizar ordem de serviço:', error);
+      res.status(500).json({ 
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  });
   
   // Rota para oficinas buscarem manutenções associadas a elas
   app.get("/api/workshop/maintenance", isWorkshop, async (req, res) => {

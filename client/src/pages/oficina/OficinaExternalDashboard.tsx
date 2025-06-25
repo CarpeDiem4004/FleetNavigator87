@@ -274,6 +274,65 @@ export default function OficinaExternalDashboard() {
     }
   };
 
+  const handleEditOrder = (order: MaintenanceRequest) => {
+    setEditingOrder(order);
+    setEditForm({
+      status: order.status || '',
+      data_previsao_entrega: order.estimatedCompletion ? new Date(order.estimatedCompletion).toISOString().split('T')[0] : '',
+      valor_mao_obra: (order as any).valor_mao_obra?.toString() || '',
+      valor_total_pecas: (order as any).valor_total_pecas?.toString() || '',
+      observacoes_oficina: (order as any).observacoes_oficina || '',
+      km_veiculo: (order as any).currentKm?.toString() || ''
+    });
+  };
+
+  const updateMaintenanceOrder = async () => {
+    if (!editingOrder) return;
+
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      
+      const response = await fetch(`/oficina/external/ordens-servico/${editingOrder.id}?token=${token}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: editForm.status || undefined,
+          data_previsao_entrega: editForm.data_previsao_entrega || undefined,
+          valor_mao_obra: editForm.valor_mao_obra ? parseFloat(editForm.valor_mao_obra) : undefined,
+          valor_total_pecas: editForm.valor_total_pecas ? parseFloat(editForm.valor_total_pecas) : undefined,
+          observacoes_oficina: editForm.observacoes_oficina || undefined,
+          km_veiculo: editForm.km_veiculo ? parseInt(editForm.km_veiculo) : undefined
+        }),
+      });
+
+      if (response.ok) {
+        setEditingOrder(null);
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        if (token && workshopData) {
+          await loadWorkshopData(workshopData.id, token);
+        }
+        toast({
+          title: "Sucesso",
+          description: "Ordem de serviço atualizada com sucesso!",
+        });
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao atualizar ordem');
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar ordem:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao atualizar ordem de serviço",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-8">
@@ -756,6 +815,102 @@ export default function OficinaExternalDashboard() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Edição */}
+      {editingOrder && (
+        <Dialog open={true} onOpenChange={() => setEditingOrder(null)}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Editar Ordem de Serviço #{editingOrder.id}</DialogTitle>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="status" className="text-right">Status</Label>
+                <Select 
+                  value={editForm.status} 
+                  onValueChange={(value) => setEditForm({...editForm, status: value})}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pendente">Pendente</SelectItem>
+                    <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                    <SelectItem value="concluida">Concluída</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="data_previsao" className="text-right">Previsão Entrega</Label>
+                <Input
+                  id="data_previsao"
+                  type="date"
+                  value={editForm.data_previsao_entrega}
+                  onChange={(e) => setEditForm({...editForm, data_previsao_entrega: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="km_veiculo" className="text-right">KM Veículo</Label>
+                <Input
+                  id="km_veiculo"
+                  type="number"
+                  value={editForm.km_veiculo}
+                  onChange={(e) => setEditForm({...editForm, km_veiculo: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="valor_mao_obra" className="text-right">Valor Mão de Obra</Label>
+                <Input
+                  id="valor_mao_obra"
+                  type="number"
+                  step="0.01"
+                  value={editForm.valor_mao_obra}
+                  onChange={(e) => setEditForm({...editForm, valor_mao_obra: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="valor_total_pecas" className="text-right">Valor Peças</Label>
+                <Input
+                  id="valor_total_pecas"
+                  type="number"
+                  step="0.01"
+                  value={editForm.valor_total_pecas}
+                  onChange={(e) => setEditForm({...editForm, valor_total_pecas: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="observacoes" className="text-right">Observações</Label>
+                <Textarea
+                  id="observacoes"
+                  value={editForm.observacoes_oficina}
+                  onChange={(e) => setEditForm({...editForm, observacoes_oficina: e.target.value})}
+                  className="col-span-3"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setEditingOrder(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={updateMaintenanceOrder}>
+                Salvar Alterações
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
