@@ -209,8 +209,15 @@ export default function OficinaExternalDashboard() {
   };
 
   const handleProjectChange = (projectId: string) => {
+    console.log('Mudança de projeto para ID:', projectId);
+    console.log('Projetos disponíveis:', projects);
+    
     setCarFormData(prev => ({ ...prev, projectId, baseId: '' }));
     const selectedProject = projects.find(p => p.id.toString() === projectId);
+    
+    console.log('Projeto selecionado:', selectedProject);
+    console.log('Bases do projeto:', selectedProject?.bases);
+    
     setSelectedProjectBases(selectedProject?.bases || []);
   };
 
@@ -890,8 +897,12 @@ export default function OficinaExternalDashboard() {
                                 
                                 // Carregar bases do projeto selecionado
                                 if ((reception as any).projectId) {
+                                  console.log('Projeto selecionado ID:', (reception as any).projectId);
+                                  console.log('Projetos disponíveis:', projects);
                                   const selectedProject = projects.find(p => p.id.toString() === (reception as any).projectId?.toString());
+                                  console.log('Projeto encontrado:', selectedProject);
                                   setSelectedProjectBases(selectedProject?.bases || []);
+                                  console.log('Bases carregadas:', selectedProject?.bases || []);
                                 }
                                 // Carregar peças existentes
                                 try {
