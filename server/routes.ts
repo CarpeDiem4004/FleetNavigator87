@@ -5404,6 +5404,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deliveryDeadline,
         status,
         notes,
+        deliveryPersonName,
+        deliveryPersonCpf,
+        deliveryPersonPhone,
+        deliveredDate,
         receptionId,
         oficina.id
       ]);
