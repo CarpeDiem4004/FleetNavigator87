@@ -5298,6 +5298,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Rota para atualizar recepção de veículo via token da oficina
+  app.put('/oficina/external/car-receptions/:id', async (req, res) => {
+    try {
+      const token = req.query.token as string;
+      const receptionId = parseInt(req.params.id);
+      
+      if (!token) {
+        return res.status(400).json({ error: 'Token é obrigatório' });
+      }
+
+      if (!receptionId || isNaN(receptionId)) {
+        return res.status(400).json({ error: 'ID da recepção inválido' });
+      }
+
+      // Buscar oficina pelo token
+      const oficinaResult = await pool.query(
+        'SELECT * FROM oficinas WHERE external_token = $1',
+        [token]
+      );
+
+      if (oficinaResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Oficina não encontrada' });
+      }
+
+      const oficina = oficinaResult.rows[0];
+
+      // Verificar se a recepção pertence à oficina
+      const receptionResult = await pool.query(
+        'SELECT * FROM car_receptions WHERE id = $1 AND workshop_id = $2',
+        [receptionId, oficina.id]
+      );
+
+      if (receptionResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Recepção de veículo não encontrada' });
+      }
+
+      const {
+        status,
+        deliveryDeadline,
+        laborCost,
+        partsCost,
+        notes,
+        currentKm,
+        replacedParts
+      } = req.body;
+
+      // Atualizar recepção de veículo
+      const updateQuery = `
+        UPDATE car_receptions 
+        SET 
+          status = COALESCE($1, status),
+          delivery_deadline = COALESCE($2, delivery_deadline),
+          labor_cost = COALESCE($3, labor_cost),
+          parts_cost = COALESCE($4, parts_cost),
+          notes = COALESCE($5, notes),
+          current_km = COALESCE($6, current_km),
+          replaced_parts = COALESCE($7, replaced_parts),
+          updated_at = NOW()
+        WHERE id = $8 AND workshop_id = $9
+        RETURNING *
+      `;
+
+      const updateResult = await pool.query(updateQuery, [
+        status,
+        deliveryDeadline,
+        laborCost,
+        partsCost,
+        notes,
+        currentKm,
+        replacedParts,
+        receptionId,
+        oficina.id
+      ]);
+
+      console.log(`Recepção ${receptionId} atualizada pela oficina ${oficina.name}`);
+
+      res.json({
+        success: true,
+        message: 'Recepção de veículo atualizada com sucesso',
+        reception: updateResult.rows[0]
+      });
+
+    } catch (error) {
+      console.error('Erro ao atualizar recepção de veículo:', error);
+      res.status(500).json({ 
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  });
   
   // Rota para oficinas buscarem manutenções associadas a elas
   app.get("/api/workshop/maintenance", isWorkshop, async (req, res) => {

@@ -75,6 +75,16 @@ export default function OficinaExternalDashboard() {
     observacoes_oficina: '',
     km_veiculo: ''
   });
+  const [editingReception, setEditingReception] = useState<CarReception | null>(null);
+  const [receptionEditForm, setReceptionEditForm] = useState({
+    status: '',
+    deliveryDeadline: '',
+    laborCost: '',
+    partsCost: '',
+    notes: '',
+    currentKm: '',
+    replacedParts: ''
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -328,6 +338,67 @@ export default function OficinaExternalDashboard() {
       toast({
         title: "Erro",
         description: error instanceof Error ? error.message : "Erro ao atualizar ordem de serviço",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditReception = (reception: CarReception) => {
+    setEditingReception(reception);
+    setReceptionEditForm({
+      status: reception.status || '',
+      deliveryDeadline: reception.deliveryDeadline ? new Date(reception.deliveryDeadline).toISOString().split('T')[0] : '',
+      laborCost: reception.laborCost?.toString() || '',
+      partsCost: reception.partsCost?.toString() || '',
+      notes: reception.notes || '',
+      currentKm: reception.currentKm?.toString() || '',
+      replacedParts: reception.replacedParts || ''
+    });
+  };
+
+  const updateCarReception = async () => {
+    if (!editingReception) return;
+
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      
+      const response = await fetch(`/oficina/external/car-receptions/${editingReception.id}?token=${token}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: receptionEditForm.status || undefined,
+          deliveryDeadline: receptionEditForm.deliveryDeadline || undefined,
+          laborCost: receptionEditForm.laborCost ? parseFloat(receptionEditForm.laborCost) : undefined,
+          partsCost: receptionEditForm.partsCost ? parseFloat(receptionEditForm.partsCost) : undefined,
+          notes: receptionEditForm.notes || undefined,
+          currentKm: receptionEditForm.currentKm ? parseInt(receptionEditForm.currentKm) : undefined,
+          replacedParts: receptionEditForm.replacedParts || undefined
+        }),
+      });
+
+      if (response.ok) {
+        setEditingReception(null);
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        if (token && workshopData) {
+          await loadWorkshopData(workshopData.id, token);
+        }
+        toast({
+          title: "Sucesso",
+          description: "Recepção de veículo atualizada com sucesso!",
+        });
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao atualizar recepção');
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar recepção:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao atualizar recepção de veículo",
         variant: "destructive",
       });
     }
@@ -592,14 +663,24 @@ export default function OficinaExternalDashboard() {
                 <>
                   {carReceptions.slice(0, 3).map((reception) => (
                     <div key={reception.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
-                      <div>
-                        <p className="font-medium">{reception.vehiclePlate}</p>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-medium">{reception.vehiclePlate}</p>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditReception(reception)}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Editar
+                            </Button>
+                            <Badge variant="outline">
+                              {new Date(reception.created_at).toLocaleDateString('pt-BR')}
+                            </Badge>
+                          </div>
+                        </div>
                         <p className="text-sm text-muted-foreground">{reception.vehicleModel} - {reception.serviceDescription}</p>
-                      </div>
-                      <div className="text-right">
-                        <Badge variant="outline">
-                          {new Date(reception.created_at).toLocaleDateString('pt-BR')}
-                        </Badge>
                         <p className="text-xs text-muted-foreground mt-1 capitalize">{reception.status}</p>
                       </div>
                     </div>
@@ -905,6 +986,116 @@ export default function OficinaExternalDashboard() {
                 Cancelar
               </Button>
               <Button onClick={updateMaintenanceOrder}>
+                Salvar Alterações
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Modal de Edição de Recepção de Veículo */}
+      {editingReception && (
+        <Dialog open={true} onOpenChange={() => setEditingReception(null)}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Editar Recepção de Veículo - {editingReception.vehiclePlate}</DialogTitle>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="reception_status" className="text-right">Status</Label>
+                <Select 
+                  value={receptionEditForm.status} 
+                  onValueChange={(value) => setReceptionEditForm({...receptionEditForm, status: value})}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recebido">Recebido</SelectItem>
+                    <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                    <SelectItem value="concluido">Concluído</SelectItem>
+                    <SelectItem value="entregue">Entregue</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="delivery_deadline" className="text-right">Previsão Entrega</Label>
+                <Input
+                  id="delivery_deadline"
+                  type="date"
+                  value={receptionEditForm.deliveryDeadline}
+                  onChange={(e) => setReceptionEditForm({...receptionEditForm, deliveryDeadline: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="current_km" className="text-right">KM Atual</Label>
+                <Input
+                  id="current_km"
+                  type="number"
+                  value={receptionEditForm.currentKm}
+                  onChange={(e) => setReceptionEditForm({...receptionEditForm, currentKm: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="labor_cost" className="text-right">Valor Mão de Obra</Label>
+                <Input
+                  id="labor_cost"
+                  type="number"
+                  step="0.01"
+                  value={receptionEditForm.laborCost}
+                  onChange={(e) => setReceptionEditForm({...receptionEditForm, laborCost: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="parts_cost" className="text-right">Valor Peças</Label>
+                <Input
+                  id="parts_cost"
+                  type="number"
+                  step="0.01"
+                  value={receptionEditForm.partsCost}
+                  onChange={(e) => setReceptionEditForm({...receptionEditForm, partsCost: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="replaced_parts" className="text-right">Peças Substituídas</Label>
+                <Textarea
+                  id="replaced_parts"
+                  value={receptionEditForm.replacedParts}
+                  onChange={(e) => setReceptionEditForm({...receptionEditForm, replacedParts: e.target.value})}
+                  className="col-span-3"
+                  rows={2}
+                  placeholder="Lista das peças substituídas..."
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="reception_notes" className="text-right">Observações</Label>
+                <Textarea
+                  id="reception_notes"
+                  value={receptionEditForm.notes}
+                  onChange={(e) => setReceptionEditForm({...receptionEditForm, notes: e.target.value})}
+                  className="col-span-3"
+                  rows={3}
+                  placeholder="Observações sobre o serviço..."
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setEditingReception(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={updateCarReception}>
                 Salvar Alterações
               </Button>
             </div>
