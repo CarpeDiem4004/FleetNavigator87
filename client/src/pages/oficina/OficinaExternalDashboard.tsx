@@ -297,8 +297,8 @@ export default function OficinaExternalDashboard() {
       // Se estamos editando, usar PUT, senão POST
       const isEditing = editingReception !== null;
       const url = isEditing 
-        ? `/oficina/external/car-receptions/${editingReception.id}?token=${token}`
-        : `/oficina/external/car-receptions?token=${token}`;
+        ? `/api/oficina/car-receptions/${editingReception.id}?token=${token}`
+        : `/api/oficina/car-receptions?token=${token}`;
       const method = isEditing ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
