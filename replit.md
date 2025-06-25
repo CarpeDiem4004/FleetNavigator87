@@ -117,6 +117,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- June 25, 2025: Completely resolved maintenance system database inconsistencies and workshop order updates
+  - Fixed critical database table inconsistency between maintenance_orders and manutencao tables
+  - Standardized all endpoints and storage methods to use maintenance_orders table exclusively
+  - Corrected workshop order listing and update functionality for external workshop access
+  - Implemented proper token validation for workshop API endpoints with detailed logging
+  - Fixed workshop order update system with support for status, costs, notes, and completion dates
+  - Created working test orders to verify system functionality across all interfaces
+
 - June 25, 2025: Fixed workshop name inconsistency and PDF generation issues
   - Resolved Alair workshop name divergence between tables (workshops and oficinas)
   - Standardized name to "Alair Manutenção e Serviços Automotivos Ltda" across both tables

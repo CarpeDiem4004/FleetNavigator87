@@ -529,41 +529,46 @@ export default function OficinaExternalDashboard() {
   };
 
   const updateMaintenanceOrder = async () => {
-    if (!editingOrder) return;
+    if (!editingOrder || !workshopData) return;
 
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get('token');
       
-      const response = await fetch(`/oficina/external/ordens-servico/${editingOrder.id}?token=${token}`, {
+      console.log('Atualizando ordem de serviço:', {
+        orderId: editingOrder.id,
+        workshopId: workshopData.id,
+        token: token ? 'presente' : 'ausente',
+        formData: editForm
+      });
+
+      const response = await fetch(`/api/workshop/${workshopData.id}/orders/${editingOrder.id}?token=${token}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           status: editForm.status || undefined,
-          data_previsao_entrega: editForm.data_previsao_entrega || undefined,
-          valor_mao_obra: editForm.valor_mao_obra ? parseFloat(editForm.valor_mao_obra) : undefined,
-          valor_total_pecas: editForm.valor_total_pecas ? parseFloat(editForm.valor_total_pecas) : undefined,
-          observacoes_oficina: editForm.observacoes_oficina || undefined,
-          km_veiculo: editForm.km_veiculo ? parseInt(editForm.km_veiculo) : undefined
+          notes: editForm.observacoes_oficina || undefined,
+          actualCost: editForm.valor_total_pecas ? parseFloat(editForm.valor_total_pecas) : undefined,
+          laborCost: editForm.valor_mao_obra ? parseFloat(editForm.valor_mao_obra) : undefined,
+          completionDate: editForm.status === 'concluido' ? new Date().toISOString() : undefined
         }),
       });
 
+      console.log('Resposta da atualização:', response.status);
+
       if (response.ok) {
         setEditingOrder(null);
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        if (token && workshopData) {
-          await loadWorkshopData(workshopData.id, token);
-        }
+        await loadWorkshopData(workshopData.id, token);
         toast({
           title: "Sucesso",
           description: "Ordem de serviço atualizada com sucesso!",
         });
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao atualizar ordem');
+        console.error('Erro da API:', errorData);
+        throw new Error(errorData.message || errorData.error || 'Erro ao atualizar ordem');
       }
     } catch (error) {
       console.error('Erro ao atualizar ordem:', error);
