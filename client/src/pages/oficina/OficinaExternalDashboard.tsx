@@ -18,7 +18,8 @@ import {
   AlertTriangle,
   User,
   Calendar,
-  Settings
+  Settings,
+  Edit
 } from 'lucide-react';
 
 interface WorkshopData {
@@ -640,6 +641,102 @@ export default function OficinaExternalDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog para editar ordem de serviço */}
+      <Dialog open={!!editingOrder} onOpenChange={() => setEditingOrder(null)}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Editar Ordem de Serviço</DialogTitle>
+          </DialogHeader>
+          
+          {editingOrder && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={editForm.status} onValueChange={(value) => setEditForm(prev => ({ ...prev, status: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pendente</SelectItem>
+                      <SelectItem value="in_progress">Em Andamento</SelectItem>
+                      <SelectItem value="awaiting_parts">Aguardando Peças</SelectItem>
+                      <SelectItem value="completed">Concluída</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="data_previsao_entrega">Previsão de Entrega</Label>
+                  <Input
+                    id="data_previsao_entrega"
+                    type="date"
+                    value={editForm.data_previsao_entrega}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, data_previsao_entrega: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="km_veiculo">KM Atual</Label>
+                  <Input
+                    id="km_veiculo"
+                    type="number"
+                    placeholder="Ex: 45000"
+                    value={editForm.km_veiculo}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, km_veiculo: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="valor_mao_obra">Valor Mão de Obra (R$)</Label>
+                  <Input
+                    id="valor_mao_obra"
+                    type="number"
+                    step="0.01"
+                    placeholder="Ex: 150.00"
+                    value={editForm.valor_mao_obra}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, valor_mao_obra: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="valor_total_pecas">Valor Total Peças (R$)</Label>
+                  <Input
+                    id="valor_total_pecas"
+                    type="number"
+                    step="0.01"
+                    placeholder="Ex: 85.50"
+                    value={editForm.valor_total_pecas}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, valor_total_pecas: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="observacoes_oficina">Observações da Oficina</Label>
+                <Textarea
+                  id="observacoes_oficina"
+                  placeholder="Observações sobre o serviço, peças utilizadas, etc..."
+                  value={editForm.observacoes_oficina}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, observacoes_oficina: e.target.value }))}
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setEditingOrder(null)}>
+                  Cancelar
+                </Button>
+                <Button onClick={updateMaintenanceOrder}>
+                  Salvar Alterações
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
