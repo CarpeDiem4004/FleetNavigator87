@@ -7333,7 +7333,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Listar ordens de serviço da oficina
   app.get("/api/oficina/orders", verificarTokenOficina, async (req, res) => {
     try {
-      const orders = await storage.getMaintenanceByWorkshop(req.oficina.id);
+      console.log(`Oficina autenticada: ${req.oficina.name} (ID: ${req.oficina.id})`);
+      
+      // Buscar ordens de serviço desta oficina diretamente da tabela maintenance_orders
+      const query = `
+        SELECT 
+          mo.*,
+          v.modelo as vehicle_model,
+          v.marca as vehicle_brand
+        FROM maintenance_orders mo
+        LEFT JOIN veiculos v ON mo.vehicle_plate = v.placa
+        WHERE mo.workshop_id = $1
+        ORDER BY mo.created_at DESC
+      `;
+      
+      const result = await pool.query(query, [req.oficina.id]);
+      console.log(`Encontradas ${result.rows.length} ordens para oficina ${req.oficina.id}`);
+      
+      const orders = result.rows.map(row => ({
+        id: row.id,
+        vehiclePlate: row.vehicle_plate,
+        description: row.description,
+        status: row.status,
+        priority: row.priority,
+        serviceType: row.service_type,
+        workshopId: row.workshop_id,
+        startDate: row.start_date,
+        estimatedCompletion: row.estimated_completion,
+        completionDate: row.completion_date,
+        estimatedCost: row.estimated_cost,
+        actualCost: row.actual_cost,
+        laborCost: row.labor_cost,
+        partsCost: row.parts_cost,
+        notes: row.notes,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        vehicleModel: row.vehicle_model,
+        vehicleBrand: row.vehicle_brand
+      }));
+      
       res.json(orders);
     } catch (error) {
       console.error("Erro ao listar ordens:", error);
