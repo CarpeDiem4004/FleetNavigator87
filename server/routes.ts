@@ -7546,23 +7546,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Sanitizar dados de data - converter strings vazias para null
+      console.log('[OFICINA-CREATE] Dados recebidos:', data);
+      
+      // Sanitizar dados de data - converter strings vazias para null e strings ISO para Date
       const sanitizedData = { ...data };
       
       // Lista de campos de data que podem estar vazios
-      const dateFields = ['deliveryDeadline', 'completionDate', 'deliveredDate'];
+      const dateFields = ['deliveryDeadline', 'completedDate', 'deliveredDate'];
       
       dateFields.forEach(field => {
         if (sanitizedData[field] === '' || sanitizedData[field] === undefined) {
           sanitizedData[field] = null;
         } else if (sanitizedData[field] && typeof sanitizedData[field] === 'string') {
-          // Verificar se é uma data válida
+          // Converter string ISO para objeto Date
           const date = new Date(sanitizedData[field]);
           if (isNaN(date.getTime())) {
             sanitizedData[field] = null;
+          } else {
+            sanitizedData[field] = date;
           }
         }
       });
+
+      // Converter deliveryPersonCpf para formato sem pontuação (apenas números)
+      if (sanitizedData.deliveryPersonCpf) {
+        sanitizedData.deliveryPersonCpf = sanitizedData.deliveryPersonCpf.replace(/\D/g, '');
+      }
+
+      // Converter deliveryPersonPhone para formato sem pontuação (apenas números)
+      if (sanitizedData.deliveryPersonPhone) {
+        sanitizedData.deliveryPersonPhone = sanitizedData.deliveryPersonPhone.replace(/\D/g, '');
+      }
+
+      console.log('[OFICINA-CREATE] Dados sanitizados:', sanitizedData);
 
       const updated = await storage.updateCarReception(parseInt(id), sanitizedData);
       if (!updated) {
