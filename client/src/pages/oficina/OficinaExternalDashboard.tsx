@@ -1447,8 +1447,8 @@ export default function OficinaExternalDashboard() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="recebido">Recebido</SelectItem>
-                        <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                        <SelectItem value="concluido">Concluído</SelectItem>
+                        <SelectItem value="em_reparo">Em Reparo</SelectItem>
+                        <SelectItem value="pronto">Pronto</SelectItem>
                         <SelectItem value="entregue">Entregue</SelectItem>
                       </SelectContent>
                     </Select>
