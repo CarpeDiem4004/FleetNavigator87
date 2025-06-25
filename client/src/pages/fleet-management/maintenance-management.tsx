@@ -144,7 +144,9 @@ const newServiceOrderSchema = z.object({
   oficina_id: z.string().min(1, "Oficina é obrigatória"),
   descricao: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
   data_prevista: z.string().min(1, "Data prevista é obrigatória"),
-  observacoes: z.string().optional()
+  observacoes: z.string().optional(),
+  projeto_id: z.string().optional(),
+  base_id: z.string().optional()
 });
 
 // Schema de validação para cadastro de oficina
@@ -208,6 +210,8 @@ export default function MaintenanceManagement() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [templates, setTemplates] = useState<MaintenanceTemplate[]>([]);
   const [carReceptions, setCarReceptions] = useState<CarReception[]>([]);
+  const [projects, setProjects] = useState<{id: number, name: string}[]>([]);
+  const [bases, setBases] = useState<{id: number, name: string}[]>([]);
   const [stats, setStats] = useState<MaintenanceStats>({
     total_orders: 0,
     orders_in_progress: 0,
@@ -249,7 +253,9 @@ export default function MaintenanceManagement() {
       oficina_id: "",
       descricao: "",
       data_prevista: "",
-      observacoes: ""
+      observacoes: "",
+      projeto_id: "",
+      base_id: ""
     }
   });
 
@@ -325,6 +331,16 @@ export default function MaintenanceManagement() {
       const receptionsData = await receptionsResponse.json();
       setCarReceptions(receptionsData.receptions || []);
 
+      // Carregar projetos
+      const projectsResponse = await apiRequest("GET", "/api/projects");
+      const projectsData = await projectsResponse.json();
+      setProjects(projectsData || []);
+
+      // Carregar bases
+      const basesResponse = await apiRequest("GET", "/api/bases");
+      const basesData = await basesResponse.json();
+      setBases(basesData || []);
+
       // Calcular estatísticas
       const orders = ordersData.orders || [];
       console.log("Orders received for stats:", orders);
@@ -365,10 +381,14 @@ export default function MaintenanceManagement() {
     try {
       setIsCreating(true);
       
-      const response = await apiRequest("POST", "/api/maintenance/orders", {
+      const requestData = {
         ...values,
-        oficina_id: parseInt(values.oficina_id)
-      });
+        oficina_id: parseInt(values.oficina_id),
+        projeto_id: values.projeto_id ? parseInt(values.projeto_id) : null,
+        base_id: values.base_id ? parseInt(values.base_id) : null
+      };
+      
+      const response = await apiRequest("POST", "/api/maintenance/orders", requestData);
 
       if (response.ok) {
         toast({
@@ -1174,6 +1194,60 @@ export default function MaintenanceManagement() {
                         </FormItem>
                       )}
                     />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="projeto_id"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Projeto (Opcional)</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione um projeto" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="">Nenhum projeto</SelectItem>
+                                {projects.map((project) => (
+                                  <SelectItem key={project.id} value={project.id.toString()}>
+                                    {project.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="base_id"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Base (Opcional)</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione uma base" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="">Nenhuma base</SelectItem>
+                                {bases.map((base) => (
+                                  <SelectItem key={base.id} value={base.id.toString()}>
+                                    {base.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
                     <FormField
                       control={form.control}
