@@ -7484,10 +7484,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Atualizar recebimento
-  app.put("/api/oficina/car-receptions/:id", verificarTokenOficina, async (req, res) => {
+  app.put("/api/oficina/car-receptions/:id", async (req, res) => {
+    console.log('[OFICINA-UPDATE] Requisição PUT recebida:', {
+      params: req.params,
+      query: req.query,
+      body: req.body,
+      token: req.query.token
+    });
+    
     try {
       const { id } = req.params;
+      const { token } = req.query;
       const data = req.body;
+      
+      // Validar token de acesso externo
+      if (!token) {
+        console.log('[OFICINA-UPDATE] Token não fornecido');
+        return res.status(401).json({ 
+          success: false,
+          message: 'Token de acesso obrigatório' 
+        });
+      }
+
+      console.log('[OFICINA-UPDATE] Validando token:', token);
+
+      // Verificar se o token é válido (removido filtro status)
+      const tokenQuery = `
+        SELECT 
+          o.id,
+          COALESCE(o.nome_fantasia, o.razao_social) as name,
+          o.cnpj,
+          o.email,
+          o.telefone as phone,
+          o.external_token as token,
+          o.status
+        FROM oficinas o
+        WHERE o.external_token = $1
+      `;
+
+      const result = await pool.query(tokenQuery, [token]);
+
+      if (result.rows.length === 0) {
+        return res.status(401).json({
+          success: false,
+          message: "Token inválido ou expirado"
+        });
+      }
+
+      const workshop = result.rows[0];
+      
+      // Verificar se a recepção pertence a esta oficina
+      const ownershipCheck = await pool.query(
+        'SELECT id FROM car_receptions WHERE id = $1 AND workshop_id = $2',
+        [id, workshop.id]
+      );
+      
+      if (ownershipCheck.rows.length === 0) {
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Acesso negado - recepção não pertence a esta oficina' 
+        });
+      }
 
       // Sanitizar dados de data - converter strings vazias para null
       const sanitizedData = { ...data };
@@ -7509,13 +7566,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updated = await storage.updateCarReception(parseInt(id), sanitizedData);
       if (!updated) {
-        return res.status(404).json({ message: 'Recebimento não encontrado' });
+        return res.status(404).json({ 
+          success: false,
+          message: 'Recebimento não encontrado' 
+        });
       }
 
-      res.json(updated);
+      console.log(`[OFICINA-UPDATE] Recepção ${id} atualizada com sucesso`);
+      res.json({ 
+        success: true, 
+        data: updated,
+        message: 'Recepção atualizada com sucesso' 
+      });
     } catch (error) {
-      console.error("Erro ao atualizar recebimento:", error);
-      res.status(500).json({ message: 'Erro ao atualizar recebimento' });
+      console.error("[OFICINA-UPDATE] Erro ao atualizar recebimento:", error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Erro ao atualizar recebimento',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
     }
   });
 

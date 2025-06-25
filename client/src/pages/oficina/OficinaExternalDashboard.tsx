@@ -619,6 +619,8 @@ export default function OficinaExternalDashboard() {
         }),
       });
 
+      console.log('Resposta da atualização - Status:', response.status);
+
       if (response.ok) {
         setEditingReception(null);
         const urlParams = new URLSearchParams(window.location.search);
@@ -631,8 +633,18 @@ export default function OficinaExternalDashboard() {
           description: "Recepção de veículo atualizada com sucesso!",
         });
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao atualizar recepção');
+        const errorText = await response.text();
+        console.error('Erro da API na atualização (texto):', errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { error: errorText };
+        }
+        
+        const errorMessage = errorData.error || errorData.message || `Erro HTTP ${response.status}`;
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Erro ao atualizar recepção:', error);
