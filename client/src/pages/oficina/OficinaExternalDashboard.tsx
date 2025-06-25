@@ -116,6 +116,7 @@ export default function OficinaExternalDashboard() {
     }
 
     validateTokenAndLoadData(token);
+    loadProjects();
   }, []);
 
   const validateTokenAndLoadData = async (token: string) => {
@@ -177,6 +178,80 @@ export default function OficinaExternalDashboard() {
     setCarFormData(prev => ({ ...prev, projectId, baseId: '' }));
     const selectedProject = projects.find(p => p.id.toString() === projectId);
     setSelectedProjectBases(selectedProject?.bases || []);
+  };
+
+  const handleCarSubmit = async () => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      
+      const carData = {
+        ...carFormData,
+        currentKm: parseInt(carFormData.currentKm) || 0,
+        baseId: parseInt(carFormData.baseId) || null,
+        projectId: parseInt(carFormData.projectId) || null,
+        laborCost: parseFloat(carFormData.laborCost) || 0,
+        partsCost: parseFloat(carFormData.partsCost) || 0,
+        workshopId: workshopData?.id
+      };
+
+      // Se estamos editando, usar PUT, senão POST
+      const isEditing = editingReception !== null;
+      const url = isEditing 
+        ? `/oficina/external/car-receptions/${editingReception.id}?token=${token}`
+        : `/oficina/external/car-receptions?token=${token}`;
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(carData),
+      });
+
+      if (response.ok) {
+        setIsCarFormOpen(false);
+        setEditingReception(null);
+        setCarFormData({
+          vehiclePlate: '',
+          vehicleModel: '',
+          vehicleType: 'carro',
+          currentKm: '',
+          baseId: '',
+          projectId: '',
+          serviceDescription: '',
+          replacedParts: '',
+          laborCost: '',
+          partsCost: '',
+          deliveryDeadline: '',
+          status: 'recebido',
+          notes: ''
+        });
+        
+        // Recarregar dados
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        if (token && workshopData) {
+          await loadWorkshopData(workshopData.id, token);
+        }
+        
+        toast({
+          title: "Sucesso",
+          description: isEditing ? "Recepção atualizada com sucesso!" : "Veículo recebido com sucesso!",
+        });
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao processar veículo');
+      }
+    } catch (error) {
+      console.error('Erro ao processar veículo:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao processar veículo",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleReceiveCar = async () => {
