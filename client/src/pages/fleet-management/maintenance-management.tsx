@@ -31,7 +31,8 @@ import {
   Mail,
   User,
   Calendar,
-  Key
+  Key,
+  Trash2
 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +41,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import jsPDF from 'jspdf';
+import { useAuth } from "@/context/AuthContext";
 
 interface ServiceOrder {
   id: number;
@@ -237,6 +239,7 @@ export default function MaintenanceManagement() {
   const [isWorkshopConfigModalOpen, setIsWorkshopConfigModalOpen] = useState(false);
   const [isWorkshopUsersModalOpen, setIsWorkshopUsersModalOpen] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Form para nova ordem de serviço
   const form = useForm<z.infer<typeof newServiceOrderSchema>>({
@@ -459,6 +462,84 @@ export default function MaintenanceManagement() {
     }
     
     setIsNegotiationModalOpen(true);
+  };
+
+  // Função para excluir ordem de serviço (apenas admin)
+  const handleDeleteOrder = async (orderId: number) => {
+    if (!user || user.role !== 'admin') {
+      toast({
+        title: "Acesso Negado",
+        description: "Apenas administradores podem excluir ordens de serviço",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!confirm("Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+
+    try {
+      const response = await apiRequest("DELETE", `/api/maintenance/orders/${orderId}`);
+      
+      if (response.ok) {
+        toast({
+          title: "Sucesso",
+          description: "Ordem de serviço excluída com sucesso!"
+        });
+        
+        // Recarregar dados
+        loadData();
+      } else {
+        throw new Error("Erro ao excluir ordem de serviço");
+      }
+    } catch (error: any) {
+      console.error("Erro ao excluir ordem de serviço:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir a ordem de serviço",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Função para excluir recebimento de veículo (apenas admin)
+  const handleDeleteReception = async (receptionId: number) => {
+    if (!user || user.role !== 'admin') {
+      toast({
+        title: "Acesso Negado",
+        description: "Apenas administradores podem excluir recebimentos de veículos",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!confirm("Tem certeza que deseja excluir este recebimento de veículo? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+
+    try {
+      const response = await apiRequest("DELETE", `/api/maintenance/car-receptions/${receptionId}`);
+      
+      if (response.ok) {
+        toast({
+          title: "Sucesso",
+          description: "Recebimento excluído com sucesso!"
+        });
+        
+        // Recarregar dados
+        loadData();
+      } else {
+        throw new Error("Erro ao excluir recebimento");
+      }
+    } catch (error: any) {
+      console.error("Erro ao excluir recebimento:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o recebimento",
+        variant: "destructive"
+      });
+    }
   };
 
   // Função para criar tratativa de manutenção

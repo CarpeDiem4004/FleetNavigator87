@@ -4063,6 +4063,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // DELETE - Excluir ordem de serviço de manutenção (apenas admin)
+  app.delete('/api/maintenance/orders/:id', isAdmin, async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: 'Apenas administradores podem excluir ordens de serviço'
+        });
+      }
+      
+      console.log(`Admin ${user.email} tentando excluir ordem de serviço ID: ${orderId}`);
+      
+      // Verificar se a ordem existe
+      const checkQuery = 'SELECT * FROM maintenance WHERE id = $1';
+      const checkResult = await pool.query(checkQuery, [orderId]);
+      
+      if (checkResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Ordem de serviço não encontrada'
+        });
+      }
+      
+      // Excluir a ordem de serviço
+      const deleteQuery = 'DELETE FROM maintenance WHERE id = $1 RETURNING *';
+      const deleteResult = await pool.query(deleteQuery, [orderId]);
+      
+      console.log(`Ordem de serviço ID ${orderId} excluída com sucesso por ${user.email}`);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Ordem de serviço excluída com sucesso',
+        deletedOrder: deleteResult.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Erro ao excluir ordem de serviço:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao excluir ordem de serviço',
+        error: error.message
+      });
+    }
+  });
+
+  // DELETE - Excluir recebimento de veículo (apenas admin)
+  app.delete('/api/maintenance/car-receptions/:id', isAdmin, async (req, res) => {
+    try {
+      const receptionId = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: 'Apenas administradores podem excluir recebimentos de veículos'
+        });
+      }
+      
+      console.log(`Admin ${user.email} tentando excluir recebimento ID: ${receptionId}`);
+      
+      // Verificar se o recebimento existe
+      const checkQuery = 'SELECT * FROM car_receptions WHERE id = $1';
+      const checkResult = await pool.query(checkQuery, [receptionId]);
+      
+      if (checkResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Recebimento de veículo não encontrado'
+        });
+      }
+      
+      // Excluir o recebimento
+      const deleteQuery = 'DELETE FROM car_receptions WHERE id = $1 RETURNING *';
+      const deleteResult = await pool.query(deleteQuery, [receptionId]);
+      
+      console.log(`Recebimento ID ${receptionId} excluído com sucesso por ${user.email}`);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Recebimento de veículo excluído com sucesso',
+        deletedReception: deleteResult.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Erro ao excluir recebimento:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao excluir recebimento',
+        error: error.message
+      });
+    }
+  });
+
   // Endpoint para diagnóstico do Supabase
   app.get("/api/diagnostico/supabase", isAdmin, async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
