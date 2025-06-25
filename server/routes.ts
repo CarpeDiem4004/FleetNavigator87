@@ -6433,12 +6433,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Requisição GET /api/maintenance/orders recebida.");
       console.log("Usuário:", req.user.email, "Papel:", req.user.role);
       
-      // Usar getAllMaintenance do storage que já foi corrigido
-      const maintenanceRecords = await storage.getAllMaintenance();
-      console.log(`[DEBUG] Encontradas ${maintenanceRecords.length} manutenções no total`);
-      console.log(`[DEBUG] Primeiras 2 manutenções:`, JSON.stringify(maintenanceRecords.slice(0, 2), null, 2));
+      // Buscar diretamente da tabela maintenance_orders
+      const query = `
+        SELECT 
+          mo.id,
+          mo.vehicle_plate,
+          mo.description,
+          mo.status,
+          mo.priority,
+          mo.service_type,
+          mo.workshop_id,
+          mo.start_date,
+          mo.estimated_completion,
+          mo.completion_date,
+          mo.estimated_cost,
+          mo.actual_cost,
+          mo.labor_cost,
+          mo.parts_cost,
+          mo.notes,
+          mo.created_at,
+          mo.updated_at,
+          v.modelo as vehicle_model,
+          v.marca as vehicle_brand,
+          o.razao_social as workshop_name
+        FROM maintenance_orders mo
+        LEFT JOIN veiculos v ON mo.vehicle_plate = v.placa
+        LEFT JOIN oficinas o ON mo.workshop_id = o.id
+        ORDER BY mo.created_at DESC
+      `;
       
-      return res.status(200).json({ orders: maintenanceRecords });
+      const result = await pool.query(query);
+      console.log(`[DEBUG] Encontradas ${result.rows.length} ordens de manutenção no total`);
+      
+      const orders = result.rows.map(row => ({
+        id: row.id,
+        vehiclePlate: row.vehicle_plate,
+        description: row.description,
+        status: row.status || 'pendente',
+        priority: row.priority || 'media',
+        maintenanceType: row.service_type || 'preventiva',
+        workshopId: row.workshop_id,
+        entryDate: row.start_date,
+        estimatedCompletion: row.estimated_completion,
+        completionDate: row.completion_date,
+        cost: row.estimated_cost || '0.00',
+        actualCost: row.actual_cost,
+        laborCost: row.labor_cost,
+        partsCost: row.parts_cost,
+        notes: row.notes,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        vehicleModel: row.vehicle_model,
+        vehicleBrand: row.vehicle_brand,
+        workshopName: row.workshop_name
+      }));
+      
+      return res.status(200).json({ orders });
     } catch (error) {
       console.error("Erro ao buscar ordens de manutenção:", error);
       return res.status(500).json({ 

@@ -914,9 +914,9 @@ export class DatabaseStorage implements IStorage {
       console.log(`Buscando manutenções para oficina ID: ${workshopId}`);
       
       const query = `
-        SELECT * FROM manutencao
-        WHERE oficina_id = $1
-        ORDER BY entry_date DESC
+        SELECT * FROM maintenance_orders
+        WHERE workshop_id = $1
+        ORDER BY start_date DESC
       `;
       
       const result = await pool.query(query, [workshopId]);
@@ -924,19 +924,19 @@ export class DatabaseStorage implements IStorage {
       
       return result.rows.map(row => ({
         id: row.id,
-        vehiclePlate: row.vehicle_plate || row.placa,
-        description: row.descricao,
+        vehiclePlate: row.vehicle_plate,
+        description: row.description,
         status: row.status,
         priority: row.priority || "média",
-        maintenanceType: row.tipo || row.maintenance_type,
-        workshopId: row.oficina_id,
-        requestBaseId: row.request_base_id || row.base_id,
-        entryDate: row.entry_date || row.data_solicitacao,
-        estimatedCompletion: row.data_agendada,
-        completionDate: row.data_conclusao,
-        responsiblePerson: row.responsible_person,
-        cost: row.custo,
-        initialBudget: row.initial_budget,
+        maintenanceType: row.service_type,
+        workshopId: row.workshop_id,
+        requestBaseId: null,
+        entryDate: row.start_date,
+        estimatedCompletion: row.estimated_completion,
+        completionDate: row.completion_date,
+        responsiblePerson: row.notes || 'Sistema',
+        cost: row.estimated_cost,
+        initialBudget: row.estimated_cost,
         created_at: row.created_at,
         updated_at: row.updated_at
       }));
@@ -1057,15 +1057,14 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log("Criando manutenção com dados:", JSON.stringify(maintenanceData, null, 2));
       
-      // Usar SQL direto com a estrutura corrigida da tabela
+      // Usar a tabela maintenance_orders que é onde os dados estão sendo criados
       const query = `
-        INSERT INTO manutencao (
-          placa, descricao, status, tipo, 
-          oficina_id, base_id, 
-          data_solicitacao, data_agendada,
-          custo, prioridade, responsavel
+        INSERT INTO maintenance_orders (
+          vehicle_plate, description, status, service_type, 
+          workshop_id, priority, estimated_cost,
+          start_date, estimated_completion, notes
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
         ) RETURNING *
       `;
       
@@ -1075,11 +1074,10 @@ export class DatabaseStorage implements IStorage {
         maintenanceData.status || 'pendente',
         maintenanceData.maintenanceType || 'preventiva',
         maintenanceData.workshopId,
-        maintenanceData.requestBaseId,
+        maintenanceData.priority || 'media',
+        maintenanceData.cost || 0,
         maintenanceData.entryDate || new Date(),
         maintenanceData.estimatedCompletion,
-        maintenanceData.cost || 0,
-        maintenanceData.priority || 'media',
         maintenanceData.responsiblePerson || 'Sistema'
       ];
       
@@ -1105,19 +1103,19 @@ export class DatabaseStorage implements IStorage {
       // Converter o objeto retornado pelo banco para o formato esperado
       return {
         id: newMaintenance.id,
-        vehiclePlate: newMaintenance.placa,
-        description: newMaintenance.descricao,
+        vehiclePlate: newMaintenance.vehicle_plate,
+        description: newMaintenance.description,
         status: newMaintenance.status,
-        priority: newMaintenance.prioridade || 'media',
-        maintenanceType: newMaintenance.tipo,
-        workshopId: newMaintenance.oficina_id,
-        requestBaseId: newMaintenance.base_id,
-        entryDate: newMaintenance.data_solicitacao,
-        estimatedCompletion: newMaintenance.data_agendada,
-        completionDate: newMaintenance.data_conclusao,
-        responsiblePerson: newMaintenance.responsavel || 'Sistema',
-        cost: newMaintenance.custo,
-        initialBudget: newMaintenance.custo,
+        priority: newMaintenance.priority || 'media',
+        maintenanceType: newMaintenance.service_type,
+        workshopId: newMaintenance.workshop_id,
+        requestBaseId: null,
+        entryDate: newMaintenance.start_date,
+        estimatedCompletion: newMaintenance.estimated_completion,
+        completionDate: newMaintenance.completion_date,
+        responsiblePerson: newMaintenance.notes || 'Sistema',
+        cost: newMaintenance.estimated_cost,
+        initialBudget: newMaintenance.estimated_cost,
         created_at: newMaintenance.created_at,
         updated_at: newMaintenance.updated_at
       };
