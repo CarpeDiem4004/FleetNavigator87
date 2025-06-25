@@ -573,9 +573,17 @@ export default function OficinaExternalDashboard() {
 
     try {
       const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token');
+      let token = urlParams.get('token');
       
-      const response = await fetch(`/oficina/external/car-receptions/${editingReception.id}?token=${token}`, {
+      // Tentar obter token da URL também (formato /oficina/:token)
+      if (!token) {
+        const pathParts = window.location.pathname.split('/');
+        if (pathParts[1] === 'oficina' && pathParts[2] && pathParts[2] !== 'external') {
+          token = pathParts[2];
+        }
+      }
+
+      const response = await fetch(`/api/oficina/car-receptions/${editingReception.id}?token=${token}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
