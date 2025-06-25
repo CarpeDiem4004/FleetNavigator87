@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useMaintenanceAuth, useMaintenanceApi } from "@/hooks/use-maintenance-auth";
+import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,7 +29,10 @@ import {
   TrendingUp,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Trash2,
+  Edit,
+  Eye
 } from "lucide-react";
 
 const createOSSchema = z.object({
@@ -68,12 +72,16 @@ const tipoLabels = {
 
 export default function DashboardInterno() {
   const { user, logout } = useMaintenanceAuth();
+  const { user: authUser } = useAuth();
   const { makeRequest } = useMaintenanceApi();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("ordens");
+  
+  // Verificar se é administrador
+  const isAdmin = authUser?.role === 'admin';
 
   // Buscar dados
   const { data: ordensServico, isLoading: loadingOrdens } = useQuery({
@@ -152,6 +160,50 @@ export default function DashboardInterno() {
     };
 
     createOSMutation.mutate(osData);
+  };
+
+  // Função para excluir ordem de serviço (apenas para administradores)
+  const handleDeleteOS = async (osId: number) => {
+    if (!isAdmin) {
+      toast({
+        title: 'Acesso negado',
+        description: 'Apenas administradores podem excluir ordens de serviço.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!confirm('Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/maintenance/${osId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        toast({
+          title: 'Sucesso',
+          description: 'Ordem de serviço excluída com sucesso.'
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/maintenance/orders'] });
+      } else {
+        const error = await response.json();
+        toast({
+          title: 'Erro',
+          description: error.message || 'Erro ao excluir ordem de serviço.',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: 'Erro de comunicação com o servidor.',
+        variant: 'destructive'
+      });
+    }
   };
 
   if (loadingOrdens) {
@@ -317,6 +369,29 @@ export default function DashboardInterno() {
                             <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
                               <strong>Observações internas:</strong> {os.observacoes_internas}
                             </div>
+                          )}
+                        </div>
+                        
+                        {/* Botões de ação */}
+                        <div className="flex items-center space-x-2 ml-4">
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4 mr-1" />
+                            Detalhes
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <Edit className="h-4 w-4 mr-1" />
+                            Editar
+                          </Button>
+                          {isAdmin && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDeleteOS(os.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Excluir
+                            </Button>
                           )}
                         </div>
                       </div>

@@ -117,6 +117,12 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- June 25, 2025: Implemented admin-only deletion restrictions for maintenance history
+  - Added role-based access control for maintenance record deletion
+  - Only administrators can now delete orders and maintenance records
+  - Buttons are hidden for non-admin users with appropriate error messages
+  - Implemented both frontend validation and backend middleware protection
+
 - June 25, 2025: Fixed external workshop access system completely
   - Resolved duplicate endpoint issue causing wrong workshop identification
   - Token auto_token_bb6ba89be514 now correctly routes to Oficina Alair (ID=5)
