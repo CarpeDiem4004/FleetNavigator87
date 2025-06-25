@@ -1402,6 +1402,7 @@ export default function OficinaExternalDashboard() {
               <Button variant="outline" onClick={() => {
                 setIsCarFormOpen(false);
                 setEditingReception(null);
+                setParts([]);
               }}>
                 Cancelar
               </Button>
