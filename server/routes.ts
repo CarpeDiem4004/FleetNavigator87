@@ -7580,11 +7580,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('[OFICINA-UPDATE] Dados sanitizados:', sanitizedData);
 
-      const updated = await storage.updateCarReception(parseInt(id), sanitizedData);
-      if (!updated) {
-        return res.status(404).json({ 
+      try {
+        const updated = await storage.updateCarReception(parseInt(id), sanitizedData);
+        console.log('[OFICINA-UPDATE] Resultado da atualização:', updated);
+        
+        if (!updated) {
+          return res.status(404).json({ 
+            success: false,
+            message: 'Recebimento não encontrado' 
+          });
+        }
+
+        res.json({ 
+          success: true,
+          message: 'Recebimento atualizado com sucesso',
+          reception: updated
+        });
+      } catch (updateError) {
+        console.error('[OFICINA-UPDATE] Erro na atualização:', updateError);
+        return res.status(500).json({ 
           success: false,
-          message: 'Recebimento não encontrado' 
+          message: 'Erro ao atualizar recebimento',
+          error: updateError instanceof Error ? updateError.message : 'Erro desconhecido'
         });
       }
 

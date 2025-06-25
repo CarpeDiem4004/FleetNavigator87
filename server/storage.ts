@@ -1989,14 +1989,35 @@ export class DatabaseStorage implements IStorage {
 
   async updateCarReception(id: number, reception: Partial<InsertCarReception>): Promise<CarReception | undefined> {
     try {
+      console.log('[STORAGE] Atualizando recepção de veículo:', { id, reception });
+      
+      // Primeiro verificar se o registro existe
+      const existing = await db
+        .select()
+        .from(carReceptions)
+        .where(eq(carReceptions.id, id))
+        .limit(1);
+      
+      if (existing.length === 0) {
+        console.log('[STORAGE] Recepção não encontrada para ID:', id);
+        return undefined;
+      }
+      
+      console.log('[STORAGE] Recepção encontrada, procedendo com atualização');
+      
       const [updatedReception] = await db.update(carReceptions)
-        .set(reception)
+        .set({
+          ...reception,
+          updated_at: new Date()
+        })
         .where(eq(carReceptions.id, id))
         .returning();
+      
+      console.log('[STORAGE] Recepção atualizada com sucesso:', updatedReception);
       return updatedReception || undefined;
     } catch (error) {
-      console.error("Erro ao atualizar recebimento:", error);
-      return undefined;
+      console.error('[STORAGE] Erro ao atualizar recebimento:', error);
+      throw error;
     }
   }
 
