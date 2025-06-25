@@ -7210,9 +7210,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Listar recebimentos da oficina
-  app.get("/api/oficina/car-receptions", verificarTokenExterno, async (req, res) => {
+  app.get("/api/oficina/car-receptions", async (req, res) => {
     try {
-      const receptions = await storage.getCarReceptionsByWorkshop(req.oficina.id);
+      const { token } = req.query;
+      
+      // Validar token de acesso externo
+      if (!token) {
+        return res.status(401).json({ 
+          success: false,
+          message: 'Token de acesso obrigatório' 
+        });
+      }
+
+      // Verificar se o token é válido
+      const tokenQuery = `
+        SELECT 
+          o.id,
+          COALESCE(o.nome_fantasia, o.razao_social) as name,
+          o.cnpj,
+          o.email,
+          o.telefone as phone,
+          o.external_token as token,
+          o.created_at as token_created
+        FROM oficinas o
+        WHERE o.external_token = $1 AND o.status = 'ativo'
+      `;
+
+      const result = await pool.query(tokenQuery, [token]);
+
+      if (result.rows.length === 0) {
+        return res.status(401).json({
+          success: false,
+          message: "Token inválido ou expirado"
+        });
+      }
+
+      const workshop = result.rows[0];
+      
+      const receptions = await storage.getCarReceptionsByWorkshop(workshop.id);
       res.json(receptions);
     } catch (error) {
       console.error("Erro ao listar recebimentos:", error);
