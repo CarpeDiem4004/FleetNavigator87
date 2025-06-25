@@ -200,7 +200,8 @@ export default function OficinaExternalDashboard() {
       const response = await fetch('/api/projects-with-bases');
       if (response.ok) {
         const data = await response.json();
-        setProjects(data.projects || []);
+        console.log('Projetos carregados:', data);
+        setProjects(data.data || data.projects || []);
       }
     } catch (error) {
       console.error('Erro ao carregar projetos:', error);
@@ -886,6 +887,12 @@ export default function OficinaExternalDashboard() {
                                   deliveryPersonCpf: (reception as any).deliveryPersonCpf || '',
                                   deliveryPersonPhone: (reception as any).deliveryPersonPhone || ''
                                 });
+                                
+                                // Carregar bases do projeto selecionado
+                                if ((reception as any).projectId) {
+                                  const selectedProject = projects.find(p => p.id.toString() === (reception as any).projectId?.toString());
+                                  setSelectedProjectBases(selectedProject?.bases || []);
+                                }
                                 // Carregar peças existentes
                                 try {
                                   const existingParts = JSON.parse((reception as any).replacedParts || '[]');
