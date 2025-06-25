@@ -1398,6 +1398,16 @@ export default function MaintenanceManagement() {
                             <Download className="mr-2 h-4 w-4" />
                             PDF
                           </Button>
+                          {user?.role === 'admin' && (
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => handleDeleteOrder(order.id)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Excluir
+                            </Button>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -1532,6 +1542,16 @@ export default function MaintenanceManagement() {
                               <Download className="mr-2 h-4 w-4" />
                               PDF
                             </Button>
+                            {user?.role === 'admin' && (
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => handleDeleteReception(reception.id)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Excluir
+                              </Button>
+                            )}
                           </div>
                         </CardContent>
                       </Card>

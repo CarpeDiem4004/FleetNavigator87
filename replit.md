@@ -117,6 +117,13 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- June 25, 2025: Implemented admin-only deletion functionality for maintenance records
+  - Added DELETE endpoints for maintenance orders and car receptions with admin-only access
+  - Implemented frontend deletion buttons visible only to admin users
+  - Added confirmation dialogs before deletion to prevent accidental data loss
+  - Backend validation ensures only authenticated admin users can delete records
+  - Complete audit trail with admin identification in deletion logs
+
 - June 25, 2025: Enhanced replaced parts display and fixed CPF validation issues
   - Improved replaced parts display to show readable format instead of raw JSON
   - Added total value calculation for replaced parts with highlighted display
