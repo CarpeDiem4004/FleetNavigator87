@@ -1125,7 +1125,28 @@ export default function OficinaDashboard() {
                     
                     {reception.replacedParts && (
                       <div className="bg-blue-50 p-2 rounded text-sm">
-                        <strong>Peças substituídas:</strong> {reception.replacedParts}
+                        <strong>Peças substituídas:</strong>
+                        <div className="mt-1 space-y-1">
+                          {(() => {
+                            try {
+                              const parts = JSON.parse(reception.replacedParts);
+                              if (Array.isArray(parts) && parts.length > 0) {
+                                return parts.map((part: any, index: number) => (
+                                  <div key={index} className="flex justify-between items-center p-1 bg-white rounded text-xs">
+                                    <span className="font-medium">{part.name || 'Peça não especificada'}</span>
+                                    <span className="text-blue-600 font-semibold">
+                                      R$ {parseFloat(part.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </span>
+                                  </div>
+                                ));
+                              } else {
+                                return <span className="text-gray-600 text-xs">Nenhuma peça substituída</span>;
+                              }
+                            } catch (e) {
+                              return <span className="text-gray-500 text-xs">{reception.replacedParts}</span>;
+                            }
+                          })()}
+                        </div>
                       </div>
                     )}
                   </div>

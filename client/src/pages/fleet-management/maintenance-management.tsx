@@ -1789,7 +1789,27 @@ export default function MaintenanceManagement() {
               {selectedReception.replacedParts && (
                 <div>
                   <p className="text-sm font-medium text-muted-foreground mb-2">Peças Substituídas</p>
-                  <p className="text-sm bg-blue-50 p-3 rounded-lg">{selectedReception.replacedParts}</p>
+                  <div className="bg-blue-50 p-3 rounded-lg space-y-2">
+                    {(() => {
+                      try {
+                        const parts = JSON.parse(selectedReception.replacedParts);
+                        if (Array.isArray(parts) && parts.length > 0) {
+                          return parts.map((part: any, index: number) => (
+                            <div key={index} className="flex justify-between items-center p-2 bg-white rounded border">
+                              <span className="font-medium">{part.name || 'Peça não especificada'}</span>
+                              <span className="text-sm font-semibold text-blue-600">
+                                R$ {parseFloat(part.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          ));
+                        } else {
+                          return <p className="text-sm text-gray-600">Nenhuma peça substituída</p>;
+                        }
+                      } catch (e) {
+                        return <p className="text-sm text-gray-500">{selectedReception.replacedParts}</p>;
+                      }
+                    })()}
+                  </div>
                 </div>
               )}
 

@@ -117,6 +117,12 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- June 25, 2025: Enhanced replaced parts display and fixed CPF validation issues
+  - Improved replaced parts display to show readable format instead of raw JSON
+  - Fixed database CPF constraint to accept 1-11 digits for better compatibility
+  - Enhanced user experience with proper Brazilian currency formatting for parts
+  - Updated both fleet management and workshop dashboards for consistent part display
+
 - June 25, 2025: Implemented Brazilian currency formatting and delivery person data collection
   - Added automatic Brazilian currency formatting (R$ 1.234,56) for all value fields
   - Values automatically format with proper thousands separators (.) and decimal separator (,)
