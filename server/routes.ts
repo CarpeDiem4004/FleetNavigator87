@@ -7350,6 +7350,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Criar recebimento de veículo
   app.post("/api/oficina/car-receptions", async (req, res) => {
+    console.log('[OFICINA-CREATE] Requisição recebida:', {
+      body: req.body,
+      query: req.query,
+      token: req.query.token
+    });
+    
     try {
       const { token } = req.query;
       const data = req.body;
@@ -7422,8 +7428,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         reception: reception
       });
     } catch (error) {
-      console.error("Erro ao criar recebimento:", error);
-      res.status(500).json({ message: 'Erro ao registrar recebimento' });
+      console.error("[OFICINA-CREATE] Erro ao criar recepção:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
     }
   });
 

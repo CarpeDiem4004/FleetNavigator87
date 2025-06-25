@@ -317,6 +317,10 @@ export default function OficinaExternalDashboard() {
         : `/api/oficina/car-receptions?token=${token}`;
       const method = isEditing ? 'PUT' : 'POST';
 
+      console.log('Enviando dados para:', url);
+      console.log('Método:', method);
+      console.log('Dados do veículo:', carData);
+      
       const response = await fetch(url, {
         method,
         headers: {
@@ -324,6 +328,9 @@ export default function OficinaExternalDashboard() {
         },
         body: JSON.stringify(carData),
       });
+
+      console.log('Resposta da API - Status:', response.status);
+      console.log('Resposta da API - Headers:', response.headers);
 
       if (response.ok) {
         setIsCarFormOpen(false);
@@ -360,14 +367,27 @@ export default function OficinaExternalDashboard() {
           description: isEditing ? "Recepção atualizada com sucesso!" : "Veículo recebido com sucesso!",
         });
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao processar veículo');
+        const errorText = await response.text();
+        console.error('Erro da API (texto):', errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { error: errorText };
+        }
+        
+        const errorMessage = errorData.error || errorData.message || `Erro HTTP ${response.status}`;
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Erro ao processar veículo:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error('Detalhes do erro:', errorMessage);
+      
       toast({
         title: "Erro",
-        description: error instanceof Error ? error.message : "Erro ao processar veículo",
+        description: `Erro ao processar veículo: ${errorMessage}`,
         variant: "destructive",
       });
     }
