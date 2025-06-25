@@ -7546,7 +7546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      console.log('[OFICINA-CREATE] Dados recebidos:', data);
+      console.log('[OFICINA-UPDATE] Dados recebidos para atualização:', data);
       
       // Sanitizar dados de data - converter strings vazias para null e strings ISO para Date
       const sanitizedData = { ...data };
@@ -7578,7 +7578,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sanitizedData.deliveryPersonPhone = sanitizedData.deliveryPersonPhone.replace(/\D/g, '');
       }
 
-      console.log('[OFICINA-CREATE] Dados sanitizados:', sanitizedData);
+      console.log('[OFICINA-UPDATE] Dados sanitizados:', sanitizedData);
 
       const updated = await storage.updateCarReception(parseInt(id), sanitizedData);
       if (!updated) {
