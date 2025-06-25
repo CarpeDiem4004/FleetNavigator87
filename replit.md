@@ -119,6 +119,7 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 - June 25, 2025: Enhanced replaced parts display and fixed CPF validation issues
   - Improved replaced parts display to show readable format instead of raw JSON
+  - Added total value calculation for replaced parts with highlighted display
   - Fixed database CPF constraint to accept 1-11 digits for better compatibility
   - Enhanced user experience with proper Brazilian currency formatting for parts
   - Updated both fleet management and workshop dashboards for consistent part display

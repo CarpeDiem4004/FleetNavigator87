@@ -1794,14 +1794,25 @@ export default function MaintenanceManagement() {
                       try {
                         const parts = JSON.parse(selectedReception.replacedParts);
                         if (Array.isArray(parts) && parts.length > 0) {
-                          return parts.map((part: any, index: number) => (
-                            <div key={index} className="flex justify-between items-center p-2 bg-white rounded border">
-                              <span className="font-medium">{part.name || 'Peça não especificada'}</span>
-                              <span className="text-sm font-semibold text-blue-600">
-                                R$ {parseFloat(part.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                              </span>
-                            </div>
-                          ));
+                          const totalValue = parts.reduce((sum, part) => sum + parseFloat(part.price || 0), 0);
+                          return (
+                            <>
+                              {parts.map((part: any, index: number) => (
+                                <div key={index} className="flex justify-between items-center p-2 bg-white rounded border">
+                                  <span className="font-medium">{part.name || 'Peça não especificada'}</span>
+                                  <span className="text-sm font-semibold text-blue-600">
+                                    R$ {parseFloat(part.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                              ))}
+                              <div className="flex justify-between items-center p-2 bg-green-100 rounded border border-green-300 mt-2">
+                                <span className="font-bold text-green-800">TOTAL DAS PEÇAS</span>
+                                <span className="text-sm font-bold text-green-800">
+                                  R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            </>
+                          );
                         } else {
                           return <p className="text-sm text-gray-600">Nenhuma peça substituída</p>;
                         }

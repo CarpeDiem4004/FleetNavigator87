@@ -1131,14 +1131,25 @@ export default function OficinaDashboard() {
                             try {
                               const parts = JSON.parse(reception.replacedParts);
                               if (Array.isArray(parts) && parts.length > 0) {
-                                return parts.map((part: any, index: number) => (
-                                  <div key={index} className="flex justify-between items-center p-1 bg-white rounded text-xs">
-                                    <span className="font-medium">{part.name || 'Peça não especificada'}</span>
-                                    <span className="text-blue-600 font-semibold">
-                                      R$ {parseFloat(part.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                    </span>
-                                  </div>
-                                ));
+                                const totalValue = parts.reduce((sum, part) => sum + parseFloat(part.price || 0), 0);
+                                return (
+                                  <>
+                                    {parts.map((part: any, index: number) => (
+                                      <div key={index} className="flex justify-between items-center p-1 bg-white rounded text-xs">
+                                        <span className="font-medium">{part.name || 'Peça não especificada'}</span>
+                                        <span className="text-blue-600 font-semibold">
+                                          R$ {parseFloat(part.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                        </span>
+                                      </div>
+                                    ))}
+                                    <div className="flex justify-between items-center p-1 bg-green-100 rounded border border-green-300 mt-1">
+                                      <span className="font-bold text-green-800 text-xs">TOTAL</span>
+                                      <span className="text-xs font-bold text-green-800">
+                                        R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      </span>
+                                    </div>
+                                  </>
+                                );
                               } else {
                                 return <span className="text-gray-600 text-xs">Nenhuma peça substituída</span>;
                               }
