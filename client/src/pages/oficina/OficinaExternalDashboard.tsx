@@ -19,7 +19,8 @@ import {
   User,
   Calendar,
   Settings,
-  Edit
+  Edit,
+  X
 } from 'lucide-react';
 
 interface WorkshopData {
@@ -101,6 +102,9 @@ export default function OficinaExternalDashboard() {
     status: 'recebido',
     notes: ''
   });
+  const [parts, setParts] = useState<{ name: string; price: string }[]>([]);
+  const [newPartName, setNewPartName] = useState('');
+  const [newPartPrice, setNewPartPrice] = useState('');
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectBases, setSelectedProjectBases] = useState<any[]>([]);
   const { toast } = useToast();
@@ -180,6 +184,29 @@ export default function OficinaExternalDashboard() {
     setSelectedProjectBases(selectedProject?.bases || []);
   };
 
+  const addPart = () => {
+    if (newPartName.trim() && newPartPrice.trim()) {
+      const newPart = { name: newPartName.trim(), price: newPartPrice.trim() };
+      setParts([...parts, newPart]);
+      setNewPartName('');
+      setNewPartPrice('');
+    }
+  };
+
+  const removePart = (index: number) => {
+    setParts(parts.filter((_, i) => i !== index));
+  };
+
+  const calculateTotalParts = () => {
+    return parts.reduce((total, part) => total + parseFloat(part.price || '0'), 0);
+  };
+
+  const calculateTotalEstimated = () => {
+    const laborCost = parseFloat(carFormData.laborCost || '0');
+    const totalParts = calculateTotalParts();
+    return laborCost + totalParts;
+  };
+
   const handleCarSubmit = async () => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -191,8 +218,9 @@ export default function OficinaExternalDashboard() {
         baseId: parseInt(carFormData.baseId) || null,
         projectId: parseInt(carFormData.projectId) || null,
         laborCost: parseFloat(carFormData.laborCost) || 0,
-        partsCost: parseFloat(carFormData.partsCost) || 0,
-        workshopId: workshopData?.id
+        partsCost: calculateTotalParts(),
+        workshopId: workshopData?.id,
+        replacedParts: JSON.stringify(parts)
       };
 
       // Se estamos editando, usar PUT, senão POST
@@ -228,6 +256,7 @@ export default function OficinaExternalDashboard() {
           status: 'recebido',
           notes: ''
         });
+        setParts([]);
         
         // Recarregar dados
         const urlParams = new URLSearchParams(window.location.search);
@@ -780,6 +809,18 @@ export default function OficinaExternalDashboard() {
                                   status: reception.status || 'recebido',
                                   notes: (reception as any).notes || ''
                                 });
+                                // Carregar peças existentes
+                                try {
+                                  const existingParts = JSON.parse((reception as any).replacedParts || '[]');
+                                  setParts(Array.isArray(existingParts) ? existingParts : []);
+                                } catch (e) {
+                                  setParts([]);
+                                }
+                                // Carregar projeto/base selecionados
+                                if ((reception as any).projectId) {
+                                  const selectedProject = projects.find(p => p.id.toString() === (reception as any).projectId?.toString());
+                                  setSelectedProjectBases(selectedProject?.bases || []);
+                                }
                                 setIsCarFormOpen(true);
                               }}
                             >
@@ -1251,8 +1292,68 @@ export default function OficinaExternalDashboard() {
                 />
               </div>
 
+              {/* Seção de Peças e Valores */}
+              <div className="grid gap-4 col-span-4">
+                <div className="flex items-center gap-2">
+                  <Car className="h-4 w-4" />
+                  <h3 className="text-lg font-semibold">Peças e Valores</h3>
+                </div>
+                
+                {/* Adicionar nova peça */}
+                <div className="grid grid-cols-7 items-center gap-2">
+                  <Label className="text-sm">Nome da Peça</Label>
+                  <Input
+                    placeholder="Nome da peça"
+                    value={newPartName}
+                    onChange={(e) => setNewPartName(e.target.value)}
+                    className="col-span-3"
+                  />
+                  <Label className="text-sm">Valor (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={newPartPrice}
+                    onChange={(e) => setNewPartPrice(e.target.value)}
+                    className="col-span-1"
+                  />
+                  <Button
+                    type="button"
+                    onClick={addPart}
+                    size="sm"
+                    className="col-span-1"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Adicionar
+                  </Button>
+                </div>
+
+                {/* Lista de peças adicionadas */}
+                {parts.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Peças Adicionadas:</h4>
+                    {parts.map((part, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <span>{part.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">R$ {parseFloat(part.price).toFixed(2)}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removePart(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="laborCost" className="text-right">Valor Mão de Obra</Label>
+                <Label htmlFor="laborCost" className="text-right">Custo Mão de Obra (R$)</Label>
                 <Input
                   id="laborCost"
                   type="number"
@@ -1260,32 +1361,27 @@ export default function OficinaExternalDashboard() {
                   value={carFormData.laborCost}
                   onChange={(e) => setCarFormData(prev => ({ ...prev, laborCost: e.target.value }))}
                   className="col-span-3"
-                  placeholder="150.00"
+                  placeholder="0"
                 />
               </div>
 
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="partsCost" className="text-right">Valor Peças</Label>
+                <Label className="text-right">Custo das Peças</Label>
                 <Input
-                  id="partsCost"
-                  type="number"
-                  step="0.01"
-                  value={carFormData.partsCost}
-                  onChange={(e) => setCarFormData(prev => ({ ...prev, partsCost: e.target.value }))}
-                  className="col-span-3"
-                  placeholder="300.00"
+                  type="text"
+                  value={`R$ ${calculateTotalParts().toFixed(2)} (calculado automaticamente)`}
+                  disabled
+                  className="col-span-3 bg-gray-100"
                 />
               </div>
 
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="parts" className="text-right">Peças Substituídas</Label>
-                <Textarea
-                  id="parts"
-                  value={carFormData.replacedParts}
-                  onChange={(e) => setCarFormData(prev => ({ ...prev, replacedParts: e.target.value }))}
-                  className="col-span-3"
-                  rows={2}
-                  placeholder="Lista das peças substituídas..."
+                <Label className="text-right font-semibold">Total Estimado</Label>
+                <Input
+                  type="text"
+                  value={`R$ ${calculateTotalEstimated().toFixed(2)}`}
+                  disabled
+                  className="col-span-3 bg-green-50 font-semibold"
                 />
               </div>
 
