@@ -30,7 +30,8 @@ import {
   Plus,
   Trash2,
   Settings,
-  Edit
+  Edit,
+  Package
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -701,6 +702,15 @@ export default function OficinaDashboard() {
             <Car className="h-4 w-4 mr-2" />
             Receber Veículo
           </Button>
+          {oficina?.id === 5 && (
+            <Button 
+              onClick={() => setLocation('/oficina-alair-estoque')}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Package className="h-4 w-4 mr-2" />
+              Gerenciar Estoque
+            </Button>
+          )}
         </div>
 
         {/* Stats Cards */}
