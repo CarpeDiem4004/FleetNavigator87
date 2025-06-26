@@ -28,10 +28,10 @@ import {
   FileText,
   DollarSign,
   Plus,
+  Package,
   Trash2,
   Settings,
-  Edit,
-  Package
+  Edit
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -684,15 +684,14 @@ export default function OficinaDashboard() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              {oficina?.id === 5 && (
-                <Button 
-                  onClick={() => setLocation('/oficina-alair-estoque')}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <Package className="h-4 w-4 mr-2" />
-                  Gerenciar Estoque
-                </Button>
-              )}
+              {/* Debug: mostrar sempre o botão primeiro para testar */}
+              <Button 
+                onClick={() => setLocation('/oficina-alair-estoque')}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Gerenciar Estoque
+              </Button>
               <Button variant="outline" onClick={logout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Sair
