@@ -200,45 +200,50 @@ export const hasMaintenanceAccess = async (req: Request, res: Response, next: Ne
  */
 export const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Verificar se o token JWT está presente e é válido
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    let user: any = null;
+    
+    console.log('[isAdmin] Verificando autenticação:', {
+      hasSession: !!req.session,
+      sessionID: req.sessionID,
+      isAuthenticated: req.isAuthenticated && req.isAuthenticated(),
+      hasUser: !!req.user,
+      userEmail: req.user?.email,
+      userRole: req.user?.role,
+      hasAuthHeader: !!req.headers.authorization
+    });
+    
+    // Método 1: Verificar sessão ativa primeiro (Passport)
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+      user = req.user as any;
+      console.log(`[isAdmin] Usuário autenticado via sessão: ${user.email}, role: ${user.role}`);
+    }
+    
+    // Método 2: Verificar token JWT se a sessão não estiver ativa
+    if (!user && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
       try {
         const token = extractJwtToken(req.headers.authorization);
         
-        // Tentativa 1: Verificar com o Supabase
+        // Tentar Supabase primeiro
         try {
           const supabaseUser = await validateSupabaseToken(token);
           if (supabaseUser) {
-            // Anexar usuário ao request
-            (req as any).supabaseUser = supabaseUser;
+            user = supabaseUser;
             console.log(`[isAdmin] Token JWT Supabase validado para usuário: ${supabaseUser.email}`);
           }
         } catch (supabaseError) {
           console.log('[isAdmin] Token não é do Supabase, tentando verificar token híbrido...');
-        }
-        
-        // Tentativa 2: Verificar com o serviço híbrido se o Supabase falhou
-        if (!(req as any).supabaseUser) {
+          
+          // Tentar JWT híbrido
           try {
-            // Importar getHybridUserService para verificar token (usando dynamic import)
-            const hybridModule = await import('../../hybrid-user-service');
-            const hybridService = hybridModule.getHybridUserService();
+            const jwt = require('jsonwebtoken');
+            const verifyResult = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
             
-            // Verificar token com o serviço híbrido
-            const verifyResult = await hybridService.verifyToken(token, true);
-            console.log(`[isAdmin] Resultado verificação do token JWT híbrido:`, JSON.stringify(verifyResult));
-            
-            // Se o token retornou um objeto de usuário diretamente
-            if (verifyResult && !verifyResult.user && typeof verifyResult === 'object' && verifyResult.id) {
-              // Anexar o próprio objeto como usuário
-              (req as any).hybridUser = verifyResult;
-              console.log(`[isAdmin] Token JWT híbrido direto validado para ${verifyResult.email || verifyResult.id}`);
-            }
-            // Se o token retornou um objeto com propriedade user
-            else if (verifyResult && verifyResult.user) {
-              // Usuário autenticado via JWT híbrido, anexá-lo à requisição
-              (req as any).hybridUser = verifyResult.user;
-              console.log(`[isAdmin] Token JWT híbrido validado para usuário: ${verifyResult.user.email}`);
+            if (verifyResult && (verifyResult.email || verifyResult.id)) {
+              user = verifyResult;
+              console.log(`[isAdmin] Token JWT híbrido validado para ${verifyResult.email || verifyResult.id}`);
+            } else if (verifyResult && verifyResult.user) {
+              user = verifyResult.user;
+              console.log(`[isAdmin] Token JWT híbrido com wrapper validado para usuário: ${verifyResult.user.email}`);
             }
           } catch (hybridError) {
             console.error('[isAdmin] Erro ao validar token JWT híbrido:', hybridError);
@@ -249,37 +254,29 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
       }
     }
     
-    // Verificar autenticação por qualquer método disponível
-    const isUserAuthenticatedByAnyMethod = req.isAuthenticated() || 
-                                          !!(req as any).supabaseUser || 
-                                          !!(req as any).hybridUser;
+    // Método 3: Verificar dados anexados por outros middlewares
+    if (!user) {
+      user = (req as any).supabaseUser || (req as any).hybridUser;
+    }
     
-    if (!isUserAuthenticatedByAnyMethod) {
-      console.log('[isAdmin] Usuário não autenticado por nenhum método:', {
-        authHeader: !!req.headers.authorization,
-        sessionAuth: req.isAuthenticated(),
-        supabaseAuth: !!(req as any).supabaseUser,
-        hybridAuth: !!(req as any).hybridUser
-      });
+    if (!user) {
+      console.log('[isAdmin] Usuário não autenticado por nenhum método');
       return res.status(401).json({ message: "Usuário não autenticado" });
     }
     
-    // Verificar se o usuário é administrador - usar o primeiro disponível
-    const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
-    
-    if (user && isUserAdmin(user)) {
+    // Verificar se o usuário é admin
+    if (user.role === 'admin') {
       console.log(`[isAdmin] Acesso autorizado para admin: ${user.email}, role: ${user.role}`);
       return next();
     }
     
     console.log("[isAdmin] Acesso negado - Permissão de administrador necessária:", {
-      url: req.originalUrl,
-      method: req.method,
-      role: user?.role,
-      email: user?.email
+      email: user.email,
+      role: user.role,
+      requiredRole: 'admin'
     });
     
-    return res.status(403).json({ message: "Acesso negado. Permissão de administrador necessária." });
+    return res.status(403).json({ message: "Acesso negado. Apenas administradores podem realizar esta ação." });
   } catch (error) {
     console.error('[isAdmin] Erro inesperado:', error);
     return res.status(500).json({ message: "Erro interno do servidor" });
