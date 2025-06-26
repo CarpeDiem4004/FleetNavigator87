@@ -4079,7 +4079,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Admin ${user.email} tentando excluir ordem de serviço ID: ${orderId}`);
       
       // Verificar se a ordem existe
-      const checkQuery = 'SELECT * FROM maintenance WHERE id = $1';
+      const checkQuery = 'SELECT * FROM maintenance_orders WHERE id = $1';
       const checkResult = await pool.query(checkQuery, [orderId]);
       
       if (checkResult.rowCount === 0) {
@@ -4090,7 +4090,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Excluir a ordem de serviço
-      const deleteQuery = 'DELETE FROM maintenance WHERE id = $1 RETURNING *';
+      const deleteQuery = 'DELETE FROM maintenance_orders WHERE id = $1 RETURNING *';
       const deleteResult = await pool.query(deleteQuery, [orderId]);
       
       console.log(`Ordem de serviço ID ${orderId} excluída com sucesso por ${user.email}`);
