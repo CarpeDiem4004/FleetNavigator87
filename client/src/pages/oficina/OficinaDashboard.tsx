@@ -684,9 +684,9 @@ export default function OficinaDashboard() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              {/* Debug: mostrar sempre o botão primeiro para testar */}
+              {/* Botão de Estoque para Oficina Alair */}
               <Button 
-                onClick={() => setLocation('/oficina-alair-estoque')}
+                onClick={() => setLocation('/oficina/alair/estoque')}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <Package className="h-4 w-4 mr-2" />
