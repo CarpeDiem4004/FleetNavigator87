@@ -683,10 +683,21 @@ export default function OficinaDashboard() {
                 </p>
               </div>
             </div>
-            <Button variant="outline" onClick={logout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Sair
-            </Button>
+            <div className="flex items-center space-x-3">
+              {oficina?.id === 5 && (
+                <Button 
+                  onClick={() => setLocation('/oficina-alair-estoque')}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  Gerenciar Estoque
+                </Button>
+              )}
+              <Button variant="outline" onClick={logout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sair
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -702,15 +713,6 @@ export default function OficinaDashboard() {
             <Car className="h-4 w-4 mr-2" />
             Receber Veículo
           </Button>
-          {oficina?.id === 5 && (
-            <Button 
-              onClick={() => setLocation('/oficina-alair-estoque')}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Package className="h-4 w-4 mr-2" />
-              Gerenciar Estoque
-            </Button>
-          )}
         </div>
 
         {/* Stats Cards */}
