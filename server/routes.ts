@@ -4089,17 +4089,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Excluir a ordem de serviço
-      const deleteQuery = 'DELETE FROM maintenance_orders WHERE id = $1 RETURNING *';
-      const deleteResult = await pool.query(deleteQuery, [orderId]);
+      // Iniciar transação para garantir consistência
+      await pool.query('BEGIN');
       
-      console.log(`Ordem de serviço ID ${orderId} excluída com sucesso por ${user.email}`);
-      
-      return res.status(200).json({
-        success: true,
-        message: 'Ordem de serviço excluída com sucesso',
-        deletedOrder: deleteResult.rows[0]
-      });
+      try {
+        // 1. Excluir registros dependentes primeiro
+        console.log(`Excluindo itens de manutenção relacionados à ordem ${orderId}...`);
+        await pool.query('DELETE FROM maintenance_items WHERE order_id = $1', [orderId]);
+        
+        console.log(`Excluindo anexos relacionados à ordem ${orderId}...`);
+        await pool.query('DELETE FROM maintenance_attachments WHERE order_id = $1', [orderId]);
+        
+        // 2. Excluir a ordem de serviço principal
+        console.log(`Excluindo ordem de serviço ${orderId}...`);
+        const deleteQuery = 'DELETE FROM maintenance_orders WHERE id = $1 RETURNING *';
+        const deleteResult = await pool.query(deleteQuery, [orderId]);
+        
+        // Confirmar transação
+        await pool.query('COMMIT');
+        
+        console.log(`Ordem de serviço ID ${orderId} e todos os registros relacionados excluídos com sucesso por ${user.email}`);
+        
+        return res.status(200).json({
+          success: true,
+          message: 'Ordem de serviço excluída com sucesso',
+          deletedOrder: deleteResult.rows[0]
+        });
+      } catch (transactionError) {
+        // Reverter transação em caso de erro
+        await pool.query('ROLLBACK');
+        throw transactionError;
+      }
     } catch (error: any) {
       console.error('Erro ao excluir ordem de serviço:', error);
       return res.status(500).json({
