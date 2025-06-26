@@ -17450,6 +17450,301 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
+  // ===== ENDPOINTS PARA ESTOQUE DA OFICINA ALAIR =====
+  
+  // GET - Listar todas as peças do estoque da Oficina Alair
+  app.get('/api/oficina-alair/estoque-pecas', async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          id, codigo, nome, descricao, categoria, fabricante, aplicacao,
+          quantidade, valor_unitario, valor_total, estoque_minimo, estoque_maximo,
+          localizacao, unidade_medida, created_at, updated_at,
+          CASE 
+            WHEN quantidade = 0 THEN 'zerado'
+            WHEN quantidade <= estoque_minimo THEN 'baixo'
+            ELSE 'normal'
+          END as status_disponibilidade
+        FROM oficina_alair_estoque_pecas 
+        ORDER BY nome ASC
+      `;
+      
+      const result = await pool.query(query);
+      
+      return res.status(200).json(result.rows);
+    } catch (error: any) {
+      console.error('Erro ao buscar estoque Alair:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar peças do estoque',
+        error: error.message
+      });
+    }
+  });
+
+  // GET - Resumo do estoque da Oficina Alair
+  app.get('/api/oficina-alair/estoque-resumo', async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          COUNT(*) as total_itens,
+          SUM(quantidade) as total_quantidade,
+          SUM(valor_total) as valor_total_estoque,
+          SUM(CASE WHEN quantidade <= estoque_minimo THEN 1 ELSE 0 END) as itens_abaixo_minimo,
+          SUM(CASE WHEN quantidade = 0 THEN 1 ELSE 0 END) as itens_zerados,
+          MAX(updated_at) as ultima_atualizacao
+        FROM oficina_alair_estoque_pecas
+      `;
+      
+      const result = await pool.query(query);
+      
+      return res.status(200).json(result.rows[0]);
+    } catch (error: any) {
+      console.error('Erro ao buscar resumo do estoque Alair:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar resumo do estoque',
+        error: error.message
+      });
+    }
+  });
+
+  // POST - Adicionar nova peça ao estoque da Oficina Alair
+  app.post('/api/oficina-alair/estoque-pecas', async (req, res) => {
+    try {
+      const {
+        nome, descricao, categoria, fabricante, aplicacao,
+        quantidade, valor_unitario, estoque_minimo, estoque_maximo,
+        localizacao, unidade_medida
+      } = req.body;
+
+      // Gerar código automático
+      const codigoQuery = `
+        SELECT COALESCE(MAX(CAST(SUBSTRING(codigo FROM 'ALAIR-([0-9]+)') AS INTEGER)), 0) + 1 as proximo_numero
+        FROM oficina_alair_estoque_pecas 
+        WHERE codigo LIKE 'ALAIR-%'
+      `;
+      
+      const codigoResult = await pool.query(codigoQuery);
+      const proximoNumero = codigoResult.rows[0].proximo_numero;
+      const codigo = `ALAIR-${proximoNumero.toString().padStart(3, '0')}`;
+
+      const insertQuery = `
+        INSERT INTO oficina_alair_estoque_pecas (
+          codigo, nome, descricao, categoria, fabricante, aplicacao,
+          quantidade, valor_unitario, estoque_minimo, estoque_maximo,
+          localizacao, unidade_medida
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        RETURNING *
+      `;
+      
+      const result = await pool.query(insertQuery, [
+        codigo, nome, descricao, categoria, fabricante, aplicacao,
+        quantidade || 0, valor_unitario || 0, estoque_minimo || 5, estoque_maximo,
+        localizacao, unidade_medida || 'UN'
+      ]);
+      
+      return res.status(201).json({
+        success: true,
+        message: 'Peça adicionada com sucesso',
+        data: result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Erro ao adicionar peça ao estoque Alair:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao adicionar peça ao estoque',
+        error: error.message
+      });
+    }
+  });
+
+  // PUT - Atualizar peça do estoque da Oficina Alair
+  app.put('/api/oficina-alair/estoque-pecas/:id', async (req, res) => {
+    try {
+      const pecaId = parseInt(req.params.id);
+      const {
+        codigo, nome, descricao, categoria, fabricante, aplicacao,
+        quantidade, valor_unitario, estoque_minimo, estoque_maximo,
+        localizacao, unidade_medida
+      } = req.body;
+
+      const updateQuery = `
+        UPDATE oficina_alair_estoque_pecas SET
+          codigo = $1, nome = $2, descricao = $3, categoria = $4, fabricante = $5,
+          aplicacao = $6, quantidade = $7, valor_unitario = $8, estoque_minimo = $9,
+          estoque_maximo = $10, localizacao = $11, unidade_medida = $12, updated_at = CURRENT_TIMESTAMP
+        WHERE id = $13
+        RETURNING *
+      `;
+      
+      const result = await pool.query(updateQuery, [
+        codigo, nome, descricao, categoria, fabricante, aplicacao,
+        quantidade, valor_unitario, estoque_minimo, estoque_maximo,
+        localizacao, unidade_medida, pecaId
+      ]);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Peça não encontrada'
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Peça atualizada com sucesso',
+        data: result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Erro ao atualizar peça do estoque Alair:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar peça',
+        error: error.message
+      });
+    }
+  });
+
+  // DELETE - Remover peça do estoque da Oficina Alair
+  app.delete('/api/oficina-alair/estoque-pecas/:id', async (req, res) => {
+    try {
+      const pecaId = parseInt(req.params.id);
+      
+      const deleteQuery = 'DELETE FROM oficina_alair_estoque_pecas WHERE id = $1 RETURNING *';
+      const result = await pool.query(deleteQuery, [pecaId]);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Peça não encontrada'
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Peça removida com sucesso',
+        data: result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Erro ao remover peça do estoque Alair:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao remover peça',
+        error: error.message
+      });
+    }
+  });
+
+  // POST - Registrar movimentação de estoque da Oficina Alair
+  app.post('/api/oficina-alair/movimentacao-estoque', async (req, res) => {
+    try {
+      const {
+        peca_id, tipo_movimento, quantidade, motivo, nota_fiscal,
+        veiculo_placa, observacoes, valor_unitario
+      } = req.body;
+
+      // Buscar peça atual
+      const pecaQuery = 'SELECT * FROM oficina_alair_estoque_pecas WHERE id = $1';
+      const pecaResult = await pool.query(pecaQuery, [peca_id]);
+      
+      if (pecaResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Peça não encontrada'
+        });
+      }
+      
+      const peca = pecaResult.rows[0];
+      const quantidadeAnterior = peca.quantidade;
+      let quantidadeNova;
+      
+      // Calcular nova quantidade
+      if (tipo_movimento === 'entrada') {
+        quantidadeNova = quantidadeAnterior + quantidade;
+      } else if (tipo_movimento === 'saida') {
+        quantidadeNova = Math.max(0, quantidadeAnterior - quantidade);
+      } else { // ajuste
+        quantidadeNova = quantidade;
+      }
+      
+      // Iniciar transação
+      await pool.query('BEGIN');
+      
+      try {
+        // Atualizar quantidade da peça
+        const updatePecaQuery = `
+          UPDATE oficina_alair_estoque_pecas 
+          SET quantidade = $1, updated_at = CURRENT_TIMESTAMP 
+          WHERE id = $2
+        `;
+        await pool.query(updatePecaQuery, [quantidadeNova, peca_id]);
+        
+        // Registrar movimentação
+        const insertMovQuery = `
+          INSERT INTO oficina_alair_movimentacao_estoque (
+            peca_id, tipo_movimento, quantidade, quantidade_anterior, quantidade_nova,
+            valor_unitario, valor_total, motivo, nota_fiscal, veiculo_placa,
+            observacoes, usuario_nome
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          RETURNING *
+        `;
+        
+        const valorTotal = quantidade * (valor_unitario || peca.valor_unitario);
+        
+        const movResult = await pool.query(insertMovQuery, [
+          peca_id, tipo_movimento, quantidade, quantidadeAnterior, quantidadeNova,
+          valor_unitario || peca.valor_unitario, valorTotal, motivo, nota_fiscal,
+          veiculo_placa, observacoes, 'Sistema'
+        ]);
+        
+        // Confirmar transação
+        await pool.query('COMMIT');
+        
+        return res.status(201).json({
+          success: true,
+          message: 'Movimentação registrada com sucesso',
+          data: movResult.rows[0]
+        });
+      } catch (transactionError) {
+        await pool.query('ROLLBACK');
+        throw transactionError;
+      }
+    } catch (error: any) {
+      console.error('Erro ao registrar movimentação do estoque Alair:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao registrar movimentação',
+        error: error.message
+      });
+    }
+  });
+
+  // GET - Histórico de movimentações da Oficina Alair
+  app.get('/api/oficina-alair/movimentacao-estoque', async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          m.*, p.nome as peca_nome, p.codigo as peca_codigo
+        FROM oficina_alair_movimentacao_estoque m
+        JOIN oficina_alair_estoque_pecas p ON m.peca_id = p.id
+        ORDER BY m.created_at DESC
+        LIMIT 100
+      `;
+      
+      const result = await pool.query(query);
+      
+      return res.status(200).json(result.rows);
+    } catch (error: any) {
+      console.error('Erro ao buscar movimentações do estoque Alair:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar histórico de movimentações',
+        error: error.message
+      });
+    }
+  });
+
   // Servir arquivos estáticos para uploads
   app.use('/uploads', express.static('uploads'));
 
