@@ -265,6 +265,21 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
     }
   }, [selectedProjectId, form]);
 
+  // Atualizar o campo cardNumber quando a placa ou tipo de cartão mudar
+  React.useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'plate' || name === 'cardType') {
+        if (value.cardType === 'vinculado' && value.plate) {
+          form.setValue('cardNumber', value.plate);
+        } else if (value.cardType === 'especifico') {
+          form.setValue('cardNumber', '');
+        }
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form]);
+
   // Mutations
   const createRequestMutation = useMutation({
     mutationFn: async (data: FuelCardRequestFormData) => {
@@ -330,6 +345,12 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
     console.log('[FUEL-CARD-FORM] Base ID:', baseId);
     console.log('[FUEL-CARD-FORM] Form errors:', form.formState.errors);
     console.log('[FUEL-CARD-FORM] Form is valid:', form.formState.isValid);
+    
+    // Se o cartão for vinculado à placa, usar a placa como número do cartão
+    if (data.cardType === 'vinculado') {
+      data.cardNumber = data.plate;
+      console.log('[FUEL-CARD-FORM] Cartão vinculado: usando placa como número do cartão:', data.cardNumber);
+    }
     
     // Verificar se todos os campos obrigatórios estão preenchidos
     const requiredFields = ['plate', 'cardNumber', 'amount', 'reason', 'provider', 'fuelType', 'fuelTime', 'driverName', 'driverPhone', 'projectId', 'baseId'];
@@ -587,7 +608,7 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                         />
                       </div>
 
-                      {/* Campo obrigatório do número do cartão */}
+                      {/* Campo de número do cartão - condicional baseado no tipo */}
                       <div className="mt-4">
                         <FormField
                           control={form.control}
@@ -596,17 +617,21 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                             <FormItem>
                               <FormLabel className="flex items-center gap-2 text-red-600 font-medium">
                                 <CreditCard size={14} />
-                                Número do Cartão
+                                {form.watch('cardType') === 'vinculado' ? 'Placa do Veículo (Cartão)' : 'Número do Cartão'}
                               </FormLabel>
                               <FormControl>
                                 <Input
-                                  placeholder="Ex: 1234567890123456"
+                                  placeholder={form.watch('cardType') === 'vinculado' ? 'Placa será usada automaticamente' : 'Ex: 1234567890123456'}
                                   {...field}
-                                  className="bg-blue-50 border-blue-200 focus:border-blue-400"
+                                  value={form.watch('cardType') === 'vinculado' ? form.watch('plate') : field.value}
+                                  readOnly={form.watch('cardType') === 'vinculado'}
+                                  className={`${form.watch('cardType') === 'vinculado' ? 'bg-gray-100' : 'bg-blue-50'} border-blue-200 focus:border-blue-400`}
                                 />
                               </FormControl>
                               <FormDescription className="text-xs text-gray-500">
-                                Número do cartão de combustível
+                                {form.watch('cardType') === 'vinculado' 
+                                  ? 'Para cartão vinculado, a placa do veículo será usada automaticamente' 
+                                  : 'Digite o número do cartão específico'}
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
