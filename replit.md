@@ -117,6 +117,12 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 9, 2025: Restored all projects in the system
+  - Reactivated all 19 projects after temporary filtering
+  - System now includes all original projects: COCA-COLA, FMS09, FULL MELI, GRUPO PEREIRA, LINE HALL, MERCADO LIVRE, PETLOVE, SHOPEE, XPT, Line Hall Shopee, MADEIRA MADEIRA, MARISTELA INDUSTRIA, OXXO, PRIMO BASILE, Manutenção, Manutenção Preventiva, Reparo de Emergência, Revisão Geral, Uso Operacional
+  - All projects are now active and available for selection in fuel card request forms
+  - System maintains full functionality with complete project catalog
+
 - July 9, 2025: Implemented dynamic project-base filtering for fuel card requests
   - Created `/api/project-bases` endpoint returning 106 project-base relationships
   - Implemented dynamic base filtering based on selected project in frontend
