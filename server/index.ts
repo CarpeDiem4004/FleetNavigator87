@@ -1712,6 +1712,101 @@ app.use((req, res, next) => {
   iniciarScheduler();
   console.log('🕛 Sistema de coleta automática de consumo diário iniciado');
 
+  // APIs críticas para o sistema de cartão de combustível - DEVEM ser registradas ANTES do middleware de autenticação
+  app.get('/api/projects', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const query = `
+        SELECT id, name, description, is_active 
+        FROM projects 
+        WHERE is_active = true 
+        ORDER BY name ASC
+      `;
+      const result = await pool.query(query);
+      
+      console.log('Projects API - Found', result.rows.length, 'projects');
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error) {
+      console.error('Projects API - Error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching projects',
+        error: error.message
+      });
+    }
+  });
+
+  app.get('/api/bases', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const query = `
+        SELECT id, name, basename, description, is_active 
+        FROM bases 
+        WHERE is_active = true 
+        ORDER BY name ASC
+      `;
+      const result = await pool.query(query);
+      
+      console.log('Direct Bases API - Found', result.rows.length, 'bases');
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error) {
+      console.error('Direct Bases API - Error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching bases',
+        error: error.message
+      });
+    }
+  });
+
+  // Add project-bases relationship API
+  app.get('/api/project-bases', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const query = `
+        SELECT pb.project_id, pb.base_name, pb.base_code, pb.description, pb.is_active,
+               p.name as project_name, b.id as base_id, b.name as base_full_name
+        FROM project_bases pb 
+        JOIN projects p ON pb.project_id = p.id
+        LEFT JOIN bases b ON pb.base_name = b.name OR pb.base_code = b.basename
+        WHERE pb.is_active = true 
+        ORDER BY p.name, pb.base_name
+      `;
+      const result = await pool.query(query);
+      
+      console.log('Project-Bases API - Found', result.rows.length, 'relationships');
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error) {
+      console.error('Project-Bases API - Error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching project-bases relationships',
+        error: error.message
+      });
+    }
+  });
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
