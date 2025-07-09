@@ -185,8 +185,11 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
   const { data: requests, isLoading: requestsLoading } = useQuery({
     queryKey: ['/api/fuel-card/requests', baseId],
     queryFn: async () => {
+      console.log('[FUEL-CARD-REQUESTS] Buscando solicitações para baseId:', baseId);
       const response = await apiRequest('GET', `/api/fuel-card/requests?baseId=${baseId}`);
-      return response.json();
+      const data = await response.json();
+      console.log('[FUEL-CARD-REQUESTS] Dados recebidos:', data);
+      return data;
     },
   });
 
@@ -303,7 +306,7 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
         title: 'Solicitação enviada com sucesso!',
         description: 'Sua solicitação foi enviada e está aguardando retorno da gestão de combustível. Você será notificado quando houver uma resposta.',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/fuel-card/requests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/fuel-card/requests', baseId] });
       form.reset();
       setIsDialogOpen(false);
     },
@@ -326,7 +329,7 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
         title: 'Solicitação atualizada',
         description: 'Status da solicitação foi atualizado com sucesso.',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/fuel-card/requests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/fuel-card/requests', baseId] });
       setSelectedRequest(null);
     },
     onError: (error: any) => {
