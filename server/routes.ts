@@ -3932,7 +3932,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/fuel-card/request', isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      const { plate, cardNumber, amount, reason, baseId, baseName } = req.body;
+      const { 
+        plate, 
+        odometer, 
+        cardNumber, 
+        cardType, 
+        amount, 
+        provider, 
+        fuelType, 
+        driverName, 
+        driverPhone, 
+        projectId, 
+        baseId, 
+        reason 
+      } = req.body;
       
       // Validações básicas
       if (!plate || !cardNumber || !amount || !reason) {
@@ -3949,17 +3962,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Obter informações de projeto e base
+      let projectName = '';
+      let baseName = '';
+      
+      if (projectId) {
+        const projectQuery = 'SELECT name FROM projects WHERE id = $1';
+        const projectResult = await pool.query(projectQuery, [projectId]);
+        projectName = projectResult.rows[0]?.name || '';
+      }
+      
+      if (baseId) {
+        const baseQuery = 'SELECT name FROM bases WHERE id = $1';
+        const baseResult = await pool.query(baseQuery, [baseId]);
+        baseName = baseResult.rows[0]?.name || '';
+      }
+      
       // Criar a solicitação
       const query = `
         INSERT INTO fuel_card_requests (
-          plate, card_number, amount, reason, requested_by, 
-          base_id, status, requested_at, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, 'pendente', NOW(), NOW(), NOW())
+          plate, odometer, card_number, card_type, amount, provider, fuel_type,
+          driver_name, driver_phone, project_id, project_name, base_id, base_name,
+          reason, requested_by, status, requested_at, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'pendente', NOW(), NOW(), NOW())
         RETURNING *
       `;
       
       const result = await pool.query(query, [
-        plate, cardNumber, amount, reason, user.name, baseId
+        plate, odometer, cardNumber, cardType, amount, provider, fuelType,
+        driverName, driverPhone, projectId, projectName, baseId, baseName,
+        reason, user.name
       ]);
       
       return res.status(201).json({
@@ -4100,6 +4132,253 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({
         success: false,
         message: 'Erro ao criar solicitação pública',
+        error: error.message
+      });
+    }
+  });
+
+  // GET - Obter projetos para o fuel card system
+  app.get('/api/projects', isAuthenticated, async (req, res) => {
+    try {
+      const query = 'SELECT id, name, description FROM projects ORDER BY name';
+      const result = await pool.query(query);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar projetos:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar projetos',
+        error: error.message
+      });
+    }
+  });
+
+  // GET - Obter bases para o fuel card system
+  app.get('/api/bases', isAuthenticated, async (req, res) => {
+    try {
+      const query = 'SELECT id, name, description FROM bases ORDER BY name';
+      const result = await pool.query(query);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar bases:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar bases',
+        error: error.message
+      });
+    }
+  });
+
+  // GET - Obter solicitações de cartão combustível (genérico)
+  app.get('/api/fuel-card/requests', isAuthenticated, async (req, res) => {
+    try {
+      const { baseId } = req.query;
+      
+      let query = `
+        SELECT fcr.*, b.name as base_name, p.name as project_name
+        FROM fuel_card_requests fcr
+        LEFT JOIN bases b ON fcr.base_id = b.id
+        LEFT JOIN projects p ON fcr.project_id = p.id
+      `;
+      
+      const params = [];
+      
+      if (baseId) {
+        query += ' WHERE fcr.base_id = $1';
+        params.push(baseId);
+      }
+      
+      query += ' ORDER BY fcr.requested_at DESC';
+      
+      const result = await pool.query(query, params);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar solicitações:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar solicitações',
+        error: error.message
+      });
+    }
+  });
+
+  // GET - Obter cartões combustível (genérico)
+  app.get('/api/fuel-cards', isAuthenticated, async (req, res) => {
+    try {
+      const { baseId } = req.query;
+      
+      // Simular dados de cartões (implementar com dados reais posteriormente)
+      const mockCards = [
+        {
+          id: 1,
+          cardNumber: '****567890',
+          cardType: 'Visa Fleet',
+          plate: 'ABC1234',
+          currentBalance: 1500.00,
+          lastUpdate: new Date().toISOString(),
+          status: 'ativo'
+        },
+        {
+          id: 2,
+          cardNumber: '****654321',
+          cardType: 'Ticket Car',
+          plate: 'DEF5678',
+          currentBalance: 800.50,
+          lastUpdate: new Date().toISOString(),
+          status: 'ativo'
+        },
+        {
+          id: 3,
+          cardNumber: '****123456',
+          cardType: 'Alelo Frotas',
+          plate: 'GHI9012',
+          currentBalance: 2200.75,
+          lastUpdate: new Date().toISOString(),
+          status: 'ativo'
+        }
+      ];
+      
+      return res.status(200).json({
+        success: true,
+        data: mockCards,
+        count: mockCards.length
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar cartões:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar cartões',
+        error: error.message
+      });
+    }
+  });
+
+  // GET - Obter projetos para acesso público
+  app.get('/api/public/projects', async (req, res) => {
+    try {
+      const query = 'SELECT id, name, description FROM projects ORDER BY name';
+      const result = await pool.query(query);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar projetos (público):', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar projetos',
+        error: error.message
+      });
+    }
+  });
+
+  // GET - Obter bases para acesso público
+  app.get('/api/public/bases', async (req, res) => {
+    try {
+      const query = 'SELECT id, name, description FROM bases ORDER BY name';
+      const result = await pool.query(query);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar bases (público):', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar bases',
+        error: error.message
+      });
+    }
+  });
+
+  // POST - Criar nova solicitação de cartão combustível (acesso público)
+  app.post('/api/public/fuel-card/request', async (req, res) => {
+    try {
+      const { 
+        plate, 
+        odometer, 
+        cardNumber, 
+        cardType, 
+        amount, 
+        provider, 
+        fuelType, 
+        driverName, 
+        driverPhone, 
+        projectId, 
+        baseId, 
+        baseName,
+        reason 
+      } = req.body;
+      
+      // Validações básicas
+      if (!plate || !cardNumber || !amount || !reason) {
+        return res.status(400).json({
+          success: false,
+          message: 'Todos os campos são obrigatórios'
+        });
+      }
+      
+      if (amount < 10 || amount > 5000) {
+        return res.status(400).json({
+          success: false,
+          message: 'Valor deve estar entre R$ 10,00 e R$ 5.000,00'
+        });
+      }
+      
+      // Obter informações de projeto se necessário
+      let projectName = '';
+      
+      if (projectId) {
+        const projectQuery = 'SELECT name FROM projects WHERE id = $1';
+        const projectResult = await pool.query(projectQuery, [projectId]);
+        projectName = projectResult.rows[0]?.name || '';
+      }
+      
+      // Criar a solicitação
+      const query = `
+        INSERT INTO fuel_card_requests (
+          plate, odometer, card_number, card_type, amount, provider, fuel_type,
+          driver_name, driver_phone, project_id, project_name, base_id, base_name,
+          reason, requested_by, status, requested_at, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'pendente', NOW(), NOW(), NOW())
+        RETURNING *
+      `;
+      
+      const result = await pool.query(query, [
+        plate, odometer, cardNumber, cardType, amount, provider, fuelType,
+        driverName, driverPhone, projectId, projectName, baseId, baseName,
+        reason, 'Sistema Externo'
+      ]);
+      
+      return res.status(201).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Solicitação criada com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao criar solicitação (público):', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao criar solicitação',
         error: error.message
       });
     }

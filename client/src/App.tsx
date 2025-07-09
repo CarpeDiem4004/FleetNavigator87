@@ -149,6 +149,10 @@ import SolicitacaoOrcamentoCampinas from "@/pages/bases/SolicitacaoOrcamentoCamp
 import ManutencaoFrotaCampinas from "@/pages/bases/ManutencaoFrotaCampinas";
 import CartaoCombustivelCampinas from "@/pages/bases/CartaoCombustivelCampinas";
 import CartaoCombustivelCampinasExterno from "@/pages/bases/external/CartaoCombustivelCampinasExterno";
+import CartaoCombustivelGoiania from "@/pages/bases/CartaoCombustivelGoiania";
+import CartaoCombustivelAlair from "@/pages/bases/CartaoCombustivelAlair";
+import CartaoCombustivelGoianiaExterno from "@/pages/bases/external/CartaoCombustivelGoianiaExterno";
+import CartaoCombustivelAlairExterno from "@/pages/bases/external/CartaoCombustivelAlairExterno";
 
 // Importação das páginas da Base Goiânia
 import BaseGoiania from "@/pages/bases/BaseGoiania";
@@ -273,8 +277,19 @@ function App() {
           {/* Rotas externas públicas - Base Campinas */}
           <Route path="/bases/campinas/external/cartao-combustivel" component={CartaoCombustivelCampinasExterno} />
           
+          {/* Rotas externas públicas - Base Goiânia */}
+          <Route path="/bases/goiania/external/cartao-combustivel" component={CartaoCombustivelGoianiaExterno} />
+          
+          {/* Rotas externas públicas - Base Alair */}
+          <Route path="/bases/alair/external/cartao-combustivel" component={CartaoCombustivelAlairExterno} />
+          
           {/* Rotas para a Base Goiânia */}
           <ProtectedRoute path="/bases/goiania" component={BaseGoiania} />
+          <ProtectedRoute path="/bases/goiania/cartao-combustivel" component={CartaoCombustivelGoiania} />
+          
+          {/* Rotas para a Base Alair */}
+          <ProtectedRoute path="/bases/alair/cartao-combustivel" component={CartaoCombustivelAlair} />
+          
           <ProtectedRoute path="/solicitacoes" component={BaseRequests} />
           
           {/* Rotas para os postos de abastecimento - protegidas */}

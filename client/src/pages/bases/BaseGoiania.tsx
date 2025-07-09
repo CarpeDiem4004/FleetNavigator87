@@ -80,6 +80,29 @@ const BaseGoiania: React.FC = () => {
           </CardFooter>
         </Card>
         
+        {/* Card para Cartão Combustível */}
+        <Card className="shadow-md hover:shadow-lg transition-shadow">
+          <CardHeader className="bg-green-50 pb-2">
+            <CardTitle className="flex items-center text-green-700">
+              <CreditCard className="w-5 h-5 mr-2" />
+              Cartão Combustível
+            </CardTitle>
+            <CardDescription>Solicitações de recarga de combustível</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <p className="text-gray-600">
+              Solicite recargas de cartão combustível para veículos da frota. Informe dados do veículo, motorista, valor desejado e justificativa para aprovação.
+            </p>
+          </CardContent>
+          <CardFooter className="border-t pt-4 flex justify-end">
+            <Link href="/bases/goiania/cartao-combustivel">
+              <Button variant="outline" className="flex items-center text-green-600 hover:text-green-800">
+                Solicitar Recarga <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
+
         {/* Card para Gestão de Multas */}
         <Card className="shadow-md hover:shadow-lg transition-shadow">
           <CardHeader className="bg-indigo-50 pb-2">
