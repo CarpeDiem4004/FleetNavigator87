@@ -177,6 +177,12 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
     queryFn: () => apiRequest('/api/bases'),
   });
 
+  // Debug logging to see what data is being returned
+  console.log('Projects data:', projects);
+  console.log('Bases data:', bases);
+  console.log('Projects loading:', projectsLoading);
+  console.log('Bases loading:', basesLoading);
+
   // Mutations
   const createRequestMutation = useMutation({
     mutationFn: (data: FuelCardRequestFormData) => 
@@ -611,11 +617,17 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {projects?.data?.map((project: Project) => (
-                                    <SelectItem key={project.id} value={project.id.toString()}>
-                                      {project.name}
-                                    </SelectItem>
-                                  ))}
+                                  {projectsLoading ? (
+                                    <SelectItem value="loading" disabled>Carregando projetos...</SelectItem>
+                                  ) : projects?.data?.length > 0 ? (
+                                    projects.data.map((project: Project) => (
+                                      <SelectItem key={project.id} value={project.id.toString()}>
+                                        {project.name}
+                                      </SelectItem>
+                                    ))
+                                  ) : (
+                                    <SelectItem value="empty" disabled>Nenhum projeto encontrado</SelectItem>
+                                  )}
                                 </SelectContent>
                               </Select>
                               <FormDescription className="text-xs text-gray-500">
@@ -639,11 +651,17 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {bases?.data?.map((base: Base) => (
-                                    <SelectItem key={base.id} value={base.id.toString()}>
-                                      {base.name}
-                                    </SelectItem>
-                                  ))}
+                                  {basesLoading ? (
+                                    <SelectItem value="loading" disabled>Carregando bases...</SelectItem>
+                                  ) : bases?.data?.length > 0 ? (
+                                    bases.data.map((base: Base) => (
+                                      <SelectItem key={base.id} value={base.id.toString()}>
+                                        {base.name}
+                                      </SelectItem>
+                                    ))
+                                  ) : (
+                                    <SelectItem value="empty" disabled>Nenhuma base encontrada</SelectItem>
+                                  )}
                                 </SelectContent>
                               </Select>
                               <FormDescription className="text-xs text-gray-500">
