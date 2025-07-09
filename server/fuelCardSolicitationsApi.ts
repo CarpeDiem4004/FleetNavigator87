@@ -859,7 +859,8 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
           '' as rota_origem,
           '' as rota_destino,
           '' as telefone_motorista,
-          '' as horario_abastecimento
+          '' as horario_abastecimento,
+          COALESCE(base, 'Base Principal') as base
         FROM solicitacoes_fuel_card
         ORDER BY data_solicitacao DESC
       `;
@@ -892,7 +893,8 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
           COALESCE(rota_origem, '') as rota_origem,
           COALESCE(rota_destino, '') as rota_destino,
           COALESCE(telefone_motorista, '') as telefone_motorista,
-          COALESCE(horario_abastecimento, '') as horario_abastecimento
+          COALESCE(horario_abastecimento, '') as horario_abastecimento,
+          'Line Hall Shopee' as base
         FROM linehall_fuel_card_requests
         ORDER BY created_at DESC
       `;
@@ -903,31 +905,33 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
       console.log('Tabela Line Hall não encontrada ou erro:', err);
     }
     
-    // 3. Tabela base system (fuel_card_requests)
+    // 3. Tabela base system (fuel_card_requests) - incluindo informações da base
     try {
       const baseSystemQuery = `
         SELECT 
-          id::text as id,
-          placa,
-          motorista,
-          COALESCE(valor_solicitado::text, '0') as valor_solicitado,
-          COALESCE(km, 0) as km,
-          tipo_cartao,
-          numero_cartao,
-          provedor_cartao,
-          status,
-          data_solicitacao,
-          atendido_por,
-          data_atendimento,
-          observacoes,
+          fcr.id::text as id,
+          fcr.plate as placa,
+          fcr.driver_name as motorista,
+          COALESCE(fcr.amount::text, '0') as valor_solicitado,
+          COALESCE(fcr.odometer, 0) as km,
+          fcr.card_type as tipo_cartao,
+          fcr.card_number as numero_cartao,
+          fcr.provider as provedor_cartao,
+          fcr.status,
+          fcr.requested_at as data_solicitacao,
+          fcr.approved_by as atendido_por,
+          fcr.approved_at as data_atendimento,
+          fcr.reason as observacoes,
           'base_system' as origem_tipo,
           '' as veiculo_modelo,
           '' as rota_origem,
           '' as rota_destino,
-          '' as telefone_motorista,
-          '' as horario_abastecimento
-        FROM fuel_card_requests
-        ORDER BY data_solicitacao DESC
+          COALESCE(fcr.driver_phone, '') as telefone_motorista,
+          COALESCE(fcr.fuel_time, '') as horario_abastecimento,
+          COALESCE(b.location, fcr.base_name, 'Base Principal') as base
+        FROM fuel_card_requests fcr
+        LEFT JOIN bases b ON fcr.base_id = b.id
+        ORDER BY fcr.requested_at DESC
       `;
       
       const baseSystemResult = await pool.query(baseSystemQuery);
@@ -959,7 +963,7 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
       'Data Solicitação': sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleDateString('pt-BR') : '',
       'Atendido Por': sol.atendido_por || '',
       'Data Atendimento': sol.data_atendimento ? new Date(sol.data_atendimento).toLocaleDateString('pt-BR') : '',
-      'Base': sol.base || 'Base Principal',
+      'Base': sol.base,
       'Observações': sol.observacoes || '',
       'Origem': sol.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 'Sistema Principal',
       'Modelo Veículo': sol.veiculo_modelo || '',
