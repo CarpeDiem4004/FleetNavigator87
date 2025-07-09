@@ -9698,11 +9698,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rotas para solicitações de cartão de combustível
   app.get('/api/fuel-card-solicitations', isAuthenticated, getFuelCardSolicitations);
+  // Rotas específicas devem vir ANTES das rotas com parâmetros
+  app.get('/api/fuel-card-solicitations/export', isAuthenticated, exportFuelCardSolicitationsToExcel);
+  app.post('/api/fuel-card-solicitations/export', isAuthenticated, exportFuelCardSolicitationsToExcel);
   app.get('/api/fuel-card-solicitations/:id', isAuthenticated, getFuelCardSolicitationById);
   app.post('/api/fuel-card-solicitations', createFuelCardSolicitation);
   app.put('/api/fuel-card-solicitations/:id/status', isAuthenticated, updateFuelCardSolicitationStatus);
-  app.post('/api/fuel-card-solicitations/export', isAuthenticated, exportFuelCardSolicitationsToExcel);
-  app.get('/api/fuel-card-solicitations/export', isAuthenticated, exportFuelCardSolicitationsToExcel);
   app.delete('/api/fuel-card-solicitations/:id', isAuthenticated, deleteFuelCardSolicitation);
 
   // Função específica para acesso público aos projetos
