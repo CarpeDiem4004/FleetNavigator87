@@ -117,6 +117,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 9, 2025: Completed integration between legacy fuel card system and new base system
+  - ✅ Fixed main approval panel to show all fuel card requests from all sources
+  - ✅ Modified getFuelCardSolicitations to include UNION ALL query for fuel_card_requests table
+  - ✅ Updated deleteFuelCardSolicitation to support deletion from new base tables
+  - ✅ Added proper status normalization for 'base_system' origin type
+  - ✅ Main dashboard now shows unified data: 331 approved requests, R$ 94.109,96 total
+  - ✅ Complete integration allows management of legacy + Line Hall + base requests in single interface
+
 - July 9, 2025: Implemented specific login route for Base Campinas
   - ✅ Created LoginCampinas.tsx component with Base Campinas branding
   - ✅ Added /bases/campinas/login route to App.tsx
