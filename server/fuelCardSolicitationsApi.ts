@@ -982,6 +982,22 @@ export async function deleteFuelCardSolicitation(req: Request, res: Response) {
       }
     }
 
+    // Se não encontrou na Line Hall, verificar na tabela das bases
+    if (!solicitationData) {
+      try {
+        const baseCheck = await pool.query(
+          'SELECT * FROM fuel_card_requests WHERE id = $1',
+          [id]
+        );
+        if (baseCheck.rows.length > 0) {
+          tableName = 'fuel_card_requests';
+          solicitationData = baseCheck.rows[0];
+        }
+      } catch (err) {
+        console.log('[DELETE-FUEL-CARD] Tabela bases não encontrada ou erro:', err);
+      }
+    }
+
     if (!solicitationData) {
       return res.status(404).json({
         success: false,
