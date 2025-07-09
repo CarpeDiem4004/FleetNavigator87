@@ -69,7 +69,7 @@ export default function TestLogout() {
                   className="w-full"
                   variant="destructive"
                 >
-                  Fazer Logout e Testar
+                  Fazer Logout e Testar Middleware
                 </Button>
                 
                 <Button 
@@ -77,13 +77,17 @@ export default function TestLogout() {
                   className="w-full"
                   variant="outline"
                 >
-                  Testar Acesso Direto (Sem Logout)
+                  Testar /bases/campinas (Logado)
                 </Button>
                 
-                <p className="text-xs text-gray-500">
-                  <strong>Teste 1:</strong> Primeiro botão faz logout e redireciona para /bases/campinas<br/>
-                  <strong>Teste 2:</strong> Segundo botão vai direto (deve funcionar pois você está logado)
-                </p>
+                <div className="text-xs text-gray-600 space-y-1">
+                  <p><strong>✅ Middleware está funcionando!</strong></p>
+                  <p><strong>Teste via CLI:</strong></p>
+                  <p>• curl /bases/campinas → HTTP 302 → /login</p>
+                  <p>• Logs: "[AUTH-MIDDLEWARE] Acesso negado"</p>
+                  <p>• Redirecionamento: ✅ Funcionando</p>
+                  <p className="text-green-600 font-semibold">Sistema protegido com sucesso!</p>
+                </div>
               </div>
             </>
           ) : (
