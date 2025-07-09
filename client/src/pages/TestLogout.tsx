@@ -10,12 +10,31 @@ export default function TestLogout() {
 
   const handleLogout = async () => {
     try {
-      await logout();
-      // Após o logout, redirecionar para /bases/campinas para testar o middleware
-      setTimeout(() => {
-        // Forçar reload completo da página para garantir que o middleware seja testado
-        window.location.href = '/bases/campinas';
-      }, 1000);
+      console.log("Iniciando logout para teste...");
+      
+      // Fazer logout direto via API sem usar o contexto (que redireciona para /)
+      const response = await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        console.log("Logout realizado com sucesso");
+        // Limpar storage local
+        localStorage.removeItem('authToken');
+        
+        // Aguardar um pouco para garantir que o logout foi processado
+        setTimeout(() => {
+          console.log("Redirecionando para /bases/campinas para testar middleware...");
+          // Forçar reload completo da página para garantir que o middleware seja testado
+          window.location.href = '/bases/campinas';
+        }, 500);
+      } else {
+        console.error("Erro no logout:", response.statusText);
+      }
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
     }
