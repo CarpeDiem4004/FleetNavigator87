@@ -434,6 +434,32 @@ app.use((req, res, next) => {
     }
   });
 
+  // Add bases API before any middleware conflicts
+  app.get('/api/bases', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const query = 'SELECT id, name, location as description FROM bases WHERE active = true ORDER BY name';
+      const result = await pool.query(query);
+      
+      console.log('Direct Bases API - Found', result.rows.length, 'bases');
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error) {
+      console.error('Direct Bases API - Error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching bases',
+        error: error.message
+      });
+    }
+  });
+
   // Add DELETE endpoint for drivers
   app.delete('/api/drivers/:id', async (req, res) => {
     try {

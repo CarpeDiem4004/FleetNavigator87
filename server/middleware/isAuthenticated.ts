@@ -3,9 +3,9 @@ import { validateSupabaseToken, extractJwtToken, AuthError } from '../utils/auth
 
 // Middleware personalizado que permite acesso público às rotas de projetos
 export const isAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
-  // Permitir acesso público às rotas de projetos para formulários de postos
-  if (req.path.startsWith('/api/projects') || req.path.includes('projects-with-bases')) {
-    console.log('[isAuthenticated] Permitindo acesso público às rotas de projetos para formulários');
+  // Permitir acesso público às rotas de projetos e bases para formulários de postos
+  if (req.path.startsWith('/api/projects') || req.path.startsWith('/api/bases') || req.path.includes('projects-with-bases')) {
+    console.log('[isAuthenticated] Permitindo acesso público às rotas de projetos e bases para formulários');
     (req as any).user = { id: 1, name: 'Sistema Público', email: 'public@muricionfleet.com', role: 'admin' };
     return next();
   }

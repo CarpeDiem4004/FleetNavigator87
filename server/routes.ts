@@ -4138,7 +4138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // GET - Obter projetos para o fuel card system
-  app.get('/api/projects', isAuthenticated, async (req, res) => {
+  app.get('/api/projects', async (req, res) => {
     try {
       const query = 'SELECT id, name, description FROM projects ORDER BY name';
       const result = await pool.query(query);
@@ -4159,7 +4159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // GET - Obter bases para o fuel card system
-  app.get('/api/bases', isAuthenticated, async (req, res) => {
+  app.get('/api/bases', async (req, res) => {
     try {
       const query = 'SELECT id, name, description FROM bases ORDER BY name';
       const result = await pool.query(query);
