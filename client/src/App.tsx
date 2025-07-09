@@ -156,6 +156,19 @@ import CartaoCombustivelAlairExterno from "@/pages/bases/external/CartaoCombusti
 
 // Importação das páginas da Base Goiânia
 import BaseGoiania from "@/pages/bases/BaseGoiania";
+import LoginGoiania from "@/pages/bases/LoginGoiania";
+
+// Importação das páginas da Base Alair
+import BaseAlair from "@/pages/bases/BaseAlair";
+import LoginAlair from "@/pages/bases/LoginAlair";
+
+// Importação das páginas da Base Salvador
+import BaseSalvador from "@/pages/bases/BaseSalvador";
+import LoginSalvador from "@/pages/bases/LoginSalvador";
+import CartaoCombustivelSalvador from "@/pages/bases/CartaoCombustivelSalvador";
+
+// Importação do sistema genérico de bases
+import BaseRouteHandler from "@/components/base/BaseRouteHandler";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -308,10 +321,32 @@ function App() {
           
           {/* Rotas para a Base Goiânia */}
           <ProtectedRoute path="/bases/goiania" component={BaseGoiania} />
+          <ProtectedRoute path="/bases/57" component={BaseGoiania} />
           <ProtectedRoute path="/bases/goiania/cartao-combustivel" component={CartaoCombustivelGoiania} />
+          <ProtectedRoute path="/bases/57/cartao-combustivel" component={CartaoCombustivelGoiania} />
+          <Route path="/bases/goiania/login" component={LoginGoiania} />
+          <Route path="/bases/57/login" component={LoginGoiania} />
           
           {/* Rotas para a Base Alair */}
+          <ProtectedRoute path="/bases/alair" component={BaseAlair} />
+          <ProtectedRoute path="/bases/76" component={BaseAlair} />
           <ProtectedRoute path="/bases/alair/cartao-combustivel" component={CartaoCombustivelAlair} />
+          <ProtectedRoute path="/bases/76/cartao-combustivel" component={CartaoCombustivelAlair} />
+          <Route path="/bases/alair/login" component={LoginAlair} />
+          <Route path="/bases/76/login" component={LoginAlair} />
+          
+          {/* Rotas para a Base Salvador */}
+          <ProtectedRoute path="/bases/salvador" component={BaseSalvador} />
+          <ProtectedRoute path="/bases/58" component={BaseSalvador} />
+          <ProtectedRoute path="/bases/salvador/cartao-combustivel" component={CartaoCombustivelSalvador} />
+          <ProtectedRoute path="/bases/58/cartao-combustivel" component={CartaoCombustivelSalvador} />
+          <Route path="/bases/salvador/login" component={LoginSalvador} />
+          <Route path="/bases/58/login" component={LoginSalvador} />
+          
+          {/* Rotas genéricas para todas as bases por ID */}
+          <ProtectedRoute path="/bases/:id" component={() => <BaseRouteHandler mode="home" />} />
+          <ProtectedRoute path="/bases/:id/cartao-combustivel" component={() => <BaseRouteHandler mode="fuel-card" />} />
+          <Route path="/bases/:id/login" component={() => <BaseRouteHandler mode="login" />} />
           
           <ProtectedRoute path="/solicitacoes" component={BaseRequests} />
           

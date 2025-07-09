@@ -1,19 +1,19 @@
 /**
- * Página de Cartão Combustível - Base Alair
+ * Página da Base Alair - ID 76
  */
 
 import React from 'react';
 import BaseLayout from '@/components/layout/BaseLayout';
-import BaseCartaoCombustivel from '@/components/base/BaseCartaoCombustivel';
+import BaseHome from '@/components/base/BaseHome';
 
-export default function CartaoCombustivelAlair() {
+export default function BaseAlair() {
   return (
     <BaseLayout 
       baseId={76} 
       baseName="Base Alair"
       primaryColor="#dc2626"
     >
-      <BaseCartaoCombustivel 
+      <BaseHome 
         baseId={76} 
         baseName="Base Alair"
         primaryColor="#dc2626"

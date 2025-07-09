@@ -473,7 +473,6 @@ app.use((req, res, next) => {
         SELECT id, name, location, operation, type, active, 
                has_maintenance as "hasMaintenance", 
                has_tires as "hasTires", 
-               has_fuel_card as "hasFuelCard",
                created_at 
         FROM bases 
         WHERE id = $1
