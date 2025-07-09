@@ -964,6 +964,189 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Modal de Detalhes da Solicitação */}
+        <Dialog open={!!selectedRequest} onOpenChange={() => setSelectedRequest(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="text-blue-600" size={20} />
+                Detalhes da Solicitação
+              </DialogTitle>
+              <DialogDescription>
+                Visualizar informações completas da solicitação de cartão combustível
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedRequest && (
+              <div className="space-y-6">
+                {/* Informações do Veículo */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-600">Placa do Veículo</Label>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium text-lg">{selectedRequest.plate}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-600">Quilometragem</Label>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">{selectedRequest.odometer ? `${selectedRequest.odometer.toLocaleString()} km` : 'Não informado'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Informações do Cartão */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-600">Tipo de Cartão</Label>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">{selectedRequest.cardType === 'vinculado' ? 'Vinculado à Placa' : 'Específico por Número'}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-600">Número do Cartão</Label>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">{selectedRequest.cardNumber}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-600">Valor Solicitado</Label>
+                    <div className="p-3 bg-green-50 rounded-lg">
+                      <span className="font-bold text-green-600">{formatCurrency(selectedRequest.amount)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Informações do Combustível */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-600">Provedor do Cartão</Label>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">{selectedRequest.provider || 'Não informado'}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-600">Tipo de Combustível</Label>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">{selectedRequest.fuelType || 'Não informado'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Informações do Motorista */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-600">Nome do Motorista</Label>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">{selectedRequest.driverName || 'Não informado'}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-600">Telefone do Motorista</Label>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">{selectedRequest.driverPhone || 'Não informado'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Informações do Projeto */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-600">Projeto</Label>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">{selectedRequest.projectName || 'Não informado'}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-600">Base</Label>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">{selectedRequest.baseName || 'Não informado'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status e Datas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-600">Status</Label>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      {getStatusBadge(selectedRequest.status)}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-600">Data da Solicitação</Label>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">{formatDate(selectedRequest.requestedAt)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Observações */}
+                {selectedRequest.reason && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-600">Observações</Label>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">{selectedRequest.reason}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Informações de Processamento */}
+                {(selectedRequest.approvedBy || selectedRequest.rejectedBy) && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium text-gray-800 mb-3">Informações de Processamento</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {selectedRequest.approvedBy && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-600">Aprovado por</Label>
+                          <div className="p-3 bg-green-50 rounded-lg">
+                            <span className="font-medium text-green-700">{selectedRequest.approvedBy}</span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {selectedRequest.rejectedBy && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-600">Rejeitado por</Label>
+                          <div className="p-3 bg-red-50 rounded-lg">
+                            <span className="font-medium text-red-700">{selectedRequest.rejectedBy}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {selectedRequest.rejectionReason && (
+                      <div className="space-y-2 mt-4">
+                        <Label className="text-sm font-medium text-gray-600">Motivo da Rejeição</Label>
+                        <div className="p-3 bg-red-50 rounded-lg">
+                          <span className="font-medium text-red-700">{selectedRequest.rejectionReason}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setSelectedRequest(null)}
+                className="w-full"
+              >
+                Fechar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </BaseCampinasLayout>
   );
