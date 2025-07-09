@@ -35,9 +35,22 @@ const LoginCampinas: React.FC = () => {
   // Redirecionar se já estiver autenticado
   useEffect(() => {
     if (user && !authLoading) {
+      console.log('Usuário já autenticado, redirecionando para /bases/campinas');
       setLocation('/bases/campinas');
     }
   }, [user, authLoading, setLocation]);
+
+  // Se o usuário já estiver autenticado, não mostrar a tela de login
+  if (user && !authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Redirecionando para Base Campinas...</p>
+        </div>
+      </div>
+    );
+  }
 
   const onSubmit = async (data: LoginFormData) => {
     setIsSubmitting(true);
