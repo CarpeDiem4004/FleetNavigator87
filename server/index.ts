@@ -1744,6 +1744,68 @@ app.use((req, res, next) => {
     }
   });
 
+  // Middleware de verificação de autenticação para rotas protegidas
+  // Deve ser adicionado ANTES da configuração do Vite para interceptar requisições
+  app.use((req, res, next) => {
+    // Lista de rotas que precisam de autenticação
+    const protectedRoutes = [
+      '/bases/campinas',
+      '/bases/goiania', 
+      '/bases/alair',
+      '/vehicles',
+      '/maintenance',
+      '/tires',
+      '/fleet-management',
+      '/refueling',
+      '/fines',
+      '/accidents',
+      '/fuel-receipts',
+      '/work-safety',
+      '/users',
+      '/solicitacoes',
+      '/postos',
+      '/posto/',
+      '/executive-dashboard'
+    ];
+    
+    // Verificar se a rota atual é protegida
+    const isProtectedRoute = protectedRoutes.some(route => 
+      req.path.startsWith(route) && !req.path.includes('/external/') && !req.path.includes('/externo')
+    );
+    
+    // Log para debug
+    console.log(`[AUTH-MIDDLEWARE] Verificando rota: ${req.path} - Protegida: ${isProtectedRoute}`);
+    
+    // Se não é uma rota protegida, continuar normalmente
+    if (!isProtectedRoute) {
+      return next();
+    }
+    
+    // Verificar se o usuário está autenticado
+    const isAuthenticated = req.isAuthenticated && req.isAuthenticated();
+    console.log(`[AUTH-MIDDLEWARE] Usuário autenticado: ${isAuthenticated}`);
+    
+    if (!isAuthenticated) {
+      console.log(`[AUTH-MIDDLEWARE] Acesso negado para rota protegida: ${req.path}`);
+      
+      // Se for uma requisição AJAX/API, retornar JSON
+      if (req.xhr || req.headers.accept?.includes('json')) {
+        return res.status(401).json({ 
+          error: 'Acesso negado',
+          message: 'Você precisa fazer login para acessar esta página.',
+          redirect: '/login'
+        });
+      }
+      
+      // Para requisições normais, redirecionar para login
+      return res.redirect('/login');
+    }
+    
+    console.log(`[AUTH-MIDDLEWARE] Acesso permitido para rota protegida: ${req.path}`);
+    // Se estiver autenticado, continuar
+    next();
+  });
+
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
