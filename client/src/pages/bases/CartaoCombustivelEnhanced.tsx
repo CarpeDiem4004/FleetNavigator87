@@ -45,7 +45,10 @@ import {
   User,
   Phone,
   MapPin,
-  Gauge
+  Gauge,
+  FileText,
+  Car,
+  Building
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import BaseCampinasLayout from '@/components/layouts/BaseCampinasLayout';
