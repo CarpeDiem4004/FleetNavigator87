@@ -461,6 +461,50 @@ app.use((req, res, next) => {
     }
   });
 
+  // Endpoint para buscar uma base específica por ID
+  app.get('/api/bases/:id', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const { id } = req.params;
+      
+      const query = `
+        SELECT id, name, location, operation, type, active, 
+               has_maintenance as "hasMaintenance", 
+               has_tires as "hasTires", 
+               has_fuel_card as "hasFuelCard",
+               created_at 
+        FROM bases 
+        WHERE id = $1
+      `;
+      
+      const result = await pool.query(query, [id]);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Base não encontrada'
+        });
+      }
+      
+      const base = result.rows[0];
+      console.log('Base API - Found base:', base.name);
+      
+      return res.status(200).json({
+        success: true,
+        data: base
+      });
+    } catch (error) {
+      console.error('Base API - Error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching base',
+        error: error.message
+      });
+    }
+  });
+
   // Add project-bases relationship API
   app.get('/api/project-bases', async (req, res) => {
     try {

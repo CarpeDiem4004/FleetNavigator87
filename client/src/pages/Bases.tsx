@@ -11,6 +11,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { Base, insertBaseSchema } from '@shared/schema';
 import AppLayout from '@/components/layout/AppLayout';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 
 import { 
   Card, 
@@ -70,7 +71,8 @@ import {
   Wrench,
   Database as DatabaseIcon,
   Fuel,
-  Home
+  Home,
+  ExternalLink
 } from 'lucide-react';
 
 // Schema para o formulário, estendendo o schema existente
@@ -91,6 +93,7 @@ export default function BasesPage() {
   const [importPreview, setImportPreview] = useState<Partial<Base>[]>([]);
   const [customOperation, setCustomOperation] = useState('');
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   
   // Formulário para adicionar/editar base
   const form = useForm<z.infer<typeof baseFormSchema>>({
@@ -323,6 +326,14 @@ export default function BasesPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              className="gap-2"
+              onClick={() => setLocation('/bases/links-externos')}
+            >
+              <ExternalLink className="h-4 w-4" />
+              Links Externos
+            </Button>
             <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="gap-2">

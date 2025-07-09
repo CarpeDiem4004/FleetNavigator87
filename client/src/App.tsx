@@ -181,6 +181,8 @@ import RegisterPostoUser from "@/pages/postos/RegisterPostoUser";
 import RedirectToPosto from "@/pages/RedirectToPosto";
 import PostoAcessoDireto from "@/pages/PostoAcessoDireto";
 import LinksExternosPostos from "@/pages/postos/LinksExternosPostos";
+import LinksExternosBases from "@/pages/bases/LinksExternosBases";
+import BasePublic from "@/pages/bases/BasePublic";
 import PartnerLogin from "@/pages/partner-login";
 import PartnerDashboard from "@/pages/partner-dashboard";
 import FuelCardRedirect from "@/components/FuelCardRedirect";
@@ -277,6 +279,7 @@ function App() {
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
           <ProtectedRoute path="/users" component={UsersNew} />
           <ProtectedRoute path="/bases" component={Bases} />
+          <ProtectedRoute path="/bases/links-externos" component={LinksExternosBases} />
           <ProtectedRoute path="/bases/campinas" component={BaseCampinas} />
           <ProtectedRoute path="/bases/campinas/despesas" component={DespesasCampinas} />
           <ProtectedRoute path="/bases/campinas/multas" component={MultasCampinas} />
@@ -298,6 +301,10 @@ function App() {
           {/* Rotas externas públicas - Base Alair */}
           <Route path="/bases/alair/external/cartao-combustivel" component={CartaoCombustivelAlairExterno} />
           <Route path="/posto/alair/externo" component={CartaoCombustivelAlairExterno} />
+          
+          {/* Rotas públicas para bases - acesso externo */}
+          <Route path="/base/:id/:slug/public" component={BasePublic} />
+          <Route path="/base/:id/public" component={BasePublic} />
           
           {/* Rotas para a Base Goiânia */}
           <ProtectedRoute path="/bases/goiania" component={BaseGoiania} />
