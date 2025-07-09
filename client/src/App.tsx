@@ -138,7 +138,7 @@ import AbastecimentoTerceirosDashboard from "@/pages/AbastecimentoTerceirosDashb
 import GerenciamentoTerceiros from "@/pages/GerenciamentoTerceiros";
 
 // Importação das páginas da Base Campinas
-
+import LoginCampinas from "@/pages/bases/LoginCampinas";
 import BaseCampinas from "@/pages/bases/BaseCampinas";
 import DespesasCampinas from "@/pages/bases/DespesasCampinas";
 import MultasCampinas from "@/pages/bases/MultasCampinas";
@@ -186,6 +186,7 @@ import PartnerDashboard from "@/pages/partner-dashboard";
 import FuelCardRedirect from "@/components/FuelCardRedirect";
 import MaintenanceSystem from "@/pages/maintenance";
 import TestLogout from "@/pages/TestLogout";
+import TestCampinasLogin from "@/pages/TestCampinasLogin";
 
 function App() {
   // Ativar o hook de injeção automática de token JWT em todas as requisições fetch
@@ -207,6 +208,11 @@ function App() {
             <Route path="/login-supabase">
               <LoginWithSupabase />
             </Route>
+            
+            {/* Rotas específicas de login para cada base */}
+            <Route path="/bases/campinas/login">
+              <LoginCampinas />
+            </Route>
             <Route path="/register">
               <RegisterNew />
             </Route>
@@ -218,6 +224,9 @@ function App() {
             </Route>
             <Route path="/test-logout">
               <TestLogout />
+            </Route>
+            <Route path="/test-campinas-login">
+              <TestCampinasLogin />
             </Route>
             
             {/* Componentes de redirecionamento para usuários específicos */}

@@ -1788,17 +1788,28 @@ app.use((req, res, next) => {
     if (!isAuthenticated) {
       console.log(`[AUTH-MIDDLEWARE] Acesso negado para rota protegida: ${req.path}`);
       
+      // Definir rota de login específica baseada no caminho
+      let loginRoute = '/login';
+      
+      if (req.path.startsWith('/bases/campinas')) {
+        loginRoute = '/bases/campinas/login';
+      } else if (req.path.startsWith('/bases/goiania')) {
+        loginRoute = '/bases/goiania/login';
+      } else if (req.path.startsWith('/bases/alair')) {
+        loginRoute = '/bases/alair/login';
+      }
+      
       // Se for uma requisição AJAX/API, retornar JSON
       if (req.xhr || req.headers.accept?.includes('json')) {
         return res.status(401).json({ 
           error: 'Acesso negado',
           message: 'Você precisa fazer login para acessar esta página.',
-          redirect: '/login'
+          redirect: loginRoute
         });
       }
       
-      // Para requisições normais, redirecionar para login
-      return res.redirect('/login');
+      // Para requisições normais, redirecionar para login específico
+      return res.redirect(loginRoute);
     }
     
     console.log(`[AUTH-MIDDLEWARE] Acesso permitido para rota protegida: ${req.path}`);
