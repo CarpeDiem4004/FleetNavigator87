@@ -399,8 +399,8 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
     );
   };
 
-  const formatPhone = (phone: string | undefined) => {
-    if (!phone) return '';
+  const formatPhone = (phone: string | undefined | null) => {
+    if (!phone || typeof phone !== 'string') return '';
     const cleaned = phone.replace(/\D/g, '');
     if (cleaned.length === 11) {
       return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
@@ -581,6 +581,33 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                                   </div>
                                 </div>
                               </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Campo obrigatório do número do cartão */}
+                      <div className="mt-4">
+                        <FormField
+                          control={form.control}
+                          name="cardNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2 text-red-600 font-medium">
+                                <CreditCard size={14} />
+                                Número do Cartão
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Ex: 1234567890123456"
+                                  {...field}
+                                  className="bg-blue-50 border-blue-200 focus:border-blue-400"
+                                />
+                              </FormControl>
+                              <FormDescription className="text-xs text-gray-500">
+                                Número do cartão de combustível
+                              </FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
