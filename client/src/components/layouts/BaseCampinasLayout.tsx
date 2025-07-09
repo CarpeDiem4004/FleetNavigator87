@@ -11,7 +11,25 @@ const BaseCampinasLayout: React.FC<BaseCampinasLayoutProps> = ({ children }) => 
 
   const handleLogout = async () => {
     try {
-      await logout();
+      // Fazer logout direto via API sem usar o contexto (que redireciona para /)
+      const response = await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        // Limpar storage local
+        localStorage.removeItem('authToken');
+        console.log("Logout realizado com sucesso");
+        
+        // Redirecionar para a mesma página - o middleware irá interceptar e redirecionar para login
+        window.location.href = '/bases/campinas';
+      } else {
+        console.error("Erro no logout:", response.statusText);
+      }
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
     }

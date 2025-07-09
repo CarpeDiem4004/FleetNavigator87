@@ -117,6 +117,13 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 9, 2025: Fixed logout functionality for base pages to maintain proper context
+  - ✅ Custom logout implementation in BaseCampinasLayout.tsx
+  - ✅ Logout button now redirects to /bases/campinas after logout
+  - ✅ Middleware intercepts unauthenticated access and redirects to /login
+  - ✅ Prevents redirection to main system login, keeping base context
+  - ✅ Tested and verified working correctly with proper middleware flow
+
 - July 9, 2025: Successfully implemented and tested mandatory authentication system
   - ✅ Server-side authentication middleware protecting all internal routes
   - ✅ All base routes (/bases/campinas, /bases/goiania, /bases/alair) require login
