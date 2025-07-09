@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 9, 2025: Fixed fuel card request system API connectivity issues
+  - Resolved authentication middleware blocking `/api/bases` endpoint
+  - Added direct API registration in `server/index.ts` before middleware pipeline
+  - Fixed database column mapping (location vs description) in bases table query
+  - Both projects and bases dropdowns now load correctly with 16 projects and 108 bases
+  - Fuel card providers successfully restricted to Ticket and Alelo only
+  - Added fuel timing preference options ("Antes das 17h" and "Após as 18h")
+  - System now fully operational with working dropdown population
+
 - June 25, 2025: Enhanced maintenance order creation with project and base assignment
   - Added project and base selection fields to new service order form
   - Integrated dynamic loading of 16 projects and 100+ bases from database
