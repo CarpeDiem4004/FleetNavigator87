@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 9, 2025: Implemented mandatory authentication system for all internal routes
+  - Added server-side authentication middleware to protect all internal routes
+  - All base routes (/bases/campinas, /bases/goiania, /bases/alair) now require login
+  - Automatic redirection to /login page for unauthenticated users
+  - HTTP 302 redirect status implemented for proper security enforcement
+  - Authentication logs added for security monitoring and debugging
+  - External/public routes remain unaffected for proper mobile access
+  - System now fully secure with mandatory login for all internal functionality
+
 - July 9, 2025: Enhanced fuel card request system with improved user experience
   - Added conditional "Dados específicos do cartão" field that appears only when "Cartão específico por número" is selected
   - Implemented validation requiring specific card data when option is chosen
