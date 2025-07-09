@@ -191,6 +191,11 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
       console.log('[FUEL-CARD-REQUESTS] Dados recebidos:', data);
       return data;
     },
+    enabled: !!baseId,
+    refetchInterval: 1000, // Recarrega a cada segundo
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0, // Dados sempre considerados obsoletos
   });
 
   const { data: fuelCards, isLoading: cardsLoading } = useQuery({
@@ -983,14 +988,13 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
               </CardHeader>
               <CardContent>
                 {(() => {
-                  console.log('[FUEL-CARD-RENDER] Estado atual:', {
-                    requestsLoading,
-                    requestsData: requests?.data,
-                    requestsLength: requests?.data?.length,
-                    requests: requests
-                  });
+                  console.log('[FUEL-CARD-RENDER] Renderizando CardContent');
+                  console.log('[FUEL-CARD-RENDER] Loading:', requestsLoading);
+                  console.log('[FUEL-CARD-RENDER] Requests data:', requests?.data);
+                  console.log('[FUEL-CARD-RENDER] Requests length:', requests?.data?.length);
                   
                   if (requestsLoading) {
+                    console.log('[FUEL-CARD-RENDER] Mostrando loading...');
                     return (
                       <div className="flex items-center justify-center py-8">
                         <div className="text-gray-500">Carregando solicitações...</div>
@@ -999,82 +1003,50 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                   }
                   
                   if (!requests?.data || requests.data.length === 0) {
+                    console.log('[FUEL-CARD-RENDER] Nenhuma solicitação encontrada');
                     return (
                       <div className="text-center py-8 text-gray-500">
                         Nenhuma solicitação encontrada
                         <div className="text-xs mt-2">
-                          Debug: {JSON.stringify({
-                            hasRequests: !!requests,
-                            hasData: !!requests?.data,
-                            dataLength: requests?.data?.length,
-                            success: requests?.success
-                          })}
+                          Debug: requests={JSON.stringify(requests?.data || null)}
                         </div>
                       </div>
                     );
                   }
                   
+                  console.log('[FUEL-CARD-RENDER] Renderizando tabela com', requests.data.length, 'solicitações');
+                  
                   return (
                     <div className="overflow-x-auto">
-                      <h3 className="text-lg font-semibold mb-4">
-                        {requests.data.length} solicitações encontradas
-                      </h3>
-                      
-                      {/* Teste simples com cards primeiro */}
-                      <div className="space-y-4 mb-6">
-                        {requests.data.map((request: FuelCardRequest) => {
-                          console.log('[FUEL-CARD-RENDER] Renderizando card:', request);
-                          return (
-                            <Card key={request.id} className="p-4">
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <h4 className="font-medium">Placa: {request.plate}</h4>
-                                  <p className="text-sm text-gray-600">
-                                    Motorista: {request.driverName || request.driver_name || 'N/A'}
-                                  </p>
-                                  <p className="text-sm text-gray-600">
-                                    Valor: {formatCurrency(request.amount)}
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  {getStatusBadge(request.status)}
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    {formatDate(request.requestedAt || request.requested_at)}
-                                  </p>
-                                </div>
-                              </div>
-                            </Card>
-                          );
-                        })}
+                      <div className="mb-4 p-4 bg-blue-50 rounded">
+                        <h3 className="font-medium">Debug: {requests.data.length} solicitações encontradas</h3>
+                        <p className="text-sm text-gray-600">
+                          Primeira solicitação: {requests.data[0]?.plate} - {requests.data[0]?.status}
+                        </p>
                       </div>
                       
-                      {/* Agora a tabela normal */}
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Placa</TableHead>
-                            <TableHead>Motorista</TableHead>
-                            <TableHead>Valor</TableHead>
-                            <TableHead>Combustível</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Ações</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {requests.data.map((request: FuelCardRequest) => {
-                            console.log('[FUEL-CARD-RENDER] Renderizando solicitação:', request);
-                            
-                            // Teste simples para verificar se a renderização está funcionando
-                            const testRow = (
-                              <TableRow key={request.id}>
-                                <TableCell className="font-medium">{request.plate || 'SEM PLACA'}</TableCell>
-                                <TableCell>{request.driverName || request.driver_name || 'N/A'}</TableCell>
-                                <TableCell>{formatCurrency(request.amount)}</TableCell>
-                                <TableCell>{request.fuelType || request.fuel_type || 'N/A'}</TableCell>
-                                <TableCell>{getStatusBadge(request.status)}</TableCell>
-                                <TableCell>{formatDate(request.requestedAt || request.requested_at)}</TableCell>
-                                <TableCell>
+                      <table className="w-full border-collapse border border-gray-300">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="border border-gray-300 p-2">Placa</th>
+                            <th className="border border-gray-300 p-2">Motorista</th>
+                            <th className="border border-gray-300 p-2">Valor</th>
+                            <th className="border border-gray-300 p-2">Status</th>
+                            <th className="border border-gray-300 p-2">Data</th>
+                            <th className="border border-gray-300 p-2">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {requests.data.map((request: FuelCardRequest, index: number) => {
+                            console.log('[FUEL-CARD-RENDER] Renderizando linha', index, request);
+                            return (
+                              <tr key={request.id} className="hover:bg-gray-50">
+                                <td className="border border-gray-300 p-2 font-medium">{request.plate}</td>
+                                <td className="border border-gray-300 p-2">{request.driverName || request.driver_name || 'N/A'}</td>
+                                <td className="border border-gray-300 p-2">{formatCurrency(request.amount)}</td>
+                                <td className="border border-gray-300 p-2">{getStatusBadge(request.status)}</td>
+                                <td className="border border-gray-300 p-2">{formatDate(request.requestedAt || request.requested_at)}</td>
+                                <td className="border border-gray-300 p-2">
                                   <Button
                                     variant="outline"
                                     size="sm"
@@ -1083,15 +1055,12 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                                     <Eye size={14} className="mr-1" />
                                     Ver
                                   </Button>
-                                </TableCell>
-                              </TableRow>
+                                </td>
+                              </tr>
                             );
-                            
-                            console.log('[FUEL-CARD-RENDER] TableRow criado:', testRow);
-                            return testRow;
                           })}
-                        </TableBody>
-                      </Table>
+                        </tbody>
+                      </table>
                     </div>
                   );
                 })()}
