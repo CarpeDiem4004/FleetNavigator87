@@ -834,14 +834,83 @@ export async function createLineHallFuelCardRequest(req: Request, res: Response)
  */
 export async function exportFuelCardSolicitationsToExcel(req: Request, res: Response) {
   try {
-    const { solicitations } = req.body;
+    // Buscar dados diretamente do banco em vez de receber via POST
+    const unifiedQuery = `
+      SELECT 
+        id,
+        placa,
+        motorista,
+        valor_solicitado,
+        km,
+        tipo_cartao,
+        numero_cartao,
+        provedor_cartao,
+        status,
+        data_solicitacao,
+        atendido_por,
+        data_atendimento,
+        observacoes,
+        'sistema_principal' as origem_tipo,
+        '' as veiculo_modelo,
+        '' as rota_origem,
+        '' as rota_destino,
+        '' as telefone_motorista,
+        '' as horario_abastecimento
+      FROM solicitacoes_fuel_card
+      
+      UNION ALL
+      
+      SELECT 
+        id,
+        veiculo_placa as placa,
+        motorista_nome as motorista,
+        valor_calculado::text as valor_solicitado,
+        km_total as km,
+        'vinculado' as tipo_cartao,
+        veiculo_placa as numero_cartao,
+        'Alelo' as provedor_cartao,
+        status,
+        created_at as data_solicitacao,
+        '' as atendido_por,
+        updated_at as data_atendimento,
+        '' as observacoes,
+        'line_hall' as origem_tipo,
+        veiculo_modelo,
+        rota_origem,
+        rota_destino,
+        telefone_motorista,
+        horario_abastecimento
+      FROM linehall_fuel_card_requests
+      
+      UNION ALL
+      
+      SELECT 
+        id,
+        placa,
+        motorista,
+        valor_solicitado,
+        km,
+        tipo_cartao,
+        numero_cartao,
+        provedor_cartao,
+        status,
+        data_solicitacao,
+        atendido_por,
+        data_atendimento,
+        observacoes,
+        'base_system' as origem_tipo,
+        '' as veiculo_modelo,
+        '' as rota_origem,
+        '' as rota_destino,
+        '' as telefone_motorista,
+        '' as horario_abastecimento
+      FROM fuel_card_requests
+      
+      ORDER BY data_solicitacao DESC
+    `;
     
-    if (!solicitations || !Array.isArray(solicitations)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Lista de solicitações é obrigatória'
-      });
-    }
+    const result = await pool.query(unifiedQuery);
+    const solicitations = result.rows;
 
     // Preparar dados para Excel
     const excelData = solicitations.map((sol: any) => ({

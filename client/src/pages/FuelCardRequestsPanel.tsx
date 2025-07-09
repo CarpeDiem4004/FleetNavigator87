@@ -320,11 +320,8 @@ const FuelCardRequestsPanel: React.FC = () => {
 
   const handleExportExcel = async () => {
     try {
-      const filteredData = getFilteredSolicitations();
-      
-      const response = await apiRequest('POST', '/api/fuel-card-solicitations/export', {
-        solicitations: filteredData
-      });
+      // Usar GET em vez de POST para evitar problema de payload grande
+      const response = await apiRequest('GET', '/api/fuel-card-solicitations/export');
       
       if (response.ok) {
         // Criar URL para download
