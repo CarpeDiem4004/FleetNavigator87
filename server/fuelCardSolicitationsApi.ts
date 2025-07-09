@@ -154,6 +154,46 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
         FROM linehall_fuel_card_requests lh
         LEFT JOIN linehall_vehicles lhv ON lh.veiculo_placa = lhv.placa
         LEFT JOIN veiculos v ON lh.veiculo_placa = v.placa
+
+        UNION ALL
+
+        -- Adicionar solicitações das bases (nova tabela fuel_card_requests)
+        SELECT 
+          fcr.id::text as id,
+          COALESCE(fcr.plate, 'SEM-PLACA') as placa,
+          COALESCE(fcr.odometer, 0) as km,
+          COALESCE(fcr.card_type, 'Padrão') as tipo_cartao,
+          COALESCE(fcr.provider, 'Padrão') as provedor_cartao,
+          COALESCE(fcr.card_number, '') as numero_cartao,
+          COALESCE(fcr.driver_name, 'Motorista não informado') as motorista,
+          COALESCE(fcr.driver_phone, '') as telefone_celular,
+          COALESCE(fcr.reason, 'Sem observações') as observacoes,
+          fcr.status,
+          fcr.requested_at as data_solicitacao,
+          fcr.approved_by as atendido_por,
+          fcr.approved_at as data_atendimento,
+          fcr.created_at,
+          fcr.updated_at,
+          COALESCE(fcr.amount::numeric, 0) as valor_solicitado,
+          COALESCE(b.name, 'Base Principal') as base,
+          '' as id_rota,
+          'base_system' as origem_tipo,
+          fcr.fuel_type as tipo_combustivel,
+          NULL as litros_solicitados,
+          -- Campos específicos do Line Hall (NULL para solicitações das bases)
+          NULL::varchar as veiculo_modelo,
+          NULL::varchar as rota_origem,
+          NULL::varchar as rota_destino,
+          COALESCE(fcr.odometer, 0) as km_total,
+          fcr.driver_phone as telefone_motorista,
+          fcr.fuel_time as horario_abastecimento,
+          COALESCE(fcr.amount::numeric, 0) as valor_calculado,
+          NULL::json as calculo_detalhes,
+          -- Incluir cartão combustível do veículo
+          COALESCE(v.cartao_abastecimento, fcr.card_number, '') as cartao_combustivel
+        FROM fuel_card_requests fcr
+        LEFT JOIN bases b ON fcr.base_id = b.id
+        LEFT JOIN veiculos v ON fcr.plate = v.placa
       ) unified_requests
       ORDER BY 
         CASE 
@@ -203,6 +243,20 @@ function normalizeStatus(status: string, origem: string): string {
       case 'approved':
         return 'Recarga Efetuada';
       case 'rejeitada':
+      case 'rejected':
+        return 'Negado';
+      default:
+        return status;
+    }
+  } else if (origem === 'base_system') {
+    // Status das bases (nova tabela fuel_card_requests)
+    switch (status) {
+      case 'pendente':
+        return 'Pendente';
+      case 'aprovado':
+      case 'approved':
+        return 'Recarga Efetuada';
+      case 'rejeitado':
       case 'rejected':
         return 'Negado';
       default:
