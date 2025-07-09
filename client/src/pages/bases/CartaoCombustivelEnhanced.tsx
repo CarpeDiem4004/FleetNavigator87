@@ -1016,6 +1016,39 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                   
                   return (
                     <div className="overflow-x-auto">
+                      <h3 className="text-lg font-semibold mb-4">
+                        {requests.data.length} solicitações encontradas
+                      </h3>
+                      
+                      {/* Teste simples com cards primeiro */}
+                      <div className="space-y-4 mb-6">
+                        {requests.data.map((request: FuelCardRequest) => {
+                          console.log('[FUEL-CARD-RENDER] Renderizando card:', request);
+                          return (
+                            <Card key={request.id} className="p-4">
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <h4 className="font-medium">Placa: {request.plate}</h4>
+                                  <p className="text-sm text-gray-600">
+                                    Motorista: {request.driverName || request.driver_name || 'N/A'}
+                                  </p>
+                                  <p className="text-sm text-gray-600">
+                                    Valor: {formatCurrency(request.amount)}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  {getStatusBadge(request.status)}
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {formatDate(request.requestedAt || request.requested_at)}
+                                  </p>
+                                </div>
+                              </div>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                      
+                      {/* Agora a tabela normal */}
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -1031,14 +1064,16 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                         <TableBody>
                           {requests.data.map((request: FuelCardRequest) => {
                             console.log('[FUEL-CARD-RENDER] Renderizando solicitação:', request);
-                            return (
+                            
+                            // Teste simples para verificar se a renderização está funcionando
+                            const testRow = (
                               <TableRow key={request.id}>
-                                <TableCell className="font-medium">{request.plate}</TableCell>
-                                <TableCell>{request.driverName || 'N/A'}</TableCell>
+                                <TableCell className="font-medium">{request.plate || 'SEM PLACA'}</TableCell>
+                                <TableCell>{request.driverName || request.driver_name || 'N/A'}</TableCell>
                                 <TableCell>{formatCurrency(request.amount)}</TableCell>
-                                <TableCell>{request.fuelType || 'N/A'}</TableCell>
+                                <TableCell>{request.fuelType || request.fuel_type || 'N/A'}</TableCell>
                                 <TableCell>{getStatusBadge(request.status)}</TableCell>
-                                <TableCell>{formatDate(request.requestedAt)}</TableCell>
+                                <TableCell>{formatDate(request.requestedAt || request.requested_at)}</TableCell>
                                 <TableCell>
                                   <Button
                                     variant="outline"
@@ -1051,6 +1086,9 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                                 </TableCell>
                               </TableRow>
                             );
+                            
+                            console.log('[FUEL-CARD-RENDER] TableRow criado:', testRow);
+                            return testRow;
                           })}
                         </TableBody>
                       </Table>
