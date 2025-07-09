@@ -4186,6 +4186,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { baseId } = req.query;
       
+      console.log('[FUEL-CARD-REQUESTS] Buscando solicitações para baseId:', baseId);
+      
       let query = `
         SELECT fcr.*, b.name as base_name, p.name as project_name
         FROM fuel_card_requests fcr
@@ -4202,7 +4204,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       query += ' ORDER BY fcr.requested_at DESC';
       
+      console.log('[FUEL-CARD-REQUESTS] Query SQL:', query);
+      console.log('[FUEL-CARD-REQUESTS] Parâmetros:', params);
+      
       const result = await pool.query(query, params);
+      
+      console.log('[FUEL-CARD-REQUESTS] Resultado:', {
+        rowCount: result.rowCount,
+        firstRow: result.rows[0] || null
+      });
       
       return res.status(200).json({
         success: true,
