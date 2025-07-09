@@ -18308,6 +18308,11 @@ async function createFuelRequestNotification(fuelRequest) {
   // Servir arquivos estáticos para uploads
   app.use('/uploads', express.static('uploads'));
 
+  // Test fuel card form
+  app.get('/test-fuel-card', (req, res) => {
+    res.sendFile(path.join(__dirname, '../test-fuel-card-form.html'));
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

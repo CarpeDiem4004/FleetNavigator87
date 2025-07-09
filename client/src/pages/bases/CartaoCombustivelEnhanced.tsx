@@ -853,6 +853,11 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                           type="submit" 
                           disabled={createRequestMutation.isPending}
                           className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-medium"
+                          onClick={() => {
+                            console.log('[FUEL-CARD-BUTTON] Botão clicado');
+                            console.log('[FUEL-CARD-BUTTON] Form state:', form.formState);
+                            console.log('[FUEL-CARD-BUTTON] Form values:', form.getValues());
+                          }}
                         >
                           <CreditCard className="w-4 h-4 mr-2" />
                           {createRequestMutation.isPending ? 'Enviando...' : 'Solicitar Recarga'}
