@@ -185,6 +185,7 @@ import PartnerLogin from "@/pages/partner-login";
 import PartnerDashboard from "@/pages/partner-dashboard";
 import FuelCardRedirect from "@/components/FuelCardRedirect";
 import MaintenanceSystem from "@/pages/maintenance";
+import TestLogout from "@/pages/TestLogout";
 
 function App() {
   // Ativar o hook de injeção automática de token JWT em todas as requisições fetch
@@ -214,6 +215,9 @@ function App() {
             </Route>
             <Route path="/acesso-negado">
               <AccessDeniedPage />
+            </Route>
+            <Route path="/test-logout">
+              <TestLogout />
             </Route>
             
             {/* Componentes de redirecionamento para usuários específicos */}
