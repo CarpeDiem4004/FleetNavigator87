@@ -117,6 +117,13 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 9, 2025: Implemented conditional "Dados específicos do cartão" field
+  - Added field that appears only when "Cartão específico por número" is selected
+  - Implemented validation requiring specific card data when option is chosen
+  - Updated form schema with conditional validation rules
+  - Enhanced user interface with dynamic field display
+  - Removed duplicate "Horário de Preferência para Abastecimento" field, keeping only "Horário de Abastecimento"
+
 - July 9, 2025: Restored all projects in the system
   - Reactivated all 19 projects after temporary filtering
   - System now includes all original projects: COCA-COLA, FMS09, FULL MELI, GRUPO PEREIRA, LINE HALL, MERCADO LIVRE, PETLOVE, SHOPEE, XPT, Line Hall Shopee, MADEIRA MADEIRA, MARISTELA INDUSTRIA, OXXO, PRIMO BASILE, Manutenção, Manutenção Preventiva, Reparo de Emergência, Revisão Geral, Uso Operacional

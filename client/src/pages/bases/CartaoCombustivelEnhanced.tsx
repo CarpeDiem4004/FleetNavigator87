@@ -610,34 +610,6 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                         />
                       </div>
 
-                      {/* Horário de Preferência para Abastecimento */}
-                      <div className="mt-6">
-                        <FormField
-                          control={form.control}
-                          name="fuelTime"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="font-medium">Horário de Preferência para Abastecimento</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="bg-blue-50 border-blue-200 focus:border-blue-400">
-                                    <SelectValue placeholder="Selecione o horário preferido" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="Antes das 17h">Antes das 17h</SelectItem>
-                                  <SelectItem value="Após as 18h">Após as 18h</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormDescription className="text-xs text-gray-500">
-                                Horário preferido para realizar o abastecimento
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
                       {/* Horário de Abastecimento */}
                       <div className="mt-6">
                         <FormField
@@ -653,8 +625,8 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="antes_17h">Antes das 17h</SelectItem>
-                                  <SelectItem value="apos_18h">Após as 18h</SelectItem>
+                                  <SelectItem value="Antes das 17h">Antes das 17h</SelectItem>
+                                  <SelectItem value="Após as 18h">Após as 18h</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormDescription className="text-xs text-gray-500">
