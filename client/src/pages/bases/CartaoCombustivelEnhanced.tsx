@@ -113,6 +113,7 @@ const fuelCardRequestSchema = z.object({
   amount: z.number().min(10, { message: 'Valor mínimo é R$ 10,00' }).max(5000, { message: 'Valor máximo é R$ 5.000,00' }),
   provider: z.string().min(1, { message: 'Provedor do cartão é obrigatório' }),
   fuelType: z.string().min(1, { message: 'Tipo de combustível é obrigatório' }),
+  fuelTime: z.string().min(1, { message: 'Horário de abastecimento é obrigatório' }),
   driverName: z.string().min(2, { message: 'Nome do motorista é obrigatório' }),
   driverPhone: z.string().min(10, { message: 'Telefone deve ter pelo menos 10 dígitos' }),
   projectId: z.number().min(1, { message: 'Projeto é obrigatório' }),
@@ -146,6 +147,7 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
       amount: 0,
       provider: '',
       fuelType: '',
+      fuelTime: '',
       driverName: '',
       driverPhone: '',
       projectId: 0,
@@ -267,7 +269,8 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
     );
   };
 
-  const formatPhone = (phone: string) => {
+  const formatPhone = (phone: string | undefined) => {
+    if (!phone) return '';
     const cleaned = phone.replace(/\D/g, '');
     if (cleaned.length === 11) {
       return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
@@ -471,10 +474,6 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                                 <SelectContent>
                                   <SelectItem value="Ticket">Ticket</SelectItem>
                                   <SelectItem value="Alelo">Alelo</SelectItem>
-                                  <SelectItem value="VR">VR</SelectItem>
-                                  <SelectItem value="Shell">Shell</SelectItem>
-                                  <SelectItem value="Ipiranga">Ipiranga</SelectItem>
-                                  <SelectItem value="Petrobras">Petrobras</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormDescription className="text-xs text-gray-500">
@@ -506,6 +505,34 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                               </Select>
                               <FormDescription className="text-xs text-gray-500">
                                 Tipo de combustível para o veículo
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Horário de Abastecimento */}
+                      <div className="mt-6">
+                        <FormField
+                          control={form.control}
+                          name="fuelTime"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-medium">Horário de Abastecimento</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="bg-blue-50 border-blue-200 focus:border-blue-400">
+                                    <SelectValue placeholder="Selecione o horário" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="antes_17h">Antes das 17h</SelectItem>
+                                  <SelectItem value="apos_18h">Após as 18h</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormDescription className="text-xs text-gray-500">
+                                Escolha o horário preferido para abastecimento
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
