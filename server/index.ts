@@ -460,6 +460,40 @@ app.use((req, res, next) => {
     }
   });
 
+  // Add project-bases relationship API
+  app.get('/api/project-bases', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const query = `
+        SELECT pb.project_id, pb.base_name, pb.base_code, pb.description, pb.is_active,
+               p.name as project_name, b.id as base_id, b.name as base_full_name
+        FROM project_bases pb 
+        JOIN projects p ON pb.project_id = p.id
+        LEFT JOIN bases b ON pb.base_name = b.name OR pb.base_code = b.basename
+        WHERE pb.is_active = true 
+        ORDER BY p.name, pb.base_name
+      `;
+      const result = await pool.query(query);
+      
+      console.log('Project-Bases API - Found', result.rows.length, 'relationships');
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error) {
+      console.error('Project-Bases API - Error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching project-base relationships',
+        error: error.message
+      });
+    }
+  });
+
   // Add DELETE endpoint for drivers
   app.delete('/api/drivers/:id', async (req, res) => {
     try {

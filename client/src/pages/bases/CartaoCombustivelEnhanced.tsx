@@ -189,6 +189,14 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
     },
   });
 
+  const { data: projectBases, isLoading: projectBasesLoading, error: projectBasesError } = useQuery({
+    queryKey: ['/api/project-bases'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/project-bases');
+      return response.json();
+    },
+  });
+
   // Debug logging to see what data is being returned
   console.log('Projects data:', projects);
   console.log('Projects error:', projectsError);
@@ -196,6 +204,41 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
   console.log('Bases data:', bases);
   console.log('Bases error:', basesError);
   console.log('Bases loading:', basesLoading);
+  console.log('Project-Bases data:', projectBases);
+  console.log('Project-Bases error:', projectBasesError);
+  console.log('Project-Bases loading:', projectBasesLoading);
+
+  // Watch for project selection changes
+  const selectedProjectId = form.watch('projectId');
+  
+  // Filter bases based on selected project
+  const filteredBases = React.useMemo(() => {
+    if (!bases?.data || !selectedProjectId || !projectBases?.data) {
+      return bases?.data || [];
+    }
+    
+    // Get base IDs that belong to the selected project
+    const projectBaseIds = projectBases.data
+      .filter((pb: any) => pb.project_id === selectedProjectId && pb.base_id)
+      .map((pb: any) => pb.base_id);
+    
+    // Also check for base names that match (fallback)
+    const projectBaseNames = projectBases.data
+      .filter((pb: any) => pb.project_id === selectedProjectId)
+      .map((pb: any) => pb.base_name);
+    
+    // Filter bases that belong to the selected project
+    return bases.data.filter((base: Base) => {
+      return projectBaseIds.includes(base.id) || projectBaseNames.includes(base.name);
+    });
+  }, [bases?.data, selectedProjectId, projectBases?.data]);
+
+  // Reset base selection when project changes
+  React.useEffect(() => {
+    if (selectedProjectId) {
+      form.setValue('baseId', 0); // Reset base selection
+    }
+  }, [selectedProjectId, form]);
 
   // Mutations
   const createRequestMutation = useMutation({
@@ -530,6 +573,34 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                         />
                       </div>
 
+                      {/* Horário de Preferência para Abastecimento */}
+                      <div className="mt-6">
+                        <FormField
+                          control={form.control}
+                          name="fuelTime"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-medium">Horário de Preferência para Abastecimento</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="bg-blue-50 border-blue-200 focus:border-blue-400">
+                                    <SelectValue placeholder="Selecione o horário preferido" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="Antes das 17h">Antes das 17h</SelectItem>
+                                  <SelectItem value="Após as 18h">Após as 18h</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormDescription className="text-xs text-gray-500">
+                                Horário preferido para realizar o abastecimento
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
                       {/* Horário de Abastecimento */}
                       <div className="mt-6">
                         <FormField
@@ -665,12 +736,16 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                                 <SelectContent>
                                   {basesLoading ? (
                                     <SelectItem value="loading" disabled>Carregando bases...</SelectItem>
-                                  ) : bases?.data?.length > 0 ? (
-                                    bases.data.map((base: Base) => (
+                                  ) : selectedProjectId && filteredBases?.length > 0 ? (
+                                    filteredBases.map((base: Base) => (
                                       <SelectItem key={base.id} value={base.id.toString()}>
                                         {base.name}
                                       </SelectItem>
                                     ))
+                                  ) : selectedProjectId && filteredBases?.length === 0 ? (
+                                    <SelectItem value="empty" disabled>Nenhuma base encontrada para este projeto</SelectItem>
+                                  ) : !selectedProjectId ? (
+                                    <SelectItem value="empty" disabled>Selecione um projeto primeiro</SelectItem>
                                   ) : (
                                     <SelectItem value="empty" disabled>Nenhuma base encontrada</SelectItem>
                                   )}
