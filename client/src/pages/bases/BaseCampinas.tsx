@@ -195,6 +195,29 @@ const BaseCampinas: React.FC = () => {
           </CardFooter>
         </Card>
 
+        {/* Card de Cartão Combustível */}
+        <Card className="shadow-md hover:shadow-lg transition-shadow">
+          <CardHeader className="bg-cyan-50 pb-2">
+            <CardTitle className="flex items-center text-cyan-700">
+              <CreditCard className="w-5 h-5 mr-2" />
+              Cartão Combustível
+            </CardTitle>
+            <CardDescription>Solicitação de saldo e histórico</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <p className="text-gray-600">
+              Solicite recarga de saldo para cartões de combustível e acompanhe o histórico de solicitações e operações.
+            </p>
+          </CardContent>
+          <CardFooter className="border-t pt-4 flex justify-end">
+            <Link href="/bases/campinas/cartao-combustivel">
+              <Button variant="outline" className="flex items-center text-cyan-600 hover:text-cyan-800">
+                Gerenciar Cartão <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
+
         {/* Card de Manutenção de Frota */}
         <Card className="shadow-md hover:shadow-lg transition-shadow">
           <CardHeader className="bg-orange-50 pb-2">

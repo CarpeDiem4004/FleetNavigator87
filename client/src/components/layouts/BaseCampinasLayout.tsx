@@ -1,27 +1,20 @@
-import React, { ReactNode } from 'react';
-import { useLocation } from 'wouter';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import React from 'react';
 
 interface BaseCampinasLayoutProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 const BaseCampinasLayout: React.FC<BaseCampinasLayoutProps> = ({ children }) => {
-  const [location, navigate] = useLocation();
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center mb-6">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate('/bases/campinas')}
-          className="mr-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar
-        </Button>
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center text-sm text-gray-600">
+            <span>Sistema de Gestão de Frotas</span>
+            <span className="mx-2">→</span>
+            <span>Base Campinas</span>
+          </div>
+        </div>
       </div>
       {children}
     </div>

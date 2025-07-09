@@ -147,6 +147,8 @@ import SinistrosCampinas from "@/pages/bases/SinistrosCampinas";
 import SolicitacaoPneusCampinas from "@/pages/bases/SolicitacaoPneusCampinas";
 import SolicitacaoOrcamentoCampinas from "@/pages/bases/SolicitacaoOrcamentoCampinas";
 import ManutencaoFrotaCampinas from "@/pages/bases/ManutencaoFrotaCampinas";
+import CartaoCombustivelCampinas from "@/pages/bases/CartaoCombustivelCampinas";
+import CartaoCombustivelCampinasExterno from "@/pages/bases/external/CartaoCombustivelCampinasExterno";
 
 // Importação das páginas da Base Goiânia
 import BaseGoiania from "@/pages/bases/BaseGoiania";
@@ -266,6 +268,10 @@ function App() {
           <ProtectedRoute path="/bases/campinas/solicitacao-pneus" component={SolicitacaoPneusCampinas} />
           <ProtectedRoute path="/bases/campinas/solicitacao-orcamento" component={SolicitacaoOrcamentoCampinas} />
           <ProtectedRoute path="/bases/campinas/manutencao-frota" component={ManutencaoFrotaCampinas} />
+          <ProtectedRoute path="/bases/campinas/cartao-combustivel" component={CartaoCombustivelCampinas} />
+          
+          {/* Rotas externas públicas - Base Campinas */}
+          <Route path="/bases/campinas/external/cartao-combustivel" component={CartaoCombustivelCampinasExterno} />
           
           {/* Rotas para a Base Goiânia */}
           <ProtectedRoute path="/bases/goiania" component={BaseGoiania} />

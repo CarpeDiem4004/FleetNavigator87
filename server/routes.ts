@@ -3853,6 +3853,258 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Public API without authentication for external posto links
   app.get('/api/public/projects-with-bases', getProjectsWithBases);
 
+  // API endpoints for Campinas fuel card management
+  
+  // GET - Obter solicitações de cartão combustível por base
+  app.get('/api/fuel-card/base/:baseId', isAuthenticated, async (req, res) => {
+    try {
+      const { baseId } = req.params;
+      const user = req.user as any;
+      
+      const query = `
+        SELECT fcr.*, b.name as base_name
+        FROM fuel_card_requests fcr
+        LEFT JOIN bases b ON fcr.base_id = b.id
+        WHERE fcr.base_id = $1
+        ORDER BY fcr.requested_at DESC
+      `;
+      
+      const result = await pool.query(query, [baseId]);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar solicitações por base:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar solicitações por base',
+        error: error.message
+      });
+    }
+  });
+
+  // GET - Obter cartões combustível por base
+  app.get('/api/fuel-cards/base/:baseId', isAuthenticated, async (req, res) => {
+    try {
+      const { baseId } = req.params;
+      
+      // Simular dados de cartões (implementar com dados reais posteriormente)
+      const mockCards = [
+        {
+          id: 1,
+          cardNumber: '1234567890',
+          cardType: 'Visa Fleet',
+          plate: 'ABC1234',
+          currentBalance: 1500.00,
+          lastUpdate: new Date().toISOString(),
+          status: 'ativo'
+        },
+        {
+          id: 2,
+          cardNumber: '0987654321',
+          cardType: 'Ticket Car',
+          plate: 'DEF5678',
+          currentBalance: 800.50,
+          lastUpdate: new Date().toISOString(),
+          status: 'ativo'
+        }
+      ];
+      
+      return res.status(200).json({
+        success: true,
+        data: mockCards,
+        count: mockCards.length
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar cartões por base:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar cartões por base',
+        error: error.message
+      });
+    }
+  });
+
+  // POST - Criar nova solicitação de cartão combustível
+  app.post('/api/fuel-card/request', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { plate, cardNumber, amount, reason, baseId, baseName } = req.body;
+      
+      // Validações básicas
+      if (!plate || !cardNumber || !amount || !reason) {
+        return res.status(400).json({
+          success: false,
+          message: 'Todos os campos são obrigatórios'
+        });
+      }
+      
+      if (amount < 10 || amount > 5000) {
+        return res.status(400).json({
+          success: false,
+          message: 'Valor deve estar entre R$ 10,00 e R$ 5.000,00'
+        });
+      }
+      
+      // Criar a solicitação
+      const query = `
+        INSERT INTO fuel_card_requests (
+          plate, card_number, amount, reason, requested_by, 
+          base_id, status, requested_at, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'pendente', NOW(), NOW(), NOW())
+        RETURNING *
+      `;
+      
+      const result = await pool.query(query, [
+        plate, cardNumber, amount, reason, user.name, baseId
+      ]);
+      
+      return res.status(201).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Solicitação criada com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao criar solicitação:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao criar solicitação',
+        error: error.message
+      });
+    }
+  });
+
+  // Public API endpoints for external access (no authentication required)
+  
+  // GET - Obter solicitações públicas da base Campinas (últimas 20)
+  app.get('/api/public/fuel-card/campinas', async (req, res) => {
+    try {
+      const query = `
+        SELECT fcr.*, b.name as base_name
+        FROM fuel_card_requests fcr
+        LEFT JOIN bases b ON fcr.base_id = b.id
+        WHERE fcr.base_id = 2
+        ORDER BY fcr.requested_at DESC
+        LIMIT 20
+      `;
+      
+      const result = await pool.query(query);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar solicitações públicas:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar solicitações públicas',
+        error: error.message
+      });
+    }
+  });
+
+  // GET - Obter cartões públicos da base Campinas
+  app.get('/api/public/fuel-cards/campinas', async (req, res) => {
+    try {
+      // Simular dados de cartões para acesso público
+      const mockCards = [
+        {
+          id: 1,
+          cardNumber: '****567890',
+          cardType: 'Visa Fleet',
+          plate: 'CAM1234',
+          currentBalance: 1500.00,
+          lastUpdate: new Date().toISOString(),
+          status: 'ativo'
+        },
+        {
+          id: 2,
+          cardNumber: '****654321',
+          cardType: 'Ticket Car',
+          plate: 'CAM5678',
+          currentBalance: 800.50,
+          lastUpdate: new Date().toISOString(),
+          status: 'ativo'
+        },
+        {
+          id: 3,
+          cardNumber: '****123456',
+          cardType: 'Alelo Frotas',
+          plate: 'CAM9012',
+          currentBalance: 2200.75,
+          lastUpdate: new Date().toISOString(),
+          status: 'ativo'
+        }
+      ];
+      
+      return res.status(200).json({
+        success: true,
+        data: mockCards,
+        count: mockCards.length
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar cartões públicos:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar cartões públicos',
+        error: error.message
+      });
+    }
+  });
+
+  // POST - Criar solicitação pública (sem autenticação)
+  app.post('/api/public/fuel-card/request', async (req, res) => {
+    try {
+      const { plate, cardNumber, amount, reason, requestedBy, baseId, baseName } = req.body;
+      
+      // Validações básicas
+      if (!plate || !cardNumber || !amount || !reason || !requestedBy) {
+        return res.status(400).json({
+          success: false,
+          message: 'Todos os campos são obrigatórios'
+        });
+      }
+      
+      if (amount < 10 || amount > 5000) {
+        return res.status(400).json({
+          success: false,
+          message: 'Valor deve estar entre R$ 10,00 e R$ 5.000,00'
+        });
+      }
+      
+      // Criar a solicitação
+      const query = `
+        INSERT INTO fuel_card_requests (
+          plate, card_number, amount, reason, requested_by, 
+          base_id, status, requested_at, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'pendente', NOW(), NOW(), NOW())
+        RETURNING *
+      `;
+      
+      const result = await pool.query(query, [
+        plate, cardNumber, amount, reason, requestedBy, baseId || 2
+      ]);
+      
+      return res.status(201).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Solicitação criada com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao criar solicitação pública:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao criar solicitação pública',
+        error: error.message
+      });
+    }
+  });
+
   // GET - Obter detalhes de uma solicitação específica
   app.get('/api/fuel-card/:id', isAuthenticated, async (req, res) => {
     try {
