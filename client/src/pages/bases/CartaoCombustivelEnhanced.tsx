@@ -145,6 +145,20 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
   const [location, navigate] = useLocation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<FuelCardRequest | null>(null);
+  
+  // Debug: Verificar se está autenticado
+  useEffect(() => {
+    console.log('[FUEL-CARD-ENHANCED] Verificando autenticação...');
+    console.log('[FUEL-CARD-ENHANCED] Usuário:', user);
+    console.log('[FUEL-CARD-ENHANCED] BaseId:', baseId);
+    console.log('[FUEL-CARD-ENHANCED] BaseName:', baseName);
+    
+    if (!user) {
+      console.log('[FUEL-CARD-ENHANCED] Usuário não autenticado, redirecionando para login...');
+      navigate('/login');
+      return;
+    }
+  }, [user, baseId, baseName, navigate]);
 
   // Form para nova solicitação
   const form = useForm<FuelCardRequestFormData>({
