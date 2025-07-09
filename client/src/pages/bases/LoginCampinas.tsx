@@ -32,6 +32,15 @@ const LoginCampinas: React.FC = () => {
     }
   });
 
+  // Limpar tokens automáticos ao acessar a página de login
+  useEffect(() => {
+    // Limpar tokens que podem estar causando login automático
+    localStorage.removeItem('useEmergencyAuth');
+    localStorage.removeItem('emergencyToken');
+    localStorage.removeItem('authToken');
+    console.log('Tokens automáticos limpos na página de login');
+  }, []);
+
   // Redirecionar se já estiver autenticado
   useEffect(() => {
     if (user && !authLoading) {

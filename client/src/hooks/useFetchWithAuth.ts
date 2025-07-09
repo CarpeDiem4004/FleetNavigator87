@@ -11,6 +11,13 @@ export function useFetchWithAuth() {
   
   // Função para obter o token JWT da sessão Supabase, localStorage ou novo endpoint de JWT
   const getAuthToken = useCallback(async (): Promise<string | null> => {
+    // Verificar se estamos em uma página de login - se sim, não fazer autenticação automática
+    const currentPath = window.location.pathname;
+    if (currentPath.includes('/login') || currentPath.includes('/register')) {
+      console.log('[FetchWithAuth] Página de login detectada, pulando autenticação automática');
+      return null;
+    }
+    
     // Flag de emergência para autenticação alternativa - salva em localStorage para persistência
     const useEmergencyAuth = localStorage.getItem('useEmergencyAuth') === 'true' || false;
     
@@ -108,8 +115,8 @@ export function useFetchWithAuth() {
       }
     }
     
-    // Se todas as tentativas anteriores falharam, ativar modo de emergência
-    if (!useEmergencyAuth) {
+    // Se todas as tentativas anteriores falharam, ativar modo de emergência (apenas se não estamos numa página de login)
+    if (!useEmergencyAuth && !currentPath.includes('/login') && !currentPath.includes('/register')) {
       console.log('[FetchWithAuth] Ativando modo de autenticação de emergência');
       localStorage.setItem('useEmergencyAuth', 'true');
     }
