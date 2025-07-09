@@ -28,6 +28,10 @@ export async function getProjects(req: Request, res: Response) {
     
     const result = await pool.query(query);
     
+    console.log(`[DEBUG] getProjects - Query executada: ${query}`);
+    console.log(`[DEBUG] getProjects - Resultados encontrados: ${result.rows.length}`);
+    console.log(`[DEBUG] getProjects - Projetos ativos:`, result.rows.map(p => `${p.id}: ${p.name} (${p.is_active})`));
+    
     return res.status(200).json({
       success: true,
       data: result.rows,

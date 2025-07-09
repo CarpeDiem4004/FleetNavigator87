@@ -4137,11 +4137,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // GET - Obter projetos para o fuel card system
+  // GET - Obter projetos para o fuel card system (usando filtro is_active = true)
   app.get('/api/projects', async (req, res) => {
     try {
-      const query = 'SELECT id, name, description FROM projects ORDER BY name';
+      const query = 'SELECT id, name, description, is_active FROM projects WHERE is_active = true ORDER BY name';
       const result = await pool.query(query);
+      
+
       
       return res.status(200).json({
         success: true,
@@ -9744,7 +9746,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Rotas para projetos e bases
-  app.get('/api/projects', isAuthenticatedHybrid, getProjects);
+  // app.get('/api/projects', isAuthenticatedHybrid, getProjects); // Comentado - usando endpoint na linha 4141
   app.get('/api/projects/:projectId/bases', isAuthenticatedHybrid, getProjectBases);
   app.get('/api/projects-with-bases', getProjectsWithBasesPublic); // Rota pública para formulários de postos
   app.get('/api/public/projects-with-bases', getProjectsWithBasesPublic); // Endpoint público para postos externos
