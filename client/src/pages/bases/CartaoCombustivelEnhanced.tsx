@@ -245,6 +245,12 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
   console.log('[FUEL-CARD-REQUESTS] Requests data:', requests);
   console.log('[FUEL-CARD-REQUESTS] Requests loading:', requestsLoading);
   console.log('[FUEL-CARD-REQUESTS] Requests array length:', requests?.data?.length);
+  
+  // Force render debug
+  React.useEffect(() => {
+    console.log('[FUEL-CARD-COMPONENT] Componente renderizado');
+    console.log('[FUEL-CARD-COMPONENT] Requests disponíveis:', requests?.data?.length || 0);
+  }, [requests]);
 
   // Watch for project selection changes
   const selectedProjectId = form.watch('projectId');
@@ -987,40 +993,31 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {(() => {
-                  console.log('[FUEL-CARD-RENDER] Renderizando CardContent');
-                  console.log('[FUEL-CARD-RENDER] Loading:', requestsLoading);
-                  console.log('[FUEL-CARD-RENDER] Requests data:', requests?.data);
-                  console.log('[FUEL-CARD-RENDER] Requests length:', requests?.data?.length);
+                <div className="text-center py-8">
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    <strong>TESTE DE RENDERIZAÇÃO</strong>
+                    <p>Loading: {requestsLoading ? 'SIM' : 'NÃO'}</p>
+                    <p>Requests data: {requests?.data ? 'EXISTE' : 'NULL'}</p>
+                    <p>Requests length: {requests?.data?.length || 0}</p>
+                  </div>
                   
-                  if (requestsLoading) {
-                    console.log('[FUEL-CARD-RENDER] Mostrando loading...');
-                    return (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="text-gray-500">Carregando solicitações...</div>
-                      </div>
-                    );
-                  }
+                  {requestsLoading && (
+                    <div className="text-gray-500 py-4">
+                      Carregando solicitações...
+                    </div>
+                  )}
                   
-                  if (!requests?.data || requests.data.length === 0) {
-                    console.log('[FUEL-CARD-RENDER] Nenhuma solicitação encontrada');
-                    return (
-                      <div className="text-center py-8 text-gray-500">
-                        Nenhuma solicitação encontrada
-                        <div className="text-xs mt-2">
-                          Debug: requests={JSON.stringify(requests?.data || null)}
-                        </div>
-                      </div>
-                    );
-                  }
+                  {!requestsLoading && (!requests?.data || requests.data.length === 0) && (
+                    <div className="text-gray-500 py-4">
+                      Nenhuma solicitação encontrada
+                    </div>
+                  )}
                   
-                  console.log('[FUEL-CARD-RENDER] Renderizando tabela com', requests.data.length, 'solicitações');
-                  
-                  return (
+                  {!requestsLoading && requests?.data && requests.data.length > 0 && (
                     <div className="overflow-x-auto">
-                      <div className="mb-4 p-4 bg-blue-50 rounded">
-                        <h3 className="font-medium">Debug: {requests.data.length} solicitações encontradas</h3>
-                        <p className="text-sm text-gray-600">
+                      <div className="mb-4 p-4 bg-green-50 rounded">
+                        <h3 className="font-medium text-green-800">✓ {requests.data.length} solicitações encontradas</h3>
+                        <p className="text-sm text-green-600">
                           Primeira solicitação: {requests.data[0]?.plate} - {requests.data[0]?.status}
                         </p>
                       </div>
@@ -1028,6 +1025,7 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                       <table className="w-full border-collapse border border-gray-300">
                         <thead>
                           <tr className="bg-gray-100">
+                            <th className="border border-gray-300 p-2">ID</th>
                             <th className="border border-gray-300 p-2">Placa</th>
                             <th className="border border-gray-300 p-2">Motorista</th>
                             <th className="border border-gray-300 p-2">Valor</th>
@@ -1037,33 +1035,31 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                           </tr>
                         </thead>
                         <tbody>
-                          {requests.data.map((request: FuelCardRequest, index: number) => {
-                            console.log('[FUEL-CARD-RENDER] Renderizando linha', index, request);
-                            return (
-                              <tr key={request.id} className="hover:bg-gray-50">
-                                <td className="border border-gray-300 p-2 font-medium">{request.plate}</td>
-                                <td className="border border-gray-300 p-2">{request.driverName || request.driver_name || 'N/A'}</td>
-                                <td className="border border-gray-300 p-2">{formatCurrency(request.amount)}</td>
-                                <td className="border border-gray-300 p-2">{getStatusBadge(request.status)}</td>
-                                <td className="border border-gray-300 p-2">{formatDate(request.requestedAt || request.requested_at)}</td>
-                                <td className="border border-gray-300 p-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setSelectedRequest(request)}
-                                  >
-                                    <Eye size={14} className="mr-1" />
-                                    Ver
-                                  </Button>
-                                </td>
-                              </tr>
-                            );
-                          })}
+                          {requests.data.map((request: FuelCardRequest, index: number) => (
+                            <tr key={request.id} className="hover:bg-gray-50">
+                              <td className="border border-gray-300 p-2 text-sm">{request.id}</td>
+                              <td className="border border-gray-300 p-2 font-medium">{request.plate}</td>
+                              <td className="border border-gray-300 p-2">{request.driverName || request.driver_name || 'N/A'}</td>
+                              <td className="border border-gray-300 p-2">{formatCurrency(request.amount)}</td>
+                              <td className="border border-gray-300 p-2">{getStatusBadge(request.status)}</td>
+                              <td className="border border-gray-300 p-2">{formatDate(request.requestedAt || request.requested_at)}</td>
+                              <td className="border border-gray-300 p-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setSelectedRequest(request)}
+                                >
+                                  <Eye size={14} className="mr-1" />
+                                  Ver
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
                     </div>
-                  );
-                })()}
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
