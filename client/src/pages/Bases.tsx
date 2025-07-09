@@ -109,16 +109,27 @@ export default function BasesPage() {
   // Query para buscar as bases
   const { data: bases, isLoading, refetch } = useQuery<Base[]>({
     queryKey: ['/api/bases'],
-    queryFn: () => apiRequest('GET', '/api/bases').then(res => res.json()),
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/bases');
+      const data = await res.json();
+      
+      // Garantir que sempre retorna um array
+      if (data && data.success && Array.isArray(data.data)) {
+        return data.data;
+      }
+      
+      // Se a resposta não estiver no formato esperado, retorna array vazio
+      return [];
+    },
   });
   
   // Obter as operações cadastradas no sistema
   const existingOperations = React.useMemo(() => {
-    if (!bases) return [];
+    if (!bases || !Array.isArray(bases)) return [];
     
     // Filtrar bases que têm operação definida e são do tipo operacao
     const operations = bases
-      .filter(base => base.operation && base.type === 'operacao')
+      .filter(base => base && base.operation && base.type === 'operacao')
       .map(base => base.operation)
       .filter((operation): operation is string => operation !== null && operation !== undefined && operation !== '');
       
