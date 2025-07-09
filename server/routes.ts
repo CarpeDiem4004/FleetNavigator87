@@ -3940,15 +3940,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount, 
         provider, 
         fuelType, 
+        fuelTime,
         driverName, 
         driverPhone, 
         projectId, 
         baseId, 
-        reason 
+        reason,
+        specificCardData
       } = req.body;
+      
+      console.log('[FUEL-CARD-REQUEST] Dados recebidos:', {
+        plate, odometer, cardNumber, cardType, amount, provider, fuelType,
+        fuelTime, driverName, driverPhone, projectId, baseId, reason,
+        specificCardData, user: user?.name
+      });
       
       // Validações básicas
       if (!plate || !cardNumber || !amount || !reason) {
+        console.log('[FUEL-CARD-REQUEST] Validação falhada - campos obrigatórios:', {
+          plate: !!plate, cardNumber: !!cardNumber, amount: !!amount, reason: !!reason
+        });
         return res.status(400).json({
           success: false,
           message: 'Todos os campos são obrigatórios'
@@ -3956,6 +3967,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (amount < 10 || amount > 5000) {
+        console.log('[FUEL-CARD-REQUEST] Validação falhada - valor inválido:', amount);
         return res.status(400).json({
           success: false,
           message: 'Valor deve estar entre R$ 10,00 e R$ 5.000,00'
@@ -3970,29 +3982,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const projectQuery = 'SELECT name FROM projects WHERE id = $1';
         const projectResult = await pool.query(projectQuery, [projectId]);
         projectName = projectResult.rows[0]?.name || '';
+        console.log('[FUEL-CARD-REQUEST] Projeto encontrado:', projectName);
       }
       
       if (baseId) {
         const baseQuery = 'SELECT name FROM bases WHERE id = $1';
         const baseResult = await pool.query(baseQuery, [baseId]);
         baseName = baseResult.rows[0]?.name || '';
+        console.log('[FUEL-CARD-REQUEST] Base encontrada:', baseName);
       }
       
       // Criar a solicitação
       const query = `
         INSERT INTO fuel_card_requests (
-          plate, odometer, card_number, card_type, amount, provider, fuel_type,
+          plate, odometer, card_number, card_type, amount, provider, fuel_type, fuel_time,
           driver_name, driver_phone, project_id, project_name, base_id, base_name,
-          reason, requested_by, status, requested_at, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'pendente', NOW(), NOW(), NOW())
+          reason, requested_by, specific_card_data, status, requested_at, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'pendente', NOW(), NOW(), NOW())
         RETURNING *
       `;
       
+      console.log('[FUEL-CARD-REQUEST] Executando query INSERT...');
       const result = await pool.query(query, [
-        plate, odometer, cardNumber, cardType, amount, provider, fuelType,
+        plate, odometer, cardNumber, cardType, amount, provider, fuelType, fuelTime,
         driverName, driverPhone, projectId, projectName, baseId, baseName,
-        reason, user.name
+        reason, user.name, specificCardData
       ]);
+      
+      console.log('[FUEL-CARD-REQUEST] Solicitação criada com sucesso:', result.rows[0]);
       
       return res.status(201).json({
         success: true,
@@ -4000,7 +4017,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: 'Solicitação criada com sucesso'
       });
     } catch (error: any) {
-      console.error('Erro ao criar solicitação:', error);
+      console.error('[FUEL-CARD-REQUEST] Erro ao criar solicitação:', error);
       return res.status(500).json({
         success: false,
         message: 'Erro ao criar solicitação',
