@@ -117,12 +117,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
-- July 9, 2025: Implemented conditional "Dados específicos do cartão" field
-  - Added field that appears only when "Cartão específico por número" is selected
+- July 9, 2025: Enhanced fuel card request system with improved user experience
+  - Added conditional "Dados específicos do cartão" field that appears only when "Cartão específico por número" is selected
   - Implemented validation requiring specific card data when option is chosen
   - Updated form schema with conditional validation rules
   - Enhanced user interface with dynamic field display
   - Removed duplicate "Horário de Preferência para Abastecimento" field, keeping only "Horário de Abastecimento"
+  - Improved success message: "Solicitação enviada com sucesso! Sua solicitação foi enviada e está aguardando retorno da gestão de combustível"
+  - Confirmed "Solicitar Recarga" button functionality is working correctly
 
 - July 9, 2025: Restored all projects in the system
   - Reactivated all 19 projects after temporary filtering

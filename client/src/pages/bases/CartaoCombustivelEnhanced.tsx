@@ -263,8 +263,8 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
     },
     onSuccess: () => {
       toast({
-        title: 'Solicitação criada',
-        description: 'Sua solicitação de cartão combustível foi criada com sucesso.',
+        title: 'Solicitação enviada com sucesso!',
+        description: 'Sua solicitação foi enviada e está aguardando retorno da gestão de combustível. Você será notificado quando houver uma resposta.',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/fuel-card/requests'] });
       form.reset();
@@ -302,20 +302,6 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
   });
 
   const onSubmit = (data: FuelCardRequestFormData) => {
-    console.log('Dados do formulário:', data);
-    console.log('Erros do formulário:', form.formState.errors);
-    
-    // Adiciona validação extra para debugging
-    if (!data.baseId || data.baseId === 0) {
-      console.error('Base ID inválido:', data.baseId);
-      toast({
-        title: 'Erro de validação',
-        description: 'Por favor, selecione uma base válida.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
     createRequestMutation.mutate(data);
   };
 
