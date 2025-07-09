@@ -117,6 +117,16 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 9, 2025: Implemented specific login route for Base Campinas
+  - ✅ Created LoginCampinas.tsx component with Base Campinas branding
+  - ✅ Added /bases/campinas/login route to App.tsx
+  - ✅ Modified authentication middleware to redirect to base-specific login routes
+  - ✅ Fixed public routes configuration to prevent infinite redirect loops
+  - ✅ Base Campinas now has dedicated login page that maintains context
+  - ✅ After login, users are redirected back to /bases/campinas automatically
+  - ✅ Login page includes "Back to main system" button for navigation
+  - ✅ Test page created at /test-campinas-login for easy testing
+
 - July 9, 2025: Fixed logout functionality for base pages to maintain proper context
   - ✅ Custom logout implementation in BaseCampinasLayout.tsx
   - ✅ Logout button now redirects to /bases/campinas after logout

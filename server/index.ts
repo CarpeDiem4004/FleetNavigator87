@@ -1767,11 +1767,25 @@ app.use((req, res, next) => {
       '/posto/',
       '/executive-dashboard'
     ];
+
+    // Lista de rotas públicas que não precisam de autenticação
+    const publicRoutes = [
+      '/login',
+      '/register',
+      '/bases/campinas/login',
+      '/bases/goiania/login',
+      '/bases/alair/login',
+      '/test-logout',
+      '/test-campinas-login'
+    ];
+    
+    // Verificar se a rota atual é pública (não precisa de autenticação)
+    const isPublicRoute = publicRoutes.some(route => req.path === route);
     
     // Verificar se a rota atual é protegida
     const isProtectedRoute = protectedRoutes.some(route => 
       req.path.startsWith(route) && !req.path.includes('/external/') && !req.path.includes('/externo')
-    );
+    ) && !isPublicRoute;
     
     // Log para debug
     console.log(`[AUTH-MIDDLEWARE] Verificando rota: ${req.path} - Protegida: ${isProtectedRoute}`);
