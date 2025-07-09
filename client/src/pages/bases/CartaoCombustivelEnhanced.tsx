@@ -110,6 +110,7 @@ const fuelCardRequestSchema = z.object({
   odometer: z.number().min(0, { message: 'Quilometragem deve ser um número positivo' }),
   cardType: z.enum(['vinculado', 'especifico'], { message: 'Tipo de cartão é obrigatório' }),
   cardNumber: z.string().min(1, { message: 'Número do cartão é obrigatório' }),
+  specificCardData: z.string().optional(),
   amount: z.number().min(10, { message: 'Valor mínimo é R$ 10,00' }).max(5000, { message: 'Valor máximo é R$ 5.000,00' }),
   provider: z.string().min(1, { message: 'Provedor do cartão é obrigatório' }),
   fuelType: z.string().min(1, { message: 'Tipo de combustível é obrigatório' }),
@@ -119,6 +120,15 @@ const fuelCardRequestSchema = z.object({
   projectId: z.number().min(1, { message: 'Projeto é obrigatório' }),
   baseId: z.number().min(1, { message: 'Base é obrigatória' }),
   reason: z.string().min(10, { message: 'Observações devem ter pelo menos 10 caracteres' }),
+}).refine((data) => {
+  // Se cartão específico for selecionado, o campo specificCardData deve ser preenchido
+  if (data.cardType === 'especifico') {
+    return data.specificCardData && data.specificCardData.trim().length > 0;
+  }
+  return true;
+}, {
+  message: 'Dados específicos do cartão são obrigatórios quando "Cartão específico por número" é selecionado',
+  path: ['specificCardData'],
 });
 
 type FuelCardRequestFormData = z.infer<typeof fuelCardRequestSchema>;
@@ -144,6 +154,7 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
       odometer: 0,
       cardType: 'vinculado',
       cardNumber: '',
+      specificCardData: '',
       amount: 0,
       provider: '',
       fuelType: '',
@@ -517,6 +528,32 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                           )}
                         />
                       </div>
+
+                      {/* Campo condicional para dados específicos do cartão */}
+                      {form.watch('cardType') === 'especifico' && (
+                        <div className="mt-4">
+                          <FormField
+                            control={form.control}
+                            name="specificCardData"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-base font-medium">Dados específicos do cartão</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="Digite os dados específicos do cartão (número, código, etc.)"
+                                    {...field}
+                                    className="bg-blue-50 border-blue-200 focus:border-blue-400"
+                                  />
+                                </FormControl>
+                                <FormDescription className="text-xs text-gray-500">
+                                  Insira os dados específicos do cartão que será utilizado
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
 
                       {/* Provedor e Combustível */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
