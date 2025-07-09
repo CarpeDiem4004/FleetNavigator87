@@ -834,83 +834,114 @@ export async function createLineHallFuelCardRequest(req: Request, res: Response)
  */
 export async function exportFuelCardSolicitationsToExcel(req: Request, res: Response) {
   try {
-    // Buscar dados diretamente do banco em vez de receber via POST
-    const unifiedQuery = `
-      SELECT 
-        id,
-        placa,
-        motorista,
-        valor_solicitado,
-        km,
-        tipo_cartao,
-        numero_cartao,
-        provedor_cartao,
-        status,
-        data_solicitacao,
-        atendido_por,
-        data_atendimento,
-        observacoes,
-        'sistema_principal' as origem_tipo,
-        '' as veiculo_modelo,
-        '' as rota_origem,
-        '' as rota_destino,
-        '' as telefone_motorista,
-        '' as horario_abastecimento
-      FROM solicitacoes_fuel_card
-      
-      UNION ALL
-      
-      SELECT 
-        id,
-        veiculo_placa as placa,
-        motorista_nome as motorista,
-        valor_calculado::text as valor_solicitado,
-        km_total as km,
-        'vinculado' as tipo_cartao,
-        veiculo_placa as numero_cartao,
-        'Alelo' as provedor_cartao,
-        status,
-        created_at as data_solicitacao,
-        '' as atendido_por,
-        updated_at as data_atendimento,
-        '' as observacoes,
-        'line_hall' as origem_tipo,
-        veiculo_modelo,
-        rota_origem,
-        rota_destino,
-        telefone_motorista,
-        horario_abastecimento
-      FROM linehall_fuel_card_requests
-      
-      UNION ALL
-      
-      SELECT 
-        id,
-        placa,
-        motorista,
-        valor_solicitado,
-        km,
-        tipo_cartao,
-        numero_cartao,
-        provedor_cartao,
-        status,
-        data_solicitacao,
-        atendido_por,
-        data_atendimento,
-        observacoes,
-        'base_system' as origem_tipo,
-        '' as veiculo_modelo,
-        '' as rota_origem,
-        '' as rota_destino,
-        '' as telefone_motorista,
-        '' as horario_abastecimento
-      FROM fuel_card_requests
-      
-      ORDER BY data_solicitacao DESC
-    `;
+    // Buscar dados de cada tabela separadamente e depois unir
+    const allSolicitations = [];
     
-    const result = await pool.query(unifiedQuery);
-    const solicitations = result.rows;
+    // 1. Tabela tradicional (solicitacoes_fuel_card)
+    try {
+      const traditionalQuery = `
+        SELECT 
+          id::text as id,
+          placa,
+          motorista,
+          COALESCE(valor_solicitado::text, '0') as valor_solicitado,
+          COALESCE(km, 0) as km,
+          tipo_cartao,
+          numero_cartao,
+          provedor_cartao,
+          status,
+          data_solicitacao,
+          atendido_por,
+          data_atendimento,
+          observacoes,
+          'sistema_principal' as origem_tipo,
+          '' as veiculo_modelo,
+          '' as rota_origem,
+          '' as rota_destino,
+          '' as telefone_motorista,
+          '' as horario_abastecimento
+        FROM solicitacoes_fuel_card
+        ORDER BY data_solicitacao DESC
+      `;
+      
+      const traditionalResult = await pool.query(traditionalQuery);
+      allSolicitations.push(...traditionalResult.rows);
+    } catch (err) {
+      console.log('Tabela tradicional não encontrada ou erro:', err);
+    }
+    
+    // 2. Tabela Line Hall (linehall_fuel_card_requests)
+    try {
+      const lineHallQuery = `
+        SELECT 
+          id::text as id,
+          veiculo_placa as placa,
+          motorista_nome as motorista,
+          COALESCE(valor_calculado::text, '0') as valor_solicitado,
+          COALESCE(km_total, 0) as km,
+          'vinculado' as tipo_cartao,
+          veiculo_placa as numero_cartao,
+          'Alelo' as provedor_cartao,
+          status,
+          created_at as data_solicitacao,
+          '' as atendido_por,
+          updated_at as data_atendimento,
+          '' as observacoes,
+          'line_hall' as origem_tipo,
+          COALESCE(veiculo_modelo, '') as veiculo_modelo,
+          COALESCE(rota_origem, '') as rota_origem,
+          COALESCE(rota_destino, '') as rota_destino,
+          COALESCE(telefone_motorista, '') as telefone_motorista,
+          COALESCE(horario_abastecimento, '') as horario_abastecimento
+        FROM linehall_fuel_card_requests
+        ORDER BY created_at DESC
+      `;
+      
+      const lineHallResult = await pool.query(lineHallQuery);
+      allSolicitations.push(...lineHallResult.rows);
+    } catch (err) {
+      console.log('Tabela Line Hall não encontrada ou erro:', err);
+    }
+    
+    // 3. Tabela base system (fuel_card_requests)
+    try {
+      const baseSystemQuery = `
+        SELECT 
+          id::text as id,
+          placa,
+          motorista,
+          COALESCE(valor_solicitado::text, '0') as valor_solicitado,
+          COALESCE(km, 0) as km,
+          tipo_cartao,
+          numero_cartao,
+          provedor_cartao,
+          status,
+          data_solicitacao,
+          atendido_por,
+          data_atendimento,
+          observacoes,
+          'base_system' as origem_tipo,
+          '' as veiculo_modelo,
+          '' as rota_origem,
+          '' as rota_destino,
+          '' as telefone_motorista,
+          '' as horario_abastecimento
+        FROM fuel_card_requests
+        ORDER BY data_solicitacao DESC
+      `;
+      
+      const baseSystemResult = await pool.query(baseSystemQuery);
+      allSolicitations.push(...baseSystemResult.rows);
+    } catch (err) {
+      console.log('Tabela base system não encontrada ou erro:', err);
+    }
+    
+    // Ordenar por data
+    const solicitations = allSolicitations.sort((a, b) => {
+      const dateA = new Date(a.data_solicitacao);
+      const dateB = new Date(b.data_solicitacao);
+      return dateB.getTime() - dateA.getTime();
+    });
 
     // Preparar dados para Excel
     const excelData = solicitations.map((sol: any) => ({
