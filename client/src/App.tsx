@@ -276,12 +276,15 @@ function App() {
           
           {/* Rotas externas públicas - Base Campinas */}
           <Route path="/bases/campinas/external/cartao-combustivel" component={CartaoCombustivelCampinasExterno} />
+          <Route path="/posto/campinas/externo" component={CartaoCombustivelCampinasExterno} />
           
           {/* Rotas externas públicas - Base Goiânia */}
           <Route path="/bases/goiania/external/cartao-combustivel" component={CartaoCombustivelGoianiaExterno} />
+          <Route path="/posto/goiania/externo" component={CartaoCombustivelGoianiaExterno} />
           
           {/* Rotas externas públicas - Base Alair */}
           <Route path="/bases/alair/external/cartao-combustivel" component={CartaoCombustivelAlairExterno} />
+          <Route path="/posto/alair/externo" component={CartaoCombustivelAlairExterno} />
           
           {/* Rotas para a Base Goiânia */}
           <ProtectedRoute path="/bases/goiania" component={BaseGoiania} />
