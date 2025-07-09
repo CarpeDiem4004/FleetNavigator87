@@ -302,6 +302,20 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
   });
 
   const onSubmit = (data: FuelCardRequestFormData) => {
+    console.log('Dados do formulário:', data);
+    console.log('Erros do formulário:', form.formState.errors);
+    
+    // Adiciona validação extra para debugging
+    if (!data.baseId || data.baseId === 0) {
+      console.error('Base ID inválido:', data.baseId);
+      toast({
+        title: 'Erro de validação',
+        description: 'Por favor, selecione uma base válida.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     createRequestMutation.mutate(data);
   };
 
