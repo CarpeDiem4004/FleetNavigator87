@@ -159,41 +159,54 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
   // Queries
   const { data: requests, isLoading: requestsLoading } = useQuery({
     queryKey: ['/api/fuel-card/requests', baseId],
-    queryFn: () => apiRequest(`/api/fuel-card/requests?baseId=${baseId}`),
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/fuel-card/requests?baseId=${baseId}`);
+      return response.json();
+    },
   });
 
   const { data: fuelCards, isLoading: cardsLoading } = useQuery({
     queryKey: ['/api/fuel-cards', baseId],
-    queryFn: () => apiRequest(`/api/fuel-cards?baseId=${baseId}`),
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/fuel-cards?baseId=${baseId}`);
+      return response.json();
+    },
   });
 
-  const { data: projects, isLoading: projectsLoading } = useQuery({
+  const { data: projects, isLoading: projectsLoading, error: projectsError } = useQuery({
     queryKey: ['/api/projects'],
-    queryFn: () => apiRequest('/api/projects'),
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/projects');
+      return response.json();
+    },
   });
 
-  const { data: bases, isLoading: basesLoading } = useQuery({
+  const { data: bases, isLoading: basesLoading, error: basesError } = useQuery({
     queryKey: ['/api/bases'],
-    queryFn: () => apiRequest('/api/bases'),
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/bases');
+      return response.json();
+    },
   });
 
   // Debug logging to see what data is being returned
   console.log('Projects data:', projects);
-  console.log('Bases data:', bases);
+  console.log('Projects error:', projectsError);
   console.log('Projects loading:', projectsLoading);
+  console.log('Bases data:', bases);
+  console.log('Bases error:', basesError);
   console.log('Bases loading:', basesLoading);
 
   // Mutations
   const createRequestMutation = useMutation({
-    mutationFn: (data: FuelCardRequestFormData) => 
-      apiRequest('/api/fuel-card/request', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...data,
-          requestedBy: user?.name || 'Sistema',
-          baseId: baseId,
-        }),
-      }),
+    mutationFn: async (data: FuelCardRequestFormData) => {
+      const response = await apiRequest('POST', '/api/fuel-card/request', {
+        ...data,
+        requestedBy: user?.name || 'Sistema',
+        baseId: baseId,
+      });
+      return response.json();
+    },
     onSuccess: () => {
       toast({
         title: 'Solicitação criada',
@@ -213,11 +226,10 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
   });
 
   const updateRequestMutation = useMutation({
-    mutationFn: ({ id, action, reason }: { id: number; action: 'approve' | 'reject'; reason?: string }) =>
-      apiRequest(`/api/fuel-card/request/${id}/${action}`, {
-        method: 'POST',
-        body: JSON.stringify({ reason }),
-      }),
+    mutationFn: async ({ id, action, reason }: { id: number; action: 'approve' | 'reject'; reason?: string }) => {
+      const response = await apiRequest('POST', `/api/fuel-card/request/${id}/${action}`, { reason });
+      return response.json();
+    },
     onSuccess: () => {
       toast({
         title: 'Solicitação atualizada',
