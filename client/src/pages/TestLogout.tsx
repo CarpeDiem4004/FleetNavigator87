@@ -13,11 +13,17 @@ export default function TestLogout() {
       await logout();
       // Após o logout, redirecionar para /bases/campinas para testar o middleware
       setTimeout(() => {
-        setLocation('/bases/campinas');
+        // Forçar reload completo da página para garantir que o middleware seja testado
+        window.location.href = '/bases/campinas';
       }, 1000);
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
     }
+  };
+
+  const testDirectAccess = () => {
+    // Testar acesso direto sem logout
+    window.location.href = '/bases/campinas';
   };
 
   return (
@@ -44,12 +50,20 @@ export default function TestLogout() {
                   className="w-full"
                   variant="destructive"
                 >
-                  Fazer Logout
+                  Fazer Logout e Testar
+                </Button>
+                
+                <Button 
+                  onClick={testDirectAccess}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Testar Acesso Direto (Sem Logout)
                 </Button>
                 
                 <p className="text-xs text-gray-500">
-                  Após o logout, você será redirecionado para /bases/campinas
-                  e o sistema deve automaticamente te levar para a página de login.
+                  <strong>Teste 1:</strong> Primeiro botão faz logout e redireciona para /bases/campinas<br/>
+                  <strong>Teste 2:</strong> Segundo botão vai direto (deve funcionar pois você está logado)
                 </p>
               </div>
             </>
