@@ -235,6 +235,11 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
   console.log('Project-Bases data:', projectBases);
   console.log('Project-Bases error:', projectBasesError);
   console.log('Project-Bases loading:', projectBasesLoading);
+  
+  // Debug requests data
+  console.log('[FUEL-CARD-REQUESTS] Requests data:', requests);
+  console.log('[FUEL-CARD-REQUESTS] Requests loading:', requestsLoading);
+  console.log('[FUEL-CARD-REQUESTS] Requests array length:', requests?.data?.length);
 
   // Watch for project selection changes
   const selectedProjectId = form.watch('projectId');
@@ -387,21 +392,36 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
     createRequestMutation.mutate(data);
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
+  const formatCurrency = (value: number | string) => {
+    try {
+      const numValue = typeof value === 'string' ? parseFloat(value) : value;
+      if (isNaN(numValue)) return 'R$ 0,00';
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      }).format(numValue);
+    } catch (error) {
+      console.error('[FUEL-CARD-FORMAT] Erro ao formatar moeda:', error, value);
+      return 'R$ 0,00';
+    }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    try {
+      if (!dateString) return '-';
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      return date.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch (error) {
+      console.error('[FUEL-CARD-FORMAT] Erro ao formatar data:', error, dateString);
+      return '-';
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -413,6 +433,15 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
     };
 
     const config = statusConfig[status as keyof typeof statusConfig];
+    if (!config) {
+      console.warn('[FUEL-CARD-STATUS] Status desconhecido:', status);
+      return (
+        <Badge className="bg-gray-100 text-gray-800">
+          {status || 'Indefinido'}
+        </Badge>
+      );
+    }
+
     const Icon = config.icon;
 
     return (
@@ -960,6 +989,7 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                 ) : requests?.data?.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     Nenhuma solicitação encontrada
+                    {console.log('[FUEL-CARD-DEBUG] Requests data is empty or null:', requests)}
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -976,26 +1006,29 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {requests?.data?.map((request: FuelCardRequest) => (
-                          <TableRow key={request.id}>
-                            <TableCell className="font-medium">{request.plate}</TableCell>
-                            <TableCell>{request.driverName}</TableCell>
-                            <TableCell>{formatCurrency(request.amount)}</TableCell>
-                            <TableCell>{request.fuelType}</TableCell>
-                            <TableCell>{getStatusBadge(request.status)}</TableCell>
-                            <TableCell>{formatDate(request.requestedAt)}</TableCell>
-                            <TableCell>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setSelectedRequest(request)}
-                              >
-                                <Eye size={14} className="mr-1" />
-                                Ver
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {requests?.data?.map((request: FuelCardRequest) => {
+                          console.log('[FUEL-CARD-RENDER] Renderizando solicitação:', request);
+                          return (
+                            <TableRow key={request.id}>
+                              <TableCell className="font-medium">{request.plate}</TableCell>
+                              <TableCell>{request.driverName}</TableCell>
+                              <TableCell>{formatCurrency(request.amount)}</TableCell>
+                              <TableCell>{request.fuelType}</TableCell>
+                              <TableCell>{getStatusBadge(request.status)}</TableCell>
+                              <TableCell>{formatDate(request.requestedAt)}</TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setSelectedRequest(request)}
+                                >
+                                  <Eye size={14} className="mr-1" />
+                                  Ver
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
