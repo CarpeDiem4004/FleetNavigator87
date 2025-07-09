@@ -982,57 +982,81 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {requestsLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="text-gray-500">Carregando solicitações...</div>
-                  </div>
-                ) : requests?.data?.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    Nenhuma solicitação encontrada
-                    {console.log('[FUEL-CARD-DEBUG] Requests data is empty or null:', requests)}
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Placa</TableHead>
-                          <TableHead>Motorista</TableHead>
-                          <TableHead>Valor</TableHead>
-                          <TableHead>Combustível</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Data</TableHead>
-                          <TableHead>Ações</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {requests?.data?.map((request: FuelCardRequest) => {
-                          console.log('[FUEL-CARD-RENDER] Renderizando solicitação:', request);
-                          return (
-                            <TableRow key={request.id}>
-                              <TableCell className="font-medium">{request.plate}</TableCell>
-                              <TableCell>{request.driverName}</TableCell>
-                              <TableCell>{formatCurrency(request.amount)}</TableCell>
-                              <TableCell>{request.fuelType}</TableCell>
-                              <TableCell>{getStatusBadge(request.status)}</TableCell>
-                              <TableCell>{formatDate(request.requestedAt)}</TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setSelectedRequest(request)}
-                                >
-                                  <Eye size={14} className="mr-1" />
-                                  Ver
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
+                {(() => {
+                  console.log('[FUEL-CARD-RENDER] Estado atual:', {
+                    requestsLoading,
+                    requestsData: requests?.data,
+                    requestsLength: requests?.data?.length,
+                    requests: requests
+                  });
+                  
+                  if (requestsLoading) {
+                    return (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="text-gray-500">Carregando solicitações...</div>
+                      </div>
+                    );
+                  }
+                  
+                  if (!requests?.data || requests.data.length === 0) {
+                    return (
+                      <div className="text-center py-8 text-gray-500">
+                        Nenhuma solicitação encontrada
+                        <div className="text-xs mt-2">
+                          Debug: {JSON.stringify({
+                            hasRequests: !!requests,
+                            hasData: !!requests?.data,
+                            dataLength: requests?.data?.length,
+                            success: requests?.success
+                          })}
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Placa</TableHead>
+                            <TableHead>Motorista</TableHead>
+                            <TableHead>Valor</TableHead>
+                            <TableHead>Combustível</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Ações</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {requests.data.map((request: FuelCardRequest) => {
+                            console.log('[FUEL-CARD-RENDER] Renderizando solicitação:', request);
+                            return (
+                              <TableRow key={request.id}>
+                                <TableCell className="font-medium">{request.plate}</TableCell>
+                                <TableCell>{request.driverName || 'N/A'}</TableCell>
+                                <TableCell>{formatCurrency(request.amount)}</TableCell>
+                                <TableCell>{request.fuelType || 'N/A'}</TableCell>
+                                <TableCell>{getStatusBadge(request.status)}</TableCell>
+                                <TableCell>{formatDate(request.requestedAt)}</TableCell>
+                                <TableCell>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setSelectedRequest(request)}
+                                  >
+                                    <Eye size={14} className="mr-1" />
+                                    Ver
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </TabsContent>
