@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
-import { Menu, Bell } from 'lucide-react';
+import { Menu, Bell, LogOut, User } from 'lucide-react';
 import { 
   Select, 
   SelectContent, 
@@ -20,7 +20,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   
   // Get page title from current location
   const getPageTitle = () => {
@@ -54,6 +54,15 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
     enabled: !!user,
   });
 
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
+  };
+
   return (
     <header className="bg-white shadow">
       <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
@@ -86,6 +95,22 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
               <span className="text-sm ml-1">Global</span>
             )}
           </div>
+          {user && (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <User className="w-4 h-4" />
+                <span>{user.name}</span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+                title="Sair do sistema"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sair</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>
