@@ -254,11 +254,19 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
   // Mutations
   const createRequestMutation = useMutation({
     mutationFn: async (data: FuelCardRequestFormData) => {
+      console.log('[FUEL-CARD-MUTATION] Dados sendo enviados:', {
+        ...data,
+        requestedBy: user?.name || 'Sistema',
+        baseId: baseId,
+      });
+      
       const response = await apiRequest('POST', '/api/fuel-card/request', {
         ...data,
         requestedBy: user?.name || 'Sistema',
         baseId: baseId,
       });
+      
+      console.log('[FUEL-CARD-MUTATION] Resposta do servidor:', response.status);
       return response.json();
     },
     onSuccess: () => {
@@ -302,6 +310,20 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
   });
 
   const onSubmit = (data: FuelCardRequestFormData) => {
+    console.log('[FUEL-CARD-FORM] Dados do formulário:', data);
+    console.log('[FUEL-CARD-FORM] Usuário autenticado:', user);
+    console.log('[FUEL-CARD-FORM] Base ID:', baseId);
+    
+    // Verificar se todos os campos obrigatórios estão preenchidos
+    if (!data.plate || !data.cardNumber || !data.amount || !data.reason) {
+      toast({
+        title: 'Erro de validação',
+        description: 'Por favor, preencha todos os campos obrigatórios.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     createRequestMutation.mutate(data);
   };
 
