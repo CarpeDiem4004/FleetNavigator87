@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, Building2, ArrowLeft } from 'lucide-react';
+import { Loader2, Building2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const loginSchema = z.object({
@@ -98,18 +98,6 @@ const LoginCampinas: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Botão de voltar */}
-        <div className="mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => setLocation('/')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Voltar ao sistema principal
-          </Button>
-        </div>
-
         <Card className="shadow-lg border-0">
           <CardHeader className="space-y-1 text-center">
             <div className="flex justify-center mb-4">
