@@ -119,7 +119,7 @@ const fuelCardRequestSchema = z.object({
   driverPhone: z.string().min(10, { message: 'Telefone deve ter pelo menos 10 dígitos' }),
   projectId: z.number().min(1, { message: 'Projeto é obrigatório' }),
   baseId: z.number().min(1, { message: 'Base é obrigatória' }),
-  reason: z.string().min(10, { message: 'Observações devem ter pelo menos 10 caracteres' }),
+  reason: z.string().min(1, { message: 'Observações são obrigatórias' }),
 }).refine((data) => {
   // Se cartão específico for selecionado, o campo specificCardData deve ser preenchido
   if (data.cardType === 'especifico') {
@@ -324,20 +324,42 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
   });
 
   const onSubmit = (data: FuelCardRequestFormData) => {
+    console.log('[FUEL-CARD-FORM] ===== INÍCIO DA SUBMISSÃO =====');
     console.log('[FUEL-CARD-FORM] Dados do formulário:', data);
     console.log('[FUEL-CARD-FORM] Usuário autenticado:', user);
     console.log('[FUEL-CARD-FORM] Base ID:', baseId);
+    console.log('[FUEL-CARD-FORM] Form errors:', form.formState.errors);
+    console.log('[FUEL-CARD-FORM] Form is valid:', form.formState.isValid);
     
     // Verificar se todos os campos obrigatórios estão preenchidos
-    if (!data.plate || !data.cardNumber || !data.amount || !data.reason) {
+    const requiredFields = ['plate', 'cardNumber', 'amount', 'reason', 'provider', 'fuelType', 'fuelTime', 'driverName', 'driverPhone', 'projectId', 'baseId'];
+    const missingFields = requiredFields.filter(field => {
+      const value = data[field as keyof FuelCardRequestFormData];
+      return !value || value === 0 || value === '';
+    });
+    
+    console.log('[FUEL-CARD-FORM] Campos obrigatórios faltando:', missingFields);
+    
+    if (missingFields.length > 0) {
       toast({
         title: 'Erro de validação',
-        description: 'Por favor, preencha todos os campos obrigatórios.',
+        description: `Os seguintes campos são obrigatórios: ${missingFields.join(', ')}`,
         variant: 'destructive',
       });
       return;
     }
     
+    // Validação especial para cartão específico
+    if (data.cardType === 'especifico' && (!data.specificCardData || data.specificCardData.trim().length === 0)) {
+      toast({
+        title: 'Erro de validação',
+        description: 'Dados específicos do cartão são obrigatórios quando "Cartão específico por número" é selecionado.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    console.log('[FUEL-CARD-FORM] Validações passaram, executando mutação...');
     createRequestMutation.mutate(data);
   };
 
@@ -811,7 +833,7 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                         name="reason"
                         render={({ field }) => (
                           <FormItem className="mt-6">
-                            <FormLabel className="font-medium">Observações (opcional)</FormLabel>
+                            <FormLabel className="font-medium">Observações</FormLabel>
                             <FormControl>
                               <Textarea
                                 placeholder="Informe detalhes adicionais, se necessário"
