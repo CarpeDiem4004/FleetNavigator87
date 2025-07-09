@@ -301,345 +301,371 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                 Nova Solicitação
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader className="bg-blue-50 -mx-6 -mt-6 px-6 py-4 border-b">
+                <DialogTitle className="flex items-center gap-2 text-blue-800">
                   <CreditCard className="text-blue-600" size={20} />
                   Solicitação de Cartão
                 </DialogTitle>
-                <DialogDescription>
+                <DialogDescription className="text-blue-700">
                   Preencha os dados para solicitar recarga de combustível
                 </DialogDescription>
               </DialogHeader>
               
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
                   {/* Dados da Solicitação */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Fuel className="text-blue-600" size={16} />
-                      Dados da Solicitação
-                    </h3>
-                    <div className="text-sm text-gray-600 mb-4">
-                      Informe os dados do veículo e do cartão desejado
+                  <div className="bg-white rounded-lg">
+                    <div className="bg-orange-50 p-4 rounded-t-lg border-l-4 border-orange-400">
+                      <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                        <FileText className="text-orange-600" size={16} />
+                        Dados da Solicitação
+                      </h3>
+                      <div className="text-sm text-gray-600">
+                        Informe os dados do veículo e do cartão desejado
+                      </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="plate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2 text-red-600 font-medium">
+                                <Car size={14} />
+                                Placa do Veículo
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="ABC1234"
+                                  {...field}
+                                  className="uppercase bg-blue-50 border-blue-200 focus:border-blue-400"
+                                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                />
+                              </FormControl>
+                              <FormDescription className="text-xs text-gray-500">
+                                Informe a placa sem traços ou espaços
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="odometer"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2 text-gray-600 font-medium">
+                                <Gauge size={14} />
+                                Quilometragem
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder="123456"
+                                  {...field}
+                                  className="bg-blue-50 border-blue-200 focus:border-blue-400"
+                                  onChange={(e) => field.onChange(Number(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormDescription className="text-xs text-gray-500">
+                                KM atual do veículo
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="amount"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2 text-orange-600 font-medium">
+                                <DollarSign size={14} />
+                                Valor (R$)
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder="150.00"
+                                  step="0.01"
+                                  {...field}
+                                  className="bg-blue-50 border-blue-200 focus:border-blue-400"
+                                  onChange={(e) => field.onChange(Number(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormDescription className="text-xs text-gray-500">
+                                Valor em reais para carregar
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Tipo de Cartão */}
+                      <div className="mt-6">
+                        <FormField
+                          control={form.control}
+                          name="cardType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-base font-semibold mb-3 block">Tipo de Cartão</FormLabel>
+                              <FormControl>
+                                <div className="space-y-2">
+                                  <div className="flex items-center space-x-2">
+                                    <input
+                                      type="radio"
+                                      id="vinculado"
+                                      value="vinculado"
+                                      checked={field.value === 'vinculado'}
+                                      onChange={() => field.onChange('vinculado')}
+                                      className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                    />
+                                    <Label htmlFor="vinculado" className="text-sm font-medium">
+                                      Cartão vinculado à placa do veículo
+                                    </Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <input
+                                      type="radio"
+                                      id="especifico"
+                                      value="especifico"
+                                      checked={field.value === 'especifico'}
+                                      onChange={() => field.onChange('especifico')}
+                                      className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                    />
+                                    <Label htmlFor="especifico" className="text-sm font-medium">
+                                      Cartão específico por número
+                                    </Label>
+                                  </div>
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Provedor e Combustível */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                        <FormField
+                          control={form.control}
+                          name="provider"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-medium">Provedor do Cartão</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="bg-blue-50 border-blue-200 focus:border-blue-400">
+                                    <SelectValue placeholder="Ticket" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="Ticket">Ticket</SelectItem>
+                                  <SelectItem value="Alelo">Alelo</SelectItem>
+                                  <SelectItem value="VR">VR</SelectItem>
+                                  <SelectItem value="Shell">Shell</SelectItem>
+                                  <SelectItem value="Ipiranga">Ipiranga</SelectItem>
+                                  <SelectItem value="Petrobras">Petrobras</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormDescription className="text-xs text-gray-500">
+                                Empresa que fornece o cartão de combustível
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="fuelType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-medium">Tipo de Combustível</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="bg-blue-50 border-blue-200 focus:border-blue-400">
+                                    <SelectValue placeholder="Diesel" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="Diesel">Diesel</SelectItem>
+                                  <SelectItem value="Gasolina">Gasolina</SelectItem>
+                                  <SelectItem value="Etanol">Etanol</SelectItem>
+                                  <SelectItem value="GNV">GNV</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormDescription className="text-xs text-gray-500">
+                                Tipo de combustível para o veículo
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Dados do Motorista */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                        <FormField
+                          control={form.control}
+                          name="driverName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2 font-medium">
+                                <User size={14} />
+                                Nome do Motorista
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="João da Silva"
+                                  {...field}
+                                  className="bg-blue-50 border-blue-200 focus:border-blue-400"
+                                />
+                              </FormControl>
+                              <FormDescription className="text-xs text-gray-500">
+                                Nome completo do motorista
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="driverPhone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2 font-medium">
+                                <Phone size={14} />
+                                Celular (WhatsApp)
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="(11) 99999-9999"
+                                  {...field}
+                                  className="bg-blue-50 border-blue-200 focus:border-blue-400"
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/\D/g, '');
+                                    field.onChange(value);
+                                  }}
+                                  value={formatPhone(field.value)}
+                                />
+                              </FormControl>
+                              <FormDescription className="text-xs text-gray-500">
+                                Para receber notificação quando aprovado
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Projeto e Base */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                        <FormField
+                          control={form.control}
+                          name="projectId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-medium">Projeto</FormLabel>
+                              <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={field.value?.toString()}>
+                                <FormControl>
+                                  <SelectTrigger className="bg-blue-50 border-blue-200 focus:border-blue-400">
+                                    <SelectValue placeholder="Selecione um projeto" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {projects?.data?.map((project: Project) => (
+                                    <SelectItem key={project.id} value={project.id.toString()}>
+                                      {project.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormDescription className="text-xs text-gray-500">
+                                Selecione o projeto para esta solicitação
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="baseId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-medium">Base</FormLabel>
+                              <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={field.value?.toString()}>
+                                <FormControl>
+                                  <SelectTrigger className="bg-blue-50 border-blue-200 focus:border-blue-400">
+                                    <SelectValue placeholder="Selecione um projeto primeiro" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {bases?.data?.map((base: Base) => (
+                                    <SelectItem key={base.id} value={base.id.toString()}>
+                                      {base.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormDescription className="text-xs text-gray-500">
+                                Base onde o veículo está alocado
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Observações */}
                       <FormField
                         control={form.control}
-                        name="plate"
+                        name="reason"
                         render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                              <MapPin size={14} />
-                              Placa do Veículo
-                            </FormLabel>
+                          <FormItem className="mt-6">
+                            <FormLabel className="font-medium">Observações (opcional)</FormLabel>
                             <FormControl>
-                              <Input
-                                placeholder="ABC1234"
+                              <Textarea
+                                placeholder="Informe detalhes adicionais, se necessário"
+                                className="resize-none bg-blue-50 border-blue-200 focus:border-blue-400 min-h-[100px]"
+                                rows={3}
                                 {...field}
-                                className="uppercase"
-                                onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                               />
                             </FormControl>
-                            <FormDescription>
-                              Informe a placa sem traços ou espaços
-                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      
-                      <FormField
-                        control={form.control}
-                        name="odometer"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                              <Gauge size={14} />
-                              Quilometragem
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                placeholder="123456"
-                                {...field}
-                                onChange={(e) => field.onChange(Number(e.target.value))}
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              KM atual do veículo
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="amount"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                              <DollarSign size={14} />
-                              Valor (R$)
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                placeholder="150.00"
-                                step="0.01"
-                                {...field}
-                                onChange={(e) => field.onChange(Number(e.target.value))}
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              Valor em reais para carregar
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+
+                      {/* Botões */}
+                      <div className="flex flex-col gap-3 mt-8">
+                        <Button 
+                          type="submit" 
+                          disabled={createRequestMutation.isPending}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-medium"
+                        >
+                          <CreditCard className="w-4 h-4 mr-2" />
+                          {createRequestMutation.isPending ? 'Enviando...' : 'Solicitar Recarga'}
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          onClick={() => setIsDialogOpen(false)}
+                          className="w-full border-blue-300 text-blue-600 py-3 text-base"
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Tipo de Cartão */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <FormField
-                      control={form.control}
-                      name="cardType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-semibold">Tipo de Cartão</FormLabel>
-                          <FormControl>
-                            <RadioGroup
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              className="flex flex-col space-y-2"
-                            >
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="vinculado" id="vinculado" />
-                                <Label htmlFor="vinculado">Cartão vinculado à placa do veículo</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="especifico" id="especifico" />
-                                <Label htmlFor="especifico">Cartão específico por número</Label>
-                              </div>
-                            </RadioGroup>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Provedor e Combustível */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="provider"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Provedor do Cartão</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione o provedor" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Ticket">Ticket</SelectItem>
-                              <SelectItem value="Alelo">Alelo</SelectItem>
-                              <SelectItem value="VR">VR</SelectItem>
-                              <SelectItem value="Shell">Shell</SelectItem>
-                              <SelectItem value="Ipiranga">Ipiranga</SelectItem>
-                              <SelectItem value="Petrobras">Petrobras</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            Empresa que fornece o cartão de combustível
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="fuelType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tipo de Combustível</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione o combustível" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Diesel">Diesel</SelectItem>
-                              <SelectItem value="Gasolina">Gasolina</SelectItem>
-                              <SelectItem value="Etanol">Etanol</SelectItem>
-                              <SelectItem value="GNV">GNV</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            Tipo de combustível para o veículo
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Dados do Motorista */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <User className="text-blue-600" size={16} />
-                      Dados do Motorista
-                    </h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="driverName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                              <User size={14} />
-                              Nome do Motorista
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="João da Silva"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              Nome completo do motorista
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="driverPhone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                              <Phone size={14} />
-                              Celular (WhatsApp)
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="(11) 99999-9999"
-                                {...field}
-                                onChange={(e) => {
-                                  const value = e.target.value.replace(/\D/g, '');
-                                  field.onChange(value);
-                                }}
-                                value={formatPhone(field.value)}
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              Para receber notificação quando aprovado
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Projeto e Base */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="projectId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Projeto</FormLabel>
-                          <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={field.value?.toString()}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione um projeto" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {projects?.data?.map((project: Project) => (
-                                <SelectItem key={project.id} value={project.id.toString()}>
-                                  {project.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            Selecione o projeto para esta solicitação
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="baseId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Base</FormLabel>
-                          <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={field.value?.toString()}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione uma base" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {bases?.data?.map((base: Base) => (
-                                <SelectItem key={base.id} value={base.id.toString()}>
-                                  {base.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            Base onde o veículo está alocado
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Observações */}
-                  <FormField
-                    control={form.control}
-                    name="reason"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Observações (opcional)</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Informe detalhes adicionais, se necessário"
-                            className="resize-none"
-                            rows={3}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button type="submit" disabled={createRequestMutation.isPending}>
-                      {createRequestMutation.isPending ? 'Enviando...' : 'Solicitar Recarga'}
-                    </Button>
-                  </DialogFooter>
                 </form>
               </Form>
             </DialogContent>
