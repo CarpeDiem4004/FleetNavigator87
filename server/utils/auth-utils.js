@@ -43,6 +43,20 @@ const JWT_SECRET = process.env.VITE_SUPABASE_ANON_KEY || 'murici-hybrid-auth-sec
  */
 export async function unifiedAuthMiddleware(req, res, next) {
   try {
+    // Lista de rotas públicas que não precisam de autenticação
+    const publicRoutes = [
+      '/api/projects-with-bases',
+      '/api/public/projects-with-bases',
+      '/api/mobile/test-projects',
+      '/api/status'
+    ];
+    
+    // Verificar se a rota atual é pública
+    if (publicRoutes.includes(req.path)) {
+      console.log('[UnifiedAuth] Rota pública detectada, pulando autenticação:', req.path);
+      return next();
+    }
+    
     console.log('[UnifiedAuth] Verificando autenticação para:', {
       path: req.path,
       method: req.method,

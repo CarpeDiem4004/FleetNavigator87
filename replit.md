@@ -117,6 +117,13 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 10, 2025: **FIXED CRITICAL API ENDPOINT** - Successfully resolved station links not displaying projects/bases
+  - ✅ Fixed `/api/projects-with-bases` endpoint being blocked by authentication middleware
+  - ✅ Added public route exemptions in both equipment routes and unified auth middleware
+  - ✅ Endpoint now returns 13 active projects with 114 properly assigned bases
+  - ✅ All external fuel station forms can now correctly load project and base dropdown options
+  - ✅ System fully operational with complete project-base relationship data accessible
+
 - July 10, 2025: Completed comprehensive project assignment for all 114 bases in the system
   - ✅ Fixed all bases without project assignment (104 bases corrected)
   - ✅ Systematic project mapping based on nomenclature and functionality

@@ -20,8 +20,22 @@ import { unifiedAuthMiddleware } from "../utils/auth-utils.js";
 
 const router = Router();
 
-// Middleware de autenticação para todas as rotas
+// Middleware de autenticação para todas as rotas (exceto rotas públicas)
 router.use((req, res, next) => {
+  // Lista de rotas públicas que devem pular a autenticação
+  const publicRoutes = [
+    '/projects-with-bases',
+    '/public/projects-with-bases',
+    '/mobile/test-projects',
+    '/status'
+  ];
+  
+  // Verificar se a rota atual é pública
+  if (publicRoutes.includes(req.path)) {
+    console.log('[EQUIPMENT ROUTES] Rota pública detectada, pulando autenticação:', req.path);
+    return next();
+  }
+  
   console.log('[EQUIPMENT ROUTES] Middleware de autenticação ativado para:', req.path, req.method);
   unifiedAuthMiddleware(req, res, next);
 });

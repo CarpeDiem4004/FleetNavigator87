@@ -538,6 +538,82 @@ app.use((req, res, next) => {
     }
   });
 
+  // Add projects-with-bases API (endpoint específico para dropdowns)
+  app.get('/api/projects-with-bases', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      console.log('[PROJECTS-WITH-BASES] Endpoint acessado');
+      
+      // Buscar projetos ativos
+      const projectsQuery = `
+        SELECT id, name, description, is_active 
+        FROM projects 
+        WHERE is_active = true 
+        ORDER BY name ASC
+      `;
+      
+      // Buscar bases com project_id definido
+      const basesQuery = `
+        SELECT 
+          b.id,
+          b.name,
+          b.location,
+          b.basename,
+          b.project_id,
+          p.name as project_name
+        FROM bases b
+        LEFT JOIN projects p ON b.project_id = p.id
+        WHERE b.active = true AND b.project_id IS NOT NULL
+        ORDER BY p.name, b.name
+      `;
+      
+      const [projectsResult, basesResult] = await Promise.all([
+        pool.query(projectsQuery),
+        pool.query(basesQuery)
+      ]);
+      
+      console.log(`[PROJECTS-WITH-BASES] Projetos encontrados: ${projectsResult.rows.length}`);
+      console.log(`[PROJECTS-WITH-BASES] Bases encontradas: ${basesResult.rows.length}`);
+      
+      // Agrupar bases por projeto
+      const projectsWithBases = projectsResult.rows.map(project => ({
+        id: project.id,
+        name: project.name,
+        description: project.description,
+        is_active: project.is_active,
+        bases: basesResult.rows
+          .filter(base => base.project_id === project.id)
+          .map(base => ({
+            id: base.id,
+            name: base.name,
+            location: base.location,
+            basename: base.basename
+          }))
+      }));
+      
+      console.log(`[PROJECTS-WITH-BASES] Projetos com bases: ${projectsWithBases.filter(p => p.bases.length > 0).length}`);
+      
+      return res.status(200).json({
+        success: true,
+        data: projectsWithBases,
+        count: projectsWithBases.length,
+        debug: {
+          total_projects: projectsResult.rows.length,
+          total_bases: basesResult.rows.length
+        }
+      });
+    } catch (error) {
+      console.error('[PROJECTS-WITH-BASES] Erro:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar projetos com bases',
+        error: error.message
+      });
+    }
+  });
+
   // Add DELETE endpoint for drivers
   app.delete('/api/drivers/:id', async (req, res) => {
     try {
