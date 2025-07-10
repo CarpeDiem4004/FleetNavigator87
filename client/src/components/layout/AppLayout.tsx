@@ -107,6 +107,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     { href: '/users', label: 'Usuários', icon: Users },
     { href: '/bases', label: 'Bases', icon: Building2 },
     { href: '/solicitacoes', label: 'Solicitações da Base', icon: MessageSquare },
+    { href: '/equipment', label: 'Equipamentos', icon: Package },
 
   ];
 
