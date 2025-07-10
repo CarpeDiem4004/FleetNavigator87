@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,11 +37,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
-import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download } from "lucide-react";
+import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download, Search, History, Clock, Wrench } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 
@@ -145,6 +146,9 @@ export default function Equipment() {
   const [isTermDialogOpen, setIsTermDialogOpen] = useState(false);
   const [selectedEquipmentForTerm, setSelectedEquipmentForTerm] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('equipments');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedEquipmentForHistory, setSelectedEquipmentForHistory] = useState<any>(null);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -200,6 +204,38 @@ export default function Equipment() {
   });
   
   const responsibilityTerms = responsibilityTermsResponse?.data || [];
+
+  // Query para buscar histórico de movimentação
+  const { data: equipmentMovementsResponse } = useQuery({
+    queryKey: ['/api/equipment-movements', selectedEquipmentForHistory?.id],
+    enabled: !!selectedEquipmentForHistory,
+  });
+  
+  const equipmentMovements = equipmentMovementsResponse?.data || [];
+
+  // Query para buscar histórico de manutenção
+  const { data: equipmentMaintenanceResponse } = useQuery({
+    queryKey: ['/api/equipment-maintenance', selectedEquipmentForHistory?.id],
+    enabled: !!selectedEquipmentForHistory,
+  });
+  
+  const equipmentMaintenance = equipmentMaintenanceResponse?.data || [];
+
+  // Filtrar equipamentos baseado na busca
+  const filteredEquipments = useMemo(() => {
+    if (!searchTerm) return equipments;
+    
+    return equipments.filter((equipment: any) =>
+      equipment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      equipment.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (equipment.brand && equipment.brand.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (equipment.model && equipment.model.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (equipment.serial_number && equipment.serial_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (equipment.patrimony_number && equipment.patrimony_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      equipmentTypeLabels[equipment.type].toLowerCase().includes(searchTerm.toLowerCase()) ||
+      equipmentStatusLabels[equipment.status].toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [equipments, searchTerm]);
 
   // Mutation para criar equipamento
   const createEquipmentMutation = useMutation({
@@ -524,8 +560,24 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
           <Card>
             <CardHeader>
               <CardTitle>Lista de Equipamentos</CardTitle>
+              <CardDescription>
+                {filteredEquipments.length} de {equipments.length} equipamentos
+              </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Campo de Busca */}
+              <div className="mb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Buscar por nome, tipo, marca, modelo, série ou patrimônio..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
@@ -540,7 +592,7 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                     </tr>
                   </thead>
                   <tbody>
-                    {equipments.map((equipment: any) => (
+                    {filteredEquipments.map((equipment: any) => (
                       <tr key={equipment.id} className="border-b hover:bg-gray-50">
                         <td className="p-2">
                           <div className="flex items-center gap-2">
@@ -563,15 +615,20 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEdit(equipment)}
+                              title="Editar Equipamento"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleDelete(equipment.id)}
+                              onClick={() => {
+                                setSelectedEquipmentForHistory(equipment);
+                                setIsHistoryDialogOpen(true);
+                              }}
+                              title="Ver Histórico"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <History className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -580,6 +637,14 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                               title="Criar Termo de Responsabilidade"
                             >
                               <UserCheck className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(equipment.id)}
+                              title="Deletar Equipamento"
+                            >
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </td>
@@ -1099,6 +1164,114 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Histórico */}
+      <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Histórico de Movimentação e Manutenção
+            </DialogTitle>
+            <DialogDescription>
+              {selectedEquipmentForHistory?.name} - Histórico completo do equipamento
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Histórico de Movimentação */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Movimentação</h3>
+              {equipmentMovements.length > 0 ? (
+                <div className="space-y-2">
+                  {equipmentMovements.map((movement: any, index: number) => (
+                    <div key={index} className="border rounded-lg p-3 bg-gray-50">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <span className="font-medium">{movement.action}</span>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">{movement.description}</p>
+                          {movement.responsible && (
+                            <p className="text-sm text-gray-500">Responsável: {movement.responsible}</p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium">
+                            {new Date(movement.date).toLocaleDateString('pt-BR')}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(movement.date).toLocaleTimeString('pt-BR')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <History className="mx-auto h-12 w-12 text-gray-300 mb-2" />
+                  <p>Nenhuma movimentação registrada</p>
+                </div>
+              )}
+            </div>
+
+            {/* Histórico de Manutenção */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Manutenção</h3>
+              {equipmentMaintenance.length > 0 ? (
+                <div className="space-y-2">
+                  {equipmentMaintenance.map((maintenance: any, index: number) => (
+                    <div key={index} className="border rounded-lg p-3 bg-gray-50">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                            <span className="font-medium">{maintenance.type}</span>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">{maintenance.description}</p>
+                          {maintenance.cost && (
+                            <p className="text-sm text-green-600 font-medium">
+                              Custo: R$ {parseFloat(maintenance.cost).toFixed(2)}
+                            </p>
+                          )}
+                          {maintenance.technician && (
+                            <p className="text-sm text-gray-500">Técnico: {maintenance.technician}</p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium">
+                            {new Date(maintenance.date).toLocaleDateString('pt-BR')}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(maintenance.date).toLocaleTimeString('pt-BR')}
+                          </p>
+                          {maintenance.status && (
+                            <Badge variant={maintenance.status === 'completed' ? 'default' : 'secondary'}>
+                              {maintenance.status === 'completed' ? 'Concluído' : 'Pendente'}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Settings className="mx-auto h-12 w-12 text-gray-300 mb-2" />
+                  <p>Nenhuma manutenção registrada</p>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button onClick={() => setIsHistoryDialogOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

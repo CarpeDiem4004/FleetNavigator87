@@ -421,4 +421,52 @@ router.get('/equipment-dashboard', unifiedAuthMiddleware, async (req, res) => {
   }
 });
 
+// Rota para buscar histórico de movimentação de equipamento
+router.get('/equipment-movements/:equipmentId', async (req, res) => {
+  try {
+    const { equipmentId } = req.params;
+    
+    // Buscar movimentações do equipamento
+    const { data: movements, error } = await supabase
+      .from('equipment_movements')
+      .select('*')
+      .eq('equipment_id', equipmentId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Erro ao buscar movimentações:', error);
+      return res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+
+    res.json({ data: movements || [] });
+  } catch (error) {
+    console.error('Erro ao buscar movimentações:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Rota para buscar histórico de manutenção de equipamento
+router.get('/equipment-maintenance/:equipmentId', async (req, res) => {
+  try {
+    const { equipmentId } = req.params;
+    
+    // Buscar manutenções do equipamento
+    const { data: maintenance, error } = await supabase
+      .from('equipment_maintenance')
+      .select('*')
+      .eq('equipment_id', equipmentId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Erro ao buscar manutenção:', error);
+      return res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+
+    res.json({ data: maintenance || [] });
+  } catch (error) {
+    console.error('Erro ao buscar manutenção:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 export default router;
