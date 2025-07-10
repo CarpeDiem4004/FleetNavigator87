@@ -269,13 +269,12 @@ export default function Equipment() {
             Gerencie notebooks, celulares e outros equipamentos da empresa
           </p>
         </div>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Novo Equipamento
+        </Button>
+        
         <Dialog open={isCreateDialogOpen || !!editingEquipment} onOpenChange={handleDialogClose}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Equipamento
-            </Button>
-          </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
