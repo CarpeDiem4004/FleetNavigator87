@@ -21,7 +21,10 @@ import { unifiedAuthMiddleware } from "../utils/auth-utils.js";
 const router = Router();
 
 // Middleware de autenticação para todas as rotas
-router.use(unifiedAuthMiddleware);
+router.use((req, res, next) => {
+  console.log('[EQUIPMENT ROUTES] Middleware de autenticação ativado para:', req.path, req.method);
+  unifiedAuthMiddleware(req, res, next);
+});
 
 // GET /api/equipment - Listar todos os equipamentos
 router.get('/equipment', async (req, res) => {
