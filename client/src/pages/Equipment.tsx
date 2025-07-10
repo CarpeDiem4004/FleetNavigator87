@@ -151,15 +151,34 @@ export default function Equipment() {
   const form = useForm<EquipmentFormData>({
     resolver: zodResolver(equipmentSchema),
     defaultValues: {
+      name: '',
+      type: undefined,
+      brand: '',
+      model: '',
+      serial_number: '',
+      patrimony_number: '',
+      purchase_date: '',
+      purchase_value: '',
+      supplier: '',
+      warranty_expires: '',
       condition: 'novo',
       status: 'disponivel',
+      location: '',
+      notes: '',
     },
   });
 
   const termForm = useForm<ResponsibilityTermFormData>({
     resolver: zodResolver(responsibilityTermSchema),
     defaultValues: {
+      equipment_id: 0,
+      full_name: '',
+      cpf: '',
+      phone: '',
+      department: '',
+      address: '',
       condition_at_assignment: 'novo',
+      notes: '',
     },
   });
 
