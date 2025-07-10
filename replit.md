@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 10, 2025: **ENHANCED EQUIPMENT DOCUMENT MANAGEMENT** - Added comprehensive signed document viewing and download functionality
+  - ✅ Added "Documento" status column showing "Assinado" (green) or "Pendente" (yellow) badges
+  - ✅ Conditional action buttons: "Anexar" for pending documents, "Ver" + "Baixar" for signed documents
+  - ✅ View signed documents in new tab with eye icon button
+  - ✅ Download signed documents with dedicated download button (green download icon)
+  - ✅ Improved file naming for downloads: termo_assinado_equipmentname_username.ext
+  - ✅ Enhanced visual indicators and user experience for document management
+  - ✅ Maintained original PDF generation and download functionality alongside signed document features
+
 - July 10, 2025: **FIXED CRITICAL API ENDPOINT** - Successfully resolved station links not displaying projects/bases
   - ✅ Fixed `/api/projects-with-bases` endpoint being blocked by authentication middleware
   - ✅ Added public route exemptions in both equipment routes and unified auth middleware

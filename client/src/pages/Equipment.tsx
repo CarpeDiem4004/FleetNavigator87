@@ -727,6 +727,7 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                       <th className="text-left p-2">CPF</th>
                       <th className="text-left p-2">Departamento</th>
                       <th className="text-left p-2">Data de Entrega</th>
+                      <th className="text-left p-2">Documento</th>
                       <th className="text-left p-2">Ações</th>
                     </tr>
                   </thead>
@@ -744,6 +745,17 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                         <td className="p-2">{term.department}</td>
                         <td className="p-2">
                           {new Date(term.assigned_at).toLocaleDateString('pt-BR')}
+                        </td>
+                        <td className="p-2">
+                          {term.signed_document_url ? (
+                            <Badge variant="default" className="bg-green-100 text-green-800">
+                              Assinado
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                              Pendente
+                            </Badge>
+                          )}
                         </td>
                         <td className="p-2">
                           <div className="flex gap-2">
@@ -771,30 +783,49 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                                 };
                                 handleDownloadTerm(termData, equipment);
                               }}
-                              title="Baixar PDF do Termo"
+                              title="Baixar PDF do Termo Original"
                             >
                               <Download className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedTermForUpload(term);
-                                setIsUploadDialogOpen(true);
-                              }}
-                              title="Anexar Termo Assinado"
-                            >
-                              <Paperclip className="h-4 w-4" />
-                            </Button>
-                            {term.signed_document_url && (
+                            {!term.signed_document_url ? (
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => window.open(term.signed_document_url, '_blank')}
-                                title="Ver Termo Assinado"
+                                onClick={() => {
+                                  setSelectedTermForUpload(term);
+                                  setIsUploadDialogOpen(true);
+                                }}
+                                title="Anexar Termo Assinado"
                               >
-                                <Eye className="h-4 w-4" />
+                                <Paperclip className="h-4 w-4" />
                               </Button>
+                            ) : (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => window.open(term.signed_document_url, '_blank')}
+                                  title="Ver Termo Assinado"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    // Criar um link temporário para download
+                                    const link = document.createElement('a');
+                                    link.href = term.signed_document_url;
+                                    link.download = `termo_assinado_${term.equipment_name}_${term.full_name}.${term.signed_document_url.split('.').pop()}`;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                  }}
+                                  title="Baixar Termo Assinado"
+                                >
+                                  <Download className="h-4 w-4 text-green-600" />
+                                </Button>
+                              </>
                             )}
                           </div>
                         </td>
