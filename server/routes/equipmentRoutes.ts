@@ -28,7 +28,7 @@ const __dirname = path.dirname(__filename);
 // Configurar multer para upload de arquivos
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, '../../uploads/equipment-terms');
+    const uploadDir = path.join(process.cwd(), 'server', 'uploads', 'equipment-documents');
     
     // Criar diretório se não existir
     if (!fs.existsSync(uploadDir)) {
@@ -311,7 +311,16 @@ router.put('/equipment-responsibility-terms/:id/return', unifiedAuthMiddleware, 
 });
 
 // POST /api/equipment-responsibility-terms/:id/upload - Upload de documento assinado
-router.post('/equipment-responsibility-terms/:id/upload', unifiedAuthMiddleware, upload.single('signed_document'), async (req, res) => {
+router.post('/equipment-responsibility-terms/:id/upload', (req, res, next) => {
+  // Custom auth middleware for file uploads
+  unifiedAuthMiddleware(req, res, (err) => {
+    if (err) {
+      console.error('Auth error in upload:', err);
+      return res.status(401).json({ success: false, error: 'Não autorizado' });
+    }
+    next();
+  });
+}, upload.single('signed_document'), async (req, res) => {
   try {
     const termId = parseInt(req.params.id);
     
@@ -333,7 +342,7 @@ router.post('/equipment-responsibility-terms/:id/upload', unifiedAuthMiddleware,
     }
     
     // Gerar URL relativa do arquivo
-    const fileUrl = `/uploads/equipment-terms/${req.file.filename}`;
+    const fileUrl = `/uploads/equipment-documents/${req.file.filename}`;
     
     // Atualizar termo com URL do documento
     const updatedTerm = await db

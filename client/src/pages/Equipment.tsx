@@ -334,17 +334,22 @@ export default function Equipment() {
       const formData = new FormData();
       formData.append('signed_document', file);
       
+      // Use the same token extraction method as apiRequest
+      const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('emergencyToken');
+      
       const response = await fetch(`/api/equipment-responsibility-terms/${termId}/upload`, {
         method: 'POST',
         body: formData,
         credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`,
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
       });
       
       if (!response.ok) {
-        throw new Error('Erro no upload do arquivo');
+        const errorData = await response.text();
+        console.error('Upload error:', errorData);
+        throw new Error(`Erro no upload do arquivo: ${response.status}`);
       }
       
       return response.json();
