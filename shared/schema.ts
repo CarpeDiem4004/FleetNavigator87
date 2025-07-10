@@ -80,6 +80,7 @@ export const bases = pgTable("bases", {
   hasMaintenance: boolean("has_maintenance").default(false),
   hasTires: boolean("has_tires").default(false),
   requestsEnabled: boolean("requests_enabled").default(true), // Permite que a base faça solicitações
+  projectId: integer("project_id").references(() => projects.id),
   created_at: timestamp("created_at").defaultNow(),
 });
 

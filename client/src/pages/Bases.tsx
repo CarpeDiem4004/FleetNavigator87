@@ -79,6 +79,7 @@ import {
 const baseFormSchema = insertBaseSchema.extend({
   name: z.string().min(3, 'O nome da base deve ter pelo menos 3 caracteres'),
   type: z.string().optional(),
+  project_id: z.number().optional(),
 });
 
 // Componente da página de Bases
@@ -106,6 +107,7 @@ export default function BasesPage() {
       active: true,
       hasMaintenance: false,
       hasTires: false,
+      project_id: undefined,
     },
   });
 
@@ -122,6 +124,21 @@ export default function BasesPage() {
       }
       
       // Se a resposta não estiver no formato esperado, retorna array vazio
+      return [];
+    },
+  });
+
+  // Query para buscar os projetos ativos
+  const { data: projects } = useQuery({
+    queryKey: ['/api/projects'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/projects');
+      const data = await res.json();
+      
+      if (data && data.success && Array.isArray(data.data)) {
+        return data.data.filter((project: any) => project.is_active);
+      }
+      
       return [];
     },
   });
@@ -462,6 +479,38 @@ export default function BasesPage() {
                           <FormControl>
                             <Input placeholder="Ex: São Paulo, SP" value={field.value ?? ''} onChange={field.onChange} name={field.name} ref={field.ref} />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="project_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Projeto</FormLabel>
+                          <FormControl>
+                            <Select
+                              value={field.value ? field.value.toString() : ''}
+                              onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Selecione um projeto" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">Nenhum projeto</SelectItem>
+                                {projects && projects.map((project: any) => (
+                                  <SelectItem key={project.id} value={project.id.toString()}>
+                                    {project.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormDescription>
+                            Selecione o projeto ao qual esta base pertence (opcional).
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
