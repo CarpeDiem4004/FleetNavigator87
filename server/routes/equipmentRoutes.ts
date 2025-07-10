@@ -63,17 +63,29 @@ router.get('/equipment/:id', async (req, res) => {
 // POST /api/equipment - Criar novo equipamento
 router.post('/equipment', async (req, res) => {
   try {
+    console.log('Dados recebidos para criação do equipamento:', req.body);
     const validatedData = insertEquipmentSchema.parse(req.body);
+    console.log('Dados validados:', validatedData);
     
     const newEquipment = await db
       .insert(equipments)
       .values(validatedData)
       .returning();
 
+    console.log('Equipamento criado com sucesso:', newEquipment[0]);
     res.status(201).json({ success: true, data: newEquipment[0] });
   } catch (error) {
-    console.error('Erro ao criar equipamento:', error);
-    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+    console.error('Erro detalhado ao criar equipamento:', error);
+    console.error('Stack trace:', error.stack);
+    if (error.name === 'ZodError') {
+      console.error('Erros de validação Zod:', error.errors);
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Dados inválidos', 
+        details: error.errors 
+      });
+    }
+    res.status(500).json({ success: false, error: 'Erro interno do servidor', details: error.message });
   }
 });
 
