@@ -207,9 +207,6 @@ export default function Equipment() {
   });
   
   const responsibilityTerms = responsibilityTermsResponse?.data || [];
-  
-  // Debug: log the responsibility terms data
-  console.log('Responsibility Terms Data:', responsibilityTerms);
 
   // Query para buscar histórico de movimentação
   const { data: equipmentMovementsResponse } = useQuery({
