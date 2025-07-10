@@ -587,9 +587,10 @@ app.use((req, res, next) => {
           .filter(base => base.project_id === project.id)
           .map(base => ({
             id: base.id,
-            name: base.name,
-            location: base.location,
-            basename: base.basename
+            base_name: base.name || base.basename || `Base ${base.id}`,
+            base_code: base.basename,
+            description: base.location,
+            is_active: true
           }))
       }));
       

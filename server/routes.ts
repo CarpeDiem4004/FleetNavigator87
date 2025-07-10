@@ -9748,7 +9748,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         basesMap.get(base.project_id).push({
           id: base.id,
-          base_name: base.base_name,
+          base_name: base.base_name || base.description || `Base ${base.id}`,
           base_code: base.base_code,
           description: base.description,
           is_active: base.is_active
