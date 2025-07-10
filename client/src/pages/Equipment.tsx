@@ -355,7 +355,9 @@ export default function Equipment() {
       return response.json();
     },
     onSuccess: () => {
+      // Force refetch the data immediately
       queryClient.invalidateQueries({ queryKey: ['/api/equipment-responsibility-terms'] });
+      queryClient.refetchQueries({ queryKey: ['/api/equipment-responsibility-terms'] });
       setIsUploadDialogOpen(false);
       setSelectedTermForUpload(null);
       setUploadFile(null);
