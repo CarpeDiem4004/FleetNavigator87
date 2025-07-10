@@ -176,9 +176,11 @@ export default function Equipment() {
   });
 
   // Query para buscar termos de responsabilidade
-  const { data: responsibilityTerms = [] } = useQuery({
+  const { data: responsibilityTermsResponse } = useQuery({
     queryKey: ['/api/equipment-responsibility-terms'],
   });
+  
+  const responsibilityTerms = responsibilityTermsResponse?.data || [];
 
   // Mutation para criar equipamento
   const createEquipmentMutation = useMutation({
