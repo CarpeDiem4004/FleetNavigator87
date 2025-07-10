@@ -208,7 +208,7 @@ export default function OficinasExternaPage() {
                     </div>
                   </div>
                   <p className="text-sm text-gray-600 mb-2">
-                    Guarde essas informações! Você precisará delas para acessar o portal da Murici Logística.
+                    Guarde essas informações! Você precisará delas para acessar o portal da Murici On Fleet 2.0.
                   </p>
                   <p className="text-xs text-gray-500">
                     Você pode fazer login no sistema com estas credenciais após a aprovação do seu cadastro.
@@ -216,7 +216,7 @@ export default function OficinasExternaPage() {
                 </div>
               ) : null}
               <p className="text-gray-500 mb-3">
-                Em caso de dúvidas, entre em contato com a equipe de gestão de frotas da Murici.
+                Em caso de dúvidas, entre em contato com a equipe de gestão de frotas da Murici On Fleet 2.0.
               </p>
             </CardContent>
             <CardFooter className="flex justify-center">
@@ -230,13 +230,13 @@ export default function OficinasExternaPage() {
           <>
             <div className="text-center mb-8">
               <img 
-                src="https://muriciloc.com.br/wp-content/themes/murici/img/logo-murici.png" 
-                alt="Murici Logística" 
+                src="/attached_assets/logo_1752180524044.jpg" 
+                alt="Murici On Fleet 2.0" 
                 className="h-16 mx-auto mb-4" 
               />
               <h1 className="text-3xl font-bold">Cadastro de Oficina e Orçamento</h1>
               <p className="text-gray-500 mt-2">
-                Preencha o formulário abaixo para se cadastrar como parceiro da Murici Logística
+                Preencha o formulário abaixo para se cadastrar como parceiro da Murici On Fleet 2.0
               </p>
             </div>
 
@@ -484,7 +484,7 @@ export default function OficinasExternaPage() {
             </Card>
 
             <div className="mt-8 text-center text-sm text-gray-500">
-              <p>© {new Date().getFullYear()} Murici Logística - Todos os direitos reservados</p>
+              <p>© {new Date().getFullYear()} Murici On Fleet 2.0 - Todos os direitos reservados</p>
             </div>
           </>
         )}

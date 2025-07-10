@@ -159,7 +159,7 @@ export default function PartnerDashboard() {
         // Recarregar a lista de serviços para mostrar o novo registro
         await fetchPartnerServices(token, partner.id);
         
-        alert('✅ Serviço registrado com sucesso!\n\nO serviço foi adicionado ao seu histórico e está aguardando aprovação da equipe Murici Logística.');
+        alert('✅ Serviço registrado com sucesso!\n\nO serviço foi adicionado ao seu histórico e está aguardando aprovação da equipe Murici On Fleet 2.0.');
       } else {
         try {
           const errorData = await response.json();
@@ -356,7 +356,7 @@ export default function PartnerDashboard() {
                 </div>
                 <h3 className="font-medium text-gray-900 mb-2">Receba Solicitações</h3>
                 <p className="text-sm text-gray-600">
-                  A equipe da Murici Logística entrará em contato quando precisar dos seus serviços
+                  A equipe da Murici On Fleet 2.0 entrará em contato quando precisar dos seus serviços
                 </p>
               </div>
               

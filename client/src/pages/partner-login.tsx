@@ -154,7 +154,7 @@ export default function PartnerLogin() {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-500">
-            © 2025 Murici Logística - Sistema de Gestão de Frota
+            © 2025 Murici On Fleet 2.0 - Sistema de Gestão de Frota
           </p>
         </div>
       </div>

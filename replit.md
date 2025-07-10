@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 10, 2025: **COMPLETE REBRANDING TO MURICI ON FLEET 2.0** - Comprehensive system rebranding with logo integration
+  - ✅ Updated all main UI components from "Murici Logística" to "Murici On Fleet 2.0"
+  - ✅ Integrated uploaded logo files (logo_1752180524044.jpg, image_1752180547360.png) across all layouts
+  - ✅ Updated AppLayout.tsx, SidebarSimplificado.tsx, partner-dashboard.tsx with new branding
+  - ✅ Updated manifest.json with new app name and logo reference
+  - ✅ Updated external login page (public/externo/login.html) with new branding
+  - ✅ Complete visual identity transformation across entire system
+  - ✅ All logos now use attached assets instead of placeholder images
+
 - July 10, 2025: **COMPREHENSIVE BRAZIL TIMEZONE IMPLEMENTATION** - Implemented permanent Brazil timezone configuration across entire system
   - ✅ Created system-timezone.js with permanent timezone enforcement on server startup
   - ✅ Added timezone.js backend utilities with Brazil timezone functions

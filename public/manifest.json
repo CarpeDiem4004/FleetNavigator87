@@ -1,16 +1,16 @@
 {
-  "name": "Murici Fleet Management",
-  "short_name": "Murici Fleet",
-  "description": "Sistema de Gestão de Frotas Murici",
+  "name": "Murici On Fleet 2.0",
+  "short_name": "Murici On Fleet",
+  "description": "Sistema de Gestão de Frotas Murici On Fleet 2.0",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
   "icons": [
     {
-      "src": "/assets/murici-logo.png",
+      "src": "/attached_assets/logo_1752180524044.jpg",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/jpeg"
     }
   ]
 }

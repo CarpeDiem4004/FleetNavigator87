@@ -307,7 +307,7 @@ export default function SignIn({ oficina = false }: SignInProps) {
               </div>
             )}
             <p className="text-xs text-center text-gray-600">
-              Sistema de gerenciamento de frota desenvolvido para Murici Logística
+              Sistema de gerenciamento de frota desenvolvido para Murici On Fleet 2.0
             </p>
           </CardFooter>
         </Card>

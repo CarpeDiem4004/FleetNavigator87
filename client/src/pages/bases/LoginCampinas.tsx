@@ -185,7 +185,7 @@ const LoginCampinas: React.FC = () => {
         </Card>
 
         <div className="mt-6 text-center text-sm text-gray-500">
-          Sistema de Gestão de Frotas - Murici Logística
+          Sistema de Gestão de Frotas - Murici On Fleet 2.0
         </div>
       </div>
     </div>

@@ -409,7 +409,7 @@ const OficinaMurici: React.FC = () => {
       pdf.text('RELATÓRIO DE MANUTENÇÃO', 105, 30, { align: 'center' });
       
       pdf.setFontSize(14);
-      pdf.text('Murici Logística - Oficina', 105, 45, { align: 'center' });
+      pdf.text('Murici On Fleet 2.0 - Oficina', 105, 45, { align: 'center' });
       
       // Linha divisória
       pdf.setLineWidth(0.5);
