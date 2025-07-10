@@ -117,6 +117,13 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 10, 2025: Deactivated specific projects to streamline system operations
+  - ✅ Deactivated 6 projects: FMS09, MARISTELA INDUSTRIA, MANUTENÇÃO PREVENTIVA, PRIMO BASILE, REPARO DE EMERGENCIA, REVISÃO GERAL
+  - ✅ Deactivated 6 associated project bases from the removed projects
+  - ✅ System now has 13 active projects instead of 19
+  - ✅ Remaining active projects: COCA-COLA, FULL MELI, GRUPO PEREIRA, LINE HALL, Line Hall Shopee, MADEIRA MADEIRA, MERCADO LIVRE, Manutenção, OXXO, PETLOVE, SHOPEE, Uso Operacional, XPT
+  - ✅ Projects preserved via deactivation to maintain data integrity
+
 - July 10, 2025: Restored SHOPEE project to original base configuration
   - ✅ Fixed inactive bases in project_bases table for SHOPEE projects
   - ✅ Activated existing bases: FMS09 SÃO PAULO (SP) and Line Hall Shopee
