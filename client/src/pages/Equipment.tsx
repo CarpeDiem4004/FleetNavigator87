@@ -41,8 +41,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
-import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings } from "lucide-react";
+import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
 
 // Schema para validação do formulário de equipamento
 const equipmentSchema = z.object({
@@ -143,6 +144,7 @@ export default function Equipment() {
   const [editingEquipment, setEditingEquipment] = useState<any>(null);
   const [isTermDialogOpen, setIsTermDialogOpen] = useState(false);
   const [selectedEquipmentForTerm, setSelectedEquipmentForTerm] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState('equipments');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -171,6 +173,11 @@ export default function Equipment() {
   // Query para dashboard
   const { data: dashboard } = useQuery({
     queryKey: ['/api/equipment-dashboard'],
+  });
+
+  // Query para buscar termos de responsabilidade
+  const { data: responsibilityTerms = [] } = useQuery({
+    queryKey: ['/api/equipment-responsibility-terms'],
   });
 
   // Mutation para criar equipamento
@@ -270,6 +277,10 @@ export default function Equipment() {
 
   const onTermSubmit = (data: ResponsibilityTermFormData) => {
     if (selectedEquipmentForTerm) {
+      // Gerar e baixar o PDF automaticamente
+      handleDownloadTerm(data, selectedEquipmentForTerm);
+      
+      // Criar o termo no banco de dados
       createTermMutation.mutate({
         ...data,
         equipment_id: selectedEquipmentForTerm.id,
@@ -281,6 +292,88 @@ export default function Equipment() {
   const handleCreateTerm = (equipment: any) => {
     setSelectedEquipmentForTerm(equipment);
     setIsTermDialogOpen(true);
+  };
+
+  const generateTermPDF = (termData: ResponsibilityTermFormData, equipment: any) => {
+    const doc = new jsPDF();
+    
+    // Título
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TERMO DE RESPONSABILIDADE', 105, 20, { align: 'center' });
+    
+    // Subtítulo
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'normal');
+    doc.text('CONTROLE DE EQUIPAMENTOS', 105, 30, { align: 'center' });
+    
+    // Informações do equipamento
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DADOS DO EQUIPAMENTO:', 20, 50);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Equipamento: ${equipment.name}`, 20, 60);
+    doc.text(`Tipo: ${equipmentTypeLabels[equipment.type]}`, 20, 70);
+    doc.text(`Marca/Modelo: ${equipment.brand || 'N/A'} ${equipment.model || ''}`, 20, 80);
+    doc.text(`Número de Série: ${equipment.serial_number || 'N/A'}`, 20, 90);
+    doc.text(`Número do Patrimônio: ${equipment.patrimony_number || 'N/A'}`, 20, 100);
+    doc.text(`Condição: ${equipmentConditionLabels[termData.condition_at_assignment]}`, 20, 110);
+    
+    // Dados do responsável
+    doc.setFont('helvetica', 'bold');
+    doc.text('DADOS DO RESPONSÁVEL:', 20, 130);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Nome Completo: ${termData.full_name}`, 20, 140);
+    doc.text(`CPF: ${termData.cpf}`, 20, 150);
+    doc.text(`Telefone: ${termData.phone}`, 20, 160);
+    doc.text(`Departamento: ${termData.department}`, 20, 170);
+    doc.text(`Endereço: ${termData.address}`, 20, 180);
+    
+    // Termo de responsabilidade
+    doc.setFont('helvetica', 'bold');
+    doc.text('TERMO DE RESPONSABILIDADE:', 20, 200);
+    
+    doc.setFont('helvetica', 'normal');
+    const termoText = `
+Eu, ${termData.full_name}, portador do CPF ${termData.cpf}, declaro ter recebido em perfeito estado de funcionamento e conservação o equipamento descrito acima, comprometendo-me a:
+
+1. Utilizar o equipamento exclusivamente para atividades profissionais relacionadas ao meu trabalho na empresa;
+2. Manter o equipamento em bom estado de conservação;
+3. Não permitir o uso do equipamento por terceiros;
+4. Comunicar imediatamente qualquer defeito, dano ou perda do equipamento;
+5. Devolver o equipamento quando solicitado ou ao me desligar da empresa;
+6. Responsabilizar-me por eventuais danos causados por uso inadequado.
+
+Declaro estar ciente de que sou responsável pelo equipamento até sua devolução formal.
+    `;
+    
+    const splitText = doc.splitTextToSize(termoText, 170);
+    doc.text(splitText, 20, 210);
+    
+    // Observações
+    if (termData.notes) {
+      doc.text('Observações:', 20, 260);
+      const notesText = doc.splitTextToSize(termData.notes, 170);
+      doc.text(notesText, 20, 270);
+    }
+    
+    // Assinaturas
+    doc.text('_________________________', 20, 280);
+    doc.text('Assinatura do Responsável', 20, 290);
+    doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 20, 300);
+    
+    doc.text('_________________________', 120, 280);
+    doc.text('Assinatura do Gestor', 120, 290);
+    doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 120, 300);
+    
+    return doc;
+  };
+
+  const handleDownloadTerm = (termData: ResponsibilityTermFormData, equipment: any) => {
+    const doc = generateTermPDF(termData, equipment);
+    doc.save(`termo_responsabilidade_${equipment.name.replace(/[^a-zA-Z0-9]/g, '_')}_${termData.full_name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
   };
 
   const handleEdit = (equipment: any) => {
@@ -332,8 +425,235 @@ export default function Equipment() {
           <Plus className="mr-2 h-4 w-4" />
           Novo Equipamento
         </Button>
-        
-        <Dialog open={isCreateDialogOpen || !!editingEquipment} onOpenChange={handleDialogClose}>
+      </div>
+
+      {/* Abas */}
+      <div className="flex space-x-1 border-b">
+        <button
+          onClick={() => setActiveTab('equipments')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'equipments' 
+              ? 'border-b-2 border-blue-500 text-blue-600' 
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Equipamentos
+        </button>
+        <button
+          onClick={() => setActiveTab('terms')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'terms' 
+              ? 'border-b-2 border-blue-500 text-blue-600' 
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Termos de Responsabilidade
+        </button>
+      </div>
+
+      {/* Conteúdo das abas */}
+      {activeTab === 'equipments' && (
+        <div className="space-y-6">
+          {/* Dashboard Cards */}
+          {dashboard && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total de Equipamentos</CardTitle>
+                  <Settings className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{dashboard.total_equipments}</div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Disponíveis</CardTitle>
+                  <div className="h-4 w-4 rounded-full bg-green-500"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{dashboard.available_equipments}</div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Em Uso</CardTitle>
+                  <div className="h-4 w-4 rounded-full bg-blue-500"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{dashboard.in_use_equipments}</div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Em Manutenção</CardTitle>
+                  <div className="h-4 w-4 rounded-full bg-red-500"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{dashboard.maintenance_equipments}</div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          
+          {/* Tabela de Equipamentos */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Lista de Equipamentos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2">Equipamento</th>
+                      <th className="text-left p-2">Tipo</th>
+                      <th className="text-left p-2">Marca/Modelo</th>
+                      <th className="text-left p-2">Número de Série</th>
+                      <th className="text-left p-2">Status</th>
+                      <th className="text-left p-2">Condição</th>
+                      <th className="text-left p-2">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {equipments.map((equipment: any) => (
+                      <tr key={equipment.id} className="border-b hover:bg-gray-50">
+                        <td className="p-2">
+                          <div className="flex items-center gap-2">
+                            {getEquipmentIcon(equipment.type)}
+                            <span className="font-medium">{equipment.name}</span>
+                          </div>
+                        </td>
+                        <td className="p-2">{equipmentTypeLabels[equipment.type]}</td>
+                        <td className="p-2">{equipment.brand} {equipment.model}</td>
+                        <td className="p-2">{equipment.serial_number || 'N/A'}</td>
+                        <td className="p-2">
+                          <Badge variant={getStatusBadgeVariant(equipment.status)}>
+                            {equipmentStatusLabels[equipment.status]}
+                          </Badge>
+                        </td>
+                        <td className="p-2">{equipmentConditionLabels[equipment.condition]}</td>
+                        <td className="p-2">
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(equipment)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(equipment.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCreateTerm(equipment)}
+                              title="Criar Termo de Responsabilidade"
+                            >
+                              <UserCheck className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Aba de Termos de Responsabilidade */}
+      {activeTab === 'terms' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Termos de Responsabilidade Ativos</CardTitle>
+              <CardDescription>
+                Visualize e gerencie termos de responsabilidade para equipamentos
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2">Equipamento</th>
+                      <th className="text-left p-2">Responsável</th>
+                      <th className="text-left p-2">CPF</th>
+                      <th className="text-left p-2">Departamento</th>
+                      <th className="text-left p-2">Data de Entrega</th>
+                      <th className="text-left p-2">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {responsibilityTerms.map((term: any) => (
+                      <tr key={term.id} className="border-b hover:bg-gray-50">
+                        <td className="p-2">
+                          <div className="flex items-center gap-2">
+                            {getEquipmentIcon(term.equipment_type)}
+                            <span className="font-medium">{term.equipment_name}</span>
+                          </div>
+                        </td>
+                        <td className="p-2">{term.full_name}</td>
+                        <td className="p-2">{term.cpf}</td>
+                        <td className="p-2">{term.department}</td>
+                        <td className="p-2">
+                          {new Date(term.assigned_at).toLocaleDateString('pt-BR')}
+                        </td>
+                        <td className="p-2">
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                // Recriar o PDF com os dados do termo
+                                const equipment = {
+                                  name: term.equipment_name,
+                                  type: term.equipment_type,
+                                  brand: '',
+                                  model: '',
+                                  serial_number: term.equipment_serial || '',
+                                  patrimony_number: ''
+                                };
+                                const termData = {
+                                  full_name: term.full_name,
+                                  cpf: term.cpf,
+                                  phone: term.phone,
+                                  department: term.department,
+                                  address: term.address,
+                                  condition_at_assignment: term.condition_at_assignment,
+                                  notes: term.notes || ''
+                                };
+                                handleDownloadTerm(termData, equipment);
+                              }}
+                              title="Baixar PDF do Termo"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Diálogos */}
+      <Dialog open={isCreateDialogOpen || !!editingEquipment} onOpenChange={handleDialogClose}>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
@@ -599,134 +919,6 @@ export default function Equipment() {
             </Form>
           </DialogContent>
         </Dialog>
-      </div>
-
-      {/* Dashboard Cards */}
-      {dashboard && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Equipamentos</CardTitle>
-              <Settings className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboard.totalEquipments}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Disponíveis</CardTitle>
-              <div className="h-4 w-4 rounded-full bg-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboard.availableEquipments}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Em Uso</CardTitle>
-              <UserCheck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboard.inUseEquipments}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Em Manutenção</CardTitle>
-              <div className="h-4 w-4 rounded-full bg-red-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboard.maintenanceEquipments}</div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Lista de Equipamentos */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Equipamentos Cadastrados</CardTitle>
-          <CardDescription>
-            Lista de todos os equipamentos cadastrados no sistema
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Equipamento</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Marca/Modelo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Condição</TableHead>
-                <TableHead>Localização</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {equipments.map((equipment: any) => (
-                <TableRow key={equipment.id}>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      {getEquipmentIcon(equipment.type)}
-                      <div>
-                        <div className="font-medium">{equipment.name}</div>
-                        {equipment.serial_number && (
-                          <div className="text-sm text-muted-foreground">
-                            S/N: {equipment.serial_number}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{equipmentTypeLabels[equipment.type as keyof typeof equipmentTypeLabels]}</TableCell>
-                  <TableCell>
-                    <div>
-                      {equipment.brand && <div className="font-medium">{equipment.brand}</div>}
-                      {equipment.model && <div className="text-sm text-muted-foreground">{equipment.model}</div>}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadgeVariant(equipment.status)}>
-                      {equipmentStatusLabels[equipment.status as keyof typeof equipmentStatusLabels]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {equipmentConditionLabels[equipment.condition as keyof typeof equipmentConditionLabels]}
-                  </TableCell>
-                  <TableCell>{equipment.location || '-'}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(equipment)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleCreateTerm(equipment)}
-                      >
-                        <UserCheck className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(equipment.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
 
       {/* Dialog para termo de responsabilidade */}
       <Dialog open={isTermDialogOpen} onOpenChange={setIsTermDialogOpen}>
@@ -854,13 +1046,35 @@ export default function Equipment() {
                 />
               </div>
 
-              <DialogFooter>
+              <DialogFooter className="flex justify-between">
                 <Button type="button" variant="outline" onClick={() => setIsTermDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={createTermMutation.isPending}>
-                  Criar Termo de Responsabilidade
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={() => {
+                      const formData = termForm.getValues();
+                      if (selectedEquipmentForTerm && formData.full_name && formData.cpf) {
+                        handleDownloadTerm(formData, selectedEquipmentForTerm);
+                      } else {
+                        toast({
+                          title: "Erro",
+                          description: "Preencha pelo menos o nome e CPF para gerar o PDF",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Baixar PDF
+                  </Button>
+                  <Button type="submit" disabled={createTermMutation.isPending}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Criar Termo e Baixar PDF
+                  </Button>
+                </div>
               </DialogFooter>
             </form>
           </Form>
