@@ -272,6 +272,11 @@ const SidebarSimplified: React.FC<SidebarProps> = ({ open, setOpen }) => {
     return item.roles.includes(user.role);
   });
 
+  // Debug: Verificar se o item Equipamentos está sendo filtrado corretamente
+  console.log('User role:', user.role);
+  console.log('Equipamentos item found:', navItems.find(item => item.name === 'Equipamentos'));
+  console.log('Total nav items:', navItems.length);
+
   return (
     <div
       className={`${
