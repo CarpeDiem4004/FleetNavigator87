@@ -248,6 +248,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
     ]},
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
+    { name: 'Equipamentos', href: '/equipment', icon: Package },
     { name: 'Line Hall', href: '/line-hall-shopee', icon: Map },
     { name: 'Parceiros de Guincho', href: '#', icon: Truck, subItems: [
       { name: 'Parceiros', href: '/fleet-management/towing-partners', icon: Truck },
@@ -269,7 +270,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Credenciais das Oficinas', href: '/maintenance/oficinas-credentials', icon: KeyRound },
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
-    { name: 'Controle de Equipamentos', href: '/equipment', icon: Package },
+    { name: 'Equipamentos', href: '/equipment', icon: Package },
     { name: 'Parceiros de Guincho', href: '#', icon: Truck, subItems: [
       { name: 'Parceiros', href: '/fleet-management/towing-partners', icon: Truck },
       { name: 'Solicitações', href: '/fleet-management/towing-partners/requests', icon: FileText },
@@ -350,6 +351,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
+    { name: 'Equipamentos', href: '/equipment', icon: Package },
     { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
       { name: 'Operações', href: '/fuel-card', icon: CreditCard },
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList },
