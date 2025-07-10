@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 10, 2025: Completed comprehensive project assignment for all 114 bases in the system
+  - ✅ Fixed all bases without project assignment (104 bases corrected)
+  - ✅ Systematic project mapping based on nomenclature and functionality
+  - ✅ SHOPEE: 64 bases, XPT: 12 bases, COCA-COLA: 9 bases, Uso Operacional: 9 bases
+  - ✅ All remaining projects properly assigned (MADEIRA MADEIRA: 4, GRUPO PEREIRA: 3, etc.)
+  - ✅ Legacy inactive projects (FMS09, PRIMO BASILE, MARISTELA) redirected to active projects
+  - ✅ Complete system integrity with all bases having proper project relationships
+  - ✅ All dropdown selectors now function correctly across the entire system
+
 - July 10, 2025: Fixed missing bases for Madeira Madeira, Full Meli and OXXO projects in fuel station links
   - ✅ Activated all project-base relationships that were inactive (6 relationships updated)
   - ✅ Fixed missing basename and project_id fields in bases table
