@@ -30,9 +30,26 @@ router.use((req, res, next) => {
     '/status'
   ];
   
-  // Verificar se a rota atual é pública
+  // Lista de padrões de rotas públicas (regex)
+  const publicRoutePatterns = [
+    /^\/historico-direto\/.+/,
+    /^\/posto-supabase\/historico\/.+/,
+    /^\/estatisticas-mensais-direto\/.+/,
+    /^\/consumo-por-veiculo-direto\/.+/,
+    /^\/comparativo-combustiveis-direto\/.+/,
+    /^\/check-tabela-direto\/.+/
+  ];
+  
+  // Verificar se a rota atual é pública (lista exata)
   if (publicRoutes.includes(req.path)) {
     console.log('[EQUIPMENT ROUTES] Rota pública detectada, pulando autenticação:', req.path);
+    return next();
+  }
+  
+  // Verificar se a rota atual corresponde a algum padrão público (regex)
+  const isPublicPattern = publicRoutePatterns.some(pattern => pattern.test(req.path));
+  if (isPublicPattern) {
+    console.log('[EQUIPMENT ROUTES] Rota pública detectada via padrão, pulando autenticação:', req.path);
     return next();
   }
   
