@@ -269,6 +269,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Credenciais das Oficinas', href: '/maintenance/oficinas-credentials', icon: KeyRound },
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
+    { name: 'Controle de Equipamentos', href: '/equipment', icon: Package },
     { name: 'Parceiros de Guincho', href: '#', icon: Truck, subItems: [
       { name: 'Parceiros', href: '/fleet-management/towing-partners', icon: Truck },
       { name: 'Solicitações', href: '/fleet-management/towing-partners/requests', icon: FileText },

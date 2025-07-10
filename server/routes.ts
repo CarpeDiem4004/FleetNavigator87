@@ -148,6 +148,8 @@ import { resyncSession } from './routes/sessionResyncRoute.js';
 import partnerAuthRouter from './routes/partnerAuth';
 // Importação das novas rotas de JWT
 import jwtAuthRoutes from './jwtAuthRoutes.js';
+// Importação das rotas de equipamentos
+import equipmentRoutes from './routes/equipmentRoutes.js';
 // Importação das rotas de recebimento de combustível
 import fuelReceiptRoutes from './routes/fuelReceiptRoutes.js';
 // Importação do cliente Supabase para armazenamento de arquivos
@@ -1602,6 +1604,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rotas de autenticação JWT
   app.use('/api', jwtAuthRoutes);
+  
+  // Registrar rotas de equipamentos
+  app.use('/api', equipmentRoutes);
   // Rota para registro de movimentações de pátio
   app.post('/api/registro/movimentacao-patio', async (req, res) => {
     try {

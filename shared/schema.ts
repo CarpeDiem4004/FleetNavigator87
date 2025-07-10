@@ -68,6 +68,51 @@ export const requestStatusEnum = pgEnum('request_status', [
   'cancelado'             // Solicitação cancelada
 ]);
 
+// Enums para sistema de controle de equipamentos
+export const equipmentTypeEnum = pgEnum('equipment_type', [
+  'notebook',             // Notebook/Laptop
+  'celular',              // Celular/Smartphone
+  'tablet',               // Tablet
+  'desktop',              // Computador desktop
+  'monitor',              // Monitor
+  'impressora',           // Impressora
+  'scanner',              // Scanner
+  'roteador',             // Roteador/Switch
+  'telefone_fixo',        // Telefone fixo
+  'camera',               // Câmera
+  'projetor',             // Projetor
+  'outros'                // Outros equipamentos
+]);
+
+export const equipmentStatusEnum = pgEnum('equipment_status', [
+  'disponivel',           // Disponível para uso
+  'em_uso',               // Em uso por funcionário
+  'manutencao',           // Em manutenção
+  'descartado',           // Descartado/Inutilizado
+  'perdido',              // Perdido
+  'roubado'               // Roubado
+]);
+
+export const equipmentConditionEnum = pgEnum('equipment_condition', [
+  'novo',                 // Novo
+  'otimo',                // Ótimo estado
+  'bom',                  // Bom estado
+  'regular',              // Estado regular
+  'ruim',                 // Estado ruim
+  'defeituoso'            // Defeituoso
+]);
+
+// Create the projects table
+export const projects = pgTable("projects", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  client: text("client"),
+  is_active: boolean("is_active").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
 // Create the bases table
 export const bases = pgTable("bases", {
   id: serial("id").primaryKey(),
@@ -805,3 +850,142 @@ export type InsertBaseRequest = z.infer<typeof insertBaseRequestSchema>;
 export type InsertBaseRequestUpdate = z.infer<typeof insertBaseRequestUpdateSchema>;
 export type TowingServicePayment = typeof towingServicePayments.$inferSelect;
 export type InsertTowingServicePayment = z.infer<typeof insertTowingServicePaymentSchema>;
+
+// Tabela de equipamentos
+export const equipments = pgTable("equipments", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  type: equipmentTypeEnum("type").notNull(),
+  brand: text("brand"),
+  model: text("model"),
+  serial_number: text("serial_number").unique(),
+  patrimony_number: text("patrimony_number").unique(),
+  purchase_date: date("purchase_date"),
+  purchase_value: decimal("purchase_value", { precision: 10, scale: 2 }),
+  supplier: text("supplier"),
+  warranty_expires: date("warranty_expires"),
+  condition: equipmentConditionEnum("condition").notNull().default('novo'),
+  status: equipmentStatusEnum("status").notNull().default('disponivel'),
+  location: text("location"),
+  notes: text("notes"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela de termos de responsabilidade
+export const equipmentResponsibilityTerms = pgTable("equipment_responsibility_terms", {
+  id: serial("id").primaryKey(),
+  equipment_id: integer("equipment_id").references(() => equipments.id).notNull(),
+  user_id: integer("user_id").references(() => users.id).notNull(),
+  assigned_at: timestamp("assigned_at").defaultNow(),
+  returned_at: timestamp("returned_at"),
+  assigned_by: integer("assigned_by").references(() => users.id),
+  returned_by: integer("returned_by").references(() => users.id),
+  term_content: text("term_content").notNull(),
+  user_signature: text("user_signature"),
+  manager_signature: text("manager_signature"),
+  condition_at_assignment: equipmentConditionEnum("condition_at_assignment").notNull(),
+  condition_at_return: equipmentConditionEnum("condition_at_return"),
+  notes: text("notes"),
+  is_active: boolean("is_active").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela de manutenção de equipamentos
+export const equipmentMaintenance = pgTable("equipment_maintenance", {
+  id: serial("id").primaryKey(),
+  equipment_id: integer("equipment_id").references(() => equipments.id).notNull(),
+  maintenance_type: text("maintenance_type").notNull(), // 'preventiva', 'corretiva', 'upgrade'
+  description: text("description").notNull(),
+  performed_by: text("performed_by"),
+  performed_at: timestamp("performed_at").defaultNow(),
+  cost: decimal("cost", { precision: 10, scale: 2 }),
+  supplier: text("supplier"),
+  notes: text("notes"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela de movimentação de equipamentos
+export const equipmentMovements = pgTable("equipment_movements", {
+  id: serial("id").primaryKey(),
+  equipment_id: integer("equipment_id").references(() => equipments.id).notNull(),
+  from_user_id: integer("from_user_id").references(() => users.id),
+  to_user_id: integer("to_user_id").references(() => users.id),
+  from_location: text("from_location"),
+  to_location: text("to_location"),
+  movement_type: text("movement_type").notNull(), // 'assignment', 'return', 'transfer', 'maintenance'
+  moved_by: integer("moved_by").references(() => users.id).notNull(),
+  moved_at: timestamp("moved_at").defaultNow(),
+  notes: text("notes"),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// Relações para equipamentos
+export const equipmentsRelations = relations(equipments, ({ many }) => ({
+  responsibilityTerms: many(equipmentResponsibilityTerms),
+  maintenanceRecords: many(equipmentMaintenance),
+  movements: many(equipmentMovements),
+}));
+
+export const equipmentResponsibilityTermsRelations = relations(equipmentResponsibilityTerms, ({ one }) => ({
+  equipment: one(equipments, {
+    fields: [equipmentResponsibilityTerms.equipment_id],
+    references: [equipments.id],
+  }),
+  user: one(users, {
+    fields: [equipmentResponsibilityTerms.user_id],
+    references: [users.id],
+  }),
+  assignedBy: one(users, {
+    fields: [equipmentResponsibilityTerms.assigned_by],
+    references: [users.id],
+  }),
+  returnedBy: one(users, {
+    fields: [equipmentResponsibilityTerms.returned_by],
+    references: [users.id],
+  }),
+}));
+
+export const equipmentMaintenanceRelations = relations(equipmentMaintenance, ({ one }) => ({
+  equipment: one(equipments, {
+    fields: [equipmentMaintenance.equipment_id],
+    references: [equipments.id],
+  }),
+}));
+
+export const equipmentMovementsRelations = relations(equipmentMovements, ({ one }) => ({
+  equipment: one(equipments, {
+    fields: [equipmentMovements.equipment_id],
+    references: [equipments.id],
+  }),
+  fromUser: one(users, {
+    fields: [equipmentMovements.from_user_id],
+    references: [users.id],
+  }),
+  toUser: one(users, {
+    fields: [equipmentMovements.to_user_id],
+    references: [users.id],
+  }),
+  movedBy: one(users, {
+    fields: [equipmentMovements.moved_by],
+    references: [users.id],
+  }),
+}));
+
+// Schemas para inserção e validação
+export const insertEquipmentSchema = createInsertSchema(equipments);
+export const insertEquipmentResponsibilityTermSchema = createInsertSchema(equipmentResponsibilityTerms);
+export const insertEquipmentMaintenanceSchema = createInsertSchema(equipmentMaintenance);
+export const insertEquipmentMovementSchema = createInsertSchema(equipmentMovements);
+
+// Tipos TypeScript
+export type Equipment = typeof equipments.$inferSelect;
+export type InsertEquipment = z.infer<typeof insertEquipmentSchema>;
+export type EquipmentResponsibilityTerm = typeof equipmentResponsibilityTerms.$inferSelect;
+export type InsertEquipmentResponsibilityTerm = z.infer<typeof insertEquipmentResponsibilityTermSchema>;
+export type EquipmentMaintenance = typeof equipmentMaintenance.$inferSelect;
+export type InsertEquipmentMaintenance = z.infer<typeof insertEquipmentMaintenanceSchema>;
+export type EquipmentMovement = typeof equipmentMovements.$inferSelect;
+export type InsertEquipmentMovement = z.infer<typeof insertEquipmentMovementSchema>;

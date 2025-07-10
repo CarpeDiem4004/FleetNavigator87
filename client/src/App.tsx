@@ -131,6 +131,7 @@ import DriverAccess from "@/pages/DriverAccess";
 import DriverMaintenanceRequest from "@/pages/DriverMaintenanceRequest";
 import LineHallVehicleRegistration from "@/pages/LineHallVehicleRegistration";
 import LineHallFuelCardRequests from "@/pages/LineHallFuelCardRequests";
+import Equipment from "@/pages/Equipment";
 
 // Importação das páginas de Abastecimento Terceiros
 import AbastecimentoTerceirosLogin from "@/pages/AbastecimentoTerceirosLogin";
@@ -277,6 +278,7 @@ function App() {
           <ProtectedRoute path="/fleet-management/maintenance" component={MaintenanceManagement} />
           <ProtectedRoute path="/fleet-management/maintenance-management" component={MaintenanceManagement} />
           <ProtectedRoute path="/fleet-management/budgets" component={BudgetManagementPage} />
+          <ProtectedRoute path="/equipment" component={Equipment} />
           <ProtectedRoute path="/fleet-management/towing-partners" component={TowingPartnersPage} />
           <ProtectedRoute path="/fleet-management/towing-partners/new" component={NewTowingPartnerPage} />
           <ProtectedRoute path="/fleet-management/towing-partners/requests" component={TowingRequestsPage} />
