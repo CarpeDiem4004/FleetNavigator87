@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 10, 2025: Fixed missing bases for Madeira Madeira, Full Meli and OXXO projects in fuel station links
+  - ✅ Activated all project-base relationships that were inactive (6 relationships updated)
+  - ✅ Fixed missing basename and project_id fields in bases table
+  - ✅ Madeira Madeira: 4 active bases (MM01 Cajamar, MM03 Aruja, MM04 Jundiai, MM05 Osasco)
+  - ✅ Full Meli: 1 active base (FMELI01)
+  - ✅ OXXO: 1 active base (OXXO1 Cajamar)
+  - ✅ All project bases now appear correctly in fuel station dropdown selectors
+  - ✅ Complete integration between project_bases and bases tables restored
+
 - July 10, 2025: Added project selection field to base registration system
   - ✅ Added project_id column to bases table with foreign key constraint
   - ✅ Updated shared schema to include project_id field in bases table
