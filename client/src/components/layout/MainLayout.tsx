@@ -1,5 +1,5 @@
 import React from 'react';
-import Sidebar from './Sidebar';
+import SidebarSimplified from './SidebarSimplified';
 import Header from './Header';
 import { useAuth } from '@/context/AuthContext';
 
@@ -18,7 +18,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
-      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+      <SidebarSimplified open={sidebarOpen} setOpen={setSidebarOpen} />
 
       {/* Main content area */}
       <div className="flex flex-col flex-1 overflow-hidden">
