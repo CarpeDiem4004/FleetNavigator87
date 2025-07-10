@@ -118,12 +118,16 @@ export default function BasesPage() {
       const res = await apiRequest('GET', '/api/bases');
       const data = await res.json();
       
+      console.log("API Response:", data);
+      
       // Garantir que sempre retorna um array
       if (data && data.success && Array.isArray(data.data)) {
+        console.log("Found", data.data.length, "bases");
         return data.data;
       }
       
       // Se a resposta não estiver no formato esperado, retorna array vazio
+      console.log("Invalid response format, returning empty array");
       return [];
     },
   });
