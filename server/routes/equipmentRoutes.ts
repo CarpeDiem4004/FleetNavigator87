@@ -17,6 +17,52 @@ import {
 } from "@shared/schema";
 import { eq, desc, and, isNull, count } from "drizzle-orm";
 import { unifiedAuthMiddleware } from "../utils/auth-utils.js";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Configurar multer para upload de arquivos
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, '../../uploads/equipment-terms');
+    
+    // Criar diretório se não existir
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Gerar nome único para o arquivo
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `term-${req.params.id}-${uniqueSuffix}${ext}`);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+  fileFilter: function (req, file, cb) {
+    // Verificar tipos de arquivo permitidos
+    const allowedTypes = /jpeg|jpg|png|pdf/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Apenas arquivos PDF, JPG, JPEG e PNG são permitidos!'));
+    }
+  }
+});
 
 const router = Router();
 
@@ -260,6 +306,59 @@ router.put('/equipment-responsibility-terms/:id/return', unifiedAuthMiddleware, 
     res.json({ success: true, data: updatedTerm[0] });
   } catch (error) {
     console.error('Erro ao registrar devolução:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
+});
+
+// POST /api/equipment-responsibility-terms/:id/upload - Upload de documento assinado
+router.post('/equipment-responsibility-terms/:id/upload', unifiedAuthMiddleware, upload.single('signed_document'), async (req, res) => {
+  try {
+    const termId = parseInt(req.params.id);
+    
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'Nenhum arquivo foi enviado' });
+    }
+    
+    // Verificar se o termo existe
+    const term = await db
+      .select()
+      .from(equipmentResponsibilityTerms)
+      .where(eq(equipmentResponsibilityTerms.id, termId))
+      .limit(1);
+
+    if (term.length === 0) {
+      // Remover arquivo se o termo não existe
+      fs.unlinkSync(req.file.path);
+      return res.status(404).json({ success: false, error: 'Termo de responsabilidade não encontrado' });
+    }
+    
+    // Gerar URL relativa do arquivo
+    const fileUrl = `/uploads/equipment-terms/${req.file.filename}`;
+    
+    // Atualizar termo com URL do documento
+    const updatedTerm = await db
+      .update(equipmentResponsibilityTerms)
+      .set({
+        signed_document_url: fileUrl,
+        updated_at: new Date()
+      })
+      .where(eq(equipmentResponsibilityTerms.id, termId))
+      .returning();
+
+    res.json({ 
+      success: true, 
+      data: updatedTerm[0],
+      message: 'Documento anexado com sucesso!',
+      file_url: fileUrl
+    });
+  } catch (error) {
+    console.error('Erro ao fazer upload do documento:', error);
+    
+    // Remover arquivo em caso de erro
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 });

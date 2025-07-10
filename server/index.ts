@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { configureBrazilTimezone, timezoneMiddleware } from './utils/timezone.js';
@@ -2046,6 +2047,9 @@ app.use((req, res, next) => {
     // Se estiver autenticado, continuar
     next();
   });
+
+  // Servir arquivos estáticos de uploads de equipamentos
+  app.use('/uploads', express.static(path.join(process.cwd(), 'server', 'uploads')));
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route

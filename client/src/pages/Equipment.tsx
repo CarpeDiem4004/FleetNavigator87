@@ -42,7 +42,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
-import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download, Search, History, Clock, Wrench } from "lucide-react";
+import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download, Search, History, Clock, Wrench, Paperclip, Eye, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 
@@ -149,6 +149,9 @@ export default function Equipment() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEquipmentForHistory, setSelectedEquipmentForHistory] = useState<any>(null);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+  const [selectedTermForUpload, setSelectedTermForUpload] = useState<any>(null);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -307,6 +310,7 @@ export default function Equipment() {
     mutationFn: (data: ResponsibilityTermFormData) => apiRequest('POST', '/api/equipment-responsibility-terms', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/equipment-responsibility-terms'] });
       setIsTermDialogOpen(false);
       setSelectedEquipmentForTerm(null);
       termForm.reset();
@@ -319,6 +323,46 @@ export default function Equipment() {
       toast({
         title: "Erro", 
         description: "Erro ao criar termo de responsabilidade",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation para upload de arquivo
+  const uploadTermMutation = useMutation({
+    mutationFn: async ({ termId, file }: { termId: number; file: File }) => {
+      const formData = new FormData();
+      formData.append('signed_document', file);
+      
+      const response = await fetch(`/api/equipment-responsibility-terms/${termId}/upload`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erro no upload do arquivo');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/equipment-responsibility-terms'] });
+      setIsUploadDialogOpen(false);
+      setSelectedTermForUpload(null);
+      setUploadFile(null);
+      toast({
+        title: "Sucesso",
+        description: "Documento anexado com sucesso!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro",
+        description: "Erro ao anexar documento",
         variant: "destructive",
       });
     },
@@ -726,6 +770,27 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                             >
                               <Download className="h-4 w-4" />
                             </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedTermForUpload(term);
+                                setIsUploadDialogOpen(true);
+                              }}
+                              title="Anexar Termo Assinado"
+                            >
+                              <Paperclip className="h-4 w-4" />
+                            </Button>
+                            {term.signed_document_url && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => window.open(term.signed_document_url, '_blank')}
+                                title="Ver Termo Assinado"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1270,6 +1335,85 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
           <DialogFooter>
             <Button onClick={() => setIsHistoryDialogOpen(false)}>
               Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Upload */}
+      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Anexar Termo Assinado</DialogTitle>
+            <DialogDescription>
+              Faça upload do documento assinado (PDF, JPG, PNG)
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {selectedTermForUpload && (
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm font-medium">Equipamento: {selectedTermForUpload.equipment_name}</p>
+                <p className="text-sm text-gray-600">Responsável: {selectedTermForUpload.full_name}</p>
+              </div>
+            )}
+            
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setUploadFile(e.target.files[0]);
+                  }
+                }}
+                className="hidden"
+                id="upload-file"
+              />
+              <label htmlFor="upload-file" className="cursor-pointer">
+                <div className="space-y-2">
+                  <Upload className="mx-auto h-8 w-8 text-gray-400" />
+                  <p className="text-sm text-gray-600">
+                    Clique para selecionar um arquivo
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    PDF, JPG, PNG (máx. 10MB)
+                  </p>
+                </div>
+              </label>
+            </div>
+            
+            {uploadFile && (
+              <div className="flex items-center gap-2 p-2 bg-blue-50 rounded">
+                <FileText className="h-4 w-4 text-blue-600" />
+                <span className="text-sm text-blue-800">{uploadFile.name}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setUploadFile(null)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedTermForUpload && uploadFile) {
+                  uploadTermMutation.mutate({
+                    termId: selectedTermForUpload.id,
+                    file: uploadFile,
+                  });
+                }
+              }}
+              disabled={!uploadFile || uploadTermMutation.isPending}
+            >
+              {uploadTermMutation.isPending ? 'Enviando...' : 'Anexar'}
             </Button>
           </DialogFooter>
         </DialogContent>

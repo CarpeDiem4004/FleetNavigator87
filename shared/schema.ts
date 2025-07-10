@@ -889,6 +889,7 @@ export const equipmentResponsibilityTerms = pgTable("equipment_responsibility_te
   term_content: text("term_content").notNull(),
   user_signature: text("user_signature"),
   manager_signature: text("manager_signature"),
+  signed_document_url: text("signed_document_url"), // URL do documento assinado
   condition_at_assignment: equipmentConditionEnum("condition_at_assignment").notNull(),
   condition_at_return: equipmentConditionEnum("condition_at_return"),
   notes: text("notes"),
