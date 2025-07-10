@@ -62,7 +62,20 @@ const equipmentSchema = z.object({
   notes: z.string().optional(),
 });
 
+// Schema para termo de responsabilidade
+const responsibilityTermSchema = z.object({
+  equipment_id: z.number(),
+  full_name: z.string().min(1, "Nome completo é obrigatório"),
+  cpf: z.string().min(11, "CPF deve ter 11 dígitos").max(14, "CPF inválido"),
+  phone: z.string().min(10, "Telefone é obrigatório"),
+  department: z.string().min(1, "Departamento é obrigatório"),
+  address: z.string().min(1, "Endereço é obrigatório"),
+  condition_at_assignment: z.enum(['novo', 'otimo', 'bom', 'regular', 'ruim', 'defeituoso']),
+  notes: z.string().optional(),
+});
+
 type EquipmentFormData = z.infer<typeof equipmentSchema>;
+type ResponsibilityTermFormData = z.infer<typeof responsibilityTermSchema>;
 
 const equipmentTypeLabels = {
   notebook: 'Notebook',
@@ -128,6 +141,8 @@ const getStatusBadgeVariant = (status: string) => {
 export default function Equipment() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<any>(null);
+  const [isTermDialogOpen, setIsTermDialogOpen] = useState(false);
+  const [selectedEquipmentForTerm, setSelectedEquipmentForTerm] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -136,6 +151,13 @@ export default function Equipment() {
     defaultValues: {
       condition: 'novo',
       status: 'disponivel',
+    },
+  });
+
+  const termForm = useForm<ResponsibilityTermFormData>({
+    resolver: zodResolver(responsibilityTermSchema),
+    defaultValues: {
+      condition_at_assignment: 'novo',
     },
   });
 
@@ -216,12 +238,49 @@ export default function Equipment() {
     },
   });
 
+  // Mutation para criar termo de responsabilidade
+  const createTermMutation = useMutation({
+    mutationFn: (data: ResponsibilityTermFormData) => apiRequest('/api/equipment-responsibility-terms', 'POST', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/equipment'] });
+      setIsTermDialogOpen(false);
+      setSelectedEquipmentForTerm(null);
+      termForm.reset();
+      toast({
+        title: "Sucesso",
+        description: "Termo de responsabilidade criado com sucesso!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro", 
+        description: "Erro ao criar termo de responsabilidade",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: EquipmentFormData) => {
     if (editingEquipment) {
       updateEquipmentMutation.mutate({ id: editingEquipment.id, data });
     } else {
       createEquipmentMutation.mutate(data);
     }
+  };
+
+  const onTermSubmit = (data: ResponsibilityTermFormData) => {
+    if (selectedEquipmentForTerm) {
+      createTermMutation.mutate({
+        ...data,
+        equipment_id: selectedEquipmentForTerm.id,
+        term_content: `Termo de Responsabilidade para ${selectedEquipmentForTerm.name}`,
+      });
+    }
+  };
+
+  const handleCreateTerm = (equipment: any) => {
+    setSelectedEquipmentForTerm(equipment);
+    setIsTermDialogOpen(true);
   };
 
   const handleEdit = (equipment: any) => {
@@ -649,6 +708,13 @@ export default function Equipment() {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => handleCreateTerm(equipment)}
+                      >
+                        <UserCheck className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleDelete(equipment.id)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -661,6 +727,145 @@ export default function Equipment() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Dialog para termo de responsabilidade */}
+      <Dialog open={isTermDialogOpen} onOpenChange={setIsTermDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Criar Termo de Responsabilidade</DialogTitle>
+            <DialogDescription>
+              Criar termo de responsabilidade para o equipamento: {selectedEquipmentForTerm?.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...termForm}>
+            <form onSubmit={termForm.handleSubmit(onTermSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={termForm.control}
+                  name="full_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome Completo *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nome completo da pessoa responsável" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={termForm.control}
+                  name="cpf"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CPF *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="000.000.000-00" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={termForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="(11) 99999-9999" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={termForm.control}
+                  name="department"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Departamento *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: TI, Recursos Humanos, Logística" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={termForm.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Endereço *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Endereço completo" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={termForm.control}
+                  name="condition_at_assignment"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Condição do Equipamento *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a condição" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.entries(equipmentConditionLabels).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={termForm.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Observações</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Informações adicionais sobre o termo de responsabilidade..."
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsTermDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={createTermMutation.isPending}>
+                  Criar Termo de Responsabilidade
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -876,7 +876,12 @@ export const equipments = pgTable("equipments", {
 export const equipmentResponsibilityTerms = pgTable("equipment_responsibility_terms", {
   id: serial("id").primaryKey(),
   equipment_id: integer("equipment_id").references(() => equipments.id).notNull(),
-  user_id: integer("user_id").references(() => users.id).notNull(),
+  user_id: integer("user_id").references(() => users.id), // Opcional para usuários do sistema
+  full_name: text("full_name").notNull(), // Nome completo da pessoa responsável
+  cpf: text("cpf").notNull(), // CPF da pessoa responsável
+  phone: text("phone").notNull(), // Telefone da pessoa responsável
+  department: text("department").notNull(), // Departamento da pessoa responsável
+  address: text("address").notNull(), // Endereço da pessoa responsável
   assigned_at: timestamp("assigned_at").defaultNow(),
   returned_at: timestamp("returned_at"),
   assigned_by: integer("assigned_by").references(() => users.id),
