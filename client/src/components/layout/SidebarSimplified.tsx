@@ -29,8 +29,13 @@ import {
   Droplets,
 } from 'lucide-react';
 
-// Constantes para itens de menu
-import { baseItems } from './constants/baseItems';
+// Constantes para itens de menu de bases
+const baseItems = [
+  { name: 'Campinas', href: '/bases/campinas', icon: Warehouse },
+  { name: 'Goiânia', href: '/bases/goiania', icon: Warehouse },
+  { name: 'Alair', href: '/bases/alair', icon: Warehouse },
+  { name: 'Salvador', href: '/bases/salvador', icon: Warehouse },
+];
 
 export interface NavItem {
   name: string;
