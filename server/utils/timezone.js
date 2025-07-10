@@ -1,10 +1,82 @@
 /**
  * Utilitários de timezone para o backend
+ * CONFIGURAÇÃO FIXA PARA BRASIL - NÃO ALTERAR EXCETO POR ADMINISTRADOR
  * Garante que todas as operações de data/hora usem o fuso horário do Brasil
  */
 
 const BRAZIL_TIMEZONE = 'America/Sao_Paulo';
 const BRAZIL_LOCALE = 'pt-BR';
+
+/**
+ * Configura o timezone do sistema para o Brasil de forma definitiva
+ * Esta função deve ser chamada no início do servidor
+ */
+function configureBrazilTimezone() {
+  // Define as variáveis de ambiente do sistema para usar timezone do Brasil
+  process.env.TZ = BRAZIL_TIMEZONE;
+  
+  // Força a configuração do Intl para usar locale brasileiro
+  if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
+    // Intercepta e força timezone brasileiro em todas as operações de data
+    const originalToLocaleString = Date.prototype.toLocaleString;
+    const originalToLocaleDateString = Date.prototype.toLocaleDateString;
+    const originalToLocaleTimeString = Date.prototype.toLocaleTimeString;
+    
+    // Override das funções nativas para garantir timezone brasileiro
+    Date.prototype.toLocaleString = function(locale = 'pt-BR', options = {}) {
+      return originalToLocaleString.call(this, locale, {
+        timeZone: BRAZIL_TIMEZONE,
+        ...options
+      });
+    };
+    
+    Date.prototype.toLocaleDateString = function(locale = 'pt-BR', options = {}) {
+      return originalToLocaleDateString.call(this, locale, {
+        timeZone: BRAZIL_TIMEZONE,
+        ...options
+      });
+    };
+    
+    Date.prototype.toLocaleTimeString = function(locale = 'pt-BR', options = {}) {
+      return originalToLocaleTimeString.call(this, locale, {
+        timeZone: BRAZIL_TIMEZONE,
+        ...options
+      });
+    };
+  }
+  
+  console.log(`[Timezone] Configurado para: ${BRAZIL_TIMEZONE}`);
+  console.log(`[Timezone] Data atual: ${new Date().toLocaleString('pt-BR', { timeZone: BRAZIL_TIMEZONE })}`);
+}
+
+/**
+ * Middleware para garantir que todas as requisições usem timezone brasileiro
+ */
+function timezoneMiddleware(req, res, next) {
+  // Força timezone brasileiro para esta requisição
+  const originalNow = Date.now;
+  const originalNewDate = Date;
+  
+  // Override temporário do construtor Date para esta requisição
+  req.BrazilDate = function(...args) {
+    if (args.length === 0) {
+      // Se não há argumentos, cria data atual no timezone do Brasil
+      const now = new originalNewDate();
+      return new originalNewDate(now.toLocaleString('en-US', { timeZone: BRAZIL_TIMEZONE }));
+    } else {
+      // Se há argumentos, cria a data normalmente
+      return new originalNewDate(...args);
+    }
+  };
+  
+  // Adiciona funções de utilidade na requisição
+  req.toBrazilTime = toBrazilTime;
+  req.formatBrazilDateTime = formatBrazilDateTime;
+  req.formatBrazilDate = formatBrazilDate;
+  req.formatBrazilTime = formatBrazilTime;
+  
+  next();
+}
 
 /**
  * Converte uma data para o timezone do Brasil
@@ -156,33 +228,7 @@ function toBrazilISOString(date) {
   return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
 }
 
-/**
- * Configura o timezone padrão do processo Node.js
- */
-function configureBrazilTimezone() {
-  // Define o timezone padrão do processo
-  process.env.TZ = BRAZIL_TIMEZONE;
-  
-  console.log(`[Timezone] Configurado para: ${BRAZIL_TIMEZONE}`);
-  console.log(`[Timezone] Data atual: ${formatBrazilDateTime(new Date())}`);
-}
 
-/**
- * Middleware para adicionar funções de timezone ao objeto req
- */
-function timezoneMiddleware(req, res, next) {
-  req.timezone = {
-    toBrazilTime,
-    formatBrazilDate,
-    formatBrazilDateTime,
-    formatBrazilTime,
-    nowInBrazil,
-    brazilToUTC,
-    createBrazilDate,
-    toBrazilISOString
-  };
-  next();
-}
 
 /**
  * Processa resultados de query do banco para converter datas

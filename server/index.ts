@@ -3,6 +3,7 @@ import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { configureBrazilTimezone, timezoneMiddleware } from './utils/timezone.js';
+import { initializeSystemTimezone, enforceTimezoneMiddleware } from './utils/system-timezone.js';
 // Importar cronJobs para tarefas agendadas
 import { initCronJobs } from "./cronJobs";
 // Importar migrações
@@ -70,6 +71,8 @@ process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUz
 process.env.SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
 
 // Configurar timezone do Brasil ANTES de qualquer operação
+// Configuração definitiva e permanente do timezone
+initializeSystemTimezone();
 configureBrazilTimezone();
 
 const app = express();
@@ -81,6 +84,45 @@ app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
 // Aplicar middleware de timezone para todas as rotas
 app.use(timezoneMiddleware);
+// Aplicar middleware de enforcement de timezone (garante que todas as datas sejam brasileiras)
+app.use(enforceTimezoneMiddleware);
+
+// ENDPOINT DE DIAGNÓSTICO DE TIMEZONE - Registrar ANTES de todos os middlewares
+app.get('/api/timezone-status', (req, res) => {
+  try {
+    const now = new Date();
+    const brazilTime = now.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    const systemTime = now.toLocaleString();
+    const utcTime = now.toISOString();
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).json({
+      success: true,
+      message: 'Status do timezone do sistema',
+      data: {
+        systemTimezone: process.env.TZ || 'Não definido',
+        currentTime: {
+          brazil: brazilTime,
+          system: systemTime,
+          utc: utcTime,
+          timestamp: now.getTime()
+        },
+        configuration: {
+          processEnvTZ: process.env.TZ,
+          defaultTimezone: 'America/Sao_Paulo',
+          locale: 'pt-BR'
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao verificar timezone:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao verificar timezone',
+      error: error.message
+    });
+  }
+});
 
 // ROTAS DE TERCEIROS - Registrar ANTES de qualquer middleware para evitar interceptação do Vite
 app.get('/api/terceiros/admin/stats', async (req, res) => {
