@@ -117,6 +117,16 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 10, 2025: Added project selection field to base registration system
+  - ✅ Added project_id column to bases table with foreign key constraint
+  - ✅ Updated shared schema to include project_id field in bases table
+  - ✅ Enhanced base registration form with project selection dropdown
+  - ✅ Implemented dynamic project loading from database (13 active projects)
+  - ✅ Added proper validation and optional project assignment
+  - ✅ Created missing bases for Grupo Pereira project (GP01, GP02, GP03)
+  - ✅ Added missing Mercado Livre bases (SSC3, SDP1, SPR8)
+  - ✅ System now has 114 total bases with proper project associations
+
 - July 10, 2025: Deactivated specific projects to streamline system operations
   - ✅ Deactivated 6 projects: FMS09, MARISTELA INDUSTRIA, MANUTENÇÃO PREVENTIVA, PRIMO BASILE, REPARO DE EMERGENCIA, REVISÃO GERAL
   - ✅ Deactivated 6 associated project bases from the removed projects
