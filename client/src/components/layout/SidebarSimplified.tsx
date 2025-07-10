@@ -196,6 +196,7 @@ const SidebarSimplified: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Lista unificada de todos os itens de navegação com controle de roles
   const allMenuItems: NavItem[] = [
     { name: 'Dashboard', href: '/', icon: Gauge, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_combustivel'] },
+    { name: 'Equipamentos', href: '/equipment', icon: Package, roles: ['admin', 'gestor_frota', 'line_hall'] },
     { name: 'Dashboard Executivo', href: '/executive-dashboard', icon: BarChart4, roles: ['admin', 'gestor_frota', 'line_hall'] },
     { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_combustivel'] },
     { name: 'Veículos', href: '/vehicles', icon: Truck, roles: ['admin', 'gestor_frota', 'line_hall'] },
@@ -203,7 +204,6 @@ const SidebarSimplified: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText, roles: ['admin', 'gestor_frota', 'line_hall'] },
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench, roles: ['admin', 'gestor_frota', 'line_hall'] },
     { name: 'Pneus', href: '/tires', icon: CircleDot, roles: ['admin', 'gestor_frota', 'line_hall'] },
-    { name: 'Equipamentos', href: '/equipment', icon: Package, roles: ['admin', 'gestor_frota', 'line_hall'] },
     
     // Menu de Abastecimentos com submenu
     { name: 'Abastecimentos', href: '#', icon: Fuel, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_combustivel'], subItems: [
@@ -271,11 +271,6 @@ const SidebarSimplified: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Verificar se o role do usuário está na lista de roles permitidos
     return item.roles.includes(user.role);
   });
-
-  // Debug: Verificar se o item Equipamentos está sendo filtrado corretamente
-  console.log('User role:', user.role);
-  console.log('Equipamentos item found:', navItems.find(item => item.name === 'Equipamentos'));
-  console.log('Total nav items:', navItems.length);
 
   return (
     <div
