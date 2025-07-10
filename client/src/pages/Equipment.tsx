@@ -140,9 +140,11 @@ export default function Equipment() {
   });
 
   // Query para buscar equipamentos
-  const { data: equipments = [], isLoading } = useQuery({
+  const { data: equipmentsResponse, isLoading } = useQuery({
     queryKey: ['/api/equipment'],
   });
+  
+  const equipments = equipmentsResponse?.data || [];
 
   // Query para dashboard
   const { data: dashboard } = useQuery({

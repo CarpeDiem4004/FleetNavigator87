@@ -15,7 +15,7 @@ import {
   type EquipmentMaintenance,
   type EquipmentMovement
 } from "@shared/schema";
-import { eq, desc, and, isNull } from "drizzle-orm";
+import { eq, desc, and, isNull, count } from "drizzle-orm";
 import { unifiedAuthMiddleware } from "../utils/auth-utils.js";
 
 const router = Router();
@@ -349,23 +349,23 @@ router.post('/equipment-movements', async (req, res) => {
 // GET /api/equipment-dashboard - Dashboard de equipamentos
 router.get('/equipment-dashboard', async (req, res) => {
   try {
-    // Estatísticas gerais
-    const totalEquipments = await db
-      .select({ count: equipments.id })
+    // Estatísticas gerais usando count()
+    const [totalResult] = await db
+      .select({ count: count() })
       .from(equipments);
 
-    const availableEquipments = await db
-      .select({ count: equipments.id })
+    const [availableResult] = await db
+      .select({ count: count() })
       .from(equipments)
       .where(eq(equipments.status, 'disponivel'));
 
-    const inUseEquipments = await db
-      .select({ count: equipments.id })
+    const [inUseResult] = await db
+      .select({ count: count() })
       .from(equipments)
       .where(eq(equipments.status, 'em_uso'));
 
-    const maintenanceEquipments = await db
-      .select({ count: equipments.id })
+    const [maintenanceResult] = await db
+      .select({ count: count() })
       .from(equipments)
       .where(eq(equipments.status, 'manutencao'));
 
@@ -373,14 +373,14 @@ router.get('/equipment-dashboard', async (req, res) => {
     const equipmentsByType = await db
       .select({ 
         type: equipments.type,
-        count: equipments.id 
+        count: count()
       })
       .from(equipments)
       .groupBy(equipments.type);
 
     // Termos ativos
-    const activeTerms = await db
-      .select({ count: equipmentResponsibilityTerms.id })
+    const [activeTermsResult] = await db
+      .select({ count: count() })
       .from(equipmentResponsibilityTerms)
       .where(
         and(
@@ -390,12 +390,12 @@ router.get('/equipment-dashboard', async (req, res) => {
       );
 
     const dashboard = {
-      totalEquipments: totalEquipments.length,
-      availableEquipments: availableEquipments.length,
-      inUseEquipments: inUseEquipments.length,
-      maintenanceEquipments: maintenanceEquipments.length,
+      totalEquipments: Number(totalResult?.count || 0),
+      availableEquipments: Number(availableResult?.count || 0),
+      inUseEquipments: Number(inUseResult?.count || 0),
+      maintenanceEquipments: Number(maintenanceResult?.count || 0),
       equipmentsByType,
-      activeTerms: activeTerms.length
+      activeTerms: Number(activeTermsResult?.count || 0)
     };
 
     res.json({ success: true, data: dashboard });
