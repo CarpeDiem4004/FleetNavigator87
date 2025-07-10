@@ -980,7 +980,11 @@ export const equipmentMovementsRelations = relations(equipmentMovements, ({ one 
 }));
 
 // Schemas para inserção e validação
-export const insertEquipmentSchema = createInsertSchema(equipments);
+export const insertEquipmentSchema = createInsertSchema(equipments).extend({
+  purchase_date: z.string().transform(val => val === '' ? null : val).optional(),
+  warranty_expires: z.string().transform(val => val === '' ? null : val).optional(),
+  purchase_value: z.string().transform(val => val === '' ? null : val).optional(),
+});
 export const insertEquipmentResponsibilityTermSchema = createInsertSchema(equipmentResponsibilityTerms);
 export const insertEquipmentMaintenanceSchema = createInsertSchema(equipmentMaintenance);
 export const insertEquipmentMovementSchema = createInsertSchema(equipmentMovements);
