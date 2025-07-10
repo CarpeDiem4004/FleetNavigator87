@@ -20,45 +20,10 @@ import { unifiedAuthMiddleware } from "../utils/auth-utils.js";
 
 const router = Router();
 
-// Middleware de autenticação para todas as rotas (exceto rotas públicas)
-router.use((req, res, next) => {
-  // Lista de rotas públicas que devem pular a autenticação
-  const publicRoutes = [
-    '/projects-with-bases',
-    '/public/projects-with-bases',
-    '/mobile/test-projects',
-    '/status'
-  ];
-  
-  // Lista de padrões de rotas públicas (regex)
-  const publicRoutePatterns = [
-    /^\/historico-direto\/.+/,
-    /^\/posto-supabase\/historico\/.+/,
-    /^\/estatisticas-mensais-direto\/.+/,
-    /^\/consumo-por-veiculo-direto\/.+/,
-    /^\/comparativo-combustiveis-direto\/.+/,
-    /^\/check-tabela-direto\/.+/
-  ];
-  
-  // Verificar se a rota atual é pública (lista exata)
-  if (publicRoutes.includes(req.path)) {
-    console.log('[EQUIPMENT ROUTES] Rota pública detectada, pulando autenticação:', req.path);
-    return next();
-  }
-  
-  // Verificar se a rota atual corresponde a algum padrão público (regex)
-  const isPublicPattern = publicRoutePatterns.some(pattern => pattern.test(req.path));
-  if (isPublicPattern) {
-    console.log('[EQUIPMENT ROUTES] Rota pública detectada via padrão, pulando autenticação:', req.path);
-    return next();
-  }
-  
-  console.log('[EQUIPMENT ROUTES] Middleware de autenticação ativado para:', req.path, req.method);
-  unifiedAuthMiddleware(req, res, next);
-});
+// Não aplicar middleware global - aplicar individualmente nas rotas que precisam
 
 // GET /api/equipment - Listar todos os equipamentos
-router.get('/equipment', async (req, res) => {
+router.get('/equipment', unifiedAuthMiddleware, async (req, res) => {
   try {
     const equipmentList = await db
       .select()
@@ -73,7 +38,7 @@ router.get('/equipment', async (req, res) => {
 });
 
 // GET /api/equipment/:id - Buscar equipamento por ID
-router.get('/equipment/:id', async (req, res) => {
+router.get('/equipment/:id', unifiedAuthMiddleware, async (req, res) => {
   try {
     const equipmentId = parseInt(req.params.id);
     
@@ -95,7 +60,7 @@ router.get('/equipment/:id', async (req, res) => {
 });
 
 // POST /api/equipment - Criar novo equipamento
-router.post('/equipment', async (req, res) => {
+router.post('/equipment', unifiedAuthMiddleware, async (req, res) => {
   try {
     console.log('Dados recebidos para criação do equipamento:', req.body);
     const validatedData = insertEquipmentSchema.parse(req.body);
@@ -124,7 +89,7 @@ router.post('/equipment', async (req, res) => {
 });
 
 // PUT /api/equipment/:id - Atualizar equipamento
-router.put('/equipment/:id', async (req, res) => {
+router.put('/equipment/:id', unifiedAuthMiddleware, async (req, res) => {
   try {
     const equipmentId = parseInt(req.params.id);
     const validatedData = insertEquipmentSchema.parse(req.body);
@@ -147,7 +112,7 @@ router.put('/equipment/:id', async (req, res) => {
 });
 
 // DELETE /api/equipment/:id - Deletar equipamento
-router.delete('/equipment/:id', async (req, res) => {
+router.delete('/equipment/:id', unifiedAuthMiddleware, async (req, res) => {
   try {
     const equipmentId = parseInt(req.params.id);
     
@@ -168,7 +133,7 @@ router.delete('/equipment/:id', async (req, res) => {
 });
 
 // GET /api/equipment-responsibility-terms - Listar todos os termos de responsabilidade
-router.get('/equipment-responsibility-terms', async (req, res) => {
+router.get('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req, res) => {
   try {
     const terms = await db
       .select({
@@ -210,7 +175,7 @@ router.get('/equipment-responsibility-terms', async (req, res) => {
 });
 
 // POST /api/equipment-responsibility-terms - Criar novo termo de responsabilidade
-router.post('/equipment-responsibility-terms', async (req, res) => {
+router.post('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req, res) => {
   try {
     const validatedData = insertEquipmentResponsibilityTermSchema.parse(req.body);
     
@@ -264,7 +229,7 @@ router.post('/equipment-responsibility-terms', async (req, res) => {
 });
 
 // PUT /api/equipment-responsibility-terms/:id/return - Registrar devolução de equipamento
-router.put('/equipment-responsibility-terms/:id/return', async (req, res) => {
+router.put('/equipment-responsibility-terms/:id/return', unifiedAuthMiddleware, async (req, res) => {
   try {
     const termId = parseInt(req.params.id);
     const { condition_at_return, notes, returned_by } = req.body;
@@ -300,7 +265,7 @@ router.put('/equipment-responsibility-terms/:id/return', async (req, res) => {
 });
 
 // GET /api/equipment-maintenance - Listar manutenções
-router.get('/equipment-maintenance', async (req, res) => {
+router.get('/equipment-maintenance', unifiedAuthMiddleware, async (req, res) => {
   try {
     const maintenanceList = await db
       .select({
@@ -330,7 +295,7 @@ router.get('/equipment-maintenance', async (req, res) => {
 });
 
 // POST /api/equipment-maintenance - Criar nova manutenção
-router.post('/equipment-maintenance', async (req, res) => {
+router.post('/equipment-maintenance', unifiedAuthMiddleware, async (req, res) => {
   try {
     const validatedData = insertEquipmentMaintenanceSchema.parse(req.body);
     
@@ -347,7 +312,7 @@ router.post('/equipment-maintenance', async (req, res) => {
 });
 
 // GET /api/equipment-movements - Listar movimentações
-router.get('/equipment-movements', async (req, res) => {
+router.get('/equipment-movements', unifiedAuthMiddleware, async (req, res) => {
   try {
     const movementsList = await db
       .select({
@@ -378,7 +343,7 @@ router.get('/equipment-movements', async (req, res) => {
 });
 
 // POST /api/equipment-movements - Criar nova movimentação
-router.post('/equipment-movements', async (req, res) => {
+router.post('/equipment-movements', unifiedAuthMiddleware, async (req, res) => {
   try {
     const validatedData = insertEquipmentMovementSchema.parse(req.body);
     
@@ -398,7 +363,7 @@ router.post('/equipment-movements', async (req, res) => {
 });
 
 // GET /api/equipment-dashboard - Dashboard de equipamentos
-router.get('/equipment-dashboard', async (req, res) => {
+router.get('/equipment-dashboard', unifiedAuthMiddleware, async (req, res) => {
   try {
     // Estatísticas gerais usando count()
     const [totalResult] = await db

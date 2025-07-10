@@ -203,7 +203,7 @@ export default function Equipment() {
 
   // Mutation para criar equipamento
   const createEquipmentMutation = useMutation({
-    mutationFn: (data: EquipmentFormData) => apiRequest('/api/equipment', 'POST', data),
+    mutationFn: (data: EquipmentFormData) => apiRequest('POST', '/api/equipment', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/equipment'] });
       queryClient.invalidateQueries({ queryKey: ['/api/equipment-dashboard'] });
@@ -226,7 +226,7 @@ export default function Equipment() {
   // Mutation para atualizar equipamento
   const updateEquipmentMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: EquipmentFormData }) =>
-      apiRequest(`/api/equipment/${id}`, 'PUT', data),
+      apiRequest('PUT', `/api/equipment/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/equipment'] });
       queryClient.invalidateQueries({ queryKey: ['/api/equipment-dashboard'] });
@@ -248,7 +248,7 @@ export default function Equipment() {
 
   // Mutation para deletar equipamento
   const deleteEquipmentMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/equipment/${id}`, 'DELETE'),
+    mutationFn: (id: number) => apiRequest('DELETE', `/api/equipment/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/equipment'] });
       queryClient.invalidateQueries({ queryKey: ['/api/equipment-dashboard'] });
@@ -268,7 +268,7 @@ export default function Equipment() {
 
   // Mutation para criar termo de responsabilidade
   const createTermMutation = useMutation({
-    mutationFn: (data: ResponsibilityTermFormData) => apiRequest('/api/equipment-responsibility-terms', 'POST', data),
+    mutationFn: (data: ResponsibilityTermFormData) => apiRequest('POST', '/api/equipment-responsibility-terms', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/equipment'] });
       setIsTermDialogOpen(false);
