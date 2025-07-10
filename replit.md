@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 10, 2025: Fixed SHOPEE project base loading issues in fuel card request system
+  - ✅ Resolved inactive bases in project_bases table for SHOPEE projects
+  - ✅ Activated existing bases: FMS09 SÃO PAULO (SP) and Line Hall Shopee
+  - ✅ Added 10 new bases for SHOPEE project: Osasco, Guarulhos, Campinas, ABC, Socorro, Sorocaba, Barueri, Diadema, Jundiaí, Mogi das Cruzes
+  - ✅ SHOPEE project now loads 11 bases correctly in fuel card request forms
+  - ✅ Line Hall Shopee project maintained with 1 base (Line Hall Shopee)
+  - ✅ Total SHOPEE-related bases now available: 12 bases across 2 projects
+  - ✅ All bases properly configured as active with correct project associations
+
 - July 9, 2025: Completed integration between legacy fuel card system and new base system
   - ✅ Fixed main approval panel to show all fuel card requests from all sources
   - ✅ Modified getFuelCardSolicitations to include UNION ALL query for fuel_card_requests table
