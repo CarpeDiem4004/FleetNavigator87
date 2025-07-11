@@ -183,6 +183,26 @@ import AcidentesTrabalhoSC from "@/pages/bases/AcidentesTrabalhoSC";
 import CartaoCombustivelSC from "@/pages/bases/CartaoCombustivelSC";
 import MultasSC from "@/pages/bases/MultasSC";
 
+// Importação das páginas das bases SC adicionais
+import BaseCampoGrande from "@/pages/bases/BaseCampoGrande";
+import LoginCampoGrande from "@/pages/bases/LoginCampoGrande";
+import BaseCaraguatatuba from "@/pages/bases/BaseCaraguatatuba";
+import BaseCuritiba from "@/pages/bases/BaseCuritiba";
+import BaseFlorianopolis from "@/pages/bases/BaseFlorianopolis";
+import BaseBlumenau from "@/pages/bases/BaseBlumenau";
+import BaseSantos from "@/pages/bases/BaseSantos";
+import BasePortoAlegre from "@/pages/bases/BasePortoAlegre";
+import BaseRecife from "@/pages/bases/BaseRecife";
+import BaseManaus from "@/pages/bases/BaseManaus";
+import BaseBelem from "@/pages/bases/BaseBelem";
+import BaseFoz from "@/pages/bases/BaseFoz";
+import BaseFortaleza from "@/pages/bases/BaseFortaleza";
+import BaseVitoria from "@/pages/bases/BaseVitoria";
+import LoginBelem from "@/pages/bases/LoginBelem";
+import LoginFoz from "@/pages/bases/LoginFoz";
+import LoginFortaleza from "@/pages/bases/LoginFortaleza";
+import LoginVitoria from "@/pages/bases/LoginVitoria";
+
 // Importação do sistema genérico de bases
 import BaseRouteHandler from "@/components/base/BaseRouteHandler";
 
@@ -246,6 +266,21 @@ function App() {
             </Route>
             <Route path="/bases/sc/login">
               <LoginSC />
+            </Route>
+            <Route path="/bases/campo-grande/login">
+              <LoginCampoGrande />
+            </Route>
+            <Route path="/bases/belem/login">
+              <LoginBelem />
+            </Route>
+            <Route path="/bases/foz/login">
+              <LoginFoz />
+            </Route>
+            <Route path="/bases/fortaleza/login">
+              <LoginFortaleza />
+            </Route>
+            <Route path="/bases/vitoria/login">
+              <LoginVitoria />
             </Route>
             <Route path="/register">
               <RegisterNew />
@@ -362,6 +397,21 @@ function App() {
           <ProtectedRoute path="/bases/sc/multas" component={MultasSC} />
           <ProtectedRoute path="/bases/sc/cartao-combustivel" component={CartaoCombustivelSC} />
           <Route path="/bases/sc/login" component={LoginSC} />
+
+          {/* Rotas para as bases SC adicionais */}
+          <ProtectedRoute path="/bases/campo-grande" component={BaseCampoGrande} />
+          <ProtectedRoute path="/bases/caraguatatuba" component={BaseCaraguatatuba} />
+          <ProtectedRoute path="/bases/curitiba" component={BaseCuritiba} />
+          <ProtectedRoute path="/bases/florianopolis" component={BaseFlorianopolis} />
+          <ProtectedRoute path="/bases/blumenau" component={BaseBlumenau} />
+          <ProtectedRoute path="/bases/santos" component={BaseSantos} />
+          <ProtectedRoute path="/bases/porto-alegre" component={BasePortoAlegre} />
+          <ProtectedRoute path="/bases/recife" component={BaseRecife} />
+          <ProtectedRoute path="/bases/manaus" component={BaseManaus} />
+          <ProtectedRoute path="/bases/belem" component={BaseBelem} />
+          <ProtectedRoute path="/bases/foz" component={BaseFoz} />
+          <ProtectedRoute path="/bases/fortaleza" component={BaseFortaleza} />
+          <ProtectedRoute path="/bases/vitoria" component={BaseVitoria} />
           
           {/* Rotas para a Base Salvador */}
           <ProtectedRoute path="/bases/salvador" component={BaseSalvador} />

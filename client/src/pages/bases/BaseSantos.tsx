@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Link } from 'wouter';
 
-const BaseBlumenau: React.FC = () => {
+const BaseSantos: React.FC = () => {
   const functionalities = [
     {
       id: 1,
@@ -23,7 +23,7 @@ const BaseBlumenau: React.FC = () => {
       description: "Solicite recarga ou novo cartão para veículos",
       icon: CreditCard,
       color: "bg-blue-500",
-      link: "/bases/blumenau/cartao-combustivel",
+      link: "/bases/santos/cartao-combustivel",
       status: "Ativo"
     },
     {
@@ -32,7 +32,7 @@ const BaseBlumenau: React.FC = () => {
       description: "Registre ocorrências e sinistros",
       icon: AlertTriangle,
       color: "bg-red-500",
-      link: "/bases/blumenau/sinistros",
+      link: "/bases/santos/sinistros",
       status: "Ativo"
     },
     {
@@ -41,7 +41,7 @@ const BaseBlumenau: React.FC = () => {
       description: "Registre acidentes e incidentes",
       icon: Clock,
       color: "bg-orange-500",
-      link: "/bases/blumenau/acidentes-trabalho",
+      link: "/bases/santos/acidentes-trabalho",
       status: "Ativo"
     },
     {
@@ -50,7 +50,7 @@ const BaseBlumenau: React.FC = () => {
       description: "Gerenciar equipe e escalas",
       icon: Users,
       color: "bg-green-500",
-      link: "/bases/blumenau/colaboradores",
+      link: "/bases/santos/colaboradores",
       status: "Ativo"
     },
     {
@@ -59,7 +59,7 @@ const BaseBlumenau: React.FC = () => {
       description: "Visualize relatórios e métricas",
       icon: FileText,
       color: "bg-purple-500",
-      link: "/bases/blumenau/relatorios",
+      link: "/bases/santos/relatorios",
       status: "Ativo"
     },
     {
@@ -68,7 +68,7 @@ const BaseBlumenau: React.FC = () => {
       description: "Consulte multas da gestão",
       icon: Shield,
       color: "bg-yellow-500",
-      link: "/bases/blumenau/multas",
+      link: "/bases/santos/multas",
       status: "Ativo"
     },
     {
@@ -77,7 +77,7 @@ const BaseBlumenau: React.FC = () => {
       description: "Acompanhe gastos e orçamentos",
       icon: DollarSign,
       color: "bg-indigo-500",
-      link: "/bases/blumenau/financeiro",
+      link: "/bases/santos/financeiro",
       status: "Ativo"
     },
     {
@@ -86,7 +86,7 @@ const BaseBlumenau: React.FC = () => {
       description: "Controle frota e manutenções",
       icon: Truck,
       color: "bg-teal-500",
-      link: "/bases/blumenau/veiculos",
+      link: "/bases/santos/veiculos",
       status: "Ativo"
     },
     {
@@ -95,7 +95,7 @@ const BaseBlumenau: React.FC = () => {
       description: "Ajustes e configurações locais",
       icon: Settings,
       color: "bg-gray-500",
-      link: "/bases/blumenau/configuracoes",
+      link: "/bases/santos/configuracoes",
       status: "Ativo"
     }
   ];
@@ -116,10 +116,10 @@ const BaseBlumenau: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            SC (BLUMENAU) SSC1
+            SC (SANTOS) SSP15-SDD
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Gerenciamento completo da Base Blumenau
+            Gerenciamento completo da Base Santos
           </p>
         </div>
 
@@ -173,4 +173,4 @@ const BaseBlumenau: React.FC = () => {
   );
 };
 
-export default BaseBlumenau;
+export default BaseSantos;
