@@ -117,6 +117,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 11, 2025: **LOGO UPDATE TO LATEST DESIGN** - Updated all logo references to use the newest logo image
+  - ✅ Replaced all logo instances with image_1752231690168.png (latest logo design)
+  - ✅ Updated SidebarSimplificado.tsx with new logo and proper sizing (h-10, max-w-[200px])
+  - ✅ Updated AppLayout.tsx desktop and mobile headers with new logo
+  - ✅ Updated manifest.json to reference new PNG logo file
+  - ✅ Optimized logo sizing for better visual balance across all layouts
+  - ✅ All components now use the latest logo design provided by user
+
 - July 10, 2025: **COMPLETE REBRANDING TO MURICI ON FLEET 2.0** - Comprehensive system rebranding with logo integration
   - ✅ Updated all main UI components from "Murici Logística" to "Murici On Fleet 2.0"
   - ✅ Integrated uploaded logo files (logo_1752180524044.jpg, image_1752180547360.png) across all layouts
