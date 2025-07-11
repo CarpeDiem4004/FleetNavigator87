@@ -75,6 +75,7 @@ const FuelCardRequestsPanel: React.FC = () => {
   const [editedStatus, setEditedStatus] = useState<string>('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [isNewRequestDialogOpen, setIsNewRequestDialogOpen] = useState(false);
+  const [approvingBatch, setApprovingBatch] = useState(false);
   
   // Estados para o modal de histórico de abastecimentos
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
@@ -354,6 +355,99 @@ const FuelCardRequestsPanel: React.FC = () => {
         description: 'Não foi possível gerar o arquivo Excel',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleBatchApproval = async () => {
+    if (baseFilter === 'all') {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Selecione uma base específica para aprovar solicitações em lote'
+      });
+      return;
+    }
+
+    try {
+      setApprovingBatch(true);
+      
+      // Buscar solicitações pendentes da base selecionada
+      const pendingSolicitations = solicitations.filter(sol => 
+        sol.base === baseFilter && 
+        (sol.status === 'Pendente' || sol.status === 'Em Análise')
+      );
+      
+      if (pendingSolicitations.length === 0) {
+        toast({
+          title: 'Informação',
+          description: 'Não há solicitações pendentes para esta base'
+        });
+        return;
+      }
+
+      // Confirmar com o usuário
+      const confirmed = window.confirm(
+        `Deseja aprovar ${pendingSolicitations.length} solicitação(ões) pendente(s) da base "${baseFilter}"?`
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      // Aprovar todas as solicitações pendentes
+      const approvalPromises = pendingSolicitations.map(async (sol) => {
+        const updateData = {
+          id: sol.id,
+          status: 'Recarga Efetuada',
+          origem_tipo: sol.origem_tipo,
+          atendido_por: user?.name,
+          observacoes: sol.observacoes
+        };
+        
+        return apiRequest('PUT', `/api/fuel-card-solicitations/${sol.id}/status`, updateData);
+      });
+
+      const results = await Promise.allSettled(approvalPromises);
+      
+      // Contar sucessos e falhas
+      const successes = results.filter(result => result.status === 'fulfilled').length;
+      const failures = results.filter(result => result.status === 'rejected').length;
+
+      if (successes > 0) {
+        // Atualizar a lista local
+        setSolicitations(solicitations.map(sol => {
+          if (sol.base === baseFilter && (sol.status === 'Pendente' || sol.status === 'Em Análise')) {
+            return {
+              ...sol,
+              status: 'Recarga Efetuada' as FuelCardSolicitation['status'],
+              atendido_por: user?.name,
+              data_atendimento: new Date().toISOString()
+            };
+          }
+          return sol;
+        }));
+
+        toast({
+          title: 'Aprovação em Lote Concluída',
+          description: `${successes} solicitação(ões) aprovada(s) com sucesso${failures > 0 ? ` (${failures} falha(s))` : ''}`
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Erro',
+          description: 'Não foi possível aprovar as solicitações'
+        });
+      }
+
+    } catch (error) {
+      console.error('Erro na aprovação em lote:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Falha na aprovação em lote'
+      });
+    } finally {
+      setApprovingBatch(false);
     }
   };
   
@@ -677,10 +771,32 @@ const FuelCardRequestsPanel: React.FC = () => {
                   Mostrando {filteredSolicitations.length} solicitações
                 </CardDescription>
               </div>
-              <Button onClick={fetchSolicitations} variant="outline" size="sm">
-                Atualizar
-              </Button>
-            </div>
+              <div className="flex gap-2">
+                {baseFilter !== 'all' && user?.role === 'admin' && (
+                  <Button 
+                    onClick={handleBatchApproval} 
+                    variant="default" 
+                    size="sm"
+                    disabled={approvingBatch}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {approvingBatch ? (
+                      <>
+                        <Clock className="h-4 w-4 mr-2 animate-spin" />
+                        Aprovando...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Aprovar Base
+                      </>
+                    )}
+                  </Button>
+                )}
+                <Button onClick={fetchSolicitations} variant="outline" size="sm">
+                  Atualizar
+                </Button>
+              </div>
           </CardHeader>
           <CardContent>
             {loading ? (
