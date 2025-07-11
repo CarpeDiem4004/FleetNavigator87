@@ -1,0 +1,636 @@
+
+// IMPORTS PARA ADICIONAR AO APP.TSX
+import BaseAbc from "@/pages/bases/BaseAbc";
+import LoginAbc from "@/pages/bases/LoginAbc";
+import BaseAracatuba from "@/pages/bases/BaseAracatuba";
+import LoginAracatuba from "@/pages/bases/LoginAracatuba";
+import BaseArenaBarueri from "@/pages/bases/BaseArenaBarueri";
+import LoginArenaBarueri from "@/pages/bases/LoginArenaBarueri";
+import BaseAtibaia from "@/pages/bases/BaseAtibaia";
+import LoginAtibaia from "@/pages/bases/LoginAtibaia";
+import BaseAvare from "@/pages/bases/BaseAvare";
+import LoginAvare from "@/pages/bases/LoginAvare";
+import BaseBahiaSalvador from "@/pages/bases/BaseBahiaSalvador";
+import LoginBahiaSalvador from "@/pages/bases/LoginBahiaSalvador";
+import BaseBauru from "@/pages/bases/BaseBauru";
+import LoginBauru from "@/pages/bases/LoginBauru";
+import BaseBlumenau from "@/pages/bases/BaseBlumenau";
+import LoginBlumenau from "@/pages/bases/LoginBlumenau";
+import BaseBrasilia from "@/pages/bases/BaseBrasilia";
+import LoginBrasilia from "@/pages/bases/LoginBrasilia";
+import BaseCampinaGrandeSul from "@/pages/bases/BaseCampinaGrandeSul";
+import LoginCampinaGrandeSul from "@/pages/bases/LoginCampinaGrandeSul";
+import BaseCampinasS3 from "@/pages/bases/BaseCampinasS3";
+import LoginCampinasS3 from "@/pages/bases/LoginCampinasS3";
+import BaseCampinasS7 from "@/pages/bases/BaseCampinasS7";
+import LoginCampinasS7 from "@/pages/bases/LoginCampinasS7";
+import BaseCampoGrande from "@/pages/bases/BaseCampoGrande";
+import LoginCampoGrande from "@/pages/bases/LoginCampoGrande";
+import BaseCaraguatatuba from "@/pages/bases/BaseCaraguatatuba";
+import LoginCaraguatatuba from "@/pages/bases/LoginCaraguatatuba";
+import BaseCascavel from "@/pages/bases/BaseCascavel";
+import LoginCascavel from "@/pages/bases/LoginCascavel";
+import BaseChapeco from "@/pages/bases/BaseChapeco";
+import LoginChapeco from "@/pages/bases/LoginChapeco";
+import BaseContagem from "@/pages/bases/BaseContagem";
+import LoginContagem from "@/pages/bases/LoginContagem";
+import BaseCotia from "@/pages/bases/BaseCotia";
+import LoginCotia from "@/pages/bases/LoginCotia";
+import BaseCriciuma from "@/pages/bases/BaseCriciuma";
+import LoginCriciuma from "@/pages/bases/LoginCriciuma";
+import BaseCuiaba from "@/pages/bases/BaseCuiaba";
+import LoginCuiaba from "@/pages/bases/LoginCuiaba";
+import BaseCuritiba from "@/pages/bases/BaseCuritiba";
+import LoginCuritiba from "@/pages/bases/LoginCuritiba";
+import BaseDivinopolis from "@/pages/bases/BaseDivinopolis";
+import LoginDivinopolis from "@/pages/bases/LoginDivinopolis";
+import BaseFlorianopolis from "@/pages/bases/BaseFlorianopolis";
+import LoginFlorianopolis from "@/pages/bases/LoginFlorianopolis";
+import BaseFortaleza from "@/pages/bases/BaseFortaleza";
+import LoginFortaleza from "@/pages/bases/LoginFortaleza";
+import BaseFranca from "@/pages/bases/BaseFranca";
+import LoginFranca from "@/pages/bases/LoginFranca";
+import BaseFullFilmente from "@/pages/bases/BaseFullFilmente";
+import LoginFullFilmente from "@/pages/bases/LoginFullFilmente";
+import BaseGoiania from "@/pages/bases/BaseGoiania";
+import LoginGoiania from "@/pages/bases/LoginGoiania";
+import BaseGuarapuava from "@/pages/bases/BaseGuarapuava";
+import LoginGuarapuava from "@/pages/bases/LoginGuarapuava";
+import BaseItapetininga from "@/pages/bases/BaseItapetininga";
+import LoginItapetininga from "@/pages/bases/LoginItapetininga";
+import BaseItaquera from "@/pages/bases/BaseItaquera";
+import LoginItaquera from "@/pages/bases/LoginItaquera";
+import BaseItupeva from "@/pages/bases/BaseItupeva";
+import LoginItupeva from "@/pages/bases/LoginItupeva";
+import BaseJales from "@/pages/bases/BaseJales";
+import LoginJales from "@/pages/bases/LoginJales";
+import BaseJoinville from "@/pages/bases/BaseJoinville";
+import LoginJoinville from "@/pages/bases/LoginJoinville";
+import BaseLajeado from "@/pages/bases/BaseLajeado";
+import LoginLajeado from "@/pages/bases/LoginLajeado";
+import BaseLondrina from "@/pages/bases/BaseLondrina";
+import LoginLondrina from "@/pages/bases/LoginLondrina";
+import BaseManaus from "@/pages/bases/BaseManaus";
+import LoginManaus from "@/pages/bases/LoginManaus";
+import BaseMarilia from "@/pages/bases/BaseMarilia";
+import LoginMarilia from "@/pages/bases/LoginMarilia";
+import BaseMaringa from "@/pages/bases/BaseMaringa";
+import LoginMaringa from "@/pages/bases/LoginMaringa";
+import BaseMegaGuarulhos from "@/pages/bases/BaseMegaGuarulhos";
+import LoginMegaGuarulhos from "@/pages/bases/LoginMegaGuarulhos";
+import BaseMogiCruzes from "@/pages/bases/BaseMogiCruzes";
+import LoginMogiCruzes from "@/pages/bases/LoginMogiCruzes";
+import BaseMoocaCentro from "@/pages/bases/BaseMoocaCentro";
+import LoginMoocaCentro from "@/pages/bases/LoginMoocaCentro";
+import BasePassoFundo from "@/pages/bases/BasePassoFundo";
+import LoginPassoFundo from "@/pages/bases/LoginPassoFundo";
+import BasePatoBranco from "@/pages/bases/BasePatoBranco";
+import LoginPatoBranco from "@/pages/bases/LoginPatoBranco";
+import BasePatosMinas from "@/pages/bases/BasePatosMinas";
+import LoginPatosMinas from "@/pages/bases/LoginPatosMinas";
+import BasePelotas from "@/pages/bases/BasePelotas";
+import LoginPelotas from "@/pages/bases/LoginPelotas";
+import BasePiracicaba from "@/pages/bases/BasePiracicaba";
+import LoginPiracicaba from "@/pages/bases/LoginPiracicaba";
+import BasePocosCaldas from "@/pages/bases/BasePocosCaldas";
+import LoginPocosCaldas from "@/pages/bases/LoginPocosCaldas";
+import BasePontaGrossa from "@/pages/bases/BasePontaGrossa";
+import LoginPontaGrossa from "@/pages/bases/LoginPontaGrossa";
+import BasePortoAlegre from "@/pages/bases/BasePortoAlegre";
+import LoginPortoAlegre from "@/pages/bases/LoginPortoAlegre";
+import BasePqNovoMundo from "@/pages/bases/BasePqNovoMundo";
+import LoginPqNovoMundo from "@/pages/bases/LoginPqNovoMundo";
+import BasePresidentePrudente from "@/pages/bases/BasePresidentePrudente";
+import LoginPresidentePrudente from "@/pages/bases/LoginPresidentePrudente";
+import BaseQueimados from "@/pages/bases/BaseQueimados";
+import LoginQueimados from "@/pages/bases/LoginQueimados";
+import BaseRecife from "@/pages/bases/BaseRecife";
+import LoginRecife from "@/pages/bases/LoginRecife";
+import BaseSantaMaria from "@/pages/bases/BaseSantaMaria";
+import LoginSantaMaria from "@/pages/bases/LoginSantaMaria";
+import BaseSantos from "@/pages/bases/BaseSantos";
+import LoginSantos from "@/pages/bases/LoginSantos";
+import BaseSaoCarlos from "@/pages/bases/BaseSaoCarlos";
+import LoginSaoCarlos from "@/pages/bases/LoginSaoCarlos";
+import BaseSaoJoseCampos from "@/pages/bases/BaseSaoJoseCampos";
+import LoginSaoJoseCampos from "@/pages/bases/LoginSaoJoseCampos";
+import BaseSapucaia from "@/pages/bases/BaseSapucaia";
+import LoginSapucaia from "@/pages/bases/LoginSapucaia";
+import BaseSjRioPreto from "@/pages/bases/BaseSjRioPreto";
+import LoginSjRioPreto from "@/pages/bases/LoginSjRioPreto";
+import BaseSorocaba from "@/pages/bases/BaseSorocaba";
+import LoginSorocaba from "@/pages/bases/LoginSorocaba";
+import BaseVitoria from "@/pages/bases/BaseVitoria";
+import LoginVitoria from "@/pages/bases/LoginVitoria";
+import BaseZLeste from "@/pages/bases/BaseZLeste";
+import LoginZLeste from "@/pages/bases/LoginZLeste";
+import BaseZSul from "@/pages/bases/BaseZSul";
+import LoginZSul from "@/pages/bases/LoginZSul";
+
+// ROTAS PARA ADICIONAR AO APP.TSX
+            <Route path="/bases/abc">
+              <ProtectedRoute>
+                <BaseAbc />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/aracatuba">
+              <ProtectedRoute>
+                <BaseAracatuba />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/arena-barueri">
+              <ProtectedRoute>
+                <BaseArenaBarueri />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/atibaia">
+              <ProtectedRoute>
+                <BaseAtibaia />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/avare">
+              <ProtectedRoute>
+                <BaseAvare />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/bahia-salvador">
+              <ProtectedRoute>
+                <BaseBahiaSalvador />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/bauru">
+              <ProtectedRoute>
+                <BaseBauru />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/blumenau">
+              <ProtectedRoute>
+                <BaseBlumenau />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/brasilia">
+              <ProtectedRoute>
+                <BaseBrasilia />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/campina-grande-sul">
+              <ProtectedRoute>
+                <BaseCampinaGrandeSul />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/campinas-s3">
+              <ProtectedRoute>
+                <BaseCampinasS3 />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/campinas-s7">
+              <ProtectedRoute>
+                <BaseCampinasS7 />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/campo-grande">
+              <ProtectedRoute>
+                <BaseCampoGrande />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/caraguatatuba">
+              <ProtectedRoute>
+                <BaseCaraguatatuba />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/cascavel">
+              <ProtectedRoute>
+                <BaseCascavel />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/chapeco">
+              <ProtectedRoute>
+                <BaseChapeco />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/contagem">
+              <ProtectedRoute>
+                <BaseContagem />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/cotia">
+              <ProtectedRoute>
+                <BaseCotia />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/criciuma">
+              <ProtectedRoute>
+                <BaseCriciuma />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/cuiaba">
+              <ProtectedRoute>
+                <BaseCuiaba />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/curitiba">
+              <ProtectedRoute>
+                <BaseCuritiba />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/divinopolis">
+              <ProtectedRoute>
+                <BaseDivinopolis />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/florianopolis">
+              <ProtectedRoute>
+                <BaseFlorianopolis />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/fortaleza">
+              <ProtectedRoute>
+                <BaseFortaleza />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/franca">
+              <ProtectedRoute>
+                <BaseFranca />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/full-filmente">
+              <ProtectedRoute>
+                <BaseFullFilmente />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/goiania">
+              <ProtectedRoute>
+                <BaseGoiania />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/guarapuava">
+              <ProtectedRoute>
+                <BaseGuarapuava />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/itapetininga">
+              <ProtectedRoute>
+                <BaseItapetininga />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/itaquera">
+              <ProtectedRoute>
+                <BaseItaquera />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/itupeva">
+              <ProtectedRoute>
+                <BaseItupeva />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/jales">
+              <ProtectedRoute>
+                <BaseJales />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/joinville">
+              <ProtectedRoute>
+                <BaseJoinville />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/lajeado">
+              <ProtectedRoute>
+                <BaseLajeado />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/londrina">
+              <ProtectedRoute>
+                <BaseLondrina />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/manaus">
+              <ProtectedRoute>
+                <BaseManaus />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/marilia">
+              <ProtectedRoute>
+                <BaseMarilia />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/maringa">
+              <ProtectedRoute>
+                <BaseMaringa />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/mega-guarulhos">
+              <ProtectedRoute>
+                <BaseMegaGuarulhos />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/mogi-cruzes">
+              <ProtectedRoute>
+                <BaseMogiCruzes />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/mooca-centro">
+              <ProtectedRoute>
+                <BaseMoocaCentro />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/passo-fundo">
+              <ProtectedRoute>
+                <BasePassoFundo />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/pato-branco">
+              <ProtectedRoute>
+                <BasePatoBranco />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/patos-minas">
+              <ProtectedRoute>
+                <BasePatosMinas />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/pelotas">
+              <ProtectedRoute>
+                <BasePelotas />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/piracicaba">
+              <ProtectedRoute>
+                <BasePiracicaba />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/pocos-caldas">
+              <ProtectedRoute>
+                <BasePocosCaldas />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/ponta-grossa">
+              <ProtectedRoute>
+                <BasePontaGrossa />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/porto-alegre">
+              <ProtectedRoute>
+                <BasePortoAlegre />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/pq-novo-mundo">
+              <ProtectedRoute>
+                <BasePqNovoMundo />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/presidente-prudente">
+              <ProtectedRoute>
+                <BasePresidentePrudente />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/queimados">
+              <ProtectedRoute>
+                <BaseQueimados />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/recife">
+              <ProtectedRoute>
+                <BaseRecife />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/santa-maria">
+              <ProtectedRoute>
+                <BaseSantaMaria />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/santos">
+              <ProtectedRoute>
+                <BaseSantos />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/sao-carlos">
+              <ProtectedRoute>
+                <BaseSaoCarlos />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/sao-jose-campos">
+              <ProtectedRoute>
+                <BaseSaoJoseCampos />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/sapucaia">
+              <ProtectedRoute>
+                <BaseSapucaia />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/sj-rio-preto">
+              <ProtectedRoute>
+                <BaseSjRioPreto />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/sorocaba">
+              <ProtectedRoute>
+                <BaseSorocaba />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/vitoria">
+              <ProtectedRoute>
+                <BaseVitoria />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/z-leste">
+              <ProtectedRoute>
+                <BaseZLeste />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/bases/z-sul">
+              <ProtectedRoute>
+                <BaseZSul />
+              </ProtectedRoute>
+            </Route>
+
+// ROTAS DE LOGIN PARA ADICIONAR AO APP.TSX
+            <Route path="/bases/abc/login">
+              <LoginAbc />
+            </Route>
+            <Route path="/bases/aracatuba/login">
+              <LoginAracatuba />
+            </Route>
+            <Route path="/bases/arena-barueri/login">
+              <LoginArenaBarueri />
+            </Route>
+            <Route path="/bases/atibaia/login">
+              <LoginAtibaia />
+            </Route>
+            <Route path="/bases/avare/login">
+              <LoginAvare />
+            </Route>
+            <Route path="/bases/bahia-salvador/login">
+              <LoginBahiaSalvador />
+            </Route>
+            <Route path="/bases/bauru/login">
+              <LoginBauru />
+            </Route>
+            <Route path="/bases/blumenau/login">
+              <LoginBlumenau />
+            </Route>
+            <Route path="/bases/brasilia/login">
+              <LoginBrasilia />
+            </Route>
+            <Route path="/bases/campina-grande-sul/login">
+              <LoginCampinaGrandeSul />
+            </Route>
+            <Route path="/bases/campinas-s3/login">
+              <LoginCampinasS3 />
+            </Route>
+            <Route path="/bases/campinas-s7/login">
+              <LoginCampinasS7 />
+            </Route>
+            <Route path="/bases/campo-grande/login">
+              <LoginCampoGrande />
+            </Route>
+            <Route path="/bases/caraguatatuba/login">
+              <LoginCaraguatatuba />
+            </Route>
+            <Route path="/bases/cascavel/login">
+              <LoginCascavel />
+            </Route>
+            <Route path="/bases/chapeco/login">
+              <LoginChapeco />
+            </Route>
+            <Route path="/bases/contagem/login">
+              <LoginContagem />
+            </Route>
+            <Route path="/bases/cotia/login">
+              <LoginCotia />
+            </Route>
+            <Route path="/bases/criciuma/login">
+              <LoginCriciuma />
+            </Route>
+            <Route path="/bases/cuiaba/login">
+              <LoginCuiaba />
+            </Route>
+            <Route path="/bases/curitiba/login">
+              <LoginCuritiba />
+            </Route>
+            <Route path="/bases/divinopolis/login">
+              <LoginDivinopolis />
+            </Route>
+            <Route path="/bases/florianopolis/login">
+              <LoginFlorianopolis />
+            </Route>
+            <Route path="/bases/fortaleza/login">
+              <LoginFortaleza />
+            </Route>
+            <Route path="/bases/franca/login">
+              <LoginFranca />
+            </Route>
+            <Route path="/bases/full-filmente/login">
+              <LoginFullFilmente />
+            </Route>
+            <Route path="/bases/goiania/login">
+              <LoginGoiania />
+            </Route>
+            <Route path="/bases/guarapuava/login">
+              <LoginGuarapuava />
+            </Route>
+            <Route path="/bases/itapetininga/login">
+              <LoginItapetininga />
+            </Route>
+            <Route path="/bases/itaquera/login">
+              <LoginItaquera />
+            </Route>
+            <Route path="/bases/itupeva/login">
+              <LoginItupeva />
+            </Route>
+            <Route path="/bases/jales/login">
+              <LoginJales />
+            </Route>
+            <Route path="/bases/joinville/login">
+              <LoginJoinville />
+            </Route>
+            <Route path="/bases/lajeado/login">
+              <LoginLajeado />
+            </Route>
+            <Route path="/bases/londrina/login">
+              <LoginLondrina />
+            </Route>
+            <Route path="/bases/manaus/login">
+              <LoginManaus />
+            </Route>
+            <Route path="/bases/marilia/login">
+              <LoginMarilia />
+            </Route>
+            <Route path="/bases/maringa/login">
+              <LoginMaringa />
+            </Route>
+            <Route path="/bases/mega-guarulhos/login">
+              <LoginMegaGuarulhos />
+            </Route>
+            <Route path="/bases/mogi-cruzes/login">
+              <LoginMogiCruzes />
+            </Route>
+            <Route path="/bases/mooca-centro/login">
+              <LoginMoocaCentro />
+            </Route>
+            <Route path="/bases/passo-fundo/login">
+              <LoginPassoFundo />
+            </Route>
+            <Route path="/bases/pato-branco/login">
+              <LoginPatoBranco />
+            </Route>
+            <Route path="/bases/patos-minas/login">
+              <LoginPatosMinas />
+            </Route>
+            <Route path="/bases/pelotas/login">
+              <LoginPelotas />
+            </Route>
+            <Route path="/bases/piracicaba/login">
+              <LoginPiracicaba />
+            </Route>
+            <Route path="/bases/pocos-caldas/login">
+              <LoginPocosCaldas />
+            </Route>
+            <Route path="/bases/ponta-grossa/login">
+              <LoginPontaGrossa />
+            </Route>
+            <Route path="/bases/porto-alegre/login">
+              <LoginPortoAlegre />
+            </Route>
+            <Route path="/bases/pq-novo-mundo/login">
+              <LoginPqNovoMundo />
+            </Route>
+            <Route path="/bases/presidente-prudente/login">
+              <LoginPresidentePrudente />
+            </Route>
+            <Route path="/bases/queimados/login">
+              <LoginQueimados />
+            </Route>
+            <Route path="/bases/recife/login">
+              <LoginRecife />
+            </Route>
+            <Route path="/bases/santa-maria/login">
+              <LoginSantaMaria />
+            </Route>
+            <Route path="/bases/santos/login">
+              <LoginSantos />
+            </Route>
+            <Route path="/bases/sao-carlos/login">
+              <LoginSaoCarlos />
+            </Route>
+            <Route path="/bases/sao-jose-campos/login">
+              <LoginSaoJoseCampos />
+            </Route>
+            <Route path="/bases/sapucaia/login">
+              <LoginSapucaia />
+            </Route>
+            <Route path="/bases/sj-rio-preto/login">
+              <LoginSjRioPreto />
+            </Route>
+            <Route path="/bases/sorocaba/login">
+              <LoginSorocaba />
+            </Route>
+            <Route path="/bases/vitoria/login">
+              <LoginVitoria />
+            </Route>
+            <Route path="/bases/z-leste/login">
+              <LoginZLeste />
+            </Route>
+            <Route path="/bases/z-sul/login">
+              <LoginZSul />
+            </Route>

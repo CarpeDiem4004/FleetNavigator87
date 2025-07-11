@@ -30,7 +30,7 @@ const LoginFortaleza: React.FC = () => {
       if (result.success) {
         toast({
           title: "Login realizado com sucesso!",
-          description: "Redirecionando para a Base Fortaleza...",
+          description: "Redirecionando para a Base FORTALEZA SCE1...",
         });
         navigate('/bases/fortaleza');
       } else {
@@ -53,10 +53,10 @@ const LoginFortaleza: React.FC = () => {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
-            SC (FORTALEZA) SCE1
+            FORTALEZA SCE1 SCE1
           </CardTitle>
           <p className="text-gray-600">
-            Faça login para acessar a Base Fortaleza
+            Faça login para acessar a Base FORTALEZA SCE1
           </p>
         </CardHeader>
         <CardContent>
