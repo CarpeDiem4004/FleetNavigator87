@@ -70,6 +70,7 @@ const FuelCardRequestsPanel: React.FC = () => {
   const [dateFilter, setDateFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [projectFilter, setProjectFilter] = useState<string>('all');
+  const [baseFilter, setBaseFilter] = useState<string>('all');
   const [projects, setProjects] = useState<any[]>([]);
   const [editedStatus, setEditedStatus] = useState<string>('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -96,6 +97,11 @@ const FuelCardRequestsPanel: React.FC = () => {
       loadSolicitudeCounts();
     }
   }, [solicitations]);
+
+  // Reset base filter when project changes
+  useEffect(() => {
+    setBaseFilter('all');
+  }, [projectFilter]);
 
   const loadSolicitudeCounts = async () => {
     try {
@@ -377,6 +383,13 @@ const FuelCardRequestsPanel: React.FC = () => {
           }
         }
       }
+
+      // Filtro por base
+      if (baseFilter !== 'all') {
+        if (sol.base !== baseFilter) {
+          return false;
+        }
+      }
       
       // Filtro por busca (placa ou motorista)
       if (searchQuery) {
@@ -434,6 +447,29 @@ const FuelCardRequestsPanel: React.FC = () => {
   };
 
   // Funções para calcular estatísticas
+  // Get filtered bases based on selected project
+  const getFilteredBases = () => {
+    if (projectFilter === 'all') {
+      // Return all unique bases from all projects
+      const allBases = new Set<string>();
+      projects.forEach(project => {
+        if (project.bases) {
+          project.bases.forEach((base: any) => {
+            allBases.add(base.base_name);
+          });
+        }
+      });
+      return Array.from(allBases).sort();
+    } else {
+      // Return bases from selected project
+      const selectedProject = projects.find(p => p.id.toString() === projectFilter);
+      if (selectedProject && selectedProject.bases) {
+        return selectedProject.bases.map((base: any) => base.base_name).sort();
+      }
+      return [];
+    }
+  };
+
   const getStatistics = () => {
     const pendentes = solicitations.filter(s => s.status === 'Pendente' || s.status === 'Em Análise').length;
     const atendidas = solicitations.filter(s => s.status === 'Recarga Efetuada').length;
@@ -540,12 +576,12 @@ const FuelCardRequestsPanel: React.FC = () => {
             <CardTitle className="text-lg">Filtros</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="status-filter">Status</Label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger id="status-filter">
-                    <SelectValue placeholder="Selecione o status" />
+                    <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
@@ -565,6 +601,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                     type="date"
                     value={dateFilter}
                     onChange={(e) => setDateFilter(e.target.value)}
+                    placeholder="dd/mm/aaaa"
                   />
                   {dateFilter && (
                     <Button 
@@ -583,13 +620,30 @@ const FuelCardRequestsPanel: React.FC = () => {
                 <Label htmlFor="project-filter">Projeto</Label>
                 <Select value={projectFilter} onValueChange={setProjectFilter}>
                   <SelectTrigger id="project-filter">
-                    <SelectValue placeholder="Selecione o projeto" />
+                    <SelectValue placeholder="Todos os Projetos" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos os Projetos</SelectItem>
                     {projects.map((project) => (
                       <SelectItem key={project.id} value={project.id.toString()}>
                         {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="base-filter">Base</Label>
+                <Select value={baseFilter} onValueChange={setBaseFilter}>
+                  <SelectTrigger id="base-filter">
+                    <SelectValue placeholder="Todas as Bases" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as Bases</SelectItem>
+                    {getFilteredBases().map((baseName) => (
+                      <SelectItem key={baseName} value={baseName}>
+                        {baseName}
                       </SelectItem>
                     ))}
                   </SelectContent>
