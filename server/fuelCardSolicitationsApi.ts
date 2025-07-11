@@ -1005,16 +1005,25 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
     // Adicionar worksheet ao workbook
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Solicitações Cartão Combustível');
 
-    // Gerar buffer do Excel
-    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    // Gerar buffer do Excel com configurações mais específicas
+    const excelBuffer = XLSX.write(workbook, { 
+      type: 'buffer', 
+      bookType: 'xlsx',
+      compression: true
+    });
 
-    // Configurar headers para download
+    // Configurar headers para download com nome de arquivo mais simples
+    const fileName = `solicitacoes-cartao-combustivel-${new Date().toISOString().split('T')[0]}.xlsx`;
+    
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=solicitacoes-cartao-combustivel-${new Date().toISOString().split('T')[0]}.xlsx`);
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.setHeader('Content-Length', excelBuffer.length);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
 
     // Enviar arquivo
-    res.send(excelBuffer);
+    res.end(excelBuffer);
 
   } catch (error: any) {
     console.error('Erro ao exportar Excel:', error);
