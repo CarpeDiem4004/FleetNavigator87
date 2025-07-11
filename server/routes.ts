@@ -84,7 +84,8 @@ import {
   deleteFuelCardSolicitation,
   setupFuelCardTable,
   createLineHallFuelCardRequest,
-  exportFuelCardSolicitationsToExcel
+  exportFuelCardSolicitationsToExcel,
+  createFuelCardRequest
 } from "./fuelCardSolicitationsApi";
 import { 
   getProjects, 
@@ -9715,6 +9716,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/fuel-card-solicitations', createFuelCardSolicitation);
   app.put('/api/fuel-card-solicitations/:id/status', isAuthenticated, updateFuelCardSolicitationStatus);
   app.delete('/api/fuel-card-solicitations/:id', isAuthenticated, deleteFuelCardSolicitation);
+  
+  // Nova rota para solicitações de cartão de combustível das bases
+  app.post('/api/fuel-card-requests', createFuelCardRequest);
 
   // Função específica para acesso público aos projetos
   const getProjectsWithBasesPublic = async (req: Request, res: Response) => {

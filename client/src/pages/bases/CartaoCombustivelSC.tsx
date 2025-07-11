@@ -327,12 +327,47 @@ const CartaoCombustivelSC: React.FC = () => {
         return;
       }
 
-      // Simular envio para API
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Preparar dados para envio à API
+      const requestData = {
+        plate: formData.placaVeiculo,
+        odometer: parseInt(formData.quilometragem) || 0,
+        amount: parseFloat(formData.valor.replace(',', '.')) || 0,
+        card_type: formData.tipoCartao,
+        provider: formData.provedorCartao,
+        card_number: formData.tipoCartao === 'especifico' ? 'Específico' : '',
+        driver_name: formData.nomeMotorista,
+        driver_phone: formData.celularWhatsApp,
+        fuel_type: formData.tipoCombustivel,
+        fuel_time: formData.horarioAbastecimento,
+        reason: `Solicitação para ${formData.provedorCartao} - ${formData.tipoCombustivel}`,
+        project_id: parseInt(formData.projeto),
+        base_id: parseInt(formData.base),
+        status: 'pendente'
+      };
+
+      // Enviar dados para a API real
+      const response = await fetch('/api/fuel-card-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(requestData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`);
+      }
+
+      const result = await response.json();
       
-      // Adicionar nova solicitação ao histórico
+      if (!result.success) {
+        throw new Error(result.message || 'Erro ao salvar solicitação');
+      }
+      
+      // Adicionar nova solicitação ao histórico local para feedback imediato
       const novaSolicitacao: SolicitacaoHistorico = {
-        id: Date.now().toString(),
+        id: result.data?.id?.toString() || Date.now().toString(),
         tipoSolicitacao: 'Recarga de Saldo',
         numeroCartao: formData.tipoCartao === 'especifico' ? 'Específico' : '',
         placaVeiculo: formData.placaVeiculo,

@@ -1140,3 +1140,101 @@ export async function deleteFuelCardSolicitation(req: Request, res: Response) {
     });
   }
 }
+
+/**
+ * Criar uma nova solicitação de cartão de combustível na tabela fuel_card_requests
+ */
+export async function createFuelCardRequest(req: Request, res: Response) {
+  try {
+    console.log('[CREATE-FUEL-CARD-REQUEST] Criando nova solicitação:', req.body);
+    
+    const {
+      plate,
+      odometer,
+      amount,
+      card_type,
+      provider,
+      card_number,
+      driver_name,
+      driver_phone,
+      fuel_type,
+      fuel_time,
+      reason,
+      project_id,
+      base_id,
+      status = 'pendente'
+    } = req.body;
+
+    // Validações básicas
+    if (!plate || !driver_name || !amount) {
+      return res.status(400).json({
+        success: false,
+        message: 'Placa, motorista e valor são obrigatórios'
+      });
+    }
+
+    if (!project_id || !base_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Projeto e base são obrigatórios'
+      });
+    }
+
+    // Verificar se a base existe
+    const baseCheckQuery = `SELECT name FROM bases WHERE id = $1`;
+    const baseResult = await pool.query(baseCheckQuery, [base_id]);
+    
+    let base_name = null;
+    if (baseResult.rows.length > 0) {
+      base_name = baseResult.rows[0].name;
+    }
+
+    // Inserir nova solicitação
+    const insertQuery = `
+      INSERT INTO fuel_card_requests (
+        plate, odometer, amount, card_type, provider, card_number,
+        driver_name, driver_phone, fuel_type, fuel_time, reason,
+        project_id, base_id, base_name, status, requested_at, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW(), NOW()
+      ) RETURNING *
+    `;
+
+    const values = [
+      plate,
+      odometer || 0,
+      amount,
+      card_type || 'vinculado',
+      provider || 'Ticket',
+      card_number || '',
+      driver_name,
+      driver_phone || '',
+      fuel_type || 'Diesel',
+      fuel_time || '',
+      reason || 'Solicitação de recarga',
+      project_id,
+      base_id,
+      base_name,
+      status
+    ];
+
+    const result = await pool.query(insertQuery, values);
+    const newRequest = result.rows[0];
+
+    console.log('[CREATE-FUEL-CARD-REQUEST] Solicitação criada com sucesso:', newRequest.id);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Solicitação criada com sucesso',
+      data: newRequest
+    });
+
+  } catch (error: any) {
+    console.error('[CREATE-FUEL-CARD-REQUEST] Erro ao criar solicitação:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao criar solicitação',
+      error: error.message
+    });
+  }
+}
