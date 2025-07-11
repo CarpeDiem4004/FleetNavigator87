@@ -117,6 +117,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 11, 2025: **JACAREI FILTER ISSUE RESOLVED** - Fixed critical naming inconsistency in fuel card request filtering system
+  - ✅ Problem: API returned "GP02 JACAREI" while stored requests used "GP02 JACAREI (GRUPO PEREIRA)"
+  - ✅ Solution: Disabled incorrect endpoint in server/index.ts, now using getProjectsWithBasesPublic function
+  - ✅ Fixed endpoint now uses project_bases table with complete base names
+  - ✅ API correctly returns "GP02 JACAREI (GRUPO PEREIRA)" matching stored solicitations
+  - ✅ All 201 JACAREI fuel card requests now properly filterable in admin panel
+  - ✅ System maintains data integrity with consistent naming across all endpoints
+
 - July 11, 2025: **COMPLETE FUEL CARD FORM STANDARDIZATION** - Successfully standardized all 68 fuel card request forms across SC bases
   - ✅ Implemented modal-based fuel card request form matching exact Campinas reference design
   - ✅ Created automated standardization script (standardize-fuel-card-forms.cjs) for mass deployment

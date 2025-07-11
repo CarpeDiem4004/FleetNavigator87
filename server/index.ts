@@ -581,7 +581,8 @@ app.use((req, res, next) => {
     }
   });
 
-  // Add projects-with-bases API (endpoint específico para dropdowns)
+  // Add projects-with-bases API (endpoint específico para dropdowns) - COMENTADO PARA USAR A FUNÇÃO CORRETA
+  /*
   app.get('/api/projects-with-bases', async (req, res) => {
     try {
       res.setHeader('Content-Type', 'application/json');
@@ -597,19 +598,19 @@ app.use((req, res, next) => {
         ORDER BY name ASC
       `;
       
-      // Buscar bases com project_id definido
+      // Buscar bases usando project_bases para obter nomes completos
       const basesQuery = `
         SELECT 
-          b.id,
-          b.name,
-          b.location,
-          b.basename,
-          b.project_id,
+          pb.project_id,
+          pb.base_name,
+          pb.base_code,
+          pb.description,
+          pb.is_active,
           p.name as project_name
-        FROM bases b
-        LEFT JOIN projects p ON b.project_id = p.id
-        WHERE b.active = true AND b.project_id IS NOT NULL
-        ORDER BY p.name, b.name
+        FROM project_bases pb
+        LEFT JOIN projects p ON pb.project_id = p.id
+        WHERE pb.is_active = true
+        ORDER BY p.name, pb.base_name
       `;
       
       const [projectsResult, basesResult] = await Promise.all([
@@ -629,11 +630,11 @@ app.use((req, res, next) => {
         bases: basesResult.rows
           .filter(base => base.project_id === project.id)
           .map(base => ({
-            id: base.id,
-            base_name: base.name || base.basename || `Base ${base.id}`,
-            base_code: base.basename,
-            description: base.location,
-            is_active: true
+            id: base.project_id, // Usar project_id como ID
+            base_name: base.base_name, // Nome completo da project_bases
+            base_code: base.base_code,
+            description: base.description,
+            is_active: base.is_active
           }))
       }));
       
@@ -657,6 +658,7 @@ app.use((req, res, next) => {
       });
     }
   });
+  */
 
   // Add DELETE endpoint for drivers
   app.delete('/api/drivers/:id', async (req, res) => {
