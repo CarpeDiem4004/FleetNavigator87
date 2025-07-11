@@ -1,4 +1,14 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * Script para padronizar os formulários de cartão combustível de todas as bases SC
+ * com a mesma configuração do formulário de Campinas
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+// Template do formulário padronizado baseado no Campinas
+const createStandardizedFuelCardForm = (baseName, baseDisplayName) => {
+  return `import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,7 +68,7 @@ interface SolicitacaoFormData {
   base: string;
 }
 
-const CartaoCombustivelCampinas: React.FC = () => {
+const CartaoCombustivel${baseName}: React.FC = () => {
   const [formData, setFormData] = useState<SolicitacaoFormData>({
     placaVeiculo: '',
     quilometragem: '',
@@ -144,7 +154,7 @@ const CartaoCombustivelCampinas: React.FC = () => {
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
       }
       
       const data = await response.json();
@@ -245,8 +255,8 @@ const CartaoCombustivelCampinas: React.FC = () => {
         valorSolicitado: formData.valor,
         status: 'pendente',
         dataSolicitacao: new Date().toISOString(),
-        justificativa: `Solicitação para ${formData.provedorCartao} - ${formData.tipoCombustivel}`,
-        observacoes: `Projeto: ${selectedProject?.name || formData.projeto}, Base: ${selectedProject?.bases.find(b => b.id.toString() === formData.base)?.base_name || formData.base}`
+        justificativa: \`Solicitação para \${formData.provedorCartao} - \${formData.tipoCombustivel}\`,
+        observacoes: \`Projeto: \${selectedProject?.name || formData.projeto}, Base: \${selectedProject?.bases.find(b => b.id.toString() === formData.base)?.base_name || formData.base}\`
       };
       
       setHistorico(prev => [novaSolicitacao, ...prev]);
@@ -311,10 +321,10 @@ const CartaoCombustivelCampinas: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 to-blue-100 py-8">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="mb-8">
-          <Link href="/bases/campinas">
+          <Link href="/bases/${baseName.toLowerCase()}">
             <Button variant="ghost" className="mb-4 text-gray-600 hover:text-gray-800">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar à Base Campinas
+              Voltar à Base ${baseDisplayName}
             </Button>
           </Link>
           
@@ -326,7 +336,7 @@ const CartaoCombustivelCampinas: React.FC = () => {
               </h1>
             </div>
             <p className="text-gray-600 text-lg">
-              Base Campinas
+              Base ${baseDisplayName}
             </p>
           </div>
         </div>
@@ -592,7 +602,7 @@ const CartaoCombustivelCampinas: React.FC = () => {
                               <SelectTrigger>
                                 <SelectValue placeholder={
                                   selectedProject ? 
-                                    `Selecione entre ${selectedProject.bases.length} bases` : 
+                                    \`Selecione entre \${selectedProject.bases.length} bases\` : 
                                     "Primeiro selecione um projeto"
                                 } />
                               </SelectTrigger>
@@ -728,4 +738,129 @@ const CartaoCombustivelCampinas: React.FC = () => {
   );
 };
 
-export default CartaoCombustivelCampinas;
+export default CartaoCombustivel${baseName};`;
+};
+
+// Lista de todas as bases SC para padronização
+const scBases = [
+  'ABC', 'Santos', 'Limeira', 'Bauru', 'Araraquara', 'Sao_Jose_do_Rio_Preto', 'Franca', 'Marilia', 'Piracicaba',
+  'Campinas', 'Sorocaba', 'Guarulhos', 'Osasco', 'Sao_Bernardo_do_Campo', 'Santo_Andre', 'Mauá', 'Diadema',
+  'Ribeirao_Preto', 'Aracatuba', 'Presidente_Prudente', 'Jau', 'Itu', 'Americana', 'Rio_Claro', 'Sao_Carlos',
+  'Taubate', 'Jacareí', 'Sao_Jose_dos_Campos', 'Guaratingueta', 'Cruzeiro', 'Lorena', 'Pindamonhangaba',
+  'Caraguatatuba', 'Ubatuba', 'Registro', 'Itanhaem', 'Praia_Grande', 'Mongagua', 'Peruibe', 'Bertioga',
+  'Guaruja', 'Cubatao', 'Sao_Vicente', 'Itaquaquecetuba', 'Mogi_das_Cruzes', 'Suzano', 'Poa', 'Ferraz_de_Vasconcelos',
+  'Itapevi', 'Jandira', 'Barueri', 'Carapicuiba', 'Cotia', 'Vargem_Grande_Paulista', 'Embu_das_Artes', 'Taboao_da_Serra',
+  'Embu_Guacu', 'Itapecerica_da_Serra', 'Juquitiba', 'Sao_Lourenco_da_Serra', 'Piedade', 'Ibiuna', 'Mairinque',
+  'Aluminio', 'Aracoiaba_da_Serra', 'Salto_de_Pirapora', 'Tapiraí', 'SC'
+];
+
+// Lista de bases com seus nomes para exibição
+const baseDisplayNames = {
+  'ABC': 'ABC',
+  'Santos': 'Santos',
+  'Limeira': 'Limeira',
+  'Bauru': 'Bauru',
+  'Araraquara': 'Araraquara',
+  'Sao_Jose_do_Rio_Preto': 'São José do Rio Preto',
+  'Franca': 'Franca',
+  'Marilia': 'Marília',
+  'Piracicaba': 'Piracicaba',
+  'Campinas': 'Campinas',
+  'Sorocaba': 'Sorocaba',
+  'Guarulhos': 'Guarulhos',
+  'Osasco': 'Osasco',
+  'Sao_Bernardo_do_Campo': 'São Bernardo do Campo',
+  'Santo_Andre': 'Santo André',
+  'Mauá': 'Mauá',
+  'Diadema': 'Diadema',
+  'Ribeirao_Preto': 'Ribeirão Preto',
+  'Aracatuba': 'Araçatuba',
+  'Presidente_Prudente': 'Presidente Prudente',
+  'Jau': 'Jaú',
+  'Itu': 'Itu',
+  'Americana': 'Americana',
+  'Rio_Claro': 'Rio Claro',
+  'Sao_Carlos': 'São Carlos',
+  'Taubate': 'Taubaté',
+  'Jacareí': 'Jacareí',
+  'Sao_Jose_dos_Campos': 'São José dos Campos',
+  'Guaratingueta': 'Guaratinguetá',
+  'Cruzeiro': 'Cruzeiro',
+  'Lorena': 'Lorena',
+  'Pindamonhangaba': 'Pindamonhangaba',
+  'Caraguatatuba': 'Caraguatatuba',
+  'Ubatuba': 'Ubatuba',
+  'Registro': 'Registro',
+  'Itanhaem': 'Itanhaém',
+  'Praia_Grande': 'Praia Grande',
+  'Mongagua': 'Mongaguá',
+  'Peruibe': 'Peruíbe',
+  'Bertioga': 'Bertioga',
+  'Guaruja': 'Guarujá',
+  'Cubatao': 'Cubatão',
+  'Sao_Vicente': 'São Vicente',
+  'Itaquaquecetuba': 'Itaquaquecetuba',
+  'Mogi_das_Cruzes': 'Mogi das Cruzes',
+  'Suzano': 'Suzano',
+  'Poa': 'Poá',
+  'Ferraz_de_Vasconcelos': 'Ferraz de Vasconcelos',
+  'Itapevi': 'Itapevi',
+  'Jandira': 'Jandira',
+  'Barueri': 'Barueri',
+  'Carapicuiba': 'Carapicuíba',
+  'Cotia': 'Cotia',
+  'Vargem_Grande_Paulista': 'Vargem Grande Paulista',
+  'Embu_das_Artes': 'Embu das Artes',
+  'Taboao_da_Serra': 'Taboão da Serra',
+  'Embu_Guacu': 'Embu-Guaçu',
+  'Itapecerica_da_Serra': 'Itapecerica da Serra',
+  'Juquitiba': 'Juquitiba',
+  'Sao_Lourenco_da_Serra': 'São Lourenço da Serra',
+  'Piedade': 'Piedade',
+  'Ibiuna': 'Ibiúna',
+  'Mairinque': 'Mairinque',
+  'Aluminio': 'Alumínio',
+  'Aracoiaba_da_Serra': 'Araçoiaba da Serra',
+  'Salto_de_Pirapora': 'Salto de Pirapora',
+  'Tapiraí': 'Tapiraí',
+  'SC': 'SC (Ribeirão Preto) SSP4'
+};
+
+async function standardizeAllFuelCardForms() {
+  const clientDir = path.join(__dirname, '../client/src/pages/bases');
+  let updatedCount = 0;
+  
+  console.log('🔄 Iniciando padronização de formulários de cartão combustível...');
+  
+  for (const baseName of scBases) {
+    const fileName = `CartaoCombustivel${baseName}.tsx`;
+    const filePath = path.join(clientDir, fileName);
+    const displayName = baseDisplayNames[baseName] || baseName;
+    
+    try {
+      // Gerar o conteúdo padronizado
+      const standardizedContent = createStandardizedFuelCardForm(baseName, displayName);
+      
+      // Escrever o arquivo
+      fs.writeFileSync(filePath, standardizedContent, 'utf8');
+      
+      console.log(`✅ Padronizado: ${fileName} (${displayName})`);
+      updatedCount++;
+    } catch (error) {
+      console.error(`❌ Erro ao padronizar ${fileName}:`, error.message);
+    }
+  }
+  
+  console.log(`🎉 Padronização concluída! ${updatedCount} formulários de cartão combustível padronizados.`);
+  console.log('📋 Todos os formulários agora seguem o padrão do Campinas:');
+  console.log('   - Modal com formulário estruturado');
+  console.log('   - Campos: placa, quilometragem, valor, tipo de cartão');
+  console.log('   - Seleção de provedor (Ticket/Alelo/VR)');
+  console.log('   - Tipo de combustível e horário de abastecimento');
+  console.log('   - Dados do motorista e WhatsApp');
+  console.log('   - Seleção de projeto e base');
+  console.log('   - Sistema de histórico com abas');
+}
+
+// Executar a padronização
+standardizeAllFuelCardForms().catch(console.error);

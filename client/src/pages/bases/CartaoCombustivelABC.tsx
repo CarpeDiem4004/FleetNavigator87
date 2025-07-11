@@ -58,7 +58,7 @@ interface SolicitacaoFormData {
   base: string;
 }
 
-const CartaoCombustivelCampinas: React.FC = () => {
+const CartaoCombustivelABC: React.FC = () => {
   const [formData, setFormData] = useState<SolicitacaoFormData>({
     placaVeiculo: '',
     quilometragem: '',
@@ -311,10 +311,10 @@ const CartaoCombustivelCampinas: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 to-blue-100 py-8">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="mb-8">
-          <Link href="/bases/campinas">
+          <Link href="/bases/abc">
             <Button variant="ghost" className="mb-4 text-gray-600 hover:text-gray-800">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar à Base Campinas
+              Voltar à Base ABC
             </Button>
           </Link>
           
@@ -326,7 +326,7 @@ const CartaoCombustivelCampinas: React.FC = () => {
               </h1>
             </div>
             <p className="text-gray-600 text-lg">
-              Base Campinas
+              Base ABC
             </p>
           </div>
         </div>
@@ -728,4 +728,4 @@ const CartaoCombustivelCampinas: React.FC = () => {
   );
 };
 
-export default CartaoCombustivelCampinas;
+export default CartaoCombustivelABC;

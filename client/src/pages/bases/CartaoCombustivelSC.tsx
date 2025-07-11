@@ -8,8 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, ArrowLeft, CheckCircle, History, FileText, Calendar, DollarSign, Clock, User, Car } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { CreditCard, ArrowLeft, CheckCircle, History, FileText, Calendar, DollarSign, Clock, User, Car, X } from "lucide-react";
 import { Link } from 'wouter';
+import { useToast } from '@/hooks/use-toast';
 
 interface SolicitacaoHistorico {
   id: string;
@@ -26,22 +29,59 @@ interface SolicitacaoHistorico {
   observacoesGestao?: string;
 }
 
+interface Project {
+  id: number;
+  name: string;
+  description?: string;
+  bases: ProjectBase[];
+}
+
+interface ProjectBase {
+  id: number;
+  base_name: string;
+  base_code: string;
+  description?: string;
+}
+
+interface SolicitacaoFormData {
+  placaVeiculo: string;
+  quilometragem: string;
+  valor: string;
+  tipoCartao: 'vinculado' | 'especifico';
+  placaAutomatic: string;
+  provedorCartao: string;
+  tipoCombustivel: string;
+  horarioAbastecimento: string;
+  nomeMotorista: string;
+  celularWhatsApp: string;
+  projeto: string;
+  base: string;
+}
+
 const CartaoCombustivelSC: React.FC = () => {
-  const [formData, setFormData] = useState({
-    tipoSolicitacao: '',
-    numeroCartao: '',
+  const [formData, setFormData] = useState<SolicitacaoFormData>({
     placaVeiculo: '',
-    nomeMotorista: '',
-    valorSolicitado: '',
-    justificativa: '',
+    quilometragem: '',
+    valor: '',
+    tipoCartao: 'vinculado',
+    placaAutomatic: '',
+    provedorCartao: 'Ticket',
+    tipoCombustivel: 'Diesel',
     horarioAbastecimento: '',
-    localPreferencia: '',
-    observacoes: ''
+    nomeMotorista: '',
+    celularWhatsApp: '',
+    projeto: '',
+    base: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [historico, setHistorico] = useState<SolicitacaoHistorico[]>([]);
   const [activeTab, setActiveTab] = useState('nova-solicitacao');
+  const [showModal, setShowModal] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Carregar histórico de solicitações - simulando dados para demonstração
@@ -88,7 +128,54 @@ const CartaoCombustivelSC: React.FC = () => {
       }
     ];
     setHistorico(historicoMock);
+    loadProjectsWithBases();
   }, []);
+
+  const loadProjectsWithBases = async () => {
+    try {
+      setIsLoadingProjects(true);
+      const response = await fetch('/api/public/projects-with-bases', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        setProjects(data.data);
+      } else {
+        throw new Error('Dados de projetos inválidos ou vazios');
+      }
+      
+    } catch (error: any) {
+      console.error('Erro ao carregar projetos:', error);
+      toast({
+        title: 'Erro ao carregar projetos',
+        description: 'Verifique sua conexão e tente novamente',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoadingProjects(false);
+    }
+  };
+
+  const handleProjectChange = (projectId: string) => {
+    const project = projects.find(p => p.id.toString() === projectId);
+    setSelectedProject(project || null);
+    setFormData(prev => ({
+      ...prev,
+      projeto: projectId,
+      base: '' // Reset base selection
+    }));
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -126,44 +213,72 @@ const CartaoCombustivelSC: React.FC = () => {
     setIsSubmitting(true);
     
     try {
+      // Validações básicas
+      if (!formData.placaVeiculo || !formData.nomeMotorista || !formData.valor) {
+        toast({
+          title: 'Campos obrigatórios',
+          description: 'Preencha placa, motorista e valor',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      if (!formData.projeto || !formData.base) {
+        toast({
+          title: 'Projeto e Base obrigatórios',
+          description: 'Selecione um projeto e uma base',
+          variant: 'destructive'
+        });
+        return;
+      }
+
       // Simular envio para API
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Adicionar nova solicitação ao histórico
       const novaSolicitacao: SolicitacaoHistorico = {
         id: Date.now().toString(),
-        tipoSolicitacao: formData.tipoSolicitacao,
-        numeroCartao: formData.numeroCartao,
+        tipoSolicitacao: 'Recarga de Saldo',
+        numeroCartao: formData.tipoCartao === 'especifico' ? 'Específico' : '',
         placaVeiculo: formData.placaVeiculo,
         nomeMotorista: formData.nomeMotorista,
-        valorSolicitado: formData.valorSolicitado,
+        valorSolicitado: formData.valor,
         status: 'pendente',
         dataSolicitacao: new Date().toISOString(),
-        justificativa: formData.justificativa,
-        observacoes: formData.observacoes || undefined
+        justificativa: `Solicitação para ${formData.provedorCartao} - ${formData.tipoCombustivel}`,
+        observacoes: `Projeto: ${selectedProject?.name || formData.projeto}, Base: ${selectedProject?.bases.find(b => b.id.toString() === formData.base)?.base_name || formData.base}`
       };
       
       setHistorico(prev => [novaSolicitacao, ...prev]);
       setSubmitSuccess(true);
+      setShowModal(false);
       
       // Limpar formulário após sucesso
       setTimeout(() => {
         setFormData({
-          tipoSolicitacao: '',
-          numeroCartao: '',
           placaVeiculo: '',
-          nomeMotorista: '',
-          valorSolicitado: '',
-          justificativa: '',
+          quilometragem: '',
+          valor: '',
+          tipoCartao: 'vinculado',
+          placaAutomatic: '',
+          provedorCartao: 'Ticket',
+          tipoCombustivel: 'Diesel',
           horarioAbastecimento: '',
-          localPreferencia: '',
-          observacoes: ''
+          nomeMotorista: '',
+          celularWhatsApp: '',
+          projeto: '',
+          base: ''
         });
         setSubmitSuccess(false);
         setActiveTab('historico');
       }, 3000);
     } catch (error) {
       console.error('Erro ao enviar solicitação:', error);
+      toast({
+        title: 'Erro de conexão',
+        description: 'Não foi possível enviar a solicitação',
+        variant: 'destructive'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -199,7 +314,7 @@ const CartaoCombustivelSC: React.FC = () => {
           <Link href="/bases/sc">
             <Button variant="ghost" className="mb-4 text-gray-600 hover:text-gray-800">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar à Base SC
+              Voltar à Base SC (Ribeirão Preto) SSP4
             </Button>
           </Link>
           
@@ -240,158 +355,276 @@ const CartaoCombustivelSC: React.FC = () => {
               </TabsList>
               
               <TabsContent value="nova-solicitacao" className="mt-6">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="tipoSolicitacao" className="text-gray-700 font-medium">
-                        Tipo de Solicitação *
-                      </Label>
-                      <Select onValueChange={(value) => handleInputChange('tipoSolicitacao', value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="recarga-saldo">Recarga de Saldo</SelectItem>
-                          <SelectItem value="novo-cartao">Novo Cartão</SelectItem>
-                          <SelectItem value="substituicao">Substituição de Cartão</SelectItem>
-                          <SelectItem value="desbloqueio">Desbloqueio de Cartão</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                <div className="flex justify-center">
+                  <Dialog open={showModal} onOpenChange={setShowModal}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg">
+                        Nova Solicitação
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-blue-600">
+                          <CreditCard className="h-5 w-5" />
+                          Solicitação de Cartão
+                        </DialogTitle>
+                        <p className="text-sm text-gray-600">Preencha os dados para solicitar recarga de combustível</p>
+                      </DialogHeader>
+                      
+                      <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="bg-orange-50 p-4 rounded-lg">
+                          <h3 className="font-semibold text-orange-800 mb-3 flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            Dados da Solicitação
+                          </h3>
+                          <p className="text-sm text-orange-700 mb-4">Informe os dados do veículo e do cartão desejado</p>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="placaVeiculo" className="text-red-600 font-medium">
+                                🚗 Placa do Veículo
+                              </Label>
+                              <Input
+                                id="placaVeiculo"
+                                placeholder="ABC1234"
+                                value={formData.placaVeiculo}
+                                onChange={(e) => setFormData(prev => ({ ...prev, placaVeiculo: e.target.value }))}
+                                className="h-11"
+                                required
+                              />
+                              <p className="text-xs text-gray-500">Informe a placa sem traços ou espaços</p>
+                            </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="numeroCartao" className="text-gray-700 font-medium">
-                        Número do Cartão
-                      </Label>
-                      <Input
-                        id="numeroCartao"
-                        placeholder="Ex: 1234567890123456"
-                        value={formData.numeroCartao}
-                        onChange={(e) => handleInputChange('numeroCartao', e.target.value)}
-                        className="h-11"
-                      />
-                    </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="quilometragem" className="text-gray-700 font-medium">
+                                📊 Quilometragem
+                              </Label>
+                              <Input
+                                id="quilometragem"
+                                type="number"
+                                placeholder="0"
+                                value={formData.quilometragem}
+                                onChange={(e) => setFormData(prev => ({ ...prev, quilometragem: e.target.value }))}
+                                className="h-11"
+                              />
+                              <p className="text-xs text-gray-500">KM atual do veículo</p>
+                            </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="placaVeiculo" className="text-gray-700 font-medium">
-                        Placa do Veículo *
-                      </Label>
-                      <Input
-                        id="placaVeiculo"
-                        placeholder="Ex: ABC1234"
-                        value={formData.placaVeiculo}
-                        onChange={(e) => handleInputChange('placaVeiculo', e.target.value)}
-                        required
-                        className="h-11"
-                      />
-                    </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="valor" className="text-yellow-600 font-medium">
+                                💰 Valor (R$)
+                              </Label>
+                              <Input
+                                id="valor"
+                                type="number"
+                                step="0.01"
+                                placeholder="0"
+                                value={formData.valor}
+                                onChange={(e) => setFormData(prev => ({ ...prev, valor: e.target.value }))}
+                                className="h-11"
+                                required
+                              />
+                              <p className="text-xs text-gray-500">Valor em reais para carregar</p>
+                            </div>
+                          </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="nomeMotorista" className="text-gray-700 font-medium">
-                        Nome do Motorista *
-                      </Label>
-                      <Input
-                        id="nomeMotorista"
-                        placeholder="Nome completo"
-                        value={formData.nomeMotorista}
-                        onChange={(e) => handleInputChange('nomeMotorista', e.target.value)}
-                        required
-                        className="h-11"
-                      />
-                    </div>
+                          <div className="mt-4 space-y-3">
+                            <Label className="text-gray-700 font-medium">Tipo de Cartão</Label>
+                            <RadioGroup 
+                              value={formData.tipoCartao} 
+                              onValueChange={(value) => setFormData(prev => ({ ...prev, tipoCartao: value as 'vinculado' | 'especifico' }))}
+                              className="space-y-2"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="vinculado" id="vinculado" />
+                                <Label htmlFor="vinculado" className="text-sm">
+                                  🔗 Cartão vinculado à placa do veículo
+                                </Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="especifico" id="especifico" />
+                                <Label htmlFor="especifico" className="text-sm">
+                                  🎯 Cartão específico por número
+                                </Label>
+                              </div>
+                            </RadioGroup>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="valorSolicitado" className="text-gray-700 font-medium">
-                        Valor Solicitado *
-                      </Label>
-                      <Input
-                        id="valorSolicitado"
-                        type="number"
-                        step="0.01"
-                        placeholder="R$ 0,00"
-                        value={formData.valorSolicitado}
-                        onChange={(e) => handleInputChange('valorSolicitado', e.target.value)}
-                        required
-                        className="h-11"
-                      />
-                    </div>
+                            {formData.tipoCartao === 'vinculado' && (
+                              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                                <Label htmlFor="placaAutomatic" className="text-blue-600 font-medium">
+                                  🚗 Placa do Veículo (Cartão)
+                                </Label>
+                                <Input
+                                  id="placaAutomatic"
+                                  placeholder="Placa será usada automaticamente"
+                                  value={formData.placaVeiculo}
+                                  disabled
+                                  className="h-11 mt-2 bg-white"
+                                />
+                                <p className="text-xs text-blue-600 mt-1">
+                                  Para cartão vinculado, a placa do veículo será usada automaticamente
+                                </p>
+                              </div>
+                            )}
+                          </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="horarioAbastecimento" className="text-gray-700 font-medium">
-                        Horário de Abastecimento *
-                      </Label>
-                      <Select onValueChange={(value) => handleInputChange('horarioAbastecimento', value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o horário" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="antes-17h">Antes das 17h</SelectItem>
-                          <SelectItem value="apos-18h">Após as 18h</SelectItem>
-                          <SelectItem value="qualquer-horario">Qualquer horário</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="provedorCartao" className="text-gray-700 font-medium">
+                                Provedor do Cartão
+                              </Label>
+                              <Select value={formData.provedorCartao} onValueChange={(value) => setFormData(prev => ({ ...prev, provedorCartao: value }))}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Ticket">Ticket</SelectItem>
+                                  <SelectItem value="Alelo">Alelo</SelectItem>
+                                  <SelectItem value="VR">VR</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <p className="text-xs text-gray-500">Empresa que fornece o cartão de combustível</p>
+                            </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="localPreferencia" className="text-gray-700 font-medium">
-                      Local de Preferência para Abastecimento
-                    </Label>
-                    <Input
-                      id="localPreferencia"
-                      placeholder="Ex: Posto Shell - Av. Principal, 123"
-                      value={formData.localPreferencia}
-                      onChange={(e) => handleInputChange('localPreferencia', e.target.value)}
-                      className="h-11"
-                    />
-                  </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="tipoCombustivel" className="text-gray-700 font-medium">
+                                Tipo de Combustível
+                              </Label>
+                              <Select value={formData.tipoCombustivel} onValueChange={(value) => setFormData(prev => ({ ...prev, tipoCombustivel: value }))}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Diesel">Diesel</SelectItem>
+                                  <SelectItem value="Gasolina">Gasolina</SelectItem>
+                                  <SelectItem value="Etanol">Etanol</SelectItem>
+                                  <SelectItem value="GNV">GNV</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <p className="text-xs text-gray-500">Tipo de combustível para o veículo</p>
+                            </div>
+                          </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="justificativa" className="text-gray-700 font-medium">
-                      Justificativa *
-                    </Label>
-                    <Textarea
-                      id="justificativa"
-                      placeholder="Descreva o motivo da solicitação"
-                      value={formData.justificativa}
-                      onChange={(e) => handleInputChange('justificativa', e.target.value)}
-                      required
-                      rows={3}
-                      className="resize-none"
-                    />
-                  </div>
+                          <div className="mt-4 space-y-2">
+                            <Label htmlFor="horarioAbastecimento" className="text-gray-700 font-medium">
+                              Horário de Abastecimento
+                            </Label>
+                            <Select value={formData.horarioAbastecimento} onValueChange={(value) => setFormData(prev => ({ ...prev, horarioAbastecimento: value }))}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione o horário" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="manha">Manhã (6h às 12h)</SelectItem>
+                                <SelectItem value="tarde">Tarde (12h às 18h)</SelectItem>
+                                <SelectItem value="noite">Noite (18h às 22h)</SelectItem>
+                                <SelectItem value="madrugada">Madrugada (22h às 6h)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-gray-500">Escolha o horário preferido para abastecimento</p>
+                          </div>
+                        </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="observacoes" className="text-gray-700 font-medium">
-                      Observações Adicionais
-                    </Label>
-                    <Textarea
-                      id="observacoes"
-                      placeholder="Outras informações relevantes"
-                      value={formData.observacoes}
-                      onChange={(e) => handleInputChange('observacoes', e.target.value)}
-                      rows={3}
-                      className="resize-none"
-                    />
-                  </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="nomeMotorista" className="text-yellow-600 font-medium">
+                              👤 Nome do Motorista
+                            </Label>
+                            <Input
+                              id="nomeMotorista"
+                              placeholder="João da Silva"
+                              value={formData.nomeMotorista}
+                              onChange={(e) => setFormData(prev => ({ ...prev, nomeMotorista: e.target.value }))}
+                              className="h-11"
+                              required
+                            />
+                            <p className="text-xs text-gray-500">Nome completo do motorista</p>
+                          </div>
 
-                  <Alert className="border-cyan-200 bg-cyan-50">
-                    <CreditCard className="h-4 w-4" />
-                    <AlertDescription className="text-cyan-800">
-                      <strong>Importante:</strong> Todas as solicitações são analisadas pela gestão de combustível. O prazo para aprovação é de até 48 horas úteis.
-                    </AlertDescription>
-                  </Alert>
+                          <div className="space-y-2">
+                            <Label htmlFor="celularWhatsApp" className="text-green-600 font-medium">
+                              📱 Celular (WhatsApp)
+                            </Label>
+                            <Input
+                              id="celularWhatsApp"
+                              placeholder="(11) 99999-9999"
+                              value={formData.celularWhatsApp}
+                              onChange={(e) => setFormData(prev => ({ ...prev, celularWhatsApp: e.target.value }))}
+                              className="h-11"
+                            />
+                            <p className="text-xs text-gray-500">Para receber notificação quando aprovado</p>
+                          </div>
+                        </div>
 
-                  <div className="flex gap-4 pt-4">
-                    <Button
-                      type="submit"
-                      className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white h-12"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? 'Enviando...' : 'Solicitar Recarga'}
-                    </Button>
-                  </div>
-                </form>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="projeto" className="text-gray-700 font-medium">
+                              Projeto
+                            </Label>
+                            {isLoadingProjects ? (
+                              <div className="flex items-center justify-center h-11 border rounded">
+                                <span className="text-sm text-gray-500">Carregando projetos...</span>
+                              </div>
+                            ) : (
+                              <Select value={formData.projeto} onValueChange={handleProjectChange}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione o projeto" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {projects.map((project) => (
+                                    <SelectItem key={project.id} value={project.id.toString()}>
+                                      {project.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="base" className="text-gray-700 font-medium">
+                              Base
+                            </Label>
+                            <Select 
+                              value={formData.base} 
+                              onValueChange={(value) => setFormData(prev => ({ ...prev, base: value }))}
+                              disabled={!selectedProject || selectedProject.bases.length === 0}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder={
+                                  selectedProject ? 
+                                    `Selecione entre ${selectedProject.bases.length} bases` : 
+                                    "Primeiro selecione um projeto"
+                                } />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {selectedProject?.bases.map((base) => (
+                                  <SelectItem key={base.id} value={base.id.toString()}>
+                                    {base.base_name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-4">
+                          <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
+                            Cancelar
+                          </Button>
+                          <Button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700">
+                            {isSubmitting ? 'Enviando...' : 'Enviar Solicitação'}
+                          </Button>
+                        </div>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                
+                <div className="mt-8 text-center">
+                  <p className="text-gray-500 text-sm">
+                    Clique no botão acima para abrir o formulário de solicitação
+                  </p>
+                </div>
               </TabsContent>
 
               <TabsContent value="historico" className="mt-6">
