@@ -87,6 +87,7 @@ import {
   exportFuelCardSolicitationsToExcel,
   createFuelCardRequest
 } from "./fuelCardSolicitationsApi";
+import { exportFuelCardSolicitationsToCSV } from "./fuelCardExportAlternative";
 import { 
   getProjects, 
   getProjectBases, 
@@ -9712,6 +9713,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rotas específicas devem vir ANTES das rotas com parâmetros
   app.get('/api/fuel-card-solicitations/export', isAuthenticated, exportFuelCardSolicitationsToExcel);
   app.post('/api/fuel-card-solicitations/export', isAuthenticated, exportFuelCardSolicitationsToExcel);
+  // Rota alternativa para CSV
+  app.get('/api/fuel-card-solicitations/export-csv', isAuthenticated, exportFuelCardSolicitationsToCSV);
   app.get('/api/fuel-card-solicitations/:id', isAuthenticated, getFuelCardSolicitationById);
   app.post('/api/fuel-card-solicitations', createFuelCardSolicitation);
   app.put('/api/fuel-card-solicitations/:id/status', isAuthenticated, updateFuelCardSolicitationStatus);

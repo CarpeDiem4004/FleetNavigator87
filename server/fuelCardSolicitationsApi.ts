@@ -947,31 +947,39 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
       return dateB.getTime() - dateA.getTime();
     });
 
-    // Preparar dados para Excel
-    const excelData = solicitations.map((sol: any) => ({
-      'ID': sol.id,
-      'Placa': sol.placa,
-      'Motorista': sol.motorista,
-      'Valor Solicitado (R$)': parseFloat(sol.valor_solicitado) || 0,
-      'KM': sol.km || sol.km_total || 0,
-      'Tipo Cartão': sol.tipo_cartao === 'numero' ? 'Cartão Numerado' : 
-                     sol.tipo_cartao === 'placa' ? 'Cartão por Placa' : 
-                     sol.tipo_cartao || 'Padrão',
-      'Número Cartão': sol.tipo_cartao === 'placa' ? sol.placa : sol.numero_cartao || '',
-      'Provedor': sol.provedor_cartao || 'Padrão',
-      'Status': sol.status,
-      'Data Solicitação': sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleDateString('pt-BR') : '',
-      'Atendido Por': sol.atendido_por || '',
-      'Data Atendimento': sol.data_atendimento ? new Date(sol.data_atendimento).toLocaleDateString('pt-BR') : '',
-      'Base': sol.base,
-      'Observações': sol.observacoes || '',
-      'Origem': sol.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 'Sistema Principal',
-      'Modelo Veículo': sol.veiculo_modelo || '',
-      'Rota Origem': sol.rota_origem || '',
-      'Rota Destino': sol.rota_destino || '',
-      'Telefone Motorista': sol.telefone_motorista || '',
-      'Horário Abastecimento': sol.horario_abastecimento || ''
-    }));
+    // Preparar dados para Excel com formatação mais robusta
+    const excelData = solicitations.map((sol: any) => {
+      const valorFormatado = parseFloat(sol.valor_solicitado) || 0;
+      const dataFormatada = sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleDateString('pt-BR') : '';
+      const dataAtendimentoFormatada = sol.data_atendimento ? new Date(sol.data_atendimento).toLocaleDateString('pt-BR') : '';
+      
+      return {
+        'ID': String(sol.id || ''),
+        'Placa': String(sol.placa || ''),
+        'Motorista': String(sol.motorista || ''),
+        'Valor Solicitado': valorFormatado,
+        'KM': parseInt(sol.km || '0') || 0,
+        'Tipo Cartao': sol.tipo_cartao === 'numero' ? 'Cartão Numerado' : 
+                       sol.tipo_cartao === 'placa' ? 'Cartão por Placa' : 
+                       String(sol.tipo_cartao || 'Padrão'),
+        'Numero Cartao': String(sol.tipo_cartao === 'placa' ? sol.placa : sol.numero_cartao || ''),
+        'Provedor': String(sol.provedor_cartao || 'Padrão'),
+        'Status': String(sol.status || ''),
+        'Data Solicitacao': dataFormatada,
+        'Atendido Por': String(sol.atendido_por || ''),
+        'Data Atendimento': dataAtendimentoFormatada,
+        'Base': String(sol.base || ''),
+        'Observacoes': String(sol.observacoes || ''),
+        'Origem': sol.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 'Sistema Principal',
+        'Modelo Veiculo': String(sol.veiculo_modelo || ''),
+        'Rota Origem': String(sol.rota_origem || ''),
+        'Rota Destino': String(sol.rota_destino || ''),
+        'Telefone Motorista': String(sol.telefone_motorista || ''),
+        'Horario Abastecimento': String(sol.horario_abastecimento || '')
+      };
+    });
+
+    console.log('[EXPORT-EXCEL] Dados formatados para Excel, total:', excelData.length);
 
     // Criar workbook e worksheet
     const workbook = XLSX.utils.book_new();
@@ -984,36 +992,39 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
       { wch: 20 },  // Motorista
       { wch: 15 },  // Valor Solicitado
       { wch: 8 },   // KM
-      { wch: 15 },  // Tipo Cartão
-      { wch: 20 },  // Número Cartão
+      { wch: 15 },  // Tipo Cartao
+      { wch: 20 },  // Numero Cartao
       { wch: 15 },  // Provedor
       { wch: 15 },  // Status
-      { wch: 15 },  // Data Solicitação
+      { wch: 15 },  // Data Solicitacao
       { wch: 15 },  // Atendido Por
       { wch: 15 },  // Data Atendimento
       { wch: 15 },  // Base
-      { wch: 30 },  // Observações
+      { wch: 30 },  // Observacoes
       { wch: 15 },  // Origem
-      { wch: 15 },  // Modelo Veículo
+      { wch: 15 },  // Modelo Veiculo
       { wch: 20 },  // Rota Origem
       { wch: 20 },  // Rota Destino
       { wch: 15 },  // Telefone Motorista
-      { wch: 15 },  // Horário Abastecimento
+      { wch: 15 },  // Horario Abastecimento
     ];
     worksheet['!cols'] = columnWidths;
 
     // Adicionar worksheet ao workbook
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Solicitações Cartão Combustível');
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Solicitacoes');
 
-    // Gerar buffer do Excel com configurações mais específicas
+    // Gerar buffer do Excel com configurações mais robustas
     const excelBuffer = XLSX.write(workbook, { 
       type: 'buffer', 
       bookType: 'xlsx',
+      bookSST: false,
       compression: true
     });
 
     // Configurar headers para download com nome de arquivo mais simples
     const fileName = `solicitacoes-cartao-combustivel-${new Date().toISOString().split('T')[0]}.xlsx`;
+    
+    console.log('[EXPORT-EXCEL] Enviando arquivo:', fileName, 'Tamanho:', excelBuffer.length, 'bytes');
     
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
