@@ -81,6 +81,7 @@ const CartaoCombustivelSC: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const [isAutoFilled, setIsAutoFilled] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -131,6 +132,57 @@ const CartaoCombustivelSC: React.FC = () => {
     loadProjectsWithBases();
   }, []);
 
+  // Função para detectar automaticamente o contexto da base SC
+  const detectSCContext = () => {
+    // Detectar pela URL atual
+    const currentPath = window.location.pathname;
+    
+    // Extrair nome da base da URL (ex: /bases/sc/cartao-combustivel)
+    if (currentPath.includes('/bases/sc/') || currentPath.includes('/bases/SC/')) {
+      return {
+        projectName: 'MERCADO LIVRE',
+        projectId: '3',
+        baseName: 'SC (Ribeirão Preto) SSP4', // Nome padrão para SC
+        baseCode: 'SC'
+      };
+    }
+    
+    // Detectar por outras bases SC específicas
+    const baseMapping: { [key: string]: string } = {
+      'campinas': 'SC (CAMPINAS S3) SSP3',
+      'abc': 'SC (ABC) SSP17',
+      'santos': 'SC (SANTOS) SSP15-SDD',
+      'sorocaba': 'SC (SOROCABA) SSP20',
+      'ribeirao': 'SC (Ribeirão Preto) SSP4',
+      'curitiba': 'SC (CURITIBA) SPR1',
+      'florianopolis': 'SC (FLORIANÓPOLIS) SSC2',
+      'porto-alegre': 'SC (PORTO ALEGRE) SRS1',
+      'fortaleza': 'SC (FORTALEZA) SCE1',
+      'recife': 'SC (RECIFE) SPE1',
+      'brasilia': 'SC (BRASÍLIA) SDP1',
+      'goiania': 'SC (GOIÂNIA) SGO1',
+      'belo-horizonte': 'SC (CONTAGEM) SMG1',
+      'cuiaba': 'SC (CUIABÁ) SMR1',
+      'manaus': 'SC (MANAUS) SAM1',
+      'salvador': 'SC (BAHIA SALVADOR) SBA1',
+      'vitoria': 'SC (VITÓRIA) SES1-SDD'
+    };
+    
+    // Tentar detectar base específica pela URL
+    for (const [urlPart, baseName] of Object.entries(baseMapping)) {
+      if (currentPath.includes(urlPart)) {
+        return {
+          projectName: 'MERCADO LIVRE',
+          projectId: '3',
+          baseName: baseName,
+          baseCode: 'SC'
+        };
+      }
+    }
+    
+    return null;
+  };
+
   const loadProjectsWithBases = async () => {
     try {
       setIsLoadingProjects(true);
@@ -151,6 +203,12 @@ const CartaoCombustivelSC: React.FC = () => {
       
       if (data.success && Array.isArray(data.data) && data.data.length > 0) {
         setProjects(data.data);
+        
+        // Aplicar auto-preenchimento após carregar os projetos
+        const scContext = detectSCContext();
+        if (scContext) {
+          autoFillSCContext(data.data, scContext);
+        }
       } else {
         throw new Error('Dados de projetos inválidos ou vazios');
       }
@@ -164,6 +222,43 @@ const CartaoCombustivelSC: React.FC = () => {
       });
     } finally {
       setIsLoadingProjects(false);
+    }
+  };
+
+  // Função para aplicar auto-preenchimento baseado no contexto SC
+  const autoFillSCContext = (projectsData: Project[], scContext: any) => {
+    // Encontrar o projeto Mercado Livre
+    const mercadoLivreProject = projectsData.find(p => 
+      p.name.includes('MERCADO LIVRE') || 
+      p.id.toString() === scContext.projectId
+    );
+
+    if (mercadoLivreProject) {
+      // Definir o projeto selecionado
+      setSelectedProject(mercadoLivreProject);
+      
+      // Encontrar a base SC correspondente
+      const scBase = mercadoLivreProject.bases.find(b => 
+        b.base_name.includes('SC') || 
+        b.base_name.includes(scContext.baseName)
+      );
+
+      // Atualizar o formulário com os dados auto-preenchidos
+      setFormData(prev => ({
+        ...prev,
+        projeto: mercadoLivreProject.id.toString(),
+        base: scBase ? scBase.id.toString() : ''
+      }));
+
+      // Marcar como auto-preenchido
+      setIsAutoFilled(true);
+
+      // Mostrar notificação de auto-preenchimento
+      toast({
+        title: '🎯 Auto-preenchimento aplicado',
+        description: `Projeto: ${mercadoLivreProject.name}${scBase ? ` | Base: ${scBase.base_name}` : ''}`,
+        variant: 'default'
+      });
     }
   };
 
@@ -557,8 +652,13 @@ const CartaoCombustivelSC: React.FC = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="projeto" className="text-gray-700 font-medium">
+                            <Label htmlFor="projeto" className="text-gray-700 font-medium flex items-center gap-2">
                               Projeto
+                              {isAutoFilled && (
+                                <Badge variant="secondary" className="bg-green-100 text-green-700 px-2 py-1 text-xs">
+                                  🎯 Auto-preenchido
+                                </Badge>
+                              )}
                             </Label>
                             {isLoadingProjects ? (
                               <div className="flex items-center justify-center h-11 border rounded">
@@ -566,7 +666,7 @@ const CartaoCombustivelSC: React.FC = () => {
                               </div>
                             ) : (
                               <Select value={formData.projeto} onValueChange={handleProjectChange}>
-                                <SelectTrigger>
+                                <SelectTrigger className={isAutoFilled ? "border-green-300 bg-green-50" : ""}>
                                   <SelectValue placeholder="Selecione o projeto" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -581,15 +681,20 @@ const CartaoCombustivelSC: React.FC = () => {
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="base" className="text-gray-700 font-medium">
+                            <Label htmlFor="base" className="text-gray-700 font-medium flex items-center gap-2">
                               Base
+                              {isAutoFilled && formData.base && (
+                                <Badge variant="secondary" className="bg-green-100 text-green-700 px-2 py-1 text-xs">
+                                  🎯 Auto-preenchido
+                                </Badge>
+                              )}
                             </Label>
                             <Select 
                               value={formData.base} 
                               onValueChange={(value) => setFormData(prev => ({ ...prev, base: value }))}
                               disabled={!selectedProject || selectedProject.bases.length === 0}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className={isAutoFilled && formData.base ? "border-green-300 bg-green-50" : ""}>
                                 <SelectValue placeholder={
                                   selectedProject ? 
                                     `Selecione entre ${selectedProject.bases.length} bases` : 
@@ -606,6 +711,14 @@ const CartaoCombustivelSC: React.FC = () => {
                             </Select>
                           </div>
                         </div>
+
+                        {isAutoFilled && (
+                          <Alert className="border-green-200 bg-green-50">
+                            <AlertDescription className="text-green-800">
+                              <strong>Auto-preenchimento aplicado:</strong> O projeto "MERCADO LIVRE" e a base correspondente foram automaticamente selecionados com base no contexto SC.
+                            </AlertDescription>
+                          </Alert>
+                        )}
 
                         <div className="flex justify-end gap-3 pt-4">
                           <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
