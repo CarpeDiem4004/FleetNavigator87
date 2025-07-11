@@ -797,6 +797,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                   Atualizar
                 </Button>
               </div>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
