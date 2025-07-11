@@ -175,6 +175,14 @@ import BaseSalvador from "@/pages/bases/BaseSalvador";
 import LoginSalvador from "@/pages/bases/LoginSalvador";
 import CartaoCombustivelSalvador from "@/pages/bases/CartaoCombustivelSalvador";
 
+// Importação das páginas da Base SC (Ribeirão Preto) SSP4
+import BaseSC from "@/pages/bases/BaseSC";
+import LoginSC from "@/pages/bases/LoginSC";
+import SinistrosSC from "@/pages/bases/SinistrosSC";
+import AcidentesTrabalhoSC from "@/pages/bases/AcidentesTrabalhoSC";
+import CartaoCombustivelSC from "@/pages/bases/CartaoCombustivelSC";
+import MultasSC from "@/pages/bases/MultasSC";
+
 // Importação do sistema genérico de bases
 import BaseRouteHandler from "@/components/base/BaseRouteHandler";
 
@@ -235,6 +243,9 @@ function App() {
             {/* Rotas específicas de login para cada base */}
             <Route path="/bases/campinas/login">
               <LoginCampinas />
+            </Route>
+            <Route path="/bases/sc/login">
+              <LoginSC />
             </Route>
             <Route path="/register">
               <RegisterNew />
@@ -343,6 +354,14 @@ function App() {
           <ProtectedRoute path="/bases/76/cartao-combustivel" component={CartaoCombustivelAlair} />
           <Route path="/bases/alair/login" component={LoginAlair} />
           <Route path="/bases/76/login" component={LoginAlair} />
+          
+          {/* Rotas para a Base SC (Ribeirão Preto) SSP4 */}
+          <ProtectedRoute path="/bases/sc" component={BaseSC} />
+          <ProtectedRoute path="/bases/sc/sinistros" component={SinistrosSC} />
+          <ProtectedRoute path="/bases/sc/acidentes-trabalho" component={AcidentesTrabalhoSC} />
+          <ProtectedRoute path="/bases/sc/multas" component={MultasSC} />
+          <ProtectedRoute path="/bases/sc/cartao-combustivel" component={CartaoCombustivelSC} />
+          <Route path="/bases/sc/login" component={LoginSC} />
           
           {/* Rotas para a Base Salvador */}
           <ProtectedRoute path="/bases/salvador" component={BaseSalvador} />
