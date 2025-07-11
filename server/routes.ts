@@ -15196,12 +15196,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELECT 
           p.id as project_id, 
           p.name as project_name,
-          p.base_id,
-          b.id as base_id,
-          b.name as base_name
+          pb.base_name,
+          pb.base_code
         FROM projects p
-        LEFT JOIN bases b ON p.base_id = b.id
-        ORDER BY p.name, b.name
+        LEFT JOIN project_bases pb ON p.id = pb.project_id
+        WHERE pb.is_active = true
+        ORDER BY p.name, pb.base_name
       `;
       
       const result = await pool.query(query);
@@ -15218,10 +15218,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
-        projectsMap.get(row.project_id).bases.push({
-          id: row.base_id,
-          name: row.base_name
-        });
+        if (row.base_name) {
+          projectsMap.get(row.project_id).bases.push({
+            id: row.base_code || row.base_name,
+            name: row.base_name
+          });
+        }
       });
       
       const projects = Array.from(projectsMap.values());
