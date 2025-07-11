@@ -125,6 +125,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
   - ✅ Optimized logo sizing for better visual balance across all layouts
   - ✅ All components now use the latest logo design provided by user
 
+- July 11, 2025: **COMPLETED SC BASE IMPLEMENTATION** - Fully implemented SC (Ribeirão Preto) SSP4 base system
+  - ✅ Created complete SC base structure with 5 components: BaseSC.tsx, LoginSC.tsx, SinistrosSC.tsx, AcidentesTrabalhoSC.tsx, CartaoCombustivelSC.tsx, MultasSC.tsx
+  - ✅ All routes added to App.tsx with proper authentication protection
+  - ✅ Updated all SC base components to use exact name format: "SC (Ribeirão Preto) SSP4"
+  - ✅ Fixed 'Tire' icon import error by replacing with 'Circle' icon from lucide-react
+  - ✅ Base SC now has identical login access structure matching Campinas base
+  - ✅ All 9 functionalities organized in cards with proper navigation and forms
+
 - July 10, 2025: **COMPLETE REBRANDING TO MURICI ON FLEET 2.0** - Comprehensive system rebranding with logo integration
   - ✅ Updated all main UI components from "Murici Logística" to "Murici On Fleet 2.0"
   - ✅ Integrated uploaded logo files (logo_1752180524044.jpg, image_1752180547360.png) across all layouts

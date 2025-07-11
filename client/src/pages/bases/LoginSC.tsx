@@ -39,7 +39,7 @@ const LoginSC: React.FC = () => {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Base SC (Ribeirão Preto) SSP4
+            SC (Ribeirão Preto) SSP4
           </h1>
           <p className="text-gray-600">
             Acesso ao sistema de gerenciamento da base

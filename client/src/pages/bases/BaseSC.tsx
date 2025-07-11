@@ -135,7 +135,7 @@ const BaseSC: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Base SC (Ribeirão Preto) SSP4
+            SC (Ribeirão Preto) SSP4
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Gerenciamento completo da Base SC em Ribeirão Preto
