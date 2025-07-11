@@ -1194,9 +1194,9 @@ export async function createFuelCardRequest(req: Request, res: Response) {
       INSERT INTO fuel_card_requests (
         plate, odometer, amount, card_type, provider, card_number,
         driver_name, driver_phone, fuel_type, fuel_time, reason,
-        project_id, base_id, base_name, status, requested_at, created_at, updated_at
+        project_id, base_id, base_name, status, requested_by, requested_at, created_at, updated_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW(), NOW()
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW(), NOW()
       ) RETURNING *
     `;
 
@@ -1215,7 +1215,8 @@ export async function createFuelCardRequest(req: Request, res: Response) {
       project_id,
       base_id,
       base_name,
-      status
+      status,
+      driver_name || 'Sistema SC'
     ];
 
     const result = await pool.query(insertQuery, values);
