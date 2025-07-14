@@ -296,7 +296,42 @@ export const chatMessages = pgTable("chat_messages", {
   sent_at: timestamp("sent_at").defaultNow(),
 });
 
-// Create the tires table (pneus)
+// Create the tires stock table (pneus_estoque)
+export const tiresStock = pgTable("pneus_estoque", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  dot: text("dot").notNull(), // Código DOT do pneu
+  numeroSerie: text("numero_serie").notNull(), // Número de série do fabricante
+  modelo: text("modelo").notNull(), // Ex: Pirelli FH01
+  medida: text("medida").notNull(), // Ex: 295/80R22.5
+  tipo: text("tipo").notNull(), // Novo, usado, recapado
+  status: text("status").notNull(), // Em estoque, em uso, descartado
+  localizacao: text("localizacao").notNull(), // Nome da base, oficina ou veículo
+  dataEntrada: timestamp("data_entrada").notNull().defaultNow(),
+  valorUnitario: decimal("valor_unitario", { precision: 10, scale: 2 }),
+  marca: text("marca").notNull(),
+  observacoes: text("observacoes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Create the tire mounting table (pneus_montagens)
+export const tireMounting = pgTable("pneus_montagens", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  idPneu: uuid("id_pneu").notNull().references(() => tiresStock.id),
+  placaVeiculo: text("placa_veiculo").notNull(),
+  posicao: text("posicao").notNull(), // Ex: dianteira esquerda, tração 2 direita
+  kmMontagem: integer("km_montagem").notNull(),
+  dataMontagem: timestamp("data_montagem").notNull().defaultNow(),
+  responsavel: text("responsavel").notNull(),
+  desmontado: boolean("desmontado").notNull().default(false),
+  dataDesmontagem: timestamp("data_desmontagem"),
+  kmDesmontagem: integer("km_desmontagem"),
+  motivoDesmontagem: text("motivo_desmontagem"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Legacy tires table for backward compatibility
 export const tires = pgTable("pneus", {
   id: serial("id").primaryKey(),
   tireNumber: text("tire_number").notNull().unique(),
@@ -591,6 +626,16 @@ export type InsertMaintenance = z.infer<typeof insertMaintenanceSchema>;
 
 export type Tire = typeof tires.$inferSelect;
 export type InsertTire = z.infer<typeof insertTireSchema>;
+
+// New tire stock and mounting types
+export type TireStock = typeof tiresStock.$inferSelect;
+export type InsertTireStock = typeof tiresStock.$inferInsert;
+export type TireMounting = typeof tireMounting.$inferSelect;
+export type InsertTireMounting = typeof tireMounting.$inferInsert;
+
+// Zod schemas for validation
+export const insertTireStockSchema = createInsertSchema(tiresStock);
+export const insertTireMountingSchema = createInsertSchema(tireMounting);
 
 export type Refueling = typeof refueling.$inferSelect;
 export type InsertRefueling = z.infer<typeof insertRefuelingSchema>;

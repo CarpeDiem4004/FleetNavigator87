@@ -49,6 +49,8 @@ import { iniciarScheduler } from './services/consumoDiarioScheduler.js';
 // Importar rotas de histórico de consumo diário
 import consumoDiarioHistorico from './routes/consumoDiarioHistorico.js';
 import consumoDiarioTabela from './routes/consumoDiarioTabela.js';
+// Importar rotas de gestão de estoque de pneus
+import tireStockRoutes from './routes/tireStockRoutes';
 // Importar API de manutenção veicular
 import { 
   loginMaintenance, 
@@ -1146,6 +1148,9 @@ app.use((req, res, next) => {
   
   // Registrar rotas de projetos padronizados
   app.use('/api', projetosRoutes);
+  
+  // Registrar rotas de gestão de estoque de pneus
+  app.use('/api', tireStockRoutes);
   
   // Rota pública para visão geral dos postos (sem autenticação)
   app.get('/api/postos-publico', async (req, res) => {
