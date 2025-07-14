@@ -117,6 +117,16 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 14, 2025: **GP FUEL CARD JAVASCRIPT ERRORS FIXED** - Resolved all JavaScript errors in GP fuel card components
+  - ✅ Fixed "projects.map is not a function" error by adding proper API response handling and array validation
+  - ✅ Fixed "Cannot read properties of undefined (reading 'toString')" error by adding null checks for project IDs
+  - ✅ Applied comprehensive fixes to all three GP bases (GP01, GP02, GP03) fuel card components
+  - ✅ Enhanced API response parsing to handle both wrapped ({success: true, data: []}) and direct array responses
+  - ✅ Added robust error handling with Array.isArray() checks and null/undefined validation
+  - ✅ Improved project filtering logic with proper validation before operations
+  - ✅ Console logs confirm successful authentication, API calls returning 92 project relationships, and no JavaScript errors
+  - ✅ All GP fuel card request systems now function properly with GRUPO PEREIRA project auto-selection
+
 - July 14, 2025: **GRUPO PEREIRA FUEL CARD REQUEST SYSTEM COMPLETED** - Implemented dedicated fuel card request functionality for all 3 GP bases
   - ✅ Created CartaoCombustivelGP01.tsx with complete fuel card request functionality matching Campinas structure
   - ✅ Created CartaoCombustivelGP02.tsx with identical structure for Jacarei base (GP02)

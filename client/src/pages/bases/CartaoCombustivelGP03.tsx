@@ -131,7 +131,7 @@ export default function CartaoCombustivelGP03() {
           
           // Filtrar automaticamente para o projeto GRUPO PEREIRA
           const grupoPereiraProject = projectsData.find((p: Project) => p.name === 'GRUPO PEREIRA');
-          if (grupoPereiraProject) {
+          if (grupoPereiraProject && grupoPereiraProject.id) {
             setSelectedProject(grupoPereiraProject);
             setFilteredBases(grupoPereiraProject.bases || []);
             setFormData(prev => ({ ...prev, projeto: grupoPereiraProject.id.toString() }));
@@ -158,11 +158,11 @@ export default function CartaoCombustivelGP03() {
 
   // Filtrar bases baseado no projeto selecionado
   useEffect(() => {
-    if (formData.projeto) {
-      const project = projects.find(p => p.id.toString() === formData.projeto);
+    if (formData.projeto && Array.isArray(projects)) {
+      const project = projects.find(p => p.id && p.id.toString() === formData.projeto);
       if (project) {
         setSelectedProject(project);
-        setFilteredBases(project.bases);
+        setFilteredBases(project.bases || []);
         setFormData(prev => ({ ...prev, base: '' }));
       }
     } else {
@@ -521,9 +521,11 @@ export default function CartaoCombustivelGP03() {
                               </SelectTrigger>
                               <SelectContent>
                                 {Array.isArray(projects) && projects.map((project) => (
-                                  <SelectItem key={project.id} value={project.id.toString()}>
-                                    {project.name}
-                                  </SelectItem>
+                                  project.id && (
+                                    <SelectItem key={project.id} value={project.id.toString()}>
+                                      {project.name}
+                                    </SelectItem>
+                                  )
                                 ))}
                               </SelectContent>
                             </Select>
