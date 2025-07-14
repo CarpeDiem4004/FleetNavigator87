@@ -129,12 +129,30 @@ export default function CartaoCombustivelGP03() {
         if (Array.isArray(projectsData)) {
           setProjects(projectsData);
           
-          // Filtrar automaticamente para o projeto GRUPO PEREIRA
-          const grupoPereiraProject = projectsData.find((p: Project) => p.name === 'GRUPO PEREIRA');
-          if (grupoPereiraProject && grupoPereiraProject.id) {
+          // Buscar automaticamente o projeto GRUPO PEREIRA e base GP03
+          const grupoPereiraItems = projectsData.filter((p: any) => p.project_name === 'GRUPO PEREIRA');
+          const gp03Base = grupoPereiraItems.find((p: any) => p.base_name && p.base_name.includes('GP03'));
+          
+          if (gp03Base) {
+            console.log('Selecionando automaticamente GP03:', gp03Base);
+            setFormData(prev => ({ 
+              ...prev, 
+              projeto: gp03Base.project_id.toString(),
+              base: gp03Base.base_id.toString()
+            }));
+            
+            // Configurar filtros para mostrar as bases do GRUPO PEREIRA
+            const grupoPereiraProject = {
+              id: gp03Base.project_id,
+              name: gp03Base.project_name,
+              bases: grupoPereiraItems.map((item: any) => ({
+                id: item.base_id,
+                base_name: item.base_name,
+                base_code: item.base_code
+              }))
+            };
             setSelectedProject(grupoPereiraProject);
-            setFilteredBases(grupoPereiraProject.bases || []);
-            setFormData(prev => ({ ...prev, projeto: grupoPereiraProject.id.toString() }));
+            setFilteredBases(grupoPereiraProject.bases);
           }
         } else {
           console.error('Dados dos projetos não são um array:', projectsData);

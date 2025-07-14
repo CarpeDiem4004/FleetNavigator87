@@ -117,6 +117,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 14, 2025: **GP FUEL CARD AUTOMATIC SELECTION IMPLEMENTED** - Enhanced all GP fuel card forms with automatic project and base selection
+  - ✅ Fixed API response parsing to correctly identify GRUPO PEREIRA project using project_name field
+  - ✅ Implemented automatic base selection: GP01 for CartaoCombustivelGP01, GP02 for CartaoCombustivelGP02, GP03 for CartaoCombustivelGP03
+  - ✅ Users now see project "GRUPO PEREIRA" and corresponding base pre-selected upon login
+  - ✅ Enhanced user experience with no manual selection required for project/base fields
+  - ✅ Maintained full functionality for manual selection if needed
+  - ✅ Console logs confirm successful automatic selection for all three GP bases
+
 - July 14, 2025: **GP FUEL CARD JAVASCRIPT ERRORS FIXED** - Resolved all JavaScript errors in GP fuel card components
   - ✅ Fixed "projects.map is not a function" error by adding proper API response handling and array validation
   - ✅ Fixed "Cannot read properties of undefined (reading 'toString')" error by adding null checks for project IDs
