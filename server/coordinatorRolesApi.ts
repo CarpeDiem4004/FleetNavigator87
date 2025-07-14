@@ -34,14 +34,17 @@ router.get('/users-with-roles', isAuthenticated, isAdmin, async (req, res) => {
         u.name as user_name,
         u.email as user_email,
         u.is_active,
-        ARRAY_AGG(
-          JSON_BUILD_OBJECT(
-            'role_id', r.id,
-            'role_name', r.name,
-            'role_description', r.description,
-            'assigned_at', ur.created_at
+        CASE 
+          WHEN ur.role_id IS NULL THEN '[]'::json
+          ELSE JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'role_id', r.id,
+              'role_name', r.name,
+              'role_description', r.description,
+              'assigned_at', ur.created_at
+            )
           )
-        ) as roles
+        END as roles
       FROM users u
       LEFT JOIN user_roles ur ON ur.user_id = u.id
       LEFT JOIN roles r ON r.id = ur.role_id
@@ -70,9 +73,9 @@ router.get('/projects-bases', isAuthenticated, isAdmin, async (req, res) => {
     `);
     
     const basesResult = await pool.query(`
-      SELECT id, name, description, project_id, is_active
+      SELECT id, name, location as description, project_id, active as is_active
       FROM bases
-      WHERE is_active = true
+      WHERE active = true
       ORDER BY name
     `);
     
