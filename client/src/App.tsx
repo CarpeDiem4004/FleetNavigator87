@@ -140,6 +140,7 @@ import DriverMaintenanceRequest from "@/pages/DriverMaintenanceRequest";
 import LineHallVehicleRegistration from "@/pages/LineHallVehicleRegistration";
 import LineHallFuelCardRequests from "@/pages/LineHallFuelCardRequests";
 import Equipment from "@/pages/Equipment";
+import CoordinatorManagement from "@/pages/CoordinatorManagement";
 
 // Importação das páginas de Abastecimento Terceiros
 import AbastecimentoTerceirosLogin from "@/pages/AbastecimentoTerceirosLogin";
@@ -835,6 +836,7 @@ function App() {
 
           <ProtectedRoute path="/diagnostico/auto-save-demo" component={AutoSaveDemo} />
           <ProtectedRoute path="/admin/utils" component={AdminUtils} />
+          <ProtectedRoute path="/admin/coordenadores" component={CoordinatorManagement} />
           <ProtectedRoute path="/limpar-dados" component={LimparDados} />
           <ProtectedRoute path="/line-hall-shopee" component={LineHallShopeePage} />
           {/* Página dedicada para solicitações de cartão combustível do Line Hall */}

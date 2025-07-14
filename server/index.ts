@@ -49,6 +49,8 @@ import { iniciarScheduler } from './services/consumoDiarioScheduler.js';
 // Importar rotas de histórico de consumo diário
 import consumoDiarioHistorico from './routes/consumoDiarioHistorico.js';
 import consumoDiarioTabela from './routes/consumoDiarioTabela.js';
+// Importar API de coordenador de projeto
+import coordinatorRolesApi from './coordinatorRolesApi';
 // Importar API de manutenção veicular
 import { 
   loginMaintenance, 
@@ -1146,6 +1148,9 @@ app.use((req, res, next) => {
   
   // Registrar rotas de projetos padronizados
   app.use('/api', projetosRoutes);
+  
+  // Registrar API de coordenador de projeto
+  app.use('/api/coordinator-roles', coordinatorRolesApi);
   
   // Rota pública para visão geral dos postos (sem autenticação)
   app.get('/api/postos-publico', async (req, res) => {

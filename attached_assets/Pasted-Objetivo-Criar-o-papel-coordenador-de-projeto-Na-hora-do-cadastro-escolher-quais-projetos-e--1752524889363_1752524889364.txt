@@ -1,0 +1,111 @@
+Objetivo
+• Criar o papel “coordenador de projeto”.
+• Na hora do cadastro, escolher quais projetos e bases o coordenador pode ver.
+• Não tocar nos registros existentes em auth.users → ninguém perde acesso.
+
+A solução é acoplar tabelas de papéis/escopos ao lado do Supabase Auth e proteger tudo com RLS.
+
+1 ️⃣ Estrutura de tabelas (Supabase SQL)
+sql
+Copiar
+Editar
+-- Catálogo de papéis
+create table if not exists roles (
+  id serial primary key,
+  name text unique not null   -- 'admin', 'coordenador', 'gerente_base'...
+);
+
+-- Liga usuário → papel
+create table if not exists user_roles (
+  user_id uuid references auth.users on delete cascade,
+  role_id int  references roles(id) on delete cascade,
+  created_at timestamptz default now(),
+  primary key (user_id, role_id)
+);
+
+-- Escopo do coordenador (em quais projetos/bases ele enxerga dados)
+create table if not exists coordinator_scope (
+  user_id    uuid references auth.users on delete cascade,
+  project_id uuid references projects(id),
+  base_id    uuid references bases(id),
+  created_at timestamptz default now(),
+  primary key (user_id, project_id, base_id)
+);
+
+alter table user_roles        enable row level security;
+alter table coordinator_scope enable row level security;
+Nenhuma coluna de usuário é alterada → zero risco de perder cadastros.
+
+2 ️⃣ Políticas RLS básicas
+sql
+Copiar
+Editar
+-- Usuário vê só seus papéis
+create policy "see-own-roles"
+on user_roles for select
+using (user_id = auth.uid());
+
+-- Coordenador vê só seu escopo
+create policy "see-own-scope"
+on coordinator_scope for select
+using (user_id = auth.uid());
+
+-- Admin (ou service_role) tem acesso completo
+create policy "admin-all-scope"
+on coordinator_scope for all
+using (
+  auth.role() = 'service_role' OR
+  exists (
+    select 1 from user_roles ur
+    join roles r on r.id = ur.role_id
+    where ur.user_id = auth.uid() and r.name = 'admin'
+  )
+);
+3 ️⃣ Passo a passo operacional
+A) Cadastrar o papel “coordenador” (uma vez)
+sql
+Copiar
+Editar
+insert into roles (name) values ('coordenador')
+on conflict do nothing;
+B) Para cada usuário que vira coordenador
+sql
+Copiar
+Editar
+-- 1. Atribui o papel
+insert into user_roles (user_id, role_id)
+select '<<USER_UUID>>', id from roles where name = 'coordenador';
+
+-- 2. Define as bases/projetos que ele enxerga
+insert into coordinator_scope (user_id, project_id, base_id)
+values
+  ('<<USER_UUID>>', '<<PROJECT_UUID>>', '<<BASE_UUID>>'),
+  ('<<USER_UUID>>', '<<OUTRO_PROJECT>>', '<<OUTRA_BASE>>');
+Pode ser feito manualmente no SQL Editor ou via formulário/admin frontend.
+
+4 ️⃣ Integração no front‑end (React / Replit)
+Depois do login, consulte:
+
+ts
+Copiar
+Editar
+const { data: roles } = await supabase
+  .from('user_roles')
+  .select('roles(name)');
+const isCoordinator = roles?.some(r => r.roles.name === 'coordenador');
+Se isCoordinator, carregue o escopo:
+
+ts
+Copiar
+Editar
+const { data: scope } = await supabase
+  .from('coordinator_scope')
+  .select('project_id, base_id');
+Filtre queries ou rotas conforme scope.
+
+5 ️⃣ Painel de administração rápido
+Tela	Operação
+Usuários → Papéis	CRUD em user_roles
+Coordenadores → Escopo	CRUD em coordinator_scope (grade usuário × projeto × base)
+
+Só isso já garante que qualquer usuário antigo continua intacto; novos coordenadores ganham acesso restrito sem afetar mais ninguém.
