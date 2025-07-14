@@ -118,19 +118,31 @@ export default function CartaoCombustivelGP03() {
     const fetchProjects = async () => {
       try {
         const response = await fetch('/api/project-bases');
-        const data = await response.json();
-        console.log('Projetos carregados:', data);
-        setProjects(data);
+        const result = await response.json();
+        console.log('Resposta da API projetos:', result);
         
-        // Filtrar automaticamente para o projeto GRUPO PEREIRA
-        const grupoPereiraProject = data.find((p: Project) => p.name === 'GRUPO PEREIRA');
-        if (grupoPereiraProject) {
-          setSelectedProject(grupoPereiraProject);
-          setFilteredBases(grupoPereiraProject.bases);
-          setFormData(prev => ({ ...prev, projeto: grupoPereiraProject.id.toString() }));
+        // Verificar se a resposta tem a propriedade data
+        const projectsData = result.data || result;
+        console.log('Dados dos projetos:', projectsData);
+        
+        // Garantir que projectsData é um array
+        if (Array.isArray(projectsData)) {
+          setProjects(projectsData);
+          
+          // Filtrar automaticamente para o projeto GRUPO PEREIRA
+          const grupoPereiraProject = projectsData.find((p: Project) => p.name === 'GRUPO PEREIRA');
+          if (grupoPereiraProject) {
+            setSelectedProject(grupoPereiraProject);
+            setFilteredBases(grupoPereiraProject.bases || []);
+            setFormData(prev => ({ ...prev, projeto: grupoPereiraProject.id.toString() }));
+          }
+        } else {
+          console.error('Dados dos projetos não são um array:', projectsData);
+          setProjects([]);
         }
       } catch (error) {
         console.error('Erro ao carregar projetos:', error);
+        setProjects([]);
         toast({
           title: 'Erro ao carregar projetos',
           description: 'Não foi possível carregar a lista de projetos',
@@ -508,7 +520,7 @@ export default function CartaoCombustivelGP03() {
                                 <SelectValue placeholder={loadingProjects ? "Carregando..." : "Selecione o projeto"} />
                               </SelectTrigger>
                               <SelectContent>
-                                {projects.map((project) => (
+                                {Array.isArray(projects) && projects.map((project) => (
                                   <SelectItem key={project.id} value={project.id.toString()}>
                                     {project.name}
                                   </SelectItem>
