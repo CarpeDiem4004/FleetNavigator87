@@ -412,42 +412,71 @@ export default function CartaoCombustivelGP01() {
                             >
                               <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="vinculado" id="vinculado" />
-                                <Label htmlFor="vinculado">Cartão vinculado à placa do veículo</Label>
+                                <Label htmlFor="vinculado" className="text-sm">
+                                  🔗 Cartão vinculado à placa do veículo
+                                </Label>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="especifico" id="especifico" />
-                                <Label htmlFor="especifico">Cartão específico por número</Label>
+                                <Label htmlFor="especifico" className="text-sm">
+                                  🎯 Cartão específico por número
+                                </Label>
                               </div>
                             </RadioGroup>
+
+                            {formData.tipoCartao === 'vinculado' && (
+                              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                                <Label htmlFor="placaAutomatic" className="text-blue-600 font-medium">
+                                  🚗 Placa do Veículo (Cartão)
+                                </Label>
+                                <Input
+                                  id="placaAutomatic"
+                                  placeholder="Placa será usada automaticamente"
+                                  value={formData.placaVeiculo}
+                                  disabled
+                                  className="h-11 mt-2 bg-white"
+                                />
+                                <p className="text-xs text-blue-600 mt-1">
+                                  Para cartão vinculado, a placa do veículo será usada automaticamente
+                                </p>
+                              </div>
+                            )}
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label className="text-green-600 font-medium">Provedor do Cartão</Label>
+                              <Label htmlFor="provedorCartao" className="text-gray-700 font-medium">
+                                Provedor do Cartão
+                              </Label>
                               <Select value={formData.provedorCartao} onValueChange={(value) => setFormData(prev => ({ ...prev, provedorCartao: value }))}>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Selecione o provedor" />
+                                  <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="Ticket">Ticket</SelectItem>
                                   <SelectItem value="Alelo">Alelo</SelectItem>
+                                  <SelectItem value="VR">VR</SelectItem>
                                 </SelectContent>
                               </Select>
+                              <p className="text-xs text-gray-500">Empresa que fornece o cartão de combustível</p>
                             </div>
 
                             <div className="space-y-2">
-                              <Label className="text-purple-600 font-medium">Tipo de Combustível</Label>
+                              <Label htmlFor="tipoCombustivel" className="text-gray-700 font-medium">
+                                Tipo de Combustível
+                              </Label>
                               <Select value={formData.tipoCombustivel} onValueChange={(value) => setFormData(prev => ({ ...prev, tipoCombustivel: value }))}>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Selecione o combustível" />
+                                  <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="Diesel">Diesel</SelectItem>
                                   <SelectItem value="Gasolina">Gasolina</SelectItem>
                                   <SelectItem value="Etanol">Etanol</SelectItem>
-                                  <SelectItem value="Arla 32">Arla 32</SelectItem>
+                                  <SelectItem value="GNV">GNV</SelectItem>
                                 </SelectContent>
                               </Select>
+                              <p className="text-xs text-gray-500">Tipo de combustível para o veículo</p>
                             </div>
                           </div>
                         </div>
@@ -461,22 +490,23 @@ export default function CartaoCombustivelGP01() {
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="nomeMotorista" className="text-gray-700 font-medium">
+                            <Label htmlFor="nomeMotorista" className="text-yellow-600 font-medium">
                               👤 Nome do Motorista
                             </Label>
                             <Input
                               id="nomeMotorista"
-                              placeholder="Nome completo do motorista"
+                              placeholder="João da Silva"
                               value={formData.nomeMotorista}
                               onChange={(e) => setFormData(prev => ({ ...prev, nomeMotorista: e.target.value }))}
                               className="h-11"
                               required
                             />
+                            <p className="text-xs text-gray-500">Nome completo do motorista</p>
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="celularWhatsApp" className="text-gray-700 font-medium">
-                              📱 Celular/WhatsApp
+                            <Label htmlFor="celularWhatsApp" className="text-green-600 font-medium">
+                              📱 Celular (WhatsApp)
                             </Label>
                             <Input
                               id="celularWhatsApp"
@@ -485,20 +515,26 @@ export default function CartaoCombustivelGP01() {
                               onChange={(e) => setFormData(prev => ({ ...prev, celularWhatsApp: e.target.value }))}
                               className="h-11"
                             />
+                            <p className="text-xs text-gray-500">Para receber notificação quando aprovado</p>
                           </div>
                         </div>
 
                         <div className="mt-4 space-y-2">
-                          <Label className="text-gray-700 font-medium">Horário de Abastecimento</Label>
+                          <Label htmlFor="horarioAbastecimento" className="text-gray-700 font-medium">
+                            Horário de Abastecimento
+                          </Label>
                           <Select value={formData.horarioAbastecimento} onValueChange={(value) => setFormData(prev => ({ ...prev, horarioAbastecimento: value }))}>
                             <SelectTrigger>
-                              <SelectValue placeholder="Selecione o horário preferido" />
+                              <SelectValue placeholder="Selecione o horário" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Antes das 17h">Antes das 17h</SelectItem>
-                              <SelectItem value="Após as 18h">Após as 18h</SelectItem>
+                              <SelectItem value="manha">Manhã (6h às 12h)</SelectItem>
+                              <SelectItem value="tarde">Tarde (12h às 18h)</SelectItem>
+                              <SelectItem value="noite">Noite (18h às 22h)</SelectItem>
+                              <SelectItem value="madrugada">Madrugada (22h às 6h)</SelectItem>
                             </SelectContent>
                           </Select>
+                          <p className="text-xs text-gray-500">Escolha o horário preferido para abastecimento</p>
                         </div>
                       </div>
 
