@@ -433,10 +433,11 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
       });
     }
     
-    // Primeiro, determinar se é solicitação tradicional ou Line Hall
+    // Primeiro, determinar se é solicitação tradicional, Line Hall ou GP Base
     let isLineHall = origem_tipo === 'line_hall';
+    let isGPBase = origem_tipo === 'base_system';
     
-    if (!isLineHall) {
+    if (!isLineHall && !isGPBase) {
       // Tentar determinar pela existência na tabela tradicional
       const checkTradicionalQuery = `SELECT * FROM solicitacoes_fuel_card WHERE id = $1`;
       const checkTradicionalResult = await pool.query(checkTradicionalQuery, [id]);
@@ -447,13 +448,21 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
         const checkLineHallResult = await pool.query(checkLineHallQuery, [id]);
         
         if (checkLineHallResult.rowCount === 0) {
-          return res.status(404).json({
-            success: false,
-            message: 'Solicitação não encontrada'
-          });
+          // Verificar se existe na tabela GP Base (fuel_card_requests)
+          const checkGPBaseQuery = `SELECT * FROM fuel_card_requests WHERE id = $1`;
+          const checkGPBaseResult = await pool.query(checkGPBaseQuery, [id]);
+          
+          if (checkGPBaseResult.rowCount === 0) {
+            return res.status(404).json({
+              success: false,
+              message: 'Solicitação não encontrada'
+            });
+          }
+          
+          isGPBase = true;
+        } else {
+          isLineHall = true;
         }
-        
-        isLineHall = true;
       }
     }
     
@@ -492,6 +501,66 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
           RETURNING *
         `;
         values = [lineHallStatus, user?.name || 'Sistema', req.body.observacoes || '', id];
+      }
+    } else if (isGPBase) {
+      // Lógica para solicitações GP Base (fuel_card_requests)
+      tableName = 'fuel_card_requests';
+      
+      // Mapear status da interface para o banco GP Base
+      let dbStatus;
+      switch (status) {
+        case 'Recarga Efetuada':
+          dbStatus = 'aprovado';
+          break;
+        case 'Negado':
+          dbStatus = 'rejeitado';
+          break;
+        case 'Em Análise':
+          dbStatus = 'em_analise';
+          break;
+        case 'Pendente':
+          dbStatus = 'pendente';
+          break;
+        default:
+          dbStatus = status; // Para compatibilidade com status já no formato do banco
+          break;
+      }
+      
+      if (dbStatus === 'aprovado') {
+        query = `
+          UPDATE ${tableName} 
+          SET 
+            status = $1, 
+            approved_by = $2, 
+            approved_at = NOW(),
+            updated_at = NOW()
+          WHERE id = $3
+          RETURNING *
+        `;
+        values = [dbStatus, user?.name || 'Sistema', id];
+      } else if (dbStatus === 'rejeitado') {
+        query = `
+          UPDATE ${tableName} 
+          SET 
+            status = $1,
+            rejected_by = $2,
+            rejected_at = NOW(),
+            rejection_reason = $3,
+            updated_at = NOW()
+          WHERE id = $4
+          RETURNING *
+        `;
+        values = [dbStatus, user?.name || 'Sistema', req.body.observacoes || 'Rejeitado pela gestão', id];
+      } else {
+        query = `
+          UPDATE ${tableName} 
+          SET 
+            status = $1,
+            updated_at = NOW()
+          WHERE id = $2
+          RETURNING *
+        `;
+        values = [dbStatus, id];
       }
     } else {
       // Lógica para solicitações tradicionais
@@ -549,7 +618,8 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
       success: true,
       message: `Status atualizado para ${status}`,
       data: result.rows[0],
-      isLineHall
+      isLineHall,
+      isGPBase
     });
   } catch (error: any) {
     console.error('Erro ao atualizar status da solicitação:', error);
