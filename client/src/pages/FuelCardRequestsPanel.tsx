@@ -605,7 +605,7 @@ const FuelCardRequestsPanel: React.FC = () => {
             Painel de Solicitações de Cartão de Abastecimento
           </h1>
           <div className="flex items-center gap-3">
-            {user?.role === 'admin' && (
+            {(user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
               <Button 
                 variant="secondary" 
                 className="flex items-center gap-2 bg-blue-100 text-blue-700 hover:bg-blue-200"
@@ -772,7 +772,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-                {baseFilter !== 'all' && user?.role === 'admin' && (
+                {baseFilter !== 'all' && (user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
                   <Button 
                     onClick={handleBatchApproval} 
                     variant="default" 
@@ -916,7 +916,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                               size="sm"
                             />
                             
-                            {user?.role === 'admin' && (
+                            {(user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
                               <Button 
                                 variant="outline" 
                                 size="sm"
@@ -1134,44 +1134,46 @@ const FuelCardRequestsPanel: React.FC = () => {
                   <Separator />
                   
                   {/* Seção de Controle de Status */}
-                  <div className="bg-gray-50 p-4 rounded-lg border space-y-4">
-                    <h3 className="font-semibold text-lg text-gray-900">Controle de Status</h3>
-                    
-                    <div className="space-y-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="status" className="text-sm font-medium">Alterar Status da Solicitação</Label>
-                        <Select value={editedStatus} onValueChange={setEditedStatus}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecione o novo status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Pendente">🟡 Pendente</SelectItem>
-                            <SelectItem value="Em Análise">🔵 Em Análise</SelectItem>
-                            <SelectItem value="Recarga Efetuada">🟢 Recarga Efetuada</SelectItem>
-                            <SelectItem value="Negado">🔴 Negado</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                  {(user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
+                    <div className="bg-gray-50 p-4 rounded-lg border space-y-4">
+                      <h3 className="font-semibold text-lg text-gray-900">Controle de Status</h3>
                       
-                      <div className="flex gap-2">
-                        <Button 
-                          onClick={handleStatusUpdate} 
-                          className="flex-1 bg-blue-600 hover:bg-blue-700" 
-                          disabled={updatingStatus || editedStatus === selectedSolicitation.status}
-                          size="lg"
-                        >
-                          {updatingStatus ? 'Salvando...' : 'Salvar Alterações'}
-                        </Button>
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="status" className="text-sm font-medium">Alterar Status da Solicitação</Label>
+                          <Select value={editedStatus} onValueChange={setEditedStatus}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Selecione o novo status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Pendente">🟡 Pendente</SelectItem>
+                              <SelectItem value="Em Análise">🔵 Em Análise</SelectItem>
+                              <SelectItem value="Recarga Efetuada">🟢 Recarga Efetuada</SelectItem>
+                              <SelectItem value="Negado">🔴 Negado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                         
-                        <WhatsAppResponseButton 
-                          solicitation={selectedSolicitation}
-                          variant="outline"
-                          size="lg"
-                          className="px-4"
-                        />
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={handleStatusUpdate} 
+                            className="flex-1 bg-blue-600 hover:bg-blue-700" 
+                            disabled={updatingStatus || editedStatus === selectedSolicitation.status}
+                            size="lg"
+                          >
+                            {updatingStatus ? 'Salvando...' : 'Salvar Alterações'}
+                          </Button>
+                          
+                          <WhatsAppResponseButton 
+                            solicitation={selectedSolicitation}
+                            variant="outline"
+                            size="lg"
+                            className="px-4"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             ) : (

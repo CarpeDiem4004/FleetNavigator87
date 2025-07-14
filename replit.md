@@ -117,6 +117,16 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 14, 2025: **CRITICAL SECURITY FIX - FUEL MANAGEMENT PERMISSIONS** - Fixed incorrect permission controls in fuel management system
+  - ✅ Fixed "Aprovar Base" button to require 'gestor_combustivel' role in addition to 'admin' role
+  - ✅ Fixed "Gerenciamento Terceiros" button to require 'gestor_combustivel' role in addition to 'admin' role
+  - ✅ Fixed individual solicitation deletion button to require 'gestor_combustivel' role in addition to 'admin' role
+  - ✅ Fixed status control section in detail panel to require 'gestor_combustivel' role in addition to 'admin' role
+  - ✅ Resolved security vulnerability where any 'admin' user could access fuel management functions
+  - ✅ Now only users with 'admin' OR 'gestor_combustivel' roles can access fuel management features
+  - ✅ Updated all permission checks from `user?.role === 'admin'` to `(user?.role === 'admin' || user?.role === 'gestor_combustivel')`
+  - ✅ Ensures proper separation of concerns between system administration and fuel management responsibilities
+
 - July 14, 2025: **EXTERNAL FUEL STATION ACCESS FIXED** - Resolved authentication redirect issue for external fuel stations
   - ✅ Fixed critical authentication middleware blocking external fuel station access
   - ✅ Added `/posto/` to public routes list to allow unrestricted access
