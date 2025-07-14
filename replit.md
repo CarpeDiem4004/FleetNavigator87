@@ -122,6 +122,7 @@ This is a comprehensive fleet management system built with React (frontend) and 
   - ✅ Fixed "Gerenciamento Terceiros" button to require 'gestor_combustivel' role in addition to 'admin' role
   - ✅ Fixed individual solicitation deletion button to require 'gestor_combustivel' role in addition to 'admin' role
   - ✅ Fixed status control section in detail panel to require 'gestor_combustivel' role in addition to 'admin' role
+  - ✅ Fixed "Atualizar" button to require 'gestor_combustivel' role in addition to 'admin' role
   - ✅ Resolved security vulnerability where any 'admin' user could access fuel management functions
   - ✅ Now only users with 'admin' OR 'gestor_combustivel' roles can access fuel management features
   - ✅ Updated all permission checks from `user?.role === 'admin'` to `(user?.role === 'admin' || user?.role === 'gestor_combustivel')`

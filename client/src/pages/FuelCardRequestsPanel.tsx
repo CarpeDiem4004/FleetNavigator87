@@ -793,9 +793,11 @@ const FuelCardRequestsPanel: React.FC = () => {
                     )}
                   </Button>
                 )}
-                <Button onClick={fetchSolicitations} variant="outline" size="sm">
-                  Atualizar
-                </Button>
+                {(user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
+                  <Button onClick={fetchSolicitations} variant="outline" size="sm">
+                    Atualizar
+                  </Button>
+                )}
               </div>
             </div>
           </CardHeader>
