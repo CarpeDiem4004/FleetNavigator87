@@ -111,7 +111,7 @@ const fuelCardRequestSchema = z.object({
   cardType: z.enum(['vinculado', 'especifico'], { message: 'Tipo de cartão é obrigatório' }),
   cardNumber: z.string().min(1, { message: 'Número do cartão é obrigatório' }),
   specificCardData: z.string().optional(),
-  amount: z.number().min(10, { message: 'Valor mínimo é R$ 10,00' }).max(5000, { message: 'Valor máximo é R$ 5.000,00' }),
+  amount: z.number().min(0.01, { message: 'Valor mínimo é R$ 0,01' }).max(5000, { message: 'Valor máximo é R$ 5.000,00' }),
   provider: z.string().min(1, { message: 'Provedor do cartão é obrigatório' }),
   fuelType: z.string().min(1, { message: 'Tipo de combustível é obrigatório' }),
   fuelTime: z.string().min(1, { message: 'Horário de abastecimento é obrigatório' }),

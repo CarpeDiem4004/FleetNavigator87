@@ -3973,11 +3973,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      if (amount < 10 || amount > 5000) {
+      if (amount <= 0 || amount > 5000) {
         console.log('[FUEL-CARD-REQUEST] Validação falhada - valor inválido:', amount);
         return res.status(400).json({
           success: false,
-          message: 'Valor deve estar entre R$ 10,00 e R$ 5.000,00'
+          message: 'Valor deve estar entre R$ 0,01 e R$ 5.000,00'
         });
       }
       
