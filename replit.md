@@ -117,6 +117,16 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 14, 2025: **CRITICAL BUG FIX - GP FUEL CARD HISTORY LOADING FIXED** - Fixed GP base external links to display real database history instead of hardcoded mock data
+  - ✅ Fixed GP03 component to load real fuel card request history from database via /api/fuel-card-solicitations endpoint
+  - ✅ Fixed GP01 component to load real fuel card request history from database with proper base filtering
+  - ✅ Fixed GP02 component to load real fuel card request history from database with proper base filtering
+  - ✅ Replaced hardcoded mock data with dynamic data loading from fuel_card_requests table
+  - ✅ Added proper filtering to show only requests from each specific GP base (GP01/VARGEM GRANDE, GP02/JACAREI, GP03/HORTOLANDIA)
+  - ✅ Added automatic history refresh after successful form submission to immediately show new requests
+  - ✅ All GP base external links now properly display historical fuel card requests in the history tab
+  - ✅ Requests now appear in both external base history AND admin panel for complete integration
+
 - July 14, 2025: **CRITICAL BUG FIX - GP FUEL CARD STATUS UPDATES NOW WORKING** - Fixed admin panel inability to update GP fuel card requests
   - ✅ Fixed critical bug where admin panel couldn't update GP03 (and other GP base) fuel card requests
   - ✅ Updated updateFuelCardSolicitationStatus function to properly handle 'base_system' origin type

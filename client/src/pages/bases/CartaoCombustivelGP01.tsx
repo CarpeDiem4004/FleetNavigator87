@@ -88,34 +88,59 @@ export default function CartaoCombustivelGP01() {
     base: ''
   });
 
-  const [historico, setHistorico] = useState<SolicitacaoHistorico[]>([
-    {
-      id: '1',
-      tipoSolicitacao: 'Recarga de Saldo',
-      numeroCartao: 'Vinculado à Placa',
-      placaVeiculo: 'ABC1234',
-      nomeMotorista: 'João Silva',
-      valorSolicitado: '200.00',
-      status: 'aprovado',
-      dataSolicitacao: '2025-07-10T10:00:00Z',
-      dataResposta: '2025-07-10T14:30:00Z',
-      justificativa: 'Abastecimento para rota São Paulo',
-      observacoes: 'Projeto: GRUPO PEREIRA, Base: GP01 - Vargem Grande',
-      observacoesGestao: 'Aprovado conforme cronograma'
-    },
-    {
-      id: '2',
-      tipoSolicitacao: 'Recarga de Saldo',
-      numeroCartao: 'Específico',
-      placaVeiculo: 'XYZ5678',
-      nomeMotorista: 'Maria Santos',
-      valorSolicitado: '150.00',
-      status: 'pendente',
-      dataSolicitacao: '2025-07-12T09:15:00Z',
-      justificativa: 'Viagem emergencial',
-      observacoes: 'Projeto: GRUPO PEREIRA, Base: GP01 - Vargem Grande'
+  const [historico, setHistorico] = useState<SolicitacaoHistorico[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  // Carregar histórico real da API
+  const loadFuelCardHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      const response = await fetch('/api/fuel-card-solicitations');
+      if (response.ok) {
+        const result = await response.json();
+        const allData = result.data || [];
+        console.log('Histórico carregado da API:', allData);
+        
+        // Filtrar apenas solicitações do GP01 (base system)
+        const gp01Requests = allData.filter((item: any) => 
+          item.origem_tipo === 'base_system' && 
+          (item.base?.includes('GP01') || item.base?.includes('VARGEM GRANDE'))
+        );
+        
+        console.log('Solicitações GP01 filtradas:', gp01Requests);
+        
+        // Mapear dados da API para o formato esperado
+        const mappedHistory = gp01Requests.map((item: any) => ({
+          id: item.id?.toString() || Math.random().toString(),
+          tipoSolicitacao: 'Recarga de Saldo',
+          numeroCartao: item.tipo_cartao === 'especifico' ? 'Específico' : 'Vinculado à Placa',
+          placaVeiculo: item.placa || 'N/A',
+          nomeMotorista: item.motorista || 'N/A',
+          valorSolicitado: item.valor_solicitado?.toString() || '0.00',
+          status: item.status === 'aprovado' ? 'aprovado' : 
+                  item.status === 'rejeitado' ? 'rejeitado' : 'pendente',
+          dataSolicitacao: item.data_solicitacao || item.created_at || new Date().toISOString(),
+          dataResposta: item.data_atendimento || item.approved_at || item.rejected_at || undefined,
+          justificativa: item.observacoes || 'Solicitação de recarga',
+          observacoes: `Base: ${item.base || 'GP01'}`,
+          observacoesGestao: item.atendido_por ? `Atendido por: ${item.atendido_por}` : ''
+        }));
+        
+        setHistorico(mappedHistory);
+      } else {
+        console.error('Erro ao carregar histórico:', response.status);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar histórico:', error);
+    } finally {
+      setLoadingHistory(false);
     }
-  ]);
+  };
+
+  // Carregar histórico quando o componente é montado
+  useEffect(() => {
+    loadFuelCardHistory();
+  }, []);
 
   // Carregar projetos
   useEffect(() => {
@@ -264,21 +289,9 @@ export default function CartaoCombustivelGP01() {
       const result = await response.json();
       console.log('Resposta da API:', result);
 
-      // Adicionar nova solicitação ao histórico local
-      const novaSolicitacao: SolicitacaoHistorico = {
-        id: result.id || Date.now().toString(),
-        tipoSolicitacao: 'Recarga de Saldo',
-        numeroCartao: formData.tipoCartao === 'especifico' ? 'Específico' : 'Vinculado à Placa',
-        placaVeiculo: formData.placaVeiculo,
-        nomeMotorista: formData.nomeMotorista,
-        valorSolicitado: formData.valor,
-        status: 'pendente',
-        dataSolicitacao: new Date().toISOString(),
-        justificativa: `Solicitação para ${formData.provedorCartao} - ${formData.tipoCombustivel}`,
-        observacoes: formData.observacoes || `Projeto: ${selectedProject?.name || formData.projeto}, Base: ${selectedProject?.bases.find(b => b.id.toString() === formData.base)?.base_name || formData.base}`
-      };
+      // Recarregar histórico para mostrar nova solicitação
+      await loadFuelCardHistory();
       
-      setHistorico(prev => [novaSolicitacao, ...prev]);
       setSubmitSuccess(true);
       setShowModal(false);
 
