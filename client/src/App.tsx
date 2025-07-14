@@ -770,6 +770,22 @@ function App() {
           <Route path="/bases/salvador/login" component={LoginSalvador} />
           <Route path="/bases/58/login" component={LoginSalvador} />
           
+          {/* Rotas de login para as bases GRUPO PEREIRA - DEVEM VIR ANTES DAS ROTAS GENÉRICAS */}
+          <Route path="/bases/gp01/login">
+            <LoginGP01 />
+          </Route>
+          <Route path="/bases/gp02/login">
+            <LoginGP02 />
+          </Route>
+          <Route path="/bases/gp03/login">
+            <LoginGP03 />
+          </Route>
+          
+          {/* Rotas externas protegidas para as bases GRUPO PEREIRA */}
+          <ProtectedRoute path="/bases/gp01/external" component={BaseGP01External} />
+          <ProtectedRoute path="/bases/gp02/external" component={BaseGP02External} />
+          <ProtectedRoute path="/bases/gp03/external" component={BaseGP03External} />
+          
           {/* Rotas genéricas para todas as bases por ID */}
           <ProtectedRoute path="/bases/:id" component={() => <BaseRouteHandler mode="home" />} />
           <ProtectedRoute path="/bases/:id/cartao-combustivel" component={() => <BaseRouteHandler mode="fuel-card" />} />
@@ -983,21 +999,7 @@ function App() {
             <PublicPostoGP03 />
           </Route>
           
-          {/* Rotas de login para as bases GRUPO PEREIRA */}
-          <Route path="/bases/gp01/login">
-            <LoginGP01 />
-          </Route>
-          <Route path="/bases/gp02/login">
-            <LoginGP02 />
-          </Route>
-          <Route path="/bases/gp03/login">
-            <LoginGP03 />
-          </Route>
-          
-          {/* Rotas externas protegidas para as bases GRUPO PEREIRA */}
-          <ProtectedRoute path="/bases/gp01/external" component={BaseGP01External} />
-          <ProtectedRoute path="/bases/gp02/external" component={BaseGP02External} />
-          <ProtectedRoute path="/bases/gp03/external" component={BaseGP03External} />
+
           
           {/* Rotas externas para postos V2 - Registro de recebimentos de combustível */}
           <Route path="/postos-externos">
