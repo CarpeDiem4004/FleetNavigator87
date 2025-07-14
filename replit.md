@@ -117,6 +117,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 14, 2025: **GP FUEL CARD CONDITIONAL FIELDS IMPLEMENTED** - Added conditional field display for specific fuel card requests
+  - ✅ When "Cartão específico por número" is selected, displays number input field and observations field
+  - ✅ Added required validation for specific card number when option is selected
+  - ✅ Implemented styled conditional sections with orange background for specific card fields
+  - ✅ Added comprehensive form validation with proper error messages
+  - ✅ Enhanced user experience with contextual help text for each conditional field
+  - ✅ Applied consistently across all three GP fuel card forms (GP01, GP02, GP03)
+
 - July 14, 2025: **GP FUEL CARD AUTOMATIC SELECTION IMPLEMENTED** - Enhanced all GP fuel card forms with automatic project and base selection
   - ✅ Fixed API response parsing to correctly identify GRUPO PEREIRA project using project_name field
   - ✅ Implemented automatic base selection: GP01 for CartaoCombustivelGP01, GP02 for CartaoCombustivelGP02, GP03 for CartaoCombustivelGP03

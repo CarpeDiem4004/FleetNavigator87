@@ -49,6 +49,8 @@ interface SolicitacaoFormData {
   valor: string;
   tipoCartao: 'vinculado' | 'especifico';
   placaAutomatic: string;
+  numeroCartaoEspecifico?: string;
+  observacoesCartao?: string;
   provedorCartao: string;
   tipoCombustivel: string;
   horarioAbastecimento: string;
@@ -75,6 +77,8 @@ export default function CartaoCombustivelGP02() {
     valor: '',
     tipoCartao: 'vinculado',
     placaAutomatic: '',
+    numeroCartaoEspecifico: '',
+    observacoesCartao: '',
     provedorCartao: 'Ticket',
     tipoCombustivel: 'Diesel',
     horarioAbastecimento: '',
@@ -198,6 +202,16 @@ export default function CartaoCombustivelGP02() {
         toast({
           title: 'Campos obrigatórios',
           description: 'Preencha placa, motorista e valor',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Validação para cartão específico
+      if (formData.tipoCartao === 'especifico' && !formData.numeroCartaoEspecifico) {
+        toast({
+          title: 'Número do cartão obrigatório',
+          description: 'Informe o número do cartão específico',
           variant: 'destructive'
         });
         return;
@@ -457,6 +471,43 @@ export default function CartaoCombustivelGP02() {
                                 <p className="text-xs text-blue-600 mt-1">
                                   Para cartão vinculado, a placa do veículo será usada automaticamente
                                 </p>
+                              </div>
+                            )}
+
+                            {formData.tipoCartao === 'especifico' && (
+                              <div className="mt-3 p-3 bg-orange-50 rounded-lg space-y-3">
+                                <div>
+                                  <Label htmlFor="numeroCartaoEspecifico" className="text-orange-600 font-medium">
+                                    🎯 Número do Cartão Específico
+                                  </Label>
+                                  <Input
+                                    id="numeroCartaoEspecifico"
+                                    placeholder="Digite o número do cartão"
+                                    value={formData.numeroCartaoEspecifico || ''}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, numeroCartaoEspecifico: e.target.value }))}
+                                    className="h-11 mt-2"
+                                    required
+                                  />
+                                  <p className="text-xs text-orange-600 mt-1">
+                                    Informe o número do cartão específico para abastecimento
+                                  </p>
+                                </div>
+                                
+                                <div>
+                                  <Label htmlFor="observacoesCartao" className="text-orange-600 font-medium">
+                                    📝 Observações do Cartão
+                                  </Label>
+                                  <textarea
+                                    id="observacoesCartao"
+                                    placeholder="Informações adicionais sobre o cartão..."
+                                    value={formData.observacoesCartao || ''}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, observacoesCartao: e.target.value }))}
+                                    className="w-full h-20 px-3 py-2 mt-2 border border-input rounded-md resize-none"
+                                  />
+                                  <p className="text-xs text-orange-600 mt-1">
+                                    Adicione observações relevantes sobre o cartão específico
+                                  </p>
+                                </div>
                               </div>
                             )}
                           </div>
