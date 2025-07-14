@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2, Building2, ArrowLeft } from 'lucide-react';
+import { Loader2, Building2 } from 'lucide-react';
 
 export default function LoginGP02() {
   const [, setLocation] = useLocation();
@@ -90,16 +90,6 @@ export default function LoginGP02() {
               )}
             </Button>
           </form>
-          <div className="mt-4 text-center">
-            <Button
-              variant="outline"
-              onClick={() => setLocation('/login')}
-              className="w-full"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar ao sistema principal
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>

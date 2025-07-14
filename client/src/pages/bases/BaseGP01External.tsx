@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
-import { MapPin, AlertTriangle, Fuel, Car, FileText, Users, TrendingUp, CreditCard, Wrench, Building, LogOut, Home } from 'lucide-react';
+import { MapPin, AlertTriangle, Fuel, Car, FileText, Users, TrendingUp, CreditCard, Wrench, Building, LogOut } from 'lucide-react';
 
 export default function BaseGP01External() {
   const [, setLocation] = useLocation();
@@ -37,14 +37,6 @@ export default function BaseGP01External() {
             </Badge>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setLocation('/')}
-              className="flex items-center gap-2"
-            >
-              <Home className="w-4 h-4" />
-              Início
-            </Button>
             <Button
               variant="outline"
               onClick={handleLogout}

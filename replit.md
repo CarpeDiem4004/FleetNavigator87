@@ -117,6 +117,16 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 14, 2025: **GRUPO PEREIRA EXTERNAL NAVIGATION IMPROVED** - Removed "Início" (Home) button from all external base pages
+  - ✅ Removed "Início" button from BaseGP01External.tsx, BaseGP02External.tsx, and BaseGP03External.tsx
+  - ✅ Cleaned up unused Home icon imports from all three components
+  - ✅ Simplified navigation header to show only "Sair" (Logout) button
+  - ✅ Maintained consistent design across all GP external base pages
+  - ✅ Users can only logout or navigate through the main functionality cards
+  - ✅ Removed "Voltar ao sistema principal" button from all GP login pages (LoginGP01.tsx, LoginGP02.tsx, LoginGP03.tsx)
+  - ✅ Cleaned up unused ArrowLeft icon imports from all three login components
+  - ✅ Streamlined login interface focusing only on authentication without navigation distractions
+
 - July 14, 2025: **GRUPO PEREIRA EXTERNAL BASES AUTHENTICATION SYSTEM COMPLETED** - Implemented mandatory authentication for all 3 GRUPO PEREIRA bases external access
   - ✅ Created dedicated login pages: LoginGP01.tsx, LoginGP02.tsx, LoginGP03.tsx for secure base access
   - ✅ Updated App.tsx routing to include login routes: /bases/gp01/login, /bases/gp02/login, /bases/gp03/login
