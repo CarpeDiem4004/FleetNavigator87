@@ -226,12 +226,47 @@ export default function CartaoCombustivelGP02() {
         return;
       }
 
-      // Simular envio para API
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Adicionar nova solicitação ao histórico
+      // Enviar solicitação para API
+      const requestData = {
+        plate: formData.placaVeiculo,
+        odometer: formData.quilometragem,
+        amount: parseFloat(formData.valor),
+        cardType: formData.tipoCartao,
+        cardNumber: formData.tipoCartao === 'especifico' ? formData.numeroCartaoEspecifico : formData.placaVeiculo,
+        provider: formData.provedorCartao,
+        fuelType: formData.tipoCombustivel,
+        fuelTime: formData.horarioAbastecimento,
+        driverName: formData.nomeMotorista,
+        driverPhone: formData.celularWhatsApp,
+        reason: 'Solicitação de recarga de cartão combustível',
+        specificCardData: formData.tipoCartao === 'especifico' ? formData.numeroCartaoEspecifico : '',
+        projectId: selectedProject?.id || 1,
+        baseId: selectedProject?.bases.find(b => b.id.toString() === formData.base)?.base_id || 150,
+        observations: formData.observacoes,
+        origem: 'base_system',
+        solicitante: 'GP02 - Jacarei'
+      };
+
+      console.log('Enviando solicitação para API:', requestData);
+
+      const response = await fetch('/api/fuel-card/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao enviar solicitação');
+      }
+
+      const result = await response.json();
+      console.log('Resposta da API:', result);
+
+      // Adicionar nova solicitação ao histórico local
       const novaSolicitacao: SolicitacaoHistorico = {
-        id: Date.now().toString(),
+        id: result.id || Date.now().toString(),
         tipoSolicitacao: 'Recarga de Saldo',
         numeroCartao: formData.tipoCartao === 'especifico' ? 'Específico' : 'Vinculado à Placa',
         placaVeiculo: formData.placaVeiculo,
@@ -240,12 +275,18 @@ export default function CartaoCombustivelGP02() {
         status: 'pendente',
         dataSolicitacao: new Date().toISOString(),
         justificativa: `Solicitação para ${formData.provedorCartao} - ${formData.tipoCombustivel}`,
-        observacoes: `Projeto: ${selectedProject?.name || formData.projeto}, Base: ${selectedProject?.bases.find(b => b.id.toString() === formData.base)?.base_name || formData.base}`
+        observacoes: formData.observacoes || `Projeto: ${selectedProject?.name || formData.projeto}, Base: ${selectedProject?.bases.find(b => b.id.toString() === formData.base)?.base_name || formData.base}`
       };
       
       setHistorico(prev => [novaSolicitacao, ...prev]);
       setSubmitSuccess(true);
       setShowModal(false);
+
+      toast({
+        title: 'Solicitação enviada com sucesso!',
+        description: 'Sua solicitação foi enviada e está aguardando retorno da gestão de combustível.',
+        variant: 'default'
+      });
       
       // Limpar formulário após sucesso
       setTimeout(() => {

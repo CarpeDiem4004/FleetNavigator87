@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 14, 2025: **CRITICAL BUG FIX - GP FUEL CARD FORMS NOW SUBMIT TO DATABASE** - Fixed GP forms to actually save requests to database
+  - ✅ Fixed critical bug where GP fuel card forms were only simulating submission with setTimeout
+  - ✅ Replaced simulation code with actual API calls to /api/fuel-card/request endpoint
+  - ✅ Updated request data format to match API expectations (plate, amount, driverName, etc.)
+  - ✅ Applied fix to all three GP fuel card forms (GP01, GP02, GP03)
+  - ✅ Requests now properly saved to database and appear in admin portal for approval
+  - ✅ Added proper error handling and success messages for real API submissions
+  - ✅ Forms now include complete request data with project/base information
+
 - July 14, 2025: **GP FUEL CARD PLACEHOLDER TEXT UPDATED** - Changed specific card input placeholder to "PLACA DO CARTAO"
   - ✅ Updated placeholder text from "Digite o número do cartão" to "PLACA DO CARTAO"
   - ✅ Applied consistently across all three GP fuel card forms (GP01, GP02, GP03)
