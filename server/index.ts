@@ -2025,7 +2025,6 @@ app.use((req, res, next) => {
       '/users',
       '/solicitacoes',
       '/postos',
-      '/posto/',
       '/executive-dashboard'
     ];
 
@@ -2037,11 +2036,24 @@ app.use((req, res, next) => {
       '/bases/goiania/login',
       '/bases/alair/login',
       '/test-logout',
-      '/test-campinas-login'
+      '/test-campinas-login',
+      '/posto/', // Permitir acesso público a todas as rotas de postos
+      '/api/postos', // Permitir acesso público às APIs dos postos
+      '/api/historico-direto',
+      '/api/abastecimento-direto',
+      '/api/estatisticas-mensais-direto',
+      '/api/consumo-por-veiculo-direto',
+      '/api/comparativo-combustiveis-direto',
+      '/api/check-tabela-direto'
     ];
     
     // Verificar se a rota atual é pública (não precisa de autenticação)
-    const isPublicRoute = publicRoutes.some(route => req.path === route);
+    const isPublicRoute = publicRoutes.some(route => {
+      if (route.endsWith('/')) {
+        return req.path.startsWith(route);
+      }
+      return req.path === route || req.path.startsWith(route + '/');
+    });
     
     // Verificar se a rota atual é protegida
     const isProtectedRoute = protectedRoutes.some(route => 
@@ -2049,7 +2061,7 @@ app.use((req, res, next) => {
     ) && !isPublicRoute;
     
     // Log para debug
-    console.log(`[AUTH-MIDDLEWARE] Verificando rota: ${req.path} - Protegida: ${isProtectedRoute}`);
+    console.log(`[AUTH-MIDDLEWARE] Verificando rota: ${req.path} - Protegida: ${isProtectedRoute} - Pública: ${isPublicRoute}`);
     
     // Se não é uma rota protegida, continuar normalmente
     if (!isProtectedRoute) {

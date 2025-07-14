@@ -117,6 +117,17 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 14, 2025: **EXTERNAL FUEL STATION ACCESS FIXED** - Resolved authentication redirect issue for external fuel stations
+  - ✅ Fixed critical authentication middleware blocking external fuel station access
+  - ✅ Added `/posto/` to public routes list to allow unrestricted access
+  - ✅ Removed `/posto/` from protected routes list to prevent authentication conflicts
+  - ✅ Added related APIs to public routes: `/api/postos`, `/api/historico-direto`, `/api/abastecimento-direto`
+  - ✅ Enhanced public route detection logic to handle routes with trailing slashes
+  - ✅ All external fuel station routes now accessible without authentication
+  - ✅ Tested and verified: `/posto/abc_v2`, `/posto/campinas_v2`, `/posto/osasco_v2` all working
+  - ✅ External fuel station login redirects no longer redirect to main login page
+  - ✅ Public access maintained for mobile fuel station interfaces
+
 - July 14, 2025: **DEFINITIVE TIMEZONE SYSTEM IMPLEMENTED** - Complete timezone solution following international best practices
   - ✅ Backend fully configured to UTC timezone (process.env.TZ = 'UTC')
   - ✅ Created timezone-utc.js utility for backend UTC operations (getCurrentUTC, ensureUTC, processInputDates)
