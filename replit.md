@@ -117,6 +117,12 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 14, 2025: **GP FUEL CARD PLACEHOLDER TEXT UPDATED** - Changed specific card input placeholder to "PLACA DO CARTAO"
+  - ✅ Updated placeholder text from "Digite o número do cartão" to "PLACA DO CARTAO"
+  - ✅ Applied consistently across all three GP fuel card forms (GP01, GP02, GP03)
+  - ✅ Maintains all conditional field functionality and validation
+  - ✅ Improves user clarity for specific card input field
+
 - July 14, 2025: **GP FUEL CARD FOOTER OBSERVATIONS FIELD IMPLEMENTED** - Moved observations field to fixed footer position
   - ✅ Observations field now always visible in footer section regardless of card type selection
   - ✅ Fixed position before Cancel/Submit buttons for consistent user experience

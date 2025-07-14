@@ -482,7 +482,7 @@ export default function CartaoCombustivelGP03() {
                                   </Label>
                                   <Input
                                     id="numeroCartaoEspecifico"
-                                    placeholder="Digite o número do cartão"
+                                    placeholder="PLACA DO CARTAO"
                                     value={formData.numeroCartaoEspecifico || ''}
                                     onChange={(e) => setFormData(prev => ({ ...prev, numeroCartaoEspecifico: e.target.value }))}
                                     className="h-11 mt-2"
