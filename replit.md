@@ -117,6 +117,13 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 14, 2025: **BRASÍLIA BASE LOGIN FIXED** - Resolved login page display issue for base Brasília
+  - ✅ Fixed duplicate "SDP1" text in login page title (was showing "BRASÍLIA SDP1 SDP1")
+  - ✅ Corrected LoginBrasilia.tsx component to display proper title "BRASÍLIA SDP1"
+  - ✅ Verified base Brasília routes are correctly configured in App.tsx
+  - ✅ Confirmed authentication works with standard admin credentials
+  - ✅ Base Brasília now accessible via `/bases/brasilia/login` without display errors
+
 - July 14, 2025: **CRITICAL SECURITY FIX - FUEL MANAGEMENT PERMISSIONS** - Fixed incorrect permission controls in fuel management system
   - ✅ Fixed "Aprovar Base" button to require 'gestor_combustivel' role in addition to 'admin' role
   - ✅ Fixed "Gerenciamento Terceiros" button to require 'gestor_combustivel' role in addition to 'admin' role

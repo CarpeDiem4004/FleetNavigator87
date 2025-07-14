@@ -53,7 +53,7 @@ const LoginBrasilia: React.FC = () => {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
-            BRASÍLIA SDP1 SDP1
+            BRASÍLIA SDP1
           </CardTitle>
           <p className="text-gray-600">
             Faça login para acessar a Base BRASÍLIA SDP1
