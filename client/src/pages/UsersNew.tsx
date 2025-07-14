@@ -46,7 +46,7 @@ interface User {
   id: number;
   name: string;
   email: string;
-  role: 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall';
+  role: 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall' | 'coordenador';
   baseId: number | null;
   baseName: string | null;
   lastLogin: string | null;
@@ -147,6 +147,10 @@ const UsersNew: React.FC = () => {
     lastLogin: null,
     isActive: true
   });
+
+  // Estados específicos para coordenadores
+  const [selectedProjects, setSelectedProjects] = useState<number[]>([]);
+  const [selectedBases, setSelectedBases] = useState<number[]>([]);
   
   // Interface para a resposta da API híbrida
   interface HybridApiResponse {
@@ -224,9 +228,30 @@ const UsersNew: React.FC = () => {
     bases: Base[];
   }
 
+  // Interface para projetos
+  interface Project {
+    id: number;
+    name: string;
+    description?: string;
+    is_active: boolean;
+  }
+
+  // Interface para a resposta da API de projetos
+  interface ProjectsApiResponse {
+    success: boolean;
+    data: Project[];
+    count: number;
+  }
+
   // Buscar bases disponíveis usando React Query com a API híbrida
   const { data: basesRaw, isLoading: basesLoading } = useQuery<HybridBasesApiResponse>({
     queryKey: ['/api/hybrid/bases'],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+  });
+
+  // Buscar projetos disponíveis
+  const { data: projectsRaw, isLoading: projectsLoading } = useQuery<ProjectsApiResponse>({
+    queryKey: ['/api/projects'],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
   
@@ -238,6 +263,12 @@ const UsersNew: React.FC = () => {
   
   // Log das bases extraídas
   console.log('Bases extraídas:', bases);
+
+  // Extrair os projetos da resposta
+  const projects = projectsRaw?.data || [];
+  
+  // Log dos projetos extraídos
+  console.log('Projetos extraídos:', projects);
 
   // Filtrar usuários com base no termo de busca
   const filteredUsers = Array.isArray(users) ? users.filter(
@@ -278,8 +309,31 @@ const UsersNew: React.FC = () => {
       const newPassword = generateRandomPassword(10);
       setPassword(newPassword);
       setConfirmPassword(newPassword);
+    } else {
+      // Limpar estados quando o modal é fechado
+      setSelectedProjects([]);
+      setSelectedBases([]);
+      setNewUser({
+        name: '',
+        email: '',
+        role: 'operador',
+        baseId: null,
+        baseName: null,
+        lastLogin: null,
+        isActive: true
+      });
+      setPassword('');
+      setConfirmPassword('');
     }
   }, [isAddDialogOpen]);
+
+  // Efeito para limpar seleções quando o role muda
+  useEffect(() => {
+    if (newUser.role !== 'coordenador') {
+      setSelectedProjects([]);
+      setSelectedBases([]);
+    }
+  }, [newUser.role]);
   
   // Função para visualizar detalhes do usuário
   const handleViewUser = (user: User) => {
@@ -441,6 +495,27 @@ const UsersNew: React.FC = () => {
       return;
     }
 
+    // Validação específica para coordenadores
+    if (newUser.role === 'coordenador') {
+      if (selectedProjects.length === 0) {
+        toast({
+          title: "Erro ao adicionar coordenador",
+          description: "Selecione pelo menos um projeto para o coordenador",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (selectedBases.length === 0) {
+        toast({
+          title: "Erro ao adicionar coordenador",
+          description: "Selecione pelo menos uma base para o coordenador",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     try {
       toast({
         title: "Processando",
@@ -471,6 +546,42 @@ const UsersNew: React.FC = () => {
       const response = await apiRequest('POST', '/api/hybrid/users', userData);
       const data = await response.json();
       
+      // Se for coordenador, criar os registros de scope (projetos e bases)
+      if (newUser.role === 'coordenador' && data.success && data.user) {
+        console.log('Criando registros de scope para coordenador:', data.user.id);
+        
+        try {
+          // Criar registros de scope para projetos
+          for (const projectId of selectedProjects) {
+            await apiRequest('POST', '/api/coordinator-roles/scope', {
+              userId: data.user.id,
+              projectId: projectId,
+              baseId: null,
+              scopeType: 'project'
+            });
+          }
+          
+          // Criar registros de scope para bases
+          for (const baseId of selectedBases) {
+            await apiRequest('POST', '/api/coordinator-roles/scope', {
+              userId: data.user.id,
+              projectId: null,
+              baseId: baseId,
+              scopeType: 'base'
+            });
+          }
+          
+          console.log('Registros de scope criados com sucesso');
+        } catch (scopeError) {
+          console.error('Erro ao criar registros de scope:', scopeError);
+          toast({
+            title: "Aviso",
+            description: "Usuário criado, mas houve problema ao definir permissões. Verifique as permissões do coordenador.",
+            variant: "destructive"
+          });
+        }
+      }
+      
       // Armazenar a senha gerada e mostrar o diálogo
       if (data.generatedPassword) {
         setGeneratedPassword(data.generatedPassword);
@@ -497,6 +608,8 @@ const UsersNew: React.FC = () => {
         });
         setPassword('');
         setConfirmPassword('');
+        setSelectedProjects([]);
+        setSelectedBases([]);
       }
       
       // Atualizar lista de bases após adicionar um usuário
@@ -504,7 +617,9 @@ const UsersNew: React.FC = () => {
       
       toast({
         title: "Usuário adicionado",
-        description: "Usuário criado com sucesso!",
+        description: newUser.role === 'coordenador' 
+          ? "Coordenador criado com sucesso com permissões específicas!"
+          : "Usuário criado com sucesso!",
       });
     } catch (error: any) {
       console.error('Erro ao adicionar usuário:', error);
@@ -575,12 +690,13 @@ const UsersNew: React.FC = () => {
                     <NativeSelect
                       id="role"
                       value={newUser.role}
-                      onChange={(e) => setNewUser({...newUser, role: e.target.value as 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall'})}
+                      onChange={(e) => setNewUser({...newUser, role: e.target.value as 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall' | 'coordenador'})}
                       options={[
                         { value: 'admin', label: 'Administrador' },
                         { value: 'gestor', label: 'Gestor' },
                         { value: 'gestor_frota', label: 'Gestor de Frota' },
                         { value: 'gestor_combustivel', label: 'Gestor de Combustível' },
+                        { value: 'coordenador', label: 'Coordenador de Projeto' },
                         { value: 'line_hall', label: 'Line Hall' },
                         { value: 'operador', label: 'Operador' },
                         { value: 'posto', label: 'Posto (Abastecimento)' },
@@ -617,6 +733,90 @@ const UsersNew: React.FC = () => {
                     )}
                   </div>
                 </div>
+                
+                {/* Campos condicionais para coordenadores */}
+                {newUser.role === 'coordenador' && (
+                  <>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="projects" className="text-right">
+                        Projetos
+                      </Label>
+                      <div className="col-span-3">
+                        {projectsLoading ? (
+                          <div className="flex items-center justify-center h-10">
+                            <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <p className="text-sm text-gray-600">Selecione os projetos que o coordenador pode acessar:</p>
+                            <div className="max-h-40 overflow-y-auto border rounded-md p-2">
+                              {projects.map(project => (
+                                <div key={project.id} className="flex items-center space-x-2 mb-2">
+                                  <input
+                                    type="checkbox"
+                                    id={`project-${project.id}`}
+                                    checked={selectedProjects.includes(project.id)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedProjects([...selectedProjects, project.id]);
+                                      } else {
+                                        setSelectedProjects(selectedProjects.filter(id => id !== project.id));
+                                      }
+                                    }}
+                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                  />
+                                  <Label htmlFor={`project-${project.id}`} className="text-sm">
+                                    {project.name}
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="bases" className="text-right">
+                        Bases
+                      </Label>
+                      <div className="col-span-3">
+                        {basesLoading ? (
+                          <div className="flex items-center justify-center h-10">
+                            <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <p className="text-sm text-gray-600">Selecione as bases que o coordenador pode acessar:</p>
+                            <div className="max-h-40 overflow-y-auto border rounded-md p-2">
+                              {bases.map(base => (
+                                <div key={base.id} className="flex items-center space-x-2 mb-2">
+                                  <input
+                                    type="checkbox"
+                                    id={`base-${base.id}`}
+                                    checked={selectedBases.includes(base.id)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedBases([...selectedBases, base.id]);
+                                      } else {
+                                        setSelectedBases(selectedBases.filter(id => id !== base.id));
+                                      }
+                                    }}
+                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                  />
+                                  <Label htmlFor={`base-${base.id}`} className="text-sm">
+                                    {base.name} ({base.location})
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="password" className="text-right">
                     Senha

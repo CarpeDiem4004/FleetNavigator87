@@ -288,7 +288,45 @@ router.get('/coordinator-scope/:userId', isAuthenticated, async (req, res) => {
   }
 });
 
-// 10. Verificar se coordenador tem acesso a projeto/base específico
+// 10. Criar registro de escopo de coordenador (para uso durante cadastro)
+router.post('/scope', isAuthenticated, async (req, res) => {
+  try {
+    const { userId, projectId, baseId, scopeType } = req.body;
+    
+    // Verificar se o usuário logado é admin ou se está criando para si mesmo
+    if (req.user.role !== 'admin' && req.user.id !== parseInt(userId)) {
+      return res.status(403).json({ error: 'Acesso negado' });
+    }
+    
+    // Validar campos obrigatórios
+    if (!userId || !scopeType) {
+      return res.status(400).json({ error: 'userId e scopeType são obrigatórios' });
+    }
+    
+    // Verificar se o usuário existe
+    const userCheck = await pool.query('SELECT id FROM users WHERE id = $1', [userId]);
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+    
+    // Inserir registro de escopo
+    await pool.query(`
+      INSERT INTO coordinator_scope (user_id, project_id, base_id, scope_type)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (user_id, project_id, base_id) DO NOTHING
+    `, [userId, projectId || null, baseId || null, scopeType]);
+    
+    res.json({
+      success: true,
+      message: 'Escopo criado com sucesso'
+    });
+  } catch (error) {
+    console.error('Erro ao criar escopo:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// 11. Verificar se coordenador tem acesso a projeto/base específico
 router.get('/check-access/:userId/:projectId/:baseId', isAuthenticated, async (req, res) => {
   try {
     const { userId, projectId, baseId } = req.params;

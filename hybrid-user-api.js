@@ -35,7 +35,7 @@ router.post('/api/hybrid/users', unifiedAuthMiddleware, async (req, res) => {
     }
     
     // Verificar se o role é válido
-    const validRoles = ['admin', 'gestor', 'operador', 'oficina', 'pneus', 'posto', 'gestor_frota', 'gestor_combustivel', 'line_hall'];
+    const validRoles = ['admin', 'gestor', 'operador', 'oficina', 'pneus', 'posto', 'gestor_frota', 'gestor_combustivel', 'line_hall', 'coordenador'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({
         success: false,
