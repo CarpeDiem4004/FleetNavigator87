@@ -117,6 +117,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 14, 2025: **CRITICAL BUG FIX - GP FUEL CARD STATUS REFRESH FIXED** - Fixed status update display issue in GP external interfaces
+  - ✅ Fixed status mapping between backend "Recarga Efetuada" and frontend "aprovado" in all GP components
+  - ✅ Corrected status conversion logic to properly show approved requests as "✓ Aprovado" (green badge)
+  - ✅ Added real-time status updates with 10-second refresh intervals for all GP components
+  - ✅ Applied consistent status normalization across GP01, GP02, and GP03 components
+  - ✅ Status changes now immediately visible in external GP interfaces after admin approval
+  - ✅ Fixed database-to-frontend status mapping: "Recarga Efetuada" → "aprovado", "Pendente" → "pendente", "Negado" → "rejeitado"
+
 - July 14, 2025: **CRITICAL BUG FIX - GP FUEL CARD STATUS DISPLAY FIXED** - Fixed status mapping issue where approved requests showed as pending
   - ✅ Fixed GP03 component status mapping to display correct status badges from database
   - ✅ Fixed GP01 component status mapping to display correct status badges from database
