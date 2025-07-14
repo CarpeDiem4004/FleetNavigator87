@@ -76,7 +76,23 @@ export async function getHistoricoPosto(req, res) {
         postoName.toLowerCase().includes('osasco')) {
       postoName = 'osasco';
       console.log("getHistoricoPosto - Identificado como Osasco");
-    } 
+    }
+    // Casos especiais para postos do GRUPO PEREIRA
+    else if (postoName.toLowerCase() === 'gp01' || 
+        postoName.toLowerCase().includes('gp01')) {
+      postoName = 'gp01';
+      console.log("getHistoricoPosto - Identificado como GP01");
+    }
+    else if (postoName.toLowerCase() === 'gp02' || 
+        postoName.toLowerCase().includes('gp02')) {
+      postoName = 'gp02';
+      console.log("getHistoricoPosto - Identificado como GP02");
+    }
+    else if (postoName.toLowerCase() === 'gp03' || 
+        postoName.toLowerCase().includes('gp03')) {
+      postoName = 'gp03';
+      console.log("getHistoricoPosto - Identificado como GP03");
+    }
     else {
       postoName = formatPostoName(postoName);
       console.log("getHistoricoPosto - Formatado para:", postoName);
@@ -93,11 +109,21 @@ export async function getHistoricoPosto(req, res) {
         postoName.toLowerCase() === 'alair_v2' ||
         postoName.toLowerCase() === 'guarulhos_v2' ||
         postoName.toLowerCase() === 'socorro_v2' ||
-        postoName.toLowerCase() === 'sorocaba_v2') {
+        postoName.toLowerCase() === 'sorocaba_v2' ||
+        postoName.toLowerCase() === 'gp01' ||
+        postoName.toLowerCase() === 'gp02' ||
+        postoName.toLowerCase() === 'gp03') {
       console.log(`getHistoricoPosto - Usando tabela direta para ${postoName} em vez de view`);
       
       // Definir o nome da tabela com base no posto
-      const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
+      let tableName;
+      if (postoName.toLowerCase() === 'gp01' || 
+          postoName.toLowerCase() === 'gp02' || 
+          postoName.toLowerCase() === 'gp03') {
+        tableName = `${postoName.toLowerCase()}_abastecimentos`;
+      } else {
+        tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
+      }
       
       // Verificar se a tabela existe
       const tableCheckQuery = `
@@ -849,13 +875,37 @@ export async function registrarAbastecimentoPosto(req, res) {
         postoName.toLowerCase().includes('osasco')) {
       postoName = 'osasco';
       console.log("Posto identificado como Osasco");
-    } 
+    }
+    // Verificação explícita para postos GRUPO PEREIRA
+    else if (postoName.toLowerCase() === 'gp01' || 
+        postoName.toLowerCase().includes('gp01')) {
+      postoName = 'gp01';
+      console.log("Posto identificado como GP01");
+    }
+    else if (postoName.toLowerCase() === 'gp02' || 
+        postoName.toLowerCase().includes('gp02')) {
+      postoName = 'gp02';
+      console.log("Posto identificado como GP02");
+    }
+    else if (postoName.toLowerCase() === 'gp03' || 
+        postoName.toLowerCase().includes('gp03')) {
+      postoName = 'gp03';
+      console.log("Posto identificado como GP03");
+    }
     else {
       postoName = formatPostoName(postoName);
       console.log("Posto formatado para:", postoName);
     }
     
-    const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
+    // Definir o nome da tabela com base no posto
+    let tableName;
+    if (postoName.toLowerCase() === 'gp01' || 
+        postoName.toLowerCase() === 'gp02' || 
+        postoName.toLowerCase() === 'gp03') {
+      tableName = `${postoName.toLowerCase()}_abastecimentos`;
+    } else {
+      tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
+    }
     
     console.log(`Tentando registrar abastecimento na tabela ${tableName}`);
     console.log('Dados recebidos:', req.body);

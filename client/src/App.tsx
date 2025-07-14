@@ -333,6 +333,12 @@ import SocorroPublic from "@/pages/postos/public/SocorroPublic";
 import SocorroV2Public from "@/pages/postos/public/SocorroV2Public";
 import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
 import SorocabaV2Public from "@/pages/postos/public/SorocabaV2Public";
+
+// Importação das páginas públicas do GRUPO PEREIRA
+import PublicPostoGP01 from "@/pages/postos/PublicPostoGP01";
+import PublicPostoGP02 from "@/pages/postos/PublicPostoGP02";
+import PublicPostoGP03 from "@/pages/postos/PublicPostoGP03";
+
 import RegisterPostoUser from "@/pages/postos/RegisterPostoUser";
 import RedirectToPosto from "@/pages/RedirectToPosto";
 import PostoAcessoDireto from "@/pages/PostoAcessoDireto";
@@ -956,6 +962,17 @@ function App() {
           </Route>
           <Route path="/posto/sorocaba_v2/public">
             <SorocabaV2Public />
+          </Route>
+          
+          {/* Rotas públicas para o GRUPO PEREIRA */}
+          <Route path="/posto/gp01/public">
+            <PublicPostoGP01 />
+          </Route>
+          <Route path="/posto/gp02/public">
+            <PublicPostoGP02 />
+          </Route>
+          <Route path="/posto/gp03/public">
+            <PublicPostoGP03 />
           </Route>
           
           {/* Rotas externas para postos V2 - Registro de recebimentos de combustível */}
