@@ -117,6 +117,13 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 14, 2025: **GP FUEL CARD TIMING OPTIONS UPDATED** - Changed fuel timing options to specific 17h/18h schedule
+  - ✅ Updated fuel timing options from broad time ranges to specific GP schedule
+  - ✅ Changed from "Manhã/Tarde/Noite/Madrugada" to "Antes das 17h" and "Após as 18h"
+  - ✅ Applied consistently across all three GP fuel card forms (GP01, GP02, GP03)
+  - ✅ Matches exact company policy for fuel card usage timing
+  - ✅ Simplifies selection process with only two relevant options
+
 - July 14, 2025: **CRITICAL BUG FIX - GP FUEL CARD FORMS NOW SUBMIT TO DATABASE** - Fixed GP forms to actually save requests to database
   - ✅ Fixed critical bug where GP fuel card forms were only simulating submission with setTimeout
   - ✅ Replaced simulation code with actual API calls to /api/fuel-card/request endpoint

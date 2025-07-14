@@ -622,10 +622,8 @@ export default function CartaoCombustivelGP03() {
                               <SelectValue placeholder="Selecione o horário" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="manha">Manhã (6h às 12h)</SelectItem>
-                              <SelectItem value="tarde">Tarde (12h às 18h)</SelectItem>
-                              <SelectItem value="noite">Noite (18h às 22h)</SelectItem>
-                              <SelectItem value="madrugada">Madrugada (22h às 6h)</SelectItem>
+                              <SelectItem value="antes_17h">Antes das 17h</SelectItem>
+                              <SelectItem value="apos_18h">Após as 18h</SelectItem>
                             </SelectContent>
                           </Select>
                           <p className="text-xs text-gray-500">Escolha o horário preferido para abastecimento</p>
