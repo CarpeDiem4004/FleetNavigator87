@@ -117,8 +117,16 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 14, 2025: **GP FUEL CARD FOOTER OBSERVATIONS FIELD IMPLEMENTED** - Moved observations field to fixed footer position
+  - ✅ Observations field now always visible in footer section regardless of card type selection
+  - ✅ Fixed position before Cancel/Submit buttons for consistent user experience
+  - ✅ Free text input field for any relevant information about the request
+  - ✅ Properly styled with gray background section and clear labeling
+  - ✅ Applied consistently across all three GP fuel card forms (GP01, GP02, GP03)
+  - ✅ Maintains conditional specific card number field when "Cartão específico por número" is selected
+
 - July 14, 2025: **GP FUEL CARD CONDITIONAL FIELDS IMPLEMENTED** - Added conditional field display for specific fuel card requests
-  - ✅ When "Cartão específico por número" is selected, displays number input field and observations field
+  - ✅ When "Cartão específico por número" is selected, displays number input field
   - ✅ Added required validation for specific card number when option is selected
   - ✅ Implemented styled conditional sections with orange background for specific card fields
   - ✅ Added comprehensive form validation with proper error messages

@@ -475,7 +475,7 @@ export default function CartaoCombustivelGP01() {
                             )}
 
                             {formData.tipoCartao === 'especifico' && (
-                              <div className="mt-3 p-3 bg-orange-50 rounded-lg space-y-3">
+                              <div className="mt-3 p-3 bg-orange-50 rounded-lg">
                                 <div>
                                   <Label htmlFor="numeroCartaoEspecifico" className="text-orange-600 font-medium">
                                     🎯 Número do Cartão Específico
@@ -490,22 +490,6 @@ export default function CartaoCombustivelGP01() {
                                   />
                                   <p className="text-xs text-orange-600 mt-1">
                                     Informe o número do cartão específico para abastecimento
-                                  </p>
-                                </div>
-                                
-                                <div>
-                                  <Label htmlFor="observacoesCartao" className="text-orange-600 font-medium">
-                                    📝 Observações do Cartão
-                                  </Label>
-                                  <textarea
-                                    id="observacoesCartao"
-                                    placeholder="Informações adicionais sobre o cartão..."
-                                    value={formData.observacoesCartao || ''}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, observacoesCartao: e.target.value }))}
-                                    className="w-full h-20 px-3 py-2 mt-2 border border-input rounded-md resize-none"
-                                  />
-                                  <p className="text-xs text-orange-600 mt-1">
-                                    Adicione observações relevantes sobre o cartão específico
                                   </p>
                                 </div>
                               </div>
@@ -656,6 +640,23 @@ export default function CartaoCombustivelGP01() {
                             </Select>
                           </div>
                         </div>
+                      </div>
+
+                      {/* Seção de Observações - Sempre visível */}
+                      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                        <Label htmlFor="observacoesCartao" className="text-gray-700 font-medium">
+                          📝 Observações (Preenchimento Livre)
+                        </Label>
+                        <textarea
+                          id="observacoesCartao"
+                          placeholder="Informações adicionais sobre a solicitação..."
+                          value={formData.observacoesCartao || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, observacoesCartao: e.target.value }))}
+                          className="w-full h-20 px-3 py-2 mt-2 border border-input rounded-md resize-none"
+                        />
+                        <p className="text-xs text-gray-600 mt-1">
+                          Campo livre para qualquer observação relevante sobre a solicitação
+                        </p>
                       </div>
 
                       <div className="flex justify-end space-x-4">
