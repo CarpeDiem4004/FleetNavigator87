@@ -117,6 +117,17 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 14, 2025: **GRUPO PEREIRA EXTERNAL BASES SYSTEM COMPLETED** - Implemented complete external access system for all 3 GRUPO PEREIRA bases
+  - ✅ Created BaseGP01External.tsx for GP01 (Vargem Grande, SP) with full functionality suite
+  - ✅ Created BaseGP02External.tsx for GP02 (Jacarei, SP) with full functionality suite  
+  - ✅ Created BaseGP03External.tsx for GP03 (Hortolandia, SP) with full functionality suite
+  - ✅ Added external routes: /bases/gp01/external, /bases/gp02/external, /bases/gp03/external
+  - ✅ Each base includes 9 standardized functionalities: Sinistros, Acidentes, Multas, Veículos, Despesas, Pneus, Orçamentos, Cartão Combustível, Manutenção
+  - ✅ All functionalities properly redirect to corresponding fuel station forms (/posto/gp01/public, /posto/gp02/public, /posto/gp03/public)
+  - ✅ Fixed import issues with PublicPostoAuth (default export) and timezone functions (formatToBrazilTimezone)
+  - ✅ System follows existing base architecture with mobile-responsive design and proper navigation
+  - ✅ External operators can now access all GRUPO PEREIRA bases via direct public URLs without authentication
+
 - July 14, 2025: **BRASÍLIA BASE LOGIN FIXED** - Resolved login page display issue for base Brasília
   - ✅ Fixed duplicate "SDP1" text in login page title (was showing "BRASÍLIA SDP1 SDP1")
   - ✅ Corrected LoginBrasilia.tsx component to display proper title "BRASÍLIA SDP1"

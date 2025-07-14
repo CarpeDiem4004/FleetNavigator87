@@ -339,6 +339,11 @@ import PublicPostoGP01 from "@/pages/postos/PublicPostoGP01";
 import PublicPostoGP02 from "@/pages/postos/PublicPostoGP02";
 import PublicPostoGP03 from "@/pages/postos/PublicPostoGP03";
 
+// Importação das páginas externas das bases GRUPO PEREIRA
+import BaseGP01External from "@/pages/bases/BaseGP01External";
+import BaseGP02External from "@/pages/bases/BaseGP02External";
+import BaseGP03External from "@/pages/bases/BaseGP03External";
+
 import RegisterPostoUser from "@/pages/postos/RegisterPostoUser";
 import RedirectToPosto from "@/pages/RedirectToPosto";
 import PostoAcessoDireto from "@/pages/PostoAcessoDireto";
@@ -973,6 +978,17 @@ function App() {
           </Route>
           <Route path="/posto/gp03/public">
             <PublicPostoGP03 />
+          </Route>
+          
+          {/* Rotas externas para as bases GRUPO PEREIRA */}
+          <Route path="/bases/gp01/external">
+            <BaseGP01External />
+          </Route>
+          <Route path="/bases/gp02/external">
+            <BaseGP02External />
+          </Route>
+          <Route path="/bases/gp03/external">
+            <BaseGP03External />
           </Route>
           
           {/* Rotas externas para postos V2 - Registro de recebimentos de combustível */}
