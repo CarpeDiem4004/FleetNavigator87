@@ -343,6 +343,9 @@ import PublicPostoGP03 from "@/pages/postos/PublicPostoGP03";
 import BaseGP01External from "@/pages/bases/BaseGP01External";
 import BaseGP02External from "@/pages/bases/BaseGP02External";
 import BaseGP03External from "@/pages/bases/BaseGP03External";
+import LoginGP01 from "@/pages/bases/LoginGP01";
+import LoginGP02 from "@/pages/bases/LoginGP02";
+import LoginGP03 from "@/pages/bases/LoginGP03";
 
 import RegisterPostoUser from "@/pages/postos/RegisterPostoUser";
 import RedirectToPosto from "@/pages/RedirectToPosto";
@@ -980,16 +983,21 @@ function App() {
             <PublicPostoGP03 />
           </Route>
           
-          {/* Rotas externas para as bases GRUPO PEREIRA */}
-          <Route path="/bases/gp01/external">
-            <BaseGP01External />
+          {/* Rotas de login para as bases GRUPO PEREIRA */}
+          <Route path="/bases/gp01/login">
+            <LoginGP01 />
           </Route>
-          <Route path="/bases/gp02/external">
-            <BaseGP02External />
+          <Route path="/bases/gp02/login">
+            <LoginGP02 />
           </Route>
-          <Route path="/bases/gp03/external">
-            <BaseGP03External />
+          <Route path="/bases/gp03/login">
+            <LoginGP03 />
           </Route>
+          
+          {/* Rotas externas protegidas para as bases GRUPO PEREIRA */}
+          <ProtectedRoute path="/bases/gp01/external" component={BaseGP01External} />
+          <ProtectedRoute path="/bases/gp02/external" component={BaseGP02External} />
+          <ProtectedRoute path="/bases/gp03/external" component={BaseGP03External} />
           
           {/* Rotas externas para postos V2 - Registro de recebimentos de combustível */}
           <Route path="/postos-externos">

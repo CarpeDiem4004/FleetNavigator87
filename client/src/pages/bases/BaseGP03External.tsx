@@ -1,25 +1,59 @@
 import React from 'react';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, AlertTriangle, Fuel, Car, FileText, Users, TrendingUp, CreditCard, Wrench, Building } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { MapPin, AlertTriangle, Fuel, Car, FileText, Users, TrendingUp, CreditCard, Wrench, Building, LogOut, Home } from 'lucide-react';
 
 export default function BaseGP03External() {
+  const [, setLocation] = useLocation();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setLocation('/bases/gp03/login');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Base GP03 - Hortolandia
-          </h1>
-          <p className="text-lg text-gray-600">
-            Gerenciamento completo da Base GP03
-          </p>
-          <Badge variant="secondary" className="mt-2">
-            <MapPin className="w-4 h-4 mr-1" />
-            Hortolandia, SP
-          </Badge>
+        {/* Header with Navigation */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="text-center flex-1">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Base GP03 - Hortolandia
+            </h1>
+            <p className="text-lg text-gray-600">
+              Gerenciamento completo da Base GP03
+            </p>
+            <Badge variant="secondary" className="mt-2">
+              <MapPin className="w-4 h-4 mr-1" />
+              Hortolandia, SP
+            </Badge>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setLocation('/')}
+              className="flex items-center gap-2"
+            >
+              <Home className="w-4 h-4" />
+              Início
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-red-600 hover:text-red-700"
+            >
+              <LogOut className="w-4 h-4" />
+              Sair
+            </Button>
+          </div>
         </div>
 
         {/* Main Content Grid */}
