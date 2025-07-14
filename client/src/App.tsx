@@ -346,6 +346,9 @@ import BaseGP03External from "@/pages/bases/BaseGP03External";
 import LoginGP01 from "@/pages/bases/LoginGP01";
 import LoginGP02 from "@/pages/bases/LoginGP02";
 import LoginGP03 from "@/pages/bases/LoginGP03";
+import CartaoCombustivelGP01 from "@/pages/bases/CartaoCombustivelGP01";
+import CartaoCombustivelGP02 from "@/pages/bases/CartaoCombustivelGP02";
+import CartaoCombustivelGP03 from "@/pages/bases/CartaoCombustivelGP03";
 
 import RegisterPostoUser from "@/pages/postos/RegisterPostoUser";
 import RedirectToPosto from "@/pages/RedirectToPosto";
@@ -785,6 +788,11 @@ function App() {
           <ProtectedRoute path="/bases/gp01/external" component={BaseGP01External} />
           <ProtectedRoute path="/bases/gp02/external" component={BaseGP02External} />
           <ProtectedRoute path="/bases/gp03/external" component={BaseGP03External} />
+          
+          {/* Rotas de funcionalidades específicas para as bases GRUPO PEREIRA */}
+          <ProtectedRoute path="/bases/gp01/cartao-combustivel" component={CartaoCombustivelGP01} />
+          <ProtectedRoute path="/bases/gp02/cartao-combustivel" component={CartaoCombustivelGP02} />
+          <ProtectedRoute path="/bases/gp03/cartao-combustivel" component={CartaoCombustivelGP03} />
           
           {/* Rotas genéricas para todas as bases por ID */}
           <ProtectedRoute path="/bases/:id" component={() => <BaseRouteHandler mode="home" />} />

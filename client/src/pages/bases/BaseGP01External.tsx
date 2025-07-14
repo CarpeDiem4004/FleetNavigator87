@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -227,11 +227,11 @@ export default function BaseGP01External() {
               <p className="text-sm text-gray-600 mb-4">
                 Solicite recarga de saldo para cartões de combustível e acompanhe o histórico de solicitações e aprovações.
               </p>
-              <a href="/posto/gp01/public" target="_blank" rel="noopener noreferrer">
+              <Link href="/bases/gp01/cartao-combustivel">
                 <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white">
                   Gerenciar Cartão
                 </Button>
-              </a>
+              </Link>
             </CardContent>
           </Card>
 

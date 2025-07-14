@@ -117,6 +117,19 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 14, 2025: **GRUPO PEREIRA FUEL CARD REQUEST SYSTEM COMPLETED** - Implemented dedicated fuel card request functionality for all 3 GP bases
+  - ✅ Created CartaoCombustivelGP01.tsx with complete fuel card request functionality matching Campinas structure
+  - ✅ Created CartaoCombustivelGP02.tsx with identical structure for Jacarei base (GP02)
+  - ✅ Created CartaoCombustivelGP03.tsx with identical structure for Hortolandia base (GP03)
+  - ✅ Added all routes to App.tsx (/bases/gp01/cartao-combustivel, /bases/gp02/cartao-combustivel, /bases/gp03/cartao-combustivel)
+  - ✅ Updated BaseGP01External, BaseGP02External, BaseGP03External to link to dedicated fuel card components
+  - ✅ All three GP bases now have complete "Solicitação de saldo e histórico" functionality
+  - ✅ Each component includes tabs for requests and history, project/base selection, comprehensive validation
+  - ✅ Forms include vehicle data, fuel card type selection, provider options (Ticket/Alelo), fuel types
+  - ✅ Historical data display with status badges (approved/pending/rejected) and detailed information
+  - ✅ Automatic GRUPO PEREIRA project selection with proper base filtering
+  - ✅ Responsive design with mobile optimization and proper error handling
+
 - July 14, 2025: **GRUPO PEREIRA EXTERNAL NAVIGATION IMPROVED** - Removed "Início" (Home) button from all external base pages
   - ✅ Removed "Início" button from BaseGP01External.tsx, BaseGP02External.tsx, and BaseGP03External.tsx
   - ✅ Cleaned up unused Home icon imports from all three components
