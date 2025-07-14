@@ -117,6 +117,16 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 14, 2025: **CRITICAL BUG FIX - GP FUEL CARD STATUS DISPLAY FIXED** - Fixed status mapping issue where approved requests showed as pending
+  - ✅ Fixed GP03 component status mapping to display correct status badges from database
+  - ✅ Fixed GP01 component status mapping to display correct status badges from database
+  - ✅ Fixed GP02 component status mapping to display correct status badges from database
+  - ✅ Removed incorrect status transformation logic that was overriding database values
+  - ✅ Status badges now correctly show: "✓ Aprovado" (green), "✗ Rejeitado" (red), "⏳ Pendente" (yellow)
+  - ✅ All GP base components now display real-time status updates from fuel_card_requests table
+  - ✅ Database values for "aprovado", "rejeitado", and "pendente" now properly mapped to UI badges
+  - ✅ Approved requests no longer incorrectly display as "Pendente" in GP external interfaces
+
 - July 14, 2025: **CRITICAL BUG FIX - GP FUEL CARD HISTORY LOADING FIXED** - Fixed GP base external links to display real database history instead of hardcoded mock data
   - ✅ Fixed GP03 component to load real fuel card request history from database via /api/fuel-card-solicitations endpoint
   - ✅ Fixed GP01 component to load real fuel card request history from database with proper base filtering

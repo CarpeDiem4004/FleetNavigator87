@@ -117,8 +117,7 @@ export default function CartaoCombustivelGP01() {
           placaVeiculo: item.placa || 'N/A',
           nomeMotorista: item.motorista || 'N/A',
           valorSolicitado: item.valor_solicitado?.toString() || '0.00',
-          status: item.status === 'aprovado' ? 'aprovado' : 
-                  item.status === 'rejeitado' ? 'rejeitado' : 'pendente',
+          status: item.status || 'pendente',
           dataSolicitacao: item.data_solicitacao || item.created_at || new Date().toISOString(),
           dataResposta: item.data_atendimento || item.approved_at || item.rejected_at || undefined,
           justificativa: item.observacoes || 'Solicitação de recarga',
