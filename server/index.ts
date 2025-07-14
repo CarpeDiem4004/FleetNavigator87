@@ -2,8 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { configureBrazilTimezone, timezoneMiddleware } from './utils/timezone.js';
-import { initializeSystemTimezone, enforceTimezoneMiddleware } from './utils/system-timezone.js';
+import { utcMiddleware } from './utils/timezone-utc.js';
 // Importar cronJobs para tarefas agendadas
 import { initCronJobs } from "./cronJobs";
 // Importar migrações
@@ -70,10 +69,12 @@ process.env.SUPABASE_URL = process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsio
 process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
 process.env.SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
 
-// Configurar timezone do Brasil ANTES de qualquer operação
-// Configuração definitiva e permanente do timezone
-initializeSystemTimezone();
-configureBrazilTimezone();
+// CORREÇÃO DEFINITIVA: Configurar timezone como UTC no backend
+// Seguindo as melhores práticas: backend em UTC, frontend converte para local
+process.env.TZ = 'UTC';
+console.log(`[SISTEMA] Timezone configurado para: UTC`);
+console.log(`[SISTEMA] Data atual: ${new Date().toISOString()}`);
+console.log(`[SISTEMA] TZ environment: ${process.env.TZ}`);
 
 const app = express();
 
@@ -82,10 +83,8 @@ const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
-// Aplicar middleware de timezone para todas as rotas
-app.use(timezoneMiddleware);
-// Aplicar middleware de enforcement de timezone (garante que todas as datas sejam brasileiras)
-app.use(enforceTimezoneMiddleware);
+// Aplicar middleware UTC para garantir que todas as datas sejam processadas em UTC
+app.use(utcMiddleware);
 
 // ENDPOINT DE DIAGNÓSTICO DE TIMEZONE - Registrar ANTES de todos os middlewares
 app.get('/api/timezone-status', (req, res) => {
@@ -98,19 +97,20 @@ app.get('/api/timezone-status', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.status(200).json({
       success: true,
-      message: 'Status do timezone do sistema',
+      message: 'Status do timezone do sistema (Backend UTC, Frontend Brasil)',
       data: {
         systemTimezone: process.env.TZ || 'Não definido',
         currentTime: {
-          brazil: brazilTime,
-          system: systemTime,
           utc: utcTime,
-          timestamp: now.getTime()
+          utcTimestamp: now.getTime(),
+          brazilPreview: brazilTime,
+          systemTime: systemTime
         },
         configuration: {
-          processEnvTZ: process.env.TZ,
-          defaultTimezone: 'America/Sao_Paulo',
-          locale: 'pt-BR'
+          backendTimezone: process.env.TZ,
+          frontendTimezone: 'America/Sao_Paulo',
+          locale: 'pt-BR',
+          pattern: 'Backend UTC -> Frontend Local'
         }
       }
     });
