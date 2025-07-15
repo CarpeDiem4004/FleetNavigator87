@@ -117,6 +117,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 15, 2025: **TIMEZONE URL PARAMETERS ISSUE FIXED** - Fixed automatic timezone parameter injection in base navigation URLs
+  - ✅ Modified timezone URL interceptor to exclude /bases/ routes from automatic timezone parameter injection
+  - ✅ Updated fixTimezoneInUrl function to skip timezone processing for base routes
+  - ✅ Updated click interceptor to ignore base navigation links  
+  - ✅ Updated pushState/replaceState interceptors to skip base route processing
+  - ✅ Base navigation URLs now remain clean without unwanted timezone parameters
+  - ✅ Resolved issue where clicking "Voltar" in base pages added timezone parameters to URLs
+
 - July 15, 2025: **GP03 BASE ROUTING CONSISTENCY FIXED** - Fixed route inconsistency where /bases/gp03/external showed different content than /bases/gp03
   - ✅ Updated /bases/gp03/external route to use BaseGP03 component instead of BaseGP03External
   - ✅ Both URLs now show the same standardized GP03 base interface with all 9 functionalities

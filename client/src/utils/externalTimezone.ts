@@ -146,6 +146,33 @@ export function fixTimezoneInUrl(url: string): string {
     
     const urlObj = new URL(validUrl);
     
+    // Lista de rotas que NÃO devem ter parâmetros de timezone
+    const excludedRoutes = [
+      '/bases/',
+      '/admin/',
+      '/login',
+      '/logout',
+      '/dashboard',
+      '/fleet-management',
+      '/oficina',
+      '/partner'
+    ];
+    
+    // Verifica se a rota está na lista de exclusão
+    const shouldExclude = excludedRoutes.some(route => 
+      urlObj.pathname.startsWith(route)
+    );
+    
+    if (shouldExclude) {
+      // Remove parâmetros de timezone se existirem
+      urlObj.searchParams.delete('timezone');
+      urlObj.searchParams.delete('date');
+      urlObj.searchParams.delete('time');
+      urlObj.searchParams.delete('datetime');
+      urlObj.searchParams.delete('timestamp');
+      return urlObj.toString();
+    }
+    
     // Remove parâmetros de timezone antigos
     urlObj.searchParams.delete('timezone');
     urlObj.searchParams.delete('date');
@@ -153,7 +180,7 @@ export function fixTimezoneInUrl(url: string): string {
     urlObj.searchParams.delete('datetime');
     urlObj.searchParams.delete('timestamp');
     
-    // Adiciona timezone correto
+    // Adiciona timezone correto apenas para rotas que precisam
     return addTimezoneToUrl(urlObj.toString());
   } catch (error) {
     console.warn('[TimezoneURL] URL inválida ignorada:', url);
@@ -182,6 +209,27 @@ export function interceptAndFixUrls(): void {
           
           const url = new URL(link.href);
           
+          // Lista de rotas que NÃO devem ser processadas
+          const excludedRoutes = [
+            '/bases/',
+            '/admin/',
+            '/login',
+            '/logout',
+            '/dashboard',
+            '/fleet-management',
+            '/oficina',
+            '/partner'
+          ];
+          
+          // Verifica se a rota está na lista de exclusão
+          const shouldExclude = excludedRoutes.some(route => 
+            url.pathname.startsWith(route)
+          );
+          
+          if (shouldExclude) {
+            return; // Não processar links para essas rotas
+          }
+          
           // Verifica se é um link externo do sistema
           if (url.hostname === window.location.hostname) {
             const timezoneData = parseTimezoneFromUrl(link.href);
@@ -206,7 +254,29 @@ export function interceptAndFixUrls(): void {
     history.pushState = function(state, title, url) {
       try {
         if (url) {
-          const correctedUrl = fixTimezoneInUrl(url.toString());
+          const urlString = url.toString();
+          // Lista de rotas que NÃO devem ser processadas
+          const excludedRoutes = [
+            '/bases/',
+            '/admin/',
+            '/login',
+            '/logout',
+            '/dashboard',
+            '/fleet-management',
+            '/oficina',
+            '/partner'
+          ];
+          
+          // Verifica se a rota está na lista de exclusão
+          const shouldExclude = excludedRoutes.some(route => 
+            urlString.startsWith(route) || urlString.includes(route)
+          );
+          
+          if (shouldExclude) {
+            return originalPushState.call(this, state, title, url);
+          }
+          
+          const correctedUrl = fixTimezoneInUrl(urlString);
           return originalPushState.call(this, state, title, correctedUrl);
         }
         return originalPushState.call(this, state, title, url);
@@ -219,7 +289,29 @@ export function interceptAndFixUrls(): void {
     history.replaceState = function(state, title, url) {
       try {
         if (url) {
-          const correctedUrl = fixTimezoneInUrl(url.toString());
+          const urlString = url.toString();
+          // Lista de rotas que NÃO devem ser processadas
+          const excludedRoutes = [
+            '/bases/',
+            '/admin/',
+            '/login',
+            '/logout',
+            '/dashboard',
+            '/fleet-management',
+            '/oficina',
+            '/partner'
+          ];
+          
+          // Verifica se a rota está na lista de exclusão
+          const shouldExclude = excludedRoutes.some(route => 
+            urlString.startsWith(route) || urlString.includes(route)
+          );
+          
+          if (shouldExclude) {
+            return originalReplaceState.call(this, state, title, url);
+          }
+          
+          const correctedUrl = fixTimezoneInUrl(urlString);
           return originalReplaceState.call(this, state, title, correctedUrl);
         }
         return originalReplaceState.call(this, state, title, url);
