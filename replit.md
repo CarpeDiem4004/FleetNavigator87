@@ -118,13 +118,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 ## Recent Changes
 
 - July 15, 2025: **CRITICAL SECURITY FIX - OPERATOR ACCESS CONTROL IMPLEMENTED** - Implemented strict base-specific login restrictions for operator users
-  - ✅ Modified main login route to reject operator login attempts to main system
+  - ✅ Modified main login route (/api/login) in server/auth.ts to reject operator login attempts to main system
+  - ✅ Modified hybrid login route (/api/login-hybrid) in server/routes/authHybridRoutes.ts to reject operator access
   - ✅ Added authentication middleware protection to prevent operators from accessing main system
   - ✅ Implemented two-layer security: Login route rejection + authentication middleware verification
   - ✅ Operators with "operador" role can now only login to their assigned base routes
   - ✅ Added comprehensive error handling and logging for unauthorized access attempts
   - ✅ Frontend updated to properly handle operator access restriction error messages
   - ✅ System now enforces strict base-specific authentication for operator security
+  - ✅ FIXED: Operator login bypass issue - added security check to main /api/login route
 
 - July 15, 2025: **ACCESS DENIED PAGE NAVIGATION SIMPLIFIED** - Removed dashboard and back buttons from access denied page
   - ✅ Removed "Ir para o Dashboard" button from access denied page

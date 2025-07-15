@@ -1,176 +1,213 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAuth } from '@/context/AuthContext';
+import { Shield, AlertTriangle } from 'lucide-react';
 
 export default function TestOperatorSecurity() {
-  const { user } = useAuth();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('bruno.machado@muricionfleet.com');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [testResult, setTestResult] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<any>(null);
 
-  const testOperatorLogin = async () => {
+  const testLogin = async () => {
     setLoading(true);
-    setTestResult(null);
-    setError(null);
-
+    setResult(null);
+    
     try {
-      console.log('Testing operator login to main system...');
-      
-      const response = await fetch('/api/login-hybrid', {
+      const response = await fetch('/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        credentials: 'include',
+        body: JSON.stringify({
+          username: email,
+          password: password
+        }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setTestResult(`❌ SECURITY ISSUE: Operator ${email} was able to login to main system! This should be blocked.`);
-        console.log('Login successful:', data);
-      } else {
-        const errorData = await response.json();
-        
-        if (response.status === 403 && errorData.message && errorData.message.includes('Operadores devem acessar apenas a base designada')) {
-          setTestResult(`✅ SECURITY WORKING: Operator ${email} was correctly blocked from accessing main system.`);
-          console.log('Security working correctly:', errorData.message);
-        } else {
-          setError(`Login failed: ${errorData.message || 'Unknown error'}`);
-        }
-      }
-    } catch (err) {
-      setError(`Test failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      const data = await response.json();
+      
+      setResult({
+        status: response.status,
+        success: response.ok,
+        data: data,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      setResult({
+        status: 'ERROR',
+        success: false,
+        data: { message: 'Erro de conexão', error: error.message },
+        timestamp: new Date().toISOString()
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const testMainSystemAccess = async () => {
+  const testHybridLogin = async () => {
     setLoading(true);
-    setTestResult(null);
-    setError(null);
-
+    setResult(null);
+    
     try {
-      console.log('Testing main system access...');
-      
-      const response = await fetch('/', {
-        method: 'GET',
+      const response = await fetch('/api/auth/login-hybrid', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         credentials: 'include',
+        body: JSON.stringify({
+          email: email,
+          password: password
+        }),
       });
 
-      if (response.ok) {
-        if (user?.role === 'operador') {
-          setTestResult(`❌ SECURITY ISSUE: Operator ${user.email} can access main system! This should be blocked.`);
-        } else {
-          setTestResult(`✅ Non-operator user can access main system normally.`);
-        }
-      } else {
-        if (response.status === 403 && user?.role === 'operador') {
-          setTestResult(`✅ SECURITY WORKING: Operator ${user.email} was correctly blocked from main system.`);
-        } else {
-          setError(`Access test failed: ${response.status} ${response.statusText}`);
-        }
-      }
-    } catch (err) {
-      setError(`Test failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      const data = await response.json();
+      
+      setResult({
+        status: response.status,
+        success: response.ok,
+        data: data,
+        timestamp: new Date().toISOString(),
+        route: 'hybrid'
+      });
+    } catch (error) {
+      setResult({
+        status: 'ERROR',
+        success: false,
+        data: { message: 'Erro de conexão', error: error.message },
+        timestamp: new Date().toISOString(),
+        route: 'hybrid'
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>🔒 Teste de Segurança - Controle de Acesso de Operadores</CardTitle>
-            <CardDescription>
-              Este teste verifica se o sistema está corretamente bloqueando operadores do acesso ao sistema principal.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 border rounded-lg bg-blue-50">
-              <h3 className="font-semibold mb-2">Status do Usuário Atual:</h3>
-              <p><strong>Nome:</strong> {user?.name || 'Não autenticado'}</p>
-              <p><strong>Email:</strong> {user?.email || 'N/A'}</p>
-              <p><strong>Função:</strong> {user?.role || 'N/A'}</p>
-              <p><strong>Base:</strong> {user?.basename || 'N/A'}</p>
+    <div className="container mx-auto p-6 max-w-4xl">
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Teste de Segurança - Acesso de Operadores
+          </CardTitle>
+          <CardDescription>
+            Esta página testa se operadores conseguem acessar o sistema principal através das rotas de login.
+            Operadores devem receber erro 403 (Acesso Negado) em ambas as rotas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Email do Operador</label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="bruno.machado@muricionfleet.com"
+              />
             </div>
-
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Teste 1: Login de Operador no Sistema Principal</h3>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email do Operador:</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Digite o email de um operador"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha:</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Digite a senha"
-                />
-              </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2">Senha</label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Digite a senha do operador"
+              />
+            </div>
+            
+            <div className="flex gap-4">
               <Button 
-                onClick={testOperatorLogin}
+                onClick={testLogin}
                 disabled={loading || !email || !password}
-                className="w-full"
-              >
-                {loading ? 'Testando...' : 'Testar Login de Operador'}
-              </Button>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Teste 2: Acesso ao Sistema Principal</h3>
-              <Button 
-                onClick={testMainSystemAccess}
-                disabled={loading}
-                className="w-full"
                 variant="outline"
               >
-                {loading ? 'Testando...' : 'Testar Acesso ao Sistema Principal'}
+                {loading ? 'Testando...' : 'Testar Rota Principal (/api/login)'}
+              </Button>
+              
+              <Button 
+                onClick={testHybridLogin}
+                disabled={loading || !email || !password}
+                variant="outline"
+              >
+                {loading ? 'Testando...' : 'Testar Rota Híbrida (/api/auth/login-hybrid)'}
               </Button>
             </div>
+          </div>
+        </CardContent>
+      </Card>
 
-            {testResult && (
-              <Alert className={testResult.includes('✅') ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
-                <AlertDescription>{testResult}</AlertDescription>
+      {result && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              {result.success ? (
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+              ) : (
+                <Shield className="h-5 w-5 text-green-500" />
+              )}
+              Resultado do Teste {result.route === 'hybrid' ? '(Rota Híbrida)' : '(Rota Principal)'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Alert variant={result.success ? 'destructive' : 'default'}>
+                <AlertDescription>
+                  {result.success ? (
+                    <span className="text-red-600 font-semibold">
+                      🚨 FALHA DE SEGURANÇA: Operador conseguiu fazer login!
+                    </span>
+                  ) : (
+                    <span className="text-green-600 font-semibold">
+                      ✅ SEGURANÇA OK: Operador foi bloqueado como esperado
+                    </span>
+                  )}
+                </AlertDescription>
               </Alert>
-            )}
 
-            {error && (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium mb-2">Detalhes da Resposta:</h4>
+                <div className="space-y-2 text-sm">
+                  <div><strong>Status:</strong> {result.status}</div>
+                  <div><strong>Sucesso:</strong> {result.success ? 'Sim' : 'Não'}</div>
+                  <div><strong>Timestamp:</strong> {result.timestamp}</div>
+                  <div><strong>Mensagem:</strong> {result.data.message || 'Nenhuma mensagem'}</div>
+                  {result.data.error && (
+                    <div><strong>Erro:</strong> {result.data.error}</div>
+                  )}
+                </div>
+              </div>
 
-            <div className="mt-6 p-4 border rounded-lg bg-yellow-50">
-              <h4 className="font-semibold mb-2">Funcionalidades de Segurança Implementadas:</h4>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Login route blocks operators from accessing main system</li>
-                <li>Authentication middleware prevents operators from accessing main system</li>
-                <li>Two-layer security protection implemented</li>
-                <li>Proper error handling and logging for unauthorized access attempts</li>
-                <li>Base-specific redirection for operators</li>
-              </ul>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium mb-2">Dados Completos:</h4>
+                <pre className="text-xs overflow-x-auto bg-gray-100 p-2 rounded">
+                  {JSON.stringify(result.data, null, 2)}
+                </pre>
+              </div>
             </div>
           </CardContent>
         </Card>
-      </div>
+      )}
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Comportamento Esperado</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm">
+            <div>• <strong>Status 403:</strong> Acesso Negado</div>
+            <div>• <strong>Mensagem:</strong> "Operadores devem acessar apenas a base designada"</div>
+            <div>• <strong>Erro:</strong> "Acesso negado - Operadores não podem acessar o sistema principal"</div>
+            <div>• <strong>Ambas as rotas</strong> devem bloquear o acesso de operadores</div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

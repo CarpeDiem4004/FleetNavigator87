@@ -430,6 +430,15 @@ export function setupAuth(app: Express) {
           return res.status(401).json({ message: info?.message || "Credenciais inválidas" });
         }
         
+        // VERIFICAÇÃO DE SEGURANÇA: Operadores não podem acessar o sistema principal
+        if (user.role === 'operador') {
+          console.log(`Tentativa de acesso ao sistema principal negada para operador: ${user.email}`);
+          return res.status(403).json({ 
+            message: 'Operadores devem acessar apenas a base designada',
+            error: 'Acesso negado - Operadores não podem acessar o sistema principal'
+          });
+        }
+        
         console.log(`Login bem-sucedido para: ${user.email} (ID: ${user.id})`);
         req.login(user, (err) => {
           if (err) {
