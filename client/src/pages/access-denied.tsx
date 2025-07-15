@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, Link } from 'wouter';
-import { AlertTriangle, Home, ArrowLeft } from 'lucide-react';
+import { AlertTriangle, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 
@@ -39,20 +39,12 @@ const AccessDeniedPage: React.FC = () => {
         
         <div className="pt-6 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 justify-center">
           <Button 
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/login')}
             className="gap-2"
             variant="outline"
           >
             <Home className="h-4 w-4" />
-            Ir para o Dashboard
-          </Button>
-          
-          <Button 
-            onClick={() => window.history.back()}
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
+            Ir para Login
           </Button>
         </div>
       </div>

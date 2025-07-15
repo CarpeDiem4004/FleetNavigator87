@@ -117,6 +117,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 15, 2025: **ACCESS DENIED PAGE NAVIGATION SIMPLIFIED** - Removed dashboard and back buttons from access denied page
+  - ✅ Removed "Ir para o Dashboard" button from access denied page
+  - ✅ Removed "Voltar" button from access denied page
+  - ✅ Replaced with single "Ir para Login" button that redirects to login page
+  - ✅ Cleaned up unused imports (ArrowLeft icon)
+  - ✅ Simplified navigation flow to prevent unauthorized access to dashboard
+  - ✅ Users with access denied now can only return to login page
+
 - July 15, 2025: **GP03 ACTIVE FUEL CARDS MANAGEMENT SYSTEM COMPLETED** - Implemented complete fuel card management system for GP03 base
   - ✅ Created fuel_cards_active table with proper schema and relationships
   - ✅ Implemented complete CRUD API endpoints with authentication middleware
