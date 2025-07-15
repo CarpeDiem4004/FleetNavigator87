@@ -117,6 +117,12 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 15, 2025: **GP03 BASE ROUTING CONSISTENCY FIXED** - Fixed route inconsistency where /bases/gp03/external showed different content than /bases/gp03
+  - ✅ Updated /bases/gp03/external route to use BaseGP03 component instead of BaseGP03External
+  - ✅ Both URLs now show the same standardized GP03 base interface with all 9 functionalities
+  - ✅ Maintains consistent user experience across both internal and external domain URLs
+  - ✅ Resolved confusion where external domain showed different layout than development environment
+
 - July 15, 2025: **CRITICAL BUG FIX - GP03 BASE NAVIGATION CORRECTED** - Fixed all navigation buttons in GP03 base external interface
   - ✅ Fixed "Gerenciar Veículos" button to redirect to `/admin/veiculos` instead of fuel station
   - ✅ Fixed "Comunicar Sinistro" button to redirect to `/admin/sinistros` instead of fuel station

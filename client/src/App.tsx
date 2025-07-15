@@ -796,7 +796,7 @@ function App() {
           {/* Rotas externas protegidas para as bases GRUPO PEREIRA */}
           <ProtectedRoute path="/bases/gp01/external" component={BaseGP01External} />
           <ProtectedRoute path="/bases/gp02/external" component={BaseGP02External} />
-          <ProtectedRoute path="/bases/gp03/external" component={BaseGP03External} />
+          <ProtectedRoute path="/bases/gp03/external" component={BaseGP03} />
           
           {/* Rotas de funcionalidades específicas para as bases GRUPO PEREIRA */}
           <ProtectedRoute path="/bases/gp01/cartao-combustivel" component={CartaoCombustivelGP01} />
