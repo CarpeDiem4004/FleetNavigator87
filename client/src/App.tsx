@@ -803,14 +803,9 @@ function App() {
           {/* Rotas externas protegidas para as bases GRUPO PEREIRA */}
           <ProtectedRoute path="/bases/gp01/external" component={BaseGP01External} />
           <ProtectedRoute path="/bases/gp02/external" component={BaseGP02External} />
-          <ProtectedRoute path="/bases/gp03/external" component={BaseGP03} />
+          <ProtectedRoute path="/bases/gp03/external" component={BaseGP03External} />
           
-          {/* Rotas de funcionalidades específicas para as bases GRUPO PEREIRA */}
-          <ProtectedRoute path="/bases/gp01/cartao-combustivel" component={CartaoCombustivelGP01} />
-          <ProtectedRoute path="/bases/gp02/cartao-combustivel" component={CartaoCombustivelGP02} />
-          <ProtectedRoute path="/bases/gp03/cartao-combustivel" component={CartaoCombustivelGP03} />
-          
-          {/* Rotas completas para Base GP02 (seguindo padrão da Base Campinas) */}
+          {/* Rotas completas para Base GP02 (seguindo padrão da Base Campinas) - DEVE VIR ANTES DAS GENÉRICAS */}
           <ProtectedRoute path="/bases/gp02" component={BaseGP02} />
           <ProtectedRoute path="/bases/gp02/despesas" component={DespesasGP03} />
           <ProtectedRoute path="/bases/gp02/multas" component={MultasGP03} />
@@ -821,7 +816,7 @@ function App() {
           <ProtectedRoute path="/bases/gp02/manutencao-frota" component={ManutencaoFrotaGP03} />
           <ProtectedRoute path="/bases/gp02/cartoes-ativos" component={CartoesAtivosGP02} />
           
-          {/* Rotas completas para Base GP03 (seguindo padrão da Base Campinas) */}
+          {/* Rotas completas para Base GP03 (seguindo padrão da Base Campinas) - DEVE VIR ANTES DAS GENÉRICAS */}
           <ProtectedRoute path="/bases/gp03" component={BaseGP03} />
           <ProtectedRoute path="/bases/gp03/despesas" component={DespesasGP03} />
           <ProtectedRoute path="/bases/gp03/multas" component={MultasGP03} />
@@ -832,7 +827,12 @@ function App() {
           <ProtectedRoute path="/bases/gp03/manutencao-frota" component={ManutencaoFrotaGP03} />
           <ProtectedRoute path="/bases/gp03/cartoes-ativos" component={CartoesAtivosGP03} />
           
-          {/* Rotas genéricas para todas as bases por ID */}
+          {/* Rotas de funcionalidades específicas para as bases GRUPO PEREIRA */}
+          <ProtectedRoute path="/bases/gp01/cartao-combustivel" component={CartaoCombustivelGP01} />
+          <ProtectedRoute path="/bases/gp02/cartao-combustivel" component={CartaoCombustivelGP02} />
+          <ProtectedRoute path="/bases/gp03/cartao-combustivel" component={CartaoCombustivelGP03} />
+          
+          {/* Rotas genéricas para todas as bases por ID - DEVE VIR DEPOIS DAS ESPECÍFICAS */}
           <ProtectedRoute path="/bases/:id" component={() => <BaseRouteHandler mode="home" />} />
           <ProtectedRoute path="/bases/:id/cartao-combustivel" component={() => <BaseRouteHandler mode="fuel-card" />} />
           <Route path="/bases/:id/login" component={() => <BaseRouteHandler mode="login" />} />

@@ -135,6 +135,9 @@ This is a comprehensive fleet management system built with React (frontend) and 
   - ✅ Implemented complete routing system in App.tsx for all GP02 base functionalities
   - ✅ GP02 now has identical 10 functionalities to GP03 including "Cartões Ativos (Admin)" feature
   - ✅ Both External and Internal GP02 components now available with full administrative access
+  - ✅ **GP02 ROUTING PRIORITY FIXED** - Moved specific GP02/GP03 routes before generic /bases/:id route to ensure correct component loading
+  - ✅ Fixed /bases/gp03/external route to properly point to BaseGP03External component
+  - ✅ Both GP02 and GP03 now properly display 10 cards with "Cartões Ativos (Admin)" functionality at /bases/gp02 and /bases/gp03 respectively
 
 - July 15, 2025: **CRITICAL SECURITY FIX - OPERATOR ACCESS CONTROL IMPLEMENTED** - Implemented strict base-specific login restrictions for operator users
   - ✅ Modified main login route (/api/login) in server/auth.ts to reject operator login attempts to main system
