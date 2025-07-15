@@ -117,13 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
-- July 15, 2025: **CRITICAL BUG FIX - HYBRID AUTHENTICATION MIDDLEWARE FIXED** - Fixed authentication middleware to properly handle hybrid-authenticated operators
+- July 15, 2025: **CRITICAL BUG FIX - GRUPO PEREIRA OPERATORS ACCESS FIXED** - Fixed authentication and permission issues for all GP base operators
   - ✅ Fixed authentication middleware to check for req.hybridUser in addition to req.user
   - ✅ Updated operator access control to use currentUser from traditional, hybrid, or Supabase authentication
-  - ✅ Operator Bruno Machado (base GP03) can now access assigned base after hybrid login
+  - ✅ Fixed Bruno Machado (GP03) database record: updated basename from null to 'GP03'
+  - ✅ Fixed Renato Miyata (GP02) database record: updated basename from null to 'GP02'
+  - ✅ Added GP01, GP02, and GP03 route mappings to frontend permission system
   - ✅ Authentication middleware now properly validates hybrid authentication for base access
   - ✅ Enhanced logging to show all authentication methods (traditional, hybrid, Supabase)
-  - ✅ Fixed critical issue where hybrid-authenticated operators were getting "access denied" 
+  - ✅ All GP base operators can now access their assigned bases without "access denied" errors
   - ✅ System now properly supports multi-authentication method architecture
 
 - July 15, 2025: **CRITICAL SECURITY FIX - OPERATOR ACCESS CONTROL IMPLEMENTED** - Implemented strict base-specific login restrictions for operator users

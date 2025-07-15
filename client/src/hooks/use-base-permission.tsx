@@ -166,6 +166,32 @@ const baseRouteMapping = {
     '/bases/gp03/manutencao-frota',
     '/bases/gp03/veiculos',
     '/bases/gp03/external'
+  ],
+  'gp02': [
+    '/bases/gp02',
+    '/bases/gp02/cartao-combustivel',
+    '/bases/gp02/despesas',
+    '/bases/gp02/multas',
+    '/bases/gp02/acidentes-trabalho',
+    '/bases/gp02/sinistros',
+    '/bases/gp02/solicitacao-pneus',
+    '/bases/gp02/solicitacao-orcamento',
+    '/bases/gp02/manutencao-frota',
+    '/bases/gp02/veiculos',
+    '/bases/gp02/external'
+  ],
+  'gp01': [
+    '/bases/gp01',
+    '/bases/gp01/cartao-combustivel',
+    '/bases/gp01/despesas',
+    '/bases/gp01/multas',
+    '/bases/gp01/acidentes-trabalho',
+    '/bases/gp01/sinistros',
+    '/bases/gp01/solicitacao-pneus',
+    '/bases/gp01/solicitacao-orcamento',
+    '/bases/gp01/manutencao-frota',
+    '/bases/gp01/veiculos',
+    '/bases/gp01/external'
   ]
 };
 
