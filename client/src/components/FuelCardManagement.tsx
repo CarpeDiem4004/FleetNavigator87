@@ -109,10 +109,14 @@ export default function FuelCardManagement() {
     try {
       const response = await fetch('/api/fuel-cards');
       if (!response.ok) throw new Error('Erro ao carregar cartões');
-      const data = await response.json();
-      setFuelCards(data);
+      const result = await response.json();
+      
+      // Verificar se a resposta tem a estrutura esperada
+      const data = result.success ? result.data : result;
+      setFuelCards(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Erro ao carregar cartões:', error);
+      setFuelCards([]); // Garantir que sempre seja um array
       toast({
         title: 'Erro',
         description: 'Não foi possível carregar os cartões de combustível',
@@ -127,10 +131,14 @@ export default function FuelCardManagement() {
     try {
       const response = await fetch('/api/public/projects-with-bases');
       if (!response.ok) throw new Error('Erro ao carregar projetos');
-      const data = await response.json();
+      const result = await response.json();
+      
+      // Verificar se a resposta tem a estrutura esperada
+      const data = result.success ? result.data : result;
       setProjects(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Erro ao carregar projetos:', error);
+      setProjects([]); // Garantir que sempre seja um array
       toast({
         title: 'Erro',
         description: 'Não foi possível carregar os projetos',
