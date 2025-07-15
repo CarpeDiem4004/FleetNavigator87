@@ -171,15 +171,12 @@ export default function CartaoCombustivelGP02() {
           
           // Buscar automaticamente o projeto GRUPO PEREIRA e base GP02
           const grupoPereiraItems = projectsData.filter((p: any) => p.project_name === 'GRUPO PEREIRA');
-          const gp02Base = grupoPereiraItems.find((p: any) => p.base_name && p.base_name.includes('GP02'));
+          const gp02Base = grupoPereiraItems.find((p: any) => 
+            p.base_name && (p.base_name.includes('GP02') || p.base_name.includes('JACAREI'))
+          );
           
           if (gp02Base) {
-            console.log('Selecionando automaticamente GP02:', gp02Base);
-            setFormData(prev => ({ 
-              ...prev, 
-              projeto: gp02Base.project_id.toString(),
-              base: gp02Base.base_id.toString()
-            }));
+            console.log('Selecionando automaticamente GP02/JACAREI:', gp02Base);
             
             // Configurar filtros para mostrar as bases do GRUPO PEREIRA
             const grupoPereiraProject = {
@@ -193,6 +190,20 @@ export default function CartaoCombustivelGP02() {
             };
             setSelectedProject(grupoPereiraProject);
             setFilteredBases(grupoPereiraProject.bases);
+            
+            // Preencher automaticamente os campos do formulário
+            setFormData(prev => ({ 
+              ...prev, 
+              projeto: gp02Base.project_id.toString(),
+              base: gp02Base.base_id.toString()
+            }));
+            
+            console.log('Projeto e base preenchidos automaticamente:', {
+              projeto: gp02Base.project_name,
+              base: gp02Base.base_name
+            });
+          } else {
+            console.warn('Base GP02/JACAREI não encontrada nos projetos GRUPO PEREIRA');
           }
         } else {
           console.error('Dados dos projetos não são um array:', projectsData);
@@ -660,6 +671,16 @@ export default function CartaoCombustivelGP02() {
                           Projeto e Base
                         </h3>
                         
+                        {/* Notificação de preenchimento automático */}
+                        {formData.projeto && formData.base && (
+                          <div className="mb-4 p-3 bg-green-100 border border-green-200 rounded-lg">
+                            <p className="text-sm text-green-700 flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4" />
+                              ✅ Projeto e Base preenchidos automaticamente para GP02 - Jacarei
+                            </p>
+                          </div>
+                        )}
+                        
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label className="text-gray-700 font-medium">Projeto</Label>
@@ -668,7 +689,7 @@ export default function CartaoCombustivelGP02() {
                               onValueChange={(value) => setFormData(prev => ({ ...prev, projeto: value }))}
                               disabled={loadingProjects}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className={formData.projeto ? "bg-green-50 border-green-300" : ""}>
                                 <SelectValue placeholder={loadingProjects ? "Carregando..." : "Selecione o projeto"} />
                               </SelectTrigger>
                               <SelectContent>
@@ -690,7 +711,7 @@ export default function CartaoCombustivelGP02() {
                               onValueChange={(value) => setFormData(prev => ({ ...prev, base: value }))}
                               disabled={filteredBases.length === 0}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className={formData.base ? "bg-green-50 border-green-300" : ""}>
                                 <SelectValue placeholder={filteredBases.length === 0 ? "Selecione um projeto primeiro" : "Selecione a base"} />
                               </SelectTrigger>
                               <SelectContent>
