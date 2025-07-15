@@ -66,11 +66,11 @@ export default function BaseGP02External() {
               <p className="text-sm text-gray-600 mb-4">
                 Comunique sinistros, roubos e outros incidentes envolvendo veículos da frota. Registre os detalhes da ocorrência, local, horário e danos.
               </p>
-              <a href="/posto/gp02/public" target="_blank" rel="noopener noreferrer">
+              <Link href="/accidents">
                 <Button className="w-full bg-red-600 hover:bg-red-700 text-white">
                   Comunicar Sinistro
                 </Button>
-              </a>
+              </Link>
             </CardContent>
           </Card>
 
@@ -89,11 +89,11 @@ export default function BaseGP02External() {
               <p className="text-sm text-gray-600 mb-4">
                 Reporte acidentes de trabalho e incidentes com colaboradores. Informe detalhes da ocorrência, medidas tomadas e encaminhamentos médicos.
               </p>
-              <a href="/posto/gp02/public" target="_blank" rel="noopener noreferrer">
+              <Link href="/work-safety">
                 <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white">
                   Comunicar Acidente
                 </Button>
-              </a>
+              </Link>
             </CardContent>
           </Card>
 
@@ -112,11 +112,11 @@ export default function BaseGP02External() {
               <p className="text-sm text-gray-600 mb-4">
                 Receba comunicações de multas e infrações de trânsito emitidas pela Gestão de Multas. Visualize detalhes dos veículos, motoristas, datas e valores das infrações.
               </p>
-              <a href="/posto/gp02/public" target="_blank" rel="noopener noreferrer">
+              <Link href="/fines">
                 <Button className="w-full bg-yellow-600 hover:bg-yellow-700 text-white">
                   Ver Multas
                 </Button>
-              </a>
+              </Link>
             </CardContent>
           </Card>
 
@@ -135,11 +135,11 @@ export default function BaseGP02External() {
               <p className="text-sm text-gray-600 mb-4">
                 Cadastre, atualize e gerencie os veículos da Base GP02. Registre modelos, placas, status operacional e informações técnicas.
               </p>
-              <a href="/posto/gp02/public" target="_blank" rel="noopener noreferrer">
+              <Link href="/vehicles">
                 <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
                   Gerenciar Veículos
                 </Button>
-              </a>
+              </Link>
             </CardContent>
           </Card>
 
@@ -158,11 +158,11 @@ export default function BaseGP02External() {
               <p className="text-sm text-gray-600 mb-4">
                 Registre e acompanhe despesas mensais como água, energia, funcionários, PJ, aluguel, internet e extras.
               </p>
-              <a href="/posto/gp02/public" target="_blank" rel="noopener noreferrer">
+              <Link href="/bases/campinas/despesas">
                 <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                   Controlar Despesas
                 </Button>
-              </a>
+              </Link>
             </CardContent>
           </Card>
 
@@ -181,11 +181,11 @@ export default function BaseGP02External() {
               <p className="text-sm text-gray-600 mb-4">
                 Faça solicitações de pneus para a linha responsável, especificando modelos, quantidades e justificativas.
               </p>
-              <a href="/posto/gp02/public" target="_blank" rel="noopener noreferrer">
+              <Link href="/tires">
                 <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
                   Solicitar Pneus
                 </Button>
-              </a>
+              </Link>
             </CardContent>
           </Card>
 
@@ -204,11 +204,11 @@ export default function BaseGP02External() {
               <p className="text-sm text-gray-600 mb-4">
                 Solicite orçamentos para serviços ou produtos, aguarde a aprovação da gestão e acompanhe todo o processo.
               </p>
-              <a href="/posto/gp02/public" target="_blank" rel="noopener noreferrer">
+              <Link href="/fleet-management/budgets">
                 <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
                   Solicitar Orçamento
                 </Button>
-              </a>
+              </Link>
             </CardContent>
           </Card>
 
@@ -250,11 +250,11 @@ export default function BaseGP02External() {
               <p className="text-sm text-gray-600 mb-4">
                 Registre solicitações de manutenção para veículos da frota, especificando o tipo de manutenção, prioridade e detalhes.
               </p>
-              <a href="/posto/gp02/public" target="_blank" rel="noopener noreferrer">
+              <Link href="/fleet-management/maintenance">
                 <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white">
                   Solicitar Manutenção
                 </Button>
-              </a>
+              </Link>
             </CardContent>
           </Card>
         </div>
