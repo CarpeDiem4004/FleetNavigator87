@@ -2075,11 +2075,15 @@ app.use((req, res, next) => {
       return next();
     }
     
-    // Verificar se o usuário está autenticado
+    // Verificar se o usuário está autenticado (tradicional, Supabase ou híbrido)
     const isAuthenticated = req.isAuthenticated && req.isAuthenticated();
-    console.log(`[AUTH-MIDDLEWARE] Usuário autenticado: ${isAuthenticated}`);
+    const hasHybridUser = !!(req as any).hybridUser;
+    const hasSupabaseUser = !!(req as any).supabaseUser;
+    const isUserAuthenticated = isAuthenticated || hasHybridUser || hasSupabaseUser;
     
-    if (!isAuthenticated) {
+    console.log(`[AUTH-MIDDLEWARE] Usuário autenticado: ${isAuthenticated} | Híbrido: ${hasHybridUser} | Supabase: ${hasSupabaseUser} | Total: ${isUserAuthenticated}`);
+    
+    if (!isUserAuthenticated) {
       console.log(`[AUTH-MIDDLEWARE] Acesso negado para rota protegida: ${req.path}`);
       
       // Definir rota de login específica baseada no caminho
@@ -2107,16 +2111,17 @@ app.use((req, res, next) => {
     }
     
     // VERIFICAÇÃO DE SEGURANÇA: Operadores não podem acessar o sistema principal
-    if (req.user && req.user.role === 'operador') {
+    const currentUser = req.user || (req as any).hybridUser || (req as any).supabaseUser;
+    if (currentUser && currentUser.role === 'operador') {
       // Permitir acesso apenas às rotas da base designada
-      const userBaseName = req.user.basename;
+      const userBaseName = currentUser.basename;
       
       if (userBaseName && req.path.startsWith(`/bases/${userBaseName.toLowerCase()}`)) {
-        console.log(`[AUTH-MIDDLEWARE] Acesso permitido para operador ${req.user.email} na base ${userBaseName}`);
+        console.log(`[AUTH-MIDDLEWARE] Acesso permitido para operador ${currentUser.email} na base ${userBaseName}`);
         return next();
       }
       
-      console.log(`[AUTH-MIDDLEWARE] Acesso negado para operador ${req.user.email} - tentativa de acesso ao sistema principal`);
+      console.log(`[AUTH-MIDDLEWARE] Acesso negado para operador ${currentUser.email} - tentativa de acesso ao sistema principal`);
       
       // Redirecionar operador para a base designada
       const baseLoginRoute = userBaseName ? `/bases/${userBaseName.toLowerCase()}/login` : '/login';

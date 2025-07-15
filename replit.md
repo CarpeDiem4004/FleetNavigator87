@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 15, 2025: **CRITICAL BUG FIX - HYBRID AUTHENTICATION MIDDLEWARE FIXED** - Fixed authentication middleware to properly handle hybrid-authenticated operators
+  - ✅ Fixed authentication middleware to check for req.hybridUser in addition to req.user
+  - ✅ Updated operator access control to use currentUser from traditional, hybrid, or Supabase authentication
+  - ✅ Operator Bruno Machado (base GP03) can now access assigned base after hybrid login
+  - ✅ Authentication middleware now properly validates hybrid authentication for base access
+  - ✅ Enhanced logging to show all authentication methods (traditional, hybrid, Supabase)
+  - ✅ Fixed critical issue where hybrid-authenticated operators were getting "access denied" 
+  - ✅ System now properly supports multi-authentication method architecture
+
 - July 15, 2025: **CRITICAL SECURITY FIX - OPERATOR ACCESS CONTROL IMPLEMENTED** - Implemented strict base-specific login restrictions for operator users
   - ✅ Modified main login route (/api/login) in server/auth.ts to reject operator login attempts to main system
   - ✅ Modified hybrid login route (/api/login-hybrid) in server/routes/authHybridRoutes.ts to reject operator access
