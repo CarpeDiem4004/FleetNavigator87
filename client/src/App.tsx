@@ -344,6 +344,7 @@ import PublicPostoGP03 from "@/pages/postos/PublicPostoGP03";
 import BaseGP01External from "@/pages/bases/BaseGP01External";
 import BaseGP02External from "@/pages/bases/BaseGP02External";
 import BaseGP03External from "@/pages/bases/BaseGP03External";
+import BaseGP02 from "@/pages/bases/BaseGP02";
 import BaseGP03 from "@/pages/bases/BaseGP03";
 import LoginGP01 from "@/pages/bases/LoginGP01";
 import LoginGP02 from "@/pages/bases/LoginGP02";
@@ -358,6 +359,7 @@ import AcidentesTrabalhoGP03 from "@/pages/bases/AcidentesTrabalhoGP03";
 import SolicitacaoPneusGP03 from "@/pages/bases/SolicitacaoPneusGP03";
 import SolicitacaoOrcamentoGP03 from "@/pages/bases/SolicitacaoOrcamentoGP03";
 import ManutencaoFrotaGP03 from "@/pages/bases/ManutencaoFrotaGP03";
+import CartoesAtivosGP02 from "@/pages/bases/CartoesAtivosGP02";
 import CartoesAtivosGP03 from "@/pages/bases/CartoesAtivosGP03";
 
 import RegisterPostoUser from "@/pages/postos/RegisterPostoUser";
@@ -807,6 +809,17 @@ function App() {
           <ProtectedRoute path="/bases/gp01/cartao-combustivel" component={CartaoCombustivelGP01} />
           <ProtectedRoute path="/bases/gp02/cartao-combustivel" component={CartaoCombustivelGP02} />
           <ProtectedRoute path="/bases/gp03/cartao-combustivel" component={CartaoCombustivelGP03} />
+          
+          {/* Rotas completas para Base GP02 (seguindo padrão da Base Campinas) */}
+          <ProtectedRoute path="/bases/gp02" component={BaseGP02} />
+          <ProtectedRoute path="/bases/gp02/despesas" component={DespesasGP03} />
+          <ProtectedRoute path="/bases/gp02/multas" component={MultasGP03} />
+          <ProtectedRoute path="/bases/gp02/sinistros" component={SinistrosGP03} />
+          <ProtectedRoute path="/bases/gp02/acidentes-trabalho" component={AcidentesTrabalhoGP03} />
+          <ProtectedRoute path="/bases/gp02/solicitacao-pneus" component={SolicitacaoPneusGP03} />
+          <ProtectedRoute path="/bases/gp02/solicitacao-orcamento" component={SolicitacaoOrcamentoGP03} />
+          <ProtectedRoute path="/bases/gp02/manutencao-frota" component={ManutencaoFrotaGP03} />
+          <ProtectedRoute path="/bases/gp02/cartoes-ativos" component={CartoesAtivosGP02} />
           
           {/* Rotas completas para Base GP03 (seguindo padrão da Base Campinas) */}
           <ProtectedRoute path="/bases/gp03" component={BaseGP03} />
