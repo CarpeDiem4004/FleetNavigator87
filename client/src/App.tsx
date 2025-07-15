@@ -344,12 +344,20 @@ import PublicPostoGP03 from "@/pages/postos/PublicPostoGP03";
 import BaseGP01External from "@/pages/bases/BaseGP01External";
 import BaseGP02External from "@/pages/bases/BaseGP02External";
 import BaseGP03External from "@/pages/bases/BaseGP03External";
+import BaseGP03 from "@/pages/bases/BaseGP03";
 import LoginGP01 from "@/pages/bases/LoginGP01";
 import LoginGP02 from "@/pages/bases/LoginGP02";
 import LoginGP03 from "@/pages/bases/LoginGP03";
 import CartaoCombustivelGP01 from "@/pages/bases/CartaoCombustivelGP01";
 import CartaoCombustivelGP02 from "@/pages/bases/CartaoCombustivelGP02";
 import CartaoCombustivelGP03 from "@/pages/bases/CartaoCombustivelGP03";
+import DespesasGP03 from "@/pages/bases/DespesasGP03";
+import MultasGP03 from "@/pages/bases/MultasGP03";
+import SinistrosGP03 from "@/pages/bases/SinistrosGP03";
+import AcidentesTrabalhoGP03 from "@/pages/bases/AcidentesTrabalhoGP03";
+import SolicitacaoPneusGP03 from "@/pages/bases/SolicitacaoPneusGP03";
+import SolicitacaoOrcamentoGP03 from "@/pages/bases/SolicitacaoOrcamentoGP03";
+import ManutencaoFrotaGP03 from "@/pages/bases/ManutencaoFrotaGP03";
 
 import RegisterPostoUser from "@/pages/postos/RegisterPostoUser";
 import RedirectToPosto from "@/pages/RedirectToPosto";
@@ -794,6 +802,16 @@ function App() {
           <ProtectedRoute path="/bases/gp01/cartao-combustivel" component={CartaoCombustivelGP01} />
           <ProtectedRoute path="/bases/gp02/cartao-combustivel" component={CartaoCombustivelGP02} />
           <ProtectedRoute path="/bases/gp03/cartao-combustivel" component={CartaoCombustivelGP03} />
+          
+          {/* Rotas completas para Base GP03 (seguindo padrão da Base Campinas) */}
+          <ProtectedRoute path="/bases/gp03" component={BaseGP03} />
+          <ProtectedRoute path="/bases/gp03/despesas" component={DespesasGP03} />
+          <ProtectedRoute path="/bases/gp03/multas" component={MultasGP03} />
+          <ProtectedRoute path="/bases/gp03/sinistros" component={SinistrosGP03} />
+          <ProtectedRoute path="/bases/gp03/acidentes-trabalho" component={AcidentesTrabalhoGP03} />
+          <ProtectedRoute path="/bases/gp03/solicitacao-pneus" component={SolicitacaoPneusGP03} />
+          <ProtectedRoute path="/bases/gp03/solicitacao-orcamento" component={SolicitacaoOrcamentoGP03} />
+          <ProtectedRoute path="/bases/gp03/manutencao-frota" component={ManutencaoFrotaGP03} />
           
           {/* Rotas genéricas para todas as bases por ID */}
           <ProtectedRoute path="/bases/:id" component={() => <BaseRouteHandler mode="home" />} />
