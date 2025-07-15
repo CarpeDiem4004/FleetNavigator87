@@ -55,6 +55,15 @@ router.post('/login-hybrid', async (req, res) => {
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
 
+    // VERIFICAÇÃO DE SEGURANÇA: Operadores não podem acessar o sistema principal
+    if (user.role === 'operador') {
+      console.log('Tentativa de acesso ao sistema principal negada para operador:', email);
+      return res.status(403).json({ 
+        message: 'Operadores devem acessar apenas a base designada',
+        error: 'Acesso negado - Operadores não podem acessar o sistema principal'
+      });
+    }
+
     // Formata o usuário para a sessão (remove dados sensíveis como a senha)
     const userSession = {
       id: user.id,

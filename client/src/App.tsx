@@ -372,6 +372,7 @@ import FuelCardRedirect from "@/components/FuelCardRedirect";
 import MaintenanceSystem from "@/pages/maintenance";
 import TestLogout from "@/pages/TestLogout";
 import TestCampinasLogin from "@/pages/TestCampinasLogin";
+import TestOperatorSecurity from "@/pages/TestOperatorSecurity";
 
 function App() {
   // Ativar o hook de injeção automática de token JWT em todas as requisições fetch
@@ -609,6 +610,9 @@ function App() {
             </Route>
             <Route path="/test-timezone">
               <TimezoneTest />
+            </Route>
+            <Route path="/test-operator-security">
+              <TestOperatorSecurity />
             </Route>
             
             {/* Componentes de redirecionamento para usuários específicos */}

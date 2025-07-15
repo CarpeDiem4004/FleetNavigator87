@@ -258,10 +258,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             console.log("Sessão verificada e cookies persistidos com sucesso");
           }
         } else {
+          // Verificar se é um erro de acesso negado para operadores
+          if (response.status === 403) {
+            try {
+              const errorData = await response.json();
+              if (errorData.message && errorData.message.includes('Operadores devem acessar apenas a base designada')) {
+                console.log("Operador tentou acessar sistema principal - redirecionando para base");
+                throw new Error(errorData.message);
+              }
+            } catch (parseError) {
+              console.warn("Erro ao parsear resposta de erro:", parseError);
+            }
+          }
           console.warn("Autenticação tradicional falhou, tentando métodos alternativos");
         }
       } catch (tradError) {
         console.error("Erro na autenticação tradicional:", tradError);
+        // Se for um erro de acesso negado para operadores, rejeitar imediatamente
+        if (tradError.message && tradError.message.includes('Operadores devem acessar apenas a base designada')) {
+          throw tradError;
+        }
       }
       
       // PASSO 2: Se a autenticação tradicional falhar, tentar Supabase

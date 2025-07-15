@@ -2106,6 +2106,32 @@ app.use((req, res, next) => {
       return res.redirect(loginRoute);
     }
     
+    // VERIFICAÇÃO DE SEGURANÇA: Operadores não podem acessar o sistema principal
+    if (req.user && req.user.role === 'operador') {
+      // Permitir acesso apenas às rotas da base designada
+      const userBaseName = req.user.basename;
+      
+      if (userBaseName && req.path.startsWith(`/bases/${userBaseName.toLowerCase()}`)) {
+        console.log(`[AUTH-MIDDLEWARE] Acesso permitido para operador ${req.user.email} na base ${userBaseName}`);
+        return next();
+      }
+      
+      console.log(`[AUTH-MIDDLEWARE] Acesso negado para operador ${req.user.email} - tentativa de acesso ao sistema principal`);
+      
+      // Redirecionar operador para a base designada
+      const baseLoginRoute = userBaseName ? `/bases/${userBaseName.toLowerCase()}/login` : '/login';
+      
+      if (req.xhr || req.headers.accept?.includes('json')) {
+        return res.status(403).json({ 
+          error: 'Acesso negado',
+          message: 'Operadores devem acessar apenas a base designada',
+          redirect: baseLoginRoute
+        });
+      }
+      
+      return res.redirect(baseLoginRoute);
+    }
+    
     console.log(`[AUTH-MIDDLEWARE] Acesso permitido para rota protegida: ${req.path}`);
     // Se estiver autenticado, continuar
     next();
