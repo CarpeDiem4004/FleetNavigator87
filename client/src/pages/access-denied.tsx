@@ -1,12 +1,12 @@
 import React from 'react';
 import { useLocation, Link } from 'wouter';
-import { AlertTriangle, Home } from 'lucide-react';
+import { AlertTriangle, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 
 const AccessDeniedPage: React.FC = () => {
   const [, navigate] = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4">
@@ -39,11 +39,11 @@ const AccessDeniedPage: React.FC = () => {
         
         <div className="pt-6 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 justify-center">
           <Button 
-            onClick={() => navigate('/login')}
+            onClick={() => logout()}
             className="gap-2"
             variant="outline"
           >
-            <Home className="h-4 w-4" />
+            <LogOut className="h-4 w-4" />
             Ir para Login
           </Button>
         </div>
