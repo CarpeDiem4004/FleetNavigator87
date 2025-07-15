@@ -153,6 +153,19 @@ const baseRouteMapping = {
     '/sinistro',
     '/accidents',
     '/acidentes'
+  ],
+  'gp03': [
+    '/bases/gp03',
+    '/bases/gp03/cartao-combustivel',
+    '/bases/gp03/despesas',
+    '/bases/gp03/multas',
+    '/bases/gp03/acidentes-trabalho',
+    '/bases/gp03/sinistros',
+    '/bases/gp03/solicitacao-pneus',
+    '/bases/gp03/solicitacao-orcamento',
+    '/bases/gp03/manutencao-frota',
+    '/bases/gp03/veiculos',
+    '/bases/gp03/external'
   ]
 };
 
