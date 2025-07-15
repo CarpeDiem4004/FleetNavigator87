@@ -789,26 +789,32 @@ const UsersNew: React.FC = () => {
                           <div className="space-y-2">
                             <p className="text-sm text-gray-600">Selecione as bases que o coordenador pode acessar:</p>
                             <div className="max-h-40 overflow-y-auto border rounded-md p-2">
-                              {bases.map(base => (
-                                <div key={base.id} className="flex items-center space-x-2 mb-2">
-                                  <input
-                                    type="checkbox"
-                                    id={`base-${base.id}`}
-                                    checked={selectedBases.includes(base.id)}
-                                    onChange={(e) => {
-                                      if (e.target.checked) {
-                                        setSelectedBases([...selectedBases, base.id]);
-                                      } else {
-                                        setSelectedBases(selectedBases.filter(id => id !== base.id));
-                                      }
-                                    }}
-                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                  />
-                                  <Label htmlFor={`base-${base.id}`} className="text-sm">
-                                    {base.name} ({base.location})
-                                  </Label>
+                              {bases && bases.length > 0 ? (
+                                bases.map(base => (
+                                  <div key={base.id} className="flex items-center space-x-2 mb-2">
+                                    <input
+                                      type="checkbox"
+                                      id={`base-${base.id}`}
+                                      checked={selectedBases.includes(base.id)}
+                                      onChange={(e) => {
+                                        if (e.target.checked) {
+                                          setSelectedBases([...selectedBases, base.id]);
+                                        } else {
+                                          setSelectedBases(selectedBases.filter(id => id !== base.id));
+                                        }
+                                      }}
+                                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <Label htmlFor={`base-${base.id}`} className="text-sm">
+                                      {base.name} ({base.location || 'Localização não informada'})
+                                    </Label>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="text-sm text-gray-500 p-2">
+                                  {basesLoading ? 'Carregando bases...' : 'Nenhuma base disponível'}
                                 </div>
-                              ))}
+                              )}
                             </div>
                           </div>
                         )}
