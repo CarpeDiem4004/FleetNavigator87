@@ -117,6 +117,18 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 15, 2025: **CRITICAL BUG FIX - GP03 BASE NAVIGATION CORRECTED** - Fixed all navigation buttons in GP03 base external interface
+  - ✅ Fixed "Gerenciar Veículos" button to redirect to `/admin/veiculos` instead of fuel station
+  - ✅ Fixed "Comunicar Sinistro" button to redirect to `/admin/sinistros` instead of fuel station
+  - ✅ Fixed "Comunicar Acidente" button to redirect to `/admin/acidentes` instead of fuel station
+  - ✅ Fixed "Ver Multas" button to redirect to `/admin/multas` instead of fuel station
+  - ✅ Fixed "Controlar Despesas" button to redirect to `/admin/despesas` instead of fuel station
+  - ✅ Fixed "Solicitar Pneus" button to redirect to `/admin/pneus` instead of fuel station
+  - ✅ Fixed "Solicitar Orçamento" button to redirect to `/admin/orcamentos` instead of fuel station
+  - ✅ Fixed "Solicitar Manutenção" button to redirect to `/admin/manutencao` instead of fuel station
+  - ✅ Maintained "Gerenciar Cartão" button correctly pointing to `/bases/gp03/cartao-combustivel`
+  - ✅ All buttons now properly redirect to their intended administrative functions instead of fuel station
+
 - July 14, 2025: **CRITICAL BUG FIX - GP FUEL CARD STATUS REFRESH FIXED** - Fixed status update display issue in GP external interfaces
   - ✅ Fixed status mapping between backend "Recarga Efetuada" and frontend "aprovado" in all GP components
   - ✅ Corrected status conversion logic to properly show approved requests as "✓ Aprovado" (green badge)
