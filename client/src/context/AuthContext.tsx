@@ -208,6 +208,47 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Atualiza o estado com base no resultado da autenticação
       if (isAuthenticated && userData) {
         console.log(`Usuário autenticado via ${authSource}:`, userData);
+        
+        // VERIFICAÇÃO DE SEGURANÇA: Operadores não podem acessar o sistema principal
+        if (userData.role === 'operador') {
+          console.log('Operador detectado, redirecionando para base externa:', userData.basename);
+          
+          // Definir URL de redirecionamento baseada na base do operador
+          let redirectUrl = '/';
+          
+          if (userData.basename) {
+            switch (userData.basename.toUpperCase()) {
+              case 'GP01':
+                redirectUrl = '/bases/gp01/external';
+                break;
+              case 'GP02':
+                redirectUrl = '/bases/gp02/external';
+                break;
+              case 'GP03':
+                redirectUrl = '/bases/gp03/external';
+                break;
+              case 'CAMPINAS':
+                redirectUrl = '/bases/campinas/external';
+                break;
+              case 'BRASILIA':
+                redirectUrl = '/bases/brasilia/external';
+                break;
+              case 'SC':
+                redirectUrl = '/bases/sc/external';
+                break;
+              default:
+                // Para outras bases, tentar construir URL baseada no nome
+                const baseNameLower = userData.basename.toLowerCase();
+                redirectUrl = `/bases/${baseNameLower}/external`;
+            }
+          }
+          
+          // Mostrar alerta e redirecionar
+          alert("Acesso restrito. Este perfil deve acessar pelo link externo específico.");
+          window.location.href = redirectUrl;
+          return;
+        }
+        
         setUser(userData);
       } else {
         console.log("Usuário não autenticado");
@@ -363,6 +404,44 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.log("Autenticação bem-sucedida. Método:", 
           authSuccess ? "Tradicional -> Supabase -> JWT" : "Falha");
         
+        // VERIFICAÇÃO DE SEGURANÇA: Operadores não podem acessar o sistema principal
+        if (userData.role === 'operador') {
+          console.log('Operador tentou fazer login no sistema principal:', userData.basename);
+          
+          // Definir URL de redirecionamento baseada na base do operador
+          let redirectUrl = '/';
+          
+          if (userData.basename) {
+            switch (userData.basename.toUpperCase()) {
+              case 'GP01':
+                redirectUrl = '/bases/gp01/external';
+                break;
+              case 'GP02':
+                redirectUrl = '/bases/gp02/external';
+                break;
+              case 'GP03':
+                redirectUrl = '/bases/gp03/external';
+                break;
+              case 'CAMPINAS':
+                redirectUrl = '/bases/campinas/external';
+                break;
+              case 'BRASILIA':
+                redirectUrl = '/bases/brasilia/external';
+                break;
+              case 'SC':
+                redirectUrl = '/bases/sc/external';
+                break;
+              default:
+                // Para outras bases, tentar construir URL baseada no nome
+                const baseNameLower = userData.basename.toLowerCase();
+                redirectUrl = `/bases/${baseNameLower}/external`;
+            }
+          }
+          
+          // Lançar erro com mensagem explicativa
+          throw new Error(`Operadores devem acessar apenas a base designada. Você será redirecionado para: ${redirectUrl}`);
+        }
+        
         // Define o usuário no estado
         setUser(userData);
         
@@ -394,6 +473,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     } catch (error: any) {
       console.error('Erro no login:', error);
+      
+      // Verificar se é um erro de operador tentando acessar sistema principal
+      if (error.message && error.message.includes('Operadores devem acessar apenas a base designada')) {
+        // Extrair URL de redirecionamento da mensagem de erro
+        const redirectMatch = error.message.match(/Você será redirecionado para: (.+)/);
+        if (redirectMatch) {
+          const redirectUrl = redirectMatch[1];
+          
+          toast({
+            title: "Acesso Restrito",
+            description: "Operadores devem acessar apenas a base designada. Você será redirecionado.",
+            variant: "destructive",
+          });
+          
+          // Aguardar um pouco para mostrar o toast e depois redirecionar
+          setTimeout(() => {
+            window.location.href = redirectUrl;
+          }, 2000);
+          
+          throw error;
+        }
+      }
       
       toast({
         title: "Falha no login",
