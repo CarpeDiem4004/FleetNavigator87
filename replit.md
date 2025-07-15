@@ -125,6 +125,9 @@ This is a comprehensive fleet management system built with React (frontend) and 
   - ✅ Simplified navigation flow to prevent unauthorized access to dashboard
   - ✅ Users with access denied now can only return to login page
   - ✅ Fixed login button redirection - now uses logout functionality instead of direct navigation
+  - ✅ Implemented contextual login redirection - button now detects which base user was trying to access
+  - ✅ Users are redirected to appropriate base login page instead of main system login
+  - ✅ Prevents operators from accessing main system login when they shouldn't
 
 - July 15, 2025: **GP03 ACTIVE FUEL CARDS MANAGEMENT SYSTEM COMPLETED** - Implemented complete fuel card management system for GP03 base
   - ✅ Created fuel_cards_active table with proper schema and relationships
