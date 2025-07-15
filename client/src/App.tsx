@@ -358,6 +358,7 @@ import AcidentesTrabalhoGP03 from "@/pages/bases/AcidentesTrabalhoGP03";
 import SolicitacaoPneusGP03 from "@/pages/bases/SolicitacaoPneusGP03";
 import SolicitacaoOrcamentoGP03 from "@/pages/bases/SolicitacaoOrcamentoGP03";
 import ManutencaoFrotaGP03 from "@/pages/bases/ManutencaoFrotaGP03";
+import CartoesAtivosGP03 from "@/pages/bases/CartoesAtivosGP03";
 
 import RegisterPostoUser from "@/pages/postos/RegisterPostoUser";
 import RedirectToPosto from "@/pages/RedirectToPosto";
@@ -812,6 +813,7 @@ function App() {
           <ProtectedRoute path="/bases/gp03/solicitacao-pneus" component={SolicitacaoPneusGP03} />
           <ProtectedRoute path="/bases/gp03/solicitacao-orcamento" component={SolicitacaoOrcamentoGP03} />
           <ProtectedRoute path="/bases/gp03/manutencao-frota" component={ManutencaoFrotaGP03} />
+          <ProtectedRoute path="/bases/gp03/cartoes-ativos" component={CartoesAtivosGP03} />
           
           {/* Rotas genéricas para todas as bases por ID */}
           <ProtectedRoute path="/bases/:id" component={() => <BaseRouteHandler mode="home" />} />

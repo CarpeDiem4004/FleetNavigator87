@@ -64,6 +64,8 @@ import {
   getOficinas,
   getRelatorios
 } from './maintenance-api.js';
+// Importar rotas de cartões de combustível
+import fuelCardRoutes from './routes/fuelCardRoutes';
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
@@ -2111,6 +2113,9 @@ app.use((req, res, next) => {
 
   // Servir arquivos estáticos de uploads de equipamentos
   app.use('/uploads', express.static(path.join(process.cwd(), 'server', 'uploads')));
+
+  // Registrar rotas de cartões de combustível
+  app.use('/api/fuel-cards', fuelCardRoutes);
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route

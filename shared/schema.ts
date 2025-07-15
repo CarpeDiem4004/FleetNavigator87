@@ -851,6 +851,33 @@ export type InsertBaseRequestUpdate = z.infer<typeof insertBaseRequestUpdateSche
 export type TowingServicePayment = typeof towingServicePayments.$inferSelect;
 export type InsertTowingServicePayment = z.infer<typeof insertTowingServicePaymentSchema>;
 
+// Enum para status dos cartões de combustível
+export const fuelCardStatusEnum = pgEnum('fuel_card_status', [
+  'ativo',      // Cartão ativo e em uso
+  'inativo',    // Cartão inativo
+  'bloqueado',  // Cartão bloqueado
+  'perdido',    // Cartão perdido
+  'cancelado'   // Cartão cancelado
+]);
+
+// Tabela de cartões de combustível ativos
+export const fuelCards = pgTable("fuel_cards", {
+  id: serial("id").primaryKey(),
+  card_number: text("card_number").notNull().unique(),
+  card_type: text("card_type").notNull(), // 'vinculado' ou 'especifico'
+  provider: text("provider").notNull(), // 'Ticket', 'Alelo', 'VR'
+  vehicle_plate: text("vehicle_plate"), // Para cartões vinculados
+  project_id: integer("project_id").references(() => projects.id),
+  base_id: integer("base_id").references(() => bases.id),
+  status: fuelCardStatusEnum("status").notNull().default('ativo'),
+  current_balance: decimal("current_balance", { precision: 10, scale: 2 }).default('0.00'),
+  monthly_limit: decimal("monthly_limit", { precision: 10, scale: 2 }),
+  notes: text("notes"),
+  created_by: integer("created_by").references(() => users.id),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
 // Tabela de equipamentos
 export const equipments = pgTable("equipments", {
   id: serial("id").primaryKey(),
@@ -980,7 +1007,28 @@ export const equipmentMovementsRelations = relations(equipmentMovements, ({ one 
   }),
 }));
 
+// Relações para cartões de combustível
+export const fuelCardsRelations = relations(fuelCards, ({ one }) => ({
+  project: one(projects, {
+    fields: [fuelCards.project_id],
+    references: [projects.id],
+  }),
+  base: one(bases, {
+    fields: [fuelCards.base_id],
+    references: [bases.id],
+  }),
+  createdBy: one(users, {
+    fields: [fuelCards.created_by],
+    references: [users.id],
+  }),
+}));
+
 // Schemas para inserção e validação
+export const insertFuelCardSchema = createInsertSchema(fuelCards).extend({
+  current_balance: z.string().transform(val => val === '' ? null : val).optional(),
+  monthly_limit: z.string().transform(val => val === '' ? null : val).optional(),
+});
+
 export const insertEquipmentSchema = createInsertSchema(equipments).extend({
   purchase_date: z.string().transform(val => val === '' ? null : val).optional(),
   warranty_expires: z.string().transform(val => val === '' ? null : val).optional(),
@@ -991,6 +1039,8 @@ export const insertEquipmentMaintenanceSchema = createInsertSchema(equipmentMain
 export const insertEquipmentMovementSchema = createInsertSchema(equipmentMovements);
 
 // Tipos TypeScript
+export type FuelCard = typeof fuelCards.$inferSelect;
+export type InsertFuelCard = z.infer<typeof insertFuelCardSchema>;
 export type Equipment = typeof equipments.$inferSelect;
 export type InsertEquipment = z.infer<typeof insertEquipmentSchema>;
 export type EquipmentResponsibilityTerm = typeof equipmentResponsibilityTerms.$inferSelect;

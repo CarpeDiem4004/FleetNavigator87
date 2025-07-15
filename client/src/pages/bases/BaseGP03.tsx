@@ -250,6 +250,29 @@ const BaseGP03: React.FC = () => {
             </CardFooter>
           </Card>
 
+          {/* Card de Gerenciamento de Cartões Ativos (Admin) */}
+          <Card className="shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="bg-emerald-50 pb-2">
+              <CardTitle className="flex items-center text-emerald-700">
+                <CreditCard className="w-5 h-5 mr-2" />
+                Cartões Ativos (Admin)
+              </CardTitle>
+              <CardDescription>Gerenciar cartões de combustível em uso</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <p className="text-gray-600">
+                Cadastre, edite e gerencie os cartões de combustível que estão ativos e em uso na base.
+              </p>
+            </CardContent>
+            <CardFooter className="border-t pt-4 flex justify-end">
+              <Link href="/bases/gp03/cartoes-ativos">
+                <Button variant="outline" className="flex items-center text-emerald-600 hover:text-emerald-800">
+                  Gerenciar Cartões <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </CardFooter>
+          </Card>
+
           {/* Card de Manutenção de Frota */}
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="bg-orange-50 pb-2">
