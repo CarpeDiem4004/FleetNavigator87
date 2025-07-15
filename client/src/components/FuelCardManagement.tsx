@@ -371,12 +371,12 @@ export default function FuelCardManagement() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="card_number">Número do Cartão *</Label>
+                  <Label htmlFor="card_number">Placa do Cartão *</Label>
                   <Input
                     id="card_number"
                     value={formData.card_number}
                     onChange={(e) => handleInputChange('card_number', e.target.value)}
-                    placeholder="Digite o número do cartão"
+                    placeholder="Digite a placa do cartão"
                     required
                   />
                 </div>
@@ -425,18 +425,15 @@ export default function FuelCardManagement() {
                 </div>
               </div>
 
-              {formData.card_type === 'vinculado' && (
-                <div>
-                  <Label htmlFor="vehicle_plate">Placa do Veículo *</Label>
-                  <Input
-                    id="vehicle_plate"
-                    value={formData.vehicle_plate}
-                    onChange={(e) => handleInputChange('vehicle_plate', e.target.value.toUpperCase())}
-                    placeholder="Ex: ABC1234"
-                    required
-                  />
-                </div>
-              )}
+              <div>
+                <Label htmlFor="vehicle_plate">Placa do Veículo</Label>
+                <Input
+                  id="vehicle_plate"
+                  value={formData.vehicle_plate}
+                  onChange={(e) => handleInputChange('vehicle_plate', e.target.value.toUpperCase())}
+                  placeholder="Ex: ABC1234"
+                />
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -573,10 +570,10 @@ export default function FuelCardManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Número do Cartão</TableHead>
+                    <TableHead>Placa do Cartão</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Provedor</TableHead>
-                    <TableHead>Placa</TableHead>
+                    <TableHead>Placa do Veículo</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Saldo</TableHead>
                     <TableHead>Projeto/Base</TableHead>
