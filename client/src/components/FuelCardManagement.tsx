@@ -308,10 +308,11 @@ export default function FuelCardManagement() {
   };
 
   const filteredCards = fuelCards.filter(card => {
-    const matchesSearch = card.card_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         card.vehicle_plate?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         card.project_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         card.base_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = (card.card_number || '').toLowerCase().includes(searchLower) ||
+                         (card.vehicle_plate || '').toLowerCase().includes(searchLower) ||
+                         (card.project_name || '').toLowerCase().includes(searchLower) ||
+                         (card.base_name || '').toLowerCase().includes(searchLower);
     
     const matchesStatus = statusFilter === 'all' || card.status === statusFilter;
     
