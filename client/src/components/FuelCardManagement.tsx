@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -135,6 +135,7 @@ export default function FuelCardManagement() {
       
       // Verificar se a resposta tem a estrutura esperada
       const data = result.success ? result.data : result;
+      
       setProjects(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Erro ao carregar projetos:', error);
@@ -149,6 +150,7 @@ export default function FuelCardManagement() {
 
   const handleProjectChange = (projectId: string) => {
     const project = projects.find(p => p.id.toString() === projectId);
+    
     setSelectedProject(project || null);
     setFilteredBases(project ? project.bases : []);
     setFormData(prev => ({
@@ -367,6 +369,9 @@ export default function FuelCardManagement() {
               <DialogTitle>
                 {editingCard ? 'Editar Cartão' : 'Adicionar Novo Cartão'}
               </DialogTitle>
+              <DialogDescription>
+                {editingCard ? 'Modifique os dados do cartão de combustível' : 'Preencha os dados para adicionar um novo cartão de combustível'}
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
