@@ -41,6 +41,15 @@ interface MaintenanceData {
   averageCostPerVehicle: number;
 }
 
+interface WorkshopData {
+  oficina: string;
+  em_andamento: number;
+  finalizadas: number;
+  valor_total: number;
+  tempo_medio_dias: number;
+  veiculos_atrasados: number;
+}
+
 interface FuelData {
   totalRefuels: number;
   totalLiters: {
@@ -75,6 +84,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 export default function PainelOperacional() {
   const [maintenanceData, setMaintenanceData] = useState<MaintenanceData | null>(null);
   const [fuelData, setFuelData] = useState<FuelData | null>(null);
+  const [workshopData, setWorkshopData] = useState<WorkshopData[]>([]);
   const [bases, setBases] = useState<Array<{ id: string; name: string }>>([]);
   const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
   const [filters, setFilters] = useState<FilterState>({
@@ -126,9 +136,10 @@ export default function PainelOperacional() {
       if (filters.endDate) queryParams.append('endDate', filters.endDate.toISOString());
       queryParams.append('period', filters.period);
 
-      const [maintenanceResponse, fuelResponse] = await Promise.all([
+      const [maintenanceResponse, fuelResponse, workshopResponse] = await Promise.all([
         fetch(`/api/operational-dashboard/maintenance?${queryParams.toString()}`),
-        fetch(`/api/operational-dashboard/fuel?${queryParams.toString()}`)
+        fetch(`/api/operational-dashboard/fuel?${queryParams.toString()}`),
+        fetch('/api/operational-dashboard/maintenance-by-workshop')
       ]);
 
       if (maintenanceResponse.ok) {
@@ -162,6 +173,13 @@ export default function PainelOperacional() {
             averageConsumption: fuelResult.averageConsumption || 0,
             monthlyData: Array.isArray(fuelResult.monthlyData) ? fuelResult.monthlyData : []
           });
+        }
+      }
+      
+      if (workshopResponse.ok) {
+        const workshopResult = await workshopResponse.json();
+        if (workshopResult && workshopResult.workshops) {
+          setWorkshopData(workshopResult.workshops);
         }
       }
     } catch (error) {
@@ -378,6 +396,60 @@ export default function PainelOperacional() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Dados por Oficina */}
+          {workshopData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Manutenções por Oficina</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {workshopData.map((workshop) => (
+                    <Card key={workshop.oficina} className="p-4">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-lg">{workshop.oficina}</h3>
+                          <Badge variant="outline" className="font-semibold">
+                            Total: {formatCurrency(workshop.valor_total || 0)}
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Em andamento</p>
+                            <p className="text-2xl font-bold text-orange-600">{workshop.em_andamento}</p>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Finalizadas</p>
+                            <p className="text-2xl font-bold text-green-600">{workshop.finalizadas}</p>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Tempo médio</p>
+                            <p className="text-xl font-semibold">{workshop.tempo_medio_dias} dias</p>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Atrasados (+5 dias)</p>
+                            <p className="text-xl font-semibold text-red-600">{workshop.veiculos_atrasados}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="pt-2 border-t">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Total de ordens:</span>
+                            <span className="font-semibold">{workshop.em_andamento + workshop.finalizadas}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Veículos com mais de 5 dias */}
           {maintenanceData?.vehiclesOver5Days && maintenanceData.vehiclesOver5Days.length > 0 && (

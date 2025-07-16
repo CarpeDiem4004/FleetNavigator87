@@ -414,4 +414,60 @@ router.get('/fuel', async (req, res) => {
   }
 });
 
+// Endpoint para dados de manutenção por oficina
+router.get('/maintenance-by-workshop', async (req, res) => {
+  try {
+    console.log('[OPERATIONAL-DASHBOARD] Requisição de manutenção por oficina recebida');
+    
+    // Query para buscar dados agrupados por oficina
+    const maintenanceByWorkshopQuery = `
+      WITH todas_manutencoes AS (
+        -- Dados da tabela principal manutencao
+        SELECT 
+          CASE 
+            WHEN m.oficina_id = 2 THEN 'Oficina Alair'
+            WHEN m.oficina_id = 6 THEN 'Oficina Murici'
+            ELSE COALESCE(w.nome, 'Oficina não identificada')
+          END as oficina,
+          m.status,
+          COALESCE(m.custo, 0) as valor_total,
+          EXTRACT(DAY FROM (COALESCE(m.data_conclusao, NOW()) - m.created_at)) as dias_em_manutencao
+        FROM manutencao m
+        LEFT JOIN workshops w ON m.oficina_id = w.id
+        WHERE m.oficina_id IN (2, 6)
+        
+        UNION ALL
+        
+        -- Dados da tabela específica da Oficina Murici
+        SELECT 
+          'Oficina Murici' as oficina,
+          om.status,
+          COALESCE(om.custo_total, 0) as valor_total,
+          EXTRACT(DAY FROM (COALESCE(om.data_hora_fim, NOW()) - om.created_at)) as dias_em_manutencao
+        FROM oficina_murici_manutencoes om
+      )
+      SELECT 
+        oficina,
+        COUNT(CASE WHEN status IN ('pendente', 'em_andamento', 'aguardando_pecas') THEN 1 END) as em_andamento,
+        COUNT(CASE WHEN status = 'concluido' THEN 1 END) as finalizadas,
+        SUM(valor_total) as valor_total,
+        ROUND(AVG(dias_em_manutencao), 1) as tempo_medio_dias,
+        COUNT(CASE WHEN dias_em_manutencao > 5 AND status IN ('pendente', 'em_andamento', 'aguardando_pecas') THEN 1 END) as veiculos_atrasados
+      FROM todas_manutencoes
+      GROUP BY oficina
+      ORDER BY oficina
+    `;
+    
+    const result = await pool.query(maintenanceByWorkshopQuery);
+    
+    res.json({
+      workshops: result.rows
+    });
+    
+  } catch (error) {
+    console.error('Erro ao obter dados de manutenção por oficina:', error);
+    res.status(500).json({ error: 'Erro ao obter dados de manutenção por oficina' });
+  }
+});
+
 export default router;
