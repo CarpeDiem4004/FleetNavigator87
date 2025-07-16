@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { formatCurrency } from '@/lib/currency';
 
 interface FinancialService {
   id: number;
@@ -328,7 +329,7 @@ export default function FinanceiroGuincho() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Valor Total</p>
-                  <p className="text-2xl font-bold">R$ {financialSummary.summary.totalValue?.toFixed(2)}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(financialSummary.summary.totalValue || 0)}</p>
                 </div>
                 <DollarSign className="w-8 h-8 text-blue-600" />
               </div>
@@ -340,7 +341,7 @@ export default function FinanceiroGuincho() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Valor Pago</p>
-                  <p className="text-2xl font-bold text-green-600">R$ {financialSummary.summary.paidValue?.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-green-600">{formatCurrency(financialSummary.summary.paidValue || 0)}</p>
                 </div>
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
@@ -352,7 +353,7 @@ export default function FinanceiroGuincho() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Valor Pendente</p>
-                  <p className="text-2xl font-bold text-orange-500">R$ {financialSummary.summary.pendingValue?.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-orange-500">{formatCurrency(financialSummary.summary.pendingValue || 0)}</p>
                 </div>
                 <Clock className="w-8 h-8 text-orange-500" />
               </div>
@@ -411,7 +412,7 @@ export default function FinanceiroGuincho() {
                         <td className="p-3">
                           {format(new Date(service.service_date), 'dd/MM/yyyy', { locale: ptBR })}
                         </td>
-                        <td className="p-3 text-center">R$ {parseFloat(String(service.total_amount || 0)).toFixed(2)}</td>
+                        <td className="p-3 text-center">{formatCurrency(parseFloat(String(service.total_amount || 0)))}</td>
                         <td className="p-3 text-center">{getStatusBadge(service.payment_status)}</td>
                         <td className="p-3 text-center">
                           <div className="flex justify-center space-x-2">
@@ -490,9 +491,9 @@ export default function FinanceiroGuincho() {
                       <tr key={partner.id} className="border-b hover:bg-muted/50">
                         <td className="p-3 font-medium">{partner.partner_name}</td>
                         <td className="p-3 text-center">{partner.total_services}</td>
-                        <td className="p-3 text-center">R$ {parseFloat(partner.total_value).toFixed(2)}</td>
-                        <td className="p-3 text-center text-green-600">R$ {parseFloat(partner.paid_value).toFixed(2)}</td>
-                        <td className="p-3 text-center text-orange-500">R$ {parseFloat(partner.pending_value).toFixed(2)}</td>
+                        <td className="p-3 text-center">{formatCurrency(parseFloat(partner.total_value))}</td>
+                        <td className="p-3 text-center text-green-600">{formatCurrency(parseFloat(partner.paid_value))}</td>
+                        <td className="p-3 text-center text-orange-500">{formatCurrency(parseFloat(partner.pending_value))}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -515,7 +516,7 @@ export default function FinanceiroGuincho() {
                 <h4 className="font-semibold mb-2">Detalhes do Serviço</h4>
                 <p><strong>Parceiro:</strong> {selectedService.partner_name}</p>
                 <p><strong>Veículo:</strong> {selectedService.vehicle_plate}</p>
-                <p><strong>Valor:</strong> R$ {parseFloat(String(selectedService.total_amount || 0)).toFixed(2)}</p>
+                <p><strong>Valor:</strong> {formatCurrency(parseFloat(String(selectedService.total_amount || 0)))}</p>
                 <p><strong>Local:</strong> {selectedService.pickup_location} → {selectedService.destination}</p>
               </div>
             )}
@@ -652,7 +653,7 @@ export default function FinanceiroGuincho() {
                     <div>
                       <Label className="font-semibold">Valor Total</Label>
                       <p className="text-sm font-bold text-green-600">
-                        R$ {parseFloat(String(selectedService.total_amount || 0)).toFixed(2)}
+                        {formatCurrency(parseFloat(String(selectedService.total_amount || 0)))}
                       </p>
                     </div>
                   </div>
