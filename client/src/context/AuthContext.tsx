@@ -210,6 +210,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.log(`Usuário autenticado via ${authSource}:`, userData);
         
         // VERIFICAÇÃO DE SEGURANÇA: Operadores não podem acessar o sistema principal via verificação inicial
+        // TEMPORARIAMENTE DESABILITADO PARA PERMITIR ACESSO AO SISTEMA PRINCIPAL
+        /*
         if (userData.role === 'operador') {
           console.log('Operador detectado durante verificação inicial, redirecionando para base externa:', userData.basename);
           
@@ -248,6 +250,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           window.location.href = redirectUrl;
           return;
         }
+        */
         
         setUser(userData);
       } else {
