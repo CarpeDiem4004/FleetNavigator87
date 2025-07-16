@@ -54,10 +54,10 @@ router.get('/maintenance', async (req, res) => {
         
         -- Dados da tabela específica da Oficina Murici
         SELECT 
-          omm.vehicle_id as veiculo_id,
+          omm.id as veiculo_id,
           omm.status,
           6 as oficina_id, -- ID da Oficina Murici
-          omm.base_id,
+          null as base_id,
           omm.created_at
         FROM oficina_murici_manutencoes omm
         WHERE omm.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
@@ -98,11 +98,11 @@ router.get('/maintenance', async (req, res) => {
         -- Dados da tabela específica da Oficina Murici
         SELECT 
           omm.status,
-          omm.completion_date as data_conclusao,
+          omm.data_hora_fim as data_conclusao,
           omm.created_at,
           6 as oficina_id, -- ID da Oficina Murici
-          omm.base_id,
-          omm.vehicle_id as veiculo_id
+          null as base_id,
+          omm.id as veiculo_id
         FROM oficina_murici_manutencoes omm
         WHERE omm.status IS NOT NULL
       )
@@ -148,12 +148,12 @@ router.get('/maintenance', async (req, res) => {
         -- Dados da tabela específica da Oficina Murici
         SELECT 
           omm.id,
-          omm.vehicle_plate as placa,
-          omm.vehicle_id as veiculo_id,
+          omm.placa as placa,
+          omm.id as veiculo_id,
           omm.status,
           omm.created_at,
           6 as oficina_id, -- ID da Oficina Murici
-          omm.base_id,
+          null as base_id,
           'Oficina Murici' as workshop_name
         FROM oficina_murici_manutencoes omm
         WHERE omm.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
@@ -199,7 +199,7 @@ router.get('/maintenance', async (req, res) => {
         
         -- Dados da tabela específica da Oficina Murici
         SELECT 
-          COALESCE(omm.cost_total, 0) as cost,
+          COALESCE(omm.custo_total, 0) as cost,
           6 as oficina_id, -- ID da Oficina Murici
           'oficina_murici_manutencoes' as source_table
         FROM oficina_murici_manutencoes omm
