@@ -414,6 +414,72 @@ router.get('/fuel', async (req, res) => {
   }
 });
 
+// Endpoint para buscar veículos em manutenção por oficina
+router.get('/vehicles-by-workshop', async (req, res) => {
+  try {
+    console.log('[OPERATIONAL-DASHBOARD] Requisição de veículos por oficina recebida');
+    const { workshop } = req.query;
+
+    if (!workshop) {
+      return res.status(400).json({ error: 'Nome da oficina é obrigatório' });
+    }
+
+    // Query para buscar veículos de uma oficina específica
+    const vehiclesQuery = `
+      SELECT * FROM (
+        -- Tabela principal manutencao
+        SELECT 
+          m.id,
+          v.plate as placa,
+          v.model as modelo,
+          v.brand as marca,
+          EXTRACT(DAY FROM NOW() - m.data_entrada) as dias_parado,
+          m.data_entrada,
+          m.status,
+          m.descricao,
+          COALESCE(m.custo, 0) as valor_total,
+          w.nome as oficina
+        FROM manutencao m
+        JOIN vehicles v ON m.veiculo_id = v.id
+        JOIN workshops w ON m.oficina_id = w.id
+        WHERE m.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
+          AND m.oficina_id IN (2, 6)
+          AND w.nome = $1
+        
+        UNION ALL
+        
+        -- Tabela específica Murici  
+        SELECT 
+          om.id,
+          om.veiculo_placa as placa,
+          om.veiculo_modelo as modelo,
+          om.veiculo_marca as marca,
+          EXTRACT(DAY FROM NOW() - om.data_entrada) as dias_parado,
+          om.data_entrada,
+          om.status,
+          om.descricao_servico as descricao,
+          COALESCE(om.custo_total, 0) as valor_total,
+          'Oficina Murici' as oficina
+        FROM oficina_murici_manutencoes om
+        WHERE om.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
+          AND 'Oficina Murici' = $1
+      ) as combined_vehicles
+      ORDER BY dias_parado DESC
+    `;
+
+    const vehiclesResult = await pool.query(vehiclesQuery, [workshop]);
+    console.log(`[OPERATIONAL-DASHBOARD] Veículos encontrados para ${workshop}: ${vehiclesResult.rows.length}`);
+
+    res.json({ 
+      success: true,
+      vehicles: vehiclesResult.rows 
+    });
+  } catch (error) {
+    console.error('[OPERATIONAL-DASHBOARD] Erro ao buscar veículos por oficina:', error);
+    res.status(500).json({ error: 'Erro ao buscar veículos da oficina' });
+  }
+});
+
 // Endpoint para dados de manutenção por oficina
 router.get('/maintenance-by-workshop', async (req, res) => {
   try {

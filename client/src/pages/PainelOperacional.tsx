@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Car, 
   Wrench, 
@@ -19,7 +20,8 @@ import {
   Clock,
   AlertTriangle,
   DollarSign,
-  CheckCircle
+  CheckCircle,
+  X
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -48,6 +50,18 @@ interface WorkshopData {
   valor_total: number;
   tempo_medio_dias: number;
   veiculos_atrasados: number;
+}
+
+interface VehicleInMaintenance {
+  id: number;
+  placa: string;
+  modelo: string;
+  marca: string;
+  dias_parado: number;
+  data_entrada: string;
+  status: string;
+  descricao: string;
+  valor_total: number;
 }
 
 interface FuelData {
@@ -95,6 +109,9 @@ export default function PainelOperacional() {
     period: 'month'
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedWorkshop, setSelectedWorkshop] = useState<string | null>(null);
+  const [workshopVehicles, setWorkshopVehicles] = useState<VehicleInMaintenance[]>([]);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
 
   // Carregar bases e projetos
   useEffect(() => {
@@ -193,6 +210,30 @@ export default function PainelOperacional() {
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  // Carregar veículos de uma oficina específica
+  const loadWorkshopVehicles = async (workshop: string) => {
+    setIsLoadingVehicles(true);
+    try {
+      const response = await fetch(`/api/operational-dashboard/vehicles-by-workshop?workshop=${encodeURIComponent(workshop)}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setWorkshopVehicles(data.vehicles || []);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar veículos da oficina:', error);
+      setWorkshopVehicles([]);
+    } finally {
+      setIsLoadingVehicles(false);
+    }
+  };
+  
+  // Handler para clique no card da oficina
+  const handleWorkshopClick = (workshop: string) => {
+    setSelectedWorkshop(workshop);
+    loadWorkshopVehicles(workshop);
+  };
 
   // Gráfico de combustível por tipo
   const fuelTypeData = fuelData ? [
@@ -406,7 +447,11 @@ export default function PainelOperacional() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {workshopData.map((workshop) => (
-                    <Card key={workshop.oficina} className="p-4">
+                    <Card 
+                      key={workshop.oficina} 
+                      className="p-4 cursor-pointer transition-shadow hover:shadow-lg"
+                      onClick={() => handleWorkshopClick(workshop.oficina)}
+                    >
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                           <h3 className="font-semibold text-lg">{workshop.oficina}</h3>
@@ -647,6 +692,79 @@ export default function PainelOperacional() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog para mostrar veículos em manutenção */}
+      <Dialog open={selectedWorkshop !== null} onOpenChange={(open) => !open && setSelectedWorkshop(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">
+              Veículos em Manutenção - {selectedWorkshop}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            {isLoadingVehicles ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              </div>
+            ) : workshopVehicles.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                Nenhum veículo em manutenção nesta oficina
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {workshopVehicles.map((vehicle) => (
+                  <Card key={vehicle.id} className="p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Car className="h-5 w-5 text-muted-foreground" />
+                          <h4 className="font-semibold text-lg">{vehicle.placa}</h4>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {vehicle.marca} {vehicle.modelo}
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {vehicle.dias_parado} dias parado
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            Entrada: {new Date(vehicle.data_entrada).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4">
+                      <p className="text-sm text-muted-foreground mb-1">Descrição do serviço:</p>
+                      <p className="text-sm">{vehicle.descricao || 'Sem descrição'}</p>
+                    </div>
+                    
+                    <div className="mt-4 flex items-center justify-between">
+                      <Badge 
+                        variant={vehicle.status === 'em_andamento' ? 'default' : 
+                                vehicle.status === 'aguardando_pecas' ? 'secondary' : 'outline'}
+                      >
+                        {vehicle.status}
+                      </Badge>
+                      <span className="font-semibold">
+                        {formatCurrency(vehicle.valor_total || 0)}
+                      </span>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
