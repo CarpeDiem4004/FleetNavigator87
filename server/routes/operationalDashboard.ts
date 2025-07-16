@@ -79,7 +79,7 @@ router.get('/maintenance', async (req, res) => {
         m.id,
         COALESCE(v.plate, m.placa) as plate,
         EXTRACT(DAY FROM (NOW() - m.created_at)) as days_in_maintenance,
-        COALESCE(w.nome, o.nome, 'Oficina não informada') as workshop,
+        COALESCE(w.nome, o.nome_fantasia, 'Oficina não informada') as workshop,
         m.created_at as entry_date
       FROM manutencao m
       LEFT JOIN vehicles v ON m.veiculo_id = v.id
@@ -273,6 +273,36 @@ router.get('/fuel', async (req, res) => {
       console.error('Erro ao obter dados mensais:', error);
     }
 
+    // Buscar dados de fuel card
+    let fuelCardData = {
+      totalRequests: 0,
+      totalValue: 0,
+      approvedRequests: 0
+    };
+
+    try {
+      // Dados da tabela solicitacoes_fuel_card
+      const fuelCardQuery = `
+        SELECT 
+          COUNT(*) as total_requests,
+          SUM(CASE WHEN status = 'atendido' THEN valor_solicitado ELSE 0 END) as total_value,
+          COUNT(CASE WHEN status = 'atendido' THEN 1 ELSE NULL END) as approved_requests
+        FROM solicitacoes_fuel_card
+        WHERE created_at >= DATE_TRUNC('month', NOW())
+      `;
+      
+      const fuelCardResult = await pool.query(fuelCardQuery);
+      if (fuelCardResult.rows[0]) {
+        fuelCardData = {
+          totalRequests: parseInt(fuelCardResult.rows[0].total_requests) || 0,
+          totalValue: parseFloat(fuelCardResult.rows[0].total_value) || 0,
+          approvedRequests: parseInt(fuelCardResult.rows[0].approved_requests) || 0
+        };
+      }
+    } catch (error) {
+      console.error('Erro ao obter dados de fuel card:', error);
+    }
+
     res.json({
       totalRefuels: parseInt(fuelData.total_refuels),
       totalLiters: {
@@ -281,7 +311,8 @@ router.get('/fuel', async (req, res) => {
         alcohol: parseFloat(fuelData.alcohol_liters)
       },
       averageConsumption,
-      monthlyData
+      monthlyData,
+      fuelCard: fuelCardData
     });
 
   } catch (error) {

@@ -53,6 +53,11 @@ interface FuelData {
     liters: number;
     cost: number;
   }>;
+  fuelCard?: {
+    totalRequests: number;
+    totalValue: number;
+    approvedRequests: number;
+  };
 }
 
 interface FilterState {
@@ -438,6 +443,60 @@ export default function PainelOperacional() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Cards de Cartão de Combustível */}
+          {fuelData?.fuelCard && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Cartão Combustível - Solicitações</CardTitle>
+                </CardHeader>
+                <CardContent className="flex items-center p-6 pt-2">
+                  <div className="flex items-center space-x-2">
+                    <div className="h-8 w-8 rounded-full bg-purple-500 flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">S</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total de Solicitações</p>
+                      <p className="text-2xl font-bold">{fuelData.fuelCard.totalRequests}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Cartão Combustível - Aprovadas</CardTitle>
+                </CardHeader>
+                <CardContent className="flex items-center p-6 pt-2">
+                  <div className="flex items-center space-x-2">
+                    <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">✓</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Solicitações Aprovadas</p>
+                      <p className="text-2xl font-bold">{fuelData.fuelCard.approvedRequests}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Cartão Combustível - Valor</CardTitle>
+                </CardHeader>
+                <CardContent className="flex items-center p-6 pt-2">
+                  <div className="flex items-center space-x-2">
+                    <DollarSign className="h-8 w-8 text-green-500" />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Valor Total Aprovado</p>
+                      <p className="text-lg font-bold">{formatCurrency(fuelData.fuelCard.totalValue || 0)}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Gráficos de Combustível */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
