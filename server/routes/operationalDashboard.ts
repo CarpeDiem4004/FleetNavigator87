@@ -119,7 +119,7 @@ router.get('/maintenance', async (req, res) => {
     console.log('[OPERATIONAL-DASHBOARD] Query custo total:', totalCostQuery);
     console.log('[OPERATIONAL-DASHBOARD] Parâmetros para custo total:', params);
 
-    const totalCostResult = await pool.query(totalCostQuery, params);
+    const totalCostResult = await pool.query(totalCostQuery);
     console.log('[OPERATIONAL-DASHBOARD] Resultado custo total:', totalCostResult.rows[0]);
     
     const totalMaintenanceCost = parseFloat(totalCostResult.rows[0].total_cost) || 0;

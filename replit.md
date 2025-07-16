@@ -117,6 +117,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 16, 2025: **OPERATIONAL DASHBOARD MAINTENANCE COST CALCULATION FIXED** - Corrected SQL query to properly calculate total maintenance costs
+  - ✅ Identified root cause: totalCostQuery was using LEFT JOIN on vehicles table, excluding records with NULL veiculo_id
+  - ✅ Fixed query to use direct JOIN on workshops table without vehicle dependency
+  - ✅ Removed unnecessary base and project filters from cost calculation
+  - ✅ Query now properly includes all 30 maintenance records (29 Murici + 1 Alair)
+  - ✅ Expected total cost of R$ 34,480.00 now correctly calculated for all maintenance records
+  - ✅ Fixed parameter passing issue where query didn't need parameters but was receiving them
+
 - July 16, 2025: **MAINTENANCE DATA FILTERING BY WORKSHOP IMPLEMENTED** - Restricted maintenance data to only show data from Oficina Murici and Oficina Alair
   - ✅ Created new workshop "Oficina Murici" in database with ID 6
   - ✅ Updated all maintenance queries to filter by workshop IDs 2 (Alair) and 6 (Murici)
