@@ -90,15 +90,17 @@ export default function PainelOperacional() {
         
         if (basesResponse.ok) {
           const basesData = await basesResponse.json();
-          setBases(basesData);
+          setBases(Array.isArray(basesData) ? basesData : []);
         }
         
         if (projectsResponse.ok) {
           const projectsData = await projectsResponse.json();
-          setProjects(projectsData);
+          setProjects(Array.isArray(projectsData) ? projectsData : []);
         }
       } catch (error) {
         console.error('Erro ao carregar filtros:', error);
+        setBases([]);
+        setProjects([]);
       }
     };
     
@@ -124,12 +126,29 @@ export default function PainelOperacional() {
 
       if (maintenanceResponse.ok) {
         const maintenanceResult = await maintenanceResponse.json();
-        setMaintenanceData(maintenanceResult);
+        // Validar estrutura dos dados de manutenção
+        if (maintenanceResult && typeof maintenanceResult === 'object') {
+          setMaintenanceData({
+            vehiclesInMaintenance: maintenanceResult.vehiclesInMaintenance || 0,
+            averageMaintenanceDays: maintenanceResult.averageMaintenanceDays || 0,
+            vehiclesOver5Days: Array.isArray(maintenanceResult.vehiclesOver5Days) ? maintenanceResult.vehiclesOver5Days : [],
+            totalMaintenanceCost: maintenanceResult.totalMaintenanceCost || 0,
+            averageCostPerVehicle: maintenanceResult.averageCostPerVehicle || 0
+          });
+        }
       }
 
       if (fuelResponse.ok) {
         const fuelResult = await fuelResponse.json();
-        setFuelData(fuelResult);
+        // Validar estrutura dos dados de combustível
+        if (fuelResult && typeof fuelResult === 'object') {
+          setFuelData({
+            totalRefuels: fuelResult.totalRefuels || 0,
+            totalLiters: fuelResult.totalLiters || { diesel: 0, gasoline: 0, alcohol: 0 },
+            averageConsumption: fuelResult.averageConsumption || 0,
+            monthlyData: Array.isArray(fuelResult.monthlyData) ? fuelResult.monthlyData : []
+          });
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar dados do painel:', error);

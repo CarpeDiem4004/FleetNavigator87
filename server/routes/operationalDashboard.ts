@@ -4,7 +4,7 @@ import { pool } from '../database.js';
 
 const router = Router();
 
-// Aplicar middleware de autenticação
+// Aplicar middleware de autenticação para todas as rotas
 router.use(isAuthenticated);
 
 // Endpoint para dados de manutenção
