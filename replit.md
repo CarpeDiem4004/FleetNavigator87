@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 16, 2025: **OPERATIONAL DASHBOARD FIXED - COMPLETE COLUMN MAPPING RESOLVED** - Fixed final column name mismatches in Oficina Murici table queries
+  - ✅ Corrected all `oficina_murici_manutencoes` table column references to match actual database schema
+  - ✅ Fixed column names: `custo_total` (not `cost_total`), `placa` (not `vehicle_plate`), `data_hora_fim` (not `completion_date`)
+  - ✅ Updated all UNION queries to use correct column mappings for both Alair and Murici workshops
+  - ✅ Confirmed backend queries now return correct data: R$ 1,050.00 total cost and 2 vehicles in maintenance
+  - ✅ Verified frontend successfully receives and displays API data with proper values
+  - ✅ System now shows accurate maintenance KPIs: 2 vehicles in maintenance, R$ 1,050.00 total cost, 39 days average
+  - ✅ Operational dashboard fully functional with complete workshop data integration
+
 - July 16, 2025: **OPERATIONAL DASHBOARD NOW INCLUDES WORKSHOP-SPECIFIC TABLES** - Fixed maintenance data discrepancy by combining multiple database tables
   - ✅ Identified root cause: Oficina Murici uses dedicated table `oficina_murici_manutencoes` while dashboard used generic `manutencao` table
   - ✅ Updated all dashboard queries to use UNION ALL combining both tables for complete data visibility
