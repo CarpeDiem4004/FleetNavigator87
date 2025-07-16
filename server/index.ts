@@ -35,6 +35,7 @@ import fixCookieSession from "./middleware/fixCookieSession";
 // Importar middlewares de diagnóstico e recuperação de autenticação
 import { debugAuthMiddleware, recoverSessionMiddleware } from './middleware/debugAuthMiddleware';
 import { unifiedAuthMiddleware, requireRoles } from './utils/auth-utils.js';
+import { isAuthenticated } from './middleware/auth';
 import { pool } from './database.js';
 // Importar rota de diagnóstico para frota
 import frotaDiagnosticoRoute from "./routes/frotaDiagnosticoRoute";
@@ -1139,8 +1140,10 @@ app.use((req, res, next) => {
   app.get('/api/maintenance/oficinas', authenticateMaintenanceToken, getOficinas);
   
   // Rota para criar nova oficina
-  app.post('/api/maintenance/workshops', unifiedAuthMiddleware, async (req, res) => {
+  app.post('/api/workshops', unifiedAuthMiddleware, async (req, res) => {
     try {
+      console.log('[WORKSHOP-REGISTER] Tentativa de registro de oficina');
+      
       const { razao_social, nome_fantasia, cnpj, endereco, telefone, email, responsavel, tipo, status } = req.body;
       
       // Validar dados obrigatórios

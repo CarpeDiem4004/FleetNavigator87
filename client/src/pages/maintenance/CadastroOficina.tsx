@@ -95,7 +95,7 @@ export default function CadastroOficina() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('/api/maintenance/workshops', {
+      const response = await fetch('/api/workshops', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
