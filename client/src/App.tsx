@@ -142,6 +142,7 @@ import LineHallVehicleRegistration from "@/pages/LineHallVehicleRegistration";
 import LineHallFuelCardRequests from "@/pages/LineHallFuelCardRequests";
 import Equipment from "@/pages/Equipment";
 import CoordinatorManagement from "@/pages/CoordinatorManagement";
+import TestMaintenancePlates from "@/pages/TestMaintenancePlates";
 
 // Importação das páginas de Abastecimento Terceiros
 import AbastecimentoTerceirosLogin from "@/pages/AbastecimentoTerceirosLogin";
@@ -620,6 +621,9 @@ function App() {
             </Route>
             <Route path="/test-maintenance-data">
               <TestMaintenanceData />
+            </Route>
+            <Route path="/test-maintenance-plates">
+              <TestMaintenancePlates />
             </Route>
             
             {/* Componentes de redirecionamento para usuários específicos */}
