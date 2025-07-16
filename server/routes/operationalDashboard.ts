@@ -35,12 +35,14 @@ router.get('/maintenance', async (req, res) => {
       params.push(endDate);
     }
 
-    // Veículos em manutenção
+    // Veículos em manutenção (apenas oficinas Murici e Alair)
     const vehiclesInMaintenanceQuery = `
       SELECT COUNT(*) as count
       FROM manutencao m
       LEFT JOIN vehicles v ON m.veiculo_id = v.id
+      LEFT JOIN workshops w ON m.oficina_id = w.id
       WHERE m.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
+        AND w.id IN (2, 6) -- Alair (id 2) e Murici (id 6)
       ${baseCondition.replace('v.base_id', 'm.base_id')}
       ${projectCondition.replace('v.project_id', 'v.project_id')}
       ${dateCondition.replace('mo.created_at', 'm.created_at')}
@@ -53,7 +55,7 @@ router.get('/maintenance', async (req, res) => {
     const vehiclesInMaintenance = parseInt(vehiclesInMaintenanceResult.rows[0].count);
     console.log('[OPERATIONAL-DASHBOARD] Veículos em manutenção encontrados:', vehiclesInMaintenance);
 
-    // Tempo médio de manutenção
+    // Tempo médio de manutenção (apenas oficinas Murici e Alair)
     const avgMaintenanceQuery = `
       SELECT AVG(
         CASE 
@@ -64,7 +66,8 @@ router.get('/maintenance', async (req, res) => {
       ) as avg_days
       FROM manutencao m
       LEFT JOIN vehicles v ON m.veiculo_id = v.id
-      WHERE 1=1
+      LEFT JOIN workshops w ON m.oficina_id = w.id
+      WHERE w.id IN (2, 6) -- Alair (id 2) e Murici (id 6)
       ${baseCondition.replace('v.base_id', 'm.base_id')}
       ${projectCondition.replace('v.project_id', 'v.project_id')}
       ${dateCondition.replace('mo.created_at', 'm.created_at')}
@@ -87,6 +90,7 @@ router.get('/maintenance', async (req, res) => {
       LEFT JOIN oficinas o ON m.oficina_id = o.id
       WHERE m.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
         AND EXTRACT(DAY FROM (NOW() - m.created_at)) > 5
+        AND w.id IN (2, 6) -- Alair (id 2) e Murici (id 6)
       ${baseCondition.replace('v.base_id', 'm.base_id')}
       ${projectCondition.replace('v.project_id', 'v.project_id')}
       ${dateCondition.replace('mo.created_at', 'm.created_at')}
@@ -102,14 +106,15 @@ router.get('/maintenance', async (req, res) => {
       entryDate: row.entry_date
     }));
 
-    // Custo total de manutenção
+    // Custo total de manutenção (apenas oficinas Murici e Alair)
     const totalCostQuery = `
       SELECT 
         SUM(COALESCE(m.custo, 0)) as total_cost,
         COUNT(*) as total_orders
       FROM manutencao m
       LEFT JOIN vehicles v ON m.veiculo_id = v.id
-      WHERE 1=1
+      LEFT JOIN workshops w ON m.oficina_id = w.id
+      WHERE w.id IN (2, 6) -- Alair (id 2) e Murici (id 6)
       ${baseCondition.replace('v.base_id', 'm.base_id')}
       ${projectCondition.replace('v.project_id', 'v.project_id')}
       ${dateCondition.replace('mo.created_at', 'm.created_at')}

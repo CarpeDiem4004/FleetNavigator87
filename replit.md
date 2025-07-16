@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 16, 2025: **MAINTENANCE DATA FILTERING BY WORKSHOP IMPLEMENTED** - Restricted maintenance data to only show data from Oficina Murici and Oficina Alair
+  - ✅ Created new workshop "Oficina Murici" in database with ID 6
+  - ✅ Updated all maintenance queries to filter by workshop IDs 2 (Alair) and 6 (Murici)
+  - ✅ Modified vehiclesInMaintenanceQuery to include workshop filtering
+  - ✅ Modified avgMaintenanceQuery to calculate average only for Murici and Alair workshops
+  - ✅ Modified vehiclesOver5DaysQuery to show only vehicles in Murici and Alair workshops
+  - ✅ Modified totalCostQuery to calculate costs only for Murici and Alair workshops
+  - ✅ All maintenance KPIs now reflect data only from these two authorized workshops
+
 - July 16, 2025: **OPERATIONAL DASHBOARD SQL QUERIES FIXED** - Corrected SQL column name mismatches preventing data display
   - ✅ Fixed maintenance query: changed `w.name` to `w.nome` for workshop names
   - ✅ Fixed fuel query: changed `litros_abastecidos` to `quantidade_litros` and `km_rodados` to `km`
