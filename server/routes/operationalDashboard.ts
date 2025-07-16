@@ -65,6 +65,33 @@ router.get('/maintenance', async (req, res) => {
     const vehiclesInMaintenance = parseInt(vehiclesInMaintenanceResult.rows[0].count);
     console.log('[OPERATIONAL-DASHBOARD] Veículos em manutenção encontrados:', vehiclesInMaintenance);
 
+    // Manutenções concluídas (combinando tabelas manutencao e oficina_murici_manutencoes)
+    const completedMaintenanceQuery = `
+      SELECT COUNT(*) as count FROM (
+        -- Tabela principal manutencao
+        SELECT m.id
+        FROM manutencao m
+        LEFT JOIN vehicles v ON m.veiculo_id = v.id
+        WHERE m.status = 'concluido'
+          AND m.oficina_id IN (2, 6) -- Alair (2) e Murici (6)
+        ${baseCondition.replace('v.base_id', 'm.base_id')}
+        ${projectCondition}
+        ${dateCondition.replace('mo.created_at', 'm.created_at')}
+        
+        UNION ALL
+        
+        -- Tabela específica Murici
+        SELECT om.id
+        FROM oficina_murici_manutencoes om
+        WHERE om.status = 'concluido'
+        ${dateCondition.replace('mo.created_at', 'om.created_at')}
+      ) as completed_maintenance
+    `;
+
+    const completedMaintenanceResult = await pool.query(completedMaintenanceQuery, params);
+    const completedMaintenance = parseInt(completedMaintenanceResult.rows[0].count);
+    console.log('[OPERATIONAL-DASHBOARD] Manutenções concluídas encontradas:', completedMaintenance);
+
     // Tempo médio de manutenção (combinando tabelas manutencao e oficina_murici_manutencoes)
     const avgMaintenanceQuery = `
       SELECT AVG(days_in_maintenance) as avg_days FROM (
@@ -187,6 +214,7 @@ router.get('/maintenance', async (req, res) => {
 
     res.json({
       vehiclesInMaintenance,
+      completedMaintenance,
       averageMaintenanceDays,
       vehiclesOver5Days,
       totalMaintenanceCost,

@@ -18,7 +18,8 @@ import {
   TrendingUp,
   Clock,
   AlertTriangle,
-  DollarSign
+  DollarSign,
+  CheckCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -27,6 +28,7 @@ import { formatCurrency } from '@/lib/currency';
 
 interface MaintenanceData {
   vehiclesInMaintenance: number;
+  completedMaintenance: number;
   averageMaintenanceDays: number;
   vehiclesOver5Days: Array<{
     id: number;
@@ -131,24 +133,18 @@ export default function PainelOperacional() {
 
       if (maintenanceResponse.ok) {
         const maintenanceResult = await maintenanceResponse.json();
-        console.log('[DEBUG-DETAILED] Raw maintenance API response:', maintenanceResult);
+
         
         // Validar estrutura dos dados de manutenção
         if (maintenanceResult && typeof maintenanceResult === 'object') {
           const processedData = {
             vehiclesInMaintenance: maintenanceResult.vehiclesInMaintenance || 0,
+            completedMaintenance: maintenanceResult.completedMaintenance || 0,
             averageMaintenanceDays: maintenanceResult.averageMaintenanceDays || 0,
             vehiclesOver5Days: Array.isArray(maintenanceResult.vehiclesOver5Days) ? maintenanceResult.vehiclesOver5Days : [],
             totalMaintenanceCost: maintenanceResult.totalMaintenanceCost || 0,
             averageCostPerVehicle: maintenanceResult.averageCostPerVehicle || 0
           };
-          
-          console.log('[DEBUG-DETAILED] Processed maintenance data:', processedData);
-          console.log('[DEBUG-DETAILED] Setting maintenanceData state with values:', {
-            vehiclesInMaintenance: processedData.vehiclesInMaintenance,
-            totalMaintenanceCost: processedData.totalMaintenanceCost,
-            averageMaintenanceDays: processedData.averageMaintenanceDays
-          });
           
           setMaintenanceData(processedData);
         }
@@ -329,7 +325,18 @@ export default function PainelOperacional() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Veículos em Manutenção</p>
                     <p className="text-2xl font-bold">{maintenanceData?.vehiclesInMaintenance || 0}</p>
-                    {console.log('[DEBUG-RENDER] Rendering vehiclesInMaintenance:', maintenanceData?.vehiclesInMaintenance, 'maintenanceData:', maintenanceData)}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-8 w-8 text-green-500" />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Manutenções Concluídas</p>
+                    <p className="text-2xl font-bold">{maintenanceData?.completedMaintenance || 0}</p>
                   </div>
                 </div>
               </CardContent>
@@ -366,7 +373,6 @@ export default function PainelOperacional() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Custo Total</p>
                     <p className="text-lg font-bold">{formatCurrency(maintenanceData?.totalMaintenanceCost || 0)}</p>
-                    {console.log('[DEBUG-RENDER] Rendering totalMaintenanceCost:', maintenanceData?.totalMaintenanceCost, 'formatted:', formatCurrency(maintenanceData?.totalMaintenanceCost || 0))}
                   </div>
                 </div>
               </CardContent>
