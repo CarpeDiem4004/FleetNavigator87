@@ -7188,32 +7188,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Rota específica para buscar todas as oficinas no contexto de manutenção
-  app.get("/api/maintenance/workshops", hasMaintenanceAccess, async (req, res) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      
-      console.log("Requisição GET /api/maintenance/workshops recebida.");
-      console.log("Usuário:", req.user.email, "Papel:", req.user.role);
-      
-      // Usar getAllWorkshops do storage que já foi corrigido
-      const workshops = await storage.getAllWorkshops();
-      console.log(`Encontradas ${workshops.length} oficinas no total`);
-      
-      return res.status(200).json({ workshops });
-    } catch (error) {
-      console.error("Erro ao buscar oficinas:", error);
-      return res.status(500).json({ 
-        message: "Erro ao buscar dados de oficinas",
-        error: error instanceof Error ? error.message : "Erro desconhecido" 
-      });
-    }
-  });
+
 
   // API para buscar tokens de acesso externo das oficinas
-  app.get("/api/maintenance/workshops/external-tokens", hasMaintenanceAccess, async (req, res) => {
+  app.get("/api/workshops/external-tokens", hasMaintenanceAccess, async (req, res) => {
     try {
       const query = `
         SELECT 
@@ -7263,98 +7241,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API para cadastrar nova oficina com token automático
-  app.post("/api/maintenance/workshops", hasMaintenanceAccess, async (req, res) => {
-    try {
-      const { 
-        razao_social, 
-        nome_fantasia, 
-        cnpj, 
-        endereco, 
-        telefone, 
-        email, 
-        responsavel, 
-        tipo = 'parceira',
-        status = 'ativo'
-      } = req.body;
+  // Rota removida - usar /api/workshops
 
-      if (!razao_social || !cnpj || !email) {
-        return res.status(400).json({
-          success: false,
-          message: 'Razão social, CNPJ e email são obrigatórios'
-        });
-      }
-
-      // Verificar se CNPJ já existe
-      const existingQuery = `SELECT id FROM oficinas WHERE cnpj = $1`;
-      const existing = await pool.query(existingQuery, [cnpj]);
-      
-      if (existing.rows.length > 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'CNPJ já cadastrado no sistema'
-        });
-      }
-
-      // Gerar senha padrão criptografada
-      const defaultPassword = await bcrypt.hash('secret', 10);
-
-      // Inserir nova oficina
-      const insertQuery = `
-        INSERT INTO oficinas (
-          razao_social, nome_fantasia, cnpj, endereco, telefone, 
-          email, responsavel, tipo, status, password, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
-        RETURNING *
-      `;
-      
-      const result = await pool.query(insertQuery, [
-        razao_social, nome_fantasia, cnpj, endereco, telefone,
-        email, responsavel, tipo, status, defaultPassword
-      ]);
-
-      const newOficina = result.rows[0];
-
-      // O trigger criará o token automaticamente, mas vamos aguardar um pouco
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Buscar o token criado
-      const tokenQuery = `SELECT token FROM workshop_external_tokens WHERE workshop_id = $1`;
-      const tokenResult = await pool.query(tokenQuery, [newOficina.id]);
-      
-      const token = tokenResult.rows[0]?.token;
-
-      res.json({
-        success: true,
-        message: 'Oficina cadastrada com sucesso! Links de acesso gerados automaticamente.',
-        oficina: {
-          id: newOficina.id,
-          razao_social: newOficina.razao_social,
-          cnpj: newOficina.cnpj,
-          email: newOficina.email,
-          telefone: newOficina.telefone,
-          status: newOficina.status
-        },
-        access: {
-          token: token,
-          loginLink: `${req.protocol}://${req.get('host')}/oficina/login`,
-          directLink: token ? `${req.protocol}://${req.get('host')}/oficina/external?token=${token}` : null,
-          credentials: {
-            cnpj: cnpj,
-            password: 'secret'
-          }
-        }
-      });
-
-    } catch (error: any) {
-      console.error("Erro ao cadastrar oficina:", error);
-      res.status(500).json({
-        success: false,
-        message: "Erro ao cadastrar oficina",
-        error: error.message
-      });
-    }
-  });
+// Código removido - usar /api/workshops
 
   // ENDPOINT REMOVIDO - ESTAVA DUPLICADO E USANDO ESTRUTURA ANTIGA
 
@@ -7419,7 +7308,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API para gerar/regenerar token de acesso externo para uma oficina
-  app.post("/api/maintenance/workshops/:id/generate-token", hasMaintenanceAccess, async (req, res) => {
+  app.post("/api/workshops/:id/generate-token", hasMaintenanceAccess, async (req, res) => {
     try {
       const workshopId = parseInt(req.params.id);
 
@@ -7485,7 +7374,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API para desativar token de acesso externo de uma oficina
-  app.delete("/api/maintenance/workshops/:id/external-token", hasMaintenanceAccess, async (req, res) => {
+  app.delete("/api/workshops/:id/external-token", hasMaintenanceAccess, async (req, res) => {
     try {
       const workshopId = parseInt(req.params.id);
 
@@ -7525,7 +7414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API para validar token de acesso externo e retornar dados da oficina
-  app.get("/api/maintenance/workshops/validate-token", async (req, res) => {
+  app.get("/api/workshops/validate-token", async (req, res) => {
     try {
       const { token } = req.query;
 
@@ -7584,7 +7473,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Rota para criar nova oficina
-  app.post("/api/maintenance/workshops", hasMaintenanceAccess, async (req, res) => {
+  app.post("/api/workshops", hasMaintenanceAccess, async (req, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });

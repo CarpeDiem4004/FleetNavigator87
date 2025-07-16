@@ -117,6 +117,16 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 16, 2025: **WORKSHOP REGISTRATION SYSTEM FULLY OPERATIONAL** - Completed comprehensive API route cleanup and database trigger fixes
+  - ✅ Removed problematic `auto_create_workshop_token()` trigger that was causing foreign key constraint violations
+  - ✅ Systematically updated all workshop endpoints from mixed `/api/maintenance/workshops` to unified `/api/workshops` path
+  - ✅ Consolidated all workshop-related routes: credentials, generate-token, external-token, validate-token, password management
+  - ✅ Verified workshop registration API functionality with proper validation (returns appropriate error messages for missing fields)
+  - ✅ Confirmed credentials API endpoint working correctly with authentication middleware
+  - ✅ Resolved all conflicting API route issues that were preventing workshop registration form submission
+  - ✅ System now has consistent workshop management endpoints with proper error handling and validation
+  - ✅ Workshop registration form in frontend can now successfully communicate with backend API
+
 - July 16, 2025: **OPERATIONAL DASHBOARD MULTI-TABLE INTEGRATION COMPLETED** - Fixed dashboard to combine data from multiple maintenance tables
   - ✅ Corrected critical SQL column reference: 'custo' (not 'valor') in manutencao table
   - ✅ Implemented UNION ALL queries to combine data from both maintenance tables:
