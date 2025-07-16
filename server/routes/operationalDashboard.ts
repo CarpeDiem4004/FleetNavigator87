@@ -79,7 +79,7 @@ router.get('/maintenance', async (req, res) => {
         m.id,
         COALESCE(v.plate, m.placa) as plate,
         EXTRACT(DAY FROM (NOW() - m.created_at)) as days_in_maintenance,
-        COALESCE(w.name, o.name, 'Oficina não informada') as workshop,
+        COALESCE(w.nome, o.nome, 'Oficina não informada') as workshop,
         m.created_at as entry_date
       FROM manutencao m
       LEFT JOIN vehicles v ON m.veiculo_id = v.id
@@ -156,12 +156,12 @@ router.get('/fuel', async (req, res) => {
     }
     
     if (startDate && endDate) {
-      dateCondition = ' AND data_abastecimento >= $' + (params.length + 1) + ' AND data_abastecimento <= $' + (params.length + 2);
+      dateCondition = ' AND created_at >= $' + (params.length + 1) + ' AND created_at <= $' + (params.length + 2);
       params.push(startDate);
       params.push(endDate);
     } else {
       // Se não houver filtro de data, usar o mês atual
-      dateCondition = ' AND data_abastecimento >= DATE_TRUNC(\'month\', NOW())';
+      dateCondition = ' AND created_at >= DATE_TRUNC(\'month\', NOW())';
     }
 
     // Função para obter dados de uma tabela específica
@@ -169,11 +169,11 @@ router.get('/fuel', async (req, res) => {
       const fuelQuery = `
         SELECT 
           COUNT(*) as total_refuels,
-          SUM(CASE WHEN tipo_combustivel = 'Diesel' THEN litros_abastecidos ELSE 0 END) as diesel_liters,
-          SUM(CASE WHEN tipo_combustivel = 'Gasolina' THEN litros_abastecidos ELSE 0 END) as gasoline_liters,
-          SUM(CASE WHEN tipo_combustivel = 'Alcool' OR tipo_combustivel = 'Etanol' THEN litros_abastecidos ELSE 0 END) as alcohol_liters,
-          SUM(litros_abastecidos) as total_liters,
-          SUM(km_rodados) as total_km
+          SUM(CASE WHEN tipo_combustivel = 'Diesel' THEN quantidade_litros ELSE 0 END) as diesel_liters,
+          SUM(CASE WHEN tipo_combustivel = 'Gasolina' THEN quantidade_litros ELSE 0 END) as gasoline_liters,
+          SUM(CASE WHEN tipo_combustivel = 'Alcool' OR tipo_combustivel = 'Etanol' THEN quantidade_litros ELSE 0 END) as alcohol_liters,
+          SUM(quantidade_litros) as total_liters,
+          SUM(km) as total_km
         FROM ${tableName}
         WHERE 1=1
         ${baseCondition}
@@ -247,15 +247,15 @@ router.get('/fuel', async (req, res) => {
     // Dados mensais para gráfico
     const monthlyDataQuery = `
       SELECT 
-        TO_CHAR(data_abastecimento, 'YYYY-MM') as month,
+        TO_CHAR(created_at, 'YYYY-MM') as month,
         COUNT(*) as refuels,
-        SUM(litros_abastecidos) as liters,
+        SUM(quantidade_litros) as liters,
         SUM(valor_total) as cost
       FROM historico_consolidado_abastecimentos
-      WHERE data_abastecimento >= NOW() - INTERVAL '6 months'
+      WHERE created_at >= NOW() - INTERVAL '6 months'
       ${baseCondition}
       ${projectCondition}
-      GROUP BY TO_CHAR(data_abastecimento, 'YYYY-MM')
+      GROUP BY TO_CHAR(created_at, 'YYYY-MM')
       ORDER BY month DESC
       LIMIT 6
     `;

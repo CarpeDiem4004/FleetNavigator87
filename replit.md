@@ -117,6 +117,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 16, 2025: **OPERATIONAL DASHBOARD SQL QUERIES FIXED** - Corrected SQL column name mismatches preventing data display
+  - ✅ Fixed maintenance query: changed `w.name` to `w.nome` for workshop names
+  - ✅ Fixed fuel query: changed `litros_abastecidos` to `quantidade_litros` and `km_rodados` to `km`
+  - ✅ Fixed monthly data query: changed `data_abastecimento` to `created_at` for date filtering
+  - ✅ Added `/painel-operacional` to basicRoutes list to allow operator access temporarily
+  - ✅ All queries now properly reference the correct column names from historico_consolidado_abastecimentos view
+  - ✅ System uses 'manutencao' table (10 records) instead of empty 'maintenance_orders' table
+
 - July 15, 2025: **CRITICAL SECURITY IMPLEMENTATION - OPERATOR ACCESS BLOCKING SYSTEM COMPLETED** - Implemented comprehensive operator access control with multi-layer security
   - ✅ **Backend Security Layer**: Already implemented in `/api/login` (lines 433-440) and `/api/login-hybrid` (lines 58-65)
   - ✅ **Frontend Authentication Layer**: Added operator blocking in AuthContext.tsx checkTraditionalAuth function (lines 215-252)
