@@ -112,15 +112,16 @@ router.get('/maintenance', async (req, res) => {
         SUM(COALESCE(m.custo, 0)) as total_cost,
         COUNT(*) as total_orders
       FROM manutencao m
-      LEFT JOIN vehicles v ON m.veiculo_id = v.id
-      LEFT JOIN workshops w ON m.oficina_id = w.id
+      JOIN workshops w ON m.oficina_id = w.id
       WHERE w.id IN (2, 6) -- Alair (id 2) e Murici (id 6)
-      ${baseCondition.replace('v.base_id', 'm.base_id')}
-      ${projectCondition.replace('v.project_id', 'v.project_id')}
-      ${dateCondition.replace('mo.created_at', 'm.created_at')}
     `;
 
+    console.log('[OPERATIONAL-DASHBOARD] Query custo total:', totalCostQuery);
+    console.log('[OPERATIONAL-DASHBOARD] Parâmetros para custo total:', params);
+
     const totalCostResult = await pool.query(totalCostQuery, params);
+    console.log('[OPERATIONAL-DASHBOARD] Resultado custo total:', totalCostResult.rows[0]);
+    
     const totalMaintenanceCost = parseFloat(totalCostResult.rows[0].total_cost) || 0;
     const totalOrders = parseInt(totalCostResult.rows[0].total_orders) || 0;
     const averageCostPerVehicle = totalOrders > 0 ? totalMaintenanceCost / totalOrders : 0;
