@@ -199,6 +199,7 @@ const baseRouteMapping = {
 const basicRoutes = [
   '/',                                   // Dashboard
   '/executive-dashboard',                // Dashboard Executivo
+  '/painel-operacional',                 // Painel Operacional (TEMPORÁRIO - para teste de manutenção)
   '/vehicles',                           // Cadastro e gestão de veículos
   '/drivers',                            // Cadastro e gestão de motoristas
   '/maintenance',                        // Solicitações de manutenção

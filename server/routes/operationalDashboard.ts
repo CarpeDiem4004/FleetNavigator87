@@ -10,6 +10,7 @@ router.use(isAuthenticated);
 // Endpoint para dados de manutenção
 router.get('/maintenance', async (req, res) => {
   try {
+    console.log('[OPERATIONAL-DASHBOARD] Requisição de manutenção recebida:', req.query);
     const { baseId, projectId, startDate, endDate } = req.query;
     
     let baseCondition = '';
@@ -37,32 +38,36 @@ router.get('/maintenance', async (req, res) => {
     // Veículos em manutenção
     const vehiclesInMaintenanceQuery = `
       SELECT COUNT(*) as count
-      FROM maintenance_orders mo
-      JOIN vehicles v ON mo.vehicle_id = v.id
-      WHERE mo.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
-      ${baseCondition}
-      ${projectCondition}
-      ${dateCondition}
+      FROM manutencao m
+      LEFT JOIN vehicles v ON m.veiculo_id = v.id
+      WHERE m.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
+      ${baseCondition.replace('v.base_id', 'm.base_id')}
+      ${projectCondition.replace('v.project_id', 'v.project_id')}
+      ${dateCondition.replace('mo.created_at', 'm.created_at')}
     `;
 
+    console.log('[OPERATIONAL-DASHBOARD] Query veículos em manutenção:', vehiclesInMaintenanceQuery);
+    console.log('[OPERATIONAL-DASHBOARD] Parâmetros:', params);
+    
     const vehiclesInMaintenanceResult = await pool.query(vehiclesInMaintenanceQuery, params);
     const vehiclesInMaintenance = parseInt(vehiclesInMaintenanceResult.rows[0].count);
+    console.log('[OPERATIONAL-DASHBOARD] Veículos em manutenção encontrados:', vehiclesInMaintenance);
 
     // Tempo médio de manutenção
     const avgMaintenanceQuery = `
       SELECT AVG(
         CASE 
-          WHEN mo.status = 'concluida' AND mo.completion_date IS NOT NULL 
-          THEN EXTRACT(DAY FROM (mo.completion_date - mo.created_at))
-          ELSE EXTRACT(DAY FROM (NOW() - mo.created_at))
+          WHEN m.status = 'concluida' AND m.data_conclusao IS NOT NULL 
+          THEN EXTRACT(DAY FROM (m.data_conclusao - m.created_at))
+          ELSE EXTRACT(DAY FROM (NOW() - m.created_at))
         END
       ) as avg_days
-      FROM maintenance_orders mo
-      JOIN vehicles v ON mo.vehicle_id = v.id
+      FROM manutencao m
+      LEFT JOIN vehicles v ON m.veiculo_id = v.id
       WHERE 1=1
-      ${baseCondition}
-      ${projectCondition}
-      ${dateCondition}
+      ${baseCondition.replace('v.base_id', 'm.base_id')}
+      ${projectCondition.replace('v.project_id', 'v.project_id')}
+      ${dateCondition.replace('mo.created_at', 'm.created_at')}
     `;
 
     const avgMaintenanceResult = await pool.query(avgMaintenanceQuery, params);
@@ -71,20 +76,20 @@ router.get('/maintenance', async (req, res) => {
     // Veículos com mais de 5 dias parados
     const vehiclesOver5DaysQuery = `
       SELECT 
-        mo.id,
-        v.plate,
-        EXTRACT(DAY FROM (NOW() - mo.created_at)) as days_in_maintenance,
+        m.id,
+        COALESCE(v.plate, m.placa) as plate,
+        EXTRACT(DAY FROM (NOW() - m.created_at)) as days_in_maintenance,
         COALESCE(w.name, o.name, 'Oficina não informada') as workshop,
-        mo.created_at as entry_date
-      FROM maintenance_orders mo
-      JOIN vehicles v ON mo.vehicle_id = v.id
-      LEFT JOIN workshops w ON mo.workshop_id = w.id
-      LEFT JOIN oficinas o ON mo.oficina_id = o.id
-      WHERE mo.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
-        AND EXTRACT(DAY FROM (NOW() - mo.created_at)) > 5
-      ${baseCondition}
-      ${projectCondition}
-      ${dateCondition}
+        m.created_at as entry_date
+      FROM manutencao m
+      LEFT JOIN vehicles v ON m.veiculo_id = v.id
+      LEFT JOIN workshops w ON m.oficina_id = w.id
+      LEFT JOIN oficinas o ON m.oficina_id = o.id
+      WHERE m.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
+        AND EXTRACT(DAY FROM (NOW() - m.created_at)) > 5
+      ${baseCondition.replace('v.base_id', 'm.base_id')}
+      ${projectCondition.replace('v.project_id', 'v.project_id')}
+      ${dateCondition.replace('mo.created_at', 'm.created_at')}
       ORDER BY days_in_maintenance DESC
     `;
 
@@ -100,14 +105,14 @@ router.get('/maintenance', async (req, res) => {
     // Custo total de manutenção
     const totalCostQuery = `
       SELECT 
-        SUM(COALESCE(mo.labor_cost, 0) + COALESCE(mo.parts_cost, 0)) as total_cost,
+        SUM(COALESCE(m.custo, 0)) as total_cost,
         COUNT(*) as total_orders
-      FROM maintenance_orders mo
-      JOIN vehicles v ON mo.vehicle_id = v.id
+      FROM manutencao m
+      LEFT JOIN vehicles v ON m.veiculo_id = v.id
       WHERE 1=1
-      ${baseCondition}
-      ${projectCondition}
-      ${dateCondition}
+      ${baseCondition.replace('v.base_id', 'm.base_id')}
+      ${projectCondition.replace('v.project_id', 'v.project_id')}
+      ${dateCondition.replace('mo.created_at', 'm.created_at')}
     `;
 
     const totalCostResult = await pool.query(totalCostQuery, params);
