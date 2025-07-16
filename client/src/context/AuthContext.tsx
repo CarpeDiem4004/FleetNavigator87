@@ -209,9 +209,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (isAuthenticated && userData) {
         console.log(`Usuário autenticado via ${authSource}:`, userData);
         
-        // VERIFICAÇÃO DE SEGURANÇA: Operadores não podem acessar o sistema principal
+        // VERIFICAÇÃO DE SEGURANÇA: Operadores não podem acessar o sistema principal via verificação inicial
         if (userData.role === 'operador') {
-          console.log('Operador detectado, redirecionando para base externa:', userData.basename);
+          console.log('Operador detectado durante verificação inicial, redirecionando para base externa:', userData.basename);
           
           // Definir URL de redirecionamento baseada na base do operador
           let redirectUrl = '/';
@@ -243,8 +243,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             }
           }
           
-          // Mostrar alerta e redirecionar
-          alert("Acesso restrito. Este perfil deve acessar pelo link externo específico.");
+          // Redirecionar silenciosamente sem mostrar alerta durante verificação inicial
+          console.log('Redirecionando operador para:', redirectUrl);
           window.location.href = redirectUrl;
           return;
         }
@@ -438,8 +438,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             }
           }
           
-          // Lançar erro com mensagem explicativa
-          throw new Error(`Operadores devem acessar apenas a base designada. Você será redirecionado para: ${redirectUrl}`);
+          // Lançar erro com mensagem específica para tentativa de login
+          throw new Error(`Acesso restrito. Este perfil deve acessar pelo link externo específico: ${redirectUrl}`);
         }
         
         // Define o usuário no estado
@@ -475,15 +475,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.error('Erro no login:', error);
       
       // Verificar se é um erro de operador tentando acessar sistema principal
-      if (error.message && error.message.includes('Operadores devem acessar apenas a base designada')) {
+      if (error.message && error.message.includes('Acesso restrito. Este perfil deve acessar pelo link externo específico')) {
         // Extrair URL de redirecionamento da mensagem de erro
-        const redirectMatch = error.message.match(/Você será redirecionado para: (.+)/);
+        const redirectMatch = error.message.match(/específico: (.+)/);
         if (redirectMatch) {
           const redirectUrl = redirectMatch[1];
           
           toast({
             title: "Acesso Restrito",
-            description: "Operadores devem acessar apenas a base designada. Você será redirecionado.",
+            description: "Este perfil deve acessar pelo link externo específico. Você será redirecionado.",
             variant: "destructive",
           });
           
