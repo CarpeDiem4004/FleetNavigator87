@@ -376,6 +376,7 @@ import MaintenanceSystem from "@/pages/maintenance";
 import TestLogout from "@/pages/TestLogout";
 import TestCampinasLogin from "@/pages/TestCampinasLogin";
 import TestOperatorSecurity from "@/pages/TestOperatorSecurity";
+import TestMaintenanceData from "@/pages/TestMaintenanceData";
 
 function App() {
   // Ativar o hook de injeção automática de token JWT em todas as requisições fetch
@@ -616,6 +617,9 @@ function App() {
             </Route>
             <Route path="/test-operator-security">
               <TestOperatorSecurity />
+            </Route>
+            <Route path="/test-maintenance-data">
+              <TestMaintenanceData />
             </Route>
             
             {/* Componentes de redirecionamento para usuários específicos */}

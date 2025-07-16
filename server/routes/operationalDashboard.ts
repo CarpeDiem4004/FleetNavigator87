@@ -35,17 +35,27 @@ router.get('/maintenance', async (req, res) => {
       params.push(endDate);
     }
 
-    // Veículos em manutenção (tabela unificada manutencao)
+    // Veículos em manutenção (combinando tabelas manutencao e oficina_murici_manutencoes)
     const vehiclesInMaintenanceQuery = `
-      SELECT COUNT(*) as count
-      FROM manutencao m
-      LEFT JOIN workshops w ON m.oficina_id = w.id
-      LEFT JOIN vehicles v ON m.veiculo_id = v.id
-      WHERE m.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
-        AND m.oficina_id IN (2, 6) -- Alair (2) e Murici (6)
+      SELECT COUNT(*) as count FROM (
+        -- Tabela principal manutencao
+        SELECT m.id
+        FROM manutencao m
+        LEFT JOIN vehicles v ON m.veiculo_id = v.id
+        WHERE m.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
+          AND m.oficina_id IN (2, 6) -- Alair (2) e Murici (6)
         ${baseCondition.replace('v.base_id', 'm.base_id')}
         ${projectCondition}
         ${dateCondition.replace('mo.created_at', 'm.created_at')}
+        
+        UNION ALL
+        
+        -- Tabela específica Murici
+        SELECT om.id
+        FROM oficina_murici_manutencoes om
+        WHERE om.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
+        ${dateCondition.replace('mo.created_at', 'om.created_at')}
+      ) as combined_maintenance
     `;
 
     console.log('[OPERATIONAL-DASHBOARD] Query veículos em manutenção:', vehiclesInMaintenanceQuery);
@@ -55,44 +65,75 @@ router.get('/maintenance', async (req, res) => {
     const vehiclesInMaintenance = parseInt(vehiclesInMaintenanceResult.rows[0].count);
     console.log('[OPERATIONAL-DASHBOARD] Veículos em manutenção encontrados:', vehiclesInMaintenance);
 
-    // Tempo médio de manutenção (tabela unificada manutencao)
+    // Tempo médio de manutenção (combinando tabelas manutencao e oficina_murici_manutencoes)
     const avgMaintenanceQuery = `
-      SELECT AVG(
-        CASE 
-          WHEN m.status = 'concluida' AND m.data_conclusao IS NOT NULL 
-          THEN EXTRACT(DAY FROM (m.data_conclusao - m.created_at))
-          ELSE EXTRACT(DAY FROM (NOW() - m.created_at))
-        END
-      ) as avg_days
-      FROM manutencao m
-      LEFT JOIN workshops w ON m.oficina_id = w.id
-      LEFT JOIN vehicles v ON m.veiculo_id = v.id
-      WHERE m.oficina_id IN (2, 6) -- Alair (2) e Murici (6)
-      ${baseCondition.replace('v.base_id', 'm.base_id')}
-      ${projectCondition}
-      ${dateCondition.replace('mo.created_at', 'm.created_at')}
+      SELECT AVG(days_in_maintenance) as avg_days FROM (
+        -- Tabela principal manutencao
+        SELECT 
+          CASE 
+            WHEN m.status = 'concluida' AND m.data_conclusao IS NOT NULL 
+            THEN EXTRACT(DAY FROM (m.data_conclusao - m.created_at))
+            ELSE EXTRACT(DAY FROM (NOW() - m.created_at))
+          END as days_in_maintenance
+        FROM manutencao m
+        LEFT JOIN vehicles v ON m.veiculo_id = v.id
+        WHERE m.oficina_id IN (2, 6) -- Alair (2) e Murici (6)
+        ${baseCondition.replace('v.base_id', 'm.base_id')}
+        ${projectCondition}
+        ${dateCondition.replace('mo.created_at', 'm.created_at')}
+        
+        UNION ALL
+        
+        -- Tabela específica Murici
+        SELECT 
+          CASE 
+            WHEN om.status = 'concluida' AND om.data_hora_fim IS NOT NULL 
+            THEN EXTRACT(DAY FROM (om.data_hora_fim - om.created_at))
+            ELSE EXTRACT(DAY FROM (NOW() - om.created_at))
+          END as days_in_maintenance
+        FROM oficina_murici_manutencoes om
+        WHERE 1=1
+        ${dateCondition.replace('mo.created_at', 'om.created_at')}
+      ) as combined_days
     `;
 
     const avgMaintenanceResult = await pool.query(avgMaintenanceQuery, params);
     const averageMaintenanceDays = Math.round(parseFloat(avgMaintenanceResult.rows[0].avg_days) || 0);
 
-    // Veículos com mais de 5 dias parados (tabela unificada manutencao)
+    // Veículos com mais de 5 dias parados (combinando tabelas manutencao e oficina_murici_manutencoes)
     const vehiclesOver5DaysQuery = `
-      SELECT 
-        m.id,
-        COALESCE(v.plate, m.placa) as plate,
-        EXTRACT(DAY FROM (NOW() - m.created_at)) as days_in_maintenance,
-        w.nome as workshop,
-        m.created_at as entry_date
-      FROM manutencao m
-      LEFT JOIN workshops w ON m.oficina_id = w.id
-      LEFT JOIN vehicles v ON m.veiculo_id = v.id
-      WHERE m.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
-        AND EXTRACT(DAY FROM (NOW() - m.created_at)) > 5
-        AND m.oficina_id IN (2, 6) -- Alair (2) e Murici (6)
+      SELECT * FROM (
+        -- Tabela principal manutencao
+        SELECT 
+          m.id,
+          COALESCE(v.plate, m.placa) as plate,
+          EXTRACT(DAY FROM (NOW() - m.created_at)) as days_in_maintenance,
+          w.nome as workshop,
+          m.created_at as entry_date
+        FROM manutencao m
+        LEFT JOIN workshops w ON m.oficina_id = w.id
+        LEFT JOIN vehicles v ON m.veiculo_id = v.id
+        WHERE m.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
+          AND EXTRACT(DAY FROM (NOW() - m.created_at)) > 5
+          AND m.oficina_id IN (2, 6) -- Alair (2) e Murici (6)
         ${baseCondition.replace('v.base_id', 'm.base_id')}
         ${projectCondition}
         ${dateCondition.replace('mo.created_at', 'm.created_at')}
+        
+        UNION ALL
+        
+        -- Tabela específica Murici
+        SELECT 
+          om.id,
+          om.placa as plate,
+          EXTRACT(DAY FROM (NOW() - om.created_at)) as days_in_maintenance,
+          'Oficina Murici' as workshop,
+          om.created_at as entry_date
+        FROM oficina_murici_manutencoes om
+        WHERE om.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
+          AND EXTRACT(DAY FROM (NOW() - om.created_at)) > 5
+        ${dateCondition.replace('mo.created_at', 'om.created_at')}
+      ) as combined_vehicles
       ORDER BY days_in_maintenance DESC
     `;
 
@@ -105,18 +146,33 @@ router.get('/maintenance', async (req, res) => {
       entryDate: row.entry_date
     }));
 
-    // Custo total de manutenção (tabela unificada manutencao)
+    // Custo total de manutenção (combinando tabelas manutencao e oficina_murici_manutencoes)
     const totalCostQuery = `
       SELECT 
-        SUM(COALESCE(m.valor, 0)) as total_cost,
-        COUNT(*) as total_orders
-      FROM manutencao m
-      LEFT JOIN workshops w ON m.oficina_id = w.id
-      LEFT JOIN vehicles v ON m.veiculo_id = v.id
-      WHERE m.oficina_id IN (2, 6) -- Alair (2) e Murici (6)
-      ${baseCondition.replace('v.base_id', 'm.base_id')}
-      ${projectCondition}
-      ${dateCondition.replace('mo.created_at', 'm.created_at')}
+        SUM(total_cost) as total_cost,
+        SUM(total_orders) as total_orders
+      FROM (
+        -- Tabela principal manutencao
+        SELECT 
+          SUM(COALESCE(m.custo, 0)) as total_cost,
+          COUNT(*) as total_orders
+        FROM manutencao m
+        LEFT JOIN vehicles v ON m.veiculo_id = v.id
+        WHERE m.oficina_id IN (2, 6) -- Alair (2) e Murici (6)
+        ${baseCondition.replace('v.base_id', 'm.base_id')}
+        ${projectCondition}
+        ${dateCondition.replace('mo.created_at', 'm.created_at')}
+        
+        UNION ALL
+        
+        -- Tabela específica Murici
+        SELECT 
+          SUM(COALESCE(om.custo_total, 0)) as total_cost,
+          COUNT(*) as total_orders
+        FROM oficina_murici_manutencoes om
+        WHERE 1=1
+        ${dateCondition.replace('mo.created_at', 'om.created_at')}
+      ) as combined_costs
     `;
 
     console.log('[OPERATIONAL-DASHBOARD] Query custo total:', totalCostQuery);
