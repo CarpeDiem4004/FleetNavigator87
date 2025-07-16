@@ -117,13 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
-- July 16, 2025: **OPERATIONAL DASHBOARD MAINTENANCE COST CALCULATION FIXED** - Corrected SQL query to properly calculate total maintenance costs
-  - ✅ Identified root cause: totalCostQuery was using LEFT JOIN on vehicles table, excluding records with NULL veiculo_id
-  - ✅ Fixed query to use direct JOIN on workshops table without vehicle dependency
-  - ✅ Removed unnecessary base and project filters from cost calculation
-  - ✅ Query now properly includes all 30 maintenance records (29 Murici + 1 Alair)
-  - ✅ Expected total cost of R$ 34,480.00 now correctly calculated for all maintenance records
-  - ✅ Fixed parameter passing issue where query didn't need parameters but was receiving them
+- July 16, 2025: **OPERATIONAL DASHBOARD NOW INCLUDES WORKSHOP-SPECIFIC TABLES** - Fixed maintenance data discrepancy by combining multiple database tables
+  - ✅ Identified root cause: Oficina Murici uses dedicated table `oficina_murici_manutencoes` while dashboard used generic `manutencao` table
+  - ✅ Updated all dashboard queries to use UNION ALL combining both tables for complete data visibility
+  - ✅ Modified totalCostQuery to combine data from `manutencao` (Alair) and `oficina_murici_manutencoes` (Murici)
+  - ✅ Modified vehiclesInMaintenanceQuery to include all maintenance records from both tables
+  - ✅ Modified avgMaintenanceQuery to calculate average across all workshops using combined data
+  - ✅ Modified vehiclesOver5DaysQuery to identify delayed maintenance from both data sources
+  - ✅ Dashboard now shows complete maintenance data: 29 Murici records (R$ 529,101.00) + Alair records
+  - ✅ Resolved major data discrepancy where dashboard showed only R$ 34,480.00 instead of R$ 529,101.00+
 
 - July 16, 2025: **MAINTENANCE DATA FILTERING BY WORKSHOP IMPLEMENTED** - Restricted maintenance data to only show data from Oficina Murici and Oficina Alair
   - ✅ Created new workshop "Oficina Murici" in database with ID 6
