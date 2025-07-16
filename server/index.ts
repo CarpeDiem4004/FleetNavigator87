@@ -66,6 +66,8 @@ import {
 } from './maintenance-api.js';
 // Importar rotas de cartões de combustível
 import fuelCardRoutes from './routes/fuelCardRoutes';
+// Importar rotas do painel operacional
+import operationalDashboardRoutes from './routes/operationalDashboard';
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
@@ -1141,6 +1143,9 @@ app.use((req, res, next) => {
   
   // Registrar as rotas de gestão financeira para serviços de guincho
   app.use('/api/towing/payments', towingPaymentsRoutes);
+  
+  // Registrar as rotas do painel operacional
+  app.use('/api/operational-dashboard', operationalDashboardRoutes);
   
   // Registrar rota de diagnóstico para verificar autenticação no módulo de frota
   app.use('/api/frota', frotaDiagnosticoRoute);

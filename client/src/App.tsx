@@ -16,6 +16,7 @@ import WorkshopExternal from "@/pages/workshop-external";
 import DashboardNew from "@/pages/DashboardNew";
 import Dashboard from "@/pages/index";
 import ExecutiveDashboard from "@/pages/ExecutiveDashboard";
+import PainelOperacional from "@/pages/PainelOperacional";
 import VehiclesNew from "@/pages/VehiclesNew";
 import MaintenanceNew from "@/pages/MaintenanceNew";
 import TiresPage from "@/pages/TiresPage";
@@ -630,6 +631,7 @@ function App() {
           {/* Novo Dashboard com KPIs */}
           <ProtectedRoute path="/" component={Dashboard} />
           <ProtectedRoute path="/executive-dashboard" component={ExecutiveDashboard} />
+          <ProtectedRoute path="/painel-operacional" component={PainelOperacional} />
           
           {/* Rotas protegidas com verificação de permissão de base */}
           <ProtectedRoute path="/vehicles" component={VehiclesNew} />
