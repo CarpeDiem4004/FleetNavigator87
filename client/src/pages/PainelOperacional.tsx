@@ -131,16 +131,29 @@ export default function PainelOperacional() {
 
       if (maintenanceResponse.ok) {
         const maintenanceResult = await maintenanceResponse.json();
+        console.log('[DEBUG-DETAILED] Raw maintenance API response:', maintenanceResult);
+        
         // Validar estrutura dos dados de manutenção
         if (maintenanceResult && typeof maintenanceResult === 'object') {
-          setMaintenanceData({
+          const processedData = {
             vehiclesInMaintenance: maintenanceResult.vehiclesInMaintenance || 0,
             averageMaintenanceDays: maintenanceResult.averageMaintenanceDays || 0,
             vehiclesOver5Days: Array.isArray(maintenanceResult.vehiclesOver5Days) ? maintenanceResult.vehiclesOver5Days : [],
             totalMaintenanceCost: maintenanceResult.totalMaintenanceCost || 0,
             averageCostPerVehicle: maintenanceResult.averageCostPerVehicle || 0
+          };
+          
+          console.log('[DEBUG-DETAILED] Processed maintenance data:', processedData);
+          console.log('[DEBUG-DETAILED] Setting maintenanceData state with values:', {
+            vehiclesInMaintenance: processedData.vehiclesInMaintenance,
+            totalMaintenanceCost: processedData.totalMaintenanceCost,
+            averageMaintenanceDays: processedData.averageMaintenanceDays
           });
+          
+          setMaintenanceData(processedData);
         }
+      } else {
+        console.error('[DEBUG-DETAILED] Maintenance API response failed:', maintenanceResponse.status, maintenanceResponse.statusText);
       }
 
       if (fuelResponse.ok) {
@@ -316,6 +329,7 @@ export default function PainelOperacional() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Veículos em Manutenção</p>
                     <p className="text-2xl font-bold">{maintenanceData?.vehiclesInMaintenance || 0}</p>
+                    {console.log('[DEBUG-RENDER] Rendering vehiclesInMaintenance:', maintenanceData?.vehiclesInMaintenance, 'maintenanceData:', maintenanceData)}
                   </div>
                 </div>
               </CardContent>
@@ -352,6 +366,7 @@ export default function PainelOperacional() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Custo Total</p>
                     <p className="text-lg font-bold">{formatCurrency(maintenanceData?.totalMaintenanceCost || 0)}</p>
+                    {console.log('[DEBUG-RENDER] Rendering totalMaintenanceCost:', maintenanceData?.totalMaintenanceCost, 'formatted:', formatCurrency(maintenanceData?.totalMaintenanceCost || 0))}
                   </div>
                 </div>
               </CardContent>
