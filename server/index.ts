@@ -1138,6 +1138,89 @@ app.use((req, res, next) => {
   app.get('/api/maintenance/veiculos', authenticateMaintenanceToken, getVeiculos);
   app.get('/api/maintenance/oficinas', authenticateMaintenanceToken, getOficinas);
   
+  // Rota para criar nova oficina
+  app.post('/api/maintenance/workshops', unifiedAuthMiddleware, async (req, res) => {
+    try {
+      const { razao_social, nome_fantasia, cnpj, endereco, telefone, email, responsavel, tipo, status } = req.body;
+      
+      // Validar dados obrigatórios
+      if (!razao_social || !cnpj || !email) {
+        return res.status(400).json({
+          success: false,
+          message: 'Campos obrigatórios: razão social, CNPJ e email'
+        });
+      }
+      
+      // Verificar se CNPJ já existe
+      const existingWorkshop = await pool.query(
+        'SELECT id FROM workshops WHERE cnpj = $1',
+        [cnpj]
+      );
+      
+      if (existingWorkshop.rows.length > 0) {
+        return res.status(409).json({
+          success: false,
+          message: 'CNPJ já cadastrado no sistema'
+        });
+      }
+      
+      // Gerar senha aleatória
+      const bcrypt = (await import('bcrypt')).default;
+      const password = Math.random().toString(36).slice(-8);
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      // Gerar token único
+      const token = `auto_token_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Inserir nova oficina
+      const insertQuery = `
+        INSERT INTO workshops (razao_social, nome_fantasia, cnpj, endereco, telefone, email, responsavel, tipo, status, password, token)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        RETURNING id, razao_social, cnpj, email, telefone, status
+      `;
+      
+      const result = await pool.query(insertQuery, [
+        razao_social, nome_fantasia, cnpj, endereco, telefone, email, responsavel, tipo, status, hashedPassword, token
+      ]);
+      
+      const oficina = result.rows[0];
+      
+      // Gerar links de acesso
+      const baseUrl = req.protocol + '://' + req.get('host');
+      const loginLink = `${baseUrl}/oficina/login`;
+      const directLink = `${baseUrl}/oficina/external?token=${token}`;
+      
+      res.json({
+        success: true,
+        message: 'Oficina cadastrada com sucesso',
+        oficina: {
+          id: oficina.id,
+          razao_social: oficina.razao_social,
+          cnpj: oficina.cnpj,
+          email: oficina.email,
+          telefone: oficina.telefone,
+          status: oficina.status
+        },
+        access: {
+          token: token,
+          loginLink: loginLink,
+          directLink: directLink,
+          credentials: {
+            cnpj: cnpj,
+            password: password
+          }
+        }
+      });
+      
+    } catch (error) {
+      console.error('Erro ao cadastrar oficina:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
+  
   // Rotas de relatórios
   app.get('/api/maintenance/relatorios', authenticateMaintenanceToken, getRelatorios);
   
