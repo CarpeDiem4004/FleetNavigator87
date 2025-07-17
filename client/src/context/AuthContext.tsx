@@ -517,7 +517,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsLoading(true);
       
       // Chama o endpoint específico para login de bases
-      const response = await fetch('/api/login-base', {
+      const response = await fetch('/api/auth/login-base', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
