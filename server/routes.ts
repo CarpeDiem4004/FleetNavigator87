@@ -1610,6 +1610,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas de equipamentos
   app.use('/api/equipment', equipmentRoutes);
 
+
+
   // Endpoint de dashboard de equipamentos - SEM AUTENTICAÇÃO
   app.get('/api/equipment-dashboard', async (req, res) => {
     try {

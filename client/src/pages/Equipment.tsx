@@ -242,9 +242,9 @@ export default function Equipment() {
 
   // Mutation para criar equipamento
   const createEquipmentMutation = useMutation({
-    mutationFn: (data: EquipmentFormData) => apiRequest('POST', '/api/equipment', data),
+    mutationFn: (data: EquipmentFormData) => apiRequest('POST', '/api/equipment-create', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/equipment-list'] });
       queryClient.invalidateQueries({ queryKey: ['/api/equipment-dashboard'] });
       setIsCreateDialogOpen(false);
       form.reset();
@@ -268,7 +268,7 @@ export default function Equipment() {
     mutationFn: ({ id, data }: { id: number; data: EquipmentFormData }) =>
       apiRequest('PUT', `/api/equipment/${id}`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/equipment-list'] });
       queryClient.invalidateQueries({ queryKey: ['/api/equipment-dashboard'] });
       setEditingEquipment(null);
       form.reset();

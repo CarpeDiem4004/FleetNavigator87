@@ -146,7 +146,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/equipment - Criar novo equipamento
-router.post('/', unifiedAuthMiddleware, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     console.log('Dados recebidos para criação do equipamento:', req.body);
     const validatedData = insertEquipmentSchema.parse(req.body);
