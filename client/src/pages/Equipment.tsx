@@ -698,9 +698,23 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                         <td className="p-2">{equipment.brand} {equipment.model}</td>
                         <td className="p-2">{equipment.serial_number || 'N/A'}</td>
                         <td className="p-2">
-                          <Badge variant={getStatusBadgeVariant(equipment.status)}>
-                            {equipmentStatusLabels[equipment.status]}
-                          </Badge>
+                          {equipment.status === 'disponivel' ? (
+                            <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                              {equipmentStatusLabels[equipment.status]}
+                            </Badge>
+                          ) : equipment.status === 'em_uso' ? (
+                            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                              {equipmentStatusLabels[equipment.status]}
+                            </Badge>
+                          ) : equipment.status === 'manutencao' ? (
+                            <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+                              {equipmentStatusLabels[equipment.status]}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">
+                              {equipmentStatusLabels[equipment.status]}
+                            </Badge>
+                          )}
                         </td>
                         <td className="p-2">{equipmentConditionLabels[equipment.condition]}</td>
                         <td className="p-2">
