@@ -333,7 +333,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         
         {/* Conteúdo da página */}
         <main className="flex-1 overflow-auto">
-          {children}
+          <div className="min-h-full">
+            {children}
+          </div>
+          {/* Rodapé discreto */}
+          <footer className="text-center py-2 text-xs text-gray-400 bg-gray-50 border-t">
+            Desenvolvido por Carpe Diem 4004 | (11) 97055-8053
+          </footer>
         </main>
       </div>
     </div>

@@ -198,6 +198,9 @@ export default function BaseLayout({
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
           <div className="text-center text-sm text-gray-500">
             <p>© 2025 Muricion Fleet Management - {finalBaseName}</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Desenvolvido por Carpe Diem 4004 | (11) 97055-8053
+            </p>
           </div>
         </div>
       </footer>

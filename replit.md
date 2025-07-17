@@ -117,6 +117,13 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 17, 2025: **SUBTLE FOOTER BRANDING ADDED** - Added discrete footer with "Desenvolvido por Carpe Diem 4004 | (11) 97055-8053" across all main layouts
+  - ✅ Added to AppLayout.tsx main footer for all internal system pages
+  - ✅ Added to BaseLayout.tsx for all external base pages  
+  - ✅ Added to MainLayoutSimple.tsx for simple layout pages
+  - ✅ Designed with subtle gray text and proper formatting
+  - ✅ Maintains professional appearance while providing developer attribution
+
 - July 17, 2025: **WORKSHOP EDIT CONTROL FIXED** - Resolved business rule violation where delivered vehicles could still be edited
   - ✅ **PROBLEM IDENTIFIED**: Oficina dashboard allowed editing of vehicle receptions even when status was "entregue"
   - ✅ **SOLUTION IMPLEMENTED**: Added conditional rendering to hide edit button when reception.status === "entregue"
