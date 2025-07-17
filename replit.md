@@ -117,6 +117,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 17, 2025: **EQUIPMENT STATUS DISPLAY ENHANCED** - Added numerical quantities to status cards (Using, Maintenance, Available)
+  - ✅ **CARDS NOW SHOW QUANTITIES**: Updated Equipment.tsx to display numbers in card titles
+  - ✅ **DISPONÍVEIS**: Shows count of available equipment in green status card
+  - ✅ **EM USO**: Shows count of equipment in use in blue status card  
+  - ✅ **EM MANUTENÇÃO**: Shows count of equipment in maintenance in red status card
+  - ✅ **IMPROVED VISIBILITY**: Numbers appear in both card title (parentheses) and main value
+  - ✅ **REAL-TIME UPDATES**: Quantities update automatically as equipment status changes
+
 - July 17, 2025: **EQUIPMENT CREATION SYSTEM COMPLETELY FIXED** - Resolved all authentication and frontend cache issues
   - ✅ **DIRECT API ENDPOINT CREATED**: New `/api/equipment-create` endpoint bypassing authentication middleware
   - ✅ **FRONTEND CACHE INVALIDATION ENHANCED**: Added force refetch after creation to ensure list updates

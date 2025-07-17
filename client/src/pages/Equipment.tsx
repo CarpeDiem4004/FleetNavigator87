@@ -599,7 +599,7 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
               
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Disponíveis</CardTitle>
+                  <CardTitle className="text-sm font-medium">Disponíveis ({dashboard.available_equipments})</CardTitle>
                   <div className="h-4 w-4 rounded-full bg-green-500"></div>
                 </CardHeader>
                 <CardContent>
@@ -609,7 +609,7 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
               
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Em Uso</CardTitle>
+                  <CardTitle className="text-sm font-medium">Em Uso ({dashboard.in_use_equipments})</CardTitle>
                   <div className="h-4 w-4 rounded-full bg-blue-500"></div>
                 </CardHeader>
                 <CardContent>
@@ -619,7 +619,7 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
               
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Em Manutenção</CardTitle>
+                  <CardTitle className="text-sm font-medium">Em Manutenção ({dashboard.maintenance_equipments})</CardTitle>
                   <div className="h-4 w-4 rounded-full bg-red-500"></div>
                 </CardHeader>
                 <CardContent>
