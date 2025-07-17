@@ -69,7 +69,7 @@ const router = Router();
 // Não aplicar middleware global - aplicar individualmente nas rotas que precisam
 
 // GET /api/equipment - Listar todos os equipamentos
-router.get('/', unifiedAuthMiddleware, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const equipmentList = await db
       .select()
@@ -83,8 +83,48 @@ router.get('/', unifiedAuthMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/equipment/dashboard - Dashboard de equipamentos
+router.get('/dashboard', async (req, res) => {
+  try {
+    const equipmentList = await db
+      .select()
+      .from(equipments)
+      .orderBy(desc(equipments.created_at));
+
+    // Contar por status
+    const statusCounts = equipmentList.reduce((acc, equipment) => {
+      acc[equipment.status] = (acc[equipment.status] || 0) + 1;
+      return acc;
+    }, {});
+
+    const dashboard = {
+      total: equipmentList.length,
+      disponivel: statusCounts.disponivel || 0,
+      em_uso: statusCounts.em_uso || 0,
+      manutencao: statusCounts.manutencao || 0,
+      descartado: statusCounts.descartado || 0,
+      perdido: statusCounts.perdido || 0,
+      roubado: statusCounts.roubado || 0,
+      by_type: equipmentList.reduce((acc, equipment) => {
+        acc[equipment.type] = (acc[equipment.type] || 0) + 1;
+        return acc;
+      }, {}),
+      by_condition: equipmentList.reduce((acc, equipment) => {
+        acc[equipment.condition] = (acc[equipment.condition] || 0) + 1;
+        return acc;
+      }, {}),
+      recent_activity: equipmentList.slice(0, 5)
+    };
+
+    res.json({ success: true, data: dashboard });
+  } catch (error) {
+    console.error('Erro ao buscar dashboard de equipamentos:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
+});
+
 // GET /api/equipment/:id - Buscar equipamento por ID
-router.get('/:id', unifiedAuthMiddleware, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const equipmentId = parseInt(req.params.id);
     

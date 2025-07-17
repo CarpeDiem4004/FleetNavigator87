@@ -191,7 +191,7 @@ export default function Equipment() {
 
   // Query para buscar equipamentos
   const { data: equipmentsResponse, isLoading } = useQuery({
-    queryKey: ['/api/equipment'],
+    queryKey: ['/api/equipment-list'],
   });
   
   const equipments = equipmentsResponse?.data || [];
