@@ -69,7 +69,7 @@ const router = Router();
 // Não aplicar middleware global - aplicar individualmente nas rotas que precisam
 
 // GET /api/equipment - Listar todos os equipamentos
-router.get('/equipment', unifiedAuthMiddleware, async (req, res) => {
+router.get('/', unifiedAuthMiddleware, async (req, res) => {
   try {
     const equipmentList = await db
       .select()

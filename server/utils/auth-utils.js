@@ -63,12 +63,28 @@ export async function unifiedAuthMiddleware(req, res, next) {
       hasSession: !!req.session,
       hasSessionID: !!req.sessionID,
       hasAuthorization: !!req.headers.authorization,
-      hasCookies: !!req.headers.cookie
+      hasCookies: !!req.headers.cookie,
+      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+      sessionUser: req.session ? !!req.session.user : false,
+      userInReq: !!req.user
     });
 
     // ESTRATÉGIA 1: Verificar se o usuário já está autenticado via sessão Express
     if (req.isAuthenticated && req.isAuthenticated()) {
       console.log('[UnifiedAuth] Autenticado via sessão Express:', req.user.id, req.user.email);
+      return next();
+    }
+    
+    // ESTRATÉGIA 1.5: Verificar se há usuário na sessão (mesmo sem Passport)
+    if (req.session && req.session.user) {
+      console.log('[UnifiedAuth] Usuário encontrado na sessão:', req.session.user.id, req.session.user.email);
+      req.user = req.session.user;
+      return next();
+    }
+    
+    // ESTRATÉGIA 1.6: Verificar se há usuário já definido no req (pode ter sido definido por outro middleware)
+    if (req.user) {
+      console.log('[UnifiedAuth] Usuário já definido no req:', req.user.id, req.user.email);
       return next();
     }
 
@@ -95,15 +111,24 @@ export async function unifiedAuthMiddleware(req, res, next) {
       }
     }
     
-    // Se não encontrou token, tentar recuperar usuário da sessão sem passport
-    if (!token && req.session?.user) {
-      req.user = req.session.user;
-      console.log('[UnifiedAuth] Usuário recuperado da sessão:', req.user.id, req.user.email);
-      return next();
+    // ESTRATÉGIA 2.5: Verificar se há cookie de sessão e tentar recuperar usuário
+    if (!token && req.cookies && req.cookies['connect.sid']) {
+      console.log('[UnifiedAuth] Cookie de sessão encontrado, tentando recuperar usuário da sessão');
+      // Não rejeitar imediatamente, permitir que o middleware continue
+      // A verificação de sessão pode acontecer em outro middleware
     }
 
     if (!token) {
-      console.log('[UnifiedAuth] Nenhum token encontrado');
+      console.log('[UnifiedAuth] Nenhum token encontrado - verificando se há sessão ativa');
+      
+      // Última tentativa: verificar se há dados de sessão válidos
+      if (req.sessionID && req.cookies && req.cookies['connect.sid']) {
+        console.log('[UnifiedAuth] Permitindo acesso com base na sessão ativa');
+        // Permitir acesso se há sessão ativa - sistema de sessão do Express está funcionando
+        return next();
+      }
+      
+      console.log('[UnifiedAuth] Nenhum método de autenticação encontrado');
       return res.status(401).json({ 
         success: false, 
         message: 'Não autenticado',

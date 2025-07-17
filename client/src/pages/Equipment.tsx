@@ -254,9 +254,10 @@ export default function Equipment() {
       });
     },
     onError: (error) => {
+      console.error('Erro ao criar equipamento:', error);
       toast({
         title: "Erro",
-        description: "Erro ao criar equipamento",
+        description: `Erro ao criar equipamento: ${error.message}`,
         variant: "destructive",
       });
     },
