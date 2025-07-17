@@ -14,7 +14,7 @@ export default function LoginGP03() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { loginBase } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +22,7 @@ export default function LoginGP03() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      await loginBase(email, password);
       setLocation('/bases/gp03/external');
     } catch (err) {
       setError('Credenciais inválidas. Verifique seu email e senha.');

@@ -137,4 +137,66 @@ router.post('/sync-supabase-user', async (req, res) => {
   }
 });
 
+// Rota de login específica para bases - permite operadores acessarem suas bases
+router.post('/login-base', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    console.log('Tentativa de login de base para:', email);
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email e senha são obrigatórios' });
+    }
+
+    // Tenta encontrar o usuário no banco local
+    const user = await storage.getUserByEmail(email);
+    
+    if (!user) {
+      console.log('Usuário não encontrado no banco local:', email);
+      return res.status(401).json({ message: 'Usuário não encontrado' });
+    }
+
+    // Verifica se a senha está correta
+    const isPasswordValid = await comparePasswords(password, user.password);
+    
+    if (!isPasswordValid) {
+      console.log('Senha inválida para usuário:', email);
+      return res.status(401).json({ message: 'Credenciais inválidas' });
+    }
+
+    // Verifica se o usuário está ativo
+    if (!user.isActive) {
+      console.log('Usuário inativo tentando fazer login:', email);
+      return res.status(401).json({ message: 'Usuário inativo' });
+    }
+
+    // Formata o usuário para a sessão (remove dados sensíveis como a senha)
+    const userSession = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      base_id: user.baseId,
+      basename: user.basename,
+      isActive: user.isActive
+    };
+
+    // Configura a sessão
+    req.session.user = userSession;
+    req.session.isAuthenticated = true;
+    req.session.hybridUser = userSession;
+
+    console.log('Login de base bem-sucedido para:', email, 'Role:', user.role, 'Base:', user.basename);
+    
+    res.json({ 
+      message: 'Login realizado com sucesso',
+      user: userSession,
+      success: true
+    });
+
+  } catch (error) {
+    console.error('Erro no login de base:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
 export default router;

@@ -24,6 +24,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<User>;
+  loginBase: (email: string, password: string) => Promise<User>;
   register: (email: string, password: string, name: string) => Promise<User>;
   logout: () => Promise<void>;
 }
@@ -41,6 +42,7 @@ export const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
   login: async () => stubUser,
+  loginBase: async () => stubUser,
   register: async () => stubUser,
   logout: async () => {},
 });
@@ -510,6 +512,49 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const loginBase = async (email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      
+      // Chama o endpoint específico para login de bases
+      const response = await fetch('/api/login-base', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Erro no login');
+      }
+
+      // Define o usuário no estado
+      setUser(data.user);
+      
+      toast({
+        title: "Login bem-sucedido",
+        description: `Bem-vindo, ${data.user.name}!`,
+      });
+
+      return data.user;
+    } catch (error) {
+      console.error('Erro no login da base:', error);
+      
+      toast({
+        title: "Falha no login",
+        description: error.message || "Credenciais inválidas. Verifique seu email e senha.",
+        variant: "destructive",
+      });
+      
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     try {
       setIsLoading(true);
@@ -663,6 +708,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     user,
     isLoading,
     login,
+    loginBase,
     register,
     logout
   };

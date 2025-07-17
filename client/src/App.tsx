@@ -143,6 +143,7 @@ import LineHallFuelCardRequests from "@/pages/LineHallFuelCardRequests";
 import Equipment from "@/pages/Equipment";
 import CoordinatorManagement from "@/pages/CoordinatorManagement";
 import TestMaintenancePlates from "@/pages/TestMaintenancePlates";
+import TestLoginBase from "@/pages/TestLoginBase";
 
 // Importação das páginas de Abastecimento Terceiros
 import AbastecimentoTerceirosLogin from "@/pages/AbastecimentoTerceirosLogin";
@@ -926,6 +927,11 @@ function App() {
           {/* Rota para o perfil do usuário Supabase */}
           <Route path="/profile-supabase">
             <ProfileWithSupabase />
+          </Route>
+          
+          {/* Rota para teste de login de base */}
+          <Route path="/test-login-base">
+            <TestLoginBase />
           </Route>
           
           {/* Rota para registro de usuários de postos */}
