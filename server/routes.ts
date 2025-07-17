@@ -1659,6 +1659,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint de equipamentos - SEM AUTENTICAÇÃO
   app.get('/api/equipment-list', async (req, res) => {
     try {
+      // Adicionar headers anti-cache
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+      });
+      
       const { eq, desc } = await import('drizzle-orm');
       const { db } = await import('./db.js');
       const { equipments } = await import('../shared/schema.js');

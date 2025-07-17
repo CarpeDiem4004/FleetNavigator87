@@ -135,6 +135,12 @@ This is a comprehensive fleet management system built with React (frontend) and 
     - Displays success toast notification after refresh
     - Provides reliable fallback when React Query cache invalidation fails
     - Maintains consistent UI with outline button style
+  - ✅ **COMPREHENSIVE CACHE-BUSTING SOLUTION**: Multi-layer approach to resolve persistent 304 responses
+    - Backend: Added no-cache headers to /api/equipment, /api/equipment-list, and /api/equipment-dashboard endpoints
+    - Frontend: Enhanced queryClient with aggressive cache control (staleTime: 0, gcTime: 0, refetchOnMount: 'always')
+    - Manual refresh button clears entire queryClient cache using queryClient.clear()
+    - Force refresh mechanism using forceRefreshKey state variable to change query key
+    - Successfully resolves browser 304 (Not Modified) caching issues
 
 - July 17, 2025: **WORKSHOP PASSOS LOGIN SYSTEM FIXED** - Resolved 404 error for oficina login access
   - ✅ **MISSING ROUTE ADDED**: Added `/oficina/login` route to App.tsx for workshop login functionality

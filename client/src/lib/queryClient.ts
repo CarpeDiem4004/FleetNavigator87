@@ -249,10 +249,16 @@ export const getQueryFn: <T>(options: {
       console.log('[QueryClient] Sem token JWT disponível para GET:', urlOrTable);
     }
     
-    console.log(`[QueryClient] Enviando requisição GET para ${urlOrTable}`);
-    let res = await fetch(urlOrTable, {
+    // Adicionar timestamp para evitar cache
+    const urlWithTimestamp = urlOrTable.includes('?') 
+      ? `${urlOrTable}&_t=${Date.now()}`
+      : `${urlOrTable}?_t=${Date.now()}`;
+    
+    console.log(`[QueryClient] Enviando requisição GET para ${urlWithTimestamp}`);
+    let res = await fetch(urlWithTimestamp, {
       credentials: "include",
-      headers
+      headers,
+      cache: "no-store" // Forçar navegador a não usar cache
     });
 
     // Se receber 401, tenta ressincronizar a sessão e repetir a requisição
@@ -269,9 +275,14 @@ export const getQueryFn: <T>(options: {
       if (resyncSuccessful) {
         console.log('[QueryClient] Sessão ressincronizada com sucesso, repetindo requisição:', urlOrTable);
         // Repetir a requisição com o mesmo token JWT se disponível
-        res = await fetch(urlOrTable, {
+        const retryUrlWithTimestamp = urlOrTable.includes('?') 
+          ? `${urlOrTable}&_t=${Date.now()}`
+          : `${urlOrTable}?_t=${Date.now()}`;
+          
+        res = await fetch(retryUrlWithTimestamp, {
           credentials: "include",
-          headers // Reutilizar o mesmo objeto de cabeçalhos com o token
+          headers, // Reutilizar o mesmo objeto de cabeçalhos com o token
+          cache: "no-store"
         });
       }
     }
@@ -286,7 +297,8 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      staleTime: 0, // Sempre considerar dados stale
+      cacheTime: 0, // Não manter cache
       retry: false,
     },
     mutations: {

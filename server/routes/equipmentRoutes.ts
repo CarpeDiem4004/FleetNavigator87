@@ -71,6 +71,14 @@ const router = Router();
 // GET /api/equipment - Listar todos os equipamentos
 router.get('/', async (req, res) => {
   try {
+    // Adicionar headers anti-cache
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'Surrogate-Control': 'no-store'
+    });
+    
     const equipmentList = await db
       .select()
       .from(equipments)
@@ -86,6 +94,14 @@ router.get('/', async (req, res) => {
 // GET /api/equipment/dashboard - Dashboard de equipamentos
 router.get('/dashboard', async (req, res) => {
   try {
+    // Adicionar headers anti-cache
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'Surrogate-Control': 'no-store'
+    });
+    
     const equipmentList = await db
       .select()
       .from(equipments)
