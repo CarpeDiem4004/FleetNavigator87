@@ -5250,6 +5250,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Workshop routes 
+  // Test endpoint to verify route registration (MUST BE FIRST)
+  app.get("/api/workshops/test", (req, res) => {
+    console.log('[Workshop Test] TEST ENDPOINT ACCESSED SUCCESSFULLY');
+    console.log('[Workshop Test] Request path:', req.path);
+    console.log('[Workshop Test] Request method:', req.method);
+    res.json({
+      success: true,
+      message: "Workshop test endpoint working correctly"
+    });
+  });
+  
+  // Validate token endpoint (MUST BE BEFORE :id route)
+  app.get("/api/workshops/validate-token", async (req, res) => {
+    try {
+      const { token } = req.query;
+      console.log('[Workshop Validation] Token recebido:', token);
+
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          message: "Token é obrigatório"
+        });
+      }
+
+      // Verificar se o token existe e está ativo
+      const query = `
+        SELECT 
+          o.id,
+          COALESCE(o.nome_fantasia, o.razao_social) as name,
+          o.cnpj,
+          o.email,
+          o.telefone as phone,
+          o.external_token as token,
+          o.created_at as token_created
+        FROM oficinas o
+        WHERE o.external_token = $1 AND o.status = 'ativo'
+      `;
+
+      console.log('[Workshop Validation] Executando query...');
+      const result = await pool.query(query, [token]);
+      console.log('[Workshop Validation] Resultado:', result.rows);
+
+      if (result.rows.length === 0) {
+        console.log('[Workshop Validation] Token não encontrado ou inativo');
+        return res.status(401).json({
+          success: false,
+          message: "Token inválido ou expirado"
+        });
+      }
+
+      const workshop = result.rows[0];
+      console.log('[Workshop Validation] Oficina encontrada:', workshop);
+
+      res.json({
+        success: true,
+        workshop: {
+          id: workshop.id,
+          name: workshop.name,
+          cnpj: workshop.cnpj,
+          email: workshop.email,
+          phone: workshop.phone,
+          token: workshop.token,
+          token_created: workshop.token_created
+        }
+      });
+
+    } catch (error) {
+      console.error('[Workshop Validation] Erro na validação:', error);
+      res.status(500).json({
+        success: false,
+        message: "Erro interno do servidor"
+      });
+    }
+  });
+  
   app.get("/api/workshops", async (req, res) => {
     try {
       const activeOnly = req.query.active === 'true';
@@ -5263,7 +5338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Server error" });
     }
   });
-  
+
   app.get("/api/workshops/:id", isAuthenticated, async (req, res) => {
     try {
       const workshop = await storage.getWorkshop(parseInt(req.params.id));
@@ -7413,64 +7488,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API para validar token de acesso externo e retornar dados da oficina
-  app.get("/api/workshops/validate-token", async (req, res) => {
-    try {
-      const { token } = req.query;
 
-      if (!token) {
-        return res.status(400).json({
-          success: false,
-          message: "Token é obrigatório"
-        });
-      }
-
-      // Verificar se o token existe e está ativo
-      const query = `
-        SELECT 
-          o.id,
-          COALESCE(o.nome_fantasia, o.razao_social) as name,
-          o.cnpj,
-          o.email,
-          o.telefone as phone,
-          o.external_token as token,
-          o.created_at as token_created
-        FROM oficinas o
-        WHERE o.external_token = $1 AND o.status = 'ativo'
-      `;
-
-      const result = await pool.query(query, [token]);
-
-      if (result.rows.length === 0) {
-        return res.status(401).json({
-          success: false,
-          message: "Token inválido ou expirado"
-        });
-      }
-
-      const workshop = result.rows[0];
-
-      res.json({
-        success: true,
-        workshop: {
-          id: workshop.id,
-          name: workshop.name,
-          cnpj: workshop.cnpj,
-          email: workshop.email,
-          phone: workshop.phone,
-          tokenCreated: workshop.token_created
-        }
-      });
-
-    } catch (error: any) {
-      console.error("Erro ao validar token:", error);
-      res.status(500).json({
-        success: false,
-        message: "Erro ao validar token",
-        error: error.message
-      });
-    }
-  });
 
   // Rota para criar nova oficina
   app.post("/api/workshops", hasMaintenanceAccess, async (req, res) => {

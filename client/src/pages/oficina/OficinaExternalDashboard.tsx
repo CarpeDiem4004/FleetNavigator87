@@ -163,7 +163,7 @@ export default function OficinaExternalDashboard() {
   const validateTokenAndLoadData = async (token: string) => {
     try {
       // Validar token e obter dados da oficina
-      const response = await fetch(`/api/maintenance/workshops/validate-token?token=${token}`);
+      const response = await fetch(`/api/workshops/validate-token?token=${token}`);
       const data = await response.json();
       
       if (data.success) {

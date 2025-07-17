@@ -19,6 +19,12 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
     (req as any).user = { id: 1, name: 'Sistema Público', email: 'public@muricionfleet.com', role: 'admin' };
     return next();
   }
+
+  // Permitir acesso público à validação de tokens de oficinas
+  if (req.path === '/api/workshops/validate-token' || req.path === '/api/workshops/test') {
+    console.log('[isAuthenticated] Permitindo acesso público à validação de token de oficina');
+    return next();
+  }
   
   // Verificar se existe header de autorização com token JWT
   const authHeader = req.headers.authorization;

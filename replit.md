@@ -117,6 +117,16 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 17, 2025: **EXTERNAL WORKSHOP ACCESS TOKEN VALIDATION COMPLETELY RESOLVED** - Fixed critical Express route ordering issue preventing workshop token validation
+  - ✅ **ROOT CAUSE IDENTIFIED**: Express routes were incorrectly ordered - parameterized `:id` route was processing before specific `validate-token` route
+  - ✅ **SOLUTION IMPLEMENTED**: Moved validate-token endpoint (line 5269) before parameterized `:id` route (line 5342) in server/routes.ts
+  - ✅ **REMOVED DUPLICATE ENDPOINT**: Eliminated duplicate validate-token endpoint at line 7492 that was causing conflicts
+  - ✅ **ROUTE ORDERING PRINCIPLE**: Specific endpoints must always be defined before parameterized routes in Express
+  - ✅ **COMPREHENSIVE TESTING**: Both test and validate-token endpoints now working correctly
+  - ✅ **EXTERNAL ACCESS FUNCTIONAL**: AUTO MECÂNICA PASSOS LTDA (ID: 11) can now access dashboard via token `auto_token_passos_761bab98-9fb0-4ee3-b821-07d88af94fe0`
+  - ✅ **AUTHENTICATION MIDDLEWARE**: Properly configured to allow public access to external workshop routes
+  - ✅ **COMPLETE WORKFLOW**: Token validation → Workshop data retrieval → External dashboard access all operational
+
 - July 17, 2025: **WORKSHOP DISPLAY ISSUE RESOLVED** - Fixed Alair workshop not appearing in maintenance interface due to browser caching
   - ✅ Diagnosed that oficina Alair (ID: 5) exists correctly in database with complete data
   - ✅ Confirmed backend endpoint `/api/maintenance/workshops` returns all 4 workshops including Alair

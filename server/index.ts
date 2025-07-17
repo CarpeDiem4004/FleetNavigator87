@@ -2142,7 +2142,9 @@ app.use((req, res, next) => {
       '/api/estatisticas-mensais-direto',
       '/api/consumo-por-veiculo-direto',
       '/api/comparativo-combustiveis-direto',
-      '/api/check-tabela-direto'
+      '/api/check-tabela-direto',
+      '/api/workshops/validate-token', // Permitir acesso público para validação de token de oficinas
+      '/api/workshops/test' // Permitir acesso público para teste de oficinas
     ];
     
     // Verificar se a rota atual é pública (não precisa de autenticação)
