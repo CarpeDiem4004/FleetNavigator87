@@ -165,7 +165,20 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     console.log('Dados recebidos para criação do equipamento:', req.body);
-    const validatedData = insertEquipmentSchema.parse(req.body);
+    
+    // Converter strings vazias em null para campos únicos
+    const dataToValidate = {
+      ...req.body,
+      serial_number: req.body.serial_number?.trim() || null,
+      patrimony_number: req.body.patrimony_number?.trim() || null,
+      model: req.body.model?.trim() || null,
+      brand: req.body.brand?.trim() || null,
+      supplier: req.body.supplier?.trim() || null,
+      location: req.body.location?.trim() || null,
+      notes: req.body.notes?.trim() || null
+    };
+    
+    const validatedData = insertEquipmentSchema.parse(dataToValidate);
     console.log('Dados validados:', validatedData);
     
     const newEquipment = await db
@@ -194,7 +207,20 @@ router.post('/', async (req, res) => {
 router.put('/:id', unifiedAuthMiddleware, async (req, res) => {
   try {
     const equipmentId = parseInt(req.params.id);
-    const validatedData = insertEquipmentSchema.parse(req.body);
+    
+    // Converter strings vazias em null para campos únicos
+    const dataToValidate = {
+      ...req.body,
+      serial_number: req.body.serial_number?.trim() || null,
+      patrimony_number: req.body.patrimony_number?.trim() || null,
+      model: req.body.model?.trim() || null,
+      brand: req.body.brand?.trim() || null,
+      supplier: req.body.supplier?.trim() || null,
+      location: req.body.location?.trim() || null,
+      notes: req.body.notes?.trim() || null
+    };
+    
+    const validatedData = insertEquipmentSchema.parse(dataToValidate);
     
     const updatedEquipment = await db
       .update(equipments)
