@@ -252,7 +252,7 @@ export default function Equipment() {
 
   // Mutation para criar equipamento
   const createEquipmentMutation = useMutation({
-    mutationFn: (data: EquipmentFormData) => apiRequest('POST', '/api/equipment-create', data),
+    mutationFn: (data: EquipmentFormData) => apiRequest('POST', '/api/equipment', data),
     onSuccess: async (response) => {
       console.log('Equipamento criado com sucesso:', response);
       
