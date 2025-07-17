@@ -41,6 +41,70 @@ export async function getDashboardKPIs(req: Request, res: Response) {
     // Formatar o mês atual para exibição (ex: "abril 2025")
     const formattedMonth = format(targetDate, 'MMMM yyyy', { locale: ptBR });
 
+    // Calcular dados reais do banco de dados
+    // 1. Buscar dados de manutenção (car_receptions + maintenance_orders)
+    const carReceptionsResult = await pool.query(
+      `SELECT 
+        COUNT(*) as total_car_receptions,
+        COUNT(CASE WHEN status IN ('recebido', 'em_analise', 'aguardando_pecas', 'em_reparo') THEN 1 END) as veiculos_em_manutencao,
+        COUNT(CASE WHEN status = 'pronto' THEN 1 END) as veiculos_prontos,
+        COUNT(CASE WHEN status = 'entregue' THEN 1 END) as veiculos_entregues,
+        SUM(CASE WHEN total_cost IS NOT NULL THEN total_cost::numeric ELSE 0 END) as custo_total_car_receptions,
+        AVG(CASE WHEN created_at IS NOT NULL AND (delivered_date IS NOT NULL OR completed_date IS NOT NULL) 
+                 THEN EXTRACT(days FROM COALESCE(delivered_date, completed_date) - created_at) 
+                 END) as tempo_medio_manutencao
+       FROM car_receptions 
+       WHERE created_at >= $1 AND created_at <= $2`,
+      [startOfTargetMonth.toISOString(), endOfTargetMonth.toISOString()]
+    );
+
+    // 2. Buscar dados da tabela maintenance_orders (se existir)
+    const maintenanceOrdersResult = await pool.query(
+      `SELECT 
+        COUNT(*) as total_maintenance_orders,
+        COUNT(CASE WHEN status IN ('pendente', 'em_andamento', 'aguardando_pecas', 'aguardando_orcamento') THEN 1 END) as manutencoes_pendentes,
+        SUM(CASE WHEN total_cost IS NOT NULL THEN total_cost::numeric ELSE 0 END) as custo_total_maintenance
+       FROM maintenance_orders 
+       WHERE created_at >= $1 AND created_at <= $2`,
+      [startOfTargetMonth.toISOString(), endOfTargetMonth.toISOString()]
+    );
+
+    // 3. Buscar dados de veículos ativos
+    const vehiclesResult = await pool.query(
+      `SELECT 
+        COUNT(*) as total_vehicles,
+        COUNT(CASE WHEN status = 'em_operacao' THEN 1 END) as veiculos_ativos,
+        COUNT(CASE WHEN status = 'em_manutencao' THEN 1 END) as veiculos_manutencao_status,
+        COUNT(CASE WHEN status = 'parado' THEN 1 END) as veiculos_parados
+       FROM vehicles`
+    );
+
+    // 4. Buscar dados de combustível do mês atual
+    const fuelResult = await pool.query(
+      `SELECT 
+        COALESCE(SUM(quantity_litros), 0) as total_litros_diesel,
+        COALESCE(SUM(km), 0) as total_km_frota,
+        CASE 
+          WHEN SUM(quantity_litros) > 0 THEN ROUND(SUM(km)::numeric / SUM(quantity_litros)::numeric, 2) 
+          ELSE 0 
+        END as media_diesel_km
+       FROM historico_consolidado_abastecimentos 
+       WHERE created_at >= $1 AND created_at <= $2`,
+      [startOfTargetMonth.toISOString(), endOfTargetMonth.toISOString()]
+    );
+
+    // Processar os resultados
+    const carReceptions = carReceptionsResult.rows[0];
+    const maintenanceOrders = maintenanceOrdersResult.rows[0];
+    const vehicles = vehiclesResult.rows[0];
+    const fuel = fuelResult.rows[0];
+
+    // Calcular métricas consolidadas
+    const totalManutencoes = parseInt(carReceptions.total_car_receptions) + parseInt(maintenanceOrders.total_maintenance_orders);
+    const custoManutencoes = parseFloat(carReceptions.custo_total_car_receptions || 0) + parseFloat(maintenanceOrders.custo_total_maintenance || 0);
+    const veiculosEmManutencao = parseInt(carReceptions.veiculos_em_manutencao) + parseInt(maintenanceOrders.manutencoes_pendentes);
+    const tempoMedioManutencao = parseFloat(carReceptions.tempo_medio_manutencao || 0);
+
     // Tentativa de usar a tabela painel_principal para dados atualizados pelo cron
     const painelResult = await pool.query(
       `SELECT * FROM painel_principal 
@@ -51,39 +115,49 @@ export async function getDashboardKPIs(req: Request, res: Response) {
     );
 
     if (painelResult.rows && painelResult.rows.length > 0) {
-      // Se temos dados do painel principal, retornamos eles
+      // Se temos dados do painel principal, combinamos com os dados reais
       const painelInfo = painelResult.rows[0];
       
-      // Adicionar informação sobre o mês de referência
-      return res.status(200).json({
+      // Atualizar com dados reais quando disponíveis
+      const updatedPainelInfo = {
         ...painelInfo,
-        mes_referencia: formattedMonth
-      });
+        total_manutencoes: totalManutencoes || painelInfo.total_manutencoes,
+        custo_manutencoes: custoManutencoes || painelInfo.custo_manutencoes,
+        tempo_medio_manutencao: tempoMedioManutencao || painelInfo.tempo_medio_manutencao,
+        veiculos_ativos: parseInt(vehicles.veiculos_ativos) || painelInfo.veiculos_ativos,
+        veiculos_manutencao: veiculosEmManutencao || painelInfo.veiculos_manutencao,
+        total_km_frota: parseInt(fuel.total_km_frota) || painelInfo.total_km_frota,
+        total_litros_diesel: parseInt(fuel.total_litros_diesel) || painelInfo.total_litros_diesel,
+        media_diesel_km: parseFloat(fuel.media_diesel_km) || painelInfo.media_diesel_km,
+        mes_referencia: formattedMonth,
+        fonte: "dados_reais_combinados"
+      };
+      
+      return res.status(200).json(updatedPainelInfo);
     } else {
-      // Fallback: usamos valores fixos para demonstração
-      // Normalmente aqui faríamos cálculos baseados em dados reais do banco
+      // Usar dados calculados dos bancos reais
       const dashboardData: PainelPrincipalData = {
         id: 0,
         data: format(targetDate, 'yyyy-MM-dd'),
-        total_km_frota: 85000,
-        total_litros_diesel: 12500,
-        media_diesel_km: 2.8,
-        total_manutencoes: 24,
-        custo_manutencoes: 35000,
-        tempo_medio_manutencao: 3.5,
-        veiculos_ativos: 45,
-        veiculos_manutencao: 5,
-        economia_combustivel: 3200,
+        total_km_frota: parseInt(fuel.total_km_frota) || 0,
+        total_litros_diesel: parseInt(fuel.total_litros_diesel) || 0,
+        media_diesel_km: parseFloat(fuel.media_diesel_km) || 0,
+        total_manutencoes: totalManutencoes || 0,
+        custo_manutencoes: custoManutencoes || 0,
+        tempo_medio_manutencao: tempoMedioManutencao || 0,
+        veiculos_ativos: parseInt(vehicles.veiculos_ativos) || 0,
+        veiculos_manutencao: veiculosEmManutencao || 0,
+        economia_combustivel: 0, // Calcular se necessário
         tendencia_consumo: 'estável',
-        alertas_criticos: 3,
-        pneus_substituidos: 12,
+        alertas_criticos: 0, // Calcular se necessário
+        pneus_substituidos: 0, // Calcular se necessário
         base_id: 1
       };
       
       return res.status(200).json({
         ...dashboardData,
         mes_referencia: formattedMonth,
-        fonte: "calculado"
+        fonte: "dados_reais_calculados"
       });
     }
   } catch (error) {
