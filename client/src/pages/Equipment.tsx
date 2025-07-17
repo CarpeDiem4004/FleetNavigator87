@@ -42,7 +42,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
-import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download, Search, History, Clock, Wrench, Paperclip, Eye, Upload } from "lucide-react";
+import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download, Search, History, Clock, Wrench, Paperclip, Eye, Upload, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 
@@ -243,19 +243,29 @@ export default function Equipment() {
   // Mutation para criar equipamento
   const createEquipmentMutation = useMutation({
     mutationFn: (data: EquipmentFormData) => apiRequest('POST', '/api/equipment-create', data),
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
       console.log('Equipamento criado com sucesso:', response);
       
-      // Invalidar todas as queries relacionadas a equipamentos
-      console.log('Invalidando queries...');
-      queryClient.invalidateQueries({ queryKey: ['/api/equipment-list'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/equipment-dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/equipment-responsibility-terms'] });
+      // Invalidar cache completo
+      console.log('Invalidando cache completo...');
+      await queryClient.invalidateQueries();
       
-      // Forçar refetch das queries
-      console.log('Forçando refetch...');
-      queryClient.refetchQueries({ queryKey: ['/api/equipment-list'] });
-      queryClient.refetchQueries({ queryKey: ['/api/equipment-dashboard'] });
+      // Forçar refetch específico
+      console.log('Forçando refetch específico...');
+      await queryClient.refetchQueries({ queryKey: ['/api/equipment-list'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/equipment-dashboard'] });
+      
+      // Remover cache específico e refetch
+      console.log('Removendo cache específico...');
+      queryClient.removeQueries({ queryKey: ['/api/equipment-list'] });
+      queryClient.removeQueries({ queryKey: ['/api/equipment-dashboard'] });
+      
+      // Aguardar um pouco e refetch novamente
+      setTimeout(async () => {
+        console.log('Refetch final...');
+        await queryClient.refetchQueries({ queryKey: ['/api/equipment-list'] });
+        await queryClient.refetchQueries({ queryKey: ['/api/equipment-dashboard'] });
+      }, 100);
       
       setIsCreateDialogOpen(false);
       form.reset();
@@ -630,14 +640,33 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
             <CardContent>
               {/* Campo de Busca */}
               <div className="mb-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Buscar por nome, tipo, marca, modelo, série ou patrimônio..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Buscar por nome, tipo, marca, modelo, série ou patrimônio..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      queryClient.invalidateQueries({ queryKey: ['/api/equipment-list'] });
+                      queryClient.refetchQueries({ queryKey: ['/api/equipment-list'] });
+                      queryClient.invalidateQueries({ queryKey: ['/api/equipment-dashboard'] });
+                      queryClient.refetchQueries({ queryKey: ['/api/equipment-dashboard'] });
+                      toast({
+                        title: "Lista atualizada",
+                        description: "A lista de equipamentos foi atualizada com sucesso!",
+                      });
+                    }}
+                    title="Atualizar Lista"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
 

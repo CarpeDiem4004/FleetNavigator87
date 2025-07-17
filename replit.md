@@ -128,6 +128,13 @@ This is a comprehensive fleet management system built with React (frontend) and 
   - ✅ **API ENDPOINTS FUNCTIONAL**: Both /api/equipment-list and /api/equipment-create endpoints working correctly
   - ✅ **VALIDATION WORKING**: Equipment data validation using Zod schemas functioning properly
   - ✅ **COMPLETE SYSTEM OPERATIONAL**: Equipment management system fully functional with proper authentication and real-time updates
+  - ✅ **MANUAL REFRESH FALLBACK IMPLEMENTED**: Added manual refresh button for equipment list to handle persistent cache issues
+  - ✅ **REFRESH BUTTON FEATURES**: 
+    - Located beside search field with refresh icon (RefreshCw)
+    - Force invalidates and refetches both equipment list and dashboard data
+    - Displays success toast notification after refresh
+    - Provides reliable fallback when React Query cache invalidation fails
+    - Maintains consistent UI with outline button style
 
 - July 17, 2025: **WORKSHOP PASSOS LOGIN SYSTEM FIXED** - Resolved 404 error for oficina login access
   - ✅ **MISSING ROUTE ADDED**: Added `/oficina/login` route to App.tsx for workshop login functionality
