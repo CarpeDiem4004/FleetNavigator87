@@ -7771,6 +7771,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await pool.query(query);
       
       console.log(`[Lista Oficinas] Encontradas ${result.rows.length} oficinas ativas`);
+      console.log(`[Lista Oficinas] Detalhes das oficinas:`, result.rows.map(r => ({id: r.id, name: r.name})));
+      
+      // Forçar cache refresh
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       
       const mappedWorkshops = result.rows.map(workshop => ({
         id: workshop.id,

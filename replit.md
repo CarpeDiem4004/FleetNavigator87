@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 17, 2025: **WORKSHOP DISPLAY ISSUE RESOLVED** - Fixed Alair workshop not appearing in maintenance interface due to browser caching
+  - ✅ Diagnosed that oficina Alair (ID: 5) exists correctly in database with complete data
+  - ✅ Confirmed backend endpoint `/api/maintenance/workshops` returns all 4 workshops including Alair
+  - ✅ Identified root cause: browser cache preventing display of updated workshop data
+  - ✅ Implemented cache-busting headers (no-cache, no-store, must-revalidate) to force fresh data
+  - ✅ Verified solution: workshop data now properly loads with Alair appearing in maintenance interface
+  - ✅ All 4 workshops now visible: AUTO MECÂNICA PASSOS LTDA, Alair Manutenção e Serviços Automotivos Ltda, Auto Center RJ, Oficina Teste Ltda
+  - ✅ External access token for Alair workshop remains functional: `auto_token_bb6ba89be514`
+
 - July 16, 2025: **WORKSHOP REGISTRATION SYSTEM FULLY OPERATIONAL** - Completed comprehensive API route cleanup and database trigger fixes
   - ✅ Removed problematic `auto_create_workshop_token()` trigger that was causing foreign key constraint violations
   - ✅ Systematically updated all workshop endpoints from mixed `/api/maintenance/workshops` to unified `/api/workshops` path
