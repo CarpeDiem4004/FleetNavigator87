@@ -33,6 +33,24 @@ export default function TestLoginBase() {
       if (response.ok) {
         setResult(data);
         console.log('Login bem-sucedido:', data);
+        
+        // Redirecionar automaticamente para a base após 2 segundos
+        setTimeout(() => {
+          const basename = data.user.basename;
+          if (basename === 'GP03') {
+            window.location.href = '/bases/gp03';
+          } else if (basename === 'GP02') {
+            window.location.href = '/bases/gp02';
+          } else if (basename === 'GP01') {
+            window.location.href = '/bases/gp01';
+          } else if (basename === 'Campinas') {
+            window.location.href = '/bases/campinas';
+          } else {
+            // Para outras bases, usar formato padrão
+            const baseUrl = basename?.toLowerCase().replace(/\s+/g, '-');
+            window.location.href = `/bases/${baseUrl}`;
+          }
+        }, 2000);
       } else {
         setError(data.message || 'Erro no login');
         console.error('Erro no login:', data);
@@ -118,6 +136,9 @@ export default function TestLoginBase() {
                   <strong>Base:</strong> {result.user?.basename} (ID: {result.user?.base_id})
                   <br />
                   <strong>Ativo:</strong> {result.user?.isActive ? 'Sim' : 'Não'}
+                </div>
+                <div className="mt-3 p-2 bg-blue-50 rounded text-sm text-blue-800">
+                  <strong>🔄 Redirecionando automaticamente para a base {result.user?.basename} em 2 segundos...</strong>
                 </div>
               </AlertDescription>
             </Alert>
