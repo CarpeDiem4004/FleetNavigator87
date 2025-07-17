@@ -152,6 +152,7 @@ export default function Equipment() {
   const [selectedTermForUpload, setSelectedTermForUpload] = useState<any>(null);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [forceRefreshKey, setForceRefreshKey] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -190,15 +191,24 @@ export default function Equipment() {
   });
 
   // Query para buscar equipamentos
-  const { data: equipmentsResponse, isLoading } = useQuery({
-    queryKey: ['/api/equipment-list'],
+  const { data: equipmentsResponse, isLoading, refetch: refetchEquipments } = useQuery({
+    queryKey: ['/api/equipment-list', forceRefreshKey],
+    staleTime: 0,
+    cacheTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
   
   const equipments = equipmentsResponse?.data || [];
+  console.log('Equipamentos carregados:', equipments.length, equipments);
 
   // Query para dashboard
-  const { data: dashboard } = useQuery({
+  const { data: dashboard, refetch: refetchDashboard } = useQuery({
     queryKey: ['/api/equipment-dashboard'],
+    staleTime: 0,
+    cacheTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   // Query para buscar termos de responsabilidade
@@ -246,26 +256,16 @@ export default function Equipment() {
     onSuccess: async (response) => {
       console.log('Equipamento criado com sucesso:', response);
       
-      // Invalidar cache completo
-      console.log('Invalidando cache completo...');
-      await queryClient.invalidateQueries();
+      // Forçar atualização mudando a chave
+      setForceRefreshKey(prev => prev + 1);
       
-      // Forçar refetch específico
-      console.log('Forçando refetch específico...');
-      await queryClient.refetchQueries({ queryKey: ['/api/equipment-list'] });
-      await queryClient.refetchQueries({ queryKey: ['/api/equipment-dashboard'] });
+      // Limpar todo o cache do React Query
+      queryClient.clear();
       
-      // Remover cache específico e refetch
-      console.log('Removendo cache específico...');
-      queryClient.removeQueries({ queryKey: ['/api/equipment-list'] });
-      queryClient.removeQueries({ queryKey: ['/api/equipment-dashboard'] });
-      
-      // Aguardar um pouco e refetch novamente
-      setTimeout(async () => {
-        console.log('Refetch final...');
-        await queryClient.refetchQueries({ queryKey: ['/api/equipment-list'] });
-        await queryClient.refetchQueries({ queryKey: ['/api/equipment-dashboard'] });
-      }, 100);
+      // Aguardar um pouco para garantir que o backend processou
+      setTimeout(() => {
+        setForceRefreshKey(prev => prev + 1);
+      }, 500);
       
       setIsCreateDialogOpen(false);
       form.reset();
@@ -653,11 +653,13 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      queryClient.invalidateQueries({ queryKey: ['/api/equipment-list'] });
-                      queryClient.refetchQueries({ queryKey: ['/api/equipment-list'] });
-                      queryClient.invalidateQueries({ queryKey: ['/api/equipment-dashboard'] });
-                      queryClient.refetchQueries({ queryKey: ['/api/equipment-dashboard'] });
+                    onClick={async () => {
+                      // Forçar atualização mudando a chave
+                      setForceRefreshKey(prev => prev + 1);
+                      
+                      // Limpar completamente o cache
+                      queryClient.clear();
+                      
                       toast({
                         title: "Lista atualizada",
                         description: "A lista de equipamentos foi atualizada com sucesso!",
