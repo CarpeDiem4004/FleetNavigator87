@@ -82,10 +82,10 @@ export async function getDashboardKPIs(req: Request, res: Response) {
     // 4. Buscar dados de combustível do mês atual
     const fuelResult = await pool.query(
       `SELECT 
-        COALESCE(SUM(quantity_litros), 0) as total_litros_diesel,
+        COALESCE(SUM(quantidade_litros), 0) as total_litros_diesel,
         COALESCE(SUM(km), 0) as total_km_frota,
         CASE 
-          WHEN SUM(quantity_litros) > 0 THEN ROUND(SUM(km)::numeric / SUM(quantity_litros)::numeric, 2) 
+          WHEN SUM(quantidade_litros) > 0 THEN ROUND(SUM(km)::numeric / SUM(quantidade_litros)::numeric, 2) 
           ELSE 0 
         END as media_diesel_km
        FROM historico_consolidado_abastecimentos 

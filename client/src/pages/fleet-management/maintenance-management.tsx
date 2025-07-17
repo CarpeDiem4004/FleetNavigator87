@@ -32,7 +32,8 @@ import {
   User,
   Calendar,
   Key,
-  Trash2
+  Trash2,
+  RefreshCw
 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useToast } from "@/hooks/use-toast";
@@ -1415,6 +1416,21 @@ export default function MaintenanceManagement() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
+                <Button 
+                  variant="outline" 
+                  size="default" 
+                  onClick={() => {
+                    loadData();
+                    toast({
+                      title: "Atualizado",
+                      description: "Dados de manutenção atualizados com sucesso"
+                    });
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Atualizar
+                </Button>
               </div>
 
               <div className="grid gap-4">
@@ -1540,6 +1556,21 @@ export default function MaintenanceManagement() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
+                <Button 
+                  variant="outline" 
+                  size="default" 
+                  onClick={() => {
+                    loadData();
+                    toast({
+                      title: "Atualizado",
+                      description: "Dados de recebimentos atualizados com sucesso"
+                    });
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Atualizar
+                </Button>
               </div>
 
               <div className="grid gap-4">
