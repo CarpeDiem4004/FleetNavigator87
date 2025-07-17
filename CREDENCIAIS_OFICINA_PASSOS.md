@@ -13,7 +13,7 @@
 ### Acesso por Login/Senha
 - **URL**: https://muricionfleet-joaopaulo60.replit.app/oficina/login
 - **CNPJ**: 43.965.708/0001-95 (ou 43965708000195)
-- **Senha**: passos123
+- **Senha**: passos123 (com hash bcrypt configurado)
 
 ### Acesso por Token Externo (Direto)
 - **URL**: https://muricionfleet-joaopaulo60.replit.app/oficina/external?token=auto_token_passos_761bab98-9fb0-4ee3-b821-07d88af94fe0
