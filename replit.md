@@ -121,8 +121,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
   - ✅ Added to AppLayout.tsx main footer for all internal system pages
   - ✅ Added to BaseLayout.tsx for all external base pages  
   - ✅ Added to MainLayoutSimple.tsx for simple layout pages
+  - ✅ **EXTENDED TO WORKSHOP PAGES** - Added to all oficina-related pages:
+    - ✅ OficinaExternalDashboard.tsx - external workshop dashboard
+    - ✅ OficinaDashboard.tsx - internal workshop dashboard
+    - ✅ CarReception.tsx - vehicle reception form
+    - ✅ OficinaLogin.tsx - workshop login page (fixed position)
   - ✅ Designed with subtle gray text and proper formatting
   - ✅ Maintains professional appearance while providing developer attribution
+  - ✅ Comprehensive coverage across all workshop/oficina interfaces
 
 - July 17, 2025: **WORKSHOP EDIT CONTROL FIXED** - Resolved business rule violation where delivered vehicles could still be edited
   - ✅ **PROBLEM IDENTIFIED**: Oficina dashboard allowed editing of vehicle receptions even when status was "entregue"

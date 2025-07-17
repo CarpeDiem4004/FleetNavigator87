@@ -147,6 +147,11 @@ export default function OficinaLogin() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Rodapé discreto */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white bg-opacity-90 py-4 text-center text-gray-400 text-sm">
+        Desenvolvido por Carpe Diem 4004 | (11) 97055-8053
+      </div>
     </div>
   );
 }
