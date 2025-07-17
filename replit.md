@@ -117,6 +117,16 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 17, 2025: **OFICINA PASSOS CAR RECEPTION SYSTEM FIXED** - Resolved 500 error preventing vehicle registration for maintenance
+  - ✅ **ROOT CAUSE IDENTIFIED**: Oficina Passos (ID: 11) existed in `oficinas` table but not in `workshops` table
+  - ✅ **FOREIGN KEY CONSTRAINT VIOLATION**: car_receptions table requires valid workshop_id reference
+  - ✅ **SOLUTION IMPLEMENTED**: Added Oficina Passos to `workshops` table with matching ID 11
+  - ✅ **DATABASE SYNCHRONIZATION**: Synchronized oficinas and workshops tables for Passos workshop
+  - ✅ **ENDPOINT RESTORED**: POST /api/oficina/car-receptions now working correctly for Passos
+  - ✅ **EXTERNAL ACCESS FUNCTIONAL**: Oficina Passos can now register vehicle entries for maintenance
+  - ✅ **TOKEN VALIDATION**: External token `auto_token_passos_761bab98-9fb0-4ee3-b821-07d88af94fe0` working correctly
+  - ✅ **COMPLETE INTEGRATION**: Car reception system operational for all workshop external access
+
 - July 17, 2025: **NEW EQUIPMENT MANAGER ROLE ADDED** - Added "Gestor de Equipamentos" profile for equipment management functionality
   - ✅ Added `gestor_equipamentos` to userRoleEnum in schema.ts
   - ✅ Updated User interface type to include new role
