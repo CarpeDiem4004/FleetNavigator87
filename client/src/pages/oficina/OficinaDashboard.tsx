@@ -1114,16 +1114,25 @@ export default function OficinaDashboard() {
                             </Badge>
                           )}
                           
-                          {/* Botão de Edição sempre disponível */}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => openUpdateModal(reception)}
-                            className="text-xs"
-                          >
-                            <Edit className="h-3 w-3 mr-1" />
-                            Editar
-                          </Button>
+                          {/* Botão de Edição disponível apenas quando não está entregue */}
+                          {reception.status !== "entregue" && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => openUpdateModal(reception)}
+                              className="text-xs"
+                            >
+                              <Edit className="h-3 w-3 mr-1" />
+                              Editar
+                            </Button>
+                          )}
+                          
+                          {/* Indicador de apenas visualização quando entregue */}
+                          {reception.status === "entregue" && (
+                            <span className="text-xs text-gray-500 italic">
+                              Apenas visualização
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

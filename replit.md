@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 17, 2025: **WORKSHOP EDIT CONTROL FIXED** - Resolved business rule violation where delivered vehicles could still be edited
+  - ✅ **PROBLEM IDENTIFIED**: Oficina dashboard allowed editing of vehicle receptions even when status was "entregue"
+  - ✅ **SOLUTION IMPLEMENTED**: Added conditional rendering to hide edit button when reception.status === "entregue"
+  - ✅ **BUSINESS RULE ENFORCED**: Only vehicles with status other than "entregue" can be edited
+  - ✅ **USER EXPERIENCE IMPROVED**: Added "Apenas visualização" indicator for delivered vehicles
+  - ✅ **COMPLIANCE ACHIEVED**: System now properly prevents editing of completed/delivered vehicle services
+  - ✅ **CODE LOCATION**: Fixed in client/src/pages/oficina/OficinaDashboard.tsx lines 1120-1138 and OficinaExternalDashboard.tsx lines 930-990
+  - ✅ **COMPLETE INTEGRITY**: Workshop edit controls now follow proper business logic rules
+
 - July 17, 2025: **OFICINA PASSOS CAR RECEPTION SYSTEM FIXED** - Resolved 500 error preventing vehicle registration for maintenance
   - ✅ **ROOT CAUSE IDENTIFIED**: Oficina Passos (ID: 11) existed in `oficinas` table but not in `workshops` table
   - ✅ **FOREIGN KEY CONSTRAINT VIOLATION**: car_receptions table requires valid workshop_id reference

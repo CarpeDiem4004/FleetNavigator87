@@ -924,57 +924,67 @@ export default function OficinaExternalDashboard() {
                         <div className="flex items-center justify-between mb-2">
                           <p className="font-medium">{reception.vehiclePlate}</p>
                           <div className="flex items-center space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setEditingReception(reception);
-                                setCarFormData({
-                                  vehiclePlate: reception.vehiclePlate,
-                                  vehicleModel: reception.vehicleModel,
-                                  vehicleType: (reception as any).vehicleType || 'carro',
-                                  currentKm: (reception as any).currentKm?.toString() || '',
-                                  baseId: (reception as any).baseId?.toString() || '',
-                                  projectId: (reception as any).projectId?.toString() || '',
-                                  serviceDescription: reception.serviceDescription,
-                                  replacedParts: (reception as any).replacedParts || '',
-                                  laborCost: (reception as any).laborCost ? formatCurrency(((reception as any).laborCost * 100).toString()) : '',
-                                  partsCost: (reception as any).partsCost?.toString() || '',
-                                  deliveryDeadline: (reception as any).deliveryDeadline ? new Date((reception as any).deliveryDeadline).toISOString().split('T')[0] : '',
-                                  status: reception.status || 'recebido',
-                                  notes: (reception as any).notes || '',
-                                  deliveryPersonName: (reception as any).deliveryPersonName || '',
-                                  deliveryPersonCpf: (reception as any).deliveryPersonCpf || '',
-                                  deliveryPersonPhone: (reception as any).deliveryPersonPhone || ''
-                                });
-                                
-                                // Carregar bases do projeto selecionado
-                                if ((reception as any).projectId) {
-                                  console.log('Projeto selecionado ID:', (reception as any).projectId);
-                                  console.log('Projetos disponíveis:', projects);
-                                  const selectedProject = projects.find(p => p.id.toString() === (reception as any).projectId?.toString());
-                                  console.log('Projeto encontrado:', selectedProject);
-                                  setSelectedProjectBases(selectedProject?.bases || []);
-                                  console.log('Bases carregadas:', selectedProject?.bases || []);
-                                }
-                                // Carregar peças existentes
-                                try {
-                                  const existingParts = JSON.parse((reception as any).replacedParts || '[]');
-                                  setParts(Array.isArray(existingParts) ? existingParts : []);
-                                } catch (e) {
-                                  setParts([]);
-                                }
-                                // Carregar projeto/base selecionados
-                                if ((reception as any).projectId) {
-                                  const selectedProject = projects.find(p => p.id.toString() === (reception as any).projectId?.toString());
-                                  setSelectedProjectBases(selectedProject?.bases || []);
-                                }
-                                setIsCarFormOpen(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4 mr-1" />
-                              Editar
-                            </Button>
+                            {/* Botão de Edição disponível apenas quando não está entregue */}
+                            {reception.status !== "entregue" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingReception(reception);
+                                  setCarFormData({
+                                    vehiclePlate: reception.vehiclePlate,
+                                    vehicleModel: reception.vehicleModel,
+                                    vehicleType: (reception as any).vehicleType || 'carro',
+                                    currentKm: (reception as any).currentKm?.toString() || '',
+                                    baseId: (reception as any).baseId?.toString() || '',
+                                    projectId: (reception as any).projectId?.toString() || '',
+                                    serviceDescription: reception.serviceDescription,
+                                    replacedParts: (reception as any).replacedParts || '',
+                                    laborCost: (reception as any).laborCost ? formatCurrency(((reception as any).laborCost * 100).toString()) : '',
+                                    partsCost: (reception as any).partsCost?.toString() || '',
+                                    deliveryDeadline: (reception as any).deliveryDeadline ? new Date((reception as any).deliveryDeadline).toISOString().split('T')[0] : '',
+                                    status: reception.status || 'recebido',
+                                    notes: (reception as any).notes || '',
+                                    deliveryPersonName: (reception as any).deliveryPersonName || '',
+                                    deliveryPersonCpf: (reception as any).deliveryPersonCpf || '',
+                                    deliveryPersonPhone: (reception as any).deliveryPersonPhone || ''
+                                  });
+                                  
+                                  // Carregar bases do projeto selecionado
+                                  if ((reception as any).projectId) {
+                                    console.log('Projeto selecionado ID:', (reception as any).projectId);
+                                    console.log('Projetos disponíveis:', projects);
+                                    const selectedProject = projects.find(p => p.id.toString() === (reception as any).projectId?.toString());
+                                    console.log('Projeto encontrado:', selectedProject);
+                                    setSelectedProjectBases(selectedProject?.bases || []);
+                                    console.log('Bases carregadas:', selectedProject?.bases || []);
+                                  }
+                                  // Carregar peças existentes
+                                  try {
+                                    const existingParts = JSON.parse((reception as any).replacedParts || '[]');
+                                    setParts(Array.isArray(existingParts) ? existingParts : []);
+                                  } catch (e) {
+                                    setParts([]);
+                                  }
+                                  // Carregar projeto/base selecionados
+                                  if ((reception as any).projectId) {
+                                    const selectedProject = projects.find(p => p.id.toString() === (reception as any).projectId?.toString());
+                                    setSelectedProjectBases(selectedProject?.bases || []);
+                                  }
+                                  setIsCarFormOpen(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                Editar
+                              </Button>
+                            )}
+                            
+                            {/* Indicador de apenas visualização quando entregue */}
+                            {reception.status === "entregue" && (
+                              <span className="text-xs text-gray-500 italic">
+                                Apenas visualização
+                              </span>
+                            )}
                             <Badge variant="outline">
                               {new Date(reception.created_at).toLocaleDateString('pt-BR')}
                             </Badge>
