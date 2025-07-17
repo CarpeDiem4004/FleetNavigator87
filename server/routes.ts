@@ -7747,6 +7747,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para listar oficinas
+  app.get("/api/maintenance/workshops", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          o.id,
+          COALESCE(o.nome_fantasia, o.razao_social) as name,
+          o.cnpj,
+          o.email,
+          o.telefone as phone,
+          o.endereco as address,
+          o.responsavel as contact_person,
+          o.status,
+          o.tipo as specialties,
+          o.created_at,
+          o.updated_at
+        FROM oficinas o
+        WHERE o.status = 'ativo'
+        ORDER BY COALESCE(o.nome_fantasia, o.razao_social) ASC
+      `;
+      
+      const result = await pool.query(query);
+      
+      console.log(`[Lista Oficinas] Encontradas ${result.rows.length} oficinas ativas`);
+      
+      const mappedWorkshops = result.rows.map(workshop => ({
+        id: workshop.id,
+        name: workshop.name,
+        cnpj: workshop.cnpj || '',
+        email: workshop.email || '',
+        phone: workshop.phone || '',
+        address: workshop.address || '',
+        contactPerson: workshop.contact_person || '',
+        specialties: workshop.specialties || '',
+        status: workshop.status,
+        isActive: workshop.status === 'ativo',
+        createdAt: workshop.created_at,
+        updatedAt: workshop.updated_at
+      }));
+      
+      res.json(mappedWorkshops);
+    } catch (error) {
+      console.error("Error fetching workshops:", error);
+      res.status(500).json({ message: "Error fetching workshops" });
+    }
+  });
+
   // API para gerenciar credenciais das oficinas (apenas admins)
   app.get("/api/maintenance/workshops/credentials", hasMaintenanceAccess, async (req, res) => {
     try {
@@ -18221,6 +18268,215 @@ async function createFuelRequestNotification(fuelRequest) {
   // Test fuel card form
   app.get('/test-fuel-card', (req, res) => {
     res.sendFile(path.join(__dirname, '../test-fuel-card-form.html'));
+  });
+
+  // Endpoint específico para acesso externo da oficina "Passos"
+  app.get("/oficina-passos", async (req, res) => {
+    try {
+      const token = req.query.token as string;
+      
+      if (!token) {
+        return res.status(400).json({ message: "Token é obrigatório" });
+      }
+
+      // Buscar oficina pelo token
+      const query = `
+        SELECT id, razao_social, cnpj, email, telefone, endereco, responsavel, external_token 
+        FROM oficinas 
+        WHERE external_token = $1 AND status = 'ativo'
+      `;
+      
+      const result = await pool.query(query, [token]);
+      
+      if (result.rows.length === 0) {
+        return res.status(401).json({ message: "Token inválido ou oficina não encontrada" });
+      }
+
+      const oficina = result.rows[0];
+      
+      // Página HTML para a oficina "Passos"
+      const html = `
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Oficina Passos - Acesso Externo</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 0; 
+              padding: 20px; 
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              min-height: 100vh;
+            }
+            .container {
+              max-width: 900px;
+              margin: 0 auto;
+              background: white;
+              border-radius: 15px;
+              box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+              overflow: hidden;
+            }
+            .header { 
+              background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
+              color: white; 
+              padding: 30px; 
+              text-align: center;
+            }
+            .header h1 {
+              margin: 0;
+              font-size: 2.5em;
+              font-weight: 300;
+            }
+            .header p {
+              margin: 10px 0 0 0;
+              font-size: 1.2em;
+              opacity: 0.9;
+            }
+            .content { 
+              padding: 40px; 
+            }
+            .success-badge {
+              background: #10B981;
+              color: white;
+              padding: 15px 25px;
+              border-radius: 50px;
+              display: inline-block;
+              margin-bottom: 30px;
+              font-weight: bold;
+            }
+            .info-card { 
+              background: #F8FAFC; 
+              padding: 25px; 
+              border-radius: 10px; 
+              margin: 20px 0; 
+              border-left: 4px solid #3B82F6;
+            }
+            .info-card h3 {
+              color: #1E40AF;
+              margin: 0 0 15px 0;
+            }
+            .info-row {
+              display: flex;
+              justify-content: space-between;
+              margin: 8px 0;
+              padding: 8px 0;
+              border-bottom: 1px solid #E2E8F0;
+            }
+            .info-row:last-child {
+              border-bottom: none;
+            }
+            .info-label {
+              font-weight: bold;
+              color: #475569;
+            }
+            .info-value {
+              color: #64748B;
+            }
+            .actions-section {
+              background: #F1F5F9;
+              padding: 30px;
+              border-radius: 10px;
+              margin: 30px 0;
+            }
+            .actions-section h3 {
+              color: #1E40AF;
+              margin: 0 0 20px 0;
+            }
+            .feature-list {
+              list-style: none;
+              padding: 0;
+            }
+            .feature-list li {
+              padding: 8px 0;
+              position: relative;
+              padding-left: 25px;
+            }
+            .feature-list li:before {
+              content: "✓";
+              position: absolute;
+              left: 0;
+              color: #10B981;
+              font-weight: bold;
+            }
+            .footer {
+              background: #1E293B;
+              color: white;
+              text-align: center;
+              padding: 20px;
+              margin-top: 30px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔧 Oficina Passos</h1>
+              <p>Portal de Acesso Externo</p>
+            </div>
+            
+            <div class="content">
+              <div class="success-badge">
+                ✅ Acesso Autorizado
+              </div>
+              
+              <div class="info-card">
+                <h3>Informações da Oficina</h3>
+                <div class="info-row">
+                  <span class="info-label">Razão Social:</span>
+                  <span class="info-value">${oficina.razao_social}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">CNPJ:</span>
+                  <span class="info-value">${oficina.cnpj || 'Não informado'}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">E-mail:</span>
+                  <span class="info-value">${oficina.email || 'Não informado'}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Telefone:</span>
+                  <span class="info-value">${oficina.telefone || 'Não informado'}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Endereço:</span>
+                  <span class="info-value">${oficina.endereco || 'Não informado'}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Responsável:</span>
+                  <span class="info-value">${oficina.responsavel || 'Não informado'}</span>
+                </div>
+              </div>
+              
+              <div class="actions-section">
+                <h3>Funcionalidades Disponíveis</h3>
+                <ul class="feature-list">
+                  <li>Visualizar ordens de serviço da frota</li>
+                  <li>Atualizar status de manutenção em tempo real</li>
+                  <li>Registrar peças utilizadas e custos</li>
+                  <li>Enviar relatórios de progresso</li>
+                  <li>Comunicar com equipe de logística</li>
+                  <li>Acessar histórico de serviços</li>
+                  <li>Gerenciar recebimento de veículos</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div class="footer">
+              <p>Murici On Fleet 2.0 - Sistema de Gestão de Frotas</p>
+              <p>Acesso autorizado via token: ${oficina.external_token}</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      res.send(html);
+    } catch (error) {
+      console.error("Erro no acesso externo da oficina Passos:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
   });
 
   const httpServer = createServer(app);
