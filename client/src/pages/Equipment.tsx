@@ -203,13 +203,16 @@ export default function Equipment() {
   console.log('Equipamentos carregados:', equipments.length, equipments);
 
   // Query para dashboard
-  const { data: dashboard, refetch: refetchDashboard } = useQuery({
-    queryKey: ['/api/equipment-dashboard'],
+  const { data: dashboardResponse, refetch: refetchDashboard } = useQuery({
+    queryKey: ['/api/equipment-dashboard', forceRefreshKey],
     staleTime: 0,
     cacheTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   });
+  
+  const dashboard = dashboardResponse?.data;
+  console.log('Dashboard carregado:', dashboard);
 
   // Query para buscar termos de responsabilidade
   const { data: responsibilityTermsResponse } = useQuery({
@@ -593,37 +596,37 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                   <Settings className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{dashboard.total_equipments}</div>
+                  <div className="text-2xl font-bold">{dashboard.total}</div>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Disponíveis ({dashboard.available_equipments})</CardTitle>
+                  <CardTitle className="text-sm font-medium">Disponíveis ({dashboard.disponivel})</CardTitle>
                   <div className="h-4 w-4 rounded-full bg-green-500"></div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{dashboard.available_equipments}</div>
+                  <div className="text-2xl font-bold">{dashboard.disponivel}</div>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Em Uso ({dashboard.in_use_equipments})</CardTitle>
+                  <CardTitle className="text-sm font-medium">Em Uso ({dashboard.em_uso})</CardTitle>
                   <div className="h-4 w-4 rounded-full bg-blue-500"></div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{dashboard.in_use_equipments}</div>
+                  <div className="text-2xl font-bold">{dashboard.em_uso}</div>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Em Manutenção ({dashboard.maintenance_equipments})</CardTitle>
+                  <CardTitle className="text-sm font-medium">Em Manutenção ({dashboard.manutencao})</CardTitle>
                   <div className="h-4 w-4 rounded-full bg-red-500"></div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{dashboard.maintenance_equipments}</div>
+                  <div className="text-2xl font-bold">{dashboard.manutencao}</div>
                 </CardContent>
               </Card>
             </div>
