@@ -9016,6 +9016,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rota para users (tem problema no fechamento do endpoint anterior)
 
+  // HybridAPI - Endpoints para usuários
+  app.get("/api/hybrid/users", isAuthenticated, async (req, res) => {
+    try {
+      console.log("HybridAPI: Obtendo lista de usuários...");
+      
+      // Buscar usuários com informações de base
+      const users = await storage.getAllUsers();
+      
+      // Buscar bases para enriquecer os dados
+      const bases = await storage.getAllBases();
+      
+      // Enriquecer dados dos usuários com informações de base
+      const enrichedUsers = users.map(user => {
+        const base = bases.find(b => b.id === user.baseId);
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          baseId: user.baseId,
+          baseName: base ? base.name : null,
+          isActive: user.isActive,
+          created_at: user.created_at
+        };
+      });
+      
+      console.log(`HybridAPI: Retornando ${enrichedUsers.length} usuários`);
+      return res.json(enrichedUsers);
+    } catch (error) {
+      console.error("HybridAPI: Erro ao buscar usuários:", error);
+      return res.status(500).json({ message: "Erro ao buscar usuários" });
+    }
+  });
+
+  app.post("/api/hybrid/users", isAuthenticated, async (req, res) => {
+    try {
+      console.log("HybridAPI: Criando novo usuário...");
+      console.log("Dados recebidos:", req.body);
+      
+      const { name, email, role, baseId, password } = req.body;
+      
+      // Validar dados obrigatórios
+      if (!name || !email || !role) {
+        return res.status(400).json({ 
+          message: "Nome, email e papel são obrigatórios" 
+        });
+      }
+      
+      // Verificar se o email já existe
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ 
+          message: "Email já está em uso" 
+        });
+      }
+      
+      // Gerar senha aleatória se não fornecida
+      const finalPassword = password || Math.random().toString(36).slice(-8);
+      
+      // Hash da senha
+      const hashedPassword = await hashPassword(finalPassword);
+      
+      // Criar usuário
+      const newUser = await storage.createUser({
+        name,
+        email,
+        password: hashedPassword,
+        role,
+        baseId: baseId || null,
+        isActive: true
+      });
+      
+      console.log(`HybridAPI: Usuário criado com sucesso - ID: ${newUser.id}, Email: ${newUser.email}`);
+      
+      // Retornar dados do usuário criado (sem senha)
+      const responseUser = {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        baseId: newUser.baseId,
+        isActive: newUser.isActive,
+        generatedPassword: finalPassword // Retornar senha gerada para o frontend
+      };
+      
+      return res.status(201).json({
+        message: "Usuário criado com sucesso",
+        user: responseUser
+      });
+    } catch (error) {
+      console.error("HybridAPI: Erro ao criar usuário:", error);
+      return res.status(500).json({ message: "Erro ao criar usuário" });
+    }
+  });
+
   // Dashboard API - usando middleware híbrido
   // (as rotas são redefinidas mais abaixo)
 
