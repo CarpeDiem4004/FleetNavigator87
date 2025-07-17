@@ -9043,7 +9043,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       console.log(`HybridAPI: Retornando ${enrichedUsers.length} usuários`);
-      return res.json(enrichedUsers);
+      return res.json({
+        success: true,
+        count: enrichedUsers.length,
+        users: enrichedUsers
+      });
     } catch (error) {
       console.error("HybridAPI: Erro ao buscar usuários:", error);
       return res.status(500).json({ message: "Erro ao buscar usuários" });
@@ -9108,6 +9112,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("HybridAPI: Erro ao criar usuário:", error);
       return res.status(500).json({ message: "Erro ao criar usuário" });
+    }
+  });
+
+  app.get("/api/hybrid/bases", isAuthenticated, async (req, res) => {
+    try {
+      console.log("HybridAPI: Obtendo lista de bases...");
+      
+      // Buscar todas as bases
+      const bases = await storage.getAllBases();
+      
+      console.log(`HybridAPI: Retornando ${bases.length} bases`);
+      return res.json({
+        success: true,
+        count: bases.length,
+        bases: bases
+      });
+    } catch (error) {
+      console.error("HybridAPI: Erro ao buscar bases:", error);
+      return res.status(500).json({ message: "Erro ao buscar bases" });
     }
   });
 
