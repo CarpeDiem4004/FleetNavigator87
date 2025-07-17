@@ -319,7 +319,8 @@ export default function MaintenanceManagement() {
       const workshopsResponse = await apiRequest("GET", "/api/maintenance/workshops");
       const workshopsData = await workshopsResponse.json();
       console.log("Workshop data received:", workshopsData);
-      setWorkshops(workshopsData.workshops || []);
+      // O endpoint /api/maintenance/workshops retorna diretamente um array, não { workshops: [] }
+      setWorkshops(workshopsData || []);
 
       // Carregar veículos
       const vehiclesResponse = await apiRequest("GET", "/api/vehicles");
