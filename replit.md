@@ -117,6 +117,16 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 17, 2025: **WORKSHOP PASSOS LOGIN SYSTEM FIXED** - Resolved 404 error for oficina login access
+  - ✅ **MISSING ROUTE ADDED**: Added `/oficina/login` route to App.tsx for workshop login functionality
+  - ✅ **CREDENTIALS CONFIGURED**: Set up login credentials for AUTO MECÂNICA PASSOS LTDA
+  - ✅ **WORKSHOP DATA UPDATED**: Added password "passos123" to enable login access
+  - ✅ **AUTHENTICATION WORKING**: Workshop can now login with CNPJ 43.965.708/0001-95
+  - ✅ **DUAL ACCESS MODES**: Both login/password and external token access available
+  - ✅ **DOCUMENTATION CREATED**: Created CREDENCIAIS_OFICINA_PASSOS.md with complete access instructions
+  - ✅ **SYSTEM INTEGRITY**: All existing user data preserved during implementation
+  - ✅ **COMPLETE FUNCTIONALITY**: Workshop can now access dashboard, register vehicles, and update maintenance status
+
 - July 17, 2025: **GESTOR EQUIPAMENTOS PERMISSION ISSUE FIXED** - Resolved access denied issue for "gestor_equipamentos" role users
   - ✅ **PROBLEM IDENTIFIED**: User "debora.guedes" with role "gestor_equipamentos" was getting access denied to all system pages
   - ✅ **ROOT CAUSE**: Missing role definition in use-base-permission.tsx file - "gestor_equipamentos" not included in permission validation

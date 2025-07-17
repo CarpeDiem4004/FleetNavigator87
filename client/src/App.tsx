@@ -1089,6 +1089,11 @@ function App() {
             <OficinaLogin />
           </Route>
           
+          {/* Login da Oficina - Rota direta */}
+          <Route path="/oficina/login">
+            <OficinaLogin />
+          </Route>
+          
           {/* Dashboard da Oficina */}
           <Route path="/maintenance/dashboard-oficina">
             <OficinaDashboard />
