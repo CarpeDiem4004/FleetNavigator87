@@ -46,7 +46,7 @@ interface User {
   id: number;
   name: string;
   email: string;
-  role: 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall' | 'coordenador';
+  role: 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall' | 'coordenador' | 'gestor_equipamentos';
   baseId: number | null;
   baseName: string | null;
   lastLogin: string | null;
@@ -79,6 +79,7 @@ const translateUserRole = (role: string): string => {
     gestor: 'Gestor',
     gestor_combustivel: 'Gestor de Combustível',
     gestor_frota: 'Gestor de Frota',
+    gestor_equipamentos: 'Gestor de Equipamentos',
     line_hall: 'Line Hall',
     operador: 'Operador',
     oficina: 'Oficina',
@@ -95,6 +96,7 @@ const getRoleBadgeClass = (role: string): string => {
     gestor: 'bg-blue-100 text-blue-800',
     gestor_combustivel: 'bg-orange-100 text-orange-800',
     gestor_frota: 'bg-indigo-100 text-indigo-800',
+    gestor_equipamentos: 'bg-pink-100 text-pink-800',
     line_hall: 'bg-cyan-100 text-cyan-800',
     operador: 'bg-green-100 text-green-800',
     oficina: 'bg-amber-100 text-amber-800',
@@ -690,12 +692,13 @@ const UsersNew: React.FC = () => {
                     <NativeSelect
                       id="role"
                       value={newUser.role}
-                      onChange={(e) => setNewUser({...newUser, role: e.target.value as 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall' | 'coordenador'})}
+                      onChange={(e) => setNewUser({...newUser, role: e.target.value as 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall' | 'coordenador' | 'gestor_equipamentos'})}
                       options={[
                         { value: 'admin', label: 'Administrador' },
                         { value: 'gestor', label: 'Gestor' },
                         { value: 'gestor_frota', label: 'Gestor de Frota' },
                         { value: 'gestor_combustivel', label: 'Gestor de Combustível' },
+                        { value: 'gestor_equipamentos', label: 'Gestor de Equipamentos' },
                         { value: 'coordenador', label: 'Coordenador de Projeto' },
                         { value: 'line_hall', label: 'Line Hall' },
                         { value: 'operador', label: 'Operador' },

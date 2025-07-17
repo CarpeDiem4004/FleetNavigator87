@@ -117,6 +117,16 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 17, 2025: **NEW EQUIPMENT MANAGER ROLE ADDED** - Added "Gestor de Equipamentos" profile for equipment management functionality
+  - ✅ Added `gestor_equipamentos` to userRoleEnum in schema.ts
+  - ✅ Updated User interface type to include new role
+  - ✅ Added translation: "Gestor de Equipamentos" with pink badge styling
+  - ✅ Added new profile option to user registration dropdown
+  - ✅ Database migration executed to support new enum value
+  - ✅ All 25 existing users preserved without data loss
+  - ✅ New profile specifically designed for equipment management tasks
+  - ✅ System now supports complete equipment lifecycle management with dedicated user role
+
 - July 17, 2025: **XPT PROJECT BASES LOADING ISSUE RESOLVED** - Fixed missing XPT bases in fuel card request forms
   - ✅ **ROOT CAUSE IDENTIFIED**: All 12 XPT project bases were inactive (is_active = false) in database
   - ✅ **SOLUTION IMPLEMENTED**: Activated all XPT bases using UPDATE query: `UPDATE project_bases SET is_active = true WHERE project_id = 12`
