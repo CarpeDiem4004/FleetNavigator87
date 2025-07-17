@@ -117,6 +117,17 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 17, 2025: **XPT PROJECT BASES LOADING ISSUE RESOLVED** - Fixed missing XPT bases in fuel card request forms
+  - ✅ **ROOT CAUSE IDENTIFIED**: All 12 XPT project bases were inactive (is_active = false) in database
+  - ✅ **SOLUTION IMPLEMENTED**: Activated all XPT bases using UPDATE query: `UPDATE project_bases SET is_active = true WHERE project_id = 12`
+  - ✅ **BASES ACTIVATED**: 12 XPT locations now available in dropdowns:
+    - Alta Floresta, Americana/Polis, Brasília, Chapadinha, Erechim, Francisco Beltrão
+    - Manoel Ribas, Santo Antonio da Platina, São Mateus do Sul, Três Lagoas, Umuarama, Viçosa
+  - ✅ **API VERIFICATION**: `/api/project-bases` endpoint confirmed returning all 12 active XPT bases
+  - ✅ **EXTERNAL WORKSHOP ERROR FIXED**: Fixed JavaScript error in CarReception.tsx line 450 where `token` variable was undefined
+  - ✅ **VARIABLE CORRECTION**: Changed `token` to `externalToken` in onClick handler to match state variable
+  - ✅ **COMPLETE RESOLUTION**: XPT fuel card requests now functional with all bases available in dropdown
+
 - July 17, 2025: **EXTERNAL WORKSHOP ACCESS TOKEN VALIDATION COMPLETELY RESOLVED** - Fixed critical Express route ordering issue preventing workshop token validation
   - ✅ **ROOT CAUSE IDENTIFIED**: Express routes were incorrectly ordered - parameterized `:id` route was processing before specific `validate-token` route
   - ✅ **SOLUTION IMPLEMENTED**: Moved validate-token endpoint (line 5269) before parameterized `:id` route (line 5342) in server/routes.ts

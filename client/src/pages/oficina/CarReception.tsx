@@ -447,8 +447,8 @@ function CarReception() {
           <Button 
             variant="outline" 
             onClick={() => {
-              if (isExternalAccess && token) {
-                setLocation(`/oficina/external?token=${token}`);
+              if (isExternalAccess && externalToken) {
+                setLocation(`/oficina/external?token=${externalToken}`);
               } else {
                 setLocation('/maintenance/dashboard-oficina');
               }
