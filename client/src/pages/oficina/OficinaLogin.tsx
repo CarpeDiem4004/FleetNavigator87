@@ -48,7 +48,7 @@ export default function OficinaLogin() {
           title: "Login realizado com sucesso",
           description: `Bem-vindo, ${result.oficina.razao_social}!`
         });
-        setLocation("/maintenance/dashboard-oficina");
+        setLocation("/oficina/external");
       } else {
         const error = await response.json();
         throw new Error(error.message || "Erro no login");

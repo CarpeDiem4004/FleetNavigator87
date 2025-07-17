@@ -25,11 +25,12 @@
 2. **Acesso Direto**: Use o link com token para acesso direto ao sistema
 
 ## Funcionalidades Disponíveis
-- Dashboard da oficina
+- Dashboard da oficina (interface unificada)
 - Visualização de serviços de manutenção
 - Registro de recebimento de carros
 - Atualização de status de serviços
 - Histórico de manutenções
+- Acesso consistente independente do método de login
 
 ---
 *Documento gerado em 17/07/2025 - Sistema Murici On Fleet 2.0*
