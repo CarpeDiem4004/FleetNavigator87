@@ -517,6 +517,37 @@ export const useBasePermission = (): BasePermissionHook => {
       console.log(`Gestor de Combustível permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
       return hasAccess;
     }
+    
+    // Perfil Gestor de Equipamentos - acesso às funcionalidades de gestão de equipamentos
+    if (user.role === 'gestor_equipamentos') {
+      // Lista de rotas permitidas para usuários com perfil de Gestor de Equipamentos
+      const gestorEquipamentosRoutes = [
+        '/',                               // Dashboard
+        '/equipment',                      // Gestão de Equipamentos
+        '/vehicles',                       // Veículos
+        '/maintenance',                    // Manutenções
+        '/manutencao',                     // Alias para Manutenção
+        '/fleet-management',               // Gestão de Frota
+        '/fleet-management/inventory',     // Gestão de Estoque
+        '/fleet-management/parts-inventory', // Estoque de Peças
+        '/fleet-management/maintenance',   // Sistema de Manutenção
+        '/fleet-management/workshops',     // Oficinas Credenciadas
+        '/fleet-management/budgets',       // Orçamentos
+        '/fleet-management/fleet-overview', // Visão Geral da Frota
+        '/fleet-management/operational-analysis', // Análise Operacional
+        '/fleet-management/downtime-analysis', // Análise de Tempo Parado
+        '/fleet-management/downtime',      // Alias para Tempo Parado
+        '/fleet-management/operation',     // Alias para Operação
+        '/fleet-management/overview',      // Alias para Visão Geral
+        '/drivers',                        // Motoristas
+        '/tires',                          // Pneus
+        '/pneus',                          // Alias para Pneus
+        '/executive-dashboard'             // Dashboard Executivo
+      ];
+      const hasAccess = gestorEquipamentosRoutes.includes(route);
+      console.log(`Gestor de Equipamentos permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      return hasAccess;
+    }
 
     // Usuário Micael - acesso específico para Goiânia SGO4
     if (user.email === "micael@muricionfleet.com" || 

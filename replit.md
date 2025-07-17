@@ -117,6 +117,26 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 17, 2025: **GESTOR EQUIPAMENTOS PERMISSION ISSUE FIXED** - Resolved access denied issue for "gestor_equipamentos" role users
+  - ✅ **PROBLEM IDENTIFIED**: User "debora.guedes" with role "gestor_equipamentos" was getting access denied to all system pages
+  - ✅ **ROOT CAUSE**: Missing role definition in use-base-permission.tsx file - "gestor_equipamentos" not included in permission validation
+  - ✅ **SOLUTION IMPLEMENTED**: Added complete permission set for "gestor_equipamentos" role with access to:
+    - ✅ Dashboard (/)
+    - ✅ Equipment management (/equipment)
+    - ✅ Vehicles (/vehicles)
+    - ✅ Maintenance (/maintenance, /manutencao)
+    - ✅ Fleet management (/fleet-management and sub-routes)
+    - ✅ Inventory management (/fleet-management/inventory, /fleet-management/parts-inventory)
+    - ✅ Workshops (/fleet-management/workshops)
+    - ✅ Budgets (/fleet-management/budgets)
+    - ✅ Operational analysis (/fleet-management/operational-analysis)
+    - ✅ Drivers (/drivers)
+    - ✅ Tires (/tires, /pneus)
+    - ✅ Executive dashboard (/executive-dashboard)
+  - ✅ **COMPREHENSIVE ACCESS**: Equipment managers now have full access to equipment lifecycle management
+  - ✅ **LOGGING IMPLEMENTED**: Added detailed permission logging for troubleshooting
+  - ✅ **TESTED & VERIFIED**: Role validation working correctly for equipment management functionality
+
 - July 17, 2025: **SUBTLE FOOTER BRANDING ADDED** - Added discrete footer with "Desenvolvido por Carpe Diem 4004 | (11) 97055-8053" across all main layouts
   - ✅ Added to AppLayout.tsx main footer for all internal system pages
   - ✅ Added to BaseLayout.tsx for all external base pages  
