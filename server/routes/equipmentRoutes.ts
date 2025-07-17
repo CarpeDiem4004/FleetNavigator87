@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db } from "../db.js";
+import { db } from "../db";
 import { 
   equipments, 
   equipmentResponsibilityTerms, 
@@ -16,7 +16,7 @@ import {
   type EquipmentMovement
 } from "@shared/schema";
 import { eq, desc, and, isNull, count } from "drizzle-orm";
-import { unifiedAuthMiddleware } from "../utils/auth-utils.js";
+import { unifiedAuthMiddleware } from "../utils/auth-utils";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -84,7 +84,7 @@ router.get('/equipment', unifiedAuthMiddleware, async (req, res) => {
 });
 
 // GET /api/equipment/:id - Buscar equipamento por ID
-router.get('/equipment/:id', unifiedAuthMiddleware, async (req, res) => {
+router.get('/:id', unifiedAuthMiddleware, async (req, res) => {
   try {
     const equipmentId = parseInt(req.params.id);
     
@@ -106,7 +106,7 @@ router.get('/equipment/:id', unifiedAuthMiddleware, async (req, res) => {
 });
 
 // POST /api/equipment - Criar novo equipamento
-router.post('/equipment', unifiedAuthMiddleware, async (req, res) => {
+router.post('/', unifiedAuthMiddleware, async (req, res) => {
   try {
     console.log('Dados recebidos para criação do equipamento:', req.body);
     const validatedData = insertEquipmentSchema.parse(req.body);
@@ -135,7 +135,7 @@ router.post('/equipment', unifiedAuthMiddleware, async (req, res) => {
 });
 
 // PUT /api/equipment/:id - Atualizar equipamento
-router.put('/equipment/:id', unifiedAuthMiddleware, async (req, res) => {
+router.put('/:id', unifiedAuthMiddleware, async (req, res) => {
   try {
     const equipmentId = parseInt(req.params.id);
     const validatedData = insertEquipmentSchema.parse(req.body);
@@ -158,7 +158,7 @@ router.put('/equipment/:id', unifiedAuthMiddleware, async (req, res) => {
 });
 
 // DELETE /api/equipment/:id - Deletar equipamento
-router.delete('/equipment/:id', unifiedAuthMiddleware, async (req, res) => {
+router.delete('/:id', unifiedAuthMiddleware, async (req, res) => {
   try {
     const equipmentId = parseInt(req.params.id);
     
