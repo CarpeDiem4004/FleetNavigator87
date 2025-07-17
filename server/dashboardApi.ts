@@ -49,7 +49,7 @@ export async function getDashboardKPIs(req: Request, res: Response) {
         COUNT(CASE WHEN status IN ('recebido', 'em_analise', 'aguardando_pecas', 'em_reparo') THEN 1 END) as veiculos_em_manutencao,
         COUNT(CASE WHEN status = 'pronto' THEN 1 END) as veiculos_prontos,
         COUNT(CASE WHEN status = 'entregue' THEN 1 END) as veiculos_entregues,
-        SUM(CASE WHEN total_cost IS NOT NULL THEN total_cost::numeric ELSE 0 END) as custo_total_car_receptions,
+        SUM(CASE WHEN labor_cost IS NOT NULL THEN labor_cost::numeric ELSE 0 END + CASE WHEN parts_cost IS NOT NULL THEN parts_cost::numeric ELSE 0 END) as custo_total_car_receptions,
         AVG(CASE WHEN created_at IS NOT NULL AND (delivered_date IS NOT NULL OR completed_date IS NOT NULL) 
                  THEN EXTRACT(days FROM COALESCE(delivered_date, completed_date) - created_at) 
                  END) as tempo_medio_manutencao
@@ -63,7 +63,7 @@ export async function getDashboardKPIs(req: Request, res: Response) {
       `SELECT 
         COUNT(*) as total_maintenance_orders,
         COUNT(CASE WHEN status IN ('pendente', 'em_andamento', 'aguardando_pecas', 'aguardando_orcamento') THEN 1 END) as manutencoes_pendentes,
-        SUM(CASE WHEN total_cost IS NOT NULL THEN total_cost::numeric ELSE 0 END) as custo_total_maintenance
+        SUM(CASE WHEN actual_cost IS NOT NULL THEN actual_cost::numeric ELSE 0 END) as custo_total_maintenance
        FROM maintenance_orders 
        WHERE created_at >= $1 AND created_at <= $2`,
       [startOfTargetMonth.toISOString(), endOfTargetMonth.toISOString()]

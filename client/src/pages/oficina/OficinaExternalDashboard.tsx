@@ -20,8 +20,12 @@ import {
   Calendar,
   Settings,
   Edit,
-  X
+  X,
+  Eye,
+  Download
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface WorkshopData {
   id: number;
@@ -136,6 +140,11 @@ export default function OficinaExternalDashboard() {
   };
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectBases, setSelectedProjectBases] = useState<any[]>([]);
+  
+  // Estados para modal de visualização detalhada
+  const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
+  const [selectedReceptionDetails, setSelectedReceptionDetails] = useState<CarReception | null>(null);
+  
   const { toast } = useToast();
 
   useEffect(() => {
@@ -580,6 +589,196 @@ export default function OficinaExternalDashboard() {
     }
   };
 
+  // Função para abrir modal de detalhes
+  const openDetailView = (reception: CarReception) => {
+    setSelectedReceptionDetails(reception);
+    setIsDetailViewOpen(true);
+  };
+
+  // Função para gerar PDF dos detalhes do veículo
+  const generatePDF = async (reception: CarReception) => {
+    try {
+      const pdf = new jsPDF();
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 20;
+      let yPosition = margin;
+
+      // Título do relatório
+      pdf.setFontSize(20);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("RELATÓRIO DE MANUTENÇÃO", pageWidth / 2, yPosition, { align: "center" });
+      yPosition += 15;
+
+      // Informações da oficina
+      if (workshopData) {
+        pdf.setFontSize(12);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(`Oficina: ${workshopData.name}`, margin, yPosition);
+        yPosition += 7;
+        pdf.text(`CNPJ: ${workshopData.cnpj}`, margin, yPosition);
+        yPosition += 7;
+        pdf.text(`Telefone: ${workshopData.telefone}`, margin, yPosition);
+        yPosition += 10;
+      }
+
+      // Linha separadora
+      pdf.setLineWidth(0.5);
+      pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+      yPosition += 15;
+
+      // Dados do veículo
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("DADOS DO VEÍCULO", margin, yPosition);
+      yPosition += 10;
+
+      pdf.setFontSize(11);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(`Placa: ${reception.vehiclePlate}`, margin, yPosition);
+      yPosition += 7;
+      pdf.text(`Modelo: ${reception.vehicleModel}`, margin, yPosition);
+      yPosition += 7;
+      pdf.text(`Tipo: ${reception.vehicleType || 'N/A'}`, margin, yPosition);
+      yPosition += 7;
+      pdf.text(`Quilometragem: ${reception.currentKm?.toLocaleString() || 'N/A'} km`, margin, yPosition);
+      yPosition += 7;
+      pdf.text(`Projeto: ${reception.projectName || 'N/A'}`, margin, yPosition);
+      yPosition += 10;
+
+      // Dados do serviço
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("DADOS DO SERVIÇO", margin, yPosition);
+      yPosition += 10;
+
+      pdf.setFontSize(11);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(`Status: ${reception.status}`, margin, yPosition);
+      yPosition += 7;
+      pdf.text(`Prioridade: ${reception.priority || 'N/A'}`, margin, yPosition);
+      yPosition += 7;
+      pdf.text(`Data de Recebimento: ${new Date(reception.created_at).toLocaleDateString('pt-BR')}`, margin, yPosition);
+      yPosition += 7;
+      
+      if (reception.deliveryDeadline) {
+        pdf.text(`Prazo de Entrega: ${new Date(reception.deliveryDeadline).toLocaleDateString('pt-BR')}`, margin, yPosition);
+        yPosition += 7;
+      }
+
+      if (reception.deliveredDate) {
+        pdf.text(`Data de Entrega: ${new Date(reception.deliveredDate).toLocaleDateString('pt-BR')}`, margin, yPosition);
+        yPosition += 7;
+      }
+
+      yPosition += 5;
+
+      // Descrição do serviço
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("DESCRIÇÃO DO SERVIÇO", margin, yPosition);
+      yPosition += 10;
+
+      pdf.setFontSize(11);
+      pdf.setFont("helvetica", "normal");
+      const descriptionLines = pdf.splitTextToSize(reception.serviceDescription || 'N/A', pageWidth - 2 * margin);
+      pdf.text(descriptionLines, margin, yPosition);
+      yPosition += descriptionLines.length * 7 + 10;
+
+      // Peças substituídas
+      if (reception.replacedParts) {
+        pdf.setFontSize(14);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("PEÇAS SUBSTITUÍDAS", margin, yPosition);
+        yPosition += 10;
+
+        try {
+          const parts = JSON.parse(reception.replacedParts);
+          if (Array.isArray(parts) && parts.length > 0) {
+            pdf.setFontSize(11);
+            pdf.setFont("helvetica", "normal");
+            parts.forEach((part: any, index: number) => {
+              pdf.text(`${index + 1}. ${part.name || part.item} - R$ ${(part.price || part.valor || 0).toFixed(2)}`, margin, yPosition);
+              yPosition += 7;
+            });
+          } else {
+            pdf.text("Nenhuma peça substituída", margin, yPosition);
+            yPosition += 7;
+          }
+        } catch (error) {
+          pdf.text("Erro ao processar peças substituídas", margin, yPosition);
+          yPosition += 7;
+        }
+        yPosition += 10;
+      }
+
+      // Custos
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("CUSTOS", margin, yPosition);
+      yPosition += 10;
+
+      pdf.setFontSize(11);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(`Custo de Peças: R$ ${Number(reception.partsCost || 0).toFixed(2)}`, margin, yPosition);
+      yPosition += 7;
+      pdf.text(`Custo de Mão de Obra: R$ ${Number(reception.laborCost || 0).toFixed(2)}`, margin, yPosition);
+      yPosition += 7;
+      pdf.text(`Total: R$ ${Number(reception.totalCost || 0).toFixed(2)}`, margin, yPosition);
+      yPosition += 10;
+
+      // Observações
+      if (reception.notes) {
+        pdf.setFontSize(14);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("OBSERVAÇÕES", margin, yPosition);
+        yPosition += 10;
+
+        pdf.setFontSize(11);
+        pdf.setFont("helvetica", "normal");
+        const notesLines = pdf.splitTextToSize(reception.notes, pageWidth - 2 * margin);
+        pdf.text(notesLines, margin, yPosition);
+        yPosition += notesLines.length * 7 + 10;
+      }
+
+      // Dados da entrega (se disponível)
+      if (reception.deliveryPersonName) {
+        pdf.setFontSize(14);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("DADOS DA ENTREGA", margin, yPosition);
+        yPosition += 10;
+
+        pdf.setFontSize(11);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(`Recebido por: ${reception.deliveryPersonName}`, margin, yPosition);
+        yPosition += 7;
+        pdf.text(`CPF: ${reception.deliveryPersonCpf || 'N/A'}`, margin, yPosition);
+        yPosition += 7;
+        pdf.text(`Telefone: ${reception.deliveryPersonPhone || 'N/A'}`, margin, yPosition);
+        yPosition += 7;
+      }
+
+      // Rodapé
+      pdf.setFontSize(8);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(`Relatório gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, margin, pdf.internal.pageSize.getHeight() - 10);
+
+      // Salvar o PDF
+      pdf.save(`relatorio_manutencao_${reception.vehiclePlate}_${new Date().toISOString().split('T')[0]}.pdf`);
+
+      toast({
+        title: "PDF gerado",
+        description: "Relatório gerado com sucesso!"
+      });
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao gerar relatório PDF",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleEditReception = (reception: CarReception) => {
     setEditingReception(reception);
     setReceptionEditForm({
@@ -924,6 +1123,26 @@ export default function OficinaExternalDashboard() {
                         <div className="flex items-center justify-between mb-2">
                           <p className="font-medium">{reception.vehiclePlate}</p>
                           <div className="flex items-center space-x-2">
+                            {/* Botão Ver Detalhes - sempre disponível */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openDetailView(reception)}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver Detalhes
+                            </Button>
+                            
+                            {/* Botão Imprimir PDF - sempre disponível */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => generatePDF(reception)}
+                            >
+                              <Download className="h-4 w-4 mr-1" />
+                              Imprimir PDF
+                            </Button>
+                            
                             {/* Botão de Edição disponível apenas quando não está entregue */}
                             {reception.status !== "entregue" && (
                               <Button
@@ -1690,6 +1909,192 @@ export default function OficinaExternalDashboard() {
               </Button>
               <Button onClick={handleCarSubmit}>
                 {editingReception ? 'Atualizar Recepção' : 'Registrar Veículo'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+      
+      {/* Modal de Visualização Detalhada */}
+      {isDetailViewOpen && selectedReceptionDetails && (
+        <Dialog open={isDetailViewOpen} onOpenChange={setIsDetailViewOpen}>
+          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold">
+                Detalhes da Manutenção - {selectedReceptionDetails.vehiclePlate}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              {/* Dados do Veículo */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <Car className="h-5 w-5" />
+                  Dados do Veículo
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Placa:</p>
+                    <p className="font-medium">{selectedReceptionDetails.vehiclePlate}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Modelo:</p>
+                    <p className="font-medium">{selectedReceptionDetails.vehicleModel}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Tipo:</p>
+                    <p className="font-medium">{(selectedReceptionDetails as any).vehicleType || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Quilometragem:</p>
+                    <p className="font-medium">{(selectedReceptionDetails as any).currentKm?.toLocaleString() || 'N/A'} km</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Projeto:</p>
+                    <p className="font-medium">{(selectedReceptionDetails as any).projectName || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dados do Serviço */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Dados do Serviço
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Status:</p>
+                    <p className="font-medium capitalize">{selectedReceptionDetails.status}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Prioridade:</p>
+                    <p className="font-medium capitalize">{(selectedReceptionDetails as any).priority || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Data de Recebimento:</p>
+                    <p className="font-medium">{new Date(selectedReceptionDetails.created_at).toLocaleDateString('pt-BR')}</p>
+                  </div>
+                  {(selectedReceptionDetails as any).deliveryDeadline && (
+                    <div>
+                      <p className="text-sm text-gray-600">Prazo de Entrega:</p>
+                      <p className="font-medium">{new Date((selectedReceptionDetails as any).deliveryDeadline).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                  )}
+                  {(selectedReceptionDetails as any).deliveredDate && (
+                    <div>
+                      <p className="text-sm text-gray-600">Data de Entrega:</p>
+                      <p className="font-medium">{new Date((selectedReceptionDetails as any).deliveredDate).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Descrição do Serviço */}
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Descrição do Serviço
+                </h3>
+                <p className="text-gray-700">{selectedReceptionDetails.serviceDescription || 'N/A'}</p>
+              </div>
+
+              {/* Peças Substituídas */}
+              {(selectedReceptionDetails as any).replacedParts && (
+                <div className="bg-orange-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <Wrench className="h-5 w-5" />
+                    Peças Substituídas
+                  </h3>
+                  <div className="space-y-2">
+                    {(() => {
+                      try {
+                        const parts = JSON.parse((selectedReceptionDetails as any).replacedParts);
+                        if (Array.isArray(parts) && parts.length > 0) {
+                          return parts.map((part: any, index: number) => (
+                            <div key={index} className="flex justify-between items-center p-2 bg-white rounded">
+                              <span>{part.name || part.item}</span>
+                              <span className="font-medium text-green-600">
+                                R$ {(part.price || part.valor || 0).toFixed(2)}
+                              </span>
+                            </div>
+                          ));
+                        } else {
+                          return <p className="text-gray-600 italic">Nenhuma peça substituída</p>;
+                        }
+                      } catch (error) {
+                        return <p className="text-red-600 italic">Erro ao processar peças substituídas</p>;
+                      }
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              {/* Custos */}
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  Custos
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Custo de Peças:</span>
+                    <span className="font-medium">R$ {Number((selectedReceptionDetails as any).partsCost || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Custo de Mão de Obra:</span>
+                    <span className="font-medium">R$ {Number((selectedReceptionDetails as any).laborCost || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold text-lg border-t pt-2">
+                    <span>Total:</span>
+                    <span className="text-green-600">R$ {Number((selectedReceptionDetails as any).totalCost || 0).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Observações */}
+              {(selectedReceptionDetails as any).notes && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Observações
+                  </h3>
+                  <p className="text-gray-700">{(selectedReceptionDetails as any).notes}</p>
+                </div>
+              )}
+
+              {/* Dados da Entrega */}
+              {(selectedReceptionDetails as any).deliveryPersonName && (
+                <div className="bg-indigo-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Dados da Entrega
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Recebido por:</p>
+                      <p className="font-medium">{(selectedReceptionDetails as any).deliveryPersonName}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">CPF:</p>
+                      <p className="font-medium">{(selectedReceptionDetails as any).deliveryPersonCpf || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Telefone:</p>
+                      <p className="font-medium">{(selectedReceptionDetails as any).deliveryPersonPhone || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setIsDetailViewOpen(false)}>
+                Fechar
+              </Button>
+              <Button onClick={() => generatePDF(selectedReceptionDetails)}>
+                <Download className="h-4 w-4 mr-2" />
+                Imprimir PDF
               </Button>
             </div>
           </DialogContent>
