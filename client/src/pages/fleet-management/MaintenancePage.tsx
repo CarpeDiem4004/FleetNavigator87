@@ -113,6 +113,10 @@ interface Maintenance {
   priority?: string; // Campo adicionado
   created_at: string;
   updated_at: string;
+  // Novos campos obrigatórios
+  vehicleKm?: number;
+  projectId?: number;
+  projectName?: string;
 }
 
 // Componente para exibir o status com ícone apropriado
@@ -204,12 +208,20 @@ export default function MaintenancePage() {
     cost: undefined,
     initialBudget: undefined,
     requestBaseId: user?.baseId || 0,
-    responsiblePerson: 'Técnico responsável'
+    responsiblePerson: 'Técnico responsável',
+    vehicleKm: undefined,
+    projectId: undefined
   });
 
   // Carregar bases
   const { data: bases = [] } = useQuery<Base[]>({
     queryKey: ['/api/bases'],
+    refetchOnWindowFocus: false
+  });
+
+  // Carregar projetos
+  const { data: projects = [] } = useQuery({
+    queryKey: ['/api/projects'],
     refetchOnWindowFocus: false
   });
 
@@ -377,10 +389,11 @@ export default function MaintenancePage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.vehiclePlate || !formData.workshopId || !formData.maintenanceType || !formData.entryDate || !formData.estimatedCompletion || !formData.responsiblePerson) {
+    // Validação dos campos obrigatórios
+    if (!formData.vehiclePlate || !formData.workshopId || !formData.maintenanceType || !formData.entryDate || !formData.estimatedCompletion || !formData.responsiblePerson || !formData.description || !formData.vehicleKm || !formData.projectId) {
       toast({
         title: 'Dados incompletos',
-        description: 'Por favor, preencha todos os campos obrigatórios',
+        description: 'Por favor, preencha todos os campos obrigatórios: placa, km, descrição do problema, projeto, base, data de envio do carro e oficina',
         variant: 'destructive'
       });
       return;
@@ -432,7 +445,9 @@ export default function MaintenancePage() {
       cost: undefined,
       initialBudget: undefined,
       requestBaseId: user?.baseId || 0,
-      responsiblePerson: 'Técnico responsável'
+      responsiblePerson: 'Técnico responsável',
+      vehicleKm: undefined,
+      projectId: undefined
     });
     setIsOpen(true);
   };
@@ -836,7 +851,7 @@ export default function MaintenancePage() {
                 {/* Veículo */}
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="vehiclePlate">
-                    Veículo <span className="text-red-500">*</span>
+                    Veículo (Placa) <span className="text-red-500">*</span>
                   </Label>
                   <Select 
                     value={formData.vehiclePlate || "default"} 
@@ -858,6 +873,24 @@ export default function MaintenancePage() {
                       )}
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* Quilometragem */}
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="vehicleKm">
+                    Quilometragem (KM) <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="vehicleKm"
+                    name="vehicleKm"
+                    type="number"
+                    min="0"
+                    value={formData.vehicleKm?.toString() || ''}
+                    onChange={handleNumberInputChange}
+                    className="h-10"
+                    placeholder="Ex: 45000"
+                    required
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -917,6 +950,33 @@ export default function MaintenancePage() {
                   </div>
                 </div>
 
+                {/* Projeto */}
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="projectId">
+                    Projeto <span className="text-red-500">*</span>
+                  </Label>
+                  <Select 
+                    value={formData.projectId ? formData.projectId.toString() : "0"} 
+                    onValueChange={(value) => handleSelectChange('projectId', value)}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Selecione o projeto" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Selecione um projeto</SelectItem>
+                      {Array.isArray(projects) && projects.length > 0 ? (
+                        projects.map((project: any) => (
+                          <SelectItem key={project.id} value={project.id.toString()}>
+                            {project.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="-1">Carregando projetos...</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Tipo de Manutenção */}
                   <div className="flex flex-col space-y-1.5">
@@ -937,10 +997,10 @@ export default function MaintenancePage() {
                     </Select>
                   </div>
 
-                  {/* Data de Entrada */}
+                  {/* Data de Envio do Carro */}
                   <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="entryDate">
-                      Data de Entrada <span className="text-red-500">*</span>
+                      Data de Envio do Carro <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="entryDate"
@@ -970,10 +1030,10 @@ export default function MaintenancePage() {
                   </div>
                 </div>
 
-                {/* Descrição do Serviço */}
+                {/* Descrição do Problema */}
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="description">
-                    Descrição do Serviço <span className="text-red-500">*</span>
+                    Descrição do Problema <span className="text-red-500">*</span>
                   </Label>
                   <Textarea
                     id="description"
@@ -981,7 +1041,7 @@ export default function MaintenancePage() {
                     value={formData.description}
                     onChange={handleInputChange}
                     rows={3}
-                    placeholder="Descreva o serviço a ser realizado"
+                    placeholder="Descreva o problema ou serviço a ser realizado"
                     required
                   />
                 </div>
