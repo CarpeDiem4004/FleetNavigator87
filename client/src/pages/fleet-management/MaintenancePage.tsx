@@ -210,7 +210,8 @@ export default function MaintenancePage() {
     requestBaseId: user?.baseId || 0,
     responsiblePerson: 'Técnico responsável',
     vehicleKm: undefined,
-    projectId: undefined
+    projectId: undefined,
+    baseIdOptional: undefined
   });
 
   // Carregar bases
@@ -224,6 +225,44 @@ export default function MaintenancePage() {
     queryKey: ['/api/projects'],
     refetchOnWindowFocus: false
   });
+
+  // Carregar project-bases para filtrar bases por projeto
+  const { data: projectBases = [] } = useQuery({
+    queryKey: ['/api/project-bases'],
+    refetchOnWindowFocus: false
+  });
+
+  // Estado para bases filtradas baseado no projeto selecionado
+  const [filteredBases, setFilteredBases] = useState<Base[]>([]);
+
+  // Filtrar bases baseado no projeto selecionado
+  const selectedProjectId = formData.projectId;
+  
+  useEffect(() => {
+    if (!selectedProjectId || !projectBases.length || !bases.length) {
+      setFilteredBases([]);
+      return;
+    }
+
+    // Filtrar bases que pertencem ao projeto selecionado
+    const projectBasesForProject = projectBases.filter((pb: any) => 
+      pb.project_id === Number(selectedProjectId)
+    );
+
+    // Mapear para as bases completas
+    const basesForProject = projectBasesForProject
+      .map((pb: any) => bases.find((base: Base) => base.id === pb.base_id))
+      .filter(Boolean);
+
+    setFilteredBases(basesForProject);
+  }, [selectedProjectId, projectBases, bases]);
+
+  // Reset base selection when project changes
+  useEffect(() => {
+    if (selectedProjectId) {
+      setFormData(prev => ({ ...prev, baseIdOptional: undefined }));
+    }
+  }, [selectedProjectId]);
 
   // Carregar oficinas ativas
   const { data: workshops = [] } = useQuery<Workshop[]>({
@@ -487,7 +526,8 @@ export default function MaintenancePage() {
       requestBaseId: user?.baseId || 0,
       responsiblePerson: 'Técnico responsável',
       vehicleKm: undefined,
-      projectId: undefined
+      projectId: undefined,
+      baseIdOptional: undefined
     });
     setIsOpen(true);
   };
@@ -1028,6 +1068,35 @@ export default function MaintenancePage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Base (Opcional) - Aparece apenas quando um projeto for selecionado */}
+                {selectedProjectId && (
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="baseIdOptional">
+                      Base (Opcional)
+                    </Label>
+                    <Select 
+                      value={formData.baseIdOptional ? formData.baseIdOptional.toString() : "0"} 
+                      onValueChange={(value) => handleSelectChange('baseIdOptional', value)}
+                    >
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Selecione uma base" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Selecione uma base</SelectItem>
+                        {filteredBases.length > 0 ? (
+                          filteredBases.map((base: Base) => (
+                            <SelectItem key={base.id} value={base.id.toString()}>
+                              {base.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="-1" disabled>Nenhuma base</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Tipo de Manutenção */}

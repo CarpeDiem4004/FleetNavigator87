@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 18, 2025: **BASE FILTERING BY PROJECT IMPLEMENTATION COMPLETED** - Successfully implemented dynamic base filtering in maintenance OS creation form
+  - ✅ **PROJECT-BASE LOADING**: Added dynamic loading of project-base relationships via `/api/project-bases` endpoint
+  - ✅ **CONDITIONAL FIELD DISPLAY**: Implemented "Base (Opcional)" field that appears only when a project is selected
+  - ✅ **DYNAMIC FILTERING**: Base dropdown now shows only bases belonging to the selected project
+  - ✅ **AUTOMATIC RESET**: Base selection automatically resets when project changes
+  - ✅ **CONSISTENT PATTERN**: Following same filtering approach used in CartaoCombustivelEnhanced and CarReception components
+  - ✅ **COMPLETE INTEGRATION**: All 104 project-base relationships loaded and filtered correctly
+  - ✅ **USER EXPERIENCE**: Solves the "Nenhuma base" issue by showing relevant bases for each project
+
 - July 18, 2025: **MAINTENANCE ENDPOINT CONSISTENCY COMPLETELY FIXED** - Resolved all frontend-backend endpoint mismatches for maintenance operations
   - ✅ **FRONTEND STANDARDIZATION**: Fixed all API calls in MaintenancePage.tsx to use correct `/api/maintenance/orders` endpoint
   - ✅ **CACHE INVALIDATION CORRECTED**: Updated all queryClient.invalidateQueries calls to use consistent endpoint key
