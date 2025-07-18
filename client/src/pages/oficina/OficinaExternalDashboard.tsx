@@ -905,7 +905,7 @@ export default function OficinaExternalDashboard() {
   ];
 
   const pendingRequests = allRequests.filter(r => r.status === 'pendente' || r.status === 'recebido');
-  const inProgressRequests = allRequests.filter(r => r.status === 'em_andamento');
+  const inProgressRequests = allRequests.filter(r => r.status === 'em_andamento' || r.status === 'em_reparo');
   const completedRequests = allRequests.filter(r => r.status === 'concluida' || r.status === 'entregue');
 
   return (

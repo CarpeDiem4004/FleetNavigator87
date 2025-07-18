@@ -117,6 +117,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 18, 2025: **WORKSHOP STATUS CALCULATION FIXED** - Resolved dashboard indicators not counting "em_reparo" status correctly
+  - ✅ **PROBLEM IDENTIFIED**: Dashboard was filtering only for "em_andamento" status but database used "em_reparo" status
+  - ✅ **MAPPING CORRECTED**: Added "em_reparo" to inProgressRequests filter in OficinaExternalDashboard.tsx
+  - ✅ **DATA CONFIRMED**: Oficina Passos (ID: 11) has vehicle ABC1234 with status "em_reparo" now counted correctly
+  - ✅ **SYSTEM VERIFICATION**: API endpoint confirms two vehicles - one "em_reparo" and one "entregue" 
+  - ✅ **DASHBOARD FUNCTIONAL**: Status indicators now accurately reflect maintenance data from car_receptions table
+  - ✅ **COMPLETE RESOLUTION**: Workshop partners can now see correct "Em Andamento" count in dashboard
+
 - July 18, 2025: **GP03 BASE MENU CONFIGURATION COMPLETELY FIXED** - Corrected all menu routing issues and implemented proper base-specific navigation
   - ✅ **ROUTING ANALYSIS COMPLETED**: Identified all broken `/admin/*` routes that were causing 404 errors
   - ✅ **MENU ROUTES CORRECTED**: Fixed all 10 menu items to point to correct base-specific routes
