@@ -7419,17 +7419,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Token inválido para esta oficina' });
       }
 
-      // Buscar solicitações de manutenção
+      // Buscar solicitações de manutenção da tabela manutencao
       const requestsQuery = `
-        SELECT id, vehicle_plate, description, status, priority, 
-               created_at as entry_date, estimated_completion, estimated_cost as cost
-        FROM maintenance_orders
-        WHERE workshop_id = $1
-        ORDER BY created_at DESC
+        SELECT id, placa as vehicle_plate, descricao as description, status, prioridade as priority, 
+               data_solicitacao as entry_date, data_agendada as estimated_completion, custo as cost
+        FROM manutencao
+        WHERE oficina_id = $1
+        ORDER BY data_solicitacao DESC
         LIMIT 20
       `;
       
       const requestsResult = await pool.query(requestsQuery, [workshopId]);
+
+      console.log(`[Workshop ${workshopId}] Encontradas ${requestsResult.rows.length} solicitações de manutenção`);
 
       res.json({
         success: true,

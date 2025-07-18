@@ -891,9 +891,22 @@ export default function OficinaExternalDashboard() {
     );
   }
 
-  const pendingRequests = maintenanceRequests.filter(r => r.status === 'pendente');
-  const inProgressRequests = maintenanceRequests.filter(r => r.status === 'em_andamento');
-  const completedRequests = maintenanceRequests.filter(r => r.status === 'concluida');
+  // Combinar dados de solicitações de manutenção e recepções de carros
+  const allRequests = [
+    ...maintenanceRequests,
+    ...carReceptions.map(reception => ({
+      ...reception,
+      vehiclePlate: reception.vehiclePlate,
+      description: reception.serviceDescription,
+      status: reception.status,
+      priority: 'media',
+      entryDate: reception.created_at
+    }))
+  ];
+
+  const pendingRequests = allRequests.filter(r => r.status === 'pendente' || r.status === 'recebido');
+  const inProgressRequests = allRequests.filter(r => r.status === 'em_andamento');
+  const completedRequests = allRequests.filter(r => r.status === 'concluida' || r.status === 'entregue');
 
   return (
     <div className="container mx-auto py-8">
