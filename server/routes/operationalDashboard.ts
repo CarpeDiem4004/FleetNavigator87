@@ -127,8 +127,8 @@ router.get('/maintenance', async (req, res) => {
     const avgMaintenanceResult = await pool.query(avgMaintenanceQuery, params);
     const averageMaintenanceDays = Math.round(parseFloat(avgMaintenanceResult.rows[0].avg_days) || 0);
 
-    // Veículos com mais de 5 dias parados (combinando tabelas manutencao e oficina_murici_manutencoes)
-    const vehiclesOver5DaysQuery = `
+    // Veículos com mais de 3 dias parados (combinando tabelas manutencao e oficina_murici_manutencoes)
+    const vehiclesOver3DaysQuery = `
       SELECT * FROM (
         -- Tabela principal manutencao
         SELECT 
@@ -141,7 +141,7 @@ router.get('/maintenance', async (req, res) => {
         LEFT JOIN workshops w ON m.oficina_id = w.id
         LEFT JOIN vehicles v ON m.veiculo_id = v.id
         WHERE m.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
-          AND EXTRACT(DAY FROM (NOW() - m.created_at)) > 5
+          AND EXTRACT(DAY FROM (NOW() - m.created_at)) > 3
           AND m.oficina_id IN (2, 6) -- Alair (2) e Murici (6)
         ${baseCondition.replace('v.base_id', 'm.base_id')}
         ${projectCondition}
@@ -158,14 +158,14 @@ router.get('/maintenance', async (req, res) => {
           om.created_at as entry_date
         FROM oficina_murici_manutencoes om
         WHERE om.status IN ('pendente', 'em_andamento', 'aguardando_pecas')
-          AND EXTRACT(DAY FROM (NOW() - om.created_at)) > 5
+          AND EXTRACT(DAY FROM (NOW() - om.created_at)) > 3
         ${dateCondition.replace('mo.created_at', 'om.created_at')}
       ) as combined_vehicles
       ORDER BY days_in_maintenance DESC
     `;
 
-    const vehiclesOver5DaysResult = await pool.query(vehiclesOver5DaysQuery, params);
-    const vehiclesOver5Days = vehiclesOver5DaysResult.rows.map(row => ({
+    const vehiclesOver3DaysResult = await pool.query(vehiclesOver3DaysQuery, params);
+    const vehiclesOver3Days = vehiclesOver3DaysResult.rows.map(row => ({
       id: row.id,
       plate: row.plate,
       daysInMaintenance: parseInt(row.days_in_maintenance),
@@ -216,7 +216,7 @@ router.get('/maintenance', async (req, res) => {
       vehiclesInMaintenance,
       completedMaintenance,
       averageMaintenanceDays,
-      vehiclesOver5Days,
+      vehiclesOver3Days,
       totalMaintenanceCost,
       averageCostPerVehicle
     });
@@ -518,7 +518,7 @@ router.get('/maintenance-by-workshop', async (req, res) => {
         COUNT(CASE WHEN status = 'concluido' THEN 1 END) as finalizadas,
         SUM(valor_total) as valor_total,
         ROUND(AVG(dias_em_manutencao), 1) as tempo_medio_dias,
-        COUNT(CASE WHEN dias_em_manutencao > 5 AND status IN ('pendente', 'em_andamento', 'aguardando_pecas') THEN 1 END) as veiculos_atrasados
+        COUNT(CASE WHEN dias_em_manutencao > 3 AND status IN ('pendente', 'em_andamento', 'aguardando_pecas') THEN 1 END) as veiculos_atrasados
       FROM todas_manutencoes
       GROUP BY oficina
       ORDER BY oficina

@@ -33,7 +33,7 @@ interface MaintenanceData {
   vehiclesInMaintenance: number;
   completedMaintenance: number;
   averageMaintenanceDays: number;
-  vehiclesOver5Days: Array<{
+  vehiclesOver3Days: Array<{
     id: number;
     plate: string;
     daysInMaintenance: number;
@@ -170,7 +170,7 @@ export default function PainelOperacional() {
             vehiclesInMaintenance: maintenanceResult.vehiclesInMaintenance || 0,
             completedMaintenance: maintenanceResult.completedMaintenance || 0,
             averageMaintenanceDays: maintenanceResult.averageMaintenanceDays || 0,
-            vehiclesOver5Days: Array.isArray(maintenanceResult.vehiclesOver5Days) ? maintenanceResult.vehiclesOver5Days : [],
+            vehiclesOver3Days: Array.isArray(maintenanceResult.vehiclesOver3Days) ? maintenanceResult.vehiclesOver3Days : [],
             totalMaintenanceCost: maintenanceResult.totalMaintenanceCost || 0,
             averageCostPerVehicle: maintenanceResult.averageCostPerVehicle || 0
           };
@@ -419,8 +419,8 @@ export default function PainelOperacional() {
                 <div className="flex items-center space-x-2">
                   <AlertTriangle className="h-8 w-8 text-red-500" />
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Mais de 5 dias</p>
-                    <p className="text-2xl font-bold">{maintenanceData?.vehiclesOver5Days?.length || 0}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Mais de 3 dias</p>
+                    <p className="text-2xl font-bold">{maintenanceData?.vehiclesOver3Days?.length || 0}</p>
                   </div>
                 </div>
               </CardContent>
@@ -497,15 +497,15 @@ export default function PainelOperacional() {
             </Card>
           )}
 
-          {/* Veículos com mais de 5 dias */}
-          {maintenanceData?.vehiclesOver5Days && maintenanceData.vehiclesOver5Days.length > 0 && (
+          {/* Veículos com mais de 3 dias */}
+          {maintenanceData?.vehiclesOver3Days && maintenanceData.vehiclesOver3Days.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Veículos com mais de 5 dias parados</CardTitle>
+                <CardTitle>Veículos com mais de 3 dias parados</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {maintenanceData.vehiclesOver5Days.map((vehicle) => (
+                  {maintenanceData.vehiclesOver3Days.map((vehicle) => (
                     <div key={vehicle.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center space-x-4">
                         <Badge variant="destructive">{vehicle.plate}</Badge>
