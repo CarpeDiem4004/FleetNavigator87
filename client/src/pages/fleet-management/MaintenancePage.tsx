@@ -438,7 +438,11 @@ export default function MaintenancePage() {
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    // Converter valores para números quando necessário
+    const numericFields = ['workshopId', 'requestBaseId', 'projectId', 'baseIdOptional'];
+    const processedValue = numericFields.includes(name) ? (value === "0" ? undefined : parseInt(value)) : value;
+    
+    setFormData(prev => ({ ...prev, [name]: processedValue }));
   };
 
   const handleNumberInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
