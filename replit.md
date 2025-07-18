@@ -117,6 +117,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 18, 2025: **MAINTENANCE ENDPOINT CONSISTENCY COMPLETELY FIXED** - Resolved all frontend-backend endpoint mismatches for maintenance operations
+  - ✅ **FRONTEND STANDARDIZATION**: Fixed all API calls in MaintenancePage.tsx to use correct `/api/maintenance/orders` endpoint
+  - ✅ **CACHE INVALIDATION CORRECTED**: Updated all queryClient.invalidateQueries calls to use consistent endpoint key
+  - ✅ **COMPREHENSIVE COVERAGE**: Fixed 6 occurrences of incorrect endpoint usage across all mutation handlers
+  - ✅ **COMPLETE CONSISTENCY**: All maintenance operations now use unified endpoint pattern throughout the system
+  - ✅ **ENDPOINT CORRECTIONS**: Fixed GET queries, POST mutations, PATCH updates, and DELETE operations
+  - ✅ **SYSTEM INTEGRATION**: All maintenance-related operations now properly synchronized with correct backend endpoints
+
 - July 18, 2025: **ALAIR WORKSHOP OS CLEANUP COMPLETED** - Successfully removed 3 pending OS from Oficina Alair workshop
   - ✅ **OS DELETED**: Removed OS #7 (ABC1234 - Troca de óleo e filtros), OS #8 (DEF5678 - Revisão preventiva completa), OS #9 (GHI9012 - Reparo no sistema de freios)
   - ✅ **DATABASE CLEANUP**: All 3 OS successfully deleted from `manutencao` table for workshop ID 5 (Oficina Alair)

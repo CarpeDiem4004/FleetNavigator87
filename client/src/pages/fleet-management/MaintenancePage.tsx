@@ -240,9 +240,9 @@ export default function MaintenancePage() {
 
   // Carregar manutenções com base no filtro e na base do usuário
   const { data: maintenances = [], isLoading, refetch: refetchMaintenances } = useQuery<Maintenance[]>({
-    queryKey: ['/api/maintenance', { baseId: filterBaseId, status: activeTab !== 'all' ? activeTab : null }],
+    queryKey: ['/api/maintenance/orders', { baseId: filterBaseId, status: activeTab !== 'all' ? activeTab : null }],
     queryFn: async () => {
-      let url = '/api/maintenance';
+      let url = '/api/maintenance/orders';
       const params = new URLSearchParams();
       
       // Se o usuário não for admin ou gestor_frota e tiver uma baseId, filtrar por essa base
@@ -276,9 +276,9 @@ export default function MaintenancePage() {
   
   // Consulta específica para solicitações pendentes da Base Campinas
   const { data: campinasRequests = [] } = useQuery<Maintenance[]>({
-    queryKey: ['/api/maintenance', { baseId: 2, status: 'pendente' }],
+    queryKey: ['/api/maintenance/orders', { baseId: 2, status: 'pendente' }],
     queryFn: async () => {
-      const url = '/api/maintenance?baseId=2&status=pendente';
+      const url = '/api/maintenance/orders?baseId=2&status=pendente';
       console.log(`Buscando manutenções com os parâmetros: baseId=2&status=pendente`);
       // Usar apiRequest para garantir que o token JWT seja incluído
       const res = await apiRequest('GET', url);
@@ -295,7 +295,7 @@ export default function MaintenancePage() {
   // Mutation para criar manutenção
   const createMaintenanceMutation = useMutation({
     mutationFn: async (data: Partial<Maintenance>) => {
-      const response = await apiRequest('POST', '/api/maintenance', data);
+      const response = await apiRequest('POST', '/api/maintenance/orders', data);
       return await response.json();
     },
     onSuccess: () => {
@@ -303,7 +303,7 @@ export default function MaintenancePage() {
         title: 'Manutenção registrada com sucesso',
       });
       // Invalidar todas as consultas relacionadas à manutenção para forçar a atualização dos dados
-      queryClient.invalidateQueries({ queryKey: ['/api/maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/maintenance/orders'] });
       queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
       
       // Forçar atualizações específicas para o card de solicitações das bases
@@ -330,7 +330,7 @@ export default function MaintenancePage() {
       toast({
         title: 'Status atualizado com sucesso',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/maintenance/orders'] });
       queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
       setStatusDialogOpen(false);
     },
@@ -353,7 +353,7 @@ export default function MaintenancePage() {
       toast({
         title: 'Datas atualizadas com sucesso',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/maintenance/orders'] });
       queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
       setDatesDialogOpen(false);
     },
@@ -380,7 +380,7 @@ export default function MaintenancePage() {
       toast({
         title: 'Manutenção excluída com sucesso',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/maintenance/orders'] });
       queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
     },
     onError: (error: Error) => {
@@ -1339,7 +1339,7 @@ export default function MaintenancePage() {
           workshops={workshops}
           onUpdate={() => {
             setDetailDialogOpen(false);
-            queryClient.invalidateQueries({ queryKey: ['/api/maintenance'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/maintenance/orders'] });
           }}
         />
       )}
