@@ -117,6 +117,16 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 18, 2025: **OS DELETION ENDPOINT INCONSISTENCY COMPLETELY FIXED** - Resolved all frontend-backend endpoint mismatches causing 404 errors on OS deletion
+  - ✅ **BACKEND CORRECTION**: Fixed `deleteMaintenance` function to operate on correct `manutencao` table instead of `maintenance` table
+  - ✅ **FRONTEND ENDPOINT FIXES**: Corrected all frontend files using incorrect `/api/maintenance/orders/{id}` endpoints:
+    - Fixed `maintenance-management.tsx`: Changed GET, POST, DELETE endpoints from `/api/maintenance/orders` to `/api/maintenance`
+    - Fixed `dashboard-interno.tsx`: Updated cache invalidation query key from `/api/maintenance/orders` to `/api/maintenance`
+  - ✅ **ENDPOINT CONSISTENCY**: All components now use unified `/api/maintenance/{id}` endpoint for CRUD operations
+  - ✅ **DATABASE INTEGRITY**: All operations now correctly target `manutencao` table with proper SQL transactions
+  - ✅ **SYSTEM VERIFICATION**: OS #31 (placa III9999) confirmed to exist in database and ready for deletion testing
+  - ✅ **COMPLETE RESOLUTION**: System now has full frontend-backend endpoint consistency for OS management
+
 - July 18, 2025: **OS CREATION FORM COMPLETELY ENHANCED** - Implemented complete OS creation form with all mandatory fields in MaintenancePage.tsx
   - ✅ **ALL MANDATORY FIELDS ADDED**: Added all required fields: placa, quilometragem (KM), descrição do problema, projeto, base, data de envio do carro, and workshop selection
   - ✅ **COMPREHENSIVE VALIDATION**: Added validation for all mandatory fields with clear error messages

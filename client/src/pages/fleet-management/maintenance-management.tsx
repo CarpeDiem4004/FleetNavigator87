@@ -309,7 +309,7 @@ export default function MaintenanceManagement() {
       setIsLoading(true);
       
       // Carregar ordens de serviço
-      const ordersResponse = await apiRequest("GET", "/api/maintenance/orders");
+      const ordersResponse = await apiRequest("GET", "/api/maintenance");
       const ordersData = await ordersResponse.json();
       console.log("API Response for orders:", ordersData);
       console.log("Orders array:", ordersData.orders);
@@ -392,7 +392,7 @@ export default function MaintenanceManagement() {
         base_id: values.base_id ? parseInt(values.base_id) : null
       };
       
-      const response = await apiRequest("POST", "/api/maintenance/orders", requestData);
+      const response = await apiRequest("POST", "/api/maintenance", requestData);
 
       if (response.ok) {
         toast({
@@ -504,7 +504,7 @@ export default function MaintenanceManagement() {
     }
 
     try {
-      const response = await apiRequest("DELETE", `/api/maintenance/orders/${orderId}`);
+      const response = await apiRequest("DELETE", `/api/maintenance/${orderId}`);
       
       if (response.ok) {
         toast({

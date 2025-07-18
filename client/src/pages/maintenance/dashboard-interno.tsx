@@ -255,7 +255,7 @@ export default function DashboardInterno() {
           title: 'Sucesso',
           description: 'Ordem de serviço excluída com sucesso.'
         });
-        queryClient.invalidateQueries({ queryKey: ['/api/maintenance/orders'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/maintenance'] });
       } else {
         const error = await response.json();
         toast({
