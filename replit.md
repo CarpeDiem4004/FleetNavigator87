@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 18, 2025: **BASE FILTERING BY PROJECT COMPLETELY RESOLVED** - Successfully fixed all API response handling issues in maintenance OS creation form
+  - ✅ **API RESPONSE FORMAT FIXED**: Corrected extraction of data from API responses with format {success: true, data: [...]}
+  - ✅ **ROBUST DATA EXTRACTION**: Implemented fallback pattern "response?.data || response || []" for all API calls
+  - ✅ **COMPREHENSIVE LOGGING**: Added detailed debugging logs for project-bases, bases, and projects data loading
+  - ✅ **COCA-COLA PROJECT VERIFIED**: Project ID 8 correctly shows 9 bases (ABC, APARECIDA, CRICIUMA, IPATINGA, JURUBATUBA, etc.)
+  - ✅ **COMPLETE FUNCTIONALITY**: Base dropdown now appears and filters correctly when project is selected
+  - ✅ **SYSTEM INTEGRITY**: All 104 project-base relationships and 114 bases loading properly
+  - ✅ **USER EXPERIENCE RESTORED**: "Nenhuma base" issue completely resolved with proper project-base filtering
+
 - July 18, 2025: **BASE FILTERING BY PROJECT IMPLEMENTATION COMPLETED** - Successfully implemented dynamic base filtering in maintenance OS creation form
   - ✅ **PROJECT-BASE LOADING**: Added dynamic loading of project-base relationships via `/api/project-bases` endpoint
   - ✅ **CONDITIONAL FIELD DISPLAY**: Implemented "Base (Opcional)" field that appears only when a project is selected

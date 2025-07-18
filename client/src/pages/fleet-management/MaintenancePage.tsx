@@ -215,22 +215,40 @@ export default function MaintenancePage() {
   });
 
   // Carregar bases
-  const { data: bases = [] } = useQuery<Base[]>({
+  const { data: basesResponse } = useQuery<Base[]>({
     queryKey: ['/api/bases'],
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    onSuccess: (data) => {
+      console.log('Bases response:', data);
+    }
   });
+
+  // Extrair dados da resposta
+  const bases = basesResponse?.data || basesResponse || [];
 
   // Carregar projetos
-  const { data: projects = [] } = useQuery({
+  const { data: projectsResponse } = useQuery({
     queryKey: ['/api/projects'],
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    onSuccess: (data) => {
+      console.log('Projects response:', data);
+    }
   });
 
+  // Extrair dados da resposta
+  const projects = projectsResponse?.data || projectsResponse || [];
+
   // Carregar project-bases para filtrar bases por projeto
-  const { data: projectBases = [] } = useQuery({
+  const { data: projectBasesResponse } = useQuery({
     queryKey: ['/api/project-bases'],
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    onSuccess: (data) => {
+      console.log('Project-bases response:', data);
+    }
   });
+
+  // Extrair dados da resposta (pode vir como {success: true, data: []} ou diretamente como [])
+  const projectBases = projectBasesResponse?.data || projectBasesResponse || [];
 
   // Estado para bases filtradas baseado no projeto selecionado
   const [filteredBases, setFilteredBases] = useState<Base[]>([]);
@@ -239,7 +257,13 @@ export default function MaintenancePage() {
   const selectedProjectId = formData.projectId;
   
   useEffect(() => {
+    console.log('Filtro de bases - Debug:');
+    console.log('selectedProjectId:', selectedProjectId);
+    console.log('projectBases.length:', projectBases.length);
+    console.log('bases.length:', bases.length);
+    
     if (!selectedProjectId || !projectBases.length || !bases.length) {
+      console.log('Condição não atendida - limpando filteredBases');
       setFilteredBases([]);
       return;
     }
@@ -248,12 +272,16 @@ export default function MaintenancePage() {
     const projectBasesForProject = projectBases.filter((pb: any) => 
       pb.project_id === Number(selectedProjectId)
     );
+    
+    console.log('Projeto selecionado:', selectedProjectId);
+    console.log('ProjectBases para projeto:', projectBasesForProject);
 
     // Mapear para as bases completas
     const basesForProject = projectBasesForProject
       .map((pb: any) => bases.find((base: Base) => base.id === pb.base_id))
       .filter(Boolean);
 
+    console.log('Bases filtradas:', basesForProject);
     setFilteredBases(basesForProject);
   }, [selectedProjectId, projectBases, bases]);
 
