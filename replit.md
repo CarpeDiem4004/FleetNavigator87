@@ -117,6 +117,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 18, 2025: **WORKSHOP OS CREATION COMPLETELY REMOVED** - Eliminated all OS creation capabilities from workshop frontend interfaces
+  - ✅ **COMPLETE BUTTON REMOVAL**: Removed all "Nova OS", "Criar OS", and "Criar Nova OS" buttons from workshop dashboard
+  - ✅ **STATE CLEANUP**: Removed all related state variables (isNewOSOpen, osFormData) and functions (handleCreateOS)
+  - ✅ **BUSINESS RULE ENFORCED**: Workshops can now only view, edit, and complete existing OS - no creation capability
+  - ✅ **SYSTEM INTEGRITY MAINTAINED**: All existing OS data preserved in `manutencao` table (34 records)
+  - ✅ **FRONTEND VERIFICATION**: Zero occurrences of "Nova OS" text confirmed in workshop dashboard
+  - ✅ **BACKEND SECURITY**: OS creation endpoints remain protected for main system use only
+
 - July 18, 2025: **BUSINESS RULE ENFORCEMENT COMPLETED** - Implemented proper separation between internal OS creation and external workshop reception
   - ✅ **ENDPOINT SEPARATION**: Main `/api/maintenance` endpoint now queries ONLY `manutencao` table (internal OS creation)
   - ✅ **UNIFIED REPORTING**: New `/api/maintenance/unified-report` endpoint for comprehensive reports including all tables

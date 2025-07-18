@@ -71,14 +71,9 @@ export default function OficinaExternalDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [maintenanceRequests, setMaintenanceRequests] = useState<MaintenanceRequest[]>([]);
   const [carReceptions, setCarReceptions] = useState<CarReception[]>([]);
-  const [isNewOSOpen, setIsNewOSOpen] = useState(false);
+  // Estado isNewOSOpen removido - Apenas sistema principal pode criar OS
 
-  const [osFormData, setOSFormData] = useState({
-    vehiclePlate: '',
-    description: '',
-    priority: 'media',
-    estimatedCost: ''
-  });
+  // Estado osFormData removido - Apenas sistema principal pode criar OS
   const [editingOrder, setEditingOrder] = useState<MaintenanceRequest | null>(null);
   const [editForm, setEditForm] = useState({
     status: '',
@@ -485,63 +480,7 @@ export default function OficinaExternalDashboard() {
     }
   };
 
-  const handleCreateOS = async () => {
-    try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token');
-      
-      if (!token || !workshopData) {
-        toast({
-          title: "Erro",
-          description: "Token de acesso não encontrado",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const response = await fetch('/api/oficina/create-service-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          workshopId: workshopData.id,
-          ...osFormData,
-          estimatedCost: parseFloat(osFormData.estimatedCost) || 0
-        })
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Sucesso",
-          description: "Ordem de serviço criada com sucesso!",
-        });
-        setIsNewOSOpen(false);
-        setOSFormData({
-          vehiclePlate: '',
-          description: '',
-          priority: 'media',
-          estimatedCost: ''
-        });
-        // Recarregar dados
-        await loadWorkshopData(workshopData.id, token);
-      } else {
-        const error = await response.json();
-        toast({
-          title: "Erro",
-          description: error.message || "Erro ao criar ordem de serviço",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro de conexão",
-        variant: "destructive",
-      });
-    }
-  };
+  // Função handleCreateOS removida - Apenas sistema principal pode criar OS
 
   const handleEditOrder = (order: MaintenanceRequest) => {
     setEditingOrder(order);
@@ -1070,77 +1009,7 @@ export default function OficinaExternalDashboard() {
                 </div>
               </Button>
 
-              {/* Botão Nova OS */}
-              <Dialog open={isNewOSOpen} onOpenChange={setIsNewOSOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2 h-auto p-4 justify-start">
-                    <FileText className="h-5 w-5" />
-                    <div className="text-left">
-                      <p className="font-medium">Nova OS</p>
-                      <p className="text-sm opacity-80">Criar ordem de serviço</p>
-                    </div>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Nova Ordem de Serviço</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="osVehiclePlate">Placa do Veículo</Label>
-                      <Input
-                        id="osVehiclePlate"
-                        value={osFormData.vehiclePlate}
-                        onChange={(e) => setOSFormData(prev => ({ ...prev, vehiclePlate: e.target.value.toUpperCase() }))}
-                        placeholder="ABC1234"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="osDescription">Descrição do Serviço</Label>
-                      <Textarea
-                        id="osDescription"
-                        value={osFormData.description}
-                        onChange={(e) => setOSFormData(prev => ({ ...prev, description: e.target.value }))}
-                        placeholder="Descreva detalhadamente o serviço..."
-                        rows={4}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="osPriority">Prioridade</Label>
-                      <Select onValueChange={(value) => setOSFormData(prev => ({ ...prev, priority: value }))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione a prioridade" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="baixa">Baixa</SelectItem>
-                          <SelectItem value="media">Média</SelectItem>
-                          <SelectItem value="alta">Alta</SelectItem>
-                          <SelectItem value="urgente">Urgente</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="estimatedCost">Custo Estimado (R$)</Label>
-                      <Input
-                        id="estimatedCost"
-                        type="number"
-                        step="0.01"
-                        value={osFormData.estimatedCost}
-                        onChange={(e) => setOSFormData(prev => ({ ...prev, estimatedCost: e.target.value }))}
-                        placeholder="150.00"
-                      />
-                    </div>
-                    <div className="flex gap-2 pt-4">
-                      <Button onClick={handleCreateOS} className="flex-1">
-                        Criar OS
-                      </Button>
-                      <Button variant="outline" onClick={() => setIsNewOSOpen(false)}>
-                        Cancelar
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              {/* Botão Nova OS - REMOVIDO: Apenas sistema principal pode criar OS */}
               
               {/* Botão Finalizar Serviço */}
               <Button variant="outline" className="flex items-center gap-2 h-auto p-4 justify-start">
@@ -1306,14 +1175,7 @@ export default function OficinaExternalDashboard() {
                 <FileText className="h-5 w-5" />
                 Ordens de Serviço
               </CardTitle>
-              <Dialog open={isNewOSOpen} onOpenChange={setIsNewOSOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    Nova OS
-                  </Button>
-                </DialogTrigger>
-              </Dialog>
+              {/* Botão Nova OS removido - Apenas sistema principal pode criar OS */}
             </div>
             <CardDescription>
               Serviços em andamento e pendentes
@@ -1325,9 +1187,7 @@ export default function OficinaExternalDashboard() {
                 <div className="text-center py-6">
                   <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
                   <p className="text-muted-foreground">Nenhuma OS pendente</p>
-                  <Button size="sm" className="mt-2">
-                    Criar Nova OS
-                  </Button>
+                  {/* Botão Criar Nova OS removido - Apenas sistema principal pode criar OS */}
                 </div>
               ) : (
                 <>
