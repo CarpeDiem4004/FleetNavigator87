@@ -63,9 +63,9 @@ import {
   FileText,
   CheckCircle2,
   Clock,
+  XCircle,
   ClipboardList,
   AlertTriangle,
-  XCircle,
   AlertCircle,
   User,
   FileBarChart as FileSpreadsheet,
@@ -366,6 +366,32 @@ export default function MaintenancePage() {
     }
   });
 
+  // Mutation para excluir manutenção
+  const deleteMaintenanceMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest('DELETE', `/api/maintenance/${id}`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao excluir manutenção');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Manutenção excluída com sucesso',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro ao excluir manutenção',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+
   // Manipuladores de eventos
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -384,6 +410,20 @@ export default function MaintenancePage() {
   const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setDateFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Função para excluir manutenção
+  const handleDeleteMaintenance = async (id: number) => {
+    const maintenance = maintenances?.find(m => m.id === id);
+    if (!maintenance) return;
+
+    const confirmed = window.confirm(
+      `Tem certeza que deseja excluir a OS #${id} do veículo ${maintenance.vehiclePlate}?\n\nEsta ação não pode ser desfeita.`
+    );
+
+    if (confirmed) {
+      deleteMaintenanceMutation.mutate(id);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -821,6 +861,18 @@ export default function MaintenancePage() {
                                     <FileSpreadsheet className="h-4 w-4 mr-2" />
                                     Exportar Relatório
                                   </DropdownMenuItem>
+                                  {(user?.role === 'admin' || user?.role === 'gestor_frota') && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem 
+                                        onClick={() => handleDeleteMaintenance(maintenance.id)}
+                                        className="text-red-600 hover:text-red-700 focus:text-red-700"
+                                      >
+                                        <XCircle className="h-4 w-4 mr-2" />
+                                        Excluir OS
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             )}
