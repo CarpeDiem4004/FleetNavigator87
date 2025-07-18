@@ -6066,7 +6066,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           `;
           
           const result = await pool.query(query);
-          console.log(`Encontradas ${result.rows.length} manutenções no total (sistema principal)`);
+          console.log(`[DEBUG] Encontradas ${result.rows.length} ordens de manutenção no total`);
+          console.log(`[DEBUG] Query executada: ${query}`);
+          console.log(`[DEBUG] Primeiras 3 linhas:`, result.rows.slice(0, 3));
           
           // Mapear os resultados para o formato esperado pelo frontend
           const maintenanceRecords = result.rows.map(row => ({
@@ -7338,7 +7340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Rota específica para buscar todas as ordens de manutenção
-  app.get("/api/maintenance/orders", hasMaintenanceAccess, async (req, res) => {
+  app.get("/api/maintenance/orders", maintenanceAccessMiddleware, async (req, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -7347,33 +7349,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Requisição GET /api/maintenance/orders recebida.");
       console.log("Usuário:", req.user.email, "Papel:", req.user.role);
       
-      // Buscar diretamente da tabela maintenance_orders
+      // Buscar diretamente da tabela manutencao (sistema principal)
       const query = `
         SELECT 
-          mo.id,
-          mo.vehicle_plate,
-          mo.description,
-          mo.status,
-          mo.priority,
-          mo.service_type,
-          mo.workshop_id,
-          mo.start_date,
-          mo.estimated_completion,
-          mo.completion_date,
-          mo.estimated_cost,
-          mo.actual_cost,
-          mo.labor_cost,
-          mo.parts_cost,
-          mo.notes,
-          mo.created_at,
-          mo.updated_at,
+          m.id,
+          m.placa as vehicle_plate,
+          m.descricao as description,
+          m.status,
+          m.prioridade as priority,
+          m.tipo as service_type,
+          m.oficina_id as workshop_id,
+          m.data_solicitacao as start_date,
+          m.data_agendada as estimated_completion,
+          m.data_conclusao as completion_date,
+          m.custo as estimated_cost,
+          m.custo as actual_cost,
+          0 as labor_cost,
+          0 as parts_cost,
+          m.observacoes as notes,
+          m.created_at,
+          m.updated_at,
           v.modelo as vehicle_model,
           v.marca as vehicle_brand,
           o.razao_social as workshop_name
-        FROM maintenance_orders mo
-        LEFT JOIN veiculos v ON mo.vehicle_plate = v.placa
-        LEFT JOIN oficinas o ON mo.workshop_id = o.id
-        ORDER BY mo.created_at DESC
+        FROM manutencao m
+        LEFT JOIN veiculos v ON m.placa = v.placa
+        LEFT JOIN oficinas o ON m.oficina_id = o.id
+        ORDER BY m.created_at DESC
       `;
       
       const result = await pool.query(query);
