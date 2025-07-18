@@ -1190,21 +1190,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteMaintenance(id: number): Promise<boolean> {
-    // Primeiro, obter a manutenção para saber qual veículo atualizar
-    const [maintenanceRecord] = await db.select().from(maintenance).where(eq(maintenance.id, id));
-    
-    if (maintenanceRecord) {
+    try {
+      // Usar SQL direto para consultar a tabela correta (manutencao)
+      const maintenanceQuery = await pool.query('SELECT * FROM manutencao WHERE id = $1', [id]);
+      
+      if (maintenanceQuery.rows.length === 0) {
+        console.log(`Manutenção com ID ${id} não encontrada na tabela manutencao`);
+        return false;
+      }
+      
+      const maintenanceRecord = maintenanceQuery.rows[0];
+      
       // Se o veículo estiver em manutenção, retornar para operação
-      await db.update(veiculos)
-        .set({ status: 'em_operacao' })
-        .where(eq(veiculos.plate, maintenanceRecord.vehiclePlate));
+      if (maintenanceRecord.placa) {
+        await pool.query(
+          'UPDATE veiculos SET status = $1 WHERE plate = $2',
+          ['em_operacao', maintenanceRecord.placa]
+        );
+      }
+      
+      // Excluir da tabela manutencao
+      const deleteResult = await pool.query('DELETE FROM manutencao WHERE id = $1', [id]);
+      
+      console.log(`Manutenção ID ${id} (placa: ${maintenanceRecord.placa}) excluída com sucesso`);
+      return deleteResult.rowCount > 0;
+      
+    } catch (error) {
+      console.error(`Erro ao excluir manutenção ID ${id}:`, error);
+      return false;
     }
-    
-    const [deleted] = await db
-      .delete(maintenance)
-      .where(eq(maintenance.id, id))
-      .returning();
-    return !!deleted;
   }
   
   // Tire operations (pneus)

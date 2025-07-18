@@ -369,7 +369,7 @@ export default function MaintenancePage() {
   // Mutation para excluir manutenção
   const deleteMaintenanceMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest('DELETE', `/api/maintenance/orders/${id}`);
+      const response = await apiRequest('DELETE', `/api/maintenance/${id}`);
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Erro ao excluir manutenção');
