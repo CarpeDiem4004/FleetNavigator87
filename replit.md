@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 18, 2025: **FOOTER CONTACT INFORMATION UPDATED** - Updated all footer contact information across entire system
+  - ✅ **CONTACT UPDATE**: Changed footer from "(11) 97055-8053" to "suporte 11 970558053"
+  - ✅ **COMPLETE COVERAGE**: Updated all layouts and pages:
+    - MainLayoutSimple.tsx, BaseLayout.tsx, AppLayout.tsx (main layouts)
+    - OficinaExternalDashboard.tsx, OficinaDashboard.tsx, OficinaLogin.tsx, CarReception.tsx (workshop pages)
+    - BaseGP03.tsx (base pages)
+  - ✅ **CONSISTENT BRANDING**: All pages now display "Desenvolvido por Carpe Diem 4004 | suporte 11 970558053"
+  - ✅ **SYSTEM-WIDE IMPLEMENTATION**: Footer update applied to all user-facing interfaces across the platform
+
 - July 18, 2025: **WORKSHOP STATUS CALCULATION FIXED** - Resolved dashboard indicators not counting "em_reparo" status correctly
   - ✅ **PROBLEM IDENTIFIED**: Dashboard was filtering only for "em_andamento" status but database used "em_reparo" status
   - ✅ **MAPPING CORRECTED**: Added "em_reparo" to inProgressRequests filter in OficinaExternalDashboard.tsx

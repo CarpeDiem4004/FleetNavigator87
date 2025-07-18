@@ -17,7 +17,7 @@ const MainLayoutSimple: React.FC<MainLayoutSimpleProps> = ({ children }) => {
           &copy; {new Date().getFullYear()} Muricion Fleet - Todos os direitos reservados
           <br />
           <span className="text-xs text-gray-400">
-            Desenvolvido por Carpe Diem 4004 | (11) 97055-8053
+            Desenvolvido por Carpe Diem 4004 | suporte 11 970558053
           </span>
         </div>
       </footer>

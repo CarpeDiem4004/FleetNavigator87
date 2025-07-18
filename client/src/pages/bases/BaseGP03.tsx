@@ -364,7 +364,7 @@ const BaseGP03: React.FC = () => {
       {/* Footer */}
       <div className="fixed bottom-0 right-0 left-0 lg:left-64 bg-white border-t p-2">
         <p className="text-xs text-center text-gray-500">
-          Desenvolvido por Carpe Diem 4004 | (11) 97055-8053
+          Desenvolvido por Carpe Diem 4004 | suporte 11 970558053
         </p>
       </div>
     </div>

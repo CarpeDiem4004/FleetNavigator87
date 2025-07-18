@@ -2116,7 +2116,7 @@ export default function OficinaExternalDashboard() {
       
       {/* Rodapé discreto */}
       <div className="mt-16 pb-8 text-center text-gray-400 text-sm">
-        Desenvolvido por Carpe Diem 4004 | (11) 97055-8053
+        Desenvolvido por Carpe Diem 4004 | suporte 11 970558053
       </div>
     </div>
   );
