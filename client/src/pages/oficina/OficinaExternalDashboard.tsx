@@ -22,7 +22,9 @@ import {
   Edit,
   X,
   Eye,
-  Download
+  Download,
+  Package2,
+  Trash2
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -57,6 +59,12 @@ interface CarReception {
   workshopId: number;
 }
 
+interface Part {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export default function OficinaExternalDashboard() {
   const [workshopData, setWorkshopData] = useState<WorkshopData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,7 +86,13 @@ export default function OficinaExternalDashboard() {
     valor_mao_obra: '',
     valor_total_pecas: '',
     observacoes_oficina: '',
-    km_veiculo: ''
+    km_veiculo: '',
+    placa: '',
+    modelo: '',
+    descricao_servico: '',
+    entrega_nome: '',
+    entrega_cpf: '',
+    entrega_telefone: ''
   });
   const [editingReception, setEditingReception] = useState<CarReception | null>(null);
   const [receptionEditForm, setReceptionEditForm] = useState({
@@ -109,7 +123,7 @@ export default function OficinaExternalDashboard() {
     deliveryPersonCpf: '',
     deliveryPersonPhone: ''
   });
-  const [parts, setParts] = useState<{ name: string; price: string }[]>([]);
+  const [parts, setParts] = useState<Part[]>([]);
   const [newPartName, setNewPartName] = useState('');
   const [newPartPrice, setNewPartPrice] = useState('');
 
@@ -240,24 +254,28 @@ export default function OficinaExternalDashboard() {
 
   const addPart = () => {
     if (newPartName.trim() && newPartPrice.trim()) {
-      // Converte o valor formatado para número antes de salvar
-      const numericPrice = parseCurrency(newPartPrice);
-      setParts([...parts, { name: newPartName.trim(), price: numericPrice.toString() }]);
+      const numericPrice = parseFloat(newPartPrice) || 0;
+      const newPart: Part = {
+        id: Date.now().toString(),
+        name: newPartName.trim(),
+        price: numericPrice
+      };
+      setParts([...parts, newPart]);
       setNewPartName('');
       setNewPartPrice('');
     }
   };
 
-  const removePart = (index: number) => {
-    setParts(parts.filter((_, i) => i !== index));
+  const removePart = (partId: string) => {
+    setParts(parts.filter(part => part.id !== partId));
   };
 
   const calculateTotalParts = () => {
-    return parts.reduce((total, part) => total + parseFloat(part.price || '0'), 0);
+    return parts.reduce((total, part) => total + part.price, 0);
   };
 
   const calculateTotalEstimated = () => {
-    const laborCost = parseCurrency(carFormData.laborCost) || 0;
+    const laborCost = parseFloat(carFormData.laborCost) || 0;
     const totalParts = calculateTotalParts();
     return laborCost + totalParts;
   };
@@ -533,8 +551,33 @@ export default function OficinaExternalDashboard() {
       valor_mao_obra: (order as any).valor_mao_obra?.toString() || '',
       valor_total_pecas: (order as any).valor_total_pecas?.toString() || '',
       observacoes_oficina: (order as any).observacoes_oficina || '',
-      km_veiculo: (order as any).currentKm?.toString() || ''
+      km_veiculo: (order as any).currentKm?.toString() || '',
+      placa: order.vehiclePlate || '',
+      modelo: (order as any).vehicleModel || '',
+      descricao_servico: order.description || '',
+      entrega_nome: (order as any).deliveryPersonName || '',
+      entrega_cpf: (order as any).deliveryPersonCpf || '',
+      entrega_telefone: (order as any).deliveryPersonPhone || ''
     });
+    
+    // Carregar peças existentes se houver
+    if ((order as any).replacedParts) {
+      try {
+        const existingParts = JSON.parse((order as any).replacedParts);
+        if (Array.isArray(existingParts)) {
+          setParts(existingParts.map((part: any) => ({
+            id: part.id || Date.now().toString(),
+            name: part.name || part.nome,
+            price: typeof part.price === 'number' ? part.price : parseFloat(part.price || part.valor || '0')
+          })));
+        }
+      } catch (e) {
+        console.error('Erro ao carregar peças existentes:', e);
+        setParts([]);
+      }
+    } else {
+      setParts([]);
+    }
   };
 
   const updateMaintenanceOrder = async () => {
@@ -544,11 +587,20 @@ export default function OficinaExternalDashboard() {
       const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get('token');
       
+      // Calcular total das peças
+      const totalParts = parts.reduce((sum, part) => sum + part.price, 0);
+      const laborCost = parseFloat(editForm.valor_mao_obra) || 0;
+      const totalCost = laborCost + totalParts;
+      
       console.log('Atualizando ordem de serviço:', {
         orderId: editingOrder.id,
         workshopId: workshopData.id,
         token: token ? 'presente' : 'ausente',
-        formData: editForm
+        formData: editForm,
+        parts: parts,
+        totalParts,
+        laborCost,
+        totalCost
       });
 
       const response = await fetch(`/api/workshop/${workshopData.id}/orders/${editingOrder.id}?token=${token}`, {
@@ -559,9 +611,16 @@ export default function OficinaExternalDashboard() {
         body: JSON.stringify({
           status: editForm.status || undefined,
           notes: editForm.observacoes_oficina || undefined,
-          actualCost: editForm.valor_total_pecas ? parseFloat(editForm.valor_total_pecas) : undefined,
-          laborCost: editForm.valor_mao_obra ? parseFloat(editForm.valor_mao_obra) : undefined,
-          completionDate: editForm.status === 'concluido' ? new Date().toISOString() : undefined
+          actualCost: totalCost > 0 ? totalCost : undefined,
+          laborCost: laborCost > 0 ? laborCost : undefined,
+          partsCost: totalParts > 0 ? totalParts : undefined,
+          replacedParts: parts.length > 0 ? JSON.stringify(parts) : undefined,
+          currentKm: editForm.km_veiculo ? parseInt(editForm.km_veiculo) : undefined,
+          estimatedCompletion: editForm.data_previsao_entrega || undefined,
+          completionDate: editForm.status === 'concluida' || editForm.status === 'entregue' ? new Date().toISOString() : undefined,
+          deliveryPersonName: editForm.entrega_nome || undefined,
+          deliveryPersonCpf: editForm.entrega_cpf || undefined,
+          deliveryPersonPhone: editForm.entrega_telefone || undefined
         }),
       });
 
@@ -569,6 +628,7 @@ export default function OficinaExternalDashboard() {
 
       if (response.ok) {
         setEditingOrder(null);
+        setParts([]); // Limpar peças após salvar
         await loadWorkshopData(workshopData.id, token);
         toast({
           title: "Sucesso",
@@ -1345,13 +1405,14 @@ export default function OficinaExternalDashboard() {
 
       {/* Dialog para editar ordem de serviço */}
       <Dialog open={!!editingOrder} onOpenChange={() => setEditingOrder(null)}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar Ordem de Serviço</DialogTitle>
+            <DialogTitle>Editar Ordem de Serviço #{editingOrder?.id}</DialogTitle>
           </DialogHeader>
           
           {editingOrder && (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Seção 1: Status e Previsão */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="status">Status</Label>
@@ -1360,10 +1421,11 @@ export default function OficinaExternalDashboard() {
                       <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">Pendente</SelectItem>
-                      <SelectItem value="in_progress">Em Andamento</SelectItem>
-                      <SelectItem value="awaiting_parts">Aguardando Peças</SelectItem>
-                      <SelectItem value="completed">Concluída</SelectItem>
+                      <SelectItem value="pendente">Pendente</SelectItem>
+                      <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                      <SelectItem value="aguardando_pecas">Aguardando Peças</SelectItem>
+                      <SelectItem value="concluida">Concluída</SelectItem>
+                      <SelectItem value="entregue">Entregue</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1379,52 +1441,241 @@ export default function OficinaExternalDashboard() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="km_veiculo">KM Atual</Label>
-                  <Input
-                    id="km_veiculo"
-                    type="number"
-                    placeholder="Ex: 45000"
-                    value={editForm.km_veiculo}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, km_veiculo: e.target.value }))}
-                  />
+              {/* Seção 2: Dados do Veículo */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Car className="h-4 w-4" />
+                  <h3 className="text-sm font-medium">Dados do Veículo</h3>
                 </div>
+                
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="placa">Placa</Label>
+                    <Input
+                      id="placa"
+                      value={editForm.placa || editingOrder.placa}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, placa: e.target.value }))}
+                      placeholder="ABC-1234"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="modelo">Modelo</Label>
+                    <Input
+                      id="modelo"
+                      value={editForm.modelo || editingOrder.modelo}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, modelo: e.target.value }))}
+                      placeholder="Ex: Mercedes Sprinter"
+                    />
+                  </div>
 
-                <div>
-                  <Label htmlFor="valor_mao_obra">Valor Mão de Obra (R$)</Label>
-                  <Input
-                    id="valor_mao_obra"
-                    type="number"
-                    step="0.01"
-                    placeholder="Ex: 150.00"
-                    value={editForm.valor_mao_obra}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, valor_mao_obra: e.target.value }))}
-                  />
+                  <div>
+                    <Label htmlFor="km_veiculo">KM Atual</Label>
+                    <Input
+                      id="km_veiculo"
+                      type="number"
+                      placeholder="Ex: 45000"
+                      value={editForm.km_veiculo}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, km_veiculo: e.target.value }))}
+                    />
+                  </div>
                 </div>
+              </div>
 
+              {/* Seção 3: Descrição do Serviço */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  <h3 className="text-sm font-medium">Descrição do Serviço</h3>
+                </div>
+                
                 <div>
-                  <Label htmlFor="valor_total_pecas">Valor Total Peças (R$)</Label>
-                  <Input
-                    id="valor_total_pecas"
-                    type="number"
-                    step="0.01"
-                    placeholder="Ex: 85.50"
-                    value={editForm.valor_total_pecas}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, valor_total_pecas: e.target.value }))}
+                  <Label htmlFor="descricao_servico">Descrição Detalhada</Label>
+                  <Textarea
+                    id="descricao_servico"
+                    value={editForm.descricao_servico || editingOrder.descricao_servico}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, descricao_servico: e.target.value }))}
+                    placeholder="Descreva detalhadamente o serviço realizado..."
+                    rows={3}
                   />
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="observacoes_oficina">Observações da Oficina</Label>
-                <Textarea
-                  id="observacoes_oficina"
-                  placeholder="Observações sobre o serviço, peças utilizadas, etc..."
-                  value={editForm.observacoes_oficina}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, observacoes_oficina: e.target.value }))}
-                />
+              {/* Seção 4: Peças e Valores */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Package2 className="h-4 w-4" />
+                  <h3 className="text-sm font-medium">Peças e Valores</h3>
+                </div>
+                
+                {/* Adicionar Nova Peça */}
+                <div className="grid grid-cols-4 gap-2">
+                  <Input
+                    placeholder="Nome da peça"
+                    value={newPartName}
+                    onChange={(e) => setNewPartName(e.target.value)}
+                    className="col-span-2"
+                  />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Valor (R$)"
+                    value={newPartPrice}
+                    onChange={(e) => setNewPartPrice(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    onClick={addPart}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Adicionar
+                  </Button>
+                </div>
+
+                {/* Lista de Peças Adicionadas */}
+                {parts.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-medium text-muted-foreground">Peças utilizadas:</h4>
+                    {parts.map((part) => (
+                      <div
+                        key={part.id}
+                        className="flex items-center justify-between p-2 bg-muted rounded border"
+                      >
+                        <div className="flex-1">
+                          <span className="text-sm font-medium">{part.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-green-600">
+                            R$ {part.price.toFixed(2).replace('.', ',')}
+                          </span>
+                          <Button
+                            type="button"
+                            onClick={() => removePart(part.id)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 hover:bg-red-100"
+                          >
+                            <Trash2 className="h-3 w-3 text-red-500" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Total das Peças */}
+                    <div className="flex justify-end pt-2 border-t">
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Total peças: </span>
+                        <span className="font-semibold text-green-600">
+                          R$ {parts.reduce((sum, part) => sum + part.price, 0).toFixed(2).replace('.', ',')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Custos */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="valor_mao_obra">Valor Mão de Obra (R$)</Label>
+                    <Input
+                      id="valor_mao_obra"
+                      type="number"
+                      step="0.01"
+                      placeholder="Ex: 150.00"
+                      value={editForm.valor_mao_obra}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, valor_mao_obra: e.target.value }))}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Valor Total Peças (R$)</Label>
+                    <div className="h-10 flex items-center justify-start bg-gray-50 border rounded-md px-3">
+                      <span className="text-sm text-muted-foreground">
+                        R$ {parts.reduce((sum, part) => sum + part.price, 0).toFixed(2).replace('.', ',')}
+                      </span>
+                      <span className="text-xs text-muted-foreground ml-2">
+                        (calculado automaticamente)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Total Estimado</Label>
+                    <div className="h-10 flex items-center justify-center bg-gray-50 border rounded-md px-3">
+                      <span className="font-semibold text-green-600">
+                        R$ {(
+                          parseFloat(editForm.valor_mao_obra || '0') + 
+                          parts.reduce((sum, part) => sum + part.price, 0)
+                        ).toFixed(2).replace('.', ',')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              {/* Seção 5: Observações */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  <h3 className="text-sm font-medium">Observações Adicionais</h3>
+                </div>
+                
+                <div>
+                  <Label htmlFor="observacoes_oficina">Observações da Oficina</Label>
+                  <Textarea
+                    id="observacoes_oficina"
+                    placeholder="Observações sobre o serviço, peças utilizadas, condições do veículo, etc..."
+                    value={editForm.observacoes_oficina}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, observacoes_oficina: e.target.value }))}
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              {/* Entrega do Veículo */}
+              {editForm.status === 'entregue' && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <h3 className="text-sm font-medium">Dados da Entrega</h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="entrega_nome">Nome do Responsável</Label>
+                      <Input
+                        id="entrega_nome"
+                        value={editForm.entrega_nome || ''}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, entrega_nome: e.target.value }))}
+                        placeholder="Nome completo"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="entrega_cpf">CPF</Label>
+                      <Input
+                        id="entrega_cpf"
+                        value={editForm.entrega_cpf || ''}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, entrega_cpf: e.target.value }))}
+                        placeholder="000.000.000-00"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="entrega_telefone">Telefone</Label>
+                      <Input
+                        id="entrega_telefone"
+                        value={editForm.entrega_telefone || ''}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, entrega_telefone: e.target.value }))}
+                        placeholder="(11) 99999-9999"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setEditingOrder(null)}>

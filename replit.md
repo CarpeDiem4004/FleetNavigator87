@@ -117,6 +117,27 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 18, 2025: **OS EDIT FORM ENHANCEMENT COMPLETED** - Completely upgraded workshop OS (Service Order) edit form with comprehensive parts management
+  - ✅ **INTERFACE REDESIGN**: Expanded from compact 900px modal to full-screen interface with scroll (900px × 90vh)
+  - ✅ **FIVE ORGANIZED SECTIONS**: 
+    - Status e Previsão de Entrega (delivery prediction)
+    - Dados do Veículo (vehicle data - plate, model, km)
+    - Descrição Detalhada do Serviço (detailed service description)
+    - Peças e Valores (parts and values - complete management system)
+    - Observações Adicionais (additional observations)
+  - ✅ **COMPREHENSIVE PARTS MANAGEMENT**: 
+    - Add parts with name and price
+    - View formatted parts list with individual removal
+    - Automatic total calculation (labor + parts)
+    - Load existing parts when editing orders
+    - Save parts data to database as JSON
+  - ✅ **ENHANCED FORM STATE**: Added complete field set including vehicle plate, model, service description, delivery person data
+  - ✅ **CALCULATION SYSTEM**: Real-time totals with labor cost + parts cost = total estimated cost
+  - ✅ **DATA PERSISTENCE**: Full integration with backend API for saving/loading parts data
+  - ✅ **CONDITIONAL DELIVERY FIELDS**: Shows delivery person fields when status = "entregue"
+  - ✅ **MATCHING FUNCTIONALITY**: OS edit form now has identical capabilities to vehicle reception form
+  - ✅ **IMPROVED USER EXPERIENCE**: Better organization, visual indicators, and comprehensive form handling
+
 - July 18, 2025: **FOOTER CONTACT INFORMATION UPDATED** - Updated all footer contact information across entire system
   - ✅ **CONTACT UPDATE**: Changed footer from "(11) 97055-8053" to "suporte 11 970558053"
   - ✅ **COMPLETE COVERAGE**: Updated all layouts and pages:
