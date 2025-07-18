@@ -125,6 +125,8 @@ This is a comprehensive fleet management system built with React (frontend) and 
   - ✅ **CONSISTENT PATTERN**: Following same filtering approach used in CartaoCombustivelEnhanced and CarReception components
   - ✅ **COMPLETE INTEGRATION**: All 104 project-base relationships loaded and filtered correctly
   - ✅ **USER EXPERIENCE**: Solves the "Nenhuma base" issue by showing relevant bases for each project
+  - ✅ **BUG FIX RESOLVED**: Fixed handleSelectChange function to properly convert string values to numbers for ID fields
+  - ✅ **SYSTEM VERIFIED**: Confirmed working with COCA-COLA project selection showing filtered bases correctly
 
 - July 18, 2025: **MAINTENANCE ENDPOINT CONSISTENCY COMPLETELY FIXED** - Resolved all frontend-backend endpoint mismatches for maintenance operations
   - ✅ **FRONTEND STANDARDIZATION**: Fixed all API calls in MaintenancePage.tsx to use correct `/api/maintenance/orders` endpoint
