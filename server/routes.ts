@@ -5538,10 +5538,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { workshopId, orderId } = req.params;
       const { token } = req.query;
-      const { status, notes, actualCost, completionDate, laborCost, partsCost } = req.body;
+      const { 
+        status, 
+        notes, 
+        actualCost, 
+        completionDate, 
+        laborCost, 
+        partsCost,
+        replacedParts,
+        currentKm,
+        estimatedCompletion,
+        deliveryPersonName,
+        deliveryPersonCpf,
+        deliveryPersonPhone
+      } = req.body;
 
       console.log(`[Workshop Update] Recebida atualização da oficina ${workshopId} para ordem ${orderId}`);
-      console.log('[Workshop Update] Dados recebidos:', { status, notes, actualCost, completionDate, laborCost, partsCost });
+      console.log('[Workshop Update] Dados recebidos:', { 
+        status, 
+        notes, 
+        actualCost, 
+        completionDate, 
+        laborCost, 
+        partsCost,
+        replacedParts,
+        currentKm,
+        estimatedCompletion,
+        deliveryPersonName,
+        deliveryPersonCpf,
+        deliveryPersonPhone
+      });
 
       // Verificar token
       if (!token) {
@@ -5585,11 +5611,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // Verificar se a ordem pertence à oficina
-      const checkQuery = `
-        SELECT * FROM maintenance_orders 
-        WHERE id = $1 AND workshop_id = $2
+      // Primeiro tenta na tabela principal (manutencao)
+      let checkQuery = `
+        SELECT * FROM manutencao 
+        WHERE id = $1 AND oficina_id = $2
       `;
-      const checkResult = await pool.query(checkQuery, [orderId, workshopId]);
+      let checkResult = await pool.query(checkQuery, [orderId, workshopId]);
+
+      if (checkResult.rows.length === 0) {
+        // Se não encontrou na tabela principal, tenta na tabela maintenance_orders
+        checkQuery = `
+          SELECT * FROM maintenance_orders 
+          WHERE id = $1 AND workshop_id = $2
+        `;
+        checkResult = await pool.query(checkQuery, [orderId, workshopId]);
+      }
 
       if (checkResult.rows.length === 0) {
         console.log(`[Workshop Update] Ordem ${orderId} não encontrada para oficina ${workshopId}`);
@@ -5601,35 +5637,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('[Workshop Update] Ordem encontrada, procedendo com atualização');
 
-      // Atualizar a ordem com todos os campos possíveis
-      const updateQuery = `
-        UPDATE maintenance_orders 
-        SET 
-          status = COALESCE($1, status),
-          notes = COALESCE($2, notes),
-          actual_cost = CASE WHEN $3::text != '' AND $3 IS NOT NULL THEN $3::numeric ELSE actual_cost END,
-          labor_cost = CASE WHEN $4::text != '' AND $4 IS NOT NULL THEN $4::numeric ELSE labor_cost END,
-          parts_cost = CASE WHEN $5::text != '' AND $5 IS NOT NULL THEN $5::numeric ELSE parts_cost END,
-          completion_date = CASE 
-            WHEN $1 = 'concluido' OR $1 = 'completed' THEN COALESCE($6::timestamp, NOW()) 
-            WHEN $6::timestamp IS NOT NULL THEN $6::timestamp 
-            ELSE completion_date 
-          END,
-          updated_at = NOW()
-        WHERE id = $7 AND workshop_id = $8
-        RETURNING *
-      `;
-
-      const updateResult = await pool.query(updateQuery, [
-        status, 
-        notes, 
-        actualCost, 
-        laborCost, 
-        partsCost, 
-        completionDate, 
-        orderId, 
-        workshopId
-      ]);
+      // Verificar em qual tabela está a ordem e atualizar corretamente
+      let updateQuery;
+      let updateResult;
+      
+      // Se tem a coluna 'oficina_id', está na tabela manutencao
+      if (checkResult.rows[0].oficina_id) {
+        updateQuery = `
+          UPDATE manutencao 
+          SET 
+            status = COALESCE($1, status),
+            observacoes = COALESCE($2, observacoes),
+            custo = CASE WHEN $3::text != '' AND $3 IS NOT NULL THEN $3::numeric ELSE custo END,
+            data_conclusao = CASE 
+              WHEN $1 = 'entregue' OR $1 = 'finalizado' OR $1 = 'concluido' OR $1 = 'completed' THEN COALESCE($6::timestamp, NOW()) 
+              WHEN $6::timestamp IS NOT NULL THEN $6::timestamp 
+              ELSE data_conclusao 
+            END,
+            data_agendada = CASE WHEN $7::text != '' AND $7 IS NOT NULL THEN $7::timestamp ELSE data_agendada END,
+            km_atual = CASE WHEN $8::text != '' AND $8 IS NOT NULL THEN $8::integer ELSE km_atual END,
+            delivery_person_name = CASE WHEN $10::text != '' AND $10 IS NOT NULL THEN $10 ELSE delivery_person_name END,
+            delivery_person_cpf = CASE WHEN $11::text != '' AND $11 IS NOT NULL THEN $11 ELSE delivery_person_cpf END,
+            delivery_person_phone = CASE WHEN $12::text != '' AND $12 IS NOT NULL THEN $12 ELSE delivery_person_phone END,
+            delivered_date = CASE 
+              WHEN $1 = 'entregue' THEN COALESCE($6::timestamp, NOW()) 
+              ELSE delivered_date 
+            END,
+            updated_at = NOW()
+          WHERE id = $13 AND oficina_id = $14
+          RETURNING *
+        `;
+        
+        updateResult = await pool.query(updateQuery, [
+          status, 
+          notes, 
+          actualCost, 
+          laborCost, 
+          partsCost, 
+          completionDate, 
+          estimatedCompletion,
+          currentKm,
+          replacedParts,
+          deliveryPersonName,
+          deliveryPersonCpf,
+          deliveryPersonPhone,
+          orderId, 
+          workshopId
+        ]);
+      } else {
+        // Se não tem 'oficina_id', está na tabela maintenance_orders
+        updateQuery = `
+          UPDATE maintenance_orders 
+          SET 
+            status = COALESCE($1, status),
+            notes = COALESCE($2, notes),
+            actual_cost = CASE WHEN $3::text != '' AND $3 IS NOT NULL THEN $3::numeric ELSE actual_cost END,
+            labor_cost = CASE WHEN $4::text != '' AND $4 IS NOT NULL THEN $4::numeric ELSE labor_cost END,
+            parts_cost = CASE WHEN $5::text != '' AND $5 IS NOT NULL THEN $5::numeric ELSE parts_cost END,
+            completion_date = CASE 
+              WHEN $1 = 'entregue' OR $1 = 'finalizado' OR $1 = 'concluido' OR $1 = 'completed' THEN COALESCE($6::timestamp, NOW()) 
+              WHEN $6::timestamp IS NOT NULL THEN $6::timestamp 
+              ELSE completion_date 
+            END,
+            estimated_completion = CASE WHEN $7::text != '' AND $7 IS NOT NULL THEN $7::date ELSE estimated_completion END,
+            updated_at = NOW()
+          WHERE id = $13 AND workshop_id = $14
+          RETURNING *
+        `;
+        
+        updateResult = await pool.query(updateQuery, [
+          status, 
+          notes, 
+          actualCost, 
+          laborCost, 
+          partsCost, 
+          completionDate, 
+          estimatedCompletion,
+          currentKm,
+          replacedParts,
+          deliveryPersonName,
+          deliveryPersonCpf,
+          deliveryPersonPhone,
+          orderId, 
+          workshopId
+        ]);
+      }
 
       console.log('[Workshop Update] Ordem atualizada com sucesso:', updateResult.rows[0]);
 

@@ -1207,12 +1207,16 @@ export default function OficinaExternalDashboard() {
                             </Button>
                             <Badge 
                               variant={
-                                request.status === 'concluida' ? 'default' :
+                                request.status === 'entregue' ? 'default' :
+                                request.status === 'finalizado' ? 'secondary' :
                                 request.status === 'em_andamento' ? 'secondary' : 'outline'
                               }
                             >
-                              {request.status === 'pendente' ? 'Pendente' :
-                               request.status === 'em_andamento' ? 'Em Andamento' : 'Concluída'}
+                              {request.status === 'recebido' ? 'Recebido' :
+                               request.status === 'em_andamento' ? 'Em Andamento' :
+                               request.status === 'finalizado' ? 'Finalizado' :
+                               request.status === 'aguardando_pecas' ? 'Aguardando Peças' :
+                               request.status === 'entregue' ? 'Entregue' : 'Pendente'}
                             </Badge>
                           </div>
                         </div>
@@ -1281,10 +1285,10 @@ export default function OficinaExternalDashboard() {
                       <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pendente">Pendente</SelectItem>
+                      <SelectItem value="recebido">Recebido</SelectItem>
                       <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                      <SelectItem value="finalizado">Finalizado</SelectItem>
                       <SelectItem value="aguardando_pecas">Aguardando Peças</SelectItem>
-                      <SelectItem value="concluida">Concluída</SelectItem>
                       <SelectItem value="entregue">Entregue</SelectItem>
                     </SelectContent>
                   </Select>
