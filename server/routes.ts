@@ -6054,107 +6054,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         // Sem filtros, retornar todos
         else {
-          console.log("Buscando todas as manutenções de todas as tabelas");
-          // Query unificada para buscar dados de todas as tabelas de manutenção
-          const unifiedQuery = `
-            -- Dados da tabela manutencao (sistema principal)
+          console.log("Buscando todas as manutenções (apenas sistema principal)");
+          // Usar SQL direto para garantir compatibilidade - APENAS tabela manutencao
+          const query = `
             SELECT 
-              'manutencao' as source_table,
-              m.id,
-              m.placa as vehicle_plate,
-              m.descricao as description,
-              m.status,
-              m.prioridade as priority,
-              m.tipo as maintenance_type,
-              m.oficina_id as workshop_id,
-              m.base_id as request_base_id,
-              m.data_solicitacao as entry_date,
-              m.data_agendada as estimated_completion,
-              m.data_conclusao as completion_date,
-              m.responsavel as responsible_person,
-              m.custo as cost,
-              m.custo as initial_budget,
-              m.created_at,
-              m.updated_at,
+              m.*,
               o.razao_social as workshop_name
             FROM manutencao m
             LEFT JOIN oficinas o ON m.oficina_id = o.id
-            
-            UNION ALL
-            
-            -- Dados da tabela car_receptions (oficinas externas)
-            SELECT 
-              'car_receptions' as source_table,
-              cr.id,
-              cr.vehicle_plate,
-              cr.service_description as description,
-              cr.status,
-              COALESCE(cr.priority, 'média') as priority,
-              cr.vehicle_type as maintenance_type,
-              cr.workshop_id,
-              cr.base_id as request_base_id,
-              cr.received_date as entry_date,
-              cr.estimated_delivery as estimated_completion,
-              cr.delivered_date as completion_date,
-              'Oficina Externa' as responsible_person,
-              COALESCE(cr.labor_cost, 0) + COALESCE(cr.parts_cost, 0) as cost,
-              COALESCE(cr.labor_cost, 0) + COALESCE(cr.parts_cost, 0) as initial_budget,
-              cr.created_at,
-              cr.updated_at,
-              o.razao_social as workshop_name
-            FROM car_receptions cr
-            LEFT JOIN oficinas o ON cr.workshop_id = o.id
-            
-            UNION ALL
-            
-            -- Dados da tabela oficina_murici_manutencoes (oficina murici)
-            SELECT 
-              'oficina_murici' as source_table,
-              om.id,
-              om.placa as vehicle_plate,
-              om.descricao as description,
-              om.status,
-              'média' as priority,
-              om.tipo_servico as maintenance_type,
-              6 as workshop_id,
-              NULL as request_base_id,
-              om.created_at as entry_date,
-              om.data_previsao_termino as estimated_completion,
-              om.data_hora_fim as completion_date,
-              om.responsavel as responsible_person,
-              om.custo_total as cost,
-              om.custo_total as initial_budget,
-              om.created_at,
-              om.updated_at,
-              'Oficina Murici' as workshop_name
-            FROM oficina_murici_manutencoes om
-            
-            ORDER BY created_at DESC
+            ORDER BY m.data_solicitacao DESC
           `;
           
-          const result = await pool.query(unifiedQuery);
-          console.log(`Encontradas ${result.rows.length} manutenções no total (todas as tabelas)`);
+          const result = await pool.query(query);
+          console.log(`Encontradas ${result.rows.length} manutenções no total (sistema principal)`);
           
           // Mapear os resultados para o formato esperado pelo frontend
           const maintenanceRecords = result.rows.map(row => ({
             id: row.id,
-            vehiclePlate: row.vehicle_plate,
-            description: row.description,
+            vehiclePlate: row.placa,
+            description: row.descricao,
             status: row.status,
-            priority: row.priority || "média",
-            maintenanceType: row.maintenance_type,
-            workshopId: row.workshop_id,
-            requestBaseId: row.request_base_id,
-            entryDate: row.entry_date,
-            estimatedCompletion: row.estimated_completion,
-            completionDate: row.completion_date,
-            responsiblePerson: row.responsible_person,
-            cost: row.cost,
-            initialBudget: row.initial_budget,
+            priority: row.prioridade || "média",
+            maintenanceType: row.tipo,
+            workshopId: row.oficina_id,
+            requestBaseId: row.base_id,
+            entryDate: row.data_solicitacao,
+            estimatedCompletion: row.data_agendada,
+            completionDate: row.data_conclusao,
+            responsiblePerson: row.responsavel,
+            cost: row.custo,
+            initialBudget: row.custo,
             created_at: row.created_at,
             updated_at: row.updated_at,
-            workshopName: row.workshop_name,
-            sourceTable: row.source_table // Para identificar a origem dos dados
+            workshopName: row.workshop_name
           }));
           
           return res.status(200).json(maintenanceRecords);
@@ -6170,6 +6102,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Server error",
         error: error instanceof Error ? error.message : "Unknown error"
       });
+    }
+  });
+
+  // Endpoint para relatórios - consulta unificada de todas as tabelas de manutenção
+  app.get("/api/maintenance/unified-report", hasMaintenanceAccess, async (req, res) => {
+    try {
+      console.log("Buscando relatório unificado de manutenções (todas as tabelas)");
+      
+      // Query unificada para relatórios - inclui dados de todas as tabelas
+      const unifiedQuery = `
+        -- Dados da tabela manutencao (sistema principal)
+        SELECT 
+          'manutencao' as source_table,
+          m.id,
+          m.placa as vehicle_plate,
+          m.descricao as description,
+          m.status,
+          m.prioridade as priority,
+          m.tipo as maintenance_type,
+          m.oficina_id as workshop_id,
+          m.base_id as request_base_id,
+          m.data_solicitacao as entry_date,
+          m.data_agendada as estimated_completion,
+          m.data_conclusao as completion_date,
+          m.responsavel as responsible_person,
+          m.custo as cost,
+          m.custo as initial_budget,
+          m.created_at,
+          m.updated_at,
+          o.razao_social as workshop_name
+        FROM manutencao m
+        LEFT JOIN oficinas o ON m.oficina_id = o.id
+        
+        UNION ALL
+        
+        -- Dados da tabela car_receptions (oficinas externas)
+        SELECT 
+          'car_receptions' as source_table,
+          cr.id,
+          cr.vehicle_plate,
+          cr.service_description as description,
+          cr.status,
+          COALESCE(cr.priority, 'média') as priority,
+          cr.vehicle_type as maintenance_type,
+          cr.workshop_id,
+          cr.base_id as request_base_id,
+          cr.received_date as entry_date,
+          cr.estimated_delivery as estimated_completion,
+          cr.delivered_date as completion_date,
+          'Recepção Externa' as responsible_person,
+          COALESCE(cr.labor_cost, 0) + COALESCE(cr.parts_cost, 0) as cost,
+          COALESCE(cr.labor_cost, 0) + COALESCE(cr.parts_cost, 0) as initial_budget,
+          cr.created_at,
+          cr.updated_at,
+          o.razao_social as workshop_name
+        FROM car_receptions cr
+        LEFT JOIN oficinas o ON cr.workshop_id = o.id
+        
+        UNION ALL
+        
+        -- Dados da tabela oficina_murici_manutencoes (oficina murici)
+        SELECT 
+          'oficina_murici' as source_table,
+          om.id,
+          om.placa as vehicle_plate,
+          om.descricao as description,
+          om.status,
+          'média' as priority,
+          om.tipo_servico as maintenance_type,
+          6 as workshop_id,
+          NULL as request_base_id,
+          om.created_at as entry_date,
+          om.data_previsao_termino as estimated_completion,
+          om.data_hora_fim as completion_date,
+          om.responsavel as responsible_person,
+          om.custo_total as cost,
+          om.custo_total as initial_budget,
+          om.created_at,
+          om.updated_at,
+          'Oficina Murici' as workshop_name
+        FROM oficina_murici_manutencoes om
+        
+        ORDER BY created_at DESC
+      `;
+      
+      const result = await pool.query(unifiedQuery);
+      console.log(`Encontradas ${result.rows.length} manutenções no relatório unificado`);
+      
+      // Mapear os resultados para o formato esperado pelo frontend
+      const maintenanceRecords = result.rows.map(row => ({
+        id: row.id,
+        vehiclePlate: row.vehicle_plate,
+        description: row.description,
+        status: row.status,
+        priority: row.priority || "média",
+        maintenanceType: row.maintenance_type,
+        workshopId: row.workshop_id,
+        requestBaseId: row.request_base_id,
+        entryDate: row.entry_date,
+        estimatedCompletion: row.estimated_completion,
+        completionDate: row.completion_date,
+        responsiblePerson: row.responsible_person,
+        cost: row.cost,
+        initialBudget: row.initial_budget,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        workshopName: row.workshop_name,
+        sourceTable: row.source_table // Para identificar a origem dos dados
+      }));
+      
+      return res.status(200).json(maintenanceRecords);
+    } catch (error) {
+      console.error("Erro ao buscar relatório unificado:", error);
+      return res.status(500).json({ message: "Erro ao buscar relatório unificado" });
     }
   });
 

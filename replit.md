@@ -117,6 +117,14 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 18, 2025: **BUSINESS RULE ENFORCEMENT COMPLETED** - Implemented proper separation between internal OS creation and external workshop reception
+  - ✅ **ENDPOINT SEPARATION**: Main `/api/maintenance` endpoint now queries ONLY `manutencao` table (internal OS creation)
+  - ✅ **UNIFIED REPORTING**: New `/api/maintenance/unified-report` endpoint for comprehensive reports including all tables
+  - ✅ **BUSINESS RULE RESPECTED**: Partner workshops can only register vehicles via external reception form (`car_receptions`)
+  - ✅ **DATA INTEGRITY MAINTAINED**: All existing data preserved, no data loss during system correction
+  - ✅ **FIELD MAPPING CORRECTED**: Proper mapping between database fields and frontend format
+  - ✅ **SYSTEM ARCHITECTURE CLARIFIED**: Clear separation of responsibilities between internal management and external reception
+
 - July 18, 2025: **OS EDIT FORM ENHANCEMENT COMPLETED** - Completely upgraded workshop OS (Service Order) edit form with comprehensive parts management
   - ✅ **INTERFACE REDESIGN**: Expanded from compact 900px modal to full-screen interface with scroll (900px × 90vh)
   - ✅ **FIVE ORGANIZED SECTIONS**: 
