@@ -46,6 +46,7 @@ import ServicosPendentesPage from "@/pages/fleet-management/towing-partners/serv
 import FinanceiroGuincho from "@/pages/fleet-management/towing-partners/financeiro";
 import TimezoneTest from "@/pages/timezone-test";
 import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
+import ProtectedBaseRoute from "@/components/ProtectedBaseRoute";
 // LineHallRedirect removido conforme solicitação
 import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
 import { AuthProvider } from "@/context/AuthContext";
@@ -828,7 +829,7 @@ function App() {
           <ProtectedRoute path="/bases/gp02/cartoes-ativos" component={CartoesAtivosGP02} />
           
           {/* Rotas completas para Base GP03 (seguindo padrão da Base Campinas) - DEVE VIR ANTES DAS GENÉRICAS */}
-          <ProtectedRoute path="/bases/gp03" component={BaseGP03} />
+          <ProtectedBaseRoute path="/bases/gp03" component={BaseGP03} baseLoginPath="/bases/gp03/login" baseName="GP03" />
           <ProtectedRoute path="/bases/gp03/despesas" component={DespesasGP03} />
           <ProtectedRoute path="/bases/gp03/multas" component={MultasGP03} />
           <ProtectedRoute path="/bases/gp03/sinistros" component={SinistrosGP03} />
