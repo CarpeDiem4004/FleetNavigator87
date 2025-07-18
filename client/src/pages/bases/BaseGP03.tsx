@@ -60,7 +60,7 @@ const BaseGP03: React.FC = () => {
           title: 'Sinistros e Roubos',
           icon: <AlertTriangle className="w-5 h-5" />,
           description: 'Registre ocorrências de sinistros e roubos de veículos',
-          route: '/admin/sinistros',
+          route: '/bases/gp03/sinistros',
           category: 'operational'
         },
         {
@@ -68,7 +68,7 @@ const BaseGP03: React.FC = () => {
           title: 'Acidentes de Trabalho',
           icon: <HardHat className="w-5 h-5" />,
           description: 'Registre acidentes de trabalho com colaboradores',
-          route: '/admin/acidentes',
+          route: '/bases/gp03/acidentes-trabalho',
           category: 'operational'
         },
         {
@@ -76,7 +76,7 @@ const BaseGP03: React.FC = () => {
           title: 'Gestão de Multas',
           icon: <FileWarning className="w-5 h-5" />,
           description: 'Acompanhe multas e infrações de trânsito',
-          route: '/admin/multas',
+          route: '/bases/gp03/multas',
           category: 'operational'
         },
         {
@@ -84,7 +84,7 @@ const BaseGP03: React.FC = () => {
           title: 'Cadastro de Veículos',
           icon: <Car className="w-5 h-5" />,
           description: 'Gerencie frota de veículos da base',
-          route: '/admin/veiculos',
+          route: '/vehicles',
           category: 'operational'
         },
         {
@@ -92,7 +92,7 @@ const BaseGP03: React.FC = () => {
           title: 'Manutenção de Frota',
           icon: <Wrench className="w-5 h-5" />,
           description: 'Registre solicitações de manutenção para veículos',
-          route: '/admin/manutencao',
+          route: '/bases/gp03/manutencao-frota',
           category: 'operational'
         }
       ]
@@ -107,7 +107,7 @@ const BaseGP03: React.FC = () => {
           title: 'Despesas Mensais',
           icon: <DollarSign className="w-5 h-5" />,
           description: 'Registre despesas mensais como: Água, Energia, Telefone',
-          route: '/admin/despesas',
+          route: '/bases/gp03/despesas',
           category: 'financial'
         },
         {
@@ -123,7 +123,7 @@ const BaseGP03: React.FC = () => {
           title: 'Solicitação de Orçamentos',
           icon: <FileText className="w-5 h-5" />,
           description: 'Solicite orçamentos para produtos',
-          route: '/admin/orcamentos',
+          route: '/bases/gp03/solicitacao-orcamento',
           category: 'financial'
         }
       ]
@@ -138,7 +138,7 @@ const BaseGP03: React.FC = () => {
           title: 'Solicitação de Pneus',
           icon: <CircleDot className="w-5 h-5" />,
           description: 'Faça solicitações de pneus para frota',
-          route: '/admin/pneus',
+          route: '/bases/gp03/solicitacao-pneus',
           category: 'management'
         },
         {
