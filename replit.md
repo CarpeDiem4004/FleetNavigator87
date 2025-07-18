@@ -117,6 +117,12 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 18, 2025: **ALAIR WORKSHOP OS CLEANUP COMPLETED** - Successfully removed 3 pending OS from Oficina Alair workshop
+  - ✅ **OS DELETED**: Removed OS #7 (ABC1234 - Troca de óleo e filtros), OS #8 (DEF5678 - Revisão preventiva completa), OS #9 (GHI9012 - Reparo no sistema de freios)
+  - ✅ **DATABASE CLEANUP**: All 3 OS successfully deleted from `manutencao` table for workshop ID 5 (Oficina Alair)
+  - ✅ **SYSTEM VERIFICATION**: Confirmed 0 remaining OS for Oficina Alair, dashboard should now show clean state
+  - ✅ **DATA INTEGRITY**: All other workshop data preserved, only targeted OS removed as requested
+
 - July 18, 2025: **OS DELETION ENDPOINT INCONSISTENCY COMPLETELY FIXED** - Resolved all frontend-backend endpoint mismatches causing 404 errors on OS deletion
   - ✅ **BACKEND CORRECTION**: Fixed `deleteMaintenance` function to operate on correct `manutencao` table instead of `maintenance` table
   - ✅ **FRONTEND ENDPOINT FIXES**: Corrected all frontend files using incorrect `/api/maintenance/orders/{id}` endpoints:
