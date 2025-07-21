@@ -111,7 +111,7 @@ const FuelCardRequestsPanel: React.FC = () => {
 
   const loadSolicitudeCounts = async () => {
     try {
-      const uniquePlates = [...new Set(solicitations.map(s => s.placa))];
+      const uniquePlates = Array.from(new Set(solicitations.map(s => s.placa)));
       const counts: Record<string, number> = {};
       
       for (const plate of uniquePlates) {
@@ -886,7 +886,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas as Bases</SelectItem>
-                    {getFilteredBases().map((baseName) => (
+                    {getFilteredBases().map((baseName: string) => (
                       <SelectItem key={baseName} value={baseName}>
                         {baseName}
                       </SelectItem>
@@ -1026,10 +1026,11 @@ const FuelCardRequestsPanel: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Motorista */}
+                        {/* Dados do Solicitante */}
                         <div className="lg:col-span-2">
-                          <p className="text-sm font-medium text-gray-900 truncate">{solicitacao.motorista}</p>
-                          <p className="text-xs text-gray-500">Motorista</p>
+                          <p className="text-sm font-medium text-gray-900 truncate">{solicitacao.motorista || 'Nome não informado'}</p>
+                          <p className="text-xs text-gray-500">{solicitacao.telefone || 'Telefone não informado'}</p>
+                          <p className="text-xs text-gray-400 font-medium">Dados do Solicitante</p>
                         </div>
 
                         {/* Valor e KM */}
