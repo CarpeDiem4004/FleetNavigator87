@@ -34,6 +34,8 @@ const solicitacaoSchema = z.object({
   placa: z.string()
     .min(7, { message: "A placa deve ter no mínimo 7 caracteres" })
     .max(8, { message: "A placa deve ter no máximo 8 caracteres" }),
+  nomeMotorista: z.string()
+    .min(3, { message: "O nome do motorista deve ter no mínimo 3 caracteres" }),
   km: z.string()
     .min(1, { message: "A quilometragem é obrigatória" })
     .transform(val => parseInt(val, 10))
@@ -85,6 +87,7 @@ export default function FuelCardSolicitation() {
     resolver: zodResolver(solicitacaoSchema),
     defaultValues: {
       placa: "",
+      nomeMotorista: "",
       km: "",
       valor_solicitado: "",
       tipo_cartao: "placa",
@@ -248,6 +251,27 @@ export default function FuelCardSolicitation() {
                         </FormControl>
                         <FormDescription className="text-xs">
                           Informe a placa sem traços ou espaços
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="nomeMotorista"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">👤 Nome do Motorista</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="João da Silva" 
+                            className="text-base h-12" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          Nome completo do motorista
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

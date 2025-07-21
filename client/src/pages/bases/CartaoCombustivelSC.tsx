@@ -509,7 +509,7 @@ const CartaoCombustivelSC: React.FC = () => {
                           </h3>
                           <p className="text-sm text-orange-700 mb-4">Informe os dados do veículo e do cartão desejado</p>
                           
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="space-y-2">
                               <Label htmlFor="placaVeiculo" className="text-red-600 font-medium">
                                 🚗 Placa do Veículo
@@ -523,6 +523,21 @@ const CartaoCombustivelSC: React.FC = () => {
                                 required
                               />
                               <p className="text-xs text-gray-500">Informe a placa sem traços ou espaços</p>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="nomeMotorista" className="text-purple-600 font-medium">
+                                👤 Nome do Motorista
+                              </Label>
+                              <Input
+                                id="nomeMotorista"
+                                placeholder="João da Silva"
+                                value={formData.nomeMotorista}
+                                onChange={(e) => setFormData(prev => ({ ...prev, nomeMotorista: e.target.value }))}
+                                className="h-11"
+                                required
+                              />
+                              <p className="text-xs text-gray-500">Nome completo do motorista</p>
                             </div>
 
                             <div className="space-y-2">
@@ -554,48 +569,138 @@ const CartaoCombustivelSC: React.FC = () => {
                                 className="h-11"
                                 required
                               />
-                              <p className="text-xs text-gray-500">Valor em reais para carregar</p>
+                              <p className="text-xs text-gray-500">Valor da recarga solicitada</p>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-4 space-y-4">
+                            <div className="space-y-2">
+                              <Label className="text-blue-600 font-medium">Tipo de Cartão</Label>
+                              <RadioGroup
+                                value={formData.tipoCartao}
+                                onValueChange={(value) => setFormData(prev => ({ ...prev, tipoCartao: value as 'vinculado' | 'especifico' }))}
+                                className="flex flex-col space-y-2"
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="vinculado" id="vinculado" />
+                                  <Label htmlFor="vinculado" className="text-sm">
+                                    🔗 Cartão vinculado à placa do veículo
+                                  </Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="especifico" id="especifico" />
+                                  <Label htmlFor="especifico" className="text-sm">
+                                    🎯 Cartão específico por número
+                                  </Label>
+                                </div>
+                              </RadioGroup>
                             </div>
                           </div>
 
-                          <div className="mt-4 space-y-3">
-                            <Label className="text-gray-700 font-medium">Tipo de Cartão</Label>
-                            <RadioGroup 
-                              value={formData.tipoCartao} 
-                              onValueChange={(value) => setFormData(prev => ({ ...prev, tipoCartao: value as 'vinculado' | 'especifico' }))}
-                              className="space-y-2"
-                            >
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="vinculado" id="vinculado" />
-                                <Label htmlFor="vinculado" className="text-sm">
-                                  🔗 Cartão vinculado à placa do veículo
-                                </Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="especifico" id="especifico" />
-                                <Label htmlFor="especifico" className="text-sm">
-                                  🎯 Cartão específico por número
-                                </Label>
-                              </div>
-                            </RadioGroup>
-
-                            {formData.tipoCartao === 'vinculado' && (
-                              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                                <Label htmlFor="placaAutomatic" className="text-blue-600 font-medium">
-                                  🚗 Placa do Veículo (Cartão)
+                          {/* Conditional field for specific card */}
+                          {formData.tipoCartao === 'especifico' && (
+                            <div className="bg-gray-50 p-4 rounded-lg border">
+                              <div className="space-y-2">
+                                <Label htmlFor="numeroCartaoEspecifico" className="text-blue-600 font-medium">
+                                  🎯 PLACA DO CARTAO
                                 </Label>
                                 <Input
-                                  id="placaAutomatic"
-                                  placeholder="Placa será usada automaticamente"
-                                  value={formData.placaVeiculo}
-                                  disabled
-                                  className="h-11 mt-2 bg-white"
+                                  id="numeroCartaoEspecifico"
+                                  placeholder="PLACA DO CARTAO"
+                                  value={formData.placaAutomatic}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, placaAutomatic: e.target.value }))}
+                                  className="h-11"
+                                  required={formData.tipoCartao === 'especifico'}
                                 />
-                                <p className="text-xs text-blue-600 mt-1">
-                                  Para cartão vinculado, a placa do veículo será usada automaticamente
-                                </p>
+                                <p className="text-xs text-gray-500">Informe a placa do cartão específico</p>
                               </div>
-                            )}
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="provedorCartao" className="text-green-600 font-medium">
+                                Provedor do Cartão
+                              </Label>
+                              <Select value={formData.provedorCartao} onValueChange={(value) => setFormData(prev => ({ ...prev, provedorCartao: value }))}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Ticket">Ticket</SelectItem>
+                                  <SelectItem value="Alelo">Alelo</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <p className="text-xs text-gray-500">Escolha o provedor do cartão</p>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="tipoCombustivel" className="text-blue-600 font-medium">
+                                Tipo de Combustível
+                              </Label>
+                              <Select value={formData.tipoCombustivel} onValueChange={(value) => setFormData(prev => ({ ...prev, tipoCombustivel: value }))}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Diesel">Diesel</SelectItem>
+                                  <SelectItem value="Gasolina">Gasolina</SelectItem>
+                                  <SelectItem value="Etanol">Etanol</SelectItem>
+                                  <SelectItem value="GNV">GNV</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <p className="text-xs text-gray-500">Tipo de combustível para o veículo</p>
+                            </div>
+                          </div>
+
+                          <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                            <h3 className="text-sm font-semibold text-orange-800 mb-4 flex items-center">
+                              👤 Dados do Solicitante
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="nomeMotorista2" className="text-yellow-600 font-medium">
+                                  Nome
+                                </Label>
+                                <Input
+                                  id="nomeMotorista2"
+                                  placeholder="João da Silva"
+                                  value={formData.nomeMotorista}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, nomeMotorista: e.target.value }))}
+                                  className="h-11"
+                                  required
+                                />
+                                <p className="text-xs text-gray-500">Nome completo do solicitante</p>
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label htmlFor="celularWhatsApp2" className="text-green-600 font-medium">
+                                  Telefone
+                                </Label>
+                                <Input
+                                  id="celularWhatsApp2"
+                                  placeholder="(11) 99999-9999"
+                                  value={formData.celularWhatsApp}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, celularWhatsApp: e.target.value }))}
+                                  className="h-11"
+                                />
+                                <p className="text-xs text-gray-500">Para receber notificação quando aprovado</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Footer Section with Observations */}
+                          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <Label htmlFor="observacoes" className="text-gray-700 font-medium">
+                              📝 Observações
+                            </Label>
+                            <Textarea
+                              id="observacoes"
+                              placeholder="Informações adicionais sobre a solicitação..."
+                              value={formData.observacoes}
+                              onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
+                              className="mt-2 min-h-[80px]"
+                            />
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">

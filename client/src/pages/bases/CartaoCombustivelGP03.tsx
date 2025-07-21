@@ -450,7 +450,7 @@ export default function CartaoCombustivelGP03() {
                         </h3>
                         <p className="text-sm text-orange-700 mb-4">Informe os dados do veículo e do cartão desejado</p>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="placaVeiculo" className="text-red-600 font-medium">
                               🚗 Placa do Veículo
@@ -464,6 +464,21 @@ export default function CartaoCombustivelGP03() {
                               required
                             />
                             <p className="text-xs text-gray-500">Informe a placa sem traços ou espaços</p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="nomeMotorista" className="text-purple-600 font-medium">
+                              👤 Nome do Motorista
+                            </Label>
+                            <Input
+                              id="nomeMotorista"
+                              placeholder="João da Silva"
+                              value={formData.nomeMotorista}
+                              onChange={(e) => setFormData(prev => ({ ...prev, nomeMotorista: e.target.value }))}
+                              className="h-11"
+                              required
+                            />
+                            <p className="text-xs text-gray-500">Nome completo do motorista</p>
                           </div>
 
                           <div className="space-y-2">

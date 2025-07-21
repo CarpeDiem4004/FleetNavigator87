@@ -527,7 +527,7 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                     </div>
                     
                     <div className="p-4 space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <FormField
                           control={form.control}
                           name="plate"
@@ -547,6 +547,30 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                               </FormControl>
                               <FormDescription className="text-xs text-gray-500">
                                 Informe a placa sem traços ou espaços
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="driverName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2 text-purple-600 font-medium">
+                                <User size={14} />
+                                Nome do Motorista
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="João da Silva"
+                                  {...field}
+                                  className="bg-blue-50 border-blue-200 focus:border-blue-400"
+                                />
+                              </FormControl>
+                              <FormDescription className="text-xs text-gray-500">
+                                Nome completo do motorista
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
