@@ -1027,10 +1027,10 @@ const FuelCardRequestsPanel: React.FC = () => {
                         </div>
 
                         {/* Dados do Solicitante */}
-                        <div className="lg:col-span-2">
+                        <div className="lg:col-span-2 border-2 border-red-500 bg-red-50 p-2 rounded">
+                          <p className="text-xs text-red-600 font-bold mb-1">👤 DADOS DO SOLICITANTE</p>
                           <p className="text-sm font-medium text-gray-900 truncate">{solicitacao.motorista || 'Nome não informado'}</p>
-                          <p className="text-xs text-gray-500">{solicitacao.telefone || 'Telefone não informado'}</p>
-                          <p className="text-xs text-gray-400 font-medium">Dados do Solicitante</p>
+                          <p className="text-xs text-gray-700 font-medium">{solicitacao.telefone || 'Telefone não informado'}</p>
                         </div>
 
                         {/* Valor e KM */}
