@@ -697,7 +697,15 @@ class HybridUserService {
     try {
       console.log(`[HybridUserService] Comparando senha para autenticação`);
       
-      // Verificar se a senha armazenada está no formato correto
+      // Verificar se é hash bcrypt (começa com $2b$)
+      if (stored && stored.startsWith('$2b$')) {
+        const bcrypt = await import('bcrypt');
+        const result = await bcrypt.compare(supplied, stored);
+        console.log(`[HybridUserService] Resultado da comparação de senha: ${result ? 'válida' : 'inválida'}`);
+        return result;
+      }
+      
+      // Formato scrypt legado
       if (!stored || !stored.includes('.')) {
         console.error('[HybridUserService] Formato de senha inválido');
         return false;

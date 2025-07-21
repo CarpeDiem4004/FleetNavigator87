@@ -3,6 +3,7 @@ import { storage } from '../storage';
 import { scrypt, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 import { createClient } from '@supabase/supabase-js';
+import bcrypt from 'bcrypt';
 
 const scryptAsync = promisify(scrypt);
 const router = Router();
@@ -10,6 +11,12 @@ const router = Router();
 // Funções auxiliares de senha
 async function comparePasswords(supplied: string, stored: string) {
   try {
+    // Verificar se é hash bcrypt (começa com $2b$)
+    if (stored.startsWith('$2b$')) {
+      return await bcrypt.compare(supplied, stored);
+    }
+    
+    // Formato scrypt legado
     const [hashed, salt] = stored.split(".");
     if (!hashed || !salt) {
       console.error('Formato de senha inválido no banco de dados');

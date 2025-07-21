@@ -4,6 +4,7 @@ import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
+import bcrypt from "bcrypt";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import createMemoryStore from "memorystore";
@@ -279,11 +280,15 @@ export function setupAuth(app: Express) {
           try {
             console.log(`Verificando senha para: ${username}`);
             
-            // Verificar se a senha está armazenada como hash (contém um ponto)
+            // Verificar se a senha está armazenada como bcrypt hash (começa com $2b$)
             let isPasswordValid = false;
             
-            if (user.password && user.password.includes('.')) {
-              // Verificação de senha com hash
+            if (user.password && user.password.startsWith('$2b$')) {
+              // Verificação de senha com bcrypt
+              isPasswordValid = await bcrypt.compare(password, user.password);
+              console.log(`Verificação bcrypt resultado: ${isPasswordValid}`);
+            } else if (user.password && user.password.includes('.')) {
+              // Verificação de senha com hash scrypt antigo
               isPasswordValid = await comparePasswords(password, user.password);
             } else {
               // Para compatibilidade com senhas antigas sem hash
