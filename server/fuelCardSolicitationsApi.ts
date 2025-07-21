@@ -914,6 +914,7 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
           id::text as id,
           placa,
           motorista,
+          COALESCE(motorista, '') as nome_solicitante,
           COALESCE(valor_solicitado::text, '0') as valor_solicitado,
           COALESCE(km, 0) as km,
           tipo_cartao,
@@ -948,6 +949,7 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
           id::text as id,
           veiculo_placa as placa,
           motorista_nome as motorista,
+          COALESCE(motorista_nome, '') as nome_solicitante,
           COALESCE(valor_calculado::text, '0') as valor_solicitado,
           COALESCE(km_total, 0) as km,
           'vinculado' as tipo_cartao,
@@ -982,6 +984,7 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
           fcr.id::text as id,
           fcr.plate as placa,
           fcr.driver_name as motorista,
+          COALESCE(fcr.requester_name, fcr.nome_solicitante, fcr.driver_name, '') as nome_solicitante,
           COALESCE(fcr.amount::text, '0') as valor_solicitado,
           COALESCE(fcr.odometer, 0) as km,
           fcr.card_type as tipo_cartao,
@@ -1026,6 +1029,7 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
       return {
         'ID': String(sol.id || ''),
         'Placa': String(sol.placa || ''),
+        'Nome do Solicitante': String(sol.nome_solicitante || ''),
         'Motorista': String(sol.motorista || ''),
         'Valor Solicitado': valorFormatado,
         'KM': parseInt(sol.km || '0') || 0,
@@ -1059,6 +1063,7 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
     const columnWidths = [
       { wch: 8 },   // ID
       { wch: 12 },  // Placa
+      { wch: 20 },  // Nome do Solicitante
       { wch: 20 },  // Motorista
       { wch: 15 },  // Valor Solicitado
       { wch: 8 },   // KM
@@ -1387,6 +1392,7 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
           id::text as id,
           placa,
           motorista,
+          COALESCE(motorista, '') as nome_solicitante,
           COALESCE(valor_solicitado::text, '0') as valor_solicitado,
           COALESCE(km, 0) as km,
           tipo_cartao,
@@ -1425,6 +1431,7 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
           id::text as id,
           veiculo_placa as placa,
           motorista_nome as motorista,
+          COALESCE(motorista_nome, '') as nome_solicitante,
           COALESCE(valor_calculado::text, '0') as valor_solicitado,
           COALESCE(km_total, 0) as km,
           'vinculado' as tipo_cartao,
@@ -1462,6 +1469,7 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
           fcr.id::text as id,
           fcr.plate as placa,
           fcr.driver_name as motorista,
+          COALESCE(fcr.requested_by, fcr.driver_name, '') as nome_solicitante,
           COALESCE(fcr.amount::text, '0') as valor_solicitado,
           COALESCE(fcr.odometer, 0) as km,
           fcr.card_type as tipo_cartao,
@@ -1533,6 +1541,7 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
       return {
         'ID': String(sol.id || ''),
         'Placa': String(sol.placa || ''),
+        'Nome do Solicitante': String(sol.nome_solicitante || ''),
         'Motorista': String(sol.motorista || ''),
         'Valor Solicitado': valorFormatado,
         'KM': parseInt(sol.km || '0') || 0,
@@ -1565,6 +1574,7 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
     const columnWidths = [
       { wch: 8 },   // ID
       { wch: 12 },  // Placa
+      { wch: 20 },  // Nome do Solicitante
       { wch: 20 },  // Motorista
       { wch: 15 },  // Valor Solicitado
       { wch: 8 },   // KM
