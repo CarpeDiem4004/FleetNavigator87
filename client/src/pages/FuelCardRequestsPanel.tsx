@@ -1141,10 +1141,18 @@ const FuelCardRequestsPanel: React.FC = () => {
                       <div className="text-lg font-medium">{selectedSolicitation.placa}</div>
                     </div>
                     <div>
-                      <Label>Motorista</Label>
-                      <div className="text-lg font-medium">{selectedSolicitation.motorista}</div>
+                      <Label>Solicitante</Label>
+                      <div className="text-lg font-medium">{(selectedSolicitation as any).nome_solicitante || (selectedSolicitation as any).nomeMotorista || selectedSolicitation.motorista}</div>
                     </div>
                   </div>
+                  
+                  {/* Linha adicional para mostrar o nome do motorista quando diferente do solicitante */}
+                  {(selectedSolicitation as any).nome_motorista && (selectedSolicitation as any).nome_motorista !== ((selectedSolicitation as any).nome_solicitante || selectedSolicitation.motorista) && (
+                    <div>
+                      <Label>Motorista</Label>
+                      <div className="text-lg font-medium">{(selectedSolicitation as any).nome_motorista}</div>
+                    </div>
+                  )}
                   
                   {selectedSolicitation.veiculo_modelo && (
                     <div>

@@ -1245,21 +1245,35 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                   </div>
                 </div>
 
-                {/* Informações do Motorista */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-600">Nome do Motorista</Label>
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <span className="font-medium">{selectedRequest.driverName || 'Não informado'}</span>
+                {/* Informações do Solicitante e Motorista */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-600">Nome do Solicitante</Label>
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <span className="font-medium">{(selectedRequest as any).requesterName || selectedRequest.driverName || 'Não informado'}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-600">Telefone do Solicitante</Label>
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <span className="font-medium">{selectedRequest.driverPhone || 'Não informado'}</span>
+                      </div>
                     </div>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-600">Telefone do Motorista</Label>
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <span className="font-medium">{selectedRequest.driverPhone || 'Não informado'}</span>
+                  {/* Linha adicional para mostrar motorista quando diferente do solicitante */}
+                  {(selectedRequest as any).driverName && (selectedRequest as any).driverName !== ((selectedRequest as any).requesterName || selectedRequest.driverName) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-600">Nome do Motorista</Label>
+                        <div className="p-3 bg-purple-50 rounded-lg">
+                          <span className="font-medium">{(selectedRequest as any).driverName}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Informações do Projeto */}

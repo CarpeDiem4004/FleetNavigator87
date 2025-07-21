@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 21, 2025: **DUAL NAME DISPLAY SYSTEM COMPLETED** - Successfully implemented display of both requester name (nome do solicitante) and driver name (nome do motorista) across fuel card management interfaces
+  - ✅ **MAIN ADMIN PANEL**: Updated FuelCardRequestsPanel.tsx details modal to show both "Solicitante" and "Motorista" when different
+  - ✅ **ENHANCED FORM MODAL**: Updated CartaoCombustivelEnhanced.tsx to display both "Nome do Solicitante" (blue background) and "Nome do Motorista" (purple background) when different
+  - ✅ **FLEXIBLE FIELD HANDLING**: Implemented fallback logic to handle different field naming conventions (nome_solicitante, nomeMotorista, motorista)
+  - ✅ **CONDITIONAL DISPLAY**: Shows driver name separately only when it differs from requester name to avoid redundancy
+  - ✅ **VISUAL DISTINCTION**: Blue styling for requester info, purple styling for driver info when shown separately
+  - ✅ **TYPE SAFETY**: Used type casting to handle dynamic field names while maintaining code functionality
+  - ✅ **LSP COMPLIANCE**: All TypeScript errors resolved and code passes validation
+
 - July 21, 2025: **DRIVER NAME FIELD IMPLEMENTATION COMPLETED** - Successfully re-implemented driver name fields below license plate fields across ALL fuel card forms
   - ✅ **MAIN SOLICITATION FORM**: Added nomeMotorista field with proper schema validation in client/src/pages/fuel-card/solicitation.tsx
   - ✅ **GP BASE FORMS (GP01, GP02, GP03)**: Re-implemented driver name field positioned directly below license plate field with purple styling
