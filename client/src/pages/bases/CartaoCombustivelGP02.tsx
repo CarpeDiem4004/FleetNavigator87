@@ -288,8 +288,8 @@ export default function CartaoCombustivelGP02() {
         reason: 'Solicitação de recarga de cartão combustível',
         specificCardData: formData.tipoCartao === 'especifico' ? formData.numeroCartaoEspecifico : '',
         projectId: selectedProject?.id || 1,
-        baseId: selectedProject?.bases.find(b => b.id.toString() === formData.base)?.base_id || 150,
-        observations: formData.observacoes,
+        baseId: selectedProject?.bases.find(b => b.id.toString() === formData.base)?.id || 150,
+        observations: formData.observacoes || '',
         origem: 'base_system',
         solicitante: 'GP02 - Jacarei'
       };
@@ -569,7 +569,7 @@ export default function CartaoCombustivelGP02() {
                               <div className="mt-3 p-3 bg-orange-50 rounded-lg">
                                 <div>
                                   <Label htmlFor="numeroCartaoEspecifico" className="text-orange-600 font-medium">
-                                    🎯 Número do Cartão Específico
+                                    🎯 Placa do Cartão Específico
                                   </Label>
                                   <Input
                                     id="numeroCartaoEspecifico"

@@ -419,7 +419,7 @@ export default function FuelCardSolicitation() {
                     name="numero_cartao"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Número do Cartão</FormLabel>
+                        <FormLabel>Placa do Cartão</FormLabel>
                         <FormControl>
                           <Input placeholder="1234 5678 9012 3456" {...field} />
                         </FormControl>

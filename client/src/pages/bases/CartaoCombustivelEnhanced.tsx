@@ -684,7 +684,7 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                             <FormItem>
                               <FormLabel className="flex items-center gap-2 text-red-600 font-medium">
                                 <CreditCard size={14} />
-                                {form.watch('cardType') === 'vinculado' ? 'Placa do Veículo (Cartão)' : 'Número do Cartão'}
+                                {form.watch('cardType') === 'vinculado' ? 'Placa do Veículo (Cartão)' : 'Placa do Cartão'}
                               </FormLabel>
                               <FormControl>
                                 <Input
@@ -1214,7 +1214,7 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                   </div>
                   
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-600">Número do Cartão</Label>
+                    <Label className="text-sm font-medium text-gray-600">Placa do Cartão</Label>
                     <div className="p-3 bg-gray-50 rounded-lg">
                       <span className="font-medium">{selectedRequest.cardNumber}</span>
                     </div>

@@ -283,7 +283,7 @@ const CartaoCombustivelCampinasExterno: React.FC = () => {
                         name="cardNumber"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Número do Cartão</FormLabel>
+                            <FormLabel>Placa do Cartão</FormLabel>
                             <FormControl>
                               <Input placeholder="1234567890" {...field} />
                             </FormControl>

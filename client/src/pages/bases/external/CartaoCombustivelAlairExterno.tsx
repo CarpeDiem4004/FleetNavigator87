@@ -311,7 +311,7 @@ const CartaoCombustivelAlairExterno: React.FC = () => {
                 <div>
                   <Label htmlFor="cardNumber" className="flex items-center mb-2">
                     <CreditCard className="w-4 h-4 mr-2" />
-                    Número do Cartão *
+                    Placa do Cartão *
                   </Label>
                   <Input
                     id="cardNumber"

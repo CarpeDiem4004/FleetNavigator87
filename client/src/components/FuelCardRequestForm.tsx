@@ -370,7 +370,7 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="numero_cartao">Número do Cartão</Label>
+              <Label htmlFor="numero_cartao">Placa do Cartão</Label>
               <Input
                 id="numero_cartao"
                 value={formData.numero_cartao}
