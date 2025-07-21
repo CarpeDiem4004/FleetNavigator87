@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- July 21, 2025: **FUEL CARD FORM STANDARDIZATION COMPLETED** - Updated all fuel card request forms with new "Dados do Solicitante" section
+  - ✅ **MAIN SOLICITATION FORM**: Updated client/src/pages/fuel-card/solicitation.tsx with new section header and field labels
+  - ✅ **GP BASE FORMS**: Updated all three GP fuel card forms (GP01, GP02, GP03) with standardized labels
+  - ✅ **ENHANCED FORMS**: Updated CartaoCombustivelEnhanced.tsx and CartaoCombustivelSC.tsx with new structure
+  - ✅ **FIELD LABEL CHANGES**: Changed "Nome do Motorista" to "Nome:" and "Celular (WhatsApp)" to "Telefone:"
+  - ✅ **SECTION HEADER**: Added "Dados do Solicitante" section with orange background styling
+  - ✅ **CONSISTENT STYLING**: Applied consistent visual styling across all forms with section backgrounds
+  - ✅ **USER EXPERIENCE**: Improved form organization with clear section separation and visual hierarchy
+
 - July 21, 2025: **SYSTEM DEBUGGING AND LOGIN FIX COMPLETED** - Resolved app startup and authentication issues
   - ✅ **APPLICATION STARTUP**: Fixed session store connection issues by temporarily switching to memory store
   - ✅ **TYPESCRIPT ERRORS**: Resolved error handling type issues in server/index.ts

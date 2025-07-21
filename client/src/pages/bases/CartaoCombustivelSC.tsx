@@ -654,34 +654,39 @@ const CartaoCombustivelSC: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="nomeMotorista" className="text-yellow-600 font-medium">
-                              👤 Nome do Motorista
-                            </Label>
-                            <Input
-                              id="nomeMotorista"
-                              placeholder="João da Silva"
-                              value={formData.nomeMotorista}
-                              onChange={(e) => setFormData(prev => ({ ...prev, nomeMotorista: e.target.value }))}
-                              className="h-11"
-                              required
-                            />
-                            <p className="text-xs text-gray-500">Nome completo do motorista</p>
-                          </div>
+                        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                          <h3 className="text-sm font-semibold text-orange-800 mb-4 flex items-center">
+                            👤 Dados do Solicitante
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="nomeMotorista" className="text-yellow-600 font-medium">
+                                Nome
+                              </Label>
+                              <Input
+                                id="nomeMotorista"
+                                placeholder="João da Silva"
+                                value={formData.nomeMotorista}
+                                onChange={(e) => setFormData(prev => ({ ...prev, nomeMotorista: e.target.value }))}
+                                className="h-11"
+                                required
+                              />
+                              <p className="text-xs text-gray-500">Nome completo do solicitante</p>
+                            </div>
 
-                          <div className="space-y-2">
-                            <Label htmlFor="celularWhatsApp" className="text-green-600 font-medium">
-                              📱 Celular (WhatsApp)
-                            </Label>
-                            <Input
-                              id="celularWhatsApp"
-                              placeholder="(11) 99999-9999"
-                              value={formData.celularWhatsApp}
-                              onChange={(e) => setFormData(prev => ({ ...prev, celularWhatsApp: e.target.value }))}
-                              className="h-11"
-                            />
-                            <p className="text-xs text-gray-500">Para receber notificação quando aprovado</p>
+                            <div className="space-y-2">
+                              <Label htmlFor="celularWhatsApp" className="text-green-600 font-medium">
+                                Telefone
+                              </Label>
+                              <Input
+                                id="celularWhatsApp"
+                                placeholder="(11) 99999-9999"
+                                value={formData.celularWhatsApp}
+                                onChange={(e) => setFormData(prev => ({ ...prev, celularWhatsApp: e.target.value }))}
+                                className="h-11"
+                              />
+                              <p className="text-xs text-gray-500">Para receber notificação quando aprovado</p>
+                            </div>
                           </div>
                         </div>
 

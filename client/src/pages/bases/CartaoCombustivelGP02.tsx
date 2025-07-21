@@ -614,13 +614,13 @@ export default function CartaoCombustivelGP02() {
                       <div className="bg-blue-50 p-4 rounded-lg">
                         <h3 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
                           <User className="h-4 w-4" />
-                          Dados do Motorista
+                          Dados do Solicitante
                         </h3>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="nomeMotorista" className="text-yellow-600 font-medium">
-                              👤 Nome do Motorista
+                              Nome
                             </Label>
                             <Input
                               id="nomeMotorista"
@@ -630,12 +630,12 @@ export default function CartaoCombustivelGP02() {
                               className="h-11"
                               required
                             />
-                            <p className="text-xs text-gray-500">Nome completo do motorista</p>
+                            <p className="text-xs text-gray-500">Nome completo do solicitante</p>
                           </div>
 
                           <div className="space-y-2">
                             <Label htmlFor="celularWhatsApp" className="text-green-600 font-medium">
-                              📱 Celular (WhatsApp)
+                              Telefone
                             </Label>
                             <Input
                               id="celularWhatsApp"

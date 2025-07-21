@@ -791,60 +791,65 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                         />
                       </div>
 
-                      {/* Dados do Motorista */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                        <FormField
-                          control={form.control}
-                          name="driverName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="flex items-center gap-2 font-medium">
-                                <User size={14} />
-                                Nome do Motorista
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="João da Silva"
-                                  {...field}
-                                  className="bg-blue-50 border-blue-200 focus:border-blue-400"
-                                />
-                              </FormControl>
-                              <FormDescription className="text-xs text-gray-500">
-                                Nome completo do motorista
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="driverPhone"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="flex items-center gap-2 font-medium">
-                                <Phone size={14} />
-                                Celular (WhatsApp)
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="(11) 99999-9999"
-                                  {...field}
-                                  className="bg-blue-50 border-blue-200 focus:border-blue-400"
-                                  onChange={(e) => {
-                                    const value = e.target.value.replace(/\D/g, '');
-                                    field.onChange(value);
-                                  }}
-                                  value={formatPhone(field.value)}
-                                />
-                              </FormControl>
-                              <FormDescription className="text-xs text-gray-500">
-                                Para receber notificação quando aprovado
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                      {/* Seção Dados do Solicitante */}
+                      <div className="bg-orange-50 p-4 rounded-lg border border-orange-200 mt-6">
+                        <h3 className="text-sm font-semibold text-orange-800 mb-4 flex items-center">
+                          👤 Dados do Solicitante
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="driverName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex items-center gap-2 font-medium">
+                                  <User size={14} />
+                                  Nome
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="João da Silva"
+                                    {...field}
+                                    className="bg-blue-50 border-blue-200 focus:border-blue-400"
+                                  />
+                                </FormControl>
+                                <FormDescription className="text-xs text-gray-500">
+                                  Nome completo do solicitante
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name="driverPhone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex items-center gap-2 font-medium">
+                                  <Phone size={14} />
+                                  Telefone
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="(11) 99999-9999"
+                                    {...field}
+                                    className="bg-blue-50 border-blue-200 focus:border-blue-400"
+                                    onChange={(e) => {
+                                      const value = e.target.value.replace(/\D/g, '');
+                                      field.onChange(value);
+                                    }}
+                                    value={formatPhone(field.value)}
+                                  />
+                                </FormControl>
+                                <FormDescription className="text-xs text-gray-500">
+                                  Para receber notificação quando aprovado
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       </div>
 
                       {/* Projeto e Base */}

@@ -408,48 +408,54 @@ export default function FuelCardSolicitation() {
                   />
                 )}
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="motorista"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium">👤 Nome do Motorista</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="João da Silva" 
-                            className="text-base h-12" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormDescription className="text-xs">
-                          Nome completo do motorista
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="telefone_celular"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium">📱 Celular (WhatsApp)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="(11) 99999-9999" 
-                            className="text-base h-12" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormDescription className="text-xs">
-                          Para receber notificação quando aprovado
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                {/* Seção Dados do Solicitante */}
+                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                  <h3 className="text-sm font-semibold text-orange-800 mb-4 flex items-center">
+                    👤 Dados do Solicitante
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="motorista"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium">Nome</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="João da Silva" 
+                              className="text-base h-12" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription className="text-xs">
+                            Nome completo do solicitante
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="telefone_celular"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium">Telefone</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="(11) 99999-9999" 
+                              className="text-base h-12" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription className="text-xs">
+                            Para receber notificação quando aprovado
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
