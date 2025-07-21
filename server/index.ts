@@ -121,12 +121,12 @@ app.get('/api/timezone-status', (req, res) => {
         }
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao verificar timezone:', error);
     res.status(500).json({
       success: false,
       message: 'Erro ao verificar timezone',
-      error: error.message
+      error: error?.message || 'Erro desconhecido'
     });
   }
 });

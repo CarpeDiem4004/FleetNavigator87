@@ -151,9 +151,9 @@ export function setupAuth(app: Express) {
   const MemoryStore = createMemoryStore(session);
   const PgStore = connectPg(session);
   
-  // Sempre usar armazenamento PostgreSQL para melhor persistência
-  // Apenas usaremos MemoryStore se especificamente solicitado por variável de ambiente
-  const useMemoryStore = process.env.USE_MEMORY_STORE === 'true';
+  // Temporariamente usar MemoryStore para evitar erros de socket hang up
+  // Mudança para melhorar estabilidade da sessão
+  const useMemoryStore = process.env.USE_MEMORY_STORE !== 'false';
   
   const sessionStore = !useMemoryStore
     ? new PgStore({
