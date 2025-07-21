@@ -85,6 +85,7 @@ import {
   setupFuelCardTable,
   createLineHallFuelCardRequest,
   exportFuelCardSolicitationsToExcel,
+  exportFuelCardSolicitationsByDate,
   createFuelCardRequest
 } from "./fuelCardSolicitationsApi";
 import { exportFuelCardSolicitationsToCSV } from "./fuelCardExportAlternative";
@@ -10079,6 +10080,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rotas específicas devem vir ANTES das rotas com parâmetros
   app.get('/api/fuel-card-solicitations/export', isAuthenticated, exportFuelCardSolicitationsToExcel);
   app.post('/api/fuel-card-solicitations/export', isAuthenticated, exportFuelCardSolicitationsToExcel);
+  // Nova rota para exportação por período
+  app.get('/api/fuel-card-solicitations/export-by-date', isAuthenticated, exportFuelCardSolicitationsByDate);
   // Rota alternativa para CSV
   app.get('/api/fuel-card-solicitations/export-csv', isAuthenticated, exportFuelCardSolicitationsToCSV);
   app.get('/api/fuel-card-solicitations/:id', isAuthenticated, getFuelCardSolicitationById);

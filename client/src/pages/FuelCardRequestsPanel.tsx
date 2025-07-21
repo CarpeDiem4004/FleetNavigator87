@@ -77,6 +77,11 @@ const FuelCardRequestsPanel: React.FC = () => {
   const [isNewRequestDialogOpen, setIsNewRequestDialogOpen] = useState(false);
   const [approvingBatch, setApprovingBatch] = useState(false);
   
+  // Estados para relatório por data
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [downloadingReport, setDownloadingReport] = useState(false);
+  
   // Estados para o modal de histórico de abastecimentos
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [selectedPlaca, setSelectedPlaca] = useState('');
@@ -358,6 +363,67 @@ const FuelCardRequestsPanel: React.FC = () => {
     }
   };
 
+  const handleDownloadByDateRange = async () => {
+    if (!startDate || !endDate) {
+      toast({
+        title: 'Erro de validação',
+        description: 'Selecione as datas de início e fim para gerar o relatório',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (new Date(startDate) > new Date(endDate)) {
+      toast({
+        title: 'Erro de validação',
+        description: 'A data de início deve ser anterior à data de fim',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setDownloadingReport(true);
+    try {
+      const queryParams = new URLSearchParams({
+        startDate,
+        endDate,
+        ...(statusFilter !== 'all' && { status: statusFilter }),
+        ...(projectFilter !== 'all' && { projectId: projectFilter }),
+        ...(baseFilter !== 'all' && { base: baseFilter })
+      });
+
+      const response = await apiRequest('GET', `/api/fuel-card-solicitations/export-by-date?${queryParams}`);
+      
+      if (response.ok) {
+        // Criar URL para download
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `relatorio-cartao-combustivel-${startDate}-${endDate}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        toast({
+          title: 'Relatório baixado com sucesso',
+          description: `Relatório do período ${format(new Date(startDate), 'dd/MM/yyyy')} a ${format(new Date(endDate), 'dd/MM/yyyy')} gerado`,
+        });
+      } else {
+        throw new Error('Erro ao gerar relatório por data');
+      }
+    } catch (error) {
+      toast({
+        title: 'Erro ao baixar relatório',
+        description: 'Não foi possível gerar o relatório para o período selecionado',
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadingReport(false);
+    }
+  };
+
   const handleBatchApproval = async () => {
     if (baseFilter === 'all') {
       toast({
@@ -615,6 +681,37 @@ const FuelCardRequestsPanel: React.FC = () => {
                 Gerenciamento Terceiros
               </Button>
             )}
+            
+            {/* Controles para relatório por data */}
+            <div className="flex items-center gap-2 border rounded-lg p-2 bg-gray-50">
+              <Calendar className="h-4 w-4 text-gray-600" />
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-36 h-8"
+                placeholder="Data início"
+              />
+              <span className="text-gray-400">até</span>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-36 h-8"
+                placeholder="Data fim"
+              />
+              <Button 
+                onClick={handleDownloadByDateRange} 
+                variant="outline" 
+                size="sm"
+                disabled={downloadingReport || !startDate || !endDate}
+                className="flex items-center gap-1"
+              >
+                <Download className="h-3 w-3" />
+                {downloadingReport ? 'Gerando...' : 'Relatório'}
+              </Button>
+            </div>
+            
             <Button onClick={handleExportExcel} variant="outline" className="flex items-center gap-2">
               <Download className="h-4 w-4" />
               Baixar Relatório Excel

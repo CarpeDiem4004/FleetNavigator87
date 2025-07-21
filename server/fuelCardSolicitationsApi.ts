@@ -1329,3 +1329,295 @@ export async function createFuelCardRequest(req: Request, res: Response) {
     });
   }
 }
+
+/**
+ * Exporta solicitações de cartão de combustível filtradas por período para Excel
+ */
+export async function exportFuelCardSolicitationsByDate(req: Request, res: Response) {
+  try {
+    const { startDate, endDate, status, projectId, base } = req.query;
+
+    console.log('[EXPORT-BY-DATE] Parâmetros recebidos:', { startDate, endDate, status, projectId, base });
+
+    // Validação dos parâmetros obrigatórios
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Datas de início e fim são obrigatórias'
+      });
+    }
+
+    // Validar formato das datas
+    const start = new Date(startDate as string);
+    const end = new Date(endDate as string);
+    
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Formato de data inválido'
+      });
+    }
+
+    if (start > end) {
+      return res.status(400).json({
+        success: false,
+        message: 'Data de início deve ser anterior à data de fim'
+      });
+    }
+
+    // Buscar dados de cada tabela separadamente com filtros de data
+    const allSolicitations = [];
+    
+    // Construir filtros adicionais
+    let statusFilter = '';
+    let baseFilter = '';
+
+    if (status && status !== 'all') {
+      statusFilter = ` AND status = '${status}'`;
+    }
+
+    if (base && base !== 'all') {
+      baseFilter = ` AND base = '${base}'`;
+    }
+
+    // 1. Tabela tradicional (solicitacoes_fuel_card)
+    try {
+      const traditionalQuery = `
+        SELECT 
+          id::text as id,
+          placa,
+          motorista,
+          COALESCE(valor_solicitado::text, '0') as valor_solicitado,
+          COALESCE(km, 0) as km,
+          tipo_cartao,
+          numero_cartao,
+          provedor_cartao,
+          status,
+          data_solicitacao,
+          atendido_por,
+          data_atendimento,
+          observacoes,
+          'sistema_principal' as origem_tipo,
+          '' as veiculo_modelo,
+          '' as rota_origem,
+          '' as rota_destino,
+          '' as telefone_motorista,
+          '' as horario_abastecimento,
+          COALESCE(base, 'Base Principal') as base
+        FROM solicitacoes_fuel_card
+        WHERE data_solicitacao::date >= $1::date 
+          AND data_solicitacao::date <= $2::date
+          ${statusFilter}
+          ${baseFilter}
+        ORDER BY data_solicitacao DESC
+      `;
+      
+      const traditionalResult = await pool.query(traditionalQuery, [startDate, endDate]);
+      allSolicitations.push(...traditionalResult.rows);
+    } catch (err) {
+      console.log('Tabela tradicional não encontrada ou erro:', err);
+    }
+    
+    // 2. Tabela Line Hall (linehall_fuel_card_requests)
+    try {
+      const lineHallQuery = `
+        SELECT 
+          id::text as id,
+          veiculo_placa as placa,
+          motorista_nome as motorista,
+          COALESCE(valor_calculado::text, '0') as valor_solicitado,
+          COALESCE(km_total, 0) as km,
+          'vinculado' as tipo_cartao,
+          veiculo_placa as numero_cartao,
+          'Alelo' as provedor_cartao,
+          status,
+          created_at as data_solicitacao,
+          '' as atendido_por,
+          updated_at as data_atendimento,
+          '' as observacoes,
+          'line_hall' as origem_tipo,
+          COALESCE(veiculo_modelo, '') as veiculo_modelo,
+          COALESCE(rota_origem, '') as rota_origem,
+          COALESCE(rota_destino, '') as rota_destino,
+          COALESCE(telefone_motorista, '') as telefone_motorista,
+          COALESCE(horario_abastecimento, '') as horario_abastecimento,
+          'Line Hall Shopee' as base
+        FROM linehall_fuel_card_requests
+        WHERE created_at::date >= $1::date 
+          AND created_at::date <= $2::date
+          ${statusFilter}
+        ORDER BY created_at DESC
+      `;
+      
+      const lineHallResult = await pool.query(lineHallQuery, [startDate, endDate]);
+      allSolicitations.push(...lineHallResult.rows);
+    } catch (err) {
+      console.log('Tabela Line Hall não encontrada ou erro:', err);
+    }
+    
+    // 3. Tabela base system (fuel_card_requests)
+    try {
+      let baseSystemQuery = `
+        SELECT 
+          fcr.id::text as id,
+          fcr.plate as placa,
+          fcr.driver_name as motorista,
+          COALESCE(fcr.amount::text, '0') as valor_solicitado,
+          COALESCE(fcr.odometer, 0) as km,
+          fcr.card_type as tipo_cartao,
+          fcr.card_number as numero_cartao,
+          fcr.provider as provedor_cartao,
+          fcr.status,
+          fcr.requested_at as data_solicitacao,
+          fcr.approved_by as atendido_por,
+          fcr.approved_at as data_atendimento,
+          fcr.reason as observacoes,
+          'base_system' as origem_tipo,
+          '' as veiculo_modelo,
+          '' as rota_origem,
+          '' as rota_destino,
+          COALESCE(fcr.driver_phone, '') as telefone_motorista,
+          COALESCE(fcr.fuel_time, '') as horario_abastecimento,
+          COALESCE(b.location, fcr.base_name, 'Base Principal') as base
+        FROM fuel_card_requests fcr
+        LEFT JOIN bases b ON fcr.base_id = b.id
+        WHERE fcr.requested_at::date >= $1::date 
+          AND fcr.requested_at::date <= $2::date
+      `;
+
+      // Adicionar filtro de projeto se especificado
+      if (projectId && projectId !== 'all') {
+        baseSystemQuery += ` AND fcr.project_id = ${projectId}`;
+      }
+
+      // Adicionar filtro de base se especificado
+      if (base && base !== 'all') {
+        baseSystemQuery += ` AND (b.location = '${base}' OR fcr.base_name = '${base}')`;
+      }
+
+      // Adicionar filtro de status se especificado
+      if (status && status !== 'all') {
+        baseSystemQuery += ` AND fcr.status = '${status}'`;
+      }
+
+      baseSystemQuery += ` ORDER BY fcr.requested_at DESC`;
+      
+      const baseSystemResult = await pool.query(baseSystemQuery, [startDate, endDate]);
+      allSolicitations.push(...baseSystemResult.rows);
+    } catch (err) {
+      console.log('Tabela base system não encontrada ou erro:', err);
+    }
+    
+    // Ordenar por data
+    const solicitations = allSolicitations.sort((a, b) => {
+      const dateA = new Date(a.data_solicitacao);
+      const dateB = new Date(b.data_solicitacao);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    console.log(`[EXPORT-BY-DATE] Total de registros encontrados no período: ${solicitations.length}`);
+
+    if (solicitations.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Nenhuma solicitação encontrada no período especificado'
+      });
+    }
+
+    // Preparar dados para Excel
+    const excelData = solicitations.map((sol: any) => {
+      const valorFormatado = parseFloat(sol.valor_solicitado) || 0;
+      const dataFormatada = sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleDateString('pt-BR') : '';
+      const dataAtendimentoFormatada = sol.data_atendimento ? new Date(sol.data_atendimento).toLocaleDateString('pt-BR') : '';
+      
+      return {
+        'ID': String(sol.id || ''),
+        'Placa': String(sol.placa || ''),
+        'Motorista': String(sol.motorista || ''),
+        'Valor Solicitado': valorFormatado,
+        'KM': parseInt(sol.km || '0') || 0,
+        'Tipo Cartao': sol.tipo_cartao === 'numero' ? 'Cartão Numerado' : 
+                       sol.tipo_cartao === 'placa' ? 'Cartão por Placa' : 
+                       String(sol.tipo_cartao || 'Padrão'),
+        'Numero Cartao': String(sol.tipo_cartao === 'placa' ? sol.placa : sol.numero_cartao || ''),
+        'Provedor': String(sol.provedor_cartao || 'Padrão'),
+        'Status': String(sol.status || ''),
+        'Data Solicitacao': dataFormatada,
+        'Atendido Por': String(sol.atendido_por || ''),
+        'Data Atendimento': dataAtendimentoFormatada,
+        'Base': String(sol.base || ''),
+        'Observacoes': String(sol.observacoes || ''),
+        'Origem': sol.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 
+                  sol.origem_tipo === 'base_system' ? 'Sistema de Bases' : 'Sistema Principal',
+        'Modelo Veiculo': String(sol.veiculo_modelo || ''),
+        'Rota Origem': String(sol.rota_origem || ''),
+        'Rota Destino': String(sol.rota_destino || ''),
+        'Telefone Motorista': String(sol.telefone_motorista || ''),
+        'Horario Abastecimento': String(sol.horario_abastecimento || '')
+      };
+    });
+
+    // Criar workbook e worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+    // Configurar largura das colunas
+    const columnWidths = [
+      { wch: 8 },   // ID
+      { wch: 12 },  // Placa
+      { wch: 20 },  // Motorista
+      { wch: 15 },  // Valor Solicitado
+      { wch: 8 },   // KM
+      { wch: 15 },  // Tipo Cartao
+      { wch: 20 },  // Numero Cartao
+      { wch: 15 },  // Provedor
+      { wch: 15 },  // Status
+      { wch: 15 },  // Data Solicitacao
+      { wch: 15 },  // Atendido Por
+      { wch: 15 },  // Data Atendimento
+      { wch: 15 },  // Base
+      { wch: 30 },  // Observacoes
+      { wch: 15 },  // Origem
+      { wch: 15 },  // Modelo Veiculo
+      { wch: 20 },  // Rota Origem
+      { wch: 20 },  // Rota Destino
+      { wch: 15 },  // Telefone Motorista
+      { wch: 15 },  // Horario Abastecimento
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    // Adicionar worksheet ao workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Solicitacoes_Periodo');
+
+    // Gerar buffer do Excel
+    const excelBuffer = XLSX.write(workbook, { 
+      type: 'buffer', 
+      bookType: 'xlsx',
+      bookSST: false,
+      compression: true
+    });
+
+    // Configurar headers para download
+    const fileName = `relatorio-cartao-combustivel-${startDate}-${endDate}.xlsx`;
+    
+    console.log('[EXPORT-BY-DATE] Enviando arquivo:', fileName, 'Tamanho:', excelBuffer.length, 'bytes');
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Length', excelBuffer.length);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    // Enviar arquivo
+    res.end(excelBuffer);
+
+  } catch (error: any) {
+    console.error('[EXPORT-BY-DATE] Erro ao exportar por data:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao gerar relatório por período',
+      error: error.message
+    });
+  }
+}
