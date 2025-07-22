@@ -37,19 +37,9 @@ const solicitacaoSchema = z.object({
   nomeMotorista: z.string()
     .min(3, { message: "O nome do motorista deve ter no mínimo 3 caracteres" }),
   km: z.string()
-    .min(1, { message: "A quilometragem é obrigatória" })
-    .transform(val => parseInt(val, 10))
-    .refine(val => !isNaN(val) && val > 0, { 
-      message: "A quilometragem deve ser um número positivo",
-      path: ["km"]
-    }),
+    .min(1, { message: "A quilometragem é obrigatória" }),
   valor_solicitado: z.string()
-    .min(1, { message: "O valor solicitado é obrigatório" })
-    .transform(val => parseFloat(val))
-    .refine(val => !isNaN(val) && val > 0, {
-      message: "O valor solicitado deve ser um número positivo",
-      path: ["valor_solicitado"]
-    }),
+    .min(1, { message: "O valor solicitado é obrigatório" }),
   tipo_cartao: z.enum(["placa", "numero"], { 
     required_error: "Selecione o tipo de cartão"
   }),
