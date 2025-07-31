@@ -321,7 +321,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       } catch (tradError) {
         console.error("Erro na autenticação tradicional:", tradError);
         // Se for um erro de acesso negado para operadores, rejeitar imediatamente
-        if (tradError.message && tradError.message.includes('Operadores devem acessar apenas a base designada')) {
+        if (tradError instanceof Error && tradError.message && tradError.message.includes('Operadores devem acessar apenas a base designada')) {
           throw tradError;
         }
       }
@@ -330,46 +330,50 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (!authSuccess) {
         try {
           console.log("Tentando login com Supabase...");
-          const { success, session, user: supaUser, error } = await supabaseLogin(email, password);
+          const loginResult = await supabaseLogin(email, password);
+          const { error: loginError } = loginResult;
           
-          if (success && session) {
-            console.log("Login Supabase bem-sucedido:", supaUser);
+          if (loginResult && 'user' in loginResult && loginResult.user) {
+            console.log("Login Supabase bem-sucedido:", loginResult.user);
             
             // Converter para o formato esperado do usuário
+            const userResult = loginResult.user as any;
             userData = {
-              id: supaUser?.id ? parseInt(supaUser.id) : 0,
-              name: supaUser?.user_metadata?.name || 'Usuário',
-              email: supaUser?.email || email,
-              role: supaUser?.user_metadata?.role || 'operador',
-              baseId: supaUser?.user_metadata?.baseId || null,
-              basename: supaUser?.user_metadata?.basename || null,
-              oficina_id: supaUser?.user_metadata?.oficina_id || null
+              id: userResult?.id ? parseInt(userResult.id) : 0,
+              name: userResult?.user_metadata?.name || 'Usuário',
+              email: userResult?.email || email,
+              role: userResult?.user_metadata?.role || 'operador',
+              baseId: userResult?.user_metadata?.baseId || null,
+              basename: userResult?.user_metadata?.basename || null,
+              oficina_id: userResult?.user_metadata?.oficina_id || null
             };
             
             authSuccess = true;
             
             // Sincronizar com sistema tradicional
-            try {
-              console.log("Sincronizando sessão tradicional com Supabase...");
-              const syncResponse = await fetch('/api/resync-session-jwt', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${session.access_token}`
-                },
-                credentials: 'include'
-              });
-              
-              if (syncResponse.ok) {
-                console.log("Sessão tradicional sincronizada após login Supabase");
-              } else {
-                console.warn("Falha ao sincronizar sessão tradicional");
+            if ('session' in loginResult && loginResult.session) {
+              try {
+                console.log("Sincronizando sessão tradicional com Supabase...");
+                const syncResponse = await fetch('/api/resync-session-jwt', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${(loginResult.session as any)?.access_token}`
+                  },
+                  credentials: 'include'
+                });
+                
+                if (syncResponse.ok) {
+                  console.log("Sessão tradicional sincronizada após login Supabase");
+                } else {
+                  console.warn("Falha ao sincronizar sessão tradicional");
+                }
+              } catch (syncError) {
+                console.warn("Erro ao sincronizar sessão:", syncError);
               }
-            } catch (syncError) {
-              console.warn("Erro ao sincronizar sessão:", syncError);
             }
-          } else if (error) {
-            console.warn("Falha no login com Supabase:", error);
+          } else if (loginError) {
+            console.warn("Falha no login com Supabase:", loginError);
           }
         } catch (supabaseError) {
           console.error("Erro ao tentar login com Supabase:", supabaseError);
@@ -454,13 +458,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (authSuccess && !supabaseAuthenticated) {
           try {
             console.log("Sincronizando com Supabase após login tradicional...");
-            await supabaseRegister(email, password, {
+            await supabaseRegister(email, password, JSON.stringify({
               name: userData.name,
               role: userData.role,
               baseId: userData.baseId,
               basename: userData.basename,
               oficina_id: userData.oficina_id
-            });
+            }));
             console.log("Registro Supabase realizado após login tradicional");
           } catch (syncError) {
             console.warn("Não foi possível registrar no Supabase:", syncError);
@@ -562,12 +566,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Primeiro tenta logout via Supabase
       let supabaseLogoutSuccess = false;
       try {
-        const { success, error } = await supabaseLogout();
-        if (success) {
+        const logoutResult = await supabaseLogout();
+        if (logoutResult && 'error' in logoutResult && !logoutResult.error) {
           supabaseLogoutSuccess = true;
           console.log("Logout Supabase realizado com sucesso");
-        } else if (error) {
-          console.warn("Erro ao fazer logout do Supabase:", error);
+        } else if (logoutResult && 'error' in logoutResult && logoutResult.error) {
+          console.warn("Erro ao fazer logout do Supabase:", logoutResult.error);
         }
       } catch (supaError) {
         console.error("Exceção ao fazer logout do Supabase:", supaError);
@@ -637,15 +641,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       let registeredUser = null;
       
       try {
-        const { success, user: supaUser, error } = await supabaseRegister(email, password, userData);
+        const registerResult = await supabaseRegister(email, password, JSON.stringify(userData));
         
-        if (success && supaUser) {
-          console.log("Registro Supabase bem-sucedido:", supaUser);
+        if (registerResult && 'user' in registerResult && registerResult.user) {
+          console.log("Registro Supabase bem-sucedido:", registerResult.user);
           supabaseSuccessful = true;
           
           // Converter para o formato esperado do usuário
+          const userResult = registerResult.user as any;
           registeredUser = {
-            id: supaUser.id ? parseInt(supaUser.id) : 0,
+            id: userResult.id ? parseInt(userResult.id) : 0,
             name: name,
             email: email,
             role: 'operador',
@@ -653,8 +658,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             basename: null,
             oficina_id: null
           };
-        } else if (error) {
-          console.warn("Falha no registro com Supabase:", error);
+        } else if (registerResult && 'error' in registerResult && registerResult.error) {
+          console.warn("Falha no registro com Supabase:", registerResult.error);
         }
       } catch (supabaseError) {
         console.error("Erro ao tentar registro com Supabase:", supabaseError);

@@ -296,7 +296,8 @@ export function useFetchWithAuth() {
             typeof input === 'string' ? input : 'Request object');
             
           // Se a requisição for para rotas protegidas, especialmente para API frota/estoque
-          const inputUrl = typeof input === 'string' ? input : input.url;
+          const inputUrl = typeof input === 'string' ? input : 
+                          input instanceof Request ? input.url : input.toString();
           if (inputUrl.includes('/api/frota/') && 
               !inputUrl.includes('/login') && 
               !inputUrl.includes('/register')) {
@@ -315,7 +316,8 @@ export function useFetchWithAuth() {
 
       // Log para debug
       if (isInternalRequest) {
-        console.log(`[FetchWithAuth] Requisição para ${typeof input === 'string' ? input : input.url}`, {
+        console.log(`[FetchWithAuth] Requisição para ${typeof input === 'string' ? input : 
+                    input instanceof Request ? input.url : input.toString()}`, {
           hasAuthHeader: hasAuthHeader || (init.headers as Record<string, string>)['Authorization'] ? true : false,
           credentials: init.credentials,
         });
@@ -327,7 +329,8 @@ export function useFetchWithAuth() {
         
         // Se for uma rota protegida e recebemos 401, redirecionar para o login
         if (response.status === 401 && isInternalRequest) {
-          const inputUrl = typeof input === 'string' ? input : input.url;
+          const inputUrl = typeof input === 'string' ? input : 
+                          input instanceof Request ? input.url : input.toString();
           if (inputUrl.includes('/api/frota/')) {
             console.warn('[FetchWithAuth] Recebeu 401 de uma rota protegida:', inputUrl);
             setTimeout(() => {
