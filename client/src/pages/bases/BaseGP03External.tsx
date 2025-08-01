@@ -66,7 +66,7 @@ export default function BaseGP03External() {
               <p className="text-sm text-gray-600 mb-4">
                 Comunique sinistros, roubos e outros incidentes envolvendo veículos da frota. Registre os detalhes da ocorrência, local, horário e danos.
               </p>
-              <Link href="/accidents">
+              <Link href="/bases/gp03/sinistros">
                 <Button className="w-full bg-red-600 hover:bg-red-700 text-white">
                   Comunicar Sinistro
                 </Button>
@@ -89,7 +89,7 @@ export default function BaseGP03External() {
               <p className="text-sm text-gray-600 mb-4">
                 Reporte acidentes de trabalho e incidentes com colaboradores. Informe detalhes da ocorrência, medidas tomadas e encaminhamentos médicos.
               </p>
-              <Link href="/work-safety">
+              <Link href="/bases/gp03/acidentes-trabalho">
                 <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white">
                   Comunicar Acidente
                 </Button>
@@ -112,7 +112,7 @@ export default function BaseGP03External() {
               <p className="text-sm text-gray-600 mb-4">
                 Receba comunicações de multas e infrações de trânsito emitidas pela Gestão de Multas. Visualize detalhes dos veículos, motoristas, datas e valores das infrações.
               </p>
-              <Link href="/fines">
+              <Link href="/bases/gp03/multas">
                 <Button className="w-full bg-yellow-600 hover:bg-yellow-700 text-white">
                   Ver Multas
                 </Button>
@@ -158,7 +158,7 @@ export default function BaseGP03External() {
               <p className="text-sm text-gray-600 mb-4">
                 Registre e acompanhe despesas mensais como água, energia, funcionários, PJ, aluguel, internet e extras.
               </p>
-              <Link href="/bases/campinas/despesas">
+              <Link href="/bases/gp03/despesas">
                 <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                   Controlar Despesas
                 </Button>
@@ -181,7 +181,7 @@ export default function BaseGP03External() {
               <p className="text-sm text-gray-600 mb-4">
                 Faça solicitações de pneus para a linha responsável, especificando modelos, quantidades e justificativas.
               </p>
-              <Link href="/tires">
+              <Link href="/bases/gp03/solicitacao-pneus">
                 <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
                   Solicitar Pneus
                 </Button>
@@ -204,7 +204,7 @@ export default function BaseGP03External() {
               <p className="text-sm text-gray-600 mb-4">
                 Solicite orçamentos para serviços ou produtos, aguarde a aprovação da gestão e acompanhe todo o processo.
               </p>
-              <Link href="/fleet-management/budgets">
+              <Link href="/bases/gp03/solicitacao-orcamento">
                 <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
                   Solicitar Orçamento
                 </Button>
@@ -250,7 +250,7 @@ export default function BaseGP03External() {
               <p className="text-sm text-gray-600 mb-4">
                 Registre solicitações de manutenção para veículos da frota, especificando o tipo de manutenção, prioridade e detalhes.
               </p>
-              <Link href="/fleet-management/maintenance">
+              <Link href="/bases/gp03/manutencao-frota">
                 <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white">
                   Solicitar Manutenção
                 </Button>
