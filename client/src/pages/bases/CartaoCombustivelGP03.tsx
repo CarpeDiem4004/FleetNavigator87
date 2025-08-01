@@ -147,57 +147,42 @@ export default function CartaoCombustivelGP03() {
   useEffect(() => {
     const fetchBaseUserData = async () => {
       try {
-        // Verificar primeiro se existe uma sessão de usuário da base específica
-        const baseResponse = await fetch('/api/auth/check-base-session', {
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
+        console.log('Tentando carregar dados do usuário para GP03...');
         
-        if (baseResponse.ok) {
-          const baseUserData = await baseResponse.json();
-          console.log('Dados do usuário da base GP03:', baseUserData);
-          
-          if (baseUserData && baseUserData.user && baseUserData.user.name) {
-            setFormData(prev => ({ 
-              ...prev, 
-              nomeSolicitante: baseUserData.user.name 
-            }));
-            return; // Sair early se encontrou dados da base
-          }
-        }
-        
-        // Fallback: usar o contexto de autenticação se disponível
-        if (user && user.name && user.role !== 'admin') {
-          console.log('Usando dados do usuário do contexto:', user);
-          setFormData(prev => ({ 
-            ...prev, 
-            nomeSolicitante: user.name 
-          }));
-          return;
-        }
-        
-        // Último fallback: API geral (pode retornar admin se não há sessão específica)
-        console.log('Tentando API geral como último recurso...');
+        // Primeira tentativa: API geral que retorna dados da sessão ativa
         const response = await fetch('/api/user', {
           credentials: 'include'
         });
         
         if (response.ok) {
           const userData = await response.json();
-          console.log('Dados do usuário da API geral:', userData);
+          console.log('Dados do usuário da API:', userData);
           
-          // Só usar se não for admin (evitar mostrar "Administrador" quando deveria ser usuário da base)
-          if (userData && userData.name && userData.role !== 'admin') {
+          // Se encontrou usuário e tem nome, usar
+          if (userData && userData.name) {
+            // Limpar espaços em branco extras do nome
+            const cleanName = userData.name.trim();
+            console.log('Preenchendo nome do solicitante:', cleanName);
             setFormData(prev => ({ 
               ...prev, 
-              nomeSolicitante: userData.name 
+              nomeSolicitante: cleanName 
             }));
-          } else {
-            console.warn('Sessão de admin detectada, deixando campo vazio para preenchimento manual');
+            return;
           }
         }
+        
+        // Segunda tentativa: usar dados do contexto de autenticação se disponível
+        if (user && user.name) {
+          console.log('Usando dados do usuário do contexto:', user);
+          const cleanName = user.name.trim();
+          setFormData(prev => ({ 
+            ...prev, 
+            nomeSolicitante: cleanName 
+          }));
+          return;
+        }
+        
+        console.warn('Nenhum dado de usuário encontrado para preencher automaticamente');
       } catch (error) {
         console.error('Erro ao carregar dados do usuário:', error);
       }
