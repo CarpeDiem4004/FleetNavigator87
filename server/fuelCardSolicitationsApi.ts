@@ -904,6 +904,7 @@ export async function createLineHallFuelCardRequest(req: Request, res: Response)
  */
 export async function exportFuelCardSolicitationsToExcel(req: Request, res: Response) {
   try {
+    console.log('[EXPORT-EXCEL] Iniciando exportação com separação de solicitante e motorista');
     // Buscar dados de cada tabela separadamente e depois unir
     const allSolicitations = [];
     
@@ -913,7 +914,7 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
         SELECT 
           id::text as id,
           placa,
-          motorista,
+          motorista as nome_motorista,
           COALESCE(motorista, '') as nome_solicitante,
           COALESCE(valor_solicitado::text, '0') as valor_solicitado,
           COALESCE(km, 0) as km,
@@ -948,7 +949,7 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
         SELECT 
           id::text as id,
           veiculo_placa as placa,
-          motorista_nome as motorista,
+          COALESCE(motorista_nome, '') as nome_motorista,
           COALESCE(motorista_nome, '') as nome_solicitante,
           COALESCE(valor_calculado::text, '0') as valor_solicitado,
           COALESCE(km_total, 0) as km,
@@ -983,8 +984,8 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
         SELECT 
           fcr.id::text as id,
           fcr.plate as placa,
-          fcr.driver_name as motorista,
-          COALESCE(fcr.requester_name, fcr.nome_solicitante, fcr.driver_name, '') as nome_solicitante,
+          COALESCE(fcr.driver_name, '') as nome_motorista,
+          COALESCE(fcr.requested_by, '') as nome_solicitante,
           COALESCE(fcr.amount::text, '0') as valor_solicitado,
           COALESCE(fcr.odometer, 0) as km,
           fcr.card_type as tipo_cartao,
@@ -1030,7 +1031,7 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
         'ID': String(sol.id || ''),
         'Placa': String(sol.placa || ''),
         'Nome do Solicitante': String(sol.nome_solicitante || ''),
-        'Motorista': String(sol.motorista || ''),
+        'Motorista do Veiculo': String(sol.nome_motorista || ''),
         'Valor Solicitado': valorFormatado,
         'KM': parseInt(sol.km || '0') || 0,
         'Tipo Cartao': sol.tipo_cartao === 'numero' ? 'Cartão Numerado' : 
@@ -1044,7 +1045,8 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
         'Data Atendimento': dataAtendimentoFormatada,
         'Base': String(sol.base || ''),
         'Observacoes': String(sol.observacoes || ''),
-        'Origem': sol.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 'Sistema Principal',
+        'Origem': sol.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 
+                  sol.origem_tipo === 'base_system' ? 'Base System' : 'Sistema Principal',
         'Modelo Veiculo': String(sol.veiculo_modelo || ''),
         'Rota Origem': String(sol.rota_origem || ''),
         'Rota Destino': String(sol.rota_destino || ''),

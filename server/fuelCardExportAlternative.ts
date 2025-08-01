@@ -18,7 +18,8 @@ export async function exportFuelCardSolicitationsToCSV(req: Request, res: Respon
         SELECT 
           id::text as id,
           placa,
-          motorista,
+          motorista as nome_motorista,
+          COALESCE(motorista, '') as nome_solicitante,
           COALESCE(valor_solicitado::text, '0') as valor_solicitado,
           COALESCE(km, 0) as km,
           tipo_cartao,
@@ -48,7 +49,8 @@ export async function exportFuelCardSolicitationsToCSV(req: Request, res: Respon
         SELECT 
           id::text as id,
           veiculo_placa as placa,
-          motorista_nome as motorista,
+          COALESCE(motorista_nome, '') as nome_motorista,
+          COALESCE(motorista_nome, '') as nome_solicitante,
           COALESCE(valor_calculado::text, '0') as valor_solicitado,
           COALESCE(km_total, 0) as km,
           'vinculado' as tipo_cartao,
@@ -78,7 +80,8 @@ export async function exportFuelCardSolicitationsToCSV(req: Request, res: Respon
         SELECT 
           fcr.id::text as id,
           fcr.plate as placa,
-          fcr.driver_name as motorista,
+          COALESCE(fcr.driver_name, '') as nome_motorista,
+          COALESCE(fcr.requested_by, '') as nome_solicitante,
           COALESCE(fcr.amount::text, '0') as valor_solicitado,
           COALESCE(fcr.odometer, 0) as km,
           fcr.card_type as tipo_cartao,
@@ -119,7 +122,8 @@ export async function exportFuelCardSolicitationsToCSV(req: Request, res: Respon
     csvData.push([
       'ID',
       'Placa',
-      'Motorista',
+      'Nome do Solicitante',
+      'Motorista do Veiculo',
       'Valor Solicitado',
       'KM',
       'Tipo Cartao',
@@ -143,7 +147,8 @@ export async function exportFuelCardSolicitationsToCSV(req: Request, res: Respon
       csvData.push([
         String(sol.id || ''),
         String(sol.placa || ''),
-        String(sol.motorista || ''),
+        String(sol.nome_solicitante || ''),
+        String(sol.nome_motorista || ''),
         valorFormatado,
         parseInt(sol.km || '0') || 0,
         sol.tipo_cartao === 'numero' ? 'Cartão Numerado' : 
@@ -157,7 +162,8 @@ export async function exportFuelCardSolicitationsToCSV(req: Request, res: Respon
         dataAtendimentoFormatada,
         String(sol.base || ''),
         String(sol.observacoes || ''),
-        sol.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 'Sistema Principal'
+        sol.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 
+        sol.origem_tipo === 'base_system' ? 'Base System' : 'Sistema Principal'
       ]);
     });
 
