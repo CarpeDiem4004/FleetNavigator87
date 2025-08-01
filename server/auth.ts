@@ -556,7 +556,6 @@ export function setupAuth(app: Express) {
       }
       
       // Verificar senha
-      const bcrypt = require('bcrypt');
       const isPasswordValid = await bcrypt.compare(password, user.password);
       
       if (!isPasswordValid) {
