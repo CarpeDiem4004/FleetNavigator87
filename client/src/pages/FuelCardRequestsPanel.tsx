@@ -1076,7 +1076,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                         {/* Dados do Solicitante */}
                         <div className="lg:col-span-2 border-2 border-red-500 bg-red-50 p-2 rounded">
                           <p className="text-xs text-red-600 font-bold mb-1">👤 DADOS DO SOLICITANTE</p>
-                          <p className="text-sm font-medium text-gray-900 truncate">{solicitacao.requested_by || (solicitacao as any).nome_solicitante || 'Nome não informado'}</p>
+                          <p className="text-sm font-medium text-gray-900 truncate">{solicitacao.solicitante || solicitacao.requested_by || 'Nome não informado'}</p>
                           <p className="text-xs text-gray-700 font-medium">{(solicitacao as any).telefone || 'Telefone não informado'}</p>
                         </div>
 
@@ -1191,7 +1191,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                     <div>
                       <Label>Solicitante</Label>
                       <div className="text-lg font-medium bg-blue-50 p-2 rounded border border-blue-200">
-                        {(selectedSolicitation as any).nome_solicitante || 'Não informado'}
+                        {(selectedSolicitation as any).solicitante || (selectedSolicitation as any).requested_by || 'Não informado'}
                       </div>
                     </div>
                   </div>

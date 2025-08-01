@@ -73,6 +73,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           COALESCE(s.provedor_cartao, 'Padrão') as provedor_cartao,
           COALESCE(s.numero_cartao, '') as numero_cartao,
           COALESCE(s.motorista, 'Motorista não informado') as motorista,
+          COALESCE(s.solicitante, 'Nome não informado') as solicitante,
           COALESCE(s.telefone_celular, '') as telefone_celular,
           COALESCE(s.observacoes, 'Sem observações') as observacoes,
           s.status,
@@ -111,6 +112,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           'Line Hall Shopee' as provedor_cartao,
           COALESCE(lhv.cartao_combustivel, v.cartao_abastecimento, lh.numero_cartao, '') as numero_cartao,
           COALESCE(lh.motorista, lh.motorista_nome, 'Motorista não informado') as motorista,
+          'Line Hall Solicitante' as solicitante,
           COALESCE(lh.telefone_motorista, '') as telefone_celular,
           CONCAT('Rota: ', COALESCE(lh.rota_origem, 'N/I'), ' → ', COALESCE(lh.rota_destino, 'N/I'), 
                  ' | Tel: ', COALESCE(lh.telefone_motorista, 'N/I'), ' | Horário: ', 
@@ -166,6 +168,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           COALESCE(fcr.provider, 'Padrão') as provedor_cartao,
           COALESCE(fcr.card_number, '') as numero_cartao,
           COALESCE(fcr.driver_name, 'Motorista não informado') as motorista,
+          COALESCE(fcr.requested_by, 'Nome não informado') as solicitante,
           COALESCE(fcr.driver_phone, '') as telefone_celular,
           COALESCE(fcr.reason, 'Sem observações') as observacoes,
           fcr.status,
@@ -371,9 +374,9 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
     
     const query = `
       INSERT INTO solicitacoes_fuel_card
-        (placa, km, tipo_cartao, provedor_cartao, numero_cartao, motorista, telefone_celular, observacoes, status, data_solicitacao, valor_solicitado, tipo_combustivel, base, id_rota)
+        (placa, km, tipo_cartao, provedor_cartao, numero_cartao, motorista, solicitante, telefone_celular, observacoes, status, data_solicitacao, valor_solicitado, tipo_combustivel, base, id_rota)
       VALUES
-        ($1, $2, $3, $4, $5, $6, $7, $8, 'pendente', NOW(), $9, $10, $11, $12)
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendente', NOW(), $10, $11, $12, $13)
       RETURNING *
     `;
     
@@ -392,6 +395,7 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       provedor_cartao,
       numero_cartao || null,
       motorista,
+      req.body.solicitante || req.body.nomeSolicitante || 'Nome não informado',
       req.body.telefone_celular || null,
       observacoes || null,
       valorFinal, // Valor garantido como número fixo
