@@ -4027,7 +4027,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         projectId, 
         baseId, 
         reason,
-        specificCardData
+        specificCardData,
+        requesterName,
+        solicitante
       } = req.body;
       
       console.log('[FUEL-CARD-REQUEST] Dados recebidos:', {
@@ -4083,11 +4085,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         RETURNING *
       `;
       
+      // Usar o nome do solicitante enviado pelo formulário, caso contrário usar o nome do usuário logado
+      const requestedByName = requesterName || solicitante || user.name || 'Usuário não identificado';
+      
       console.log('[FUEL-CARD-REQUEST] Executando query INSERT...');
+      console.log('[FUEL-CARD-REQUEST] Solicitante identificado como:', requestedByName);
       const result = await pool.query(query, [
         plate, odometer, cardNumber, cardType, amount, provider, fuelType, fuelTime,
         driverName, driverPhone, projectId, projectName, baseId, baseName,
-        reason, user.name, specificCardData
+        reason, requestedByName, specificCardData
       ]);
       
       console.log('[FUEL-CARD-REQUEST] Solicitação criada com sucesso:', result.rows[0]);
@@ -4436,7 +4442,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         projectId, 
         baseId, 
         baseName,
-        reason 
+        reason,
+        requestedBy,
+        solicitante
       } = req.body;
       
       // Validações básicas
@@ -4473,10 +4481,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         RETURNING *
       `;
       
+      // Usar o nome do solicitante enviado pelo formulário, caso contrário usar 'Sistema Externo'
+      const requestedByName = requestedBy || solicitante || 'Sistema Externo';
+      
       const result = await pool.query(query, [
         plate, odometer, cardNumber, cardType, amount, provider, fuelType,
         driverName, driverPhone, projectId, projectName, baseId, baseName,
-        reason, 'Sistema Externo'
+        reason, requestedByName
       ]);
       
       return res.status(201).json({
