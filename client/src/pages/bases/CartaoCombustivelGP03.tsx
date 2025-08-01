@@ -13,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CreditCard, ArrowLeft, CheckCircle, History, FileText, Calendar, DollarSign, Clock, User, Car, X } from "lucide-react";
 import { Link } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 
 interface SolicitacaoHistorico {
   id: string;
@@ -63,6 +64,7 @@ interface SolicitacaoFormData {
 
 export default function CartaoCombustivelGP03() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('solicitacao');
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -143,28 +145,40 @@ export default function CartaoCombustivelGP03() {
 
   // Carregar dados do usuário logado e pré-preencher nome do solicitante
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await fetch('/api/user', {
-          credentials: 'include'
-        });
-        if (response.ok) {
-          const userData = await response.json();
-          if (userData && userData.name) {
-            setFormData(prev => ({ 
-              ...prev, 
-              nomeSolicitante: userData.name 
-            }));
+    // Usar o contexto de autenticação para garantir dados corretos
+    if (user && user.name) {
+      console.log('Dados do usuário do contexto:', user);
+      setFormData(prev => ({ 
+        ...prev, 
+        nomeSolicitante: user.name 
+      }));
+    } else {
+      console.log('Usuário não encontrado no contexto, tentando API...');
+      const fetchUserData = async () => {
+        try {
+          const response = await fetch('/api/user', {
+            credentials: 'include'
+          });
+          if (response.ok) {
+            const userData = await response.json();
+            console.log('Dados do usuário da API:', userData);
+            if (userData && userData.name) {
+              setFormData(prev => ({ 
+                ...prev, 
+                nomeSolicitante: userData.name 
+              }));
+            }
           }
+        } catch (error) {
+          console.error('Erro ao carregar dados do usuário:', error);
         }
-      } catch (error) {
-        console.error('Erro ao carregar dados do usuário:', error);
-      }
-    };
+      };
+      
+      fetchUserData();
+    }
     
-    fetchUserData();
     loadFuelCardHistory();
-  }, []);
+  }, [user]);
 
   // Atualizar histórico a cada 10 segundos para mostrar mudanças de status
   useEffect(() => {
