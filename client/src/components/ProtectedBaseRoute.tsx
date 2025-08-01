@@ -15,12 +15,23 @@ const ProtectedBaseRoute = ({ path, component: Component, baseLoginPath, baseNam
   return (
     <Route path={path}>
       {() => {
-        // Se não tem usuário ou não é operador de base, redireciona para login da base
-        if (!user || user.role !== 'operador' || user.basename !== baseName) {
+        // Se não tem usuário, redireciona para login da base
+        if (!user) {
           return <Redirect to={baseLoginPath} />;
         }
         
-        return <Component />;
+        // Se é admin, permite acesso a qualquer base
+        if (user.role === 'admin') {
+          return <Component />;
+        }
+        
+        // Se é operador, verifica se é da base específica
+        if (user.role === 'operador' && user.basename === baseName) {
+          return <Component />;
+        }
+        
+        // Se não atende os critérios, redireciona para login da base
+        return <Redirect to={baseLoginPath} />;
       }}
     </Route>
   );
