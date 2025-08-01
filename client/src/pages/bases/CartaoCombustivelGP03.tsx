@@ -145,38 +145,65 @@ export default function CartaoCombustivelGP03() {
 
   // Carregar dados do usuário logado e pré-preencher nome do solicitante
   useEffect(() => {
-    // Usar o contexto de autenticação para garantir dados corretos
-    if (user && user.name) {
-      console.log('Dados do usuário do contexto:', user);
-      setFormData(prev => ({ 
-        ...prev, 
-        nomeSolicitante: user.name 
-      }));
-    } else {
-      console.log('Usuário não encontrado no contexto, tentando API...');
-      const fetchUserData = async () => {
-        try {
-          const response = await fetch('/api/user', {
-            credentials: 'include'
-          });
-          if (response.ok) {
-            const userData = await response.json();
-            console.log('Dados do usuário da API:', userData);
-            if (userData && userData.name) {
-              setFormData(prev => ({ 
-                ...prev, 
-                nomeSolicitante: userData.name 
-              }));
-            }
+    const fetchBaseUserData = async () => {
+      try {
+        // Verificar primeiro se existe uma sessão de usuário da base específica
+        const baseResponse = await fetch('/api/auth/check-base-session', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
           }
-        } catch (error) {
-          console.error('Erro ao carregar dados do usuário:', error);
+        });
+        
+        if (baseResponse.ok) {
+          const baseUserData = await baseResponse.json();
+          console.log('Dados do usuário da base GP03:', baseUserData);
+          
+          if (baseUserData && baseUserData.user && baseUserData.user.name) {
+            setFormData(prev => ({ 
+              ...prev, 
+              nomeSolicitante: baseUserData.user.name 
+            }));
+            return; // Sair early se encontrou dados da base
+          }
         }
-      };
-      
-      fetchUserData();
-    }
+        
+        // Fallback: usar o contexto de autenticação se disponível
+        if (user && user.name && user.role !== 'admin') {
+          console.log('Usando dados do usuário do contexto:', user);
+          setFormData(prev => ({ 
+            ...prev, 
+            nomeSolicitante: user.name 
+          }));
+          return;
+        }
+        
+        // Último fallback: API geral (pode retornar admin se não há sessão específica)
+        console.log('Tentando API geral como último recurso...');
+        const response = await fetch('/api/user', {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          console.log('Dados do usuário da API geral:', userData);
+          
+          // Só usar se não for admin (evitar mostrar "Administrador" quando deveria ser usuário da base)
+          if (userData && userData.name && userData.role !== 'admin') {
+            setFormData(prev => ({ 
+              ...prev, 
+              nomeSolicitante: userData.name 
+            }));
+          } else {
+            console.warn('Sessão de admin detectada, deixando campo vazio para preenchimento manual');
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados do usuário:', error);
+      }
+    };
     
+    fetchBaseUserData();
     loadFuelCardHistory();
   }, [user]);
 

@@ -472,6 +472,70 @@ export function setupAuth(app: Express) {
     });
   });
 
+  // API específica para verificar sessão de bases
+  app.get("/api/auth/check-base-session", (req, res) => {
+    try {
+      // Verificar se há uma sessão ativa
+      if (req.isAuthenticated() && req.user) {
+        const user = req.user;
+        console.log(`[check-base-session] Usuário autenticado encontrado: ${user.email} (Role: ${user.role})`);
+        
+        // Se é um operador de base, retornar seus dados
+        if (user.role === 'operador' && user.basename) {
+          return res.json({
+            success: true,
+            user: {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              role: user.role,
+              basename: user.basename,
+              base_id: user.base_id
+            },
+            isBaseUser: true,
+            baseName: user.basename
+          });
+        }
+        
+        // Se é admin mas estamos em contexto de base, não retornar dados de admin
+        if (user.role === 'admin') {
+          console.log(`[check-base-session] Admin detectado, mas contexto é de base - não retornando dados de admin`);
+          return res.status(204).json({ 
+            success: false, 
+            message: 'Admin session detected in base context' 
+          });
+        }
+        
+        // Para outros tipos de usuário, retornar dados normalmente
+        return res.json({
+          success: true,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            basename: user.basename,
+            base_id: user.base_id
+          },
+          isBaseUser: false
+        });
+      }
+      
+      // Nenhuma sessão encontrada
+      console.log(`[check-base-session] Nenhuma sessão de usuário encontrada`);
+      return res.status(401).json({ 
+        success: false, 
+        message: 'No base session found' 
+      });
+    } catch (error) {
+      console.error('[check-base-session] Erro ao verificar sessão de base:', error);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Error checking base session' 
+      });
+    }
+  });
+
   // Rota específica para sincronização de login entre Supabase e o sistema tradicional
   app.post("/api/login/sync", async (req, res) => {
     // Verificar JWT do Supabase
