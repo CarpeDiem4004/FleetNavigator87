@@ -170,7 +170,7 @@ const BaseGP03: React.FC = () => {
     setSelectedItem(item.id);
     setIsSidebarOpen(false);
     if (item.route) {
-      window.location.href = item.route;
+      setLocation(item.route);
     }
   };
 
@@ -225,7 +225,7 @@ const BaseGP03: React.FC = () => {
                 Clique no botão abaixo para acessar a funcionalidade:
               </p>
               <Button 
-                onClick={() => selectedMenuItem.route && (window.location.href = selectedMenuItem.route)}
+                onClick={() => selectedMenuItem.route && setLocation(selectedMenuItem.route)}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 Acessar {selectedMenuItem.title}
