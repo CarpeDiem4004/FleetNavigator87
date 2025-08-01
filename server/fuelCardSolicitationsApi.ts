@@ -383,6 +383,13 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
     // Log do corpo completo da requisição para fins de depuração
     console.log("Corpo da requisição:", JSON.stringify(req.body, null, 2));
     
+    // Usar o nome do usuário logado quando não há solicitante informado
+    const user = req.user as any;
+    const solicitanteName = req.body.solicitante || req.body.nomeSolicitante || req.body.requesterName || 
+                           (user?.name ? user.name.trim() : 'Nome não informado');
+    
+    console.log("Nome do solicitante identificado:", solicitanteName);
+    
     // Usando o valor real enviado pelo usuário
     const valorFinal = valor_solicitado;
     
@@ -395,7 +402,7 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       provedor_cartao,
       numero_cartao || null,
       motorista,
-      req.body.solicitante || req.body.nomeSolicitante || 'Nome não informado',
+      solicitanteName,
       req.body.telefone_celular || null,
       observacoes || null,
       valorFinal, // Valor garantido como número fixo
