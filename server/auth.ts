@@ -536,6 +536,67 @@ export function setupAuth(app: Express) {
     }
   });
 
+  // API específica para login de bases (operadores)
+  app.post("/api/auth/login-base", async (req, res) => {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email e senha são obrigatórios" });
+    }
+    
+    try {
+      console.log(`[login-base] Tentativa de login para: ${email}`);
+      
+      // Buscar usuário por email
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        console.log(`[login-base] Usuário não encontrado: ${email}`);
+        return res.status(401).json({ message: "Credenciais inválidas" });
+      }
+      
+      // Verificar senha
+      const bcrypt = require('bcrypt');
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      
+      if (!isPasswordValid) {
+        console.log(`[login-base] Senha inválida para: ${email}`);
+        return res.status(401).json({ message: "Credenciais inválidas" });
+      }
+      
+      // Verificar se é um usuário de base (operador ou similar)
+      if (user.role !== 'operador') {
+        console.log(`[login-base] Acesso negado - usuário não é operador: ${email} (Role: ${user.role})`);
+        return res.status(403).json({ 
+          message: "Acesso negado. Este login é apenas para operadores de base." 
+        });
+      }
+      
+      // Fazer login e estabelecer sessão
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          console.error("[login-base] Erro ao estabelecer sessão:", loginErr);
+          return res.status(500).json({ message: "Erro interno do servidor" });
+        }
+        
+        console.log(`[login-base] Login bem-sucedido para operador: ${user.email} (Base: ${user.basename})`);
+        
+        // Remover senha antes de retornar
+        const userWithoutPassword = { ...user, password: undefined };
+        
+        return res.json({
+          success: true,
+          user: userWithoutPassword,
+          message: `Bem-vindo, ${user.name}!`
+        });
+      });
+      
+    } catch (error) {
+      console.error('[login-base] Erro no login:', error);
+      return res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Rota específica para sincronização de login entre Supabase e o sistema tradicional
   app.post("/api/login/sync", async (req, res) => {
     // Verificar JWT do Supabase
