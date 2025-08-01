@@ -280,7 +280,8 @@ const FuelCardRequestsPanel: React.FC = () => {
     setHistoryModalOpen(true);
     
     try {
-      const response = await fetch(`/fuel-data/${encodeURIComponent(placa)}`, {
+      // Buscar abastecimentos
+      const fuelResponse = await fetch(`/fuel-data/${encodeURIComponent(placa)}`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -289,19 +290,65 @@ const FuelCardRequestsPanel: React.FC = () => {
         }
       });
       
-      if (!response.ok) {
-        throw new Error(`Erro HTTP: ${response.status}`);
+      // Buscar solicitações de recarga do cartão
+      const cardResponse = await fetch(`/api/fuel-card-solicitations`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      let combinedHistory = [];
+      
+      // Processar dados de abastecimentos
+      if (fuelResponse.ok) {
+        const fuelData = await fuelResponse.json();
+        if (fuelData.success && fuelData.data) {
+          const fuelRecords = fuelData.data
+            .filter((item: any) => item.placa === placa)
+            .map((item: any) => ({
+              ...item,
+              tipo_registro: 'abastecimento',
+              data_evento: item.data_abastecimento || item.data,
+              valor_evento: item.valor,
+              descricao: `Abastecimento - ${item.posto || item.local || 'Posto não informado'}`
+            }));
+          combinedHistory.push(...fuelRecords);
+        }
       }
       
-      const data = await response.json();
-      
-      if (data.success) {
-        setFuelHistory(data.data || []);
-      } else {
-        throw new Error(data.message || 'Erro ao buscar histórico');
+      // Processar dados de solicitações de recarga
+      if (cardResponse.ok) {
+        const cardData = await cardResponse.json();
+        if (cardData.success && cardData.data) {
+          const cardRecords = cardData.data
+            .filter((item: any) => item.placa === placa)
+            .map((item: any) => ({
+              ...item,
+              tipo_registro: 'solicitacao_recarga',
+              data_evento: item.data_solicitacao,
+              valor_evento: item.valor_solicitado,
+              descricao: `Solicitação de Recarga - ${item.status}`,
+              posto: `Solicitação (${item.origem_tipo === 'line_hall' ? 'Line Hall' : 'Base System'})`,
+              litros: item.litros_solicitados
+            }));
+          combinedHistory.push(...cardRecords);
+        }
       }
+      
+      // Ordenar por data (mais recente primeiro)
+      combinedHistory.sort((a, b) => {
+        const dateA = new Date(a.data_evento);
+        const dateB = new Date(b.data_evento);
+        return dateB.getTime() - dateA.getTime();
+      });
+      
+      setFuelHistory(combinedHistory);
+      
     } catch (error) {
-      console.error('Erro ao buscar histórico:', error);
+      console.error('Erro ao buscar histórico completo:', error);
       toast({
         title: 'Erro ao carregar histórico',
         description: error instanceof Error ? error.message : 'Erro desconhecido',
@@ -1362,14 +1409,17 @@ const FuelCardRequestsPanel: React.FC = () => {
           </SheetContent>
         </Sheet>
 
-        {/* Modal de Histórico de Abastecimentos */}
+        {/* Modal de Histórico Completo (Abastecimentos + Solicitações de Recarga) */}
         <Dialog open={historyModalOpen} onOpenChange={setHistoryModalOpen}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center">
                 <History className="mr-2 h-5 w-5 text-blue-600" />
-                Histórico de Abastecimentos - Placa {selectedPlaca}
+                Histórico Completo - Placa {selectedPlaca}
               </DialogTitle>
+              <p className="text-sm text-gray-600 mt-2">
+                Mostrando abastecimentos e solicitações de recarga de cartão combinados
+              </p>
             </DialogHeader>
             
             <div className="space-y-4">
@@ -1389,68 +1439,145 @@ const FuelCardRequestsPanel: React.FC = () => {
                 <div className="text-center py-8">
                   <History className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Nenhum abastecimento encontrado
+                    Nenhum registro encontrado
                   </h3>
                   <p className="text-gray-500">
-                    Não há registros de abastecimentos para a placa {selectedPlaca}
+                    Não há registros de abastecimentos ou solicitações de recarga para a placa {selectedPlaca}
                   </p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="text-sm text-gray-600 mb-4">
-                    Total de abastecimentos encontrados: {fuelHistory.length}
+                  <div className="text-sm text-gray-600 mb-4 flex items-center justify-between">
+                    <span>Total de registros encontrados: {fuelHistory.length}</span>
+                    <div className="flex items-center gap-4 text-xs">
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 bg-blue-100 border border-blue-300 rounded"></div>
+                        <span>Abastecimentos</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
+                        <span>Solicitações de Recarga</span>
+                      </div>
+                    </div>
                   </div>
                   
-                  {fuelHistory.map((item, index) => (
-                    <div key={index} className="p-4 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                          <Label className="text-xs text-gray-500">Data</Label>
-                          <div className="font-medium">
-                            {item.data_abastecimento ? formatDate(item.data_abastecimento) : 'Não informado'}
+                  {fuelHistory.map((item, index) => {
+                    const isCardRequest = item.tipo_registro === 'solicitacao_recarga';
+                    return (
+                      <div 
+                        key={index} 
+                        className={`p-4 border rounded-lg transition-colors ${
+                          isCardRequest 
+                            ? 'bg-green-50 border-green-200 hover:bg-green-100' 
+                            : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                        }`}
+                      >
+                        {/* Header do Registro */}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            {isCardRequest ? (
+                              <CreditCard className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <svg className="h-4 w-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
+                                <path d="M3 4a1 1 0 00-1 1v1a1 1 0 001 1h1a1 1 0 001-1V5a1 1 0 00-1-1H3zM3 10a1 1 0 00-1 1v1a1 1 0 001 1h1a1 1 0 001-1v-1a1 1 0 00-1-1H3zM9 4a1 1 0 011-1h5a1 1 0 110 2h-5a1 1 0 01-1-1zM9 10a1 1 0 011-1h5a1 1 0 110 2h-5a1 1 0 01-1-1z"/>
+                              </svg>
+                            )}
+                            <Badge 
+                              variant="outline" 
+                              className={
+                                isCardRequest 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-blue-100 text-blue-800 border-blue-300'
+                              }
+                            >
+                              {isCardRequest ? 'Solicitação de Recarga' : 'Abastecimento'}
+                            </Badge>
+                            {isCardRequest && (
+                              <Badge 
+                                variant="outline" 
+                                className={
+                                  item.status === 'Recarga Efetuada' ? 'bg-green-100 text-green-800' :
+                                  item.status === 'Pendente' ? 'bg-yellow-100 text-yellow-800' :
+                                  item.status === 'Negado' ? 'bg-red-100 text-red-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }
+                              >
+                                {item.status}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {formatDate(item.data_evento || item.data_abastecimento || item.data_solicitacao)}
+                          </div>
+                        </div>
+
+                        {/* Conteúdo Principal */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div>
+                            <Label className="text-xs text-gray-500">
+                              {isCardRequest ? 'Origem' : 'Posto/Local'}
+                            </Label>
+                            <div className="font-medium">
+                              {item.posto || item.local || item.nome_posto || 'Não informado'}
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <Label className="text-xs text-gray-500">Valor</Label>
+                            <div className="font-medium text-green-600">
+                              {item.valor_evento 
+                                ? formatCurrency(parseFloat(item.valor_evento.toString())) 
+                                : (item.valor ? formatCurrency(parseFloat(item.valor.toString())) : 'Não informado')
+                              }
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <Label className="text-xs text-gray-500">Litros</Label>
+                            <div className="font-medium">
+                              {item.litros ? `${item.litros}L` : 'Não informado'}
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label className="text-xs text-gray-500">
+                              {isCardRequest ? 'Base/Projeto' : 'Quilometragem'}
+                            </Label>
+                            <div className="font-medium">
+                              {isCardRequest 
+                                ? (item.base || 'Não informado') 
+                                : (item.km_atual || item.km_veiculo || 'Não informado')
+                              }
+                            </div>
                           </div>
                         </div>
                         
-                        <div>
-                          <Label className="text-xs text-gray-500">Posto/Local</Label>
-                          <div className="font-medium">
-                            {item.posto || item.local || item.nome_posto || 'Não informado'}
+                        {/* Informações Adicionais */}
+                        {(item.motorista || item.observacoes || (isCardRequest && item.tipo_cartao)) && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                              {item.motorista && (
+                                <div>
+                                  <span className="text-gray-500">Motorista:</span> {item.motorista}
+                                </div>
+                              )}
+                              {isCardRequest && item.tipo_cartao && (
+                                <div>
+                                  <span className="text-gray-500">Tipo do Cartão:</span> {item.tipo_cartao}
+                                </div>
+                              )}
+                              {item.observacoes && (
+                                <div className="md:col-span-2">
+                                  <span className="text-gray-500">Observações:</span> {item.observacoes}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        
-                        <div>
-                          <Label className="text-xs text-gray-500">Valor</Label>
-                          <div className="font-medium text-green-600">
-                            {item.valor ? formatCurrency(parseFloat(item.valor.toString())) : 'Não informado'}
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <Label className="text-xs text-gray-500">Litros</Label>
-                          <div className="font-medium">
-                            {item.litros ? `${item.litros}L` : 'Não informado'}
-                          </div>
-                        </div>
+                        )}
                       </div>
-                      
-                      {(item.motorista || item.km_atual) && (
-                        <div className="mt-3 pt-3 border-t border-gray-200">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            {item.motorista && (
-                              <div>
-                                <span className="text-gray-500">Motorista:</span> {item.motorista}
-                              </div>
-                            )}
-                            {item.km_atual && (
-                              <div>
-                                <span className="text-gray-500">KM:</span> {item.km_atual}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
