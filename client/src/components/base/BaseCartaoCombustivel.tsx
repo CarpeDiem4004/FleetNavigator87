@@ -47,6 +47,8 @@ interface Base {
 
 const formSchema = z.object({
   motorista: z.string().min(1, 'Nome do motorista é obrigatório'),
+  solicitante: z.string().min(1, 'Nome do solicitante é obrigatório'),
+  telefone_celular: z.string().optional(),
   placa: z.string().min(1, 'Placa do veículo é obrigatória'),
   valor: z.string().min(1, 'Valor é obrigatório'),
   projeto: z.string().min(1, 'Projeto é obrigatório'),
@@ -78,6 +80,8 @@ export default function BaseCartaoCombustivel({
     resolver: zodResolver(formSchema),
     defaultValues: {
       motorista: '',
+      solicitante: '',
+      telefone_celular: '',
       placa: '',
       valor: '',
       projeto: '',
@@ -229,12 +233,42 @@ export default function BaseCartaoCombustivel({
                 
                 <FormField
                   control={form.control}
+                  name="solicitante"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome do Solicitante</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Quem está fazendo a solicitação" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
                   name="placa"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Placa do Veículo</FormLabel>
                       <FormControl>
                         <Input placeholder="ABC1234" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="telefone_celular"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone do Solicitante</FormLabel>
+                      <FormControl>
+                        <Input placeholder="(11) 99999-9999" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

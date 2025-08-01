@@ -32,6 +32,8 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
   const [formData, setFormData] = useState({
     placa: '',
     motorista: '',
+    solicitante: '',
+    telefone_celular: '',
     valor_solicitado: '',
     km: '',
     projeto_id: '',
@@ -127,10 +129,10 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
     e.preventDefault();
     
     // Validações básicas
-    if (!formData.placa || !formData.motorista || !formData.valor_solicitado) {
+    if (!formData.placa || !formData.motorista || !formData.solicitante || !formData.valor_solicitado) {
       toast({
         title: 'Campos obrigatórios',
-        description: 'Preencha placa, motorista e valor solicitado',
+        description: 'Preencha placa, motorista, solicitante e valor solicitado',
         variant: 'destructive'
       });
       return;
@@ -154,6 +156,8 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
       const requestData = {
         placa: formData.placa.toUpperCase(),
         motorista: formData.motorista,
+        solicitante: formData.solicitante,
+        telefone_celular: formData.telefone_celular,
         valor_solicitado: parseFloat(formData.valor_solicitado),
         km: formData.km ? parseInt(formData.km) : null,
         tipo_cartao: formData.tipo_cartao,
@@ -228,15 +232,39 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
             </div>
           </div>
 
-          {/* Informações do Motorista */}
+          {/* Informações do Motorista e Solicitante */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="motorista">Nome do Motorista *</Label>
+              <Input
+                id="motorista"
+                value={formData.motorista}
+                onChange={(e) => setFormData(prev => ({ ...prev, motorista: e.target.value }))}
+                placeholder="Nome completo do motorista"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="solicitante">Nome do Solicitante *</Label>
+              <Input
+                id="solicitante"
+                value={formData.solicitante}
+                onChange={(e) => setFormData(prev => ({ ...prev, solicitante: e.target.value }))}
+                placeholder="Quem está fazendo a solicitação"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Telefone do Solicitante */}
           <div className="space-y-2">
-            <Label htmlFor="motorista">Nome do Motorista *</Label>
+            <Label htmlFor="telefone_celular">Telefone do Solicitante</Label>
             <Input
-              id="motorista"
-              value={formData.motorista}
-              onChange={(e) => setFormData(prev => ({ ...prev, motorista: e.target.value }))}
-              placeholder="Nome completo do motorista"
-              required
+              id="telefone_celular"
+              value={formData.telefone_celular}
+              onChange={(e) => setFormData(prev => ({ ...prev, telefone_celular: e.target.value }))}
+              placeholder="(11) 99999-9999"
             />
           </div>
 
