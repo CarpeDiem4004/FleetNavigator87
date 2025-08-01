@@ -26,6 +26,9 @@ interface FuelCardSolicitation {
   id: number;
   placa: string;
   motorista: string;
+  solicitante?: string; // Nome da pessoa que fez a solicitação
+  requested_by?: string; // Campo alternativo para o solicitante
+  telefone_celular?: string; // Telefone do solicitante
   valor_solicitado: number;
   km_veiculo?: number;
   tipo_cartao?: string;
