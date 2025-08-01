@@ -55,6 +55,7 @@ interface SolicitacaoFormData {
   tipoCombustivel: string;
   horarioAbastecimento: string;
   nomeMotorista: string;
+  nomeSolicitante: string;
   celularWhatsApp: string;
   projeto: string;
   base: string;
@@ -83,6 +84,7 @@ export default function CartaoCombustivelGP03() {
     tipoCombustivel: 'Diesel',
     horarioAbastecimento: '',
     nomeMotorista: '',
+    nomeSolicitante: '',
     celularWhatsApp: '',
     projeto: '',
     base: ''
@@ -139,8 +141,28 @@ export default function CartaoCombustivelGP03() {
     }
   };
 
-  // Carregar histórico quando o componente é montado
+  // Carregar dados do usuário logado e pré-preencher nome do solicitante
   useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch('/api/user', {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const userData = await response.json();
+          if (userData && userData.name) {
+            setFormData(prev => ({ 
+              ...prev, 
+              nomeSolicitante: userData.name 
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados do usuário:', error);
+      }
+    };
+    
+    fetchUserData();
     loadFuelCardHistory();
   }, []);
 
@@ -273,6 +295,7 @@ export default function CartaoCombustivelGP03() {
         fuelType: formData.tipoCombustivel,
         fuelTime: formData.horarioAbastecimento,
         driverName: formData.nomeMotorista,
+        requesterName: formData.nomeSolicitante,
         driverPhone: formData.celularWhatsApp,
         reason: 'Solicitação de recarga de cartão combustível',
         specificCardData: formData.tipoCartao === 'especifico' ? formData.numeroCartaoEspecifico : '',
@@ -280,7 +303,7 @@ export default function CartaoCombustivelGP03() {
         baseId: selectedProject?.bases.find(b => b.id.toString() === formData.base)?.id || 151,
         observations: formData.observacoes || '',
         origem: 'base_system',
-        solicitante: 'GP03 - Hortolandia'
+        solicitante: formData.nomeSolicitante
       };
 
       console.log('Enviando solicitação para API:', requestData);
@@ -312,18 +335,35 @@ export default function CartaoCombustivelGP03() {
         variant: 'default'
       });
       
-      // Limpar formulário após sucesso
-      setTimeout(() => {
+      // Limpar formulário após sucesso, mas manter nome do solicitante
+      setTimeout(async () => {
+        // Buscar novamente o nome do usuário para manter preenchido
+        let currentUserName = formData.nomeSolicitante;
+        try {
+          const userResponse = await fetch('/api/user', { credentials: 'include' });
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            if (userData && userData.name) {
+              currentUserName = userData.name;
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao buscar dados do usuário:', error);
+        }
+
         setFormData({
           placaVeiculo: '',
           quilometragem: '',
           valor: '',
           tipoCartao: 'vinculado',
           placaAutomatic: '',
+          numeroCartaoEspecifico: '',
+          observacoesCartao: '',
           provedorCartao: 'Ticket',
           tipoCombustivel: 'Diesel',
           horarioAbastecimento: '',
           nomeMotorista: '',
+          nomeSolicitante: currentUserName,
           celularWhatsApp: '',
           projeto: selectedProject?.id.toString() || '',
           base: ''
@@ -623,18 +663,17 @@ export default function CartaoCombustivelGP03() {
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="nomeMotorista" className="text-yellow-600 font-medium">
+                            <Label htmlFor="nomeSolicitante" className="text-yellow-600 font-medium">
                               Nome
                             </Label>
                             <Input
-                              id="nomeMotorista"
-                              placeholder="João da Silva"
-                              value={formData.nomeMotorista}
-                              onChange={(e) => setFormData(prev => ({ ...prev, nomeMotorista: e.target.value }))}
-                              className="h-11"
-                              required
+                              id="nomeSolicitante"
+                              placeholder="Nome será preenchido automaticamente"
+                              value={formData.nomeSolicitante}
+                              disabled
+                              className="h-11 bg-gray-50"
                             />
-                            <p className="text-xs text-gray-500">Nome completo do solicitante</p>
+                            <p className="text-xs text-gray-500">Nome do solicitante (preenchido automaticamente)</p>
                           </div>
 
                           <div className="space-y-2">
