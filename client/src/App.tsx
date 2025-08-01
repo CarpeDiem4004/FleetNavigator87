@@ -801,6 +801,14 @@ function App() {
           <Route path="/bases/salvador/login" component={LoginSalvador} />
           <Route path="/bases/58/login" component={LoginSalvador} />
           
+          {/* Redirecionamentos para rotas antigas do GP03 */}
+          <Route path="/gp03/login">
+            {() => {
+              window.location.href = '/bases/gp03/login';
+              return null;
+            }}
+          </Route>
+          
           {/* Rotas de login para as bases GRUPO PEREIRA - DEVEM VIR ANTES DAS ROTAS GENÉRICAS */}
           <Route path="/bases/gp01/login">
             <LoginGP01 />
