@@ -15,7 +15,13 @@ Preferred communication style: Simple, everyday language.
 - **Route Conference System**: Fixed date format handling to analyze selected dates (not current date)
   - Automatic conversion between ISO (yyyy-mm-dd) and Brazilian (dd/mm/yyyy) formats
   - System now correctly processes any selected date for route vs fuel analysis
-- **Status**: System fully functional with all critical features operational
+- **CRITICAL FIX: Complete Fuel Source Integration** (08/08/2025 16:40)
+  - Fixed system to query ALL 3 fuel data sources instead of only 2
+  - Added missing `solicitacoes_fuel_card` table integration (35 records on 01/08/2025)
+  - Corrected column mapping: `motorista` and `base as projeto`
+  - Result: System now properly identifies vehicles that drove AND refueled (54 vs 0 previously)
+  - Enhanced logging to show records found from each fuel source
+- **Status**: System fully functional with complete fuel cross-referencing operational
 
 ## System Architecture
 The system is built with a React/TypeScript frontend and a Node.js/Express backend, utilizing Supabase as the primary database.
