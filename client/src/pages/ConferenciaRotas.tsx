@@ -165,10 +165,18 @@ const ConferenciaRotas: React.FC = () => {
       const response = await fetch('/api/conferencia-rotas/upload', {
         method: 'POST',
         body: formData,
+        credentials: 'include'
       });
 
       if (!response.ok) {
-        throw new Error(`Erro no upload: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`Erro no upload: ${response.statusText}. ${errorText.includes('<!DOCTYPE') ? 'Resposta inesperada do servidor' : errorText}`);
+      }
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const responseText = await response.text();
+        throw new Error(`Resposta inválida do servidor: esperado JSON, recebido ${contentType || 'HTML'}`);
       }
 
       const result = await response.json();

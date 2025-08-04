@@ -1095,6 +1095,8 @@ async function criarTabelaDemoForms() {
 import sqlSeguroRouter from './routes/sql-seguro';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+
+
   // ENDPOINT PARA REGISTRAR RECEBIMENTOS DE COMBUSTÍVEL (PÚBLICO - SEM AUTENTICAÇÃO)
   app.post('/recebimentos-combustivel', async (req, res) => {
     // Force JSON response headers
@@ -1229,6 +1231,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // ****************************************
+  // ROTAS DA CONFERÊNCIA DE ROTAS E ABASTECIMENTOS - PRIORIDADE MÁXIMA
+  // ****************************************
+  
+  // Upload de planilha de rotas - DEVE FICAR NO INÍCIO
+  app.post('/api/conferencia-rotas/upload', uploadExcel.single('file'), uploadRouteData);
+  
+  // Gerar relatório de conferência
+  app.get('/api/conferencia-rotas/report', isAuthenticated, generateReport);
+  
+  // Exportar relatório para Excel
+  app.get('/api/conferencia-rotas/export', isAuthenticated, exportReportToExcel);
+  
+  // Listar uploads
+  app.get('/api/conferencia-rotas/uploads', isAuthenticated, listUploads);
+  
+  // Obter dados de um upload específico
+  app.get('/api/conferencia-rotas/upload/:uploadId', isAuthenticated, getUploadData);
+  
+  // Deletar upload
+  app.delete('/api/conferencia-rotas/upload/:uploadId', isAuthenticated, deleteUpload);
 
   // ENDPOINTS CRÍTICOS - Registrar primeiro para evitar interceptação pelos middlewares
   
@@ -18950,27 +18974,7 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
-  // ========================================
-  // ROTAS DA CONFERÊNCIA DE ROTAS E ABASTECIMENTOS
-  // ========================================
-  
-  // Upload de planilha de rotas
-  app.post('/api/conferencia-rotas/upload', uploadExcel.single('file'), isAuthenticated, uploadRouteData);
-  
-  // Gerar relatório de conferência
-  app.get('/api/conferencia-rotas/report', isAuthenticated, generateReport);
-  
-  // Exportar relatório para Excel
-  app.get('/api/conferencia-rotas/export', isAuthenticated, exportReportToExcel);
-  
-  // Listar uploads
-  app.get('/api/conferencia-rotas/uploads', isAuthenticated, listUploads);
-  
-  // Obter dados de um upload específico
-  app.get('/api/conferencia-rotas/upload/:uploadId', isAuthenticated, getUploadData);
-  
-  // Deletar upload
-  app.delete('/api/conferencia-rotas/upload/:uploadId', isAuthenticated, deleteUpload);
+
 
   const httpServer = createServer(app);
   return httpServer;

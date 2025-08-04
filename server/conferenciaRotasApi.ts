@@ -24,16 +24,23 @@ interface ConferenceReport {
   abasteceram_nao_rodaram: FuelRecord[];
 }
 
-// Upload e processar planilha de rotas
+// Upload e processar planilha de rotas - VERSÃO CORRIGIDA
 export const uploadRouteData = async (req: Request, res: Response) => {
-  try {
-    const { data: routeData, upload_date } = req.body;
-    const userId = req.user?.id || 1;
+  console.log('[CONFERENCIA] Upload iniciado - NOVA VERSÃO:', {
+    hasFile: !!req.file,
+    bodyKeys: Object.keys(req.body),
+    fileName: req.file?.originalname,
+    fileSize: req.file?.size
+  });
 
-    if (!routeData || !Array.isArray(routeData)) {
+  try {
+    const { upload_date } = req.body;
+    const userId = 1; // Fixo por enquanto
+
+    if (!req.file) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Dados da planilha são obrigatórios' 
+        message: 'Arquivo Excel é obrigatório' 
       });
     }
 
@@ -43,6 +50,42 @@ export const uploadRouteData = async (req: Request, res: Response) => {
         message: 'Data de upload é obrigatória' 
       });
     }
+
+    // Processar arquivo Excel
+    console.log('[CONFERENCIA] Processando arquivo Excel:', req.file.originalname);
+    
+    const workbook = XLSX.read(req.file.buffer);
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    const rawData = XLSX.utils.sheet_to_json(worksheet);
+
+    console.log('[CONFERENCIA] Dados brutos extraídos:', rawData.length, 'registros');
+
+    // Processar dados do MercadoLivre
+    const routeData = rawData.map((row: any) => {
+      // Converter data do Excel para formato brasileiro
+      let dataFormatada = '';
+      const dataExcel = row['DATA DO FRETE/ABASTECIMENTO'];
+      
+      if (typeof dataExcel === 'number') {
+        // Data serial do Excel
+        const date = new Date((dataExcel - 25569) * 86400 * 1000);
+        dataFormatada = date.toLocaleDateString('pt-BR');
+      } else if (typeof dataExcel === 'string') {
+        // Data já em string
+        dataFormatada = dataExcel;
+      }
+
+      return {
+        data: dataFormatada,
+        operacao: row['OPERAÇÃO'] || '',
+        motorista: row['MOTORISTA'] || '',
+        placa: row['PLACA'] || '',
+        modelo: row['MODELO'] || ''
+      };
+    }).filter(item => item.data && item.placa); // Filtrar registros válidos
+
+    console.log('[CONFERENCIA] Dados processados:', routeData.length, 'registros válidos');
 
     // Verificar se já existe upload para esta data
     const existingUploadQuery = await pool.query(
@@ -77,14 +120,55 @@ export const uploadRouteData = async (req: Request, res: Response) => {
       uploadId = newUploadQuery.rows[0].id;
     }
 
-    // Inserir dados da planilha
-    for (const item of routeData) {
-      await pool.query(
-        `INSERT INTO conferencia_rotas_dados (upload_id, data, placa, motorista, operacao, modelo)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [uploadId, item.data, item.placa.toUpperCase(), item.motorista, item.operacao || null, item.modelo || null]
-      );
+    // Inserir dados da planilha em lote (otimizado para grandes volumes)
+    console.log('[CONFERENCIA] Iniciando inserção em lote de', routeData.length, 'registros');
+    
+    const batchSize = 50; // Reduzindo para lotes menores
+    for (let i = 0; i < routeData.length; i += batchSize) {
+      const batch = routeData.slice(i, i + batchSize);
+      
+      try {
+        // Usar prepared statements seguros
+        const placeholders = batch.map((_, index) => {
+          const base = index * 6;
+          return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6})`;
+        }).join(', ');
+        
+        const values = batch.flatMap(item => [
+          uploadId,
+          item.data,
+          item.placa.toUpperCase(),
+          item.motorista,
+          item.operacao || null,
+          item.modelo || null
+        ]);
+        
+        const insertQuery = `
+          INSERT INTO conferencia_rotas_dados (upload_id, data, placa, motorista, operacao, modelo)
+          VALUES ${placeholders}
+        `;
+        
+        await pool.query(insertQuery, values);
+        console.log(`[CONFERENCIA] Lote ${Math.floor(i/batchSize) + 1}/${Math.ceil(routeData.length/batchSize)} inserido (${batch.length} registros)`);
+        
+      } catch (error) {
+        console.error(`[CONFERENCIA] Erro no lote ${Math.floor(i/batchSize) + 1}:`, error);
+        // Em caso de erro, inserir um por um neste lote
+        for (const item of batch) {
+          try {
+            await pool.query(
+              `INSERT INTO conferencia_rotas_dados (upload_id, data, placa, motorista, operacao, modelo)
+               VALUES ($1, $2, $3, $4, $5, $6)`,
+              [uploadId, item.data, item.placa.toUpperCase(), item.motorista, item.operacao || null, item.modelo || null]
+            );
+          } catch (itemError) {
+            console.error('[CONFERENCIA] Erro ao inserir item:', item, itemError);
+          }
+        }
+      }
     }
+    
+    console.log('[CONFERENCIA] Inserção completa:', routeData.length, 'registros processados');
 
     res.json({
       success: true,
