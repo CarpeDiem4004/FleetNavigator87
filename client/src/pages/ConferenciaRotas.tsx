@@ -532,6 +532,24 @@ const ConferenciaRotas: React.FC = () => {
             {/* Report Results */}
             {conferenceReport && (
               <div className="space-y-6">
+                {/* Total Vehicles Fueled Card */}
+                <Card className="border-blue-200 bg-blue-50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-blue-700 flex items-center gap-2">
+                      <FileSpreadsheet className="h-4 w-4" />
+                      Total de Veículos Abastecidos em {new Date(selectedDate).toLocaleDateString('pt-BR')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-blue-600">
+                      {conferenceReport.rodaram_e_abasteceram.length + conferenceReport.abasteceram_nao_rodaram.length}
+                    </div>
+                    <p className="text-sm text-blue-600 mt-1">
+                      veículos registraram abastecimento nesta data
+                    </p>
+                  </CardContent>
+                </Card>
+
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Card className="border-green-200 bg-green-50">
