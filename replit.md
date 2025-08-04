@@ -49,6 +49,13 @@ Preferred communication style: Simple, everyday language.
   - Updated both analysis and Excel export to include all specific station tables
   - Complete data integration: 166 records from specific fuel stations + 35 from general sources = 201 total fuel records on 01/08/2025
   - Status: Data consistency fully resolved across all fuel tracking modules
+- **PROJECT TO BASE NAME MAPPING IMPLEMENTATION** (08/08/2025 20:40)
+  - Implemented comprehensive project code to base name mapping in Route Conference system
+  - Added mapProjectToBaseName function that converts project codes to readable base names
+  - Examples: "GP03 HORTOLANDIA (GRUPO PEREIRA)" → "HORTOLÂNDIA", "FULL MELI" → "MERCADO LIVRE"
+  - Supports 20+ project patterns including Grupo Pereira, Line Hall, Mercado Livre, Mars, South Connection
+  - Applied mapping to all fuel record sources in conference report generation
+  - Result: Route Conference now displays clean base names instead of complex project codes
 
 ## System Architecture
 The system is built with a React/TypeScript frontend and a Node.js/Express backend, utilizing Supabase as the primary database.

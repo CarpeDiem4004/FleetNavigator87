@@ -34,6 +34,109 @@ interface FuelRecord {
   fonte?: string;
 }
 
+// Função para mapear códigos de projeto para nomes de bases
+const mapProjectToBaseName = (projeto: string): string => {
+  if (!projeto) return '';
+  
+  const projetoUpper = projeto.toUpperCase().trim();
+  
+  // Mapeamento de códigos de projeto para nomes de bases
+  const projectToBaseMap: Record<string, string> = {
+    // Grupo Pereira
+    'GP01 VARGEM GRANDE (GRUPO PEREIRA)': 'VARGEM GRANDE',
+    'GP01 VARGEM GRANDE': 'VARGEM GRANDE',
+    'GP02 JACAREI (GRUPO PEREIRA)': 'JACAREÍ',
+    'GP02 JACAREI': 'JACAREÍ',
+    'GP03 HORTOLANDIA (GRUPO PEREIRA)': 'HORTOLÂNDIA',
+    'GP03 HORTOLÂNDIA (GRUPO PEREIRA)': 'HORTOLÂNDIA',
+    'GP03 HORTOLANDIA': 'HORTOLÂNDIA',
+    'GP03 HORTOLÂNDIA': 'HORTOLÂNDIA',
+    'GRUPO PEREIRA': 'GRUPO PEREIRA',
+    
+    // Line Hall
+    'LH01 LINE HALL': 'LINE HALL',
+    'LINE HALL SHOPEE': 'LINE HALL',
+    'LINE HALL': 'LINE HALL',
+    'LH SHOPEE': 'LINE HALL',
+    
+    // Mercado Livre/Shopee
+    'MERCADO LIVRE': 'MERCADO LIVRE',
+    'FULL MELI': 'MERCADO LIVRE',
+    'SHOPEE': 'SHOPEE',
+    
+    // Madeira Madeira
+    'MM01 (CAJAMAR)': 'CAJAMAR',
+    'MM04 (JUNDIAI)': 'JUNDIAÍ',
+    'MADEIRA MADEIRA': 'MADEIRA MADEIRA',
+    
+    // Coca-Cola
+    'COCA-COLA': 'COCA-COLA',
+    'COCA COLA': 'COCA-COLA',
+    'COCA COLA (ABC)': 'ABC',
+    
+    // OXXO
+    'OXXO1 (CAJAMAR)': 'CAJAMAR',
+    'OXXO': 'OXXO',
+    
+    // Mars
+    'ROYAL CANIN CAMPINAS (MARS)': 'CAMPINAS',
+    'MARS': 'MARS',
+    
+    // South Connection
+    'SC (A.B.RADO) SSG10-GDO': 'GUARULHOS',
+    'SC (A.B.RADO) SSG10-ODO': 'GUARULHOS',
+    'SC (ABC) SSP17': 'ABC',
+    
+    // FMS
+    'FMS09 SÃO PAULO (SP)': 'SÃO PAULO',
+    'FMS09 SAO PAULO (SP)': 'SÃO PAULO',
+    
+    // Operacionais
+    'MANUTENÇÃO': 'MANUTENÇÃO',
+    'MANUTENCAO': 'MANUTENÇÃO',
+    'TESTE': 'TESTE',
+    'USO OPERACIONAL': 'OPERACIONAL'
+  };
+  
+  // Buscar mapeamento direto
+  const mapped = projectToBaseMap[projetoUpper];
+  if (mapped) {
+    return mapped;
+  }
+  
+  // Buscar por padrões
+  if (projetoUpper.includes('GP01') || projetoUpper.includes('VARGEM GRANDE')) {
+    return 'VARGEM GRANDE';
+  }
+  if (projetoUpper.includes('GP02') || projetoUpper.includes('JACAREI')) {
+    return 'JACAREÍ';
+  }
+  if (projetoUpper.includes('GP03') || projetoUpper.includes('HORTOLANDIA') || projetoUpper.includes('HORTOLÂNDIA')) {
+    return 'HORTOLÂNDIA';
+  }
+  if (projetoUpper.includes('LINE HALL') || projetoUpper.includes('LH01') || projetoUpper.includes('LH SHOPEE')) {
+    return 'LINE HALL';
+  }
+  if (projetoUpper.includes('MM01') || (projetoUpper.includes('CAJAMAR') && projetoUpper.includes('MM'))) {
+    return 'CAJAMAR';
+  }
+  if (projetoUpper.includes('MM04') || (projetoUpper.includes('JUNDIAI') && projetoUpper.includes('MM'))) {
+    return 'JUNDIAÍ';
+  }
+  if (projetoUpper.includes('OXXO1') || (projetoUpper.includes('OXXO') && projetoUpper.includes('CAJAMAR'))) {
+    return 'CAJAMAR';
+  }
+  if (projetoUpper.includes('ROYAL CANIN') || (projetoUpper.includes('MARS') && projetoUpper.includes('CAMPINAS'))) {
+    return 'CAMPINAS';
+  }
+  if (projetoUpper.includes('FMS09') || (projetoUpper.includes('SÃO PAULO') && projetoUpper.includes('FMS'))) {
+    return 'SÃO PAULO';
+  }
+  
+  // Se não encontrou mapeamento, retorna o projeto original
+  return projeto;
+};
+
 interface VehicleReportData extends VehicleRouteData {
   fuel_records?: FuelRecord[];
 }
@@ -348,35 +451,35 @@ export const generateReport = async (req: Request, res: Response) => {
         data: item.data,
         placa: item.placa.toUpperCase(),
         motorista: item.motorista,
-        projeto: item.projeto,
+        projeto: mapProjectToBaseName(item.projeto),
         tipo: 'abastecimento' as const
       })),
       ...requestData.map((item: any) => ({
         data: item.data,
         placa: item.placa.toUpperCase(),
         motorista: item.motorista,
-        projeto: item.projeto,
+        projeto: mapProjectToBaseName(item.projeto),
         tipo: 'solicitacao_cartao' as const
       })),
       ...fuelCardData.map((item: any) => ({
         data: item.data,
         placa: item.placa.toUpperCase(),
         motorista: item.motorista,
-        projeto: item.projeto,
+        projeto: mapProjectToBaseName(item.projeto),
         tipo: 'solicitacao_fuel_card' as const
       })),
       ...historicoGeralData.map((item: any) => ({
         data: item.data,
         placa: item.placa.toUpperCase(),
         motorista: item.motorista,
-        projeto: item.projeto,
+        projeto: mapProjectToBaseName(item.projeto),
         tipo: 'historico_geral' as const
       })),
       ...postosEspecificosData.map((item: any) => ({
         data: item.data,
         placa: item.placa.toUpperCase(),
         motorista: item.motorista,
-        projeto: item.projeto,
+        projeto: mapProjectToBaseName(item.projeto),
         tipo: 'posto_especifico' as const,
         fonte: item.fonte
       }))
