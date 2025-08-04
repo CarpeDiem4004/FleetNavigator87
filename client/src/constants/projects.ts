@@ -9,7 +9,7 @@ export const PROJECTS_LIST = [
   'MANUTENÇÃO',
   'MAGALU',
   'NATURA',
-  'LINE HALL SHOPEE',
+  'LINE HAUL SHOPEE',
   'FULL MELI',
   'PETLOVE',
   'USO OPERACIONAL'

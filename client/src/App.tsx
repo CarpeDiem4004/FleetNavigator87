@@ -896,7 +896,7 @@ function App() {
           <ProtectedRoute path="/admin/coordenadores" component={CoordinatorManagement} />
           <ProtectedRoute path="/limpar-dados" component={LimparDados} />
           <ProtectedRoute path="/line-hall-shopee" component={LineHallShopeePage} />
-          {/* Página dedicada para solicitações de cartão combustível do Line Hall */}
+          {/* Página dedicada para solicitações de cartão combustível do Line Haul */}
           <ProtectedRoute path="/line-hall-fuel-requests" component={LineHallFuelCardRequests} />
           
           {/* Página para gerenciamento de terceiros no sistema principal */}
@@ -928,7 +928,7 @@ function App() {
             <DriverChecklist />
           </Route>
           
-          {/* Rota pública para acesso do motorista Line Hall */}
+          {/* Rota pública para acesso do motorista Line Haul */}
           <Route path="/line-hall-driver">
             <MotoristaLineHall />
           </Route>
@@ -956,12 +956,12 @@ function App() {
           {/* Dashboard externo da oficina com token */}
           <Route path="/oficina/external" component={OficinaExternalDashboard} />
           
-          {/* Rota para acesso de motoristas do Line Hall */}
+          {/* Rota para acesso de motoristas do Line Haul */}
           <Route path="/line-hall-driver">
             <LineHallDriverPage />
           </Route>
           
-          {/* Rotas para acesso do motorista Line Hall Shopee */}
+          {/* Rotas para acesso do motorista Line Haul Shopee */}
           <Route path="/driver-access">
             <DriverAccess />
           </Route>
@@ -974,7 +974,7 @@ function App() {
             <DriverMaintenanceRequest />
           </Route>
           
-          {/* Rota para gerenciamento de manutenções do Line Hall */}
+          {/* Rota para gerenciamento de manutenções do Line Haul */}
           <ProtectedRoute path="/line-hall-maintenance" component={LineHallMaintenanceManager} />
           <ProtectedRoute path="/line-hall-checklists" component={LineHallChecklistManager} />
           

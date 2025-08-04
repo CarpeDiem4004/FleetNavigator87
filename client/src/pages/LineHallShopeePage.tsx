@@ -138,7 +138,7 @@ export default function LineHallShopeePage() {
   const [showFuelRequests, setShowFuelRequests] = useState(false);
   const [pendingFuelRequests, setPendingFuelRequests] = useState(0);
 
-  // Estados para veículos e motoristas cadastrados no Line Hall
+  // Estados para veículos e motoristas cadastrados no Line Haul
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   
@@ -190,29 +190,29 @@ export default function LineHallShopeePage() {
     }
   };
 
-  // Função para buscar veículos cadastrados do Line Hall
+  // Função para buscar veículos cadastrados do Line Haul
   const fetchVehicles = async () => {
     try {
       const response = await api.get('/vehicles');
       if (response.data && Array.isArray(response.data)) {
         console.log('Todos os veículos:', response.data);
-        // Filtrar veículos do Line Hall - usando operacao_tipo ou base_name para identificar
-        const lineHallVehicles = response.data.filter(vehicle => 
+        // Filtrar veículos do Line Haul - usando operacao_tipo ou base_name para identificar
+        const lineHaulVehicles = response.data.filter(vehicle => 
           vehicle.operacao_tipo === 'line_hall_shopee' || 
-          vehicle.basename === 'Line Hall Shopee' ||
+          vehicle.basename === 'Line Haul Shopee' ||
           vehicle.base_id === 2 ||
           vehicle.vehicleType === 'cavalo_mecanico' || 
           vehicle.vehicleType === 'carreta'
         );
-        console.log('Veículos do Line Hall filtrados:', lineHallVehicles);
-        setVehicles(lineHallVehicles);
+        console.log('Veículos do Line Haul filtrados:', lineHaulVehicles);
+        setVehicles(lineHaulVehicles);
       }
     } catch (error) {
       console.error('Erro ao buscar veículos:', error);
     }
   };
 
-  // Função para buscar motoristas cadastrados do Line Hall
+  // Função para buscar motoristas cadastrados do Line Haul
   const fetchDrivers = async () => {
     try {
       const response = await api.get('/drivers');
