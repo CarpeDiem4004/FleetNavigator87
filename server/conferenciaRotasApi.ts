@@ -214,21 +214,21 @@ export const generateReport = async (req: Request, res: Response) => {
       searchDate = `${day}/${month}/${year}`;
     }
 
-    console.log('[CONFERENCIA] Buscando dados para data:', searchDate);
-
-    // Buscar dados das rotas para a data (aceita formato brasileiro)
-    const routeQuery = await pool.query(
-      'SELECT data, placa, motorista, operacao, modelo FROM conferencia_rotas_dados WHERE data = $1',
-      [searchDate]
-    );
-    const routeData = routeQuery.rows;
-
-    // Converter data brasileira de volta para ISO para buscar abastecimentos
+    // Converter data brasileira para ISO para buscar tanto rotas quanto abastecimentos
     let isoDate = searchDate;
     if (searchDate.includes('/')) {
       const [day, month, year] = searchDate.split('/');
       isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     }
+
+    console.log('[CONFERENCIA] Buscando dados para data:', searchDate, '-> ISO:', isoDate);
+
+    // Buscar dados das rotas para a data (usando formato ISO)
+    const routeQuery = await pool.query(
+      'SELECT data, placa, motorista, operacao, modelo FROM conferencia_rotas_dados WHERE data = $1',
+      [isoDate]
+    );
+    const routeData = routeQuery.rows;
 
     console.log('[CONFERENCIA] Buscando abastecimentos para data ISO:', isoDate);
 
