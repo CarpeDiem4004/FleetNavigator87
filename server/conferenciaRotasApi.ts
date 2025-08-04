@@ -31,6 +31,7 @@ interface FuelRecord {
   motorista: string;
   projeto: string;
   tipo: 'abastecimento' | 'solicitacao_cartao' | 'solicitacao_fuel_card' | 'historico_geral' | 'posto_especifico';
+  posto?: string;
   fonte?: string;
 }
 
@@ -421,7 +422,9 @@ export const generateReport = async (req: Request, res: Response) => {
         );
         const dados = query.rows.map(row => ({
           ...row,
-          fonte: posto.nome
+          fonte: posto.nome,
+          posto_nome: posto.nome.replace('_v2', '').replace('abastecimentos_posto_', '').toUpperCase(),
+          tipo_registro: 'posto_especifico'
         }));
         postosEspecificosData = postosEspecificosData.concat(dados);
         console.log(`[CONFERENCIA] ${posto.tabela}: ${dados.length} registros`);
@@ -452,28 +455,36 @@ export const generateReport = async (req: Request, res: Response) => {
         placa: item.placa.toUpperCase(),
         motorista: item.motorista,
         projeto: mapProjectToBaseName(item.projeto),
-        tipo: 'abastecimento' as const
+        tipo: 'abastecimento' as const,
+        posto: 'Posto Geral',
+        fonte: 'abastecimentos_postos'
       })),
       ...requestData.map((item: any) => ({
         data: item.data,
         placa: item.placa.toUpperCase(),
         motorista: item.motorista,
         projeto: mapProjectToBaseName(item.projeto),
-        tipo: 'solicitacao_cartao' as const
+        tipo: 'solicitacao_cartao' as const,
+        posto: 'Cartão Combustível',
+        fonte: 'fuel_card_requests'
       })),
       ...fuelCardData.map((item: any) => ({
         data: item.data,
         placa: item.placa.toUpperCase(),
         motorista: item.motorista,
         projeto: mapProjectToBaseName(item.projeto),
-        tipo: 'solicitacao_fuel_card' as const
+        tipo: 'solicitacao_fuel_card' as const,
+        posto: 'Solicitação Fuel Card',
+        fonte: 'solicitacoes_fuel_card'
       })),
       ...historicoGeralData.map((item: any) => ({
         data: item.data,
         placa: item.placa.toUpperCase(),
         motorista: item.motorista,
         projeto: mapProjectToBaseName(item.projeto),
-        tipo: 'historico_geral' as const
+        tipo: 'historico_geral' as const,
+        posto: 'Histórico Geral',
+        fonte: 'abastecimentos_supabase'
       })),
       ...postosEspecificosData.map((item: any) => ({
         data: item.data,
@@ -481,6 +492,7 @@ export const generateReport = async (req: Request, res: Response) => {
         motorista: item.motorista,
         projeto: mapProjectToBaseName(item.projeto),
         tipo: 'posto_especifico' as const,
+        posto: item.posto_nome || item.fonte.replace('_v2', '').toUpperCase(),
         fonte: item.fonte
       }))
     ];

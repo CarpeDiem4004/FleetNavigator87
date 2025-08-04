@@ -56,6 +56,14 @@ Preferred communication style: Simple, everyday language.
   - Supports 20+ project patterns including Grupo Pereira, Line Hall, Mercado Livre, Mars, South Connection
   - Applied mapping to all fuel record sources in conference report generation
   - Result: Route Conference now displays clean base names instead of complex project codes
+- **COMPLETE TABLE STANDARDIZATION AND ENHANCED FUEL DETAILS** (08/08/2025 21:00)
+  - Standardized all three Route Conference tabs to display identical columns: Placa, Motorista, Operação, Modelo, Registros Combustível, Projetos
+  - Enhanced fuel records to include detailed posto information and registro type
+  - Added posto names for specific fuel stations (SOROCABA, ABC, OSASCO, CAMPINAS, GUARULHOS)
+  - Improved fuel record type classification: Posto Específico, Fuel Card, Solicitação Cartão, Histórico Geral
+  - Updated TypeScript interfaces to support new posto and fonte properties
+  - Applied standardization to both PDF and Excel exports with enhanced fuel source details
+  - Result: Complete consistency across all three analysis sections with detailed fuel source tracking
 
 ## System Architecture
 The system is built with a React/TypeScript frontend and a Node.js/Express backend, utilizing Supabase as the primary database.

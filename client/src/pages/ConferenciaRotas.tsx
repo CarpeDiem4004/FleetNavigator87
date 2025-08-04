@@ -27,7 +27,9 @@ interface FuelRecord {
   placa: string;
   motorista: string;
   projeto?: string;
-  tipo: 'abastecimento' | 'solicitacao';
+  tipo: 'abastecimento' | 'solicitacao' | 'solicitacao_cartao' | 'solicitacao_fuel_card' | 'historico_geral' | 'posto_especifico';
+  posto?: string;
+  fonte?: string;
 }
 
 interface ConferenceReport {
@@ -35,6 +37,18 @@ interface ConferenceReport {
   rodaram_nao_abasteceram: VehicleRouteData[];
   abasteceram_nao_rodaram: FuelRecord[];
 }
+
+const getTipoLabel = (tipo: string): string => {
+  switch (tipo) {
+    case 'abastecimento': return 'Abastecimento';
+    case 'posto_especifico': return 'Posto Específico';
+    case 'solicitacao_cartao': return 'Solicitação Cartão';
+    case 'solicitacao_fuel_card': return 'Fuel Card';
+    case 'historico_geral': return 'Histórico Geral';
+    case 'solicitacao': return 'Solicitação';
+    default: return 'Registro';
+  }
+};
 
 const ConferenciaRotas: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -385,7 +399,7 @@ const ConferenciaRotas: React.FC = () => {
         item.motorista,
         '-',
         '-',
-        item.tipo === 'abastecimento' ? 'Abastecimento' : 'Solicitação',
+        `${getTipoLabel(item.tipo)}${item.posto ? ` (${item.posto})` : ''}`,
         item.projeto || ''
       ]);
 
@@ -734,9 +748,18 @@ const ConferenciaRotas: React.FC = () => {
                                 <TableCell>-</TableCell>
                                 <TableCell>-</TableCell>
                                 <TableCell>
-                                  <Badge variant={item.tipo === 'abastecimento' ? 'default' : 'secondary'}>
-                                    {item.tipo === 'abastecimento' ? 'Abastecimento' : 'Solicitação'}
-                                  </Badge>
+                                  <div className="flex flex-col gap-1">
+                                    <Badge variant={item.tipo === 'abastecimento' || item.tipo === 'posto_especifico' ? 'default' : 'secondary'}>
+                                      {item.tipo === 'abastecimento' && 'Abastecimento'}
+                                      {item.tipo === 'posto_especifico' && 'Posto Específico'}
+                                      {item.tipo === 'solicitacao_cartao' && 'Solicitação Cartão'}
+                                      {item.tipo === 'solicitacao_fuel_card' && 'Fuel Card'}
+                                      {item.tipo === 'historico_geral' && 'Histórico Geral'}
+                                    </Badge>
+                                    {item.posto && (
+                                      <span className="text-xs text-muted-foreground">{item.posto}</span>
+                                    )}
+                                  </div>
                                 </TableCell>
                                 <TableCell>{item.projeto}</TableCell>
                               </TableRow>
