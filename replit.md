@@ -33,6 +33,13 @@ Preferred communication style: Simple, everyday language.
   - Corrected Excel date serial conversion with UTC adjustment to prevent timezone offset
   - Fixed frontend date display to avoid timezone interpretation errors
   - System now correctly shows selected date in card headers and processing logs
+- **COMPLETE FUEL INTEGRATION: General Fuel History Added** (08/08/2025 20:10)
+  - Successfully integrated General Fuel History (abastecimentos_supabase table) into Route Conference
+  - System now queries ALL 4 fuel data sources: abastecimentos_postos, fuel_card_requests, solicitacoes_fuel_card, abastecimentos_supabase
+  - Fixed database schema compatibility issues and column mapping (placa, motorista, projeto)
+  - Added comprehensive logging for each fuel source query with detailed record counts
+  - Both report generation and Excel export now include complete fuel data integration
+  - Result: Route Conference provides most comprehensive fuel tracking across all system sources
 
 ## System Architecture
 The system is built with a React/TypeScript frontend and a Node.js/Express backend, utilizing Supabase as the primary database.

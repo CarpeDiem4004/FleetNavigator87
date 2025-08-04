@@ -30,7 +30,7 @@ interface FuelRecord {
   placa: string;
   motorista: string;
   projeto: string;
-  tipo: 'abastecimento' | 'solicitacao_cartao' | 'solicitacao_fuel_card';
+  tipo: 'abastecimento' | 'solicitacao_cartao' | 'solicitacao_fuel_card' | 'historico_geral';
 }
 
 interface VehicleReportData extends VehicleRouteData {
@@ -260,30 +260,46 @@ export const generateReport = async (req: Request, res: Response) => {
     console.log('[CONFERENCIA] Buscando abastecimentos para data ISO:', isoDate);
 
     // Buscar abastecimentos para a data (abastecimentos_postos)
+    console.log('[CONFERENCIA] Executando consulta 1: abastecimentos_postos');
     const fuelQuery = await pool.query(
       'SELECT created_at as data, placa, nome_motorista as motorista, projeto FROM abastecimentos_postos WHERE DATE(created_at) = $1',
       [isoDate]
     );
     const fuelData = fuelQuery.rows;
+    console.log('[CONFERENCIA] Consulta 1 concluída:', fuelData.length, 'registros');
 
     // Buscar solicitações de cartão para a data (fuel_card_requests)
+    console.log('[CONFERENCIA] Executando consulta 2: fuel_card_requests');
     const requestQuery = await pool.query(
       'SELECT created_at as data, plate as placa, driver_name as motorista, project_name as projeto FROM fuel_card_requests WHERE DATE(created_at) = $1',
       [isoDate]
     );
     const requestData = requestQuery.rows;
+    console.log('[CONFERENCIA] Consulta 2 concluída:', requestData.length, 'registros');
 
     // Buscar solicitações de cartão para a data (solicitacoes_fuel_card)
+    console.log('[CONFERENCIA] Executando consulta 3: solicitacoes_fuel_card');
     const fuelCardQuery = await pool.query(
       'SELECT data_solicitacao as data, placa, motorista, base as projeto FROM solicitacoes_fuel_card WHERE DATE(data_solicitacao) = $1',
       [isoDate]
     );
     const fuelCardData = fuelCardQuery.rows;
+    console.log('[CONFERENCIA] Consulta 3 concluída:', fuelCardData.length, 'registros');
+
+    // NOVA FONTE: Buscar dados do Histórico Geral de Abastecimentos (tabela abastecimentos_supabase)
+    console.log('[CONFERENCIA] Executando consulta 4: abastecimentos_supabase');
+    const historicoGeralQuery = await pool.query(
+      'SELECT created_at as data, placa, motorista, projeto FROM abastecimentos_supabase WHERE DATE(created_at) = $1',
+      [isoDate]
+    );
+    const historicoGeralData = historicoGeralQuery.rows;
+    console.log('[CONFERENCIA] Consulta 4 concluída:', historicoGeralData.length, 'registros');
 
     console.log('[CONFERENCIA] Registros encontrados:', {
       abastecimentos_postos: fuelData.length,
       fuel_card_requests: requestData.length,
-      solicitacoes_fuel_card: fuelCardData.length
+      solicitacoes_fuel_card: fuelCardData.length,
+      historico_geral_abastecimentos: historicoGeralData.length
     });
 
     // Debug: mostrar algumas placas de combustível se encontradas
@@ -291,7 +307,7 @@ export const generateReport = async (req: Request, res: Response) => {
       console.log('[CONFERENCIA] Primeiras placas de combustível:', fuelCardData.slice(0, 5).map((f: any) => f.placa));
     }
 
-    // Combinar registros de combustível de TODAS as fontes
+    // Combinar registros de combustível de TODAS as fontes (incluindo Histórico Geral)
     const allFuelRecords: FuelRecord[] = [
       ...fuelData.map((item: any) => ({
         data: item.data,
@@ -313,6 +329,13 @@ export const generateReport = async (req: Request, res: Response) => {
         motorista: item.motorista,
         projeto: item.projeto,
         tipo: 'solicitacao_fuel_card' as const
+      })),
+      ...historicoGeralData.map((item: any) => ({
+        data: item.data,
+        placa: item.placa.toUpperCase(),
+        motorista: item.motorista,
+        projeto: item.projeto,
+        tipo: 'historico_geral' as const
       }))
     ];
 
@@ -553,14 +576,22 @@ export const exportReportToExcel = async (req: Request, res: Response) => {
     );
     const fuelCardData = fuelCardQuery.rows;
 
+    // NOVA FONTE: Buscar dados do Histórico Geral de Abastecimentos (tabela abastecimentos_supabase)
+    const historicoGeralExportQuery = await pool.query(
+      'SELECT created_at as data, placa, motorista, projeto FROM abastecimentos_supabase WHERE DATE(created_at) = $1',
+      [isoDate]
+    );
+    const historicoGeralExportData = historicoGeralExportQuery.rows;
+
     console.log('[EXPORT] Registros encontrados:', {
       rotas: routeData.length,
       abastecimentos_postos: fuelData.length,
       fuel_card_requests: requestData.length,
-      solicitacoes_fuel_card: fuelCardData.length
+      solicitacoes_fuel_card: fuelCardData.length,
+      historico_geral_abastecimentos: historicoGeralExportData.length
     });
 
-    // Combinar registros de combustível
+    // Combinar registros de combustível (incluindo Histórico Geral)
     const allFuelRecords: FuelRecord[] = [
       ...fuelData.map((item: any) => ({
         data: item.data,
@@ -582,6 +613,13 @@ export const exportReportToExcel = async (req: Request, res: Response) => {
         motorista: item.motorista,
         projeto: item.projeto,
         tipo: 'solicitacao_fuel_card' as const
+      })),
+      ...historicoGeralExportData.map((item: any) => ({
+        data: item.data,
+        placa: item.placa.toUpperCase(),
+        motorista: item.motorista,
+        projeto: item.projeto,
+        tipo: 'historico_geral' as const
       }))
     ];
 
