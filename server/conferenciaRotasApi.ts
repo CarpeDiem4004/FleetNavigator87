@@ -199,24 +199,44 @@ export const generateReport = async (req: Request, res: Response) => {
       });
     }
 
-    // Buscar dados das rotas para a data
+    // Normalizar formato da data para busca
+    let searchDate = date as string;
+    
+    // Converter data ISO (yyyy-mm-dd) para formato brasileiro (dd/mm/yyyy) se necessário
+    if (searchDate.includes('-') && searchDate.length === 10) {
+      const [year, month, day] = searchDate.split('-');
+      searchDate = `${day}/${month}/${year}`;
+    }
+
+    console.log('[CONFERENCIA] Buscando dados para data:', searchDate);
+
+    // Buscar dados das rotas para a data (aceita formato brasileiro)
     const routeQuery = await pool.query(
       'SELECT data, placa, motorista, operacao, modelo FROM conferencia_rotas_dados WHERE data = $1',
-      [date]
+      [searchDate]
     );
     const routeData = routeQuery.rows;
+
+    // Converter data brasileira de volta para ISO para buscar abastecimentos
+    let isoDate = searchDate;
+    if (searchDate.includes('/')) {
+      const [day, month, year] = searchDate.split('/');
+      isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+
+    console.log('[CONFERENCIA] Buscando abastecimentos para data ISO:', isoDate);
 
     // Buscar abastecimentos para a data (usando a tabela correta)
     const fuelQuery = await pool.query(
       'SELECT created_at as data, placa, nome_motorista as motorista, projeto FROM abastecimentos_postos WHERE DATE(created_at) = $1',
-      [date]
+      [isoDate]
     );
     const fuelData = fuelQuery.rows;
 
     // Buscar solicitações de cartão para a data
     const requestQuery = await pool.query(
       'SELECT created_at as data, plate as placa, driver_name as motorista, project_name as projeto FROM fuel_card_requests WHERE DATE(created_at) = $1',
-      [date]
+      [isoDate]
     );
     const requestData = requestQuery.rows;
 
@@ -399,14 +419,14 @@ export const exportReportToExcel = async (req: Request, res: Response) => {
     // Buscar abastecimentos para a data (usando a tabela correta)
     const fuelQuery = await pool.query(
       'SELECT created_at as data, placa, nome_motorista as motorista, projeto FROM abastecimentos_postos WHERE DATE(created_at) = $1',
-      [date]
+      [isoDate]
     );
     const fuelData = fuelQuery.rows;
 
     // Buscar solicitações de cartão para a data
     const requestQuery = await pool.query(
       'SELECT created_at as data, plate as placa, driver_name as motorista, project_name as projeto FROM fuel_card_requests WHERE DATE(created_at) = $1',
-      [date]
+      [isoDate]
     );
     const requestData = requestQuery.rows;
 
