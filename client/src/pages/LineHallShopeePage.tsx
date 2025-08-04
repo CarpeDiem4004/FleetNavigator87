@@ -636,13 +636,16 @@ export default function LineHallShopeePage() {
   return (
     <MainLayoutSimple>
       <div 
-        className="min-h-screen bg-cover bg-center bg-no-repeat relative"
+        className="min-h-screen bg-cover bg-center bg-no-repeat bg-fixed relative"
         style={{
-          backgroundImage: "url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')",
+          backgroundImage: "url('/painel-background.png')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center center',
+          backgroundAttachment: 'fixed'
         }}
       >
         {/* Overlay para melhorar legibilidade */}
-        <div className="absolute inset-0 bg-white/85 backdrop-blur-sm"></div>
+        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm"></div>
         
         {/* Conteúdo principal */}
         <div className="relative z-10 space-y-6 p-6">
