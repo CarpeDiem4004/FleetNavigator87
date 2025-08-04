@@ -675,7 +675,14 @@ const HistoricoGeralPage: React.FC = () => {
       try {
         const startDate = new Date(dateStart);
         const itemDate = new Date(item.created_at);
-        passesDateFilter = passesDateFilter && itemDate >= startDate;
+        const passes = itemDate >= startDate;
+        
+        // Debug log para filtros de data
+        if (dateStart === '2025-08-01' && !passes) {
+          console.log(`[DATE_FILTER] Item rejeitado por data inicial - Item: ${item.created_at}, Filtro: ${dateStart}, ItemDate: ${itemDate.toISOString()}, StartDate: ${startDate.toISOString()}`);
+        }
+        
+        passesDateFilter = passesDateFilter && passes;
       } catch (e) {
         console.error("Erro ao comparar datas:", e);
       }
@@ -686,7 +693,14 @@ const HistoricoGeralPage: React.FC = () => {
         const endDate = new Date(dateEnd);
         endDate.setHours(23, 59, 59, 999);
         const itemDate = new Date(item.created_at);
-        passesDateFilter = passesDateFilter && itemDate <= endDate;
+        const passes = itemDate <= endDate;
+        
+        // Debug log para filtros de data
+        if (dateEnd === '2025-08-01' && !passes) {
+          console.log(`[DATE_FILTER] Item rejeitado por data final - Item: ${item.created_at}, Filtro: ${dateEnd}, ItemDate: ${itemDate.toISOString()}, EndDate: ${endDate.toISOString()}`);
+        }
+        
+        passesDateFilter = passesDateFilter && passes;
       } catch (e) {
         console.error("Erro ao comparar datas:", e);
       }
@@ -694,6 +708,23 @@ const HistoricoGeralPage: React.FC = () => {
     
     return passesSearch && passesDateFilter;
   });
+
+  // Debug logs para entender o filtro
+  React.useEffect(() => {
+    if (dateStart || dateEnd) {
+      console.log(`[FILTER_DEBUG] Total abastecimentos: ${abastecimentos.length}, Filtrados: ${filteredData.length}`);
+      console.log(`[FILTER_DEBUG] Filtros ativos - Data inicial: ${dateStart || 'não definida'}, Data final: ${dateEnd || 'não definida'}`);
+      
+      if (abastecimentos.length > 0) {
+        const sampleDates = abastecimentos.slice(0, 5).map(item => ({
+          id: item.id,
+          created_at: item.created_at,
+          placa: item.placa
+        }));
+        console.log(`[FILTER_DEBUG] Amostra de datas nos dados:`, sampleDates);
+      }
+    }
+  }, [dateStart, dateEnd, abastecimentos.length, filteredData.length]);
 
   // Cálculos para os mostradores
   const calcularConsolidado = () => {

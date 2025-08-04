@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Fuel, Plus, Search, Eye, Trash2 } from 'lucide-react';
+import { Fuel, Plus, Search, Eye, Trash2, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -70,6 +70,8 @@ export default function FuelReceiptsPage() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStation, setFilterStation] = useState('');
+  const [dateStart, setDateStart] = useState('');
+  const [dateEnd, setDateEnd] = useState('');
   const { toast } = useToast();
 
   // Form state
@@ -264,7 +266,15 @@ export default function FuelReceiptsPage() {
       receipt.nome_operador.toLowerCase().includes(searchTerm.toLowerCase()) ||
       receipt.tipo_produto.toLowerCase().includes(searchTerm.toLowerCase());
     
-    return matchesSearch;
+    // Filtrar por data de início
+    const matchesStartDate = dateStart === '' || 
+      new Date(receipt.data_recebimento) >= new Date(dateStart + 'T00:00:00');
+    
+    // Filtrar por data de fim
+    const matchesEndDate = dateEnd === '' || 
+      new Date(receipt.data_recebimento) <= new Date(dateEnd + 'T23:59:59');
+    
+    return matchesSearch && matchesStartDate && matchesEndDate;
   });
 
   const formatCurrency = (value: number) => {
@@ -520,7 +530,7 @@ export default function FuelReceiptsPage() {
           <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="flex-1">
               <Label htmlFor="search">Buscar</Label>
               <div className="relative">
@@ -535,11 +545,31 @@ export default function FuelReceiptsPage() {
               </div>
             </div>
             
+            <div>
+              <Label htmlFor="dateStart">Data Inicial</Label>
+              <Input
+                id="dateStart"
+                type="date"
+                value={dateStart}
+                onChange={(e) => setDateStart(e.target.value)}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="dateEnd">Data Final</Label>
+              <Input
+                id="dateEnd"
+                type="date"
+                value={dateEnd}
+                onChange={(e) => setDateEnd(e.target.value)}
+              />
+            </div>
+            
             {activeTab === 'consolidated' && (
               <div>
                 <Label htmlFor="filterStation">Filtrar por Posto</Label>
                 <Select value={filterStation} onValueChange={setFilterStation}>
-                  <SelectTrigger className="w-[200px]">
+                  <SelectTrigger>
                     <SelectValue placeholder="Todos os postos" />
                   </SelectTrigger>
                   <SelectContent>
@@ -554,6 +584,30 @@ export default function FuelReceiptsPage() {
               </div>
             )}
           </div>
+          
+          {(searchTerm || dateStart || dateEnd || filterStation) && (
+            <div className="mt-4 flex justify-between items-center">
+              <div className="text-sm text-muted-foreground">
+                {filteredReceipts.length} registros encontrados
+                {(dateStart || dateEnd) && (
+                  <span> • Filtrado por data: {dateStart || '...'} a {dateEnd || '...'}</span>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchTerm('');
+                  setDateStart('');
+                  setDateEnd('');
+                  setFilterStation('');
+                }}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Limpar Filtros
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
