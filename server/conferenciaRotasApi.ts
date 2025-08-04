@@ -30,7 +30,8 @@ interface FuelRecord {
   placa: string;
   motorista: string;
   projeto: string;
-  tipo: 'abastecimento' | 'solicitacao_cartao' | 'solicitacao_fuel_card' | 'historico_geral';
+  tipo: 'abastecimento' | 'solicitacao_cartao' | 'solicitacao_fuel_card' | 'historico_geral' | 'posto_especifico';
+  fonte?: string;
 }
 
 interface VehicleReportData extends VehicleRouteData {
@@ -295,11 +296,45 @@ export const generateReport = async (req: Request, res: Response) => {
     const historicoGeralData = historicoGeralQuery.rows;
     console.log('[CONFERENCIA] Consulta 4 concluída:', historicoGeralData.length, 'registros');
 
+    // FONTES ADICIONAIS: Buscar dados das tabelas específicas de postos (que o Histórico Geral usa)
+    console.log('[CONFERENCIA] Executando consultas de postos específicos...');
+    
+    const postoEspecificoQueries = [
+      { nome: 'sorocaba_v2', tabela: 'abastecimentos_posto_sorocaba_v2' },
+      { nome: 'abc_v2', tabela: 'abastecimentos_posto_abc_v2' },
+      { nome: 'osasco_v2', tabela: 'abastecimentos_posto_osasco_v2' },
+      { nome: 'campinas_v2', tabela: 'abastecimentos_posto_campinas_v2' },
+      { nome: 'guarulhos_v2', tabela: 'abastecimentos_posto_guarulhos_v2' }
+    ];
+
+    let postosEspecificosData: any[] = [];
+    
+    for (const posto of postoEspecificoQueries) {
+      try {
+        console.log(`[CONFERENCIA] Executando consulta: ${posto.tabela}`);
+        const query = await pool.query(
+          `SELECT created_at as data, placa, motorista, projeto FROM ${posto.tabela} WHERE DATE(created_at) = $1`,
+          [isoDate]
+        );
+        const dados = query.rows.map(row => ({
+          ...row,
+          fonte: posto.nome
+        }));
+        postosEspecificosData = postosEspecificosData.concat(dados);
+        console.log(`[CONFERENCIA] ${posto.tabela}: ${dados.length} registros`);
+      } catch (error: any) {
+        console.log(`[CONFERENCIA] Erro na consulta ${posto.tabela}:`, error.message);
+      }
+    }
+    
+    console.log('[CONFERENCIA] Total de registros dos postos específicos:', postosEspecificosData.length);
+
     console.log('[CONFERENCIA] Registros encontrados:', {
       abastecimentos_postos: fuelData.length,
       fuel_card_requests: requestData.length,
       solicitacoes_fuel_card: fuelCardData.length,
-      historico_geral_abastecimentos: historicoGeralData.length
+      historico_geral_abastecimentos: historicoGeralData.length,
+      postos_especificos: postosEspecificosData.length
     });
 
     // Debug: mostrar algumas placas de combustível se encontradas
@@ -336,6 +371,14 @@ export const generateReport = async (req: Request, res: Response) => {
         motorista: item.motorista,
         projeto: item.projeto,
         tipo: 'historico_geral' as const
+      })),
+      ...postosEspecificosData.map((item: any) => ({
+        data: item.data,
+        placa: item.placa.toUpperCase(),
+        motorista: item.motorista,
+        projeto: item.projeto,
+        tipo: 'posto_especifico' as const,
+        fonte: item.fonte
       }))
     ];
 
@@ -583,12 +626,40 @@ export const exportReportToExcel = async (req: Request, res: Response) => {
     );
     const historicoGeralExportData = historicoGeralExportQuery.rows;
 
+    // FONTES ADICIONAIS DE EXPORTAÇÃO: Buscar dados das tabelas específicas de postos
+    const postoEspecificoQueriesExport = [
+      { nome: 'sorocaba_v2', tabela: 'abastecimentos_posto_sorocaba_v2' },
+      { nome: 'abc_v2', tabela: 'abastecimentos_posto_abc_v2' },
+      { nome: 'osasco_v2', tabela: 'abastecimentos_posto_osasco_v2' },
+      { nome: 'campinas_v2', tabela: 'abastecimentos_posto_campinas_v2' },
+      { nome: 'guarulhos_v2', tabela: 'abastecimentos_posto_guarulhos_v2' }
+    ];
+
+    let postosEspecificosExportData: any[] = [];
+    
+    for (const posto of postoEspecificoQueriesExport) {
+      try {
+        const query = await pool.query(
+          `SELECT created_at as data, placa, motorista, projeto FROM ${posto.tabela} WHERE DATE(created_at) = $1`,
+          [isoDate]
+        );
+        const dados = query.rows.map(row => ({
+          ...row,
+          fonte: posto.nome
+        }));
+        postosEspecificosExportData = postosEspecificosExportData.concat(dados);
+      } catch (error: any) {
+        console.log(`[EXPORT] Erro na consulta ${posto.tabela}:`, error.message);
+      }
+    }
+
     console.log('[EXPORT] Registros encontrados:', {
       rotas: routeData.length,
       abastecimentos_postos: fuelData.length,
       fuel_card_requests: requestData.length,
       solicitacoes_fuel_card: fuelCardData.length,
-      historico_geral_abastecimentos: historicoGeralExportData.length
+      historico_geral_abastecimentos: historicoGeralExportData.length,
+      postos_especificos: postosEspecificosExportData.length
     });
 
     // Combinar registros de combustível (incluindo Histórico Geral)
@@ -620,6 +691,14 @@ export const exportReportToExcel = async (req: Request, res: Response) => {
         motorista: item.motorista,
         projeto: item.projeto,
         tipo: 'historico_geral' as const
+      })),
+      ...postosEspecificosExportData.map((item: any) => ({
+        data: item.data,
+        placa: item.placa.toUpperCase(),
+        motorista: item.motorista,
+        projeto: item.projeto,
+        tipo: 'posto_especifico' as const,
+        fonte: item.fonte
       }))
     ];
 

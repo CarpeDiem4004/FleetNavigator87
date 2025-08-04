@@ -378,4 +378,141 @@ router.get('/stats/overall', async (req, res) => {
   }
 });
 
+// GET all fuel data including specific station tables (for Histórico Geral and Route Conference)
+router.get('/', async (req, res) => {
+  try {
+    const { date, limit = 100, offset = 0 } = req.query;
+    
+    // Tables to query for fuel data
+    const fuelTables = [
+      'abastecimentos_postos',
+      'fuel_card_requests', 
+      'solicitacoes_fuel_card',
+      'abastecimentos_supabase',
+      'abastecimentos_posto_sorocaba_v2',
+      'abastecimentos_posto_abc_v2',
+      'abastecimentos_posto_osasco_v2',
+      'abastecimentos_posto_campinas_v2',
+      'abastecimentos_posto_guarulhos_v2'
+    ];
+
+    let allFuelData = [];
+    let totalRecords = 0;
+
+    // Query each table
+    for (const table of fuelTables) {
+      try {
+        let query = '';
+        let dateColumn = '';
+        let plateColumn = '';
+        let driverColumn = '';
+        let projectColumn = '';
+
+        // Set column mappings for each table
+        switch (table) {
+          case 'abastecimentos_postos':
+            dateColumn = 'created_at';
+            plateColumn = 'placa';
+            driverColumn = 'nome_motorista';
+            projectColumn = 'projeto';
+            break;
+          case 'fuel_card_requests':
+            dateColumn = 'created_at';
+            plateColumn = 'plate';
+            driverColumn = 'driver_name';
+            projectColumn = 'project_name';
+            break;
+          case 'solicitacoes_fuel_card':
+            dateColumn = 'data_solicitacao';
+            plateColumn = 'placa';
+            driverColumn = 'motorista';
+            projectColumn = 'base';
+            break;
+          case 'abastecimentos_supabase':
+          case 'abastecimentos_posto_sorocaba_v2':
+          case 'abastecimentos_posto_abc_v2':
+          case 'abastecimentos_posto_osasco_v2':
+          case 'abastecimentos_posto_campinas_v2':
+          case 'abastecimentos_posto_guarulhos_v2':
+            dateColumn = 'created_at';
+            plateColumn = 'placa';
+            driverColumn = 'motorista';
+            projectColumn = 'projeto';
+            break;
+        }
+
+        // Build query with date filter if provided
+        query = `
+          SELECT 
+            ${dateColumn} as data,
+            ${plateColumn} as placa,
+            ${driverColumn} as motorista,
+            ${projectColumn} as projeto,
+            '${table}' as fonte
+          FROM ${table}
+        `;
+
+        if (date) {
+          query += ` WHERE DATE(${dateColumn}) = $1`;
+          const result = await pool.query(query, [date]);
+          
+          const mappedData = result.rows.map(row => ({
+            ...row,
+            placa: row.placa?.toUpperCase() || '',
+            tipo: table.includes('posto_') ? 'posto_especifico' : 
+                  table === 'fuel_card_requests' ? 'solicitacao_cartao' :
+                  table === 'solicitacoes_fuel_card' ? 'solicitacao_fuel_card' :
+                  table === 'abastecimentos_supabase' ? 'historico_geral' : 'abastecimento'
+          }));
+          
+          allFuelData = allFuelData.concat(mappedData);
+          totalRecords += mappedData.length;
+        } else {
+          query += ` ORDER BY ${dateColumn} DESC LIMIT $1 OFFSET $2`;
+          const result = await pool.query(query, [limit, offset]);
+          
+          const mappedData = result.rows.map(row => ({
+            ...row,
+            placa: row.placa?.toUpperCase() || '',
+            tipo: table.includes('posto_') ? 'posto_especifico' : 
+                  table === 'fuel_card_requests' ? 'solicitacao_cartao' :
+                  table === 'solicitacoes_fuel_card' ? 'solicitacao_fuel_card' :
+                  table === 'abastecimentos_supabase' ? 'historico_geral' : 'abastecimento'
+          }));
+          
+          allFuelData = allFuelData.concat(mappedData);
+          totalRecords += mappedData.length;
+        }
+      } catch (error) {
+        console.error(`Error querying ${table}:`, error.message);
+        // Continue with other tables even if one fails
+      }
+    }
+
+    // Sort by date descending
+    allFuelData.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+    // Apply pagination if no date filter
+    if (!date) {
+      const start = parseInt(offset);
+      const end = start + parseInt(limit);
+      allFuelData = allFuelData.slice(start, end);
+    }
+
+    res.json({
+      data: allFuelData,
+      total: totalRecords,
+      pagination: {
+        total: totalRecords,
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        hasMore: (parseInt(offset) + parseInt(limit)) < totalRecords
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching fuel data:', error);
+    res.status(500).json({ error: 'Internal server error', message: error.message });
+  }
+});
+
 export default router;
