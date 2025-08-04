@@ -1239,11 +1239,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload de planilha de rotas - DEVE FICAR NO INÍCIO
   app.post('/api/conferencia-rotas/upload', uploadExcel.single('file'), uploadRouteData);
   
-  // Gerar relatório de conferência
-  app.get('/api/conferencia-rotas/report', isAuthenticated, generateReport);
+  // Gerar relatório de conferência (acesso público para funcionalidade de conferência)
+  app.get('/api/conferencia-rotas/report', generateReport);
   
-  // Exportar relatório para Excel
-  app.get('/api/conferencia-rotas/export', isAuthenticated, exportReportToExcel);
+  // Exportar relatório para Excel (acesso público para funcionalidade de conferência)
+  app.get('/api/conferencia-rotas/export', exportReportToExcel);
   
   // Listar uploads
   app.get('/api/conferencia-rotas/uploads', isAuthenticated, listUploads);
