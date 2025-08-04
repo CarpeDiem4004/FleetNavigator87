@@ -108,6 +108,7 @@ import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
 import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
 import { registerPostosMapeamentoRoutes } from "./routes/postosMapeamentoRoutes";
 import { registerUsuariosSupabaseRoutes } from "./routes/usuariosSupabaseRoutes";
+import { uploadRouteData, generateReport, listUploads, getUploadData, deleteUpload } from "./conferenciaRotasApi";
 // import { supabaseInsertHandler } from "./routes/supabaseInsertRoute"; // Desabilitado - usando versão PostgreSQL direta
 import postoSupabaseRoutes from "./routes/postoSupabaseRoutes";
 import postoRoutes from "./routes/postoRoutes.js";
@@ -18957,7 +18958,7 @@ async function createFuelRequestNotification(fuelRequest) {
   app.post('/api/conferencia-rotas/upload', uploadExcel.single('file'), isAuthenticated, uploadRouteData);
   
   // Gerar relatório de conferência
-  app.get('/api/conferencia-rotas/report/:date', isAuthenticated, generateReport);
+  app.get('/api/conferencia-rotas/report', isAuthenticated, generateReport);
   
   // Listar uploads
   app.get('/api/conferencia-rotas/uploads', isAuthenticated, listUploads);
