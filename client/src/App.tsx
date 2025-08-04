@@ -961,7 +961,7 @@ function App() {
             <LineHallDriverPage />
           </Route>
           
-          {/* Rotas para acesso do motorista Line Haul Shopee */}
+          {/* Rotas para acesso do motorista Line Haul Murici */}
           <Route path="/driver-access">
             <DriverAccess />
           </Route>

@@ -199,7 +199,7 @@ export default function LineHallShopeePage() {
         // Filtrar veículos do Line Haul - usando operacao_tipo ou base_name para identificar
         const lineHaulVehicles = response.data.filter(vehicle => 
           vehicle.operacao_tipo === 'line_hall_shopee' || 
-          vehicle.basename === 'Line Haul Shopee' ||
+          vehicle.basename === 'Line Haul Murici' ||
           vehicle.base_id === 2 ||
           vehicle.vehicleType === 'cavalo_mecanico' || 
           vehicle.vehicleType === 'carreta'
@@ -658,7 +658,7 @@ export default function LineHallShopeePage() {
                 {getTimeBasedGreeting()}, {user?.name || 'Usuário'}!
               </h1>
               <p className="text-gray-600">
-                Bem-vindo ao Line Hall Shopee
+                Bem-vindo ao Line Haul Murici
               </p>
             </div>
           </div>
@@ -676,7 +676,7 @@ export default function LineHallShopeePage() {
           <div>
             <h2 className="text-xl font-semibold">Painel de Controle</h2>
             <p className="text-muted-foreground">
-              Gerenciamento de viagens de Line Hall
+              Gerenciamento de viagens de Line Haul
             </p>
           </div>
           <div className="flex space-x-2">
@@ -812,7 +812,7 @@ export default function LineHallShopeePage() {
                 <DialogHeader>
                   <DialogTitle>Registrar Nova Viagem</DialogTitle>
                   <DialogDescription>
-                    Preencha os dados da viagem do Line Hall Shopee
+                    Preencha os dados da viagem do Line Haul Murici
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -1418,7 +1418,7 @@ export default function LineHallShopeePage() {
                 Rotas Cadastradas
               </CardTitle>
               <CardDescription>
-                Rotas disponíveis para as viagens do Line Hall Shopee
+                Rotas disponíveis para as viagens do Line Haul Murici
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1492,7 +1492,7 @@ export default function LineHallShopeePage() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Truck className="mr-2 h-5 w-5" />
-              Viagens Line Hall Shopee
+              Viagens Line Haul Murici
             </CardTitle>
             <CardDescription>
               Listagem de todas as viagens registradas
@@ -1580,7 +1580,7 @@ export default function LineHallShopeePage() {
           <DialogHeader>
             <DialogTitle>Editar Viagem</DialogTitle>
             <DialogDescription>
-              Atualize os dados da viagem do Line Hall Shopee
+              Atualize os dados da viagem do Line Haul Murici
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -1707,7 +1707,7 @@ export default function LineHallShopeePage() {
             <DialogHeader>
               <DialogTitle>Editar Rota</DialogTitle>
               <DialogDescription>
-                Edite os dados da rota do Line Hall Shopee
+                Edite os dados da rota do Line Haul Murici
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
