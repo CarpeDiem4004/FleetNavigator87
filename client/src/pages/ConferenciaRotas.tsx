@@ -329,13 +329,14 @@ const ConferenciaRotas: React.FC = () => {
         item.motorista,
         item.operacao || '',
         item.modelo || '',
+        item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '-',
         item.fuel_records.length.toString(),
         item.fuel_records.map(f => f.projeto).filter(Boolean).join(', ')
       ]);
 
       (doc as any).autoTable({
         startY: yPosition,
-        head: [['Placa', 'Motorista', 'Operação', 'Modelo', 'Registros Combustível', 'Projetos']],
+        head: [['Placa', 'Motorista', 'Operação', 'Modelo', 'Data', 'Registros Combustível', 'Projetos']],
         body: tableData1,
         theme: 'grid',
         headStyles: { fillColor: [34, 197, 94] }
@@ -364,13 +365,14 @@ const ConferenciaRotas: React.FC = () => {
         item.motorista,
         item.operacao || '',
         item.modelo || '',
+        item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '-',
         '0 registro(s)',
         '-'
       ]);
 
       (doc as any).autoTable({
         startY: yPosition,
-        head: [['Placa', 'Motorista', 'Operação', 'Modelo', 'Registros Combustível', 'Projetos']],
+        head: [['Placa', 'Motorista', 'Operação', 'Modelo', 'Data', 'Registros Combustível', 'Projetos']],
         body: tableData2,
         theme: 'grid',
         headStyles: { fillColor: [239, 68, 68] }
@@ -399,13 +401,14 @@ const ConferenciaRotas: React.FC = () => {
         item.motorista,
         '-',
         '-',
+        item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '-',
         `${getTipoLabel(item.tipo)}${item.posto ? ` (${item.posto})` : ''}`,
         item.projeto || ''
       ]);
 
       (doc as any).autoTable({
         startY: yPosition,
-        head: [['Placa', 'Motorista', 'Operação', 'Modelo', 'Registros Combustível', 'Projetos']],
+        head: [['Placa', 'Motorista', 'Operação', 'Modelo', 'Data', 'Registros Combustível', 'Projetos']],
         body: tableData3,
         theme: 'grid',
         headStyles: { fillColor: [251, 146, 60] }
@@ -656,6 +659,7 @@ const ConferenciaRotas: React.FC = () => {
                               <TableHead>Motorista</TableHead>
                               <TableHead>Operação</TableHead>
                               <TableHead>Modelo</TableHead>
+                              <TableHead>Data</TableHead>
                               <TableHead>Registros Combustível</TableHead>
                               <TableHead>Projetos</TableHead>
                             </TableRow>
@@ -667,6 +671,7 @@ const ConferenciaRotas: React.FC = () => {
                                 <TableCell>{item.motorista}</TableCell>
                                 <TableCell>{item.operacao}</TableCell>
                                 <TableCell>{item.modelo}</TableCell>
+                                <TableCell>{item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '-'}</TableCell>
                                 <TableCell>
                                   <Badge variant="secondary">
                                     {item.fuel_records.length} registro(s)
@@ -697,6 +702,7 @@ const ConferenciaRotas: React.FC = () => {
                               <TableHead>Motorista</TableHead>
                               <TableHead>Operação</TableHead>
                               <TableHead>Modelo</TableHead>
+                              <TableHead>Data</TableHead>
                               <TableHead>Registros Combustível</TableHead>
                               <TableHead>Projetos</TableHead>
                             </TableRow>
@@ -708,6 +714,7 @@ const ConferenciaRotas: React.FC = () => {
                                 <TableCell>{item.motorista}</TableCell>
                                 <TableCell>{item.operacao}</TableCell>
                                 <TableCell>{item.modelo}</TableCell>
+                                <TableCell>{item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '-'}</TableCell>
                                 <TableCell>
                                   <Badge variant="secondary">
                                     0 registro(s)
@@ -736,6 +743,7 @@ const ConferenciaRotas: React.FC = () => {
                               <TableHead>Motorista</TableHead>
                               <TableHead>Operação</TableHead>
                               <TableHead>Modelo</TableHead>
+                              <TableHead>Data</TableHead>
                               <TableHead>Registros Combustível</TableHead>
                               <TableHead>Projetos</TableHead>
                             </TableRow>
@@ -747,6 +755,7 @@ const ConferenciaRotas: React.FC = () => {
                                 <TableCell>{item.motorista}</TableCell>
                                 <TableCell>-</TableCell>
                                 <TableCell>-</TableCell>
+                                <TableCell>{item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '-'}</TableCell>
                                 <TableCell>
                                   <div className="flex flex-col gap-1">
                                     <Badge variant={item.tipo === 'abastecimento' || item.tipo === 'posto_especifico' ? 'default' : 'secondary'}>
