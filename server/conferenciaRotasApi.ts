@@ -206,16 +206,16 @@ export const generateReport = async (req: Request, res: Response) => {
     );
     const routeData = routeQuery.rows;
 
-    // Buscar abastecimentos para a data
+    // Buscar abastecimentos para a data (usando a tabela correta)
     const fuelQuery = await pool.query(
-      'SELECT data, placa, motorista, projeto FROM abastecimentos WHERE data = $1',
+      'SELECT created_at as data, placa, nome_motorista as motorista, projeto FROM abastecimentos_postos WHERE DATE(created_at) = $1',
       [date]
     );
     const fuelData = fuelQuery.rows;
 
     // Buscar solicitações de cartão para a data
     const requestQuery = await pool.query(
-      'SELECT data, placa, motorista, projeto FROM solicitacoes_cartao WHERE data = $1',
+      'SELECT created_at as data, plate as placa, driver_name as motorista, project_name as projeto FROM fuel_card_requests WHERE DATE(created_at) = $1',
       [date]
     );
     const requestData = requestQuery.rows;
@@ -396,16 +396,16 @@ export const exportReportToExcel = async (req: Request, res: Response) => {
     );
     const routeData = routeQuery.rows;
 
-    // Buscar abastecimentos para a data
+    // Buscar abastecimentos para a data (usando a tabela correta)
     const fuelQuery = await pool.query(
-      'SELECT data, placa, motorista, projeto FROM abastecimentos WHERE data = $1',
+      'SELECT created_at as data, placa, nome_motorista as motorista, projeto FROM abastecimentos_postos WHERE DATE(created_at) = $1',
       [date]
     );
     const fuelData = fuelQuery.rows;
 
     // Buscar solicitações de cartão para a data
     const requestQuery = await pool.query(
-      'SELECT data, placa, motorista, projeto FROM solicitacoes_cartao WHERE data = $1',
+      'SELECT created_at as data, plate as placa, driver_name as motorista, project_name as projeto FROM fuel_card_requests WHERE DATE(created_at) = $1',
       [date]
     );
     const requestData = requestQuery.rows;
