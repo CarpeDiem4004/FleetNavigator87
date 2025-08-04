@@ -771,35 +771,35 @@ export const exportReportToExcel = async (req: Request, res: Response) => {
         data: item.data,
         placa: item.placa.toUpperCase(),
         motorista: item.motorista,
-        projeto: item.projeto,
+        projeto: mapProjectToBaseName(item.projeto),
         tipo: 'abastecimento' as const
       })),
       ...requestData.map((item: any) => ({
         data: item.data,
         placa: item.placa.toUpperCase(),
         motorista: item.motorista,
-        projeto: item.projeto,
+        projeto: mapProjectToBaseName(item.projeto),
         tipo: 'solicitacao_cartao' as const
       })),
       ...fuelCardData.map((item: any) => ({
         data: item.data,
         placa: item.placa.toUpperCase(),
         motorista: item.motorista,
-        projeto: item.projeto,
+        projeto: mapProjectToBaseName(item.projeto),
         tipo: 'solicitacao_fuel_card' as const
       })),
       ...historicoGeralExportData.map((item: any) => ({
         data: item.data,
         placa: item.placa.toUpperCase(),
         motorista: item.motorista,
-        projeto: item.projeto,
+        projeto: mapProjectToBaseName(item.projeto),
         tipo: 'historico_geral' as const
       })),
       ...postosEspecificosExportData.map((item: any) => ({
         data: item.data,
         placa: item.placa.toUpperCase(),
         motorista: item.motorista,
-        projeto: item.projeto,
+        projeto: mapProjectToBaseName(item.projeto),
         tipo: 'posto_especifico' as const,
         fonte: item.fonte
       }))
