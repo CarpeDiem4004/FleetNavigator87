@@ -537,7 +537,7 @@ const ConferenciaRotas: React.FC = () => {
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm text-blue-700 flex items-center gap-2">
                       <FileSpreadsheet className="h-4 w-4" />
-                      Total de Veículos Abastecidos em {new Date(selectedDate).toLocaleDateString('pt-BR')}
+                      Total de Veículos Abastecidos em {selectedDate.split('-').reverse().join('/')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>

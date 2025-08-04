@@ -28,6 +28,11 @@ Preferred communication style: Simple, everyday language.
   - Result: Route conference now correctly shows 81 vehicles in compliance (previously 0)
   - Complete vehicle cross-referencing now operational: 81 compliant, 7290 drove only, 8 fueled only
   - Excel export with 4 worksheets fully functional
+- **DATE DISPLAY CORRECTION: Route Conference UI Fix** (08/08/2025 20:00)
+  - Fixed date display offset issue where selecting 01/08/2025 showed 31/07/2025
+  - Corrected Excel date serial conversion with UTC adjustment to prevent timezone offset
+  - Fixed frontend date display to avoid timezone interpretation errors
+  - System now correctly shows selected date in card headers and processing logs
 
 ## System Architecture
 The system is built with a React/TypeScript frontend and a Node.js/Express backend, utilizing Supabase as the primary database.

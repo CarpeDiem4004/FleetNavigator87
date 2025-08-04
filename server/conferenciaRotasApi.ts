@@ -86,9 +86,13 @@ export const uploadRouteData = async (req: Request, res: Response) => {
       const dataExcel = row['DATA DO FRETE/ABASTECIMENTO'];
       
       if (typeof dataExcel === 'number') {
-        // Data serial do Excel
+        // Data serial do Excel - corrigir offset de fuso horário
         const date = new Date((dataExcel - 25569) * 86400 * 1000);
-        dataFormatada = date.toLocaleDateString('pt-BR');
+        // Ajustar para timezone UTC para evitar problemas de fuso horário
+        const utcDate = new Date(date.getTime() + (date.getTimezoneOffset() * 60000));
+        dataFormatada = utcDate.toLocaleDateString('pt-BR');
+        
+        console.log(`[CONFERENCIA] Conversão de data Excel: ${dataExcel} -> ${date.toISOString()} -> ${dataFormatada}`);
       } else if (typeof dataExcel === 'string') {
         // Data já em string
         dataFormatada = dataExcel;
@@ -205,7 +209,7 @@ export const generateReport = async (req: Request, res: Response) => {
       });
     }
 
-    // Normalizar formato da data para busca
+    // Normalizar formato da data para busca - CORRIGIR PROBLEMA DE FUSO HORÁRIO
     let searchDate = date as string;
     
     // Converter data ISO (yyyy-mm-dd) para formato brasileiro (dd/mm/yyyy) se necessário
@@ -222,6 +226,7 @@ export const generateReport = async (req: Request, res: Response) => {
     }
 
     console.log('[CONFERENCIA] Buscando dados para data:', searchDate, '-> ISO:', isoDate);
+    console.log('[CONFERENCIA] DEBUG - Data original recebida:', date, 'Tipo:', typeof date);
 
     // Para lidar com o problema de conversão de datas, vamos buscar nas duas possibilidades
     let alternativeIsoDate = isoDate;
