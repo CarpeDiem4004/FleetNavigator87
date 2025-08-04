@@ -123,6 +123,13 @@ import historicoConsolidadoRoutes from "./routes/historicoConsolidadoRoutes";
 import patioRoutes from "./routes/patioRoutes";
 import pneusRoutes from "./routes/pneusRoutes";
 import sqlSeguroRouter from "./routes/sql-seguro.js";
+import { 
+  uploadRouteData, 
+  generateReport, 
+  listUploads, 
+  getUploadData, 
+  deleteUpload 
+} from "./conferenciaRotasApi";
 import guarulhosV2Routes from "./routes/guarulhosV2Routes.js";
 import osascoV2Routes from "./routes/osascoV2Routes.js";
 import abastecimentoUnificadoRoutes from "./routes/abastecimentoUnificado.js";
@@ -227,6 +234,25 @@ const upload = multer({
       cb(null, true);
     } else {
       cb(new Error('Tipo de arquivo não permitido'), false);
+    }
+  }
+});
+
+// Configuração específica do multer para planilhas Excel
+const uploadExcel = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB para planilhas
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel'
+    ];
+    if (allowedTypes.includes(file.mimetype) || file.originalname.endsWith('.xlsx') || file.originalname.endsWith('.xls')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas arquivos Excel (.xlsx, .xls) são permitidos'), false);
     }
   }
 });
@@ -18922,6 +18948,25 @@ async function createFuelRequestNotification(fuelRequest) {
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
+
+  // ========================================
+  // ROTAS DA CONFERÊNCIA DE ROTAS E ABASTECIMENTOS
+  // ========================================
+  
+  // Upload de planilha de rotas
+  app.post('/api/conferencia-rotas/upload', uploadExcel.single('file'), isAuthenticated, uploadRouteData);
+  
+  // Gerar relatório de conferência
+  app.get('/api/conferencia-rotas/report/:date', isAuthenticated, generateReport);
+  
+  // Listar uploads
+  app.get('/api/conferencia-rotas/uploads', isAuthenticated, listUploads);
+  
+  // Obter dados de um upload específico
+  app.get('/api/conferencia-rotas/upload/:uploadId', isAuthenticated, getUploadData);
+  
+  // Deletar upload
+  app.delete('/api/conferencia-rotas/upload/:uploadId', isAuthenticated, deleteUpload);
 
   const httpServer = createServer(app);
   return httpServer;
