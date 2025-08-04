@@ -674,12 +674,17 @@ const HistoricoGeralPage: React.FC = () => {
     if (dateStart && item.created_at) {
       try {
         const startDate = new Date(dateStart);
-        const itemDate = new Date(item.created_at);
-        const passes = itemDate >= startDate;
+        startDate.setHours(0, 0, 0, 0); // Início do dia
         
-        // Debug log para filtros de data
-        if (dateStart === '2025-08-01' && !passes) {
-          console.log(`[DATE_FILTER] Item rejeitado por data inicial - Item: ${item.created_at}, Filtro: ${dateStart}, ItemDate: ${itemDate.toISOString()}, StartDate: ${startDate.toISOString()}`);
+        const itemDate = new Date(item.created_at);
+        const itemDateOnly = new Date(itemDate);
+        itemDateOnly.setHours(0, 0, 0, 0); // Apenas a data, sem hora
+        
+        const passes = itemDateOnly >= startDate;
+        
+        // Debug log melhorado
+        if (dateStart === '2025-08-01') {
+          console.log(`[DATE_FILTER] Comparando data inicial - Item: ${item.created_at} (${itemDateOnly.toDateString()}) >= Filtro: ${dateStart} (${startDate.toDateString()}) = ${passes}`);
         }
         
         passesDateFilter = passesDateFilter && passes;
@@ -691,13 +696,14 @@ const HistoricoGeralPage: React.FC = () => {
     if (dateEnd && item.created_at) {
       try {
         const endDate = new Date(dateEnd);
-        endDate.setHours(23, 59, 59, 999);
+        endDate.setHours(23, 59, 59, 999); // Final do dia
+        
         const itemDate = new Date(item.created_at);
         const passes = itemDate <= endDate;
         
-        // Debug log para filtros de data
-        if (dateEnd === '2025-08-01' && !passes) {
-          console.log(`[DATE_FILTER] Item rejeitado por data final - Item: ${item.created_at}, Filtro: ${dateEnd}, ItemDate: ${itemDate.toISOString()}, EndDate: ${endDate.toISOString()}`);
+        // Debug log melhorado
+        if (dateEnd === '2025-08-01') {
+          console.log(`[DATE_FILTER] Comparando data final - Item: ${item.created_at} (${itemDate.toDateString()}) <= Filtro: ${dateEnd} (${endDate.toDateString()}) = ${passes}`);
         }
         
         passesDateFilter = passesDateFilter && passes;
@@ -712,17 +718,41 @@ const HistoricoGeralPage: React.FC = () => {
   // Debug logs para entender o filtro
   React.useEffect(() => {
     if (dateStart || dateEnd) {
+      console.log(`[FILTER_DEBUG] ========================================`);
       console.log(`[FILTER_DEBUG] Total abastecimentos: ${abastecimentos.length}, Filtrados: ${filteredData.length}`);
       console.log(`[FILTER_DEBUG] Filtros ativos - Data inicial: ${dateStart || 'não definida'}, Data final: ${dateEnd || 'não definida'}`);
       
       if (abastecimentos.length > 0) {
-        const sampleDates = abastecimentos.slice(0, 5).map(item => ({
-          id: item.id,
-          created_at: item.created_at,
-          placa: item.placa
-        }));
-        console.log(`[FILTER_DEBUG] Amostra de datas nos dados:`, sampleDates);
+        const sampleDates = abastecimentos.slice(0, 10).map(item => {
+          const itemDate = new Date(item.created_at);
+          return {
+            id: item.id,
+            created_at: item.created_at,
+            placa: item.placa,
+            formatted_date: itemDate.toLocaleDateString('pt-BR'),
+            iso_date: itemDate.toISOString().split('T')[0]
+          };
+        });
+        console.log(`[FILTER_DEBUG] Amostra de 10 registros com datas:`, sampleDates);
+        
+        // Verificar se há dados para a data específica
+        if (dateStart === '2025-08-01') {
+          const todayRecords = abastecimentos.filter(item => {
+            const itemDate = new Date(item.created_at);
+            const itemDateISO = itemDate.toISOString().split('T')[0];
+            return itemDateISO === '2025-08-01';
+          });
+          console.log(`[FILTER_DEBUG] Registros para 01/08/2025: ${todayRecords.length}`);
+          if (todayRecords.length > 0) {
+            console.log(`[FILTER_DEBUG] Primeiros 3 registros de hoje:`, todayRecords.slice(0, 3).map(r => ({
+              id: r.id,
+              placa: r.placa,
+              created_at: r.created_at
+            })));
+          }
+        }
       }
+      console.log(`[FILTER_DEBUG] ========================================`);
     }
   }, [dateStart, dateEnd, abastecimentos.length, filteredData.length]);
 
