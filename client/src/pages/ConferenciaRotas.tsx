@@ -314,12 +314,14 @@ const ConferenciaRotas: React.FC = () => {
         item.placa,
         item.motorista,
         item.operacao || '',
-        item.fuel_records.length.toString()
+        item.modelo || '',
+        item.fuel_records.length.toString(),
+        item.fuel_records.map(f => f.projeto).filter(Boolean).join(', ')
       ]);
 
       (doc as any).autoTable({
         startY: yPosition,
-        head: [['Placa', 'Motorista', 'Operação', 'Registros Combustível']],
+        head: [['Placa', 'Motorista', 'Operação', 'Modelo', 'Registros Combustível', 'Projetos']],
         body: tableData1,
         theme: 'grid',
         headStyles: { fillColor: [34, 197, 94] }
@@ -346,12 +348,15 @@ const ConferenciaRotas: React.FC = () => {
       const tableData2 = conferenceReport.rodaram_nao_abasteceram.map(item => [
         item.placa,
         item.motorista,
-        item.operacao || ''
+        item.operacao || '',
+        item.modelo || '',
+        '0 registro(s)',
+        '-'
       ]);
 
       (doc as any).autoTable({
         startY: yPosition,
-        head: [['Placa', 'Motorista', 'Operação']],
+        head: [['Placa', 'Motorista', 'Operação', 'Modelo', 'Registros Combustível', 'Projetos']],
         body: tableData2,
         theme: 'grid',
         headStyles: { fillColor: [239, 68, 68] }
@@ -378,13 +383,15 @@ const ConferenciaRotas: React.FC = () => {
       const tableData3 = conferenceReport.abasteceram_nao_rodaram.map(item => [
         item.placa,
         item.motorista,
-        item.projeto || '',
-        item.tipo === 'abastecimento' ? 'Abastecimento' : 'Solicitação'
+        '-',
+        '-',
+        item.tipo === 'abastecimento' ? 'Abastecimento' : 'Solicitação',
+        item.projeto || ''
       ]);
 
       (doc as any).autoTable({
         startY: yPosition,
-        head: [['Placa', 'Motorista', 'Projeto', 'Tipo']],
+        head: [['Placa', 'Motorista', 'Operação', 'Modelo', 'Registros Combustível', 'Projetos']],
         body: tableData3,
         theme: 'grid',
         headStyles: { fillColor: [251, 146, 60] }
@@ -676,6 +683,8 @@ const ConferenciaRotas: React.FC = () => {
                               <TableHead>Motorista</TableHead>
                               <TableHead>Operação</TableHead>
                               <TableHead>Modelo</TableHead>
+                              <TableHead>Registros Combustível</TableHead>
+                              <TableHead>Projetos</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -685,6 +694,12 @@ const ConferenciaRotas: React.FC = () => {
                                 <TableCell>{item.motorista}</TableCell>
                                 <TableCell>{item.operacao}</TableCell>
                                 <TableCell>{item.modelo}</TableCell>
+                                <TableCell>
+                                  <Badge variant="secondary">
+                                    0 registro(s)
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>-</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -705,8 +720,10 @@ const ConferenciaRotas: React.FC = () => {
                             <TableRow>
                               <TableHead>Placa</TableHead>
                               <TableHead>Motorista</TableHead>
-                              <TableHead>Projeto</TableHead>
-                              <TableHead>Tipo</TableHead>
+                              <TableHead>Operação</TableHead>
+                              <TableHead>Modelo</TableHead>
+                              <TableHead>Registros Combustível</TableHead>
+                              <TableHead>Projetos</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -714,12 +731,14 @@ const ConferenciaRotas: React.FC = () => {
                               <TableRow key={index} className="bg-orange-50">
                                 <TableCell className="font-mono">{item.placa}</TableCell>
                                 <TableCell>{item.motorista}</TableCell>
-                                <TableCell>{item.projeto}</TableCell>
+                                <TableCell>-</TableCell>
+                                <TableCell>-</TableCell>
                                 <TableCell>
                                   <Badge variant={item.tipo === 'abastecimento' ? 'default' : 'secondary'}>
                                     {item.tipo === 'abastecimento' ? 'Abastecimento' : 'Solicitação'}
                                   </Badge>
                                 </TableCell>
+                                <TableCell>{item.projeto}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
