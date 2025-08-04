@@ -134,7 +134,8 @@ app.get('/api/timezone-status', (req, res) => {
 // ROTAS DE TERCEIROS - Registrar ANTES de qualquer middleware para evitar interceptação do Vite
 app.get('/api/terceiros/admin/stats', async (req, res) => {
   try {
-    if (!req.isAuthenticated || !req.isAuthenticated()) {
+    // Verificação de autenticação segura (compatível com setup incompleto)
+    if (typeof req.isAuthenticated !== 'function' || !req.isAuthenticated()) {
       return res.status(401).json({ error: 'Não autorizado' });
     }
 
@@ -166,7 +167,8 @@ app.get('/api/terceiros/admin/stats', async (req, res) => {
 
 app.get('/api/terceiros/admin/empresas', async (req, res) => {
   try {
-    if (!req.isAuthenticated || !req.isAuthenticated()) {
+    // Verificação de autenticação segura (compatível com setup incompleto)
+    if (typeof req.isAuthenticated !== 'function' || !req.isAuthenticated()) {
       return res.status(401).json({ error: 'Não autorizado' });
     }
 
@@ -190,7 +192,8 @@ app.get('/api/terceiros/admin/empresas', async (req, res) => {
 
 app.get('/api/terceiros/admin/abastecimentos', async (req, res) => {
   try {
-    if (!req.isAuthenticated || !req.isAuthenticated()) {
+    // Verificação de autenticação segura (compatível com setup incompleto)
+    if (typeof req.isAuthenticated !== 'function' || !req.isAuthenticated()) {
       return res.status(401).json({ error: 'Não autorizado' });
     }
 
