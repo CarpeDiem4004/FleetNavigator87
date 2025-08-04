@@ -233,54 +233,55 @@ const ConferenciaRotas: React.FC = () => {
     }
   }, [selectedDate, toast]);
 
-  const exportToExcel = useCallback(() => {
-    if (!conferenceReport) return;
+  const exportToExcel = useCallback(async () => {
+    if (!selectedDate) {
+      toast({
+        title: "Data obrigatória",
+        description: "Selecione uma data para exportar o relatório",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    const workbook = XLSX.utils.book_new();
+    try {
+      const response = await fetch(`/api/conferencia-rotas/export?date=${selectedDate}`, {
+        method: 'GET',
+        credentials: 'include'
+      });
 
-    // Planilha 1: Rodaram e Abasteceram
-    const sheet1Data = conferenceReport.rodaram_e_abasteceram.map(item => ({
-      Data: item.data,
-      Placa: item.placa,
-      Motorista: item.motorista,
-      Operação: item.operacao || '',
-      Modelo: item.modelo || '',
-      'Registros Combustível': item.fuel_records.length,
-      Projetos: item.fuel_records.map(f => f.projeto).filter(Boolean).join(', ')
-    }));
-    const worksheet1 = XLSX.utils.json_to_sheet(sheet1Data);
-    XLSX.utils.book_append_sheet(workbook, worksheet1, 'Rodaram e Abasteceram');
+      if (!response.ok) {
+        throw new Error(`Erro ao exportar relatório: ${response.statusText}`);
+      }
 
-    // Planilha 2: Rodaram mas Não Abasteceram
-    const sheet2Data = conferenceReport.rodaram_nao_abasteceram.map(item => ({
-      Data: item.data,
-      Placa: item.placa,
-      Motorista: item.motorista,
-      Operação: item.operacao || '',
-      Modelo: item.modelo || ''
-    }));
-    const worksheet2 = XLSX.utils.json_to_sheet(sheet2Data);
-    XLSX.utils.book_append_sheet(workbook, worksheet2, 'Rodaram Não Abasteceram');
+      // Criar blob do arquivo Excel
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
+      // Criar link de download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Relatorio_Conferencia_${selectedDate.replace(/\//g, '-')}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Limpar recursos
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
 
-    // Planilha 3: Abasteceram mas Não Rodaram
-    const sheet3Data = conferenceReport.abasteceram_nao_rodaram.map(item => ({
-      Data: item.data,
-      Placa: item.placa,
-      Motorista: item.motorista,
-      Projeto: item.projeto || '',
-      Tipo: item.tipo === 'abastecimento' ? 'Abastecimento' : 'Solicitação'
-    }));
-    const worksheet3 = XLSX.utils.json_to_sheet(sheet3Data);
-    XLSX.utils.book_append_sheet(workbook, worksheet3, 'Abasteceram Não Rodaram');
+      toast({
+        title: "Excel exportado!",
+        description: "Arquivo baixado com sucesso.",
+      });
 
-    // Salvar arquivo
-    XLSX.writeFile(workbook, `conferencia_rotas_${selectedDate}.xlsx`);
-
-    toast({
-      title: "Excel exportado!",
-      description: "Arquivo baixado com sucesso.",
-    });
-  }, [conferenceReport, selectedDate, toast]);
+    } catch (error) {
+      console.error('Erro ao exportar Excel:', error);
+      toast({
+        title: "Erro ao exportar Excel",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    }
+  }, [selectedDate, toast]);
 
   const exportToPDF = useCallback(() => {
     if (!conferenceReport) return;
