@@ -475,18 +475,220 @@ export const exportReportToExcel = async (req: Request, res: Response) => {
       });
     }
 
-    // Gerar relatório (reutilizar lógica do generateReport)
-    // Para simplicidade, retornar erro temporário
-    res.status(501).json({
-      success: false,
-      message: 'Exportação Excel não implementada ainda'
+    // Normalizar formato da data para busca
+    let searchDate = date as string;
+    
+    // Converter data ISO (yyyy-mm-dd) para formato brasileiro (dd/mm/yyyy) se necessário
+    if (searchDate.includes('-') && searchDate.length === 10) {
+      const [year, month, day] = searchDate.split('-');
+      searchDate = `${day}/${month}/${year}`;
+    }
+
+    // Converter data brasileira para ISO para buscar tanto rotas quanto abastecimentos
+    let isoDate = searchDate;
+    if (searchDate.includes('/')) {
+      const [day, month, year] = searchDate.split('/');
+      isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+
+    console.log('[EXPORT] Exportando dados para data:', searchDate, '-> ISO:', isoDate);
+
+    // Buscar dados das rotas para a data (usando formato ISO)
+    const routeQuery = await pool.query(
+      'SELECT data, placa, motorista, operacao, modelo FROM conferencia_rotas_dados WHERE data = $1',
+      [isoDate]
+    );
+    const routeData = routeQuery.rows;
+
+    // Buscar abastecimentos para a data (abastecimentos_postos)
+    const fuelQuery = await pool.query(
+      'SELECT created_at as data, placa, nome_motorista as motorista, projeto FROM abastecimentos_postos WHERE DATE(created_at) = $1',
+      [isoDate]
+    );
+    const fuelData = fuelQuery.rows;
+
+    // Buscar solicitações de cartão para a data (fuel_card_requests)
+    const requestQuery = await pool.query(
+      'SELECT created_at as data, plate as placa, driver_name as motorista, project_name as projeto FROM fuel_card_requests WHERE DATE(created_at) = $1',
+      [isoDate]
+    );
+    const requestData = requestQuery.rows;
+
+    // Buscar solicitações de cartão para a data (solicitacoes_fuel_card)
+    const fuelCardQuery = await pool.query(
+      'SELECT data_solicitacao as data, placa, motorista, base as projeto FROM solicitacoes_fuel_card WHERE DATE(data_solicitacao) = $1',
+      [isoDate]
+    );
+    const fuelCardData = fuelCardQuery.rows;
+
+    console.log('[EXPORT] Registros encontrados:', {
+      rotas: routeData.length,
+      abastecimentos_postos: fuelData.length,
+      fuel_card_requests: requestData.length,
+      solicitacoes_fuel_card: fuelCardData.length
     });
+
+    // Combinar registros de combustível
+    const allFuelRecords: FuelRecord[] = [
+      ...fuelData.map((item: any) => ({
+        data: item.data,
+        placa: item.placa.toUpperCase(),
+        motorista: item.motorista,
+        projeto: item.projeto,
+        tipo: 'abastecimento' as const
+      })),
+      ...requestData.map((item: any) => ({
+        data: item.data,
+        placa: item.placa.toUpperCase(),
+        motorista: item.motorista,
+        projeto: item.projeto,
+        tipo: 'solicitacao_cartao' as const
+      })),
+      ...fuelCardData.map((item: any) => ({
+        data: item.data,
+        placa: item.placa.toUpperCase(),
+        motorista: item.motorista,
+        projeto: item.projeto,
+        tipo: 'solicitacao_fuel_card' as const
+      }))
+    ];
+
+    // Normalizar dados das rotas
+    const normalizedRoutes = routeData.map((item: any) => ({
+      ...item,
+      placa: item.placa.toUpperCase()
+    }));
+
+    // Análise comparativa
+    const report: ConferenceReport = {
+      rodaram_e_abasteceram: [],
+      rodaram_nao_abasteceram: [],
+      abasteceram_nao_rodaram: []
+    };
+
+    // Criar mapa de placas que abasteceram
+    const fuelByPlate = new Map<string, FuelRecord[]>();
+    allFuelRecords.forEach(fuel => {
+      const key = fuel.placa;
+      if (!fuelByPlate.has(key)) {
+        fuelByPlate.set(key, []);
+      }
+      fuelByPlate.get(key)!.push(fuel);
+    });
+
+    // Criar mapa de placas que rodaram
+    const routeByPlate = new Map<string, VehicleRouteData>();
+    normalizedRoutes.forEach(route => {
+      routeByPlate.set(route.placa, route);
+    });
+
+    // Análise: Veículos que rodaram
+    normalizedRoutes.forEach((route: any) => {
+      const fuelRecords = fuelByPlate.get(route.placa) || [];
+      
+      if (fuelRecords.length > 0) {
+        // Rodaram e abasteceram
+        report.rodaram_e_abasteceram.push({
+          ...route,
+          fuel_records: fuelRecords
+        });
+      } else {
+        // Rodaram mas não abasteceram
+        report.rodaram_nao_abasteceram.push(route);
+      }
+    });
+
+    // Análise: Veículos que abasteceram mas não rodaram
+    allFuelRecords.forEach(fuel => {
+      if (!routeByPlate.has(fuel.placa)) {
+        report.abasteceram_nao_rodaram.push(fuel);
+      }
+    });
+
+    // Criar planilha Excel
+    const workbook = XLSX.utils.book_new();
+
+    // Planilha 1: Rodaram e Abasteceram
+    const sheet1Data = report.rodaram_e_abasteceram.map(item => ({
+      'Data': item.data,
+      'Placa': item.placa,
+      'Motorista': item.motorista,
+      'Operação': item.operacao,
+      'Modelo': item.modelo,
+      'Registros de Combustível': item.fuel_records?.map(f => f.tipo).join(', ') || '',
+      'Projetos Combustível': item.fuel_records?.map(f => f.projeto).join(', ') || ''
+    }));
+
+    const worksheet1 = XLSX.utils.json_to_sheet(sheet1Data);
+    XLSX.utils.book_append_sheet(workbook, worksheet1, 'Rodaram e Abasteceram');
+
+    // Planilha 2: Rodaram mas Não Abasteceram
+    const sheet2Data = report.rodaram_nao_abasteceram.map(item => ({
+      'Data': item.data,
+      'Placa': item.placa,
+      'Motorista': item.motorista,
+      'Operação': item.operacao,
+      'Modelo': item.modelo
+    }));
+
+    const worksheet2 = XLSX.utils.json_to_sheet(sheet2Data);
+    XLSX.utils.book_append_sheet(workbook, worksheet2, 'Rodaram Não Abasteceram');
+
+    // Planilha 3: Abasteceram mas Não Rodaram
+    const sheet3Data = report.abasteceram_nao_rodaram.map(item => ({
+      'Data': item.data,
+      'Placa': item.placa,
+      'Motorista': item.motorista,
+      'Projeto': item.projeto,
+      'Tipo': item.tipo
+    }));
+
+    const worksheet3 = XLSX.utils.json_to_sheet(sheet3Data);
+    XLSX.utils.book_append_sheet(workbook, worksheet3, 'Abasteceram Não Rodaram');
+
+    // Planilha 4: Resumo
+    const resumoData = [
+      {
+        'Categoria': 'Rodaram e Abasteceram',
+        'Quantidade': report.rodaram_e_abasteceram.length,
+        'Percentual': ((report.rodaram_e_abasteceram.length / (normalizedRoutes.length || 1)) * 100).toFixed(2) + '%'
+      },
+      {
+        'Categoria': 'Rodaram mas Não Abasteceram',
+        'Quantidade': report.rodaram_nao_abasteceram.length,
+        'Percentual': ((report.rodaram_nao_abasteceram.length / (normalizedRoutes.length || 1)) * 100).toFixed(2) + '%'
+      },
+      {
+        'Categoria': 'Abasteceram mas Não Rodaram',
+        'Quantidade': report.abasteceram_nao_rodaram.length,
+        'Percentual': ((report.abasteceram_nao_rodaram.length / (allFuelRecords.length || 1)) * 100).toFixed(2) + '%'
+      }
+    ];
+
+    const worksheetResumo = XLSX.utils.json_to_sheet(resumoData);
+    XLSX.utils.book_append_sheet(workbook, worksheetResumo, 'Resumo');
+
+    // Converter workbook para buffer
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Definir headers para download
+    const fileName = `Relatorio_Conferencia_${searchDate.replace(/\//g, '-')}.xlsx`;
+    
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Length', buffer.length);
+
+    // Enviar arquivo
+    res.send(buffer);
+
+    console.log('[EXPORT] Arquivo Excel gerado com sucesso:', fileName);
 
   } catch (error) {
     console.error('Erro ao exportar relatório:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
+      error: (error as Error).message
     });
   }
 };

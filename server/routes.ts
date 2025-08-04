@@ -124,13 +124,6 @@ import historicoConsolidadoRoutes from "./routes/historicoConsolidadoRoutes";
 import patioRoutes from "./routes/patioRoutes";
 import pneusRoutes from "./routes/pneusRoutes";
 import sqlSeguroRouter from "./routes/sql-seguro.js";
-import { 
-  uploadRouteData, 
-  generateReport, 
-  listUploads, 
-  getUploadData, 
-  deleteUpload 
-} from "./conferenciaRotasApi";
 import guarulhosV2Routes from "./routes/guarulhosV2Routes.js";
 import osascoV2Routes from "./routes/osascoV2Routes.js";
 import abastecimentoUnificadoRoutes from "./routes/abastecimentoUnificado.js";
