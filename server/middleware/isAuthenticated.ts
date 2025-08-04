@@ -10,9 +10,36 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
     return next();
   }
 
-  // Para outras rotas, usar o middleware original
-  const { isAuthenticated: originalAuth } = await import('../middleware/auth');
-  return originalAuth(req, res, next);
+  // Para outras rotas, verificar autenticação
+  // Verificar se o usuário está autenticado via sessão
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    console.log(`[isAuthenticated] Sessão válida para usuário: ${req.user?.email}`);
+    return next();
+  }
+  
+  // Verificar token JWT se não estiver autenticado por sessão
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('Tentativa de acesso não autenticado a', req.originalUrl);
+    return res.status(401).json({ message: "Não autenticado" });
+  }
+  
+  try {
+    // Extrair token JWT
+    const token = extractJwtToken(authHeader);
+    console.log('[isAuthenticated] Token JWT encontrado, verificando...');
+    
+    // Verificar com Supabase
+    const supabaseUser = await validateSupabaseToken(token);
+    if (supabaseUser) {
+      (req as any).supabaseUser = supabaseUser;
+      console.log(`[isAuthenticated] Token JWT validado para usuário: ${supabaseUser.email}`);
+      return next();
+    }
+  } catch (error) {
+    console.error('[isAuthenticated] Erro ao processar autenticação:', error);
+    return res.status(401).json({ message: "Token de autenticação inválido" });
+  }
 };
 
 // Também exportar o isAuthenticated como isAuthenticatedBySessionOrJwt para leitura semântica mais clara

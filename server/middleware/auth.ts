@@ -8,7 +8,7 @@ import { validateSupabaseToken, extractJwtToken, AuthError } from '../utils/auth
  */
 export const isAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
   // Se o usuário está autenticado via sessão, continuar
-  if (req.isAuthenticated()) {
+  if (req.isAuthenticated && req.isAuthenticated()) {
     console.log(`[isAuthenticated] Sessão válida para usuário: ${req.user?.email}`);
     return next();
   }
@@ -94,7 +94,7 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
 export const hasMaintenanceAccess = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Verificar autenticação primeiro usando sessão, se presente
-    if (req.isAuthenticated()) {
+    if (req.isAuthenticated && req.isAuthenticated()) {
       console.log(`[hasMaintenanceAccess] Usuário autenticado por sessão: ${req.user?.email}`);
     }
     // Se não houver autenticação por sessão, verificar token JWT no header
@@ -157,7 +157,7 @@ export const hasMaintenanceAccess = async (req: Request, res: Response, next: Ne
     }
     
     // Verificar se alguma autenticação foi bem-sucedida
-    if (!req.isAuthenticated() && !(req as any).supabaseUser && !(req as any).hybridUser) {
+    if (!(req.isAuthenticated && req.isAuthenticated()) && !(req as any).supabaseUser && !(req as any).hybridUser) {
       console.log('[hasMaintenanceAccess] Acesso negado - usuário não autenticado');
       return res.status(401).json({ message: "Usuário não autenticado" });
     }
@@ -295,7 +295,7 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
  */
 export const hasTiresAccess = (req: Request, res: Response, next: NextFunction) => {
   // Verificar autenticação primeiro
-  if (!req.isAuthenticated() && !(req as any).supabaseUser && !(req as any).hybridUser) {
+  if (!(req.isAuthenticated && req.isAuthenticated()) && !(req as any).supabaseUser && !(req as any).hybridUser) {
     return res.status(401).json({ message: "Usuário não autenticado" });
   }
   
@@ -325,7 +325,7 @@ export const hasTiresAccess = (req: Request, res: Response, next: NextFunction) 
  */
 export const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
   // Verificar autenticação primeiro
-  if (!req.isAuthenticated() && !(req as any).supabaseUser && !(req as any).hybridUser) {
+  if (!(req.isAuthenticated && req.isAuthenticated()) && !(req as any).supabaseUser && !(req as any).hybridUser) {
     return res.status(401).json({ message: "Usuário não autenticado" });
   }
   
@@ -350,7 +350,7 @@ export const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
  */
 export const hasBaseAccess = (req: Request, res: Response, next: NextFunction) => {
   // Verificar autenticação primeiro
-  if (!req.isAuthenticated() && !(req as any).supabaseUser && !(req as any).hybridUser) {
+  if (!(req.isAuthenticated && req.isAuthenticated()) && !(req as any).supabaseUser && !(req as any).hybridUser) {
     return res.status(401).json({ message: "Usuário não autenticado" });
   }
   
@@ -383,7 +383,7 @@ export const hasBaseAccess = (req: Request, res: Response, next: NextFunction) =
 export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Verificar autenticação por sessão
-    if (req.isAuthenticated() && req.user) {
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
       console.log(`[hasMaintenanceAccessV2] Usuário autenticado por sessão: ${req.user.email}`);
       const user = {
         id: req.user.id,
