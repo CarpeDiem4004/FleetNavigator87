@@ -673,18 +673,24 @@ const HistoricoGeralPage: React.FC = () => {
     
     if (dateStart && item.created_at) {
       try {
-        const startDate = new Date(dateStart);
-        startDate.setHours(0, 0, 0, 0); // Início do dia
+        // Criar data do filtro em UTC para evitar problemas de fuso horário
+        const [year, month, day] = dateStart.split('-').map(Number);
+        const startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
         
+        // Processar data do item
         const itemDate = new Date(item.created_at);
-        const itemDateOnly = new Date(itemDate);
-        itemDateOnly.setHours(0, 0, 0, 0); // Apenas a data, sem hora
+        const itemDateUTC = new Date(Date.UTC(
+          itemDate.getFullYear(),
+          itemDate.getMonth(),
+          itemDate.getDate(),
+          0, 0, 0, 0
+        ));
         
-        const passes = itemDateOnly >= startDate;
+        const passes = itemDateUTC >= startDate;
         
         // Debug log melhorado
-        if (dateStart === '2025-08-01') {
-          console.log(`[DATE_FILTER] Comparando data inicial - Item: ${item.created_at} (${itemDateOnly.toDateString()}) >= Filtro: ${dateStart} (${startDate.toDateString()}) = ${passes}`);
+        if (dateStart === '2025-08-02') {
+          console.log(`[DATE_FILTER] Data inicial - Item: ${item.created_at} -> ${itemDateUTC.toISOString().split('T')[0]} >= Filtro: ${dateStart} -> ${startDate.toISOString().split('T')[0]} = ${passes}`);
         }
         
         passesDateFilter = passesDateFilter && passes;
@@ -695,15 +701,16 @@ const HistoricoGeralPage: React.FC = () => {
     
     if (dateEnd && item.created_at) {
       try {
-        const endDate = new Date(dateEnd);
-        endDate.setHours(23, 59, 59, 999); // Final do dia
+        // Criar data do filtro em UTC
+        const [year, month, day] = dateEnd.split('-').map(Number);
+        const endDate = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
         
         const itemDate = new Date(item.created_at);
         const passes = itemDate <= endDate;
         
         // Debug log melhorado
-        if (dateEnd === '2025-08-01') {
-          console.log(`[DATE_FILTER] Comparando data final - Item: ${item.created_at} (${itemDate.toDateString()}) <= Filtro: ${dateEnd} (${endDate.toDateString()}) = ${passes}`);
+        if (dateEnd === '2025-08-02') {
+          console.log(`[DATE_FILTER] Data final - Item: ${item.created_at} -> ${itemDate.toISOString()} <= Filtro: ${dateEnd} -> ${endDate.toISOString()} = ${passes}`);
         }
         
         passesDateFilter = passesDateFilter && passes;
@@ -735,19 +742,20 @@ const HistoricoGeralPage: React.FC = () => {
         });
         console.log(`[FILTER_DEBUG] Amostra de 10 registros com datas:`, sampleDates);
         
-        // Verificar se há dados para a data específica
-        if (dateStart === '2025-08-01') {
-          const todayRecords = abastecimentos.filter(item => {
+        // Verificar se há dados para a data específica selecionada
+        if (dateStart) {
+          const selectedRecords = abastecimentos.filter(item => {
             const itemDate = new Date(item.created_at);
             const itemDateISO = itemDate.toISOString().split('T')[0];
-            return itemDateISO === '2025-08-01';
+            return itemDateISO === dateStart;
           });
-          console.log(`[FILTER_DEBUG] Registros para 01/08/2025: ${todayRecords.length}`);
-          if (todayRecords.length > 0) {
-            console.log(`[FILTER_DEBUG] Primeiros 3 registros de hoje:`, todayRecords.slice(0, 3).map(r => ({
+          console.log(`[FILTER_DEBUG] Registros para ${dateStart}: ${selectedRecords.length}`);
+          if (selectedRecords.length > 0) {
+            console.log(`[FILTER_DEBUG] Primeiros 3 registros da data selecionada:`, selectedRecords.slice(0, 3).map(r => ({
               id: r.id,
               placa: r.placa,
-              created_at: r.created_at
+              created_at: r.created_at,
+              posto: r.posto
             })));
           }
         }
