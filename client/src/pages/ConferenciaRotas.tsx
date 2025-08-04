@@ -75,22 +75,64 @@ const ConferenciaRotas: React.FC = () => {
           const workbook = XLSX.read(data, { type: 'array' });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+          
+          // Usar header: 1 para obter array de arrays, não objetos
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          
+          // Primeira linha são os cabeçalhos
+          const headers = jsonData[0] as string[];
+          const dataRows = jsonData.slice(1); // Pular cabeçalho
+          
+          console.log('Cabeçalhos encontrados:', headers);
+          console.log('Total de linhas de dados:', dataRows.length);
 
-          const processedData: VehicleRouteData[] = jsonData.map((row: any) => ({
-            data: row.data || row.Data || row.DATA || '',
-            placa: row.placa || row.Placa || row.PLACA || '',
-            motorista: row.motorista || row.Motorista || row.MOTORISTA || '',
-            operacao: row.operacao || row.Operacao || row.OPERACAO || row.operação || row.Operação || row.OPERAÇÃO || '',
-            modelo: row.modelo || row.Modelo || row.MODELO || '',
-          }));
+          const processedData: VehicleRouteData[] = (dataRows as any[]).map((row: any[], index: number) => {
+            // Mapear baseado na estrutura específica do MercadoLivre:
+            // Coluna 0: DATA DO FRETE/ABASTECIMENTO (número Excel)
+            // Coluna 1: OPERAÇÃO
+            // Coluna 2: MOTORISTA  
+            // Coluna 3: PLACA
+            // Coluna 4: MODELO
+            
+            const dataFrete = row[0]; // DATA DO FRETE/ABASTECIMENTO
+            const operacao = row[1];  // OPERAÇÃO
+            const motorista = row[2]; // MOTORISTA
+            const placa = row[3];     // PLACA
+            const modelo = row[4];    // MODELO
+
+            // Converter data do Excel (número) para formato ISO
+            let dataFormatada = '';
+            if (dataFrete && typeof dataFrete === 'number') {
+              // Excel armazena datas como número de dias desde 1/1/1900
+              const excelEpoch = new Date(1900, 0, 1);
+              const dataConvertida = new Date(excelEpoch.getTime() + (dataFrete - 2) * 24 * 60 * 60 * 1000);
+              dataFormatada = dataConvertida.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+            }
+
+            const processedRow = {
+              data: dataFormatada,
+              placa: placa ? placa.toString().trim().replace(/[^A-Z0-9]/g, '').toUpperCase() : '',
+              motorista: motorista ? motorista.toString().trim() : '',
+              operacao: operacao ? operacao.toString().trim() : '',
+              modelo: modelo ? modelo.toString().trim() : '',
+            };
+
+            // Log para debug das primeiras 3 linhas
+            if (index < 3) {
+              console.log(`Linha ${index + 2} processada:`, processedRow);
+            }
+
+            return processedRow;
+          });
 
           const validData = processedData.filter(item => 
             item.data && item.placa && item.motorista
           );
 
+          console.log(`Dados válidos encontrados: ${validData.length} de ${processedData.length} total`);
+
           if (validData.length === 0) {
-            reject(new Error('Nenhum dado válido encontrado na planilha. Verifique se as colunas estão nomeadas corretamente: data, placa, motorista, operacao, modelo'));
+            reject(new Error('Nenhum dado válido encontrado na planilha. Verifique se o formato é do modelo MercadoLivre com as colunas: DATA DO FRETE/ABASTECIMENTO, OPERAÇÃO, MOTORISTA, PLACA, MODELO'));
           } else {
             resolve(validData);
           }

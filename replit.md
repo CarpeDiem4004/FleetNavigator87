@@ -25,7 +25,7 @@ The system is built with a React/TypeScript frontend and a Node.js/Express backe
 - **Middleware**: Custom validation and authentication.
 
 ### Database Schema
-Key tables include `vehicles`, `maintenance`, `towing_services`, `fuel_cards`, `projects`, and `bases`. It also includes specific tables for external fuel stations (e.g., `abc_v2`, `osasco_v2`), comprehensive audit logging, and junction tables like `project_bases`.
+Key tables include `vehicles`, `maintenance`, `towing_services`, `fuel_cards`, `projects`, and `bases`. It also includes specific tables for external fuel stations (e.g., `abc_v2`, `osasco_v2`), comprehensive audit logging, junction tables like `project_bases`, and route conference tables (`conferencia_rotas_uploads`, `conferencia_rotas_dados`) for daily vehicle operation analysis.
 
 ### Key Features
 - **Vehicle Management**: Tracking, maintenance scheduling, and real-time status.
@@ -33,6 +33,7 @@ Key tables include `vehicles`, `maintenance`, `towing_services`, `fuel_cards`, `
 - **Towing Services**: Partner management, service request workflows, financial tracking, and external access tokens.
 - **Maintenance System**: Service scheduling, workshop management, parts inventory integration, and cost tracking.
 - **Mobile External Links System**: Public access forms for fuel stations with mobile optimization, automatic project/base loading, and timezone-aware data entry.
+- **Route and Fuel Conference System**: Upload and analyze daily vehicle route reports (.xlsx format), compare with fuel records, generate comprehensive reports with visual indicators and export capabilities (Excel/PDF). Specifically optimized for MercadoLivre report format with automatic Excel date conversion.
 
 ### Data Flow
 - **Fuel Station External Access**: Public URLs, mobile device detection, dynamic project loading, data validation, and real-time synchronization.
