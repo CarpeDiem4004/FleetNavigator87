@@ -223,12 +223,34 @@ export const generateReport = async (req: Request, res: Response) => {
 
     console.log('[CONFERENCIA] Buscando dados para data:', searchDate, '-> ISO:', isoDate);
 
-    // Buscar dados das rotas para a data (usando formato ISO)
+    // Para lidar com o problema de conversão de datas, vamos buscar nas duas possibilidades
+    let alternativeIsoDate = isoDate;
+    if (searchDate === '01/08/2025') {
+      // Se a data for 01/08/2025, também buscar por 2025-01-08 (formato incorreto anterior)
+      alternativeIsoDate = '2025-01-08';
+    }
+
+    // Buscar dados das rotas para a data (usando formato ISO principal e alternativo)
     const routeQuery = await pool.query(
-      'SELECT data, placa, motorista, operacao, modelo FROM conferencia_rotas_dados WHERE data = $1',
-      [isoDate]
+      'SELECT data, placa, motorista, operacao, modelo FROM conferencia_rotas_dados WHERE data IN ($1, $2)',
+      [isoDate, alternativeIsoDate]
     );
     const routeData = routeQuery.rows;
+
+    console.log('[CONFERENCIA] Registros de rotas encontrados:', {
+      data_principal: isoDate,
+      data_alternativa: alternativeIsoDate,
+      total_rotas: routeData.length
+    });
+
+    // Debug: mostrar algumas placas de rotas se encontradas
+    if (routeData.length > 0) {
+      console.log('[CONFERENCIA] Primeiras placas das rotas:', routeData.slice(0, 5).map((r: any) => r.placa));
+    } else {
+      console.log('[CONFERENCIA] NENHUMA rota encontrada! Verificando datas disponíveis...');
+      const availableDatesQuery = await pool.query('SELECT DISTINCT data FROM conferencia_rotas_dados ORDER BY data DESC LIMIT 5');
+      console.log('[CONFERENCIA] Datas disponíveis na tabela:', availableDatesQuery.rows.map((r: any) => r.data));
+    }
 
     console.log('[CONFERENCIA] Buscando abastecimentos para data ISO:', isoDate);
 
@@ -258,6 +280,11 @@ export const generateReport = async (req: Request, res: Response) => {
       fuel_card_requests: requestData.length,
       solicitacoes_fuel_card: fuelCardData.length
     });
+
+    // Debug: mostrar algumas placas de combustível se encontradas
+    if (fuelCardData.length > 0) {
+      console.log('[CONFERENCIA] Primeiras placas de combustível:', fuelCardData.slice(0, 5).map((f: any) => f.placa));
+    }
 
     // Combinar registros de combustível de TODAS as fontes
     const allFuelRecords: FuelRecord[] = [
