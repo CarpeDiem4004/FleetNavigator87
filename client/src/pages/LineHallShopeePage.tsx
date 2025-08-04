@@ -1030,8 +1030,8 @@ export default function LineHallShopeePage() {
           </div>
         </div>
         
-        {/* Cards de estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Cards de estatísticas - Primeira linha */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {/* Card de Checklist */}
           <Card className="overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-950 dark:to-blue-900">
@@ -1165,6 +1165,10 @@ export default function LineHallShopeePage() {
             </CardContent>
           </Card>
           
+        </div>
+
+        {/* Cards de estatísticas - Segunda linha */}
+        <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
           {/* Card de Rotas */}
           <Card className="overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-green-100 to-green-50 dark:from-green-950 dark:to-green-900">
@@ -1215,84 +1219,7 @@ export default function LineHallShopeePage() {
             </CardContent>
           </Card>
 
-          {/* Card de Solicitações de Cartão Combustível */}
-          <Card className="overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-green-100 to-green-50 dark:from-green-950 dark:to-green-900">
-              <CardTitle className="flex items-center text-lg">
-                <CreditCard className="mr-2 h-5 w-5 text-green-600 dark:text-green-400" />
-                Solicitações de Cartão Combustível
-                {pendingFuelRequests > 0 && (
-                  <Badge className="ml-2 bg-red-500 text-white animate-pulse">
-                    {pendingFuelRequests}
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="flex flex-col space-y-4">
-                {fuelCardRequests.length > 0 ? (
-                  <>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {fuelCardRequests.slice(0, 5).map((request) => (
-                        <div key={request.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-sm">{request.motorista_nome}</span>
-                            <Badge 
-                              className={
-                                request.status === 'aprovada' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : request.status === 'rejeitada'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }
-                            >
-                              {request.status === 'aprovada' ? 'Aprovada' : 
-                               request.status === 'rejeitada' ? 'Rejeitada' : 'Pendente'}
-                            </Badge>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            <div>Veículo: {request.veiculo_placa}</div>
-                            <div>Rota: {request.rota_origem} → {request.rota_destino}</div>
-                            {request.status === 'aprovada' && request.valor_aprovado && (
-                              <div className="text-green-600 font-medium mt-1">
-                                Valor aprovado: R$ {Number(request.valor_aprovado).toFixed(2)}
-                              </div>
-                            )}
-                            {((request as any).valor_calculado || request.valor_solicitado) && (
-                              <div className="text-blue-600">
-                                Valor solicitado: R$ {Number((request as any).valor_calculado || request.valor_solicitado || 0).toFixed(2)}
-                              </div>
-                            )}
-                            {request.observacoes_operador && (
-                              <div className="text-orange-600 mt-1">
-                                Obs: {request.observacoes_operador}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setShowFuelRequests(!showFuelRequests)}
-                      className="w-full"
-                    >
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      {showFuelRequests ? 'Ocultar' : 'Ver Todas as Solicitações'}
-                    </Button>
-                  </>
-                ) : (
-                  <div className="text-center py-4">
-                    <CreditCard className="mx-auto h-8 w-8 mb-2 text-muted-foreground opacity-50" />
-                    <p className="text-sm text-muted-foreground">Nenhuma solicitação de cartão</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Card de Acesso */}
+          {/* Card de Acesso para Motoristas */}
           <Card className="overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-purple-100 to-purple-50 dark:from-purple-950 dark:to-purple-900">
               <CardTitle className="flex items-center text-lg">
@@ -1315,6 +1242,86 @@ export default function LineHallShopeePage() {
                 <Button variant="outline" size="sm" className="w-full" onClick={() => window.open('/driver-access', '_blank')}>
                   Acessar Interface do Motorista
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Card de Solicitações de Cartão Combustível - Linha independente */}
+        <div className="mb-6">
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-green-100 to-green-50 dark:from-green-950 dark:to-green-900">
+              <CardTitle className="flex items-center text-lg">
+                <CreditCard className="mr-2 h-5 w-5 text-green-600 dark:text-green-400" />
+                Solicitações de Cartão Combustível
+                {pendingFuelRequests > 0 && (
+                  <Badge className="ml-2 bg-red-500 text-white animate-pulse">
+                    {pendingFuelRequests}
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="flex flex-col space-y-4">
+                {fuelCardRequests.length > 0 ? (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {fuelCardRequests.slice(0, 6).map((request) => (
+                        <div key={request.id} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="font-medium text-sm">{request.motorista_nome}</span>
+                            <Badge 
+                              className={
+                                request.status === 'aprovada' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : request.status === 'rejeitada'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }
+                            >
+                              {request.status === 'aprovada' ? 'Aprovada' : 
+                               request.status === 'rejeitada' ? 'Rejeitada' : 'Pendente'}
+                            </Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            <div><strong>Veículo:</strong> {request.veiculo_placa}</div>
+                            <div><strong>Rota:</strong> {request.rota_origem} → {request.rota_destino}</div>
+                            {request.status === 'aprovada' && request.valor_aprovado && (
+                              <div className="text-green-600 font-medium">
+                                <strong>Valor aprovado:</strong> R$ {Number(request.valor_aprovado).toFixed(2)}
+                              </div>
+                            )}
+                            {((request as any).valor_calculado || request.valor_solicitado) && (
+                              <div className="text-blue-600">
+                                <strong>Valor solicitado:</strong> R$ {Number((request as any).valor_calculado || request.valor_solicitado || 0).toFixed(2)}
+                              </div>
+                            )}
+                            {request.observacoes_operador && (
+                              <div className="text-orange-600">
+                                <strong>Obs:</strong> {request.observacoes_operador}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setShowFuelRequests(!showFuelRequests)}
+                      className="w-full"
+                    >
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      {showFuelRequests ? 'Ocultar' : 'Ver Todas as Solicitações'}
+                    </Button>
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <CreditCard className="mx-auto h-12 w-12 mb-4 text-muted-foreground opacity-50" />
+                    <p className="text-sm text-muted-foreground">Nenhuma solicitação de cartão combustível</p>
+                    <p className="text-xs text-muted-foreground mt-1">As solicitações dos motoristas aparecerão aqui</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
