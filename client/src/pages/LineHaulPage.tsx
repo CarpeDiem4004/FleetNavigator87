@@ -121,6 +121,8 @@ const LineHaulPage = () => {
   const [checklistFilter, setChecklistFilter] = useState<'todos' | 'concluidos' | 'pendentes'>('todos');
   const [showMaintenance, setShowMaintenance] = useState(false);
   const [maintenanceFilter, setMaintenanceFilter] = useState<'todos' | 'pendentes' | 'em_andamento' | 'concluidas'>('todos');
+  const [showGarage, setShowGarage] = useState(false);
+  const [garageFilter, setGarageFilter] = useState<'todos' | 'cavalos' | 'carretas' | 'manutencao'>('todos');
   
   // Estados para estatísticas
   const [stats, setStats] = useState({
@@ -413,6 +415,13 @@ const LineHaulPage = () => {
         setIsLoading(false);
         setShowMaintenance(true);
         break;
+      case 'gerenciar-garagem':
+        setIsLoading(true);
+        await fetchVehicles();
+        await fetchStats();
+        setIsLoading(false);
+        setShowGarage(true);
+        break;
       case 'cadastrar-veiculo':
         window.open('/vehicles', '_blank');
         break;
@@ -484,7 +493,7 @@ const LineHaulPage = () => {
           </div>
         </div>
 
-        {/* Interface condicional - Dashboard, Checklists ou Manutenção */}
+        {/* Interface condicional - Dashboard, Checklists, Manutenção ou Garagem */}
         {showChecklists ? (
           <div className="space-y-6">
             {/* Filtros de Checklist */}
@@ -713,6 +722,160 @@ const LineHaulPage = () => {
               ))}
             </div>
           </div>
+        ) : showGarage ? (
+          <div className="space-y-6">
+            {/* Header com botão voltar para Garagem */}
+            <Card className="bg-white/90 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between text-green-700">
+                  <span className="flex items-center">
+                    <Car className="h-5 w-5 mr-2" />
+                    Gerenciar Veículos na Garagem
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowGarage(false)}
+                    className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Voltar ao Dashboard
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+            </Card>
+
+            {/* Filtros de Garagem */}
+            <Card className="bg-white/90 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center text-green-700">
+                  <Car className="h-5 w-5 mr-2" />
+                  Filtrar Veículos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2 flex-wrap">
+                  <Button 
+                    variant={garageFilter === 'todos' ? 'default' : 'outline'}
+                    onClick={() => setGarageFilter('todos')}
+                    className="flex-1"
+                  >
+                    Todos ({vehicles.length})
+                  </Button>
+                  <Button 
+                    variant={garageFilter === 'cavalos' ? 'default' : 'outline'}
+                    onClick={() => setGarageFilter('cavalos')}
+                    className="flex-1"
+                  >
+                    Cavalos ({vehicles.filter(v => v.vehicleType === 'cavalo_mecanico').length})
+                  </Button>
+                  <Button 
+                    variant={garageFilter === 'carretas' ? 'default' : 'outline'}
+                    onClick={() => setGarageFilter('carretas')}
+                    className="flex-1"
+                  >
+                    Carretas ({vehicles.filter(v => v.vehicleType === 'carreta').length})
+                  </Button>
+                  <Button 
+                    variant={garageFilter === 'manutencao' ? 'default' : 'outline'}
+                    onClick={() => setGarageFilter('manutencao')}
+                    className="flex-1"
+                  >
+                    Em Manutenção ({vehicles.filter(v => v.status === 'em_manutencao').length})
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Lista de Veículos na Garagem */}
+            <div className="grid gap-4">
+              {vehicles
+                .filter(vehicle => {
+                  if (garageFilter === 'todos') return true;
+                  if (garageFilter === 'cavalos') return vehicle.vehicleType === 'cavalo_mecanico';
+                  if (garageFilter === 'carretas') return vehicle.vehicleType === 'carreta';
+                  if (garageFilter === 'manutencao') return vehicle.status === 'em_manutencao';
+                  return true;
+                })
+                .map(vehicle => (
+                <Card key={vehicle.id} className="bg-white/90 backdrop-blur-sm">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg">{vehicle.plate}</h3>
+                        <p className="text-sm text-gray-600">Modelo: {vehicle.model}</p>
+                        <p className="text-sm text-gray-600">Tipo: {vehicle.vehicleType === 'cavalo_mecanico' ? 'Cavalo Mecânico' : vehicle.vehicleType === 'carreta' ? 'Carreta' : vehicle.vehicleType}</p>
+                        <p className="text-sm text-gray-600">Operação: {vehicle.operacao_tipo || 'Line Haul'}</p>
+                        {vehicle.basename && (
+                          <p className="text-sm text-gray-600">Base: {vehicle.basename}</p>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge 
+                          variant="default"
+                          className={
+                            vehicle.status === 'ativo' ? 'bg-green-500' :
+                            vehicle.status === 'em_manutencao' ? 'bg-orange-500' :
+                            vehicle.status === 'inativo' ? 'bg-red-500' :
+                            'bg-gray-500'
+                          }
+                        >
+                          {vehicle.status === 'ativo' ? 'Ativo' :
+                           vehicle.status === 'em_manutencao' ? 'Em Manutenção' :
+                           vehicle.status === 'inativo' ? 'Inativo' :
+                           vehicle.status || 'Indefinido'}
+                        </Badge>
+                        <Badge 
+                          variant="outline"
+                          className={
+                            vehicle.vehicleType === 'cavalo_mecanico' ? 'border-blue-500 text-blue-700' :
+                            vehicle.vehicleType === 'carreta' ? 'border-green-500 text-green-700' :
+                            'border-gray-500 text-gray-700'
+                          }
+                        >
+                          {vehicle.vehicleType === 'cavalo_mecanico' ? 'Cavalo' :
+                           vehicle.vehicleType === 'carreta' ? 'Carreta' :
+                           vehicle.vehicleType || 'Outro'}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="mb-3">
+                      {vehicle.year && (
+                        <p className="text-sm text-gray-700">
+                          <strong>Ano:</strong> {vehicle.year}
+                        </p>
+                      )}
+                      {vehicle.color && (
+                        <p className="text-sm text-gray-700">
+                          <strong>Cor:</strong> {vehicle.color}
+                        </p>
+                      )}
+                      {vehicle.lastMaintenanceDate && (
+                        <p className="text-sm text-gray-700">
+                          <strong>Última Manutenção:</strong> {new Date(vehicle.lastMaintenanceDate).toLocaleDateString('pt-BR')}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <Eye className="h-4 w-4 mr-1" />
+                        Ver Detalhes
+                      </Button>
+                      <Button size="sm" className="flex-1 bg-orange-500 hover:bg-orange-600">
+                        <Wrench className="h-4 w-4 mr-1" />
+                        Solicitar Manutenção
+                      </Button>
+                      <Button size="sm" className="flex-1 bg-blue-500 hover:bg-blue-600">
+                        <Settings className="h-4 w-4 mr-1" />
+                        Editar
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
         ) : (
           <>
             {/* Painel de Controle */}
@@ -911,9 +1074,14 @@ const LineHaulPage = () => {
                   )}
                   Atualizar
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1">
-                  <Eye className="h-4 w-4 mr-1" />
-                  Ver Veículos
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => handleCardAction('gerenciar-garagem')}
+                >
+                  <Settings className="h-4 w-4 mr-1" />
+                  Gerenciar
                 </Button>
               </div>
             </CardContent>
