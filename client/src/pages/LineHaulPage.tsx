@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Search, 
   CheckCircle, 
@@ -22,6 +23,7 @@ import lineHaulLayoutImage from '@assets/Layout Line haul  (1908 x 1126 px)_1754
 
 const LineHaulPage = () => {
   const [searchTerm, setSearchTerm] = React.useState('');
+  const { toast } = useToast();
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -29,7 +31,36 @@ const LineHaulPage = () => {
 
   const handleCardAction = (action: string) => {
     console.log(`Ação executada: ${action}`);
-    // Aqui podem ser implementadas as funcionalidades específicas
+    
+    // Mapear ações para mensagens apropriadas
+    const actionMessages: { [key: string]: { title: string; description: string } } = {
+      'cadastrar-veiculo': { title: 'Cadastrar Veículo', description: 'Redirecionando para o formulário de cadastro de veículo' },
+      'cadastrar-motorista': { title: 'Cadastrar Motorista', description: 'Redirecionando para o formulário de cadastro de motorista' },
+      'solicitacoes-cartao': { title: 'Solicitações de Cartão', description: 'Abrindo módulo de solicitações de cartão combustível' },
+      'atualizar-dashboard': { title: 'Atualizar Dashboard', description: 'Atualizando dados do painel Line Haul' },
+      'sair-sistema': { title: 'Sair do Sistema', description: 'Finalizando sessão do usuário' },
+      'nova-viagem': { title: 'Nova Viagem', description: 'Iniciando processo de cadastro de nova viagem' },
+      'atualizar-checklists': { title: 'Atualizar Checklists', description: 'Atualizando dados dos checklists de motoristas' },
+      'gerenciar-checklists': { title: 'Gerenciar Checklists', description: 'Abrindo painel de gerenciamento de checklists' },
+      'atualizar-manutencao': { title: 'Atualizar Manutenção', description: 'Atualizando dados das solicitações de manutenção' },
+      'gerenciar-manutencao': { title: 'Gerenciar Manutenção', description: 'Abrindo painel de gerenciamento de manutenção' },
+      'atualizar-garagem': { title: 'Atualizar Garagem', description: 'Atualizando dados dos veículos na garagem' },
+      'ver-veiculos-parados': { title: 'Ver Veículos Parados', description: 'Exibindo lista detalhada de veículos parados' },
+      'acessar-interface-motoristas': { title: 'Interface de Motoristas', description: 'Abrindo interface dedicada para motoristas' },
+      'ver-rotas': { title: 'Ver Rotas', description: 'Exibindo lista completa de rotas cadastradas' },
+      'nova-rota': { title: 'Nova Rota', description: 'Iniciando cadastro de nova rota' },
+      'iniciar-operacao': { title: 'Iniciar Operação', description: 'Iniciando nova operação Line Haul' }
+    };
+
+    const message = actionMessages[action] || { 
+      title: 'Ação Executada', 
+      description: `Função ${action} executada com sucesso` 
+    };
+
+    toast({
+      title: message.title,
+      description: message.description,
+    });
   };
 
   return (
@@ -63,27 +94,27 @@ const LineHaulPage = () => {
           
           {/* Botões de ação */}
           <div className="flex flex-wrap gap-3 mb-6">
-            <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+            <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleCardAction('cadastrar-veiculo')}>
               <Car className="h-4 w-4 mr-2" />
               Cadastrar Veículo
             </Button>
-            <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+            <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleCardAction('cadastrar-motorista')}>
               <Users className="h-4 w-4 mr-2" />
               Cadastrar Motorista
             </Button>
-            <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+            <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleCardAction('solicitacoes-cartao')}>
               <Settings className="h-4 w-4 mr-2" />
               Solicitações de Cartão
             </Button>
-            <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+            <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleCardAction('atualizar-dashboard')}>
               <Eye className="h-4 w-4 mr-2" />
               Atualizar
             </Button>
-            <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+            <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleCardAction('sair-sistema')}>
               <LogOut className="h-4 w-4 mr-2" />
               Sair
             </Button>
-            <Button className="bg-green-500 hover:bg-green-600 text-white">
+            <Button className="bg-green-500 hover:bg-green-600 text-white" onClick={() => handleCardAction('nova-viagem')}>
               <Plus className="h-4 w-4 mr-2" />
               Nova Viagem
             </Button>
@@ -124,11 +155,11 @@ const LineHaulPage = () => {
               </div>
               <div className="text-sm text-gray-600 mb-4">Total de checklists: 0</div>
               <div className="flex gap-2">
-                <Button size="sm" className="flex-1 bg-blue-500 hover:bg-blue-600">
+                <Button size="sm" className="flex-1 bg-blue-500 hover:bg-blue-600" onClick={() => handleCardAction('atualizar-checklists')}>
                   <Eye className="h-4 w-4 mr-1" />
                   Atualizar
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button size="sm" variant="outline" className="flex-1" onClick={() => handleCardAction('gerenciar-checklists')}>
                   <Settings className="h-4 w-4 mr-1" />
                   Gerenciar
                 </Button>
@@ -157,11 +188,11 @@ const LineHaulPage = () => {
               </div>
               <div className="text-sm text-gray-600 mb-4">Total de solicitações: 4</div>
               <div className="flex gap-2">
-                <Button size="sm" className="flex-1 bg-blue-500 hover:bg-blue-600">
+                <Button size="sm" className="flex-1 bg-blue-500 hover:bg-blue-600" onClick={() => handleCardAction('atualizar-manutencao')}>
                   <Eye className="h-4 w-4 mr-1" />
                   Atualizar
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button size="sm" variant="outline" className="flex-1" onClick={() => handleCardAction('gerenciar-manutencao')}>
                   <Settings className="h-4 w-4 mr-1" />
                   Gerenciar
                 </Button>
@@ -193,11 +224,11 @@ const LineHaulPage = () => {
                 <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">6 dias</Badge>
               </div>
               <div className="flex gap-2">
-                <Button size="sm" className="flex-1 bg-blue-500 hover:bg-blue-600">
+                <Button size="sm" className="flex-1 bg-blue-500 hover:bg-blue-600" onClick={() => handleCardAction('atualizar-garagem')}>
                   <Eye className="h-4 w-4 mr-1" />
                   Atualizar
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button size="sm" variant="outline" className="flex-1" onClick={() => handleCardAction('ver-veiculos-parados')}>
                   <Eye className="h-4 w-4 mr-1" />
                   Ver Veículos Parados
                 </Button>
@@ -220,7 +251,7 @@ const LineHaulPage = () => {
               <div className="text-sm text-blue-600 mb-4 break-all">
                 URL de acesso: https://muricionfleet2.co/app/system/driver-access
               </div>
-              <Button className="w-full bg-purple-500 hover:bg-purple-600 text-white">
+              <Button className="w-full bg-purple-500 hover:bg-purple-600 text-white" onClick={() => handleCardAction('acessar-interface-motoristas')}>
                 Acessar Interface do Motorista
               </Button>
             </CardContent>
@@ -257,11 +288,11 @@ const LineHaulPage = () => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button className="flex-1 bg-blue-500 hover:bg-blue-600 text-white">
+                <Button className="flex-1 bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleCardAction('ver-rotas')}>
                   <Eye className="h-4 w-4 mr-2" />
                   Ver Rotas
                 </Button>
-                <Button className="flex-1 bg-green-500 hover:bg-green-600 text-white">
+                <Button className="flex-1 bg-green-500 hover:bg-green-600 text-white" onClick={() => handleCardAction('nova-rota')}>
                   <Plus className="h-4 w-4 mr-2" />
                   Nova Rota
                 </Button>
@@ -283,7 +314,7 @@ const LineHaulPage = () => {
                 <p className="text-gray-600 mb-4">
                   Gerencie suas operações de Line Haul com eficiência
                 </p>
-                <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+                <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleCardAction('iniciar-operacao')}>
                   <Plus className="h-4 w-4 mr-2" />
                   Iniciar Operação
                 </Button>
