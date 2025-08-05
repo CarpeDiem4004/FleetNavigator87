@@ -227,9 +227,15 @@ const Vehicles: React.FC = () => {
   });
   
   const filteredVehicles = React.useMemo(() => {
-    if (!vehicles || !Array.isArray(vehicles)) return [];
+    console.log("Dados dos veículos recebidos:", vehicles);
+    console.log("Filtros aplicados:", filters);
     
-    return vehicles.filter((vehicle: any) => {
+    if (!vehicles || !Array.isArray(vehicles)) {
+      console.log("Veículos não são array ou estão vazios:", vehicles);
+      return [];
+    }
+    
+    const filtered = vehicles.filter((vehicle: any) => {
       return (
         (filters.status === '' || vehicle.status === filters.status) &&
         (filters.type === '' || vehicle.vehicleType === filters.type) &&
@@ -237,6 +243,9 @@ const Vehicles: React.FC = () => {
         (filters.plate === '' || vehicle.plate.toLowerCase().includes(filters.plate.toLowerCase()))
       );
     });
+    
+    console.log("Veículos filtrados:", filtered);
+    return filtered;
   }, [vehicles, filters]);
   
   const handleFilterChange = (key: string, value: string) => {
@@ -308,15 +317,33 @@ const Vehicles: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todas</SelectItem>
-                  {Array.isArray(bases) && bases.length > 0 ? (
-                    bases.map((base: any) => (
-                      <SelectItem key={base.id} value={base.id.toString()}>
-                        {base.name} {base.location ? `(${base.location})` : ''}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="12">Gestão de Frotas</SelectItem>
-                  )}
+                  {(() => {
+                    // Handle different API response structures safely
+                    try {
+                      let baseData = [];
+                      
+                      if (bases && typeof bases === 'object') {
+                        if ((bases as any)?.data && Array.isArray((bases as any).data)) {
+                          baseData = (bases as any).data;
+                        } else if (Array.isArray(bases)) {
+                          baseData = bases;
+                        }
+                      }
+                      
+                      if (Array.isArray(baseData) && baseData.length > 0) {
+                        return baseData.map((base: any) => (
+                          <SelectItem key={base.id} value={base.id.toString()}>
+                            {base.name} {base.location ? `(${base.location})` : ''}
+                          </SelectItem>
+                        ));
+                      }
+                    } catch (error) {
+                      console.error('Erro ao processar bases no filtro:', error);
+                    }
+                    
+                    // Fallback option
+                    return <SelectItem value="12">Gestão de Frotas</SelectItem>;
+                  })()}
                 </SelectContent>
               </Select>
             </div>
@@ -413,7 +440,21 @@ const Vehicles: React.FC = () => {
                       {getStatusBadge(vehicle.status as VehicleStatusType)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {Array.isArray(bases) && bases.find((base: any) => base.id === vehicle.baseId)?.name || '-'}
+                      {(() => {
+                        try {
+                          let baseData = [];
+                          if (bases && typeof bases === 'object') {
+                            if ((bases as any)?.data && Array.isArray((bases as any).data)) {
+                              baseData = (bases as any).data;
+                            } else if (Array.isArray(bases)) {
+                              baseData = bases;
+                            }
+                          }
+                          return baseData.find((base: any) => base.id === vehicle.baseId)?.name || '-';
+                        } catch (error) {
+                          return '-';
+                        }
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-3">
@@ -443,6 +484,18 @@ const Vehicles: React.FC = () => {
                     </td>
                   </tr>
                 ))
+              )}
+              
+              {/* No data row */}
+              {!isLoading && (!filteredVehicles || filteredVehicles.length === 0) && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <div className="text-gray-500">
+                      <p className="text-lg font-medium">Nenhum veículo encontrado</p>
+                      <p className="text-sm">Verifique os filtros aplicados ou adicione um novo veículo.</p>
+                    </div>
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -649,8 +702,8 @@ const Vehicles: React.FC = () => {
                         let baseData = [];
                         
                         if (bases && typeof bases === 'object') {
-                          if (bases.data && Array.isArray(bases.data)) {
-                            baseData = bases.data;
+                          if ((bases as any)?.data && Array.isArray((bases as any).data)) {
+                            baseData = (bases as any).data;
                           } else if (Array.isArray(bases)) {
                             baseData = bases;
                           }
