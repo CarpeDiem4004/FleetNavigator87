@@ -418,12 +418,26 @@ const FuelCardRequestsPanel: React.FC = () => {
 
   const handleExportExcel = async () => {
     try {
-      // Usar GET em vez de POST para evitar problema de payload grande
+      console.log('[EXPORT] Iniciando exportação de relatório Excel...');
+      
+      // Verificar se há token de autenticação
+      const authToken = localStorage.getItem('authToken');
+      console.log('[EXPORT] Token disponível:', !!authToken);
+      
+      // Usar GET para evitar problema de payload grande
       const response = await apiRequest('GET', '/api/fuel-card-solicitations/export');
+      
+      console.log('[EXPORT] Resposta recebida:', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText
+      });
       
       if (response.ok) {
         // Criar URL para download
         const blob = await response.blob();
+        console.log('[EXPORT] Blob criado:', blob.size, 'bytes');
+        
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -433,17 +447,35 @@ const FuelCardRequestsPanel: React.FC = () => {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
         
+        console.log('[EXPORT] Download iniciado com sucesso');
         toast({
           title: 'Exportação concluída',
           description: 'Relatório Excel gerado com sucesso',
         });
       } else {
-        throw new Error('Erro ao exportar dados');
+        const errorText = await response.text();
+        console.error('[EXPORT] Erro na resposta:', errorText);
+        throw new Error(`${response.status}: ${errorText}`);
       }
     } catch (error) {
+      console.error('[EXPORT] Erro na exportação:', error);
+      
+      let errorMessage = 'Não foi possível gerar o arquivo Excel';
+      if (error instanceof Error) {
+        if (error.message.includes('401')) {
+          errorMessage = 'Sessão expirada. Faça login novamente.';
+        } else if (error.message.includes('403')) {
+          errorMessage = 'Sem permissão para exportar relatórios.';
+        } else if (error.message.includes('500')) {
+          errorMessage = 'Erro no servidor. Tente novamente em alguns minutos.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: 'Erro na exportação',
-        description: 'Não foi possível gerar o arquivo Excel',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
