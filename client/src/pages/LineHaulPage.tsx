@@ -84,6 +84,21 @@ interface DriverChecklist {
   updated_at: string;
 }
 
+interface MaintenanceRequest {
+  id: number;
+  vehicle_plate: string;
+  vehicle_model?: string;
+  driver_name?: string;
+  maintenance_type: string;
+  description: string;
+  status: 'pendente' | 'em_andamento' | 'concluida';
+  priority: 'baixa' | 'media' | 'alta' | 'urgente';
+  created_at: string;
+  updated_at: string;
+  estimated_cost?: number;
+  workshop_name?: string;
+}
+
 const LineHaulPage = () => {
   const { toast } = useToast();
   const { user, logout } = useAuth();
@@ -103,6 +118,8 @@ const LineHaulPage = () => {
   const [showRoutes, setShowRoutes] = useState(false);
   const [showChecklists, setShowChecklists] = useState(false);
   const [checklistFilter, setChecklistFilter] = useState<'todos' | 'concluidos' | 'pendentes'>('todos');
+  const [showMaintenance, setShowMaintenance] = useState(false);
+  const [maintenanceFilter, setMaintenanceFilter] = useState<'todos' | 'pendentes' | 'em_andamento' | 'concluidas'>('todos');
   
   // Estados para estatísticas
   const [stats, setStats] = useState({
@@ -240,6 +257,76 @@ const LineHaulPage = () => {
     }
   };
 
+  // Estado para solicitações de manutenção
+  const [maintenanceRequests, setMaintenanceRequests] = useState<MaintenanceRequest[]>([]);
+
+  const fetchMaintenanceRequests = async () => {
+    try {
+      // Por enquanto usando dados simulados - futuramente conectar com API real
+      const mockMaintenanceRequests: MaintenanceRequest[] = [
+        {
+          id: 1,
+          vehicle_plate: "FNJ2854",
+          vehicle_model: "Volkswagen Constellation",
+          driver_name: "Adeilton Lima Cavalcante",
+          maintenance_type: "Preventiva",
+          description: "Troca de óleo e filtros - manutenção programada",
+          status: "pendente",
+          priority: "media",
+          created_at: "2025-08-05T10:30:00Z",
+          updated_at: "2025-08-05T10:30:00Z",
+          estimated_cost: 450.00,
+          workshop_name: "Oficina Line Haul SP"
+        },
+        {
+          id: 2,
+          vehicle_plate: "ABC1234",
+          vehicle_model: "Mercedes-Benz Actros",
+          driver_name: "João Silva Santos",
+          maintenance_type: "Corretiva",
+          description: "Problema no sistema de freios - pedal está mole, necessário verificação urgente",
+          status: "em_andamento",
+          priority: "urgente",
+          created_at: "2025-08-04T14:15:00Z",
+          updated_at: "2025-08-05T08:30:00Z",
+          estimated_cost: 1200.00,
+          workshop_name: "Auto Mecânica São Paulo"
+        },
+        {
+          id: 3,
+          vehicle_plate: "XYZ5678",
+          vehicle_model: "Scania R450",
+          driver_name: "Maria Santos",
+          maintenance_type: "Preventiva",
+          description: "Revisão dos 10.000 km - troca de filtros e verificação geral",
+          status: "concluida",
+          priority: "baixa",
+          created_at: "2025-08-03T09:00:00Z",
+          updated_at: "2025-08-04T16:45:00Z",
+          estimated_cost: 680.00,
+          workshop_name: "Oficina Scania Autorizada"
+        },
+        {
+          id: 4,
+          vehicle_plate: "DEF9012",
+          vehicle_model: "Volvo FH540",
+          driver_name: "Carlos Pereira",
+          maintenance_type: "Corretiva",
+          description: "Vazamento de óleo no motor - necessário reparo imediato",
+          status: "pendente",
+          priority: "alta",
+          created_at: "2025-08-05T11:45:00Z",
+          updated_at: "2025-08-05T11:45:00Z",
+          estimated_cost: 850.00,
+          workshop_name: "Oficina Volvo"
+        }
+      ];
+      setMaintenanceRequests(mockMaintenanceRequests);
+    } catch (error) {
+      console.error('Erro ao buscar solicitações de manutenção:', error);
+    }
+  };
+
   const fetchStats = async () => {
     try {
       // Buscar estatísticas de checklist
@@ -319,6 +406,12 @@ const LineHaulPage = () => {
         setIsLoading(false);
         setShowChecklists(true);
         break;
+      case 'gerenciar-manutencao':
+        setIsLoading(true);
+        await fetchMaintenanceRequests();
+        setIsLoading(false);
+        setShowMaintenance(true);
+        break;
       case 'cadastrar-veiculo':
         window.open('/vehicles', '_blank');
         break;
@@ -390,7 +483,7 @@ const LineHaulPage = () => {
           </div>
         </div>
 
-        {/* Interface condicional - Dashboard ou Checklists */}
+        {/* Interface condicional - Dashboard, Checklists ou Manutenção */}
         {showChecklists ? (
           <div className="space-y-6">
             {/* Filtros de Checklist */}
@@ -464,6 +557,153 @@ const LineHaulPage = () => {
                         <Button size="sm" className="flex-1 bg-green-500 hover:bg-green-600">
                           <CheckCircle className="h-4 w-4 mr-1" />
                           Marcar como Concluído
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ) : showMaintenance ? (
+          <div className="space-y-6">
+            {/* Header com botão voltar para Manutenção */}
+            <Card className="bg-white/90 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between text-orange-700">
+                  <span className="flex items-center">
+                    <Wrench className="h-5 w-5 mr-2" />
+                    Gerenciar Solicitações de Manutenção
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowMaintenance(false)}
+                    className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Voltar ao Dashboard
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+            </Card>
+
+            {/* Filtros de Manutenção */}
+            <Card className="bg-white/90 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center text-orange-700">
+                  <Wrench className="h-5 w-5 mr-2" />
+                  Filtrar Solicitações
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2 flex-wrap">
+                  <Button 
+                    variant={maintenanceFilter === 'todos' ? 'default' : 'outline'}
+                    onClick={() => setMaintenanceFilter('todos')}
+                    className="flex-1"
+                  >
+                    Todos ({maintenanceRequests.length})
+                  </Button>
+                  <Button 
+                    variant={maintenanceFilter === 'pendentes' ? 'default' : 'outline'}
+                    onClick={() => setMaintenanceFilter('pendentes')}
+                    className="flex-1"
+                  >
+                    Pendentes ({maintenanceRequests.filter(m => m.status === 'pendente').length})
+                  </Button>
+                  <Button 
+                    variant={maintenanceFilter === 'em_andamento' ? 'default' : 'outline'}
+                    onClick={() => setMaintenanceFilter('em_andamento')}
+                    className="flex-1"
+                  >
+                    Em Andamento ({maintenanceRequests.filter(m => m.status === 'em_andamento').length})
+                  </Button>
+                  <Button 
+                    variant={maintenanceFilter === 'concluidas' ? 'default' : 'outline'}
+                    onClick={() => setMaintenanceFilter('concluidas')}
+                    className="flex-1"
+                  >
+                    Concluídas ({maintenanceRequests.filter(m => m.status === 'concluida').length})
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Lista de Solicitações de Manutenção */}
+            <div className="grid gap-4">
+              {maintenanceRequests
+                .filter(request => 
+                  maintenanceFilter === 'todos' || request.status === maintenanceFilter
+                )
+                .map(request => (
+                <Card key={request.id} className="bg-white/90 backdrop-blur-sm">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg">{request.vehicle_plate} - {request.vehicle_model}</h3>
+                        <p className="text-sm text-gray-600">Motorista: {request.driver_name}</p>
+                        <p className="text-sm text-gray-600">Tipo: {request.maintenance_type}</p>
+                        <p className="text-sm text-gray-600">Data: {new Date(request.created_at).toLocaleDateString('pt-BR')}</p>
+                        {request.workshop_name && (
+                          <p className="text-sm text-gray-600">Oficina: {request.workshop_name}</p>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge 
+                          variant="default"
+                          className={
+                            request.status === 'concluida' ? 'bg-green-500' :
+                            request.status === 'em_andamento' ? 'bg-blue-500' :
+                            'bg-yellow-500'
+                          }
+                        >
+                          {request.status === 'concluida' ? 'Concluída' :
+                           request.status === 'em_andamento' ? 'Em Andamento' :
+                           'Pendente'}
+                        </Badge>
+                        <Badge 
+                          variant="outline"
+                          className={
+                            request.priority === 'urgente' ? 'border-red-500 text-red-700' :
+                            request.priority === 'alta' ? 'border-orange-500 text-orange-700' :
+                            request.priority === 'media' ? 'border-yellow-500 text-yellow-700' :
+                            'border-gray-500 text-gray-700'
+                          }
+                        >
+                          {request.priority === 'urgente' ? 'Urgente' :
+                           request.priority === 'alta' ? 'Alta' :
+                           request.priority === 'media' ? 'Média' :
+                           'Baixa'}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="mb-3">
+                      <p className="text-sm text-gray-700">
+                        <strong>Descrição:</strong> {request.description}
+                      </p>
+                      {request.estimated_cost && (
+                        <p className="text-sm text-gray-700 mt-1">
+                          <strong>Custo Estimado:</strong> R$ {request.estimated_cost.toFixed(2)}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <Eye className="h-4 w-4 mr-1" />
+                        Ver Detalhes
+                      </Button>
+                      {request.status === 'pendente' && (
+                        <Button size="sm" className="flex-1 bg-blue-500 hover:bg-blue-600">
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Iniciar Manutenção
+                        </Button>
+                      )}
+                      {request.status === 'em_andamento' && (
+                        <Button size="sm" className="flex-1 bg-green-500 hover:bg-green-600">
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Finalizar
                         </Button>
                       )}
                     </div>
@@ -613,7 +853,12 @@ const LineHaulPage = () => {
                   )}
                   Atualizar
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => handleCardAction('gerenciar-manutencao')}
+                >
                   <Settings className="h-4 w-4 mr-1" />
                   Gerenciar
                 </Button>
