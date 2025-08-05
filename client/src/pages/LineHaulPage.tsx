@@ -182,20 +182,44 @@ const LineHaulPage = () => {
     observacoes: ''
   });
 
+  // Tipo para operações Line Haul
+  interface LineHaulOperation {
+    id?: number;
+    motorista_id: number;
+    motorista_nome: string;
+    tipo_veiculo: 'truck' | 'cavalo_mecanico';
+    placa_truck?: string;
+    placa_cavalo?: string;
+    placa_carreta_1?: string;
+    placa_carreta_2?: string;
+    rota_id: number;
+    rota_nome: string;
+    data_inicio: string;
+    observacoes?: string;
+    status: 'finalizada' | 'cancelada_cliente' | 'no_show' | 'programada';
+    justificativa_no_show?: string;
+    data_criacao?: string;
+    created_by?: string;
+  }
+
   // Estados para gestão de operações
   const [showOperationsManagement, setShowOperationsManagement] = useState(false);
   const [showNewOperation, setShowNewOperation] = useState(false);
-  const [operationsData, setOperationsData] = useState([]);
-  const [newOperation, setNewOperation] = useState({
+  const [operationsData, setOperationsData] = useState<LineHaulOperation[]>([]);
+  const [newOperation, setNewOperation] = useState<LineHaulOperation>({
     motorista_id: 0,
     motorista_nome: '',
-    veiculo_placa: '',
+    tipo_veiculo: 'truck',
+    placa_truck: '',
+    placa_cavalo: '',
+    placa_carreta_1: '',
+    placa_carreta_2: '',
     rota_id: 0,
     rota_nome: '',
     data_inicio: new Date().toISOString().split('T')[0],
     observacoes: '',
-    status: 'programada',
-    prioridade: 'normal'
+    status: 'finalizada',
+    justificativa_no_show: ''
   });
 
   useEffect(() => {
@@ -481,10 +505,40 @@ const LineHaulPage = () => {
   };
 
   const handleCreateOperation = async () => {
-    if (!newOperation.motorista_id || !newOperation.veiculo_placa || !newOperation.rota_id) {
+    // Validação básica
+    if (!newOperation.motorista_id || !newOperation.rota_id) {
       toast({
         title: "Erro",
-        description: "Preencha todos os campos obrigatórios",
+        description: "Selecione motorista e rota",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validação específica para tipo de veículo
+    if (newOperation.tipo_veiculo === 'truck' && !newOperation.placa_truck) {
+      toast({
+        title: "Erro",
+        description: "Informe a placa do truck",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newOperation.tipo_veiculo === 'cavalo_mecanico' && (!newOperation.placa_cavalo || !newOperation.placa_carreta_1)) {
+      toast({
+        title: "Erro",
+        description: "Informe a placa do cavalo mecânico e primeira carreta",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validação para justificativa no show
+    if (newOperation.status === 'no_show' && !newOperation.justificativa_no_show.trim()) {
+      toast({
+        title: "Erro",
+        description: "Informe a justificativa para No Show",
         variant: "destructive"
       });
       return;
@@ -494,7 +548,6 @@ const LineHaulPage = () => {
       const operationData = {
         ...newOperation,
         data_criacao: new Date().toISOString(),
-        status: 'programada',
         created_by: user?.name || 'Sistema'
       };
 
@@ -507,13 +560,17 @@ const LineHaulPage = () => {
         setNewOperation({
           motorista_id: 0,
           motorista_nome: '',
-          veiculo_placa: '',
+          tipo_veiculo: 'truck',
+          placa_truck: '',
+          placa_cavalo: '',
+          placa_carreta_1: '',
+          placa_carreta_2: '',
           rota_id: 0,
           rota_nome: '',
           data_inicio: new Date().toISOString().split('T')[0],
           observacoes: '',
-          status: 'programada',
-          prioridade: 'normal'
+          status: 'finalizada',
+          justificativa_no_show: ''
         });
         setShowNewOperation(false);
         await fetchOperations();
@@ -681,7 +738,9 @@ const LineHaulPage = () => {
             <div className="grid gap-4">
               {checklists
                 .filter(checklist => 
-                  checklistFilter === 'todos' || checklist.status === checklistFilter
+                  checklistFilter === 'todos' || 
+                  (checklistFilter === 'concluidos' && checklist.status === 'concluido') ||
+                  (checklistFilter === 'pendentes' && checklist.status === 'pendente')
                 )
                 .map(checklist => (
                 <Card key={checklist.id} className="bg-white/90 backdrop-blur-sm">
@@ -1326,16 +1385,16 @@ const LineHaulPage = () => {
                   <span className="text-2xl font-bold text-blue-600">{operationsData.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Em Andamento</span>
-                  <span className="text-sm font-medium">{operationsData.filter(op => op.status === 'em_andamento').length}</span>
+                  <span className="text-sm text-gray-600">Finalizadas</span>
+                  <span className="text-sm font-medium text-green-600">{operationsData.filter(op => op.status === 'finalizada').length}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Programadas</span>
-                  <span className="text-sm font-medium">{operationsData.filter(op => op.status === 'programada').length}</span>
+                  <span className="text-sm text-gray-600">Canceladas</span>
+                  <span className="text-sm font-medium text-orange-600">{operationsData.filter(op => op.status === 'cancelada_cliente').length}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Concluídas Hoje</span>
-                  <span className="text-sm font-medium text-green-600">{operationsData.filter(op => op.status === 'concluida').length}</span>
+                  <span className="text-sm text-gray-600">No Show</span>
+                  <span className="text-sm font-medium text-red-600">{operationsData.filter(op => op.status === 'no_show').length}</span>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -1696,18 +1755,33 @@ const LineHaulPage = () => {
                               {operation.motorista_nome || 'Motorista Não Informado'}
                             </h4>
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              operation.status === 'concluida' ? 'bg-green-100 text-green-800' :
-                              operation.status === 'em_andamento' ? 'bg-blue-100 text-blue-800' :
+                              operation.status === 'finalizada' ? 'bg-green-100 text-green-800' :
+                              operation.status === 'cancelada_cliente' ? 'bg-orange-100 text-orange-800' :
+                              operation.status === 'no_show' ? 'bg-red-100 text-red-800' :
                               'bg-yellow-100 text-yellow-800'
                             }`}>
-                              {operation.status === 'concluida' ? 'Concluída' :
-                               operation.status === 'em_andamento' ? 'Em Andamento' : 'Programada'}
+                              {operation.status === 'finalizada' ? 'Finalizada' :
+                               operation.status === 'cancelada_cliente' ? 'Cancelada pelo Cliente' :
+                               operation.status === 'no_show' ? 'No Show' : 'Programada'}
                             </span>
                           </div>
                           <div className="text-sm text-gray-600 space-y-1">
-                            <p><span className="font-medium">Veículo:</span> {operation.veiculo_placa}</p>
+                            <p><span className="font-medium">Tipo:</span> {operation.tipo_veiculo === 'truck' ? 'Truck' : 'Cavalo Mecânico'}</p>
+                            {operation.tipo_veiculo === 'truck' && operation.placa_truck && (
+                              <p><span className="font-medium">Placa Truck:</span> {operation.placa_truck}</p>
+                            )}
+                            {operation.tipo_veiculo === 'cavalo_mecanico' && (
+                              <>
+                                {operation.placa_cavalo && <p><span className="font-medium">Cavalo:</span> {operation.placa_cavalo}</p>}
+                                {operation.placa_carreta_1 && <p><span className="font-medium">Carreta 1:</span> {operation.placa_carreta_1}</p>}
+                                {operation.placa_carreta_2 && <p><span className="font-medium">Carreta 2:</span> {operation.placa_carreta_2}</p>}
+                              </>
+                            )}
                             <p><span className="font-medium">Rota:</span> {operation.rota_nome}</p>
                             <p><span className="font-medium">Data Início:</span> {new Date(operation.data_inicio).toLocaleDateString('pt-BR')}</p>
+                            {operation.status === 'no_show' && operation.justificativa_no_show && (
+                              <p><span className="font-medium">Justificativa No Show:</span> {operation.justificativa_no_show}</p>
+                            )}
                             {operation.observacoes && (
                               <p><span className="font-medium">Observações:</span> {operation.observacoes}</p>
                             )}
@@ -1789,24 +1863,78 @@ const LineHaulPage = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="veiculo_select">Veículo *</Label>
+                  <Label htmlFor="tipo_veiculo">Tipo de Veículo *</Label>
                   <Select 
-                    value={newOperation.veiculo_placa} 
-                    onValueChange={(value) => setNewOperation(prev => ({ ...prev, veiculo_placa: value }))}
+                    value={newOperation.tipo_veiculo} 
+                    onValueChange={(value) => {
+                      setNewOperation(prev => ({ 
+                        ...prev, 
+                        tipo_veiculo: value,
+                        // Limpar campos quando mudar tipo
+                        placa_truck: '',
+                        placa_cavalo: '',
+                        placa_carreta_1: '',
+                        placa_carreta_2: ''
+                      }));
+                    }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione um veículo" />
+                      <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
                     <SelectContent>
-                      {vehicles.filter(v => v.vehicleType === 'cavalo_mecanico').map((vehicle) => (
-                        <SelectItem key={vehicle.id} value={vehicle.plate}>
-                          {vehicle.plate} - {vehicle.model}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="truck">Truck</SelectItem>
+                      <SelectItem value="cavalo_mecanico">Cavalo Mecânico</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
+              
+              {/* Campos condicionais baseado no tipo de veículo */}
+              {newOperation.tipo_veiculo === 'truck' && (
+                <div className="space-y-2">
+                  <Label htmlFor="placa_truck">Placa do Truck *</Label>
+                  <Input
+                    id="placa_truck"
+                    placeholder="Ex: ABC-1234"
+                    value={newOperation.placa_truck}
+                    onChange={(e) => setNewOperation(prev => ({ ...prev, placa_truck: e.target.value.toUpperCase() }))}
+                  />
+                </div>
+              )}
+              
+              {newOperation.tipo_veiculo === 'cavalo_mecanico' && (
+                <div className="grid gap-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="placa_cavalo">Placa do Cavalo *</Label>
+                      <Input
+                        id="placa_cavalo"
+                        placeholder="Ex: ABC-1234"
+                        value={newOperation.placa_cavalo}
+                        onChange={(e) => setNewOperation(prev => ({ ...prev, placa_cavalo: e.target.value.toUpperCase() }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="placa_carreta_1">Primeira Carreta *</Label>
+                      <Input
+                        id="placa_carreta_1"
+                        placeholder="Ex: XYZ-5678"
+                        value={newOperation.placa_carreta_1}
+                        onChange={(e) => setNewOperation(prev => ({ ...prev, placa_carreta_1: e.target.value.toUpperCase() }))}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="placa_carreta_2">Segunda Carreta (Opcional)</Label>
+                    <Input
+                      id="placa_carreta_2"
+                      placeholder="Ex: DEF-9012"
+                      value={newOperation.placa_carreta_2}
+                      onChange={(e) => setNewOperation(prev => ({ ...prev, placa_carreta_2: e.target.value.toUpperCase() }))}
+                    />
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="rota_select">Rota *</Label>
                 <Select 
@@ -1843,22 +1971,44 @@ const LineHaulPage = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="prioridade">Prioridade</Label>
+                  <Label htmlFor="status">Status *</Label>
                   <Select 
-                    value={newOperation.prioridade} 
-                    onValueChange={(value) => setNewOperation(prev => ({ ...prev, prioridade: value }))}
+                    value={newOperation.status} 
+                    onValueChange={(value) => {
+                      setNewOperation(prev => ({ 
+                        ...prev, 
+                        status: value,
+                        // Limpar justificativa se não for no_show
+                        justificativa_no_show: value !== 'no_show' ? '' : prev.justificativa_no_show
+                      }));
+                    }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione a prioridade" />
+                      <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="alta">Alta</SelectItem>
-                      <SelectItem value="urgente">Urgente</SelectItem>
+                      <SelectItem value="finalizada">Finalizada</SelectItem>
+                      <SelectItem value="cancelada_cliente">Cancelada pelo Cliente</SelectItem>
+                      <SelectItem value="no_show">No Show</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
+              
+              {/* Campo condicional para justificativa do No Show */}
+              {newOperation.status === 'no_show' && (
+                <div className="space-y-2">
+                  <Label htmlFor="justificativa_no_show">Justificativa para No Show *</Label>
+                  <textarea
+                    id="justificativa_no_show"
+                    className="w-full p-2 border border-gray-300 rounded-md resize-none"
+                    rows={3}
+                    placeholder="Explique o motivo do No Show..."
+                    value={newOperation.justificativa_no_show}
+                    onChange={(e) => setNewOperation(prev => ({ ...prev, justificativa_no_show: e.target.value }))}
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="observacoes_op">Observações</Label>
                 <textarea
@@ -1878,7 +2028,13 @@ const LineHaulPage = () => {
               <Button 
                 onClick={handleCreateOperation}
                 className="bg-green-500 hover:bg-green-600"
-                disabled={!newOperation.motorista_id || !newOperation.veiculo_placa || !newOperation.rota_id}
+                disabled={
+                  !newOperation.motorista_id || 
+                  !newOperation.rota_id || 
+                  (newOperation.tipo_veiculo === 'truck' && !newOperation.placa_truck) ||
+                  (newOperation.tipo_veiculo === 'cavalo_mecanico' && (!newOperation.placa_cavalo || !newOperation.placa_carreta_1)) ||
+                  (newOperation.status === 'no_show' && !newOperation.justificativa_no_show.trim())
+                }
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Iniciar Operação
