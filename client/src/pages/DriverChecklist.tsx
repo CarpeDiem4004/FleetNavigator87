@@ -145,7 +145,7 @@ const DriverChecklist: React.FC = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <Button variant="ghost" onClick={() => setLocation('/driver-access')}>
+                <Button variant="ghost" onClick={() => setLocation('/app/system/driver-access')}>
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <div>

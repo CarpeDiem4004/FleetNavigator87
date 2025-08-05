@@ -1130,7 +1130,10 @@ const LineHaulPage = () => {
               <div className="text-sm text-blue-600 mb-4 break-all">
                 URL de acesso: https://muricionfleet2.co/app/system/driver-access
               </div>
-              <Button className="w-full bg-purple-500 hover:bg-purple-600 text-white">
+              <Button 
+                className="w-full bg-purple-500 hover:bg-purple-600 text-white"
+                onClick={() => window.open('/app/system/driver-access', '_blank')}
+              >
                 Acessar Interface do Motorista
               </Button>
             </CardContent>

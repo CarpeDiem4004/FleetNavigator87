@@ -177,13 +177,13 @@ const DriverAccess: React.FC = () => {
 
   const handleChecklistClick = () => {
     if (driver) {
-      setLocation(`/driver-checklist/${driver.id}`);
+      setLocation(`/app/system/driver-checklist/${driver.id}`);
     }
   };
 
   const handleMaintenanceRequestClick = () => {
     if (driver) {
-      setLocation(`/driver-maintenance-request/${driver.id}`);
+      setLocation(`/app/system/driver-maintenance-request/${driver.id}`);
     }
   };
 

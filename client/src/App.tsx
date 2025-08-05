@@ -966,15 +966,15 @@ function App() {
           </Route>
           
           {/* Rotas para acesso do motorista Line Haul Murici */}
-          <Route path="/driver-access">
+          <Route path="/app/system/driver-access">
             <DriverAccess />
           </Route>
           
-          <Route path="/driver-checklist/:id">
+          <Route path="/app/system/driver-checklist/:id">
             <DriverChecklist />
           </Route>
           
-          <Route path="/driver-maintenance-request/:id">
+          <Route path="/app/system/driver-maintenance-request/:id">
             <DriverMaintenanceRequest />
           </Route>
           
