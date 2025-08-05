@@ -1041,30 +1041,30 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
       
       return {
         'ID': String(sol.id || ''),
-        'Placa': String(sol.placa || ''),
-        'Nome do Solicitante': String(sol.nome_solicitante || ''),
+        'Placa': String(sol.placa || '').toUpperCase(),
+        'Nome do Solicitante': String(sol.nome_solicitante || '').toUpperCase(),
         'Telefone do Solicitante': String(sol.telefone_solicitante || ''),
-        'Motorista do Veiculo': String(sol.nome_motorista || ''),
+        'Motorista do Veiculo': String(sol.nome_motorista || '').toUpperCase(),
         'Valor Solicitado': valorFormatado,
         'KM': parseInt(sol.km || '0') || 0,
-        'Tipo Cartao': sol.tipo_cartao === 'numero' ? 'Cartão Numerado' : 
-                       sol.tipo_cartao === 'placa' ? 'Cartão por Placa' : 
-                       String(sol.tipo_cartao || 'Padrão'),
-        'Numero Cartao': String(sol.tipo_cartao === 'placa' ? sol.placa : sol.numero_cartao || ''),
-        'Provedor': String(sol.provedor_cartao || 'Padrão'),
-        'Status': String(sol.status || ''),
+        'Tipo Cartao': (sol.tipo_cartao === 'numero' ? 'CARTÃO NUMERADO' : 
+                       sol.tipo_cartao === 'placa' ? 'CARTÃO POR PLACA' : 
+                       String(sol.tipo_cartao || 'PADRÃO')).toUpperCase(),
+        'Numero Cartao': String(sol.tipo_cartao === 'placa' ? sol.placa : sol.numero_cartao || '').toUpperCase(),
+        'Provedor': String(sol.provedor_cartao || 'PADRÃO').toUpperCase(),
+        'Status': String(sol.status || '').toUpperCase(),
         'Data Solicitacao': dataFormatada,
-        'Atendido Por': String(sol.atendido_por || ''),
+        'Atendido Por': String(sol.atendido_por || '').toUpperCase(),
         'Data Atendimento': dataAtendimentoFormatada,
-        'Base': String(sol.base || ''),
-        'Observacoes': String(sol.observacoes || ''),
-        'Origem': sol.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 
-                  sol.origem_tipo === 'base_system' ? 'Base System' : 'Sistema Principal',
-        'Modelo Veiculo': String(sol.veiculo_modelo || ''),
-        'Rota Origem': String(sol.rota_origem || ''),
-        'Rota Destino': String(sol.rota_destino || ''),
+        'Base': String(sol.base || '').toUpperCase(),
+        'Observacoes': String(sol.observacoes || '').toUpperCase(),
+        'Origem': (sol.origem_tipo === 'line_hall' ? 'LINE HALL SHOPEE' : 
+                  sol.origem_tipo === 'base_system' ? 'SISTEMA DE BASES' : 'SISTEMA PRINCIPAL').toUpperCase(),
+        'Modelo Veiculo': String(sol.veiculo_modelo || '').toUpperCase(),
+        'Rota Origem': String(sol.rota_origem || '').toUpperCase(),
+        'Rota Destino': String(sol.rota_destino || '').toUpperCase(),
         'Telefone Motorista': String(sol.telefone_motorista || ''),
-        'Horario Abastecimento': String(sol.horario_abastecimento || '')
+        'Horario Abastecimento': String(sol.horario_abastecimento || '').toUpperCase()
       };
     });
 
@@ -1555,29 +1555,29 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
       
       return {
         'ID': String(sol.id || ''),
-        'Placa': String(sol.placa || ''),
-        'Nome do Solicitante': String(sol.nome_solicitante || ''),
-        'Motorista': String(sol.motorista || ''),
+        'Placa': String(sol.placa || '').toUpperCase(),
+        'Nome do Solicitante': String(sol.nome_solicitante || '').toUpperCase(),
+        'Motorista': String(sol.motorista || '').toUpperCase(),
         'Valor Solicitado': valorFormatado,
         'KM': parseInt(sol.km || '0') || 0,
-        'Tipo Cartao': sol.tipo_cartao === 'numero' ? 'Cartão Numerado' : 
-                       sol.tipo_cartao === 'placa' ? 'Cartão por Placa' : 
-                       String(sol.tipo_cartao || 'Padrão'),
-        'Numero Cartao': String(sol.tipo_cartao === 'placa' ? sol.placa : sol.numero_cartao || ''),
-        'Provedor': String(sol.provedor_cartao || 'Padrão'),
-        'Status': String(sol.status || ''),
+        'Tipo Cartao': (sol.tipo_cartao === 'numero' ? 'CARTÃO NUMERADO' : 
+                       sol.tipo_cartao === 'placa' ? 'CARTÃO POR PLACA' : 
+                       String(sol.tipo_cartao || 'PADRÃO')).toUpperCase(),
+        'Numero Cartao': String(sol.tipo_cartao === 'placa' ? sol.placa : sol.numero_cartao || '').toUpperCase(),
+        'Provedor': String(sol.provedor_cartao || 'PADRÃO').toUpperCase(),
+        'Status': String(sol.status || '').toUpperCase(),
         'Data Solicitacao': dataFormatada,
-        'Atendido Por': String(sol.atendido_por || ''),
+        'Atendido Por': String(sol.atendido_por || '').toUpperCase(),
         'Data Atendimento': dataAtendimentoFormatada,
-        'Base': String(sol.base || ''),
-        'Observacoes': String(sol.observacoes || ''),
-        'Origem': sol.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 
-                  sol.origem_tipo === 'base_system' ? 'Sistema de Bases' : 'Sistema Principal',
-        'Modelo Veiculo': String(sol.veiculo_modelo || ''),
-        'Rota Origem': String(sol.rota_origem || ''),
-        'Rota Destino': String(sol.rota_destino || ''),
+        'Base': String(sol.base || '').toUpperCase(),
+        'Observacoes': String(sol.observacoes || '').toUpperCase(),
+        'Origem': (sol.origem_tipo === 'line_hall' ? 'LINE HALL SHOPEE' : 
+                  sol.origem_tipo === 'base_system' ? 'SISTEMA DE BASES' : 'SISTEMA PRINCIPAL').toUpperCase(),
+        'Modelo Veiculo': String(sol.veiculo_modelo || '').toUpperCase(),
+        'Rota Origem': String(sol.rota_origem || '').toUpperCase(),
+        'Rota Destino': String(sol.rota_destino || '').toUpperCase(),
         'Telefone Motorista': String(sol.telefone_motorista || ''),
-        'Horario Abastecimento': String(sol.horario_abastecimento || '')
+        'Horario Abastecimento': String(sol.horario_abastecimento || '').toUpperCase()
       };
     });
 

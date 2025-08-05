@@ -146,24 +146,24 @@ export async function exportFuelCardSolicitationsToCSV(req: Request, res: Respon
       
       csvData.push([
         String(sol.id || ''),
-        String(sol.placa || ''),
-        String(sol.nome_solicitante || ''),
-        String(sol.nome_motorista || ''),
+        String(sol.placa || '').toUpperCase(),
+        String(sol.nome_solicitante || '').toUpperCase(),
+        String(sol.nome_motorista || '').toUpperCase(),
         valorFormatado,
         parseInt(sol.km || '0') || 0,
-        sol.tipo_cartao === 'numero' ? 'Cartão Numerado' : 
-        sol.tipo_cartao === 'placa' ? 'Cartão por Placa' : 
-        String(sol.tipo_cartao || 'Padrão'),
-        String(sol.tipo_cartao === 'placa' ? sol.placa : sol.numero_cartao || ''),
-        String(sol.provedor_cartao || 'Padrão'),
-        String(sol.status || ''),
+        (sol.tipo_cartao === 'numero' ? 'CARTÃO NUMERADO' : 
+        sol.tipo_cartao === 'placa' ? 'CARTÃO POR PLACA' : 
+        String(sol.tipo_cartao || 'PADRÃO')).toUpperCase(),
+        String(sol.tipo_cartao === 'placa' ? sol.placa : sol.numero_cartao || '').toUpperCase(),
+        String(sol.provedor_cartao || 'PADRÃO').toUpperCase(),
+        String(sol.status || '').toUpperCase(),
         dataFormatada,
-        String(sol.atendido_por || ''),
+        String(sol.atendido_por || '').toUpperCase(),
         dataAtendimentoFormatada,
-        String(sol.base || ''),
-        String(sol.observacoes || ''),
-        sol.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 
-        sol.origem_tipo === 'base_system' ? 'Base System' : 'Sistema Principal'
+        String(sol.base || '').toUpperCase(),
+        String(sol.observacoes || '').toUpperCase(),
+        (sol.origem_tipo === 'line_hall' ? 'LINE HALL SHOPEE' : 
+        sol.origem_tipo === 'base_system' ? 'SISTEMA DE BASES' : 'SISTEMA PRINCIPAL').toUpperCase()
       ]);
     });
 

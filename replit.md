@@ -92,6 +92,13 @@ Preferred communication style: Simple, everyday language.
   - External bases show local error messages instead of redirecting on auth failure
   - Preserved main system functionality while ensuring complete base isolation
   - Status: External base login systems now completely independent of main system
+- **FUEL CARD REPORTS UPPERCASE FORMATTING** (05/08/2025 21:15)
+  - Implemented uppercase formatting for all fuel card request report exports
+  - Applied .toUpperCase() to all text fields in Excel exports (both general and date-filtered reports)
+  - Updated CSV export function to maintain consistency with uppercase formatting
+  - Affected functions: exportFuelCardSolicitationsByDate, exportFuelCardSolicitationsToExcel, exportFuelCardSolicitationsToCSV
+  - All reports now export with standardized uppercase text formatting for professional presentation
+  - Status: Complete uppercase formatting implementation across all fuel card export functions
 
 ## System Architecture
 The system is built with a React/TypeScript frontend and a Node.js/Express backend, utilizing Supabase as the primary database.
