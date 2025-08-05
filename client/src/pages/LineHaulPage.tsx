@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 import { 
   Search, 
   CheckCircle, 
@@ -23,6 +24,7 @@ import lineHaulLayoutImage from '@assets/Layout Line haul  (1908 x 1126 px)_1754
 
 const LineHaulPage = () => {
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,35 +34,44 @@ const LineHaulPage = () => {
   const handleCardAction = (action: string) => {
     console.log(`Ação executada: ${action}`);
     
-    // Mapear ações para mensagens apropriadas
-    const actionMessages: { [key: string]: { title: string; description: string } } = {
-      'cadastrar-veiculo': { title: 'Cadastrar Veículo', description: 'Redirecionando para o formulário de cadastro de veículo' },
-      'cadastrar-motorista': { title: 'Cadastrar Motorista', description: 'Redirecionando para o formulário de cadastro de motorista' },
-      'solicitacoes-cartao': { title: 'Solicitações de Cartão', description: 'Abrindo módulo de solicitações de cartão combustível' },
-      'atualizar-dashboard': { title: 'Atualizar Dashboard', description: 'Atualizando dados do painel Line Haul' },
-      'sair-sistema': { title: 'Sair do Sistema', description: 'Finalizando sessão do usuário' },
-      'nova-viagem': { title: 'Nova Viagem', description: 'Iniciando processo de cadastro de nova viagem' },
-      'atualizar-checklists': { title: 'Atualizar Checklists', description: 'Atualizando dados dos checklists de motoristas' },
-      'gerenciar-checklists': { title: 'Gerenciar Checklists', description: 'Abrindo painel de gerenciamento de checklists' },
-      'atualizar-manutencao': { title: 'Atualizar Manutenção', description: 'Atualizando dados das solicitações de manutenção' },
-      'gerenciar-manutencao': { title: 'Gerenciar Manutenção', description: 'Abrindo painel de gerenciamento de manutenção' },
-      'atualizar-garagem': { title: 'Atualizar Garagem', description: 'Atualizando dados dos veículos na garagem' },
-      'ver-veiculos-parados': { title: 'Ver Veículos Parados', description: 'Exibindo lista detalhada de veículos parados' },
-      'acessar-interface-motoristas': { title: 'Interface de Motoristas', description: 'Abrindo interface dedicada para motoristas' },
-      'ver-rotas': { title: 'Ver Rotas', description: 'Exibindo lista completa de rotas cadastradas' },
-      'nova-rota': { title: 'Nova Rota', description: 'Iniciando cadastro de nova rota' },
-      'iniciar-operacao': { title: 'Iniciar Operação', description: 'Iniciando nova operação Line Haul' }
+    // Mapear ações para rotas e mensagens baseadas nas rotas reais do sistema
+    const actionRoutes: { [key: string]: { route: string; title: string; description: string } } = {
+      'cadastrar-veiculo': { route: '/vehicles', title: 'Cadastrar Veículo', description: 'Redirecionando para o formulário de cadastro de veículo' },
+      'cadastrar-motorista': { route: '/drivers', title: 'Cadastrar Motorista', description: 'Redirecionando para o formulário de cadastro de motorista' },
+      'solicitacoes-cartao': { route: '/fuel-card-requests', title: 'Solicitações de Cartão', description: 'Abrindo módulo de solicitações de cartão combustível' },
+      'atualizar-dashboard': { route: '/line-haul', title: 'Atualizar Dashboard', description: 'Atualizando dados do painel Line Haul' },
+      'sair-sistema': { route: '/login', title: 'Sair do Sistema', description: 'Finalizando sessão do usuário' },
+      'nova-viagem': { route: '/linehall-register', title: 'Nova Viagem', description: 'Iniciando processo de cadastro de nova viagem' },
+      'atualizar-checklists': { route: '/driver-checklist', title: 'Atualizar Checklists', description: 'Atualizando dados dos checklists de motoristas' },
+      'gerenciar-checklists': { route: '/driver-checklist', title: 'Gerenciar Checklists', description: 'Abrindo painel de gerenciamento de checklists' },
+      'atualizar-manutencao': { route: '/manutencao', title: 'Atualizar Manutenção', description: 'Atualizando dados das solicitações de manutenção' },
+      'gerenciar-manutencao': { route: '/fleet-management/maintenance', title: 'Gerenciar Manutenção', description: 'Abrindo painel de gerenciamento de manutenção' },
+      'atualizar-garagem': { route: '/stopped-vehicles', title: 'Atualizar Garagem', description: 'Atualizando dados dos veículos na garagem' },
+      'ver-veiculos-parados': { route: '/stopped-vehicles', title: 'Ver Veículos Parados', description: 'Exibindo lista detalhada de veículos parados' },
+      'acessar-interface-motoristas': { route: '/driver-access', title: 'Interface de Motoristas', description: 'Abrindo interface dedicada para motoristas' },
+      'ver-rotas': { route: '/conferencia-rotas', title: 'Ver Rotas', description: 'Exibindo sistema de conferência de rotas' },
+      'nova-rota': { route: '/conferencia-rotas', title: 'Nova Rota', description: 'Abrindo sistema de conferência de rotas' },
+      'iniciar-operacao': { route: '/line-hall-driver', title: 'Iniciar Operação', description: 'Abrindo interface de motorista Line Haul' }
     };
 
-    const message = actionMessages[action] || { 
-      title: 'Ação Executada', 
-      description: `Função ${action} executada com sucesso` 
-    };
-
-    toast({
-      title: message.title,
-      description: message.description,
-    });
+    const actionData = actionRoutes[action];
+    
+    if (actionData) {
+      toast({
+        title: actionData.title,
+        description: actionData.description,
+      });
+      
+      // Navegar após um pequeno delay para mostrar a notificação
+      setTimeout(() => {
+        setLocation(actionData.route);
+      }, 800);
+    } else {
+      toast({
+        title: 'Ação Executada',
+        description: `Função ${action} executada com sucesso`,
+      });
+    }
   };
 
   return (
