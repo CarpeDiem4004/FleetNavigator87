@@ -644,21 +644,31 @@ const Vehicles: React.FC = () => {
                 <SelectContent position="popper">
                   <SelectGroup>
                     {(() => {
-                      // Handle different API response structures
-                      let baseData = [];
-                      if (bases?.data && Array.isArray(bases.data)) {
-                        baseData = bases.data;
-                      } else if (Array.isArray(bases)) {
-                        baseData = bases;
+                      // Handle different API response structures safely
+                      try {
+                        let baseData = [];
+                        
+                        if (bases && typeof bases === 'object') {
+                          if (bases.data && Array.isArray(bases.data)) {
+                            baseData = bases.data;
+                          } else if (Array.isArray(bases)) {
+                            baseData = bases;
+                          }
+                        }
+                        
+                        if (Array.isArray(baseData) && baseData.length > 0) {
+                          return baseData.map((base: any) => (
+                            <SelectItem key={base.id} value={base.id.toString()}>
+                              {base.name} {base.location ? `(${base.location})` : ''}
+                            </SelectItem>
+                          ));
+                        }
+                      } catch (error) {
+                        console.error('Erro ao processar bases:', error);
                       }
                       
-                      return baseData.length > 0 ? 
-                        baseData.map((base: any) => (
-                          <SelectItem key={base.id} value={base.id.toString()}>
-                            {base.name} {base.location ? `(${base.location})` : ''}
-                          </SelectItem>
-                        )) : 
-                        <SelectItem value="12">Gestão de Frotas</SelectItem>;
+                      // Fallback option
+                      return <SelectItem value="12">Gestão de Frotas</SelectItem>;
                     })()}
                   </SelectGroup>
                 </SelectContent>
