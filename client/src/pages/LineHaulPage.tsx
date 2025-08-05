@@ -26,7 +26,7 @@ import {
   RefreshCcw,
   ArrowLeft
 } from 'lucide-react';
-import lineHaulLayoutImage from '@assets/Layout Line haul  (1908 x 1126 px)_1754418373791.png';
+import lineHaulLayoutImage from '@assets/image_1754418722959.png';
 import { api } from '@/services/api';
 
 interface LineHallTrip {
