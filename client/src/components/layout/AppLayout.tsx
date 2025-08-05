@@ -99,7 +99,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       ]
     },
     { href: '/fines', label: 'Multas', icon: ReceiptText },
-    { href: '/line-hall-shopee', label: 'Line Hall', icon: Truck },
+    { href: '/line-haul', label: 'Line Haul', icon: Truck },
     { href: '/drivers', label: 'Motoristas', icon: Users },
     { href: '/manutencao', label: 'Solicitações de Manutenção', icon: FileText },
     { href: '/tratativa-manutencao', label: 'Tratativas de Manutenção', icon: Wrench },

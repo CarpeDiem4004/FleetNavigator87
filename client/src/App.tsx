@@ -73,6 +73,7 @@ import PostoSorocaba from "@/pages/postos/Sorocaba";
 import PostoSorocabaV2 from "@/pages/postos/SorocabaV2";
 import HistoricoGeralPage from "@/pages/postos/HistoricoGeralPage";
 import HistoricoPatioPage from "@/pages/postos/HistoricoPatioPage";
+import LineHaulPage from "@/pages/LineHaulPage";
 import HistoricoConsolidado from "@/pages/postos/HistoricoConsolidado";
 import PostosVisaoGeralIntegrada from "@/pages/postos/PostosVisaoGeralIntegrada";
 import PostoDetalhesPage from "@/pages/postos/PostoDetalhesPage";
@@ -678,6 +679,7 @@ function App() {
           <ProtectedRoute path="/fuel-receipts" component={FuelReceiptsPage} />
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
           <ProtectedRoute path="/conferencia-rotas" component={ConferenciaRotas} />
+          <ProtectedRoute path="/line-haul" component={LineHaulPage} />
           <ProtectedRoute path="/users" component={UsersNew} />
           <ProtectedRoute path="/bases" component={Bases} />
           <ProtectedRoute path="/bases/links-externos" component={LinksExternosBases} />
