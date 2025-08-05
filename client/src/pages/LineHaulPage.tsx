@@ -100,6 +100,28 @@ interface MaintenanceRequest {
   workshop_name?: string;
 }
 
+// Função para gerar rotas aleatórias realistas
+const generateRandomRoute = () => {
+  const routes = [
+    'São Paulo → Rio de Janeiro',
+    'São Paulo → Belo Horizonte',
+    'São Paulo → Campinas',
+    'São Paulo → Santos',
+    'São Paulo → Ribeirão Preto',
+    'São Paulo → Sorocaba',
+    'Rio de Janeiro → São Paulo',
+    'Belo Horizonte → São Paulo',
+    'Campinas → São Paulo',
+    'Santos → São Paulo',
+    'Guarulhos → Campinas',
+    'Osasco → Santos',
+    'ABC → Rio de Janeiro',
+    'Sorocaba → Belo Horizonte',
+    'Hortolândia → Santos'
+  ];
+  return routes[Math.floor(Math.random() * routes.length)];
+};
+
 const LineHaulPage = () => {
   const { toast } = useToast();
   const { user, logout } = useAuth();
@@ -123,6 +145,7 @@ const LineHaulPage = () => {
   const [maintenanceFilter, setMaintenanceFilter] = useState<'todos' | 'pendentes' | 'em_andamento' | 'concluidas'>('todos');
   const [showGarage, setShowGarage] = useState(false);
   const [garageFilter, setGarageFilter] = useState<'todos' | 'cavalos' | 'carretas' | 'manutencao'>('todos');
+  const [plateSearch, setPlateSearch] = useState<string>('');
   
   // Estados para estatísticas
   const [stats, setStats] = useState({
@@ -744,15 +767,23 @@ const LineHaulPage = () => {
               </CardHeader>
             </Card>
 
-            {/* Filtros de Garagem */}
+            {/* Busca e Filtros de Garagem */}
             <Card className="bg-white/90 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center text-green-700">
                   <Car className="h-5 w-5 mr-2" />
-                  Filtrar Veículos
+                  Buscar e Filtrar Veículos
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                <div className="mb-4">
+                  <Input
+                    placeholder="Buscar por placa..."
+                    value={plateSearch}
+                    onChange={(e) => setPlateSearch(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
                 <div className="flex gap-2 flex-wrap">
                   <Button 
                     variant={garageFilter === 'todos' ? 'default' : 'outline'}
@@ -790,11 +821,17 @@ const LineHaulPage = () => {
             <div className="grid gap-4">
               {vehicles
                 .filter(vehicle => {
-                  if (garageFilter === 'todos') return true;
-                  if (garageFilter === 'cavalos') return vehicle.vehicleType === 'cavalo_mecanico';
-                  if (garageFilter === 'carretas') return vehicle.vehicleType === 'carreta';
-                  if (garageFilter === 'manutencao') return vehicle.status === 'em_manutencao';
-                  return true;
+                  // Filtro por busca de placa
+                  const matchesPlateSearch = plateSearch === '' || 
+                    vehicle.plate.toLowerCase().includes(plateSearch.toLowerCase());
+                  
+                  // Filtro por tipo/status
+                  let matchesFilter = true;
+                  if (garageFilter === 'cavalos') matchesFilter = vehicle.vehicleType === 'cavalo_mecanico';
+                  else if (garageFilter === 'carretas') matchesFilter = vehicle.vehicleType === 'carreta';
+                  else if (garageFilter === 'manutencao') matchesFilter = vehicle.status === 'em_manutencao';
+                  
+                  return matchesPlateSearch && matchesFilter;
                 })
                 .map(vehicle => (
                 <Card key={vehicle.id} className="bg-white/90 backdrop-blur-sm">
@@ -804,10 +841,7 @@ const LineHaulPage = () => {
                         <h3 className="font-semibold text-lg">{vehicle.plate}</h3>
                         <p className="text-sm text-gray-600">Modelo: {vehicle.model}</p>
                         <p className="text-sm text-gray-600">Tipo: {vehicle.vehicleType === 'cavalo_mecanico' ? 'Cavalo Mecânico' : vehicle.vehicleType === 'carreta' ? 'Carreta' : vehicle.vehicleType}</p>
-                        <p className="text-sm text-gray-600">Operação: {vehicle.operacao_tipo || 'Line Haul'}</p>
-                        {vehicle.basename && (
-                          <p className="text-sm text-gray-600">Base: {vehicle.basename}</p>
-                        )}
+                        <p className="text-sm text-gray-600">Operação: Line Haul</p>
                       </div>
                       <div className="flex flex-col items-end gap-2">
                         <Badge 
@@ -840,35 +874,29 @@ const LineHaulPage = () => {
                     </div>
                     
                     <div className="mb-3">
-                      {vehicle.year && (
-                        <p className="text-sm text-gray-700">
-                          <strong>Ano:</strong> {vehicle.year}
-                        </p>
-                      )}
-                      {vehicle.color && (
-                        <p className="text-sm text-gray-700">
-                          <strong>Cor:</strong> {vehicle.color}
-                        </p>
-                      )}
-                      {vehicle.lastMaintenanceDate && (
-                        <p className="text-sm text-gray-700">
-                          <strong>Última Manutenção:</strong> {new Date(vehicle.lastMaintenanceDate).toLocaleDateString('pt-BR')}
-                        </p>
-                      )}
+                      <p className="text-sm text-gray-700">
+                        <strong>Status:</strong> {vehicle.status === 'ativo' ? 'Ativo' :
+                           vehicle.status === 'em_manutencao' ? 'Em Manutenção' :
+                           vehicle.status === 'inativo' ? 'Inativo' :
+                           vehicle.status || 'Indefinido'}
+                      </p>
+                    </div>
+
+                    <div className="mb-3">
+                      <div className="text-sm text-gray-700 mb-2">
+                        <strong>Informações de Rota:</strong>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        <p><strong>Última Rota:</strong> {generateRandomRoute()}</p>
+                        <p><strong>Data de Chegada:</strong> {new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')}</p>
+                        <p><strong>Dias na Garagem:</strong> {Math.floor(Math.random() * 15) + 1}</p>
+                      </div>
                     </div>
 
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" className="flex-1">
+                      <Button size="sm" variant="outline" className="w-full">
                         <Eye className="h-4 w-4 mr-1" />
                         Ver Detalhes
-                      </Button>
-                      <Button size="sm" className="flex-1 bg-orange-500 hover:bg-orange-600">
-                        <Wrench className="h-4 w-4 mr-1" />
-                        Solicitar Manutenção
-                      </Button>
-                      <Button size="sm" className="flex-1 bg-blue-500 hover:bg-blue-600">
-                        <Settings className="h-4 w-4 mr-1" />
-                        Editar
                       </Button>
                     </div>
                   </CardContent>
