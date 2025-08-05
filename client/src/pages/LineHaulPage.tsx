@@ -182,6 +182,22 @@ const LineHaulPage = () => {
     observacoes: ''
   });
 
+  // Estados para gestão de operações
+  const [showOperationsManagement, setShowOperationsManagement] = useState(false);
+  const [showNewOperation, setShowNewOperation] = useState(false);
+  const [operationsData, setOperationsData] = useState([]);
+  const [newOperation, setNewOperation] = useState({
+    motorista_id: 0,
+    motorista_nome: '',
+    veiculo_placa: '',
+    rota_id: 0,
+    rota_nome: '',
+    data_inicio: new Date().toISOString().split('T')[0],
+    observacoes: '',
+    status: 'programada',
+    prioridade: 'normal'
+  });
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -195,7 +211,8 @@ const LineHaulPage = () => {
         fetchVehicles(),
         fetchDrivers(),
         fetchChecklists(),
-        fetchStats()
+        fetchStats(),
+        fetchOperations()
       ]);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -460,6 +477,66 @@ const LineHaulPage = () => {
         description: "Erro ao cadastrar rota",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleCreateOperation = async () => {
+    if (!newOperation.motorista_id || !newOperation.veiculo_placa || !newOperation.rota_id) {
+      toast({
+        title: "Erro",
+        description: "Preencha todos os campos obrigatórios",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const operationData = {
+        ...newOperation,
+        data_criacao: new Date().toISOString(),
+        status: 'programada',
+        created_by: user?.name || 'Sistema'
+      };
+
+      const response = await api.post('/line-hall/operations', operationData);
+      if (response.data.success) {
+        toast({
+          title: "Sucesso",
+          description: "Operação criada com sucesso!"
+        });
+        setNewOperation({
+          motorista_id: 0,
+          motorista_nome: '',
+          veiculo_placa: '',
+          rota_id: 0,
+          rota_nome: '',
+          data_inicio: new Date().toISOString().split('T')[0],
+          observacoes: '',
+          status: 'programada',
+          prioridade: 'normal'
+        });
+        setShowNewOperation(false);
+        await fetchOperations();
+      }
+    } catch (error) {
+      console.error('Erro ao criar operação:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao criar operação",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const fetchOperations = async () => {
+    try {
+      const response = await api.get('/line-hall/operations');
+      if (response.data.success) {
+        setOperationsData(response.data.data || []);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar operações:', error);
+      setOperationsData([]);
     }
   };
 
@@ -1234,23 +1311,47 @@ const LineHaulPage = () => {
             </CardContent>
           </Card>
 
-          {/* Card vazio para futuras funcionalidades */}
-          <Card className="bg-white/90 backdrop-blur-sm border-gray-200">
+          {/* Operações Line Haul */}
+          <Card className="bg-white/90 backdrop-blur-sm border-blue-200">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center text-gray-700">
+              <CardTitle className="text-lg flex items-center text-blue-700">
                 <Truck className="h-5 w-5 mr-2" />
                 Operações Line Haul
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <Truck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-4">
-                  Gerencie suas operações de Line Haul com eficiência
-                </p>
-                <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+              <div className="space-y-3 mb-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Operações Ativas</span>
+                  <span className="text-2xl font-bold text-blue-600">{operationsData.length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Em Andamento</span>
+                  <span className="text-sm font-medium">{operationsData.filter(op => op.status === 'em_andamento').length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Programadas</span>
+                  <span className="text-sm font-medium">{operationsData.filter(op => op.status === 'programada').length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Concluídas Hoje</span>
+                  <span className="text-sm font-medium text-green-600">{operationsData.filter(op => op.status === 'concluida').length}</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+                  onClick={() => setShowOperationsManagement(true)}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Ver Operações
+                </Button>
+                <Button 
+                  className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                  onClick={() => setShowNewOperation(true)}
+                >
                   <Plus className="h-4 w-4 mr-2" />
-                  Iniciar Operação
+                  Nova Operação
                 </Button>
               </div>
             </CardContent>
@@ -1566,6 +1667,221 @@ const LineHaulPage = () => {
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Cadastrar Rota
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog para Gestão de Operações */}
+        <Dialog open={showOperationsManagement} onOpenChange={setShowOperationsManagement}>
+          <DialogContent className="sm:max-w-[1000px] max-h-[700px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center text-blue-700">
+                <Truck className="h-5 w-5 mr-2" />
+                Gestão de Operações Line Haul
+              </DialogTitle>
+              <DialogDescription>
+                Monitore e gerencie todas as operações de Line Haul ({operationsData.length} operações)
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-4 overflow-y-auto max-h-[500px]">
+              {operationsData.length > 0 ? (
+                <div className="grid gap-4">
+                  {operationsData.map((operation, index) => (
+                    <Card key={index} className="p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-semibold text-gray-900">
+                              {operation.motorista_nome || 'Motorista Não Informado'}
+                            </h4>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              operation.status === 'concluida' ? 'bg-green-100 text-green-800' :
+                              operation.status === 'em_andamento' ? 'bg-blue-100 text-blue-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {operation.status === 'concluida' ? 'Concluída' :
+                               operation.status === 'em_andamento' ? 'Em Andamento' : 'Programada'}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-600 space-y-1">
+                            <p><span className="font-medium">Veículo:</span> {operation.veiculo_placa}</p>
+                            <p><span className="font-medium">Rota:</span> {operation.rota_nome}</p>
+                            <p><span className="font-medium">Data Início:</span> {new Date(operation.data_inicio).toLocaleDateString('pt-BR')}</p>
+                            {operation.observacoes && (
+                              <p><span className="font-medium">Observações:</span> {operation.observacoes}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline">
+                            <Eye className="h-4 w-4 mr-1" />
+                            Detalhes
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Truck className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma operação cadastrada</h3>
+                  <p className="text-gray-500">Comece criando uma nova operação Line Haul</p>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowOperationsManagement(false)}>
+                Fechar
+              </Button>
+              <Button 
+                onClick={() => {
+                  setShowOperationsManagement(false);
+                  setShowNewOperation(true);
+                }}
+                className="bg-green-500 hover:bg-green-600"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Operação
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog para Nova Operação */}
+        <Dialog open={showNewOperation} onOpenChange={setShowNewOperation}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center text-green-700">
+                <Plus className="h-5 w-5 mr-2" />
+                Iniciar Nova Operação
+              </DialogTitle>
+              <DialogDescription>
+                Configure uma nova operação de Line Haul
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="motorista_select">Motorista *</Label>
+                  <Select 
+                    value={newOperation.motorista_id.toString()} 
+                    onValueChange={(value) => {
+                      const motorista = drivers.find(d => d.id.toString() === value);
+                      setNewOperation(prev => ({ 
+                        ...prev, 
+                        motorista_id: parseInt(value),
+                        motorista_nome: motorista?.nome || ''
+                      }));
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um motorista" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {drivers.map((driver) => (
+                        <SelectItem key={driver.id} value={driver.id.toString()}>
+                          {driver.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="veiculo_select">Veículo *</Label>
+                  <Select 
+                    value={newOperation.veiculo_placa} 
+                    onValueChange={(value) => setNewOperation(prev => ({ ...prev, veiculo_placa: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um veículo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vehicles.filter(v => v.vehicleType === 'cavalo_mecanico').map((vehicle) => (
+                        <SelectItem key={vehicle.id} value={vehicle.plate}>
+                          {vehicle.plate} - {vehicle.model}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="rota_select">Rota *</Label>
+                <Select 
+                  value={newOperation.rota_id.toString()} 
+                  onValueChange={(value) => {
+                    const rota = routes.find(r => r.id.toString() === value);
+                    setNewOperation(prev => ({ 
+                      ...prev, 
+                      rota_id: parseInt(value),
+                      rota_nome: rota ? `${rota.nome_ponto_a} → ${rota.nome_ponto_b}` : ''
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma rota" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {routes.map((route) => (
+                      <SelectItem key={route.id} value={route.id.toString()}>
+                        {route.nome_ponto_a} → {route.nome_ponto_b} ({route.km_total} km)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="data_inicio">Data de Início *</Label>
+                  <Input
+                    id="data_inicio"
+                    type="date"
+                    value={newOperation.data_inicio}
+                    onChange={(e) => setNewOperation(prev => ({ ...prev, data_inicio: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="prioridade">Prioridade</Label>
+                  <Select 
+                    value={newOperation.prioridade} 
+                    onValueChange={(value) => setNewOperation(prev => ({ ...prev, prioridade: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a prioridade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="alta">Alta</SelectItem>
+                      <SelectItem value="urgente">Urgente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="observacoes_op">Observações</Label>
+                <textarea
+                  id="observacoes_op"
+                  className="w-full p-2 border border-gray-300 rounded-md resize-none"
+                  rows={3}
+                  placeholder="Informações adicionais sobre a operação..."
+                  value={newOperation.observacoes}
+                  onChange={(e) => setNewOperation(prev => ({ ...prev, observacoes: e.target.value }))}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowNewOperation(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleCreateOperation}
+                className="bg-green-500 hover:bg-green-600"
+                disabled={!newOperation.motorista_id || !newOperation.veiculo_placa || !newOperation.rota_id}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Iniciar Operação
               </Button>
             </DialogFooter>
           </DialogContent>
