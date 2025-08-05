@@ -125,9 +125,23 @@ const Vehicles: React.FC = () => {
     }
   };
   
-  // Obter veículos da API real
-  const { data: vehicles, isLoading } = useQuery({
+  // Obter veículos da API real  
+  const { data: vehicles, isLoading, error } = useQuery({
     queryKey: ['/api/vehicles'],
+    retry: 3,
+    retryDelay: 1000,
+    onError: (err) => {
+      console.error("❌ ERRO NA QUERY VEÍCULOS:", err);
+    },
+    onSuccess: (data) => {
+      console.log("✅ QUERY VEÍCULOS SUCESSO:", data);
+    }
+  });
+
+  console.log("🚗 QUERY STATE:", { 
+    vehicles: vehicles ? `Array com ${Array.isArray(vehicles) ? vehicles.length : 'não-array'} items` : 'undefined',
+    isLoading, 
+    error: error?.message 
   });
   
   // Obter bases da API real
@@ -227,49 +241,55 @@ const Vehicles: React.FC = () => {
   });
   
   const filteredVehicles = React.useMemo(() => {
-    console.log("🚗 DEBUG VEÍCULOS:");
-    console.log("- Dados recebidos da API:", vehicles);
-    console.log("- Tipo dos dados:", typeof vehicles);
+    console.log("🚗 PROCESSANDO VEÍCULOS:");
+    console.log("- Dados brutos:", vehicles);
+    console.log("- Tipo:", typeof vehicles);
     console.log("- É array?", Array.isArray(vehicles));
-    console.log("- Filtros aplicados:", filters);
+    console.log("- Filtros:", filters);
     
+    // Se não há dados ainda, retorna array vazio
     if (!vehicles) {
-      console.log("❌ Veículos não definidos");
+      console.log("❌ Sem dados de veículos");
       return [];
     }
     
-    if (!Array.isArray(vehicles)) {
-      console.log("❌ Veículos não são array, tipo:", typeof vehicles);
-      console.log("- Conteúdo completo:", JSON.stringify(vehicles, null, 2));
-      return [];
-    }
-    
-    if (vehicles.length === 0) {
-      console.log("⚠️ Array de veículos está vazio");
-      return [];
-    }
-    
-    console.log(`✅ ${vehicles.length} veículos encontrados, aplicando filtros...`);
-    
-    const filtered = vehicles.filter((vehicle: any) => {
-      const statusMatch = filters.status === '' || vehicle.status === filters.status;
-      const typeMatch = filters.type === '' || vehicle.vehicleType === filters.type;
-      const baseMatch = filters.base === '' || vehicle.baseId.toString() === filters.base;
-      const plateMatch = filters.plate === '' || vehicle.plate.toLowerCase().includes(filters.plate.toLowerCase());
-      
-      const vehicleMatches = statusMatch && typeMatch && baseMatch && plateMatch;
-      
-      if (!vehicleMatches) {
-        console.log(`🔍 Veículo ${vehicle.plate} filtrado fora:`, {
-          statusMatch,
-          typeMatch,
-          baseMatch,
-          plateMatch,
-          vehicle: { status: vehicle.status, vehicleType: vehicle.vehicleType, baseId: vehicle.baseId }
-        });
+    // Verificar se é array direto ou está dentro de um objeto
+    let vehiclesArray: any[] = [];
+    if (Array.isArray(vehicles)) {
+      vehiclesArray = vehicles;
+      console.log("✅ Dados são array direto");
+    } else if (vehicles && typeof vehicles === 'object') {
+      console.log("⚠️ Dados não são array, verificando estrutura...");
+      const vehiclesObj = vehicles as any;
+      if (vehiclesObj.data && Array.isArray(vehiclesObj.data)) {
+        vehiclesArray = vehiclesObj.data;
+        console.log("✅ Encontrado array em vehicles.data");
+      } else {
+        console.log("❌ Estrutura de dados não reconhecida:", vehicles);
+        return [];
       }
+    } else {
+      console.log("❌ Tipo de dados inválido:", typeof vehicles);
+      return [];
+    }
+    
+    if (vehiclesArray.length === 0) {
+      console.log("⚠️ Array vazio");
+      return [];
+    }
+    
+    console.log(`📋 ${vehiclesArray.length} veículos para filtrar`);
+    
+    // Aplicar filtros
+    const filtered = vehiclesArray.filter((vehicle: any) => {
+      if (!vehicle) return false;
       
-      return vehicleMatches;
+      const statusMatch = !filters.status || vehicle.status === filters.status;
+      const typeMatch = !filters.type || vehicle.vehicleType === filters.type;
+      const baseMatch = !filters.base || vehicle.baseId?.toString() === filters.base;
+      const plateMatch = !filters.plate || vehicle.plate?.toLowerCase().includes(filters.plate.toLowerCase());
+      
+      return statusMatch && typeMatch && baseMatch && plateMatch;
     });
     
     console.log(`🎯 ${filtered.length} veículos após filtros`);
