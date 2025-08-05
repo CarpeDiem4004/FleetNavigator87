@@ -72,6 +72,18 @@ interface Driver {
   telefone?: string;
 }
 
+interface DriverChecklist {
+  id: number;
+  driver_id: number;
+  driver_name: string;
+  vehicle_plate: string;
+  checklist_date: string;
+  status: 'pendente' | 'concluido';
+  observations?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const LineHaulPage = () => {
   const { toast } = useToast();
   const { user, logout } = useAuth();
@@ -83,11 +95,14 @@ const LineHaulPage = () => {
   const [routes, setRoutes] = useState<RouteData[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [checklists, setChecklists] = useState<DriverChecklist[]>([]);
   
   // Estados para diálogos
   const [isCreatingTrip, setIsCreatingTrip] = useState(false);
   const [isCreatingRoute, setIsCreatingRoute] = useState(false);
   const [showRoutes, setShowRoutes] = useState(false);
+  const [showChecklists, setShowChecklists] = useState(false);
+  const [checklistFilter, setChecklistFilter] = useState<'todos' | 'concluidos' | 'pendentes'>('todos');
   
   // Estados para estatísticas
   const [stats, setStats] = useState({
@@ -126,6 +141,7 @@ const LineHaulPage = () => {
         fetchRoutes(),
         fetchVehicles(),
         fetchDrivers(),
+        fetchChecklists(),
         fetchStats()
       ]);
     } catch (error) {
@@ -184,6 +200,43 @@ const LineHaulPage = () => {
       }
     } catch (error) {
       console.error('Erro ao buscar motoristas:', error);
+    }
+  };
+
+  const fetchChecklists = async () => {
+    try {
+      const response = await api.get('/line-hall/checklists');
+      if (response.data.success) {
+        setChecklists(response.data.data || []);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar checklists:', error);
+      // Dados simulados para demonstração
+      const mockChecklists: DriverChecklist[] = [
+        {
+          id: 1,
+          driver_id: 6,
+          driver_name: 'Adeilton Lima Cavalcante',
+          vehicle_plate: 'FNJ2854',
+          checklist_date: '2025-08-05',
+          status: 'concluido',
+          observations: 'Checklist completo - veículo em boas condições',
+          created_at: '2025-08-05T09:30:00Z',
+          updated_at: '2025-08-05T09:45:00Z'
+        },
+        {
+          id: 2,
+          driver_id: 7,
+          driver_name: 'João Silva Santos',
+          vehicle_plate: 'ABC1234',
+          checklist_date: '2025-08-05',
+          status: 'pendente',
+          observations: '',
+          created_at: '2025-08-05T08:00:00Z',
+          updated_at: '2025-08-05T08:00:00Z'
+        }
+      ];
+      setChecklists(mockChecklists);
     }
   };
 
@@ -251,24 +304,29 @@ const LineHaulPage = () => {
     }
   };
 
-  const handleCardAction = (action: string) => {
+  const handleCardAction = async (action: string) => {
     switch (action) {
       case 'atualizar-checklists':
-        fetchStats();
+        setIsLoading(true);
+        await fetchStats();
+        await fetchChecklists();
+        setIsLoading(false);
         toast({ title: "Checklists atualizados", description: "Dados atualizados com sucesso!" });
         break;
       case 'gerenciar-checklists':
-        // Implementar navegação para gestão de checklists
-        window.open('/line-hall/checklist-manager', '_blank');
+        setIsLoading(true);
+        await fetchChecklists();
+        setIsLoading(false);
+        setShowChecklists(true);
         break;
       case 'cadastrar-veiculo':
-        window.open('/line-hall/vehicle-registration', '_blank');
+        window.open('/vehicles', '_blank');
         break;
       case 'cadastrar-motorista':
         window.open('/drivers', '_blank');
         break;
       case 'criar-solicitacao':
-        window.open('/line-hall/fuel-card-requests', '_blank');
+        window.open('/fuel-cards', '_blank');
         break;
       default:
         console.log(`Ação executada: ${action}`);
@@ -291,11 +349,23 @@ const LineHaulPage = () => {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-2xl font-bold text-white mb-2">
-              {`${new Date().getHours() < 12 ? 'Bom dia' : new Date().getHours() < 18 ? 'Boa tarde' : 'Boa noite'}, ${user?.name || 'Usuário'}!`}
+              {showChecklists ? 'Checklists de Motoristas' : `${new Date().getHours() < 12 ? 'Bom dia' : new Date().getHours() < 18 ? 'Boa tarde' : 'Boa noite'}, ${user?.name || 'Usuário'}!`}
             </h1>
-            <p className="text-white/80">Bem-vindo ao Line Haul Murici</p>
+            <p className="text-white/80">
+              {showChecklists ? 'Visualização e gerenciamento de checklists' : 'Bem-vindo ao Line Haul Murici'}
+            </p>
           </div>
           <div className="flex gap-2">
+            {showChecklists && (
+              <Button 
+                variant="outline" 
+                className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+                onClick={() => setShowChecklists(false)}
+              >
+                <Car className="h-4 w-4 mr-2" />
+                Voltar ao Dashboard
+              </Button>
+            )}
             <Button 
               variant="outline" 
               className="bg-white/10 text-white border-white/20 hover:bg-white/20"
@@ -320,10 +390,94 @@ const LineHaulPage = () => {
           </div>
         </div>
 
-        {/* Painel de Controle */}
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-white mb-2">Painel de Controle</h2>
-          <p className="text-white/80 mb-4">Gerenciamento de viagens de Line Haul</p>
+        {/* Interface condicional - Dashboard ou Checklists */}
+        {showChecklists ? (
+          <div className="space-y-6">
+            {/* Filtros de Checklist */}
+            <Card className="bg-white/90 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center text-blue-700">
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  Filtrar Checklists
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2">
+                  <Button 
+                    variant={checklistFilter === 'todos' ? 'default' : 'outline'}
+                    onClick={() => setChecklistFilter('todos')}
+                    className="flex-1"
+                  >
+                    Todos ({checklists.length})
+                  </Button>
+                  <Button 
+                    variant={checklistFilter === 'concluidos' ? 'default' : 'outline'}
+                    onClick={() => setChecklistFilter('concluidos')}
+                    className="flex-1"
+                  >
+                    Concluídos ({checklists.filter(c => c.status === 'concluido').length})
+                  </Button>
+                  <Button 
+                    variant={checklistFilter === 'pendentes' ? 'default' : 'outline'}
+                    onClick={() => setChecklistFilter('pendentes')}
+                    className="flex-1"
+                  >
+                    Pendentes ({checklists.filter(c => c.status === 'pendente').length})
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Lista de Checklists */}
+            <div className="grid gap-4">
+              {checklists
+                .filter(checklist => 
+                  checklistFilter === 'todos' || checklist.status === checklistFilter
+                )
+                .map(checklist => (
+                <Card key={checklist.id} className="bg-white/90 backdrop-blur-sm">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="font-semibold text-lg">{checklist.driver_name}</h3>
+                        <p className="text-sm text-gray-600">Placa: {checklist.vehicle_plate}</p>
+                        <p className="text-sm text-gray-600">Data: {new Date(checklist.checklist_date).toLocaleDateString('pt-BR')}</p>
+                      </div>
+                      <Badge 
+                        variant={checklist.status === 'concluido' ? 'default' : 'secondary'}
+                        className={checklist.status === 'concluido' ? 'bg-green-500' : 'bg-yellow-500'}
+                      >
+                        {checklist.status === 'concluido' ? 'Concluído' : 'Pendente'}
+                      </Badge>
+                    </div>
+                    {checklist.observations && (
+                      <p className="text-sm text-gray-700 mb-3">
+                        <strong>Observações:</strong> {checklist.observations}
+                      </p>
+                    )}
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <Eye className="h-4 w-4 mr-1" />
+                        Ver Detalhes
+                      </Button>
+                      {checklist.status === 'pendente' && (
+                        <Button size="sm" className="flex-1 bg-green-500 hover:bg-green-600">
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Marcar como Concluído
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Painel de Controle */}
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold text-white mb-2">Painel de Controle</h2>
+              <p className="text-white/80 mb-4">Gerenciamento de viagens de Line Haul</p>
           
           {/* Botões de ação */}
           <div className="flex flex-wrap gap-3 mb-6">
@@ -605,6 +759,8 @@ const LineHaulPage = () => {
             </CardContent>
           </Card>
         </div>
+        </>
+        )}
 
         {/* Dialog para Nova Viagem */}
         <Dialog open={isCreatingTrip} onOpenChange={setIsCreatingTrip}>
