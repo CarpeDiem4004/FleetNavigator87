@@ -643,14 +643,23 @@ const Vehicles: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent position="popper">
                   <SelectGroup>
-                    {Array.isArray(bases) && bases.length > 0 ? 
-                      bases.map((base: any) => (
-                        <SelectItem key={base.id} value={base.id.toString()}>
-                          {base.name} {base.location ? `(${base.location})` : ''}
-                        </SelectItem>
-                      )) : 
-                      <SelectItem value="12">Gestão de Frotas</SelectItem>
-                    }
+                    {(() => {
+                      // Handle different API response structures
+                      let baseData = [];
+                      if (bases?.data && Array.isArray(bases.data)) {
+                        baseData = bases.data;
+                      } else if (Array.isArray(bases)) {
+                        baseData = bases;
+                      }
+                      
+                      return baseData.length > 0 ? 
+                        baseData.map((base: any) => (
+                          <SelectItem key={base.id} value={base.id.toString()}>
+                            {base.name} {base.location ? `(${base.location})` : ''}
+                          </SelectItem>
+                        )) : 
+                        <SelectItem value="12">Gestão de Frotas</SelectItem>;
+                    })()}
                   </SelectGroup>
                 </SelectContent>
               </Select>
