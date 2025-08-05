@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   Search, 
   CheckCircle, 
@@ -16,9 +17,10 @@ import {
   Truck,
   MapPin,
   Calendar,
-  Users
+  Users,
+  CreditCard
 } from 'lucide-react';
-import lineHaulLayoutImage from '@assets/Layout Line haul  (1908 x 1126 px)_1754396606629.png';
+import AppLayout from '@/components/layout/AppLayout';
 
 const LineHaulPage = () => {
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -29,28 +31,31 @@ const LineHaulPage = () => {
 
   const handleCardAction = (action: string) => {
     console.log(`Ação executada: ${action}`);
-    // Aqui podem ser implementadas as funcionalidades específicas
   };
 
+  // Dados mock das viagens (baseado na imagem)
+  const viagensData = [
+    { 
+      id: 1, 
+      codigo: 'COD001', 
+      condutor: 'João Silva', 
+      motorista: 'Carlos Santos', 
+      objetoOrigem: 'São Paulo - SP', 
+      pontoChegada: 'Rio de Janeiro - RJ', 
+      status: 'Em Andamento' 
+    }
+  ];
+
   return (
-    <div 
-      className="min-h-screen bg-cover bg-center bg-no-repeat relative"
-      style={{
-        backgroundImage: `url(${lineHaulLayoutImage})`,
-      }}
-    >
-      {/* Overlay para melhorar legibilidade */}
-      <div className="absolute inset-0 bg-black/20" />
-      
-      {/* Conteúdo principal */}
-      <div className="relative z-10 p-6">
+    <AppLayout>
+      <div className="p-6 bg-gray-50 min-h-screen">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-white mb-2">Bom dia, Administrador!</h1>
-            <p className="text-white/80">Bem-vindo ao Line Haul Murici</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">Bom dia, Administrador!</h1>
+            <p className="text-gray-600">Bem-vindo ao Line Haul Murici</p>
           </div>
-          <Button variant="outline" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+          <Button variant="outline" className="text-gray-600 border-gray-300 hover:bg-gray-100">
             <LogOut className="h-4 w-4 mr-2" />
             Sair
           </Button>
@@ -58,8 +63,8 @@ const LineHaulPage = () => {
 
         {/* Painel de Controle */}
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-white mb-2">Painel de Controle</h2>
-          <p className="text-white/80 mb-4">Gerenciamento de viagens de Line Haul</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Painel de Controle</h2>
+          <p className="text-gray-600 mb-4">Gerenciamento de viagens de Line Haul</p>
           
           {/* Botões de ação */}
           <div className="flex flex-wrap gap-3 mb-6">
@@ -72,7 +77,7 @@ const LineHaulPage = () => {
               Cadastrar Motorista
             </Button>
             <Button className="bg-blue-500 hover:bg-blue-600 text-white">
-              <Settings className="h-4 w-4 mr-2" />
+              <CreditCard className="h-4 w-4 mr-2" />
               Solicitações de Cartão
             </Button>
             <Button className="bg-blue-500 hover:bg-blue-600 text-white">
@@ -94,17 +99,17 @@ const LineHaulPage = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input 
               placeholder="Buscar por placa, motorista ou local..." 
-              className="pl-10 bg-blue-100/80 border-blue-200 placeholder:text-gray-600"
+              className="pl-10 bg-white border-gray-300"
               value={searchTerm}
               onChange={handleSearch}
             />
           </div>
         </div>
 
-        {/* Cards de métricas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Cards de métricas - Row 1 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           {/* Checklists de Motoristas */}
-          <Card className="bg-white/90 backdrop-blur-sm border-blue-200">
+          <Card className="bg-white border-gray-200 shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center text-blue-700">
                 <CheckCircle className="h-5 w-5 mr-2" />
@@ -124,11 +129,11 @@ const LineHaulPage = () => {
               </div>
               <div className="text-sm text-gray-600 mb-4">Total de checklists: 0</div>
               <div className="flex gap-2">
-                <Button size="sm" className="flex-1 bg-blue-500 hover:bg-blue-600">
+                <Button size="sm" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white">
                   <Eye className="h-4 w-4 mr-1" />
                   Atualizar
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button size="sm" variant="outline" className="flex-1 border-gray-300">
                   <Settings className="h-4 w-4 mr-1" />
                   Gerenciar
                 </Button>
@@ -137,7 +142,7 @@ const LineHaulPage = () => {
           </Card>
 
           {/* Solicitações de Manutenção */}
-          <Card className="bg-white/90 backdrop-blur-sm border-orange-200">
+          <Card className="bg-white border-gray-200 shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center text-orange-700">
                 <Wrench className="h-5 w-5 mr-2" />
@@ -151,17 +156,17 @@ const LineHaulPage = () => {
                   <div className="text-sm text-gray-600">Pendentes</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">2</div>
+                  <div className="text-2xl font-bold text-blue-600">1</div>
                   <div className="text-sm text-gray-600">Em Andamento</div>
                 </div>
               </div>
-              <div className="text-sm text-gray-600 mb-4">Total de solicitações: 4</div>
+              <div className="text-sm text-gray-600 mb-4">Total de solicitações: 3</div>
               <div className="flex gap-2">
-                <Button size="sm" className="flex-1 bg-blue-500 hover:bg-blue-600">
+                <Button size="sm" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white">
                   <Eye className="h-4 w-4 mr-1" />
                   Atualizar
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button size="sm" variant="outline" className="flex-1 border-gray-300">
                   <Settings className="h-4 w-4 mr-1" />
                   Gerenciar
                 </Button>
@@ -170,7 +175,7 @@ const LineHaulPage = () => {
           </Card>
 
           {/* Veículos na Garagem */}
-          <Card className="bg-white/90 backdrop-blur-sm border-green-200">
+          <Card className="bg-white border-gray-200 shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center text-green-700">
                 <Car className="h-5 w-5 mr-2" />
@@ -193,11 +198,11 @@ const LineHaulPage = () => {
                 <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">6 dias</Badge>
               </div>
               <div className="flex gap-2">
-                <Button size="sm" className="flex-1 bg-blue-500 hover:bg-blue-600">
+                <Button size="sm" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white">
                   <Eye className="h-4 w-4 mr-1" />
                   Atualizar
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button size="sm" variant="outline" className="flex-1 border-gray-300">
                   <Eye className="h-4 w-4 mr-1" />
                   Ver Veículos Parados
                 </Button>
@@ -205,32 +210,21 @@ const LineHaulPage = () => {
             </CardContent>
           </Card>
 
-          {/* Acesso para Motoristas */}
-          <Card className="bg-white/90 backdrop-blur-sm border-purple-200">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center text-purple-700">
-                <Users className="h-5 w-5 mr-2" />
-                Acesso para Motoristas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 mb-4">
-                Os motoristas podem acessar a interface dedicada para realizar checklists de veículos, solicitar manutenções e recargas de cartão de combustível.
-              </p>
-              <div className="text-sm text-blue-600 mb-4 break-all">
-                URL de acesso: https://muricionfleet2.co/app/system/driver-access
+          {/* Card vazio (4º slot) */}
+          <Card className="bg-white border-gray-200 shadow-sm">
+            <CardContent className="p-6">
+              <div className="text-center py-4">
+                <div className="text-gray-400 mb-2">Card disponível para</div>
+                <div className="text-sm text-gray-600">funcionalidade futura</div>
               </div>
-              <Button className="w-full bg-purple-500 hover:bg-purple-600 text-white">
-                Acessar Interface do Motorista
-              </Button>
             </CardContent>
           </Card>
         </div>
 
-        {/* Seção inferior com rotas e nova rota */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Cards Row 2 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Rotas Cadastradas */}
-          <Card className="bg-white/90 backdrop-blur-sm border-green-200">
+          <Card className="bg-white border-gray-200 shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg flex items-center text-green-700">
                 <Route className="h-5 w-5 mr-2" />
@@ -269,30 +263,124 @@ const LineHaulPage = () => {
             </CardContent>
           </Card>
 
-          {/* Card vazio para futuras funcionalidades */}
-          <Card className="bg-white/90 backdrop-blur-sm border-gray-200">
+          {/* Acesso para Motoristas */}
+          <Card className="bg-white border-gray-200 shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center text-gray-700">
-                <Truck className="h-5 w-5 mr-2" />
-                Operações Line Haul
+              <CardTitle className="text-lg flex items-center text-purple-700">
+                <Users className="h-5 w-5 mr-2" />
+                Acesso para Motoristas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600 mb-4">
+                Os motoristas podem acessar a interface dedicada para realizar checklists de veículos, solicitar manutenções e recargas de cartão de combustível.
+              </p>
+              <div className="text-sm text-blue-600 mb-4 break-all">
+                URL de acesso: https://muricionfleet2.co/app/system/driver-access
+              </div>
+              <Button className="w-full bg-purple-500 hover:bg-purple-600 text-white">
+                Acessar Interface do Motorista
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Seção Cards inferiores */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Solicitação de Cartão Combustível */}
+          <Card className="bg-white border-gray-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center text-green-700">
+                <CreditCard className="h-5 w-5 mr-2" />
+                Solicitação de Cartão Combustível
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-center py-8">
-                <Truck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 mb-4">
-                  Gerencie suas operações de Line Haul com eficiência
+                  Gerencie solicitações de cartão combustível com eficiência
                 </p>
-                <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+                <Button className="bg-green-500 hover:bg-green-600 text-white">
                   <Plus className="h-4 w-4 mr-2" />
-                  Iniciar Operação
+                  Nova Solicitação
                 </Button>
               </div>
             </CardContent>
           </Card>
+
+          {/* Card vazio para futuras funcionalidades */}
+          <Card className="bg-white border-gray-200 shadow-sm">
+            <CardContent className="p-6">
+              <div className="text-center py-16">
+                <div className="text-gray-400 mb-2">Espaço disponível para</div>
+                <div className="text-sm text-gray-600">funcionalidade futura</div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Tabela Viagens Line Haul Murici */}
+        <Card className="bg-white border-gray-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center text-blue-700">
+              <Truck className="h-5 w-5 mr-2" />
+              Viagens Line Haul Murici
+            </CardTitle>
+            <p className="text-sm text-gray-600 mt-1">Controle detalhado de viagens</p>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Condutor</TableHead>
+                  <TableHead>Motorista</TableHead>
+                  <TableHead>Objeto Origem</TableHead>
+                  <TableHead>Ponto Chegada</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {viagensData.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                      Nenhuma viagem cadastrada
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  viagensData.map((viagem) => (
+                    <TableRow key={viagem.id}>
+                      <TableCell className="font-medium">{viagem.codigo}</TableCell>
+                      <TableCell>{viagem.condutor}</TableCell>
+                      <TableCell>{viagem.motorista}</TableCell>
+                      <TableCell>{viagem.objetoOrigem}</TableCell>
+                      <TableCell>{viagem.pontoChegada}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          {viagem.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="border-gray-300">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" className="border-gray-300">
+                            <Settings className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 
