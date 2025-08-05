@@ -79,6 +79,11 @@ Preferred communication style: Simple, everyday language.
   - Added navigation link in main sidebar menu for easy access
   - Features: Route management (83 routes), vehicle tracking, maintenance workflow, driver interface access
   - Result: Complete Line Haul management interface ready for operational use
+- **LINE HAUL VISUAL ENHANCEMENT** (05/08/2025 15:22)
+  - Updated background image to new Murici | Coca-Cola branding image
+  - Applied lighter transparency to all cards (reduced from 90% to 80% opacity)
+  - Enhanced visual presentation while maintaining full functionality
+  - No other configurations altered as per user strict requirements
 
 ## System Architecture
 The system is built with a React/TypeScript frontend and a Node.js/Express backend, utilizing Supabase as the primary database.

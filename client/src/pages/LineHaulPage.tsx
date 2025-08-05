@@ -26,7 +26,7 @@ import {
   RefreshCcw,
   ArrowLeft
 } from 'lucide-react';
-import lineHaulLayoutImage from '@assets/Layout Line haul  (1908 x 1126 px)_1754396606629.png';
+import lineHaulLayoutImage from '@assets/coca e murici_1754417755005.png';
 import { api } from '@/services/api';
 
 interface LineHallTrip {
@@ -700,7 +700,7 @@ const LineHaulPage = () => {
         {showChecklists ? (
           <div className="space-y-6">
             {/* Filtros de Checklist */}
-            <Card className="bg-white/90 backdrop-blur-sm">
+            <Card className="bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center text-blue-700">
                   <CheckCircle className="h-5 w-5 mr-2" />
@@ -743,7 +743,7 @@ const LineHaulPage = () => {
                   (checklistFilter === 'pendentes' && checklist.status === 'pendente')
                 )
                 .map(checklist => (
-                <Card key={checklist.id} className="bg-white/90 backdrop-blur-sm">
+                <Card key={checklist.id} className="bg-white/80 backdrop-blur-sm">
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start mb-3">
                       <div>
@@ -783,7 +783,7 @@ const LineHaulPage = () => {
         ) : showMaintenance ? (
           <div className="space-y-6">
             {/* Header com botão voltar para Manutenção */}
-            <Card className="bg-white/90 backdrop-blur-sm">
+            <Card className="bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between text-orange-700">
                   <span className="flex items-center">
@@ -803,7 +803,7 @@ const LineHaulPage = () => {
             </Card>
 
             {/* Filtros de Manutenção */}
-            <Card className="bg-white/90 backdrop-blur-sm">
+            <Card className="bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center text-orange-700">
                   <Wrench className="h-5 w-5 mr-2" />
@@ -851,7 +851,7 @@ const LineHaulPage = () => {
                   maintenanceFilter === 'todos' || request.status === maintenanceFilter
                 )
                 .map(request => (
-                <Card key={request.id} className="bg-white/90 backdrop-blur-sm">
+                <Card key={request.id} className="bg-white/80 backdrop-blur-sm">
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
@@ -930,7 +930,7 @@ const LineHaulPage = () => {
         ) : showGarage ? (
           <div className="space-y-6">
             {/* Header com botão voltar para Garagem */}
-            <Card className="bg-white/90 backdrop-blur-sm">
+            <Card className="bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between text-green-700">
                   <span className="flex items-center">
@@ -950,7 +950,7 @@ const LineHaulPage = () => {
             </Card>
 
             {/* Busca e Filtros de Garagem */}
-            <Card className="bg-white/90 backdrop-blur-sm">
+            <Card className="bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center text-green-700">
                   <Car className="h-5 w-5 mr-2" />
@@ -1016,7 +1016,7 @@ const LineHaulPage = () => {
                   return matchesPlateSearch && matchesFilter;
                 })
                 .map(vehicle => (
-                <Card key={vehicle.id} className="bg-white/90 backdrop-blur-sm">
+                <Card key={vehicle.id} className="bg-white/80 backdrop-blur-sm">
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
@@ -1147,7 +1147,7 @@ const LineHaulPage = () => {
         {/* Cards de métricas */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Checklists de Motoristas */}
-          <Card className="bg-white/90 backdrop-blur-sm border-blue-200">
+          <Card className="bg-white/80 backdrop-blur-sm border-blue-200">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center text-blue-700">
                 <CheckCircle className="h-5 w-5 mr-2" />
@@ -1194,7 +1194,7 @@ const LineHaulPage = () => {
           </Card>
 
           {/* Solicitações de Manutenção */}
-          <Card className="bg-white/90 backdrop-blur-sm border-orange-200">
+          <Card className="bg-white/80 backdrop-blur-sm border-orange-200">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center text-orange-700">
                 <Wrench className="h-5 w-5 mr-2" />
@@ -1241,7 +1241,7 @@ const LineHaulPage = () => {
           </Card>
 
           {/* Veículos na Garagem */}
-          <Card className="bg-white/90 backdrop-blur-sm border-green-200">
+          <Card className="bg-white/80 backdrop-blur-sm border-green-200">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center text-green-700">
                 <Car className="h-5 w-5 mr-2" />
@@ -1298,7 +1298,7 @@ const LineHaulPage = () => {
           </Card>
 
           {/* Acesso para Motoristas */}
-          <Card className="bg-white/90 backdrop-blur-sm border-purple-200">
+          <Card className="bg-white/80 backdrop-blur-sm border-purple-200">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center text-purple-700">
                 <Users className="h-5 w-5 mr-2" />
@@ -1325,7 +1325,7 @@ const LineHaulPage = () => {
         {/* Seção inferior com rotas e nova rota */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Rotas Cadastradas */}
-          <Card className="bg-white/90 backdrop-blur-sm border-green-200">
+          <Card className="bg-white/80 backdrop-blur-sm border-green-200">
             <CardHeader>
               <CardTitle className="text-lg flex items-center text-green-700">
                 <Route className="h-5 w-5 mr-2" />
@@ -1371,7 +1371,7 @@ const LineHaulPage = () => {
           </Card>
 
           {/* Operações Line Haul */}
-          <Card className="bg-white/90 backdrop-blur-sm border-blue-200">
+          <Card className="bg-white/80 backdrop-blur-sm border-blue-200">
             <CardHeader>
               <CardTitle className="text-lg flex items-center text-blue-700">
                 <Truck className="h-5 w-5 mr-2" />
