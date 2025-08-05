@@ -313,9 +313,13 @@ const VehiclesNew: React.FC = () => {
       const basesData = await basesResponse.json();
       console.log('Bases recebidas da API:', basesData);
       
+      // Extrair o array de bases do objeto retornado
+      const basesArray = basesData.success && basesData.data ? basesData.data : [];
+      console.log('Array de bases extraído:', basesArray);
+      
       // Criar um mapa de bases por ID para facilitar a busca
       const basesMap = new Map();
-      basesData.forEach((base: any) => {
+      basesArray.forEach((base: any) => {
         basesMap.set(base.id, base.name || base.nome);
       });
       

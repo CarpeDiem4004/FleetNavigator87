@@ -138,16 +138,27 @@ const Vehicles: React.FC = () => {
     }
   });
 
-  console.log("🚗 QUERY STATE:", { 
-    vehicles: vehicles ? `Array com ${Array.isArray(vehicles) ? vehicles.length : 'não-array'} items` : 'undefined',
+  console.log("🚗 QUERY STATE COMPLETO:", { 
+    vehicles, 
+    vehiclesType: typeof vehicles,
+    vehiclesIsArray: Array.isArray(vehicles),
+    vehiclesLength: vehicles ? (Array.isArray(vehicles) ? vehicles.length : 'não-array') : 'undefined',
     isLoading, 
-    error: error?.message 
+    error 
   });
   
   // Obter bases da API real
-  const { data: bases } = useQuery({
+  const { data: bases, error: basesError } = useQuery({
     queryKey: ['/api/bases'],
+    onError: (err) => {
+      console.error("❌ ERRO NA QUERY BASES:", err);
+    },
+    onSuccess: (data) => {
+      console.log("✅ QUERY BASES SUCESSO:", data);
+    }
   });
+
+  console.log("🏢 BASES STATE:", { bases, basesError });
   
   // Mutação para adicionar novo veículo
   const addVehicleMutation = useMutation({
