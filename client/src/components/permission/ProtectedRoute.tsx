@@ -55,12 +55,22 @@ const RetryableLoader = ({
       )}
       
       {isError && retryCount >= 3 && (
-        <a 
-          href="/login"
-          className="text-sm text-blue-500 hover:underline"
+        <button 
+          onClick={() => {
+            const currentPath = window.location.pathname;
+            const isExternalBase = currentPath.includes('/bases/');
+            
+            if (!isExternalBase) {
+              window.location.href = '/login';
+            } else {
+              // Para bases externas, recarregar a página atual (que deve ser o login da base)
+              window.location.reload();
+            }
+          }}
+          className="text-sm text-blue-500 hover:underline cursor-pointer"
         >
-          Voltar para a página de login
-        </a>
+          {window.location.pathname.includes('/bases/') ? 'Recarregar página' : 'Voltar para a página de login'}
+        </button>
       )}
     </div>
   </div>
@@ -267,9 +277,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
     if (recovered) {
       setRetryCount(prev => prev + 1);
     } else {
-      // Se falhar na recuperação, podemos redirecionar para o login
+      // Se falhar na recuperação, verificar contexto antes de redirecionar
       if (retryCount >= 2) {
-        window.location.href = '/login';
+        const currentPath = window.location.pathname;
+        const isExternalBase = currentPath.includes('/bases/');
+        
+        if (!isExternalBase) {
+          // Só redirecionar para login se NÃO for uma base externa
+          window.location.href = '/login';
+        } else {
+          console.log('[ProtectedRoute] Base externa - não redirecionando para login principal');
+        }
       } else {
         setRetryCount(prev => prev + 1);
       }
@@ -291,9 +309,39 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
     return <RetryableLoader message="Verificando autenticação..." onRetry={handleRetry} />;
   }
   
-  // Se o usuário não estiver autenticado, redireciona para login
+  // Se o usuário não estiver autenticado, verificar se é uma base externa antes de redirecionar
   if (!user) {
-    console.log('[ProtectedRoute] Usuário não autenticado, redirecionando para login...');
+    console.log('[ProtectedRoute] Usuário não autenticado, verificando contexto...');
+    
+    // DIRETRIZ RIGOROSA: Bases externas NUNCA devem ser redirecionadas para o login principal
+    // Verificar se estamos em uma rota de base externa
+    const currentPath = window.location.pathname;
+    const isExternalBase = currentPath.includes('/bases/');
+    
+    if (isExternalBase) {
+      // Para bases externas, NÃO redirecionar - deixar o próprio componente de login da base lidar com a autenticação
+      console.log('[ProtectedRoute] Base externa detectada, não redirecionando para login principal');
+      console.log('[ProtectedRoute] Rota atual:', currentPath);
+      
+      // Retornar uma mensagem de erro em vez de redirecionar
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center p-6 bg-background rounded-lg shadow-md max-w-md">
+            <AlertTriangle className="h-10 w-10 text-orange-500 mx-auto mb-4" />
+            <h2 className="text-lg font-semibold mb-2">Acesso Restrito</h2>
+            <p className="text-muted-foreground mb-4">
+              Esta área é restrita. Você precisa fazer login através da página de acesso da base.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Use o formulário de login correto para sua base específica.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    
+    // Para o sistema principal, redirecionar normalmente
+    console.log('[ProtectedRoute] Sistema principal - redirecionando para login...');
     return <Redirect to="/login" />;
   }
   

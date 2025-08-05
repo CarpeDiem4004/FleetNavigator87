@@ -84,6 +84,14 @@ Preferred communication style: Simple, everyday language.
   - Applied lighter transparency to all cards (reduced from 90% to 80% opacity)
   - Enhanced visual presentation while maintaining full functionality
   - No other configurations altered as per user strict requirements
+- **CRITICAL FIX: EXTERNAL BASE LOGIN ISOLATION** (05/08/2025 20:45)
+  - Implemented strict isolation for external base login systems (GP01, GP02, GP03, etc.)
+  - Fixed ProtectedRoute component to NEVER redirect external bases to main system login (/login)
+  - Each base now stays within its own URL context (/bases/gp02/login, etc.) when authentication fails
+  - Added path detection logic to distinguish external bases from main system
+  - External bases show local error messages instead of redirecting on auth failure
+  - Preserved main system functionality while ensuring complete base isolation
+  - Status: External base login systems now completely independent of main system
 
 ## System Architecture
 The system is built with a React/TypeScript frontend and a Node.js/Express backend, utilizing Supabase as the primary database.
