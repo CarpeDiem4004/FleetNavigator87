@@ -227,24 +227,52 @@ const Vehicles: React.FC = () => {
   });
   
   const filteredVehicles = React.useMemo(() => {
-    console.log("Dados dos veículos recebidos:", vehicles);
-    console.log("Filtros aplicados:", filters);
+    console.log("🚗 DEBUG VEÍCULOS:");
+    console.log("- Dados recebidos da API:", vehicles);
+    console.log("- Tipo dos dados:", typeof vehicles);
+    console.log("- É array?", Array.isArray(vehicles));
+    console.log("- Filtros aplicados:", filters);
     
-    if (!vehicles || !Array.isArray(vehicles)) {
-      console.log("Veículos não são array ou estão vazios:", vehicles);
+    if (!vehicles) {
+      console.log("❌ Veículos não definidos");
       return [];
     }
     
+    if (!Array.isArray(vehicles)) {
+      console.log("❌ Veículos não são array, tipo:", typeof vehicles);
+      console.log("- Conteúdo completo:", JSON.stringify(vehicles, null, 2));
+      return [];
+    }
+    
+    if (vehicles.length === 0) {
+      console.log("⚠️ Array de veículos está vazio");
+      return [];
+    }
+    
+    console.log(`✅ ${vehicles.length} veículos encontrados, aplicando filtros...`);
+    
     const filtered = vehicles.filter((vehicle: any) => {
-      return (
-        (filters.status === '' || vehicle.status === filters.status) &&
-        (filters.type === '' || vehicle.vehicleType === filters.type) &&
-        (filters.base === '' || vehicle.baseId.toString() === filters.base) &&
-        (filters.plate === '' || vehicle.plate.toLowerCase().includes(filters.plate.toLowerCase()))
-      );
+      const statusMatch = filters.status === '' || vehicle.status === filters.status;
+      const typeMatch = filters.type === '' || vehicle.vehicleType === filters.type;
+      const baseMatch = filters.base === '' || vehicle.baseId.toString() === filters.base;
+      const plateMatch = filters.plate === '' || vehicle.plate.toLowerCase().includes(filters.plate.toLowerCase());
+      
+      const vehicleMatches = statusMatch && typeMatch && baseMatch && plateMatch;
+      
+      if (!vehicleMatches) {
+        console.log(`🔍 Veículo ${vehicle.plate} filtrado fora:`, {
+          statusMatch,
+          typeMatch,
+          baseMatch,
+          plateMatch,
+          vehicle: { status: vehicle.status, vehicleType: vehicle.vehicleType, baseId: vehicle.baseId }
+        });
+      }
+      
+      return vehicleMatches;
     });
     
-    console.log("Veículos filtrados:", filtered);
+    console.log(`🎯 ${filtered.length} veículos após filtros`);
     return filtered;
   }, [vehicles, filters]);
   
