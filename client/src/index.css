@@ -8,6 +8,13 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased text-foreground;
+    background: url('/path/to/background-image.jpg') no-repeat center center fixed;
+    background-size: cover;
   }
+
+.card {
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+}
 }
