@@ -139,6 +139,8 @@ const LineHaulPage = () => {
   const [isCreatingTrip, setIsCreatingTrip] = useState(false);
   const [isCreatingRoute, setIsCreatingRoute] = useState(false);
   const [showRoutes, setShowRoutes] = useState(false);
+  const [showRoutesList, setShowRoutesList] = useState(false);
+  const [showNewRoute, setShowNewRoute] = useState(false);
   const [showChecklists, setShowChecklists] = useState(false);
   const [checklistFilter, setChecklistFilter] = useState<'todos' | 'concluidos' | 'pendentes'>('todos');
   const [showMaintenance, setShowMaintenance] = useState(false);
@@ -170,6 +172,14 @@ const LineHaulPage = () => {
     rota_selecionada: '',
     data_viagem: new Date().toISOString().split('T')[0],
     km_total: 0
+  });
+
+  // Estado para formulário de nova rota
+  const [newRoute, setNewRoute] = useState({
+    nome_ponto_a: '',
+    nome_ponto_b: '',
+    km_total: 0,
+    observacoes: ''
   });
 
   useEffect(() => {
@@ -414,6 +424,42 @@ const LineHaulPage = () => {
       await logout();
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
+    }
+  };
+
+  const handleCreateRoute = async () => {
+    if (!newRoute.nome_ponto_a || !newRoute.nome_ponto_b || !newRoute.km_total) {
+      toast({
+        title: "Erro",
+        description: "Preencha todos os campos obrigatórios",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await api.post('/line-hall/routes', newRoute);
+      if (response.data.success) {
+        toast({
+          title: "Sucesso",
+          description: "Rota cadastrada com sucesso!"
+        });
+        setNewRoute({
+          nome_ponto_a: '',
+          nome_ponto_b: '',
+          km_total: 0,
+          observacoes: ''
+        });
+        setShowNewRoute(false);
+        await fetchRoutes();
+      }
+    } catch (error) {
+      console.error('Erro ao criar rota:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao cadastrar rota",
+        variant: "destructive"
+      });
     }
   };
 
@@ -1170,11 +1216,17 @@ const LineHaulPage = () => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button className="flex-1 bg-blue-500 hover:bg-blue-600 text-white">
+                <Button 
+                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+                  onClick={() => setShowRoutesList(true)}
+                >
                   <Eye className="h-4 w-4 mr-2" />
                   Ver Rotas
                 </Button>
-                <Button className="flex-1 bg-green-500 hover:bg-green-600 text-white">
+                <Button 
+                  className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                  onClick={() => setShowNewRoute(true)}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Nova Rota
                 </Button>
@@ -1376,6 +1428,144 @@ const LineHaulPage = () => {
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Nova Rota
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog para Ver Rotas */}
+        <Dialog open={showRoutesList} onOpenChange={setShowRoutesList}>
+          <DialogContent className="sm:max-w-[900px] max-h-[600px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center text-blue-700">
+                <Route className="h-5 w-5 mr-2" />
+                Rotas Cadastradas
+              </DialogTitle>
+              <DialogDescription>
+                Visualize todas as rotas cadastradas no sistema ({routes.length} rotas)
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-3 overflow-y-auto max-h-[400px]">
+              {routes.length > 0 ? (
+                routes.map((route) => (
+                  <Card key={route.id} className="p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex justify-between items-center">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">
+                          {route.nome_ponto_a} → {route.nome_ponto_b}
+                        </h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                          <span className="font-medium">Distância:</span> {route.km_total} km
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(route.nome_ponto_a)}/${encodeURIComponent(route.nome_ponto_b)}`;
+                            window.open(mapsUrl, '_blank');
+                          }}
+                        >
+                          <MapPin className="h-4 w-4 mr-1" />
+                          Ver no Maps
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <Route className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma rota cadastrada</h3>
+                  <p className="text-gray-500">Comece cadastrando uma nova rota</p>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRoutesList(false)}>
+                Fechar
+              </Button>
+              <Button 
+                onClick={() => {
+                  setShowRoutesList(false);
+                  setShowNewRoute(true);
+                }}
+                className="bg-green-500 hover:bg-green-600"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Rota
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog para Nova Rota */}
+        <Dialog open={showNewRoute} onOpenChange={setShowNewRoute}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center text-green-700">
+                <Plus className="h-5 w-5 mr-2" />
+                Cadastrar Nova Rota
+              </DialogTitle>
+              <DialogDescription>
+                Preencha os dados da nova rota Line Haul
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="ponto_a">Ponto de Origem *</Label>
+                  <Input
+                    id="ponto_a"
+                    placeholder="Ex: São Paulo, SP"
+                    value={newRoute.nome_ponto_a}
+                    onChange={(e) => setNewRoute(prev => ({ ...prev, nome_ponto_a: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ponto_b">Ponto de Destino *</Label>
+                  <Input
+                    id="ponto_b"
+                    placeholder="Ex: Rio de Janeiro, RJ"
+                    value={newRoute.nome_ponto_b}
+                    onChange={(e) => setNewRoute(prev => ({ ...prev, nome_ponto_b: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="km_total">Distância Total (km) *</Label>
+                <Input
+                  id="km_total"
+                  type="number"
+                  placeholder="Ex: 450"
+                  value={newRoute.km_total || ''}
+                  onChange={(e) => setNewRoute(prev => ({ ...prev, km_total: parseInt(e.target.value) || 0 }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="observacoes">Observações</Label>
+                <textarea
+                  id="observacoes"
+                  className="w-full p-2 border border-gray-300 rounded-md resize-none"
+                  rows={3}
+                  placeholder="Informações adicionais sobre a rota..."
+                  value={newRoute.observacoes}
+                  onChange={(e) => setNewRoute(prev => ({ ...prev, observacoes: e.target.value }))}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowNewRoute(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleCreateRoute}
+                className="bg-green-500 hover:bg-green-600"
+                disabled={!newRoute.nome_ponto_a || !newRoute.nome_ponto_b || !newRoute.km_total}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Cadastrar Rota
               </Button>
             </DialogFooter>
           </DialogContent>
