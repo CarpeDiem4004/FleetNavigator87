@@ -263,8 +263,12 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
         const data = await response.json();
         console.log('Bases carregadas da API:', data);
         
+        // Extrair o array de bases do objeto retornado pela API
+        const basesArray = data.success && data.data ? data.data : [];
+        console.log('Array de bases extraído:', basesArray);
+        
         // Adaptar o formato da resposta da API para o formato esperado pelo componente
-        const formattedBases = data.map((base: any) => ({
+        const formattedBases = basesArray.map((base: any) => ({
           id: base.id,
           nome: base.name || base.nome // Lidar com ambos os formatos possíveis
         }));
