@@ -151,7 +151,7 @@ const LineHaulPage = () => {
                   <div className="text-sm text-gray-600">Pendentes</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">1</div>
+                  <div className="text-2xl font-bold text-blue-600">2</div>
                   <div className="text-sm text-gray-600">Em Andamento</div>
                 </div>
               </div>
