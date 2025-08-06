@@ -72,6 +72,59 @@ interface ComparativoData {
   };
 }
 
+// Interfaces para o comparativo mensal detalhado
+interface ComparativoMensalData {
+  resumo_executivo: {
+    total_registros_mensais: number;
+    total_projetos_analisados: number;
+    total_bases_analisadas: number;
+    postos_disponiveis: number;
+    periodo_analise: string;
+    meses_com_dados: number;
+  };
+  projetos_posto_favorito: {
+    [projeto: string]: {
+      posto_favorito: string;
+      consumo_posto_favorito: number;
+      total_postos_utilizados: number;
+      detalhes_por_posto: {
+        [posto: string]: {
+          total_litros: number;
+          total_valor: number;
+          meses_ativo: number;
+          abastecimentos: number;
+        };
+      };
+    };
+  };
+  bases_posto_favorito: {
+    [base: string]: {
+      posto_favorito: string;
+      consumo_posto_favorito: number;
+      total_postos_utilizados: number;
+      detalhes_por_posto: {
+        [posto: string]: {
+          total_litros: number;
+          total_valor: number;
+          meses_ativo: number;
+          abastecimentos: number;
+        };
+      };
+    };
+  };
+  consolidado_mensal: Array<{
+    mes: number;
+    mes_nome: string;
+    ano: number;
+    total_litros: number;
+    total_valor: number;
+    total_abastecimentos: number;
+    total_projetos: number;
+    total_bases: number;
+    total_postos: number;
+  }>;
+}
+
 export default function GraficoConsumoPage() {
   const [dadosConsumo, setDadosConsumo] = useState<DadosConsumo[]>([]);
   const [dadosGrafico, setDadosGrafico] = useState<DadosGrafico[]>([]);
@@ -85,6 +138,10 @@ export default function GraficoConsumoPage() {
   const [comparativoData, setComparativoData] = useState<ComparativoData | null>(null);
   const [isLoadingComparativo, setIsLoadingComparativo] = useState(false);
   const [activeTab, setActiveTab] = useState('graficos');
+  
+  // Estados para o comparativo mensal detalhado
+  const [comparativoMensalData, setComparativoMensalData] = useState<ComparativoMensalData | null>(null);
+  const [isLoadingComparativoMensal, setIsLoadingComparativoMensal] = useState(false);
 
   const postos = [
     { id: 'campinas_v2', nome: 'CAMPINAS' },
@@ -229,6 +286,31 @@ export default function GraficoConsumoPage() {
     }
   };
 
+  // Função para buscar dados do comparativo mensal detalhado
+  const fetchComparativoMensal = async () => {
+    try {
+      setIsLoadingComparativoMensal(true);
+      console.log('[COMPARATIVO-MENSAL] Buscando análise mensal detalhada');
+
+      const response = await fetch(`/api/abastecimentos/comparativo-mensal-detalhado?ano=${selectedYear}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success) {
+          setComparativoMensalData(data.data);
+          console.log('[COMPARATIVO-MENSAL] Dados carregados:', data.data.resumo_executivo);
+        } else {
+          console.error('[COMPARATIVO-MENSAL] Erro na resposta:', data.message);
+        }
+      }
+    } catch (error) {
+      console.error('[COMPARATIVO-MENSAL] Erro ao buscar dados:', error);
+    } finally {
+      setIsLoadingComparativoMensal(false);
+    }
+  };
+
   const exportarDados = () => {
     const dadosExport = dadosConsumo.map(d => ({
       Posto: d.postoNome,
@@ -284,6 +366,53 @@ export default function GraficoConsumoPage() {
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `comparativo-projeto-base-${selectedYear}.csv`;
+    link.click();
+  };
+
+  const exportarMensal = () => {
+    if (!comparativoMensalData) return;
+
+    // Exportar dados de postos favoritos dos projetos
+    const projetosData = Object.entries(comparativoMensalData.projetos_posto_favorito).map(([projeto, data]) => ({
+      Tipo: 'PROJETO',
+      Nome: projeto,
+      'Posto Favorito': data.posto_favorito,
+      'Consumo Posto Favorito (L)': data.consumo_posto_favorito.toFixed(1),
+      'Total Postos Utilizados': data.total_postos_utilizados,
+      'Outros Postos': Object.keys(data.detalhes_por_posto).filter(p => p !== data.posto_favorito).join('; ')
+    }));
+
+    // Exportar dados de postos favoritos das bases
+    const basesData = Object.entries(comparativoMensalData.bases_posto_favorito).map(([base, data]) => ({
+      Tipo: 'BASE',
+      Nome: base,
+      'Posto Favorito': data.posto_favorito,
+      'Consumo Posto Favorito (L)': data.consumo_posto_favorito.toFixed(1),
+      'Total Postos Utilizados': data.total_postos_utilizados,
+      'Outros Postos': Object.keys(data.detalhes_por_posto).filter(p => p !== data.posto_favorito).join('; ')
+    }));
+
+    // Exportar consolidado mensal
+    const mensalData = comparativoMensalData.consolidado_mensal.map(m => ({
+      Tipo: 'MENSAL',
+      Nome: `${m.mes_nome}/${m.ano}`,
+      'Posto Favorito': '-',
+      'Consumo Posto Favorito (L)': m.total_litros.toFixed(1),
+      'Total Postos Utilizados': m.total_postos,
+      'Outros Postos': `${m.total_projetos} projetos, ${m.total_bases} bases, ${m.total_abastecimentos} abastecimentos`
+    }));
+
+    const dadosExport = [...projetosData, ...basesData, ...mensalData];
+
+    const csv = [
+      Object.keys(dadosExport[0]).join(','),
+      ...dadosExport.map(row => Object.values(row).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `analise-mensal-postos-favoritos-${selectedYear}.csv`;
     link.click();
   };
 
@@ -394,6 +523,9 @@ export default function GraficoConsumoPage() {
     if (activeTab === 'comparativo') {
       fetchComparativo();
     }
+    if (activeTab === 'mensal') {
+      fetchComparativoMensal();
+    }
   }, [selectedYear, activeTab]);
 
   useEffect(() => {
@@ -499,12 +631,19 @@ export default function GraficoConsumoPage() {
               Exportar Comparativo
             </Button>
           )}
+          
+          {activeTab === 'mensal' && (
+            <Button onClick={exportarMensal} variant="outline" disabled={!comparativoMensalData}>
+              <Download className="w-4 h-4 mr-2" />
+              Exportar Análise Mensal
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="graficos" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Gráficos por Posto
@@ -512,6 +651,10 @@ export default function GraficoConsumoPage() {
           <TabsTrigger value="comparativo" className="flex items-center gap-2">
             <Target className="h-4 w-4" />
             Comparativo Projeto & Base
+          </TabsTrigger>
+          <TabsTrigger value="mensal" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Análise Mensal
           </TabsTrigger>
         </TabsList>
 
@@ -794,6 +937,170 @@ export default function GraficoConsumoPage() {
             <Card>
               <CardContent className="p-8 text-center">
                 <p className="text-gray-500">Nenhum dado comparativo disponível para este período</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Tab Content - Análise Mensal */}
+        <TabsContent value="mensal" className="space-y-6">
+          {isLoadingComparativoMensal ? (
+            <Card>
+              <CardContent className="p-8">
+                <div className="flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p>Carregando análise mensal detalhada...</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : comparativoMensalData ? (
+            <>
+              {/* Resumo Executivo da Análise Mensal */}
+              <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Resumo da Análise Mensal Detalhada
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-4 bg-white/70 rounded-lg">
+                      <p className="text-sm text-gray-600">Registros Mensais</p>
+                      <p className="text-2xl font-bold text-purple-700">
+                        {comparativoMensalData.resumo_executivo.total_registros_mensais}
+                      </p>
+                    </div>
+                    <div className="text-center p-4 bg-white/70 rounded-lg">
+                      <p className="text-sm text-gray-600">Projetos Analisados</p>
+                      <p className="text-2xl font-bold text-purple-700">
+                        {comparativoMensalData.resumo_executivo.total_projetos_analisados}
+                      </p>
+                    </div>
+                    <div className="text-center p-4 bg-white/70 rounded-lg">
+                      <p className="text-sm text-gray-600">Bases Analisadas</p>
+                      <p className="text-2xl font-bold text-purple-700">
+                        {comparativoMensalData.resumo_executivo.total_bases_analisadas}
+                      </p>
+                    </div>
+                    <div className="text-center p-4 bg-white/70 rounded-lg">
+                      <p className="text-sm text-gray-600">Meses com Dados</p>
+                      <p className="text-2xl font-bold text-purple-700">
+                        {comparativoMensalData.resumo_executivo.meses_com_dados}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Projetos e Postos Favoritos */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Target className="h-5 w-5" />
+                      Projetos - Posto Favorito de Cada Um
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4 max-h-96 overflow-y-auto">
+                      {Object.entries(comparativoMensalData.projetos_posto_favorito).map(([projeto, data]) => (
+                        <div key={projeto} className="p-4 border rounded-lg">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-semibold text-lg">{projeto}</h4>
+                            <Badge variant="secondary">{data.total_postos_utilizados} postos</Badge>
+                          </div>
+                          <div className="bg-green-50 p-3 rounded-md border border-green-200">
+                            <p className="text-sm text-green-700 font-medium">🏆 Posto Favorito:</p>
+                            <p className="font-bold text-green-800">{data.posto_favorito}</p>
+                            <p className="text-sm text-green-600">
+                              {data.consumo_posto_favorito.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}L consumidos
+                            </p>
+                          </div>
+                          {data.total_postos_utilizados > 1 && (
+                            <div className="mt-2 text-xs text-gray-500">
+                              + {data.total_postos_utilizados - 1} outros postos utilizados
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Filter className="h-5 w-5" />
+                      Bases - Posto Favorito de Cada Uma
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4 max-h-96 overflow-y-auto">
+                      {Object.entries(comparativoMensalData.bases_posto_favorito).map(([base, data]) => (
+                        <div key={base} className="p-4 border rounded-lg">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-semibold text-lg">{base}</h4>
+                            <Badge variant="secondary">{data.total_postos_utilizados} postos</Badge>
+                          </div>
+                          <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
+                            <p className="text-sm text-blue-700 font-medium">🏆 Posto Favorito:</p>
+                            <p className="font-bold text-blue-800">{data.posto_favorito}</p>
+                            <p className="text-sm text-blue-600">
+                              {data.consumo_posto_favorito.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}L consumidos
+                            </p>
+                          </div>
+                          {data.total_postos_utilizados > 1 && (
+                            <div className="mt-2 text-xs text-gray-500">
+                              + {data.total_postos_utilizados - 1} outros postos utilizados
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Consolidado Mensal */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Evolução Mensal do Consumo - {selectedYear}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={comparativoMensalData.consolidado_mensal} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="mes_nome" />
+                      <YAxis />
+                      <Tooltip formatter={(value: number, name: string) => {
+                        if (name === 'total_litros') {
+                          return [`${value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}L`, 'Total Litros'];
+                        }
+                        if (name === 'total_valor') {
+                          return [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Total Valor'];
+                        }
+                        return [value.toLocaleString('pt-BR'), name];
+                      }} />
+                      <Legend />
+                      <Bar dataKey="total_litros" fill="#8884d8" name="Litros" />
+                      <Bar dataKey="total_abastecimentos" fill="#82ca9d" name="Abastecimentos" />
+                      <Bar dataKey="total_projetos" fill="#ffc658" name="Projetos Ativos" />
+                      <Bar dataKey="total_bases" fill="#ff7c7c" name="Bases Ativas" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="text-gray-500">Nenhum dado de análise mensal disponível para este período</p>
               </CardContent>
             </Card>
           )}

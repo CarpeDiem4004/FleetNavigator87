@@ -12327,6 +12327,287 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para comparativo mensal detalhado por projeto e base - análise avançada
+  // DEVE VIR ANTES DA ROTA GENÉRICA /api/abastecimentos/:posto
+  app.get('/api/abastecimentos/comparativo-mensal-detalhado', async (req, res) => {
+    try {
+      const { ano = new Date().getFullYear().toString() } = req.query;
+      const anoSelecionado = parseInt(ano as string);
+      
+      console.log(`[COMPARATIVO-MENSAL] Iniciando análise mensal detalhada para o ano: ${anoSelecionado}`);
+      
+      const postos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2'];
+      const dadosMensaisDetalhados = [];
+      const analisePostosProjetos = {};
+      const analisePostosBases = {};
+      
+      // Buscar dados mensais para todos os postos
+      for (const posto of postos) {
+        const nomeTabela = `abastecimentos_posto_${posto}`;
+        
+        try {
+          // Verificar se a tabela existe
+          const tabelaExiste = await pool.query(`
+            SELECT EXISTS (
+              SELECT FROM information_schema.tables 
+              WHERE table_schema = 'public' 
+              AND table_name = $1
+            ) as "exists"
+          `, [nomeTabela]);
+          
+          if (!tabelaExiste.rows[0].exists) {
+            console.log(`[COMPARATIVO-MENSAL] Tabela ${nomeTabela} não encontrada, pulando...`);
+            continue;
+          }
+          
+          // Verificar colunas disponíveis
+          const colunasQuery = `
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = $1
+            ORDER BY ordinal_position
+          `;
+          const colunas = await pool.query(colunasQuery, [nomeTabela]);
+          const nomeColunas = colunas.rows.map(col => col.column_name);
+          
+          // Determinar quais colunas usar
+          const projetoCol = nomeColunas.includes('projeto') ? 'projeto' : 
+                            nomeColunas.includes('project') ? 'project' : 
+                            "'Não definido'";
+          const baseCol = nomeColunas.includes('base_name') ? 'base_name' : 
+                         nomeColunas.includes('base_id') ? 'CAST(base_id as text)' : 
+                         "'Base não informada'";
+          
+          // Query para análise mensal detalhada
+          const queryMensal = `
+            SELECT 
+              EXTRACT(MONTH FROM created_at) as mes,
+              EXTRACT(YEAR FROM created_at) as ano,
+              COALESCE(${projetoCol}, 'Não definido') as projeto,
+              COALESCE(${baseCol}, 'Base não informada') as base,
+              '${posto.replace('_v2', '').toUpperCase()}' as posto,
+              COALESCE(SUM(litros), 0) as total_litros,
+              COUNT(*) as total_abastecimentos,
+              COUNT(DISTINCT COALESCE(placa, 'SEM_PLACA')) as veiculos_unicos,
+              COALESCE(SUM(valor_total), 0) as total_valor,
+              ROUND(COALESCE(AVG(valor_litro), 0), 2) as preco_medio_litro,
+              ROUND(COALESCE(SUM(valor_total) / NULLIF(SUM(litros), 0), 0), 2) as custo_por_litro,
+              MIN(created_at) as primeira_data,
+              MAX(created_at) as ultima_data,
+              array_agg(DISTINCT COALESCE(placa, 'SEM_PLACA') ORDER BY COALESCE(placa, 'SEM_PLACA')) as placas_utilizadas
+            FROM ${nomeTabela}
+            WHERE EXTRACT(YEAR FROM created_at) = $1
+            AND litros > 0 
+            AND valor_total > 0
+            GROUP BY 
+              EXTRACT(MONTH FROM created_at), 
+              EXTRACT(YEAR FROM created_at),
+              ${projetoCol},
+              ${baseCol}
+            ORDER BY mes, projeto, base
+          `;
+          
+          const resultado = await pool.query(queryMensal, [anoSelecionado]);
+          
+          // Processar cada registro com análises adicionais
+          resultado.rows.forEach(row => {
+            // Adicionar informações de contexto
+            row.mes_nome = [
+              '', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+              'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ][row.mes];
+            
+            // Calcular KPIs
+            row.litros_por_veiculo = row.veiculos_unicos > 0 ? 
+              parseFloat((parseFloat(row.total_litros) / parseInt(row.veiculos_unicos)).toFixed(2)) : 0;
+            row.abastecimentos_por_veiculo = row.veiculos_unicos > 0 ? 
+              parseFloat((parseInt(row.total_abastecimentos) / parseInt(row.veiculos_unicos)).toFixed(2)) : 0;
+            row.media_litros_por_abastecimento = row.total_abastecimentos > 0 ? 
+              parseFloat((parseFloat(row.total_litros) / parseInt(row.total_abastecimentos)).toFixed(2)) : 0;
+            
+            // Classificar o volume de consumo
+            const litros = parseFloat(row.total_litros);
+            row.categoria_consumo = litros >= 20000 ? 'Muito Alto' :
+                                   litros >= 10000 ? 'Alto' :
+                                   litros >= 5000 ? 'Médio' :
+                                   litros >= 1000 ? 'Baixo' : 'Mínimo';
+            
+            // Análise de eficiência
+            row.eficiencia_operacional = row.litros_por_veiculo >= 2000 ? 'Excelente' :
+                                        row.litros_por_veiculo >= 1000 ? 'Boa' :
+                                        row.litros_por_veiculo >= 500 ? 'Regular' : 'Baixa';
+                                        
+            // Período de atividade no mês
+            const diasAtivos = Math.ceil((new Date(row.ultima_data) - new Date(row.primeira_data)) / (1000 * 60 * 60 * 24)) + 1;
+            row.dias_ativos_mes = Math.min(diasAtivos, 31);
+            row.frequencia_abastecimento = row.dias_ativos_mes > 0 ? 
+              parseFloat((parseInt(row.total_abastecimentos) / row.dias_ativos_mes).toFixed(2)) : 0;
+            
+            dadosMensaisDetalhados.push(row);
+          });
+          
+          console.log(`[COMPARATIVO-MENSAL] ${posto}: ${resultado.rows.length} registros mensais processados`);
+          
+        } catch (error) {
+          console.error(`[COMPARATIVO-MENSAL] Erro ao processar ${posto}:`, error);
+        }
+      }
+      
+      // Análise: Qual posto cada projeto mais utiliza
+      const projetosPorPosto = {};
+      const basesPorPosto = {};
+      
+      dadosMensaisDetalhados.forEach(registro => {
+        const chaveProj = registro.projeto;
+        const chaveBase = registro.base;
+        
+        // Análise por projeto
+        if (!projetosPorPosto[chaveProj]) {
+          projetosPorPosto[chaveProj] = {};
+        }
+        if (!projetosPorPosto[chaveProj][registro.posto]) {
+          projetosPorPosto[chaveProj][registro.posto] = {
+            total_litros: 0,
+            total_valor: 0,
+            meses_ativo: 0,
+            abastecimentos: 0
+          };
+        }
+        projetosPorPosto[chaveProj][registro.posto].total_litros += parseFloat(registro.total_litros);
+        projetosPorPosto[chaveProj][registro.posto].total_valor += parseFloat(registro.total_valor);
+        projetosPorPosto[chaveProj][registro.posto].meses_ativo += 1;
+        projetosPorPosto[chaveProj][registro.posto].abastecimentos += parseInt(registro.total_abastecimentos);
+        
+        // Análise por base
+        if (!basesPorPosto[chaveBase]) {
+          basesPorPosto[chaveBase] = {};
+        }
+        if (!basesPorPosto[chaveBase][registro.posto]) {
+          basesPorPosto[chaveBase][registro.posto] = {
+            total_litros: 0,
+            total_valor: 0,
+            meses_ativo: 0,
+            abastecimentos: 0
+          };
+        }
+        basesPorPosto[chaveBase][registro.posto].total_litros += parseFloat(registro.total_litros);
+        basesPorPosto[chaveBase][registro.posto].total_valor += parseFloat(registro.total_valor);
+        basesPorPosto[chaveBase][registro.posto].meses_ativo += 1;
+        basesPorPosto[chaveBase][registro.posto].abastecimentos += parseInt(registro.total_abastecimentos);
+      });
+      
+      // Identificar posto favorito de cada projeto e base
+      const projetosPostoFavorito = {};
+      const basesPostoFavorito = {};
+      
+      Object.keys(projetosPorPosto).forEach(projeto => {
+        const postos = projetosPorPosto[projeto];
+        let postoFavorito = null;
+        let maiorConsumo = 0;
+        
+        Object.keys(postos).forEach(posto => {
+          if (postos[posto].total_litros > maiorConsumo) {
+            maiorConsumo = postos[posto].total_litros;
+            postoFavorito = posto;
+          }
+        });
+        
+        projetosPostoFavorito[projeto] = {
+          posto_favorito: postoFavorito,
+          consumo_posto_favorito: maiorConsumo,
+          total_postos_utilizados: Object.keys(postos).length,
+          detalhes_por_posto: postos
+        };
+      });
+      
+      Object.keys(basesPorPosto).forEach(base => {
+        const postos = basesPorPosto[base];
+        let postoFavorito = null;
+        let maiorConsumo = 0;
+        
+        Object.keys(postos).forEach(posto => {
+          if (postos[posto].total_litros > maiorConsumo) {
+            maiorConsumo = postos[posto].total_litros;
+            postoFavorito = posto;
+          }
+        });
+        
+        basesPostoFavorito[base] = {
+          posto_favorito: postoFavorito,
+          consumo_posto_favorito: maiorConsumo,
+          total_postos_utilizados: Object.keys(postos).length,
+          detalhes_por_posto: postos
+        };
+      });
+      
+      // Análises consolidadas por mês
+      const dadosPorMes = {};
+      dadosMensaisDetalhados.forEach(registro => {
+        const chaveMes = `${registro.ano}-${registro.mes.toString().padStart(2, '0')}`;
+        
+        if (!dadosPorMes[chaveMes]) {
+          dadosPorMes[chaveMes] = {
+            mes: registro.mes,
+            mes_nome: registro.mes_nome,
+            ano: registro.ano,
+            total_litros: 0,
+            total_valor: 0,
+            total_abastecimentos: 0,
+            projetos_ativos: new Set(),
+            bases_ativas: new Set(),
+            postos_utilizados: new Set()
+          };
+        }
+        
+        dadosPorMes[chaveMes].total_litros += parseFloat(registro.total_litros);
+        dadosPorMes[chaveMes].total_valor += parseFloat(registro.total_valor);
+        dadosPorMes[chaveMes].total_abastecimentos += parseInt(registro.total_abastecimentos);
+        dadosPorMes[chaveMes].projetos_ativos.add(registro.projeto);
+        dadosPorMes[chaveMes].bases_ativas.add(registro.base);
+        dadosPorMes[chaveMes].postos_utilizados.add(registro.posto);
+      });
+      
+      // Converter Sets para arrays
+      Object.values(dadosPorMes).forEach(mes => {
+        mes.projetos_ativos = Array.from(mes.projetos_ativos);
+        mes.bases_ativas = Array.from(mes.bases_ativas);
+        mes.postos_utilizados = Array.from(mes.postos_utilizados);
+        mes.total_projetos = mes.projetos_ativos.length;
+        mes.total_bases = mes.bases_ativas.length;
+        mes.total_postos = mes.postos_utilizados.length;
+      });
+      
+      console.log(`[COMPARATIVO-MENSAL] Análise concluída: ${dadosMensaisDetalhados.length} registros mensais, ${Object.keys(projetosPostoFavorito).length} projetos, ${Object.keys(basesPostoFavorito).length} bases`);
+      
+      return res.json({
+        success: true,
+        data: {
+          resumo_executivo: {
+            total_registros_mensais: dadosMensaisDetalhados.length,
+            total_projetos_analisados: Object.keys(projetosPostoFavorito).length,
+            total_bases_analisadas: Object.keys(basesPostoFavorito).length,
+            postos_disponiveis: postos.length,
+            periodo_analise: `Janeiro - Dezembro ${anoSelecionado}`,
+            meses_com_dados: Object.keys(dadosPorMes).length
+          },
+          projetos_posto_favorito: projetosPostoFavorito,
+          bases_posto_favorito: basesPostoFavorito,
+          consolidado_mensal: Object.values(dadosPorMes).sort((a, b) => a.mes - b.mes),
+          detalhes_mensais_completos: dadosMensaisDetalhados,
+          ano: anoSelecionado
+        }
+      });
+      
+    } catch (error) {
+      console.error('[COMPARATIVO-MENSAL] Erro geral:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao gerar comparativo mensal detalhado',
+        error: error.message
+      });
+    }
+  });
+
   // API para comparativo detalhado por projeto e base - dados mensais com projeções
   // DEVE VIR ANTES DA ROTA GENÉRICA /api/abastecimentos/:posto
   app.get('/api/abastecimentos/comparativo-projeto-base', async (req, res) => {
