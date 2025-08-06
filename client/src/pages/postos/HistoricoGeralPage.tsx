@@ -317,11 +317,9 @@ const HistoricoGeralPage: React.FC = () => {
     );
   };
 
-  // Arrays de dados para gráficos
+  // Arrays de dados para interface
   const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
                 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-  
-  const cores = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#06b6d4', '#f97316'];
 
   // Função para excluir um abastecimento (apenas para admin)
   const handleDeleteAbastecimento = async (abastecimento: Abastecimento) => {
@@ -1990,11 +1988,16 @@ const HistoricoGeralPage: React.FC = () => {
                               <span className="font-medium text-blue-800">Total do Posto:</span>
                               <div className="flex gap-2">
                                 <span className="text-sm text-blue-600">
-                                  {((posto.total_litros_atual - posto.total_litros_anterior) / posto.total_litros_anterior * 100).toFixed(1)}%
+                                  {posto.total_litros_anterior > 0 ? 
+                                    ((posto.total_litros_atual - posto.total_litros_anterior) / posto.total_litros_anterior * 100).toFixed(1) + '%' :
+                                    'N/A'
+                                  }
                                 </span>
                                 {posto.total_litros_atual > posto.total_litros_anterior ? 
                                   <TrendingUp className="w-4 h-4 text-green-600" /> : 
-                                  <TrendingDown className="w-4 h-4 text-red-600" />
+                                  posto.total_litros_atual < posto.total_litros_anterior ?
+                                  <TrendingDown className="w-4 h-4 text-red-600" /> :
+                                  <Minus className="w-4 h-4 text-gray-600" />
                                 }
                               </div>
                             </div>
