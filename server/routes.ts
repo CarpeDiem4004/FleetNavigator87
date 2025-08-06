@@ -12174,6 +12174,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para dados mensais consolidados dos postos - DEVE VIR ANTES DA ROTA GENÉRICA
+  app.get('/api/abastecimentos/dados-mensais', async (req, res) => {
+    try {
+      const { ano = new Date().getFullYear().toString() } = req.query;
+      const anoSelecionado = parseInt(ano as string);
+      
+      console.log(`[DADOS-MENSAIS] Buscando dados para o ano: ${anoSelecionado}`);
+      
+      const postos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2', 'guarulhos_v2'];
+      const resultados = [];
+      
+      // Buscar dados para todos os postos
+      for (const posto of postos) {
+        const nomeTabela = `abastecimentos_posto_${posto}`;
+        
+        try {
+          // Verificar se a tabela existe
+          const tabelaExiste = await pool.query(`
+            SELECT EXISTS (
+              SELECT FROM information_schema.tables 
+              WHERE table_schema = 'public' 
+              AND table_name = $1
+            ) as "exists"
+          `, [nomeTabela]);
+          
+          if (!tabelaExiste.rows[0].exists) {
+            console.log(`[DADOS-MENSAIS] Tabela ${nomeTabela} não encontrada, pulando...`);
+            continue;
+          }
+          
+          // Dados por mês (filtrar a partir de maio = mês 5)
+          const queryMensal = `
+            SELECT 
+              EXTRACT(MONTH FROM created_at) as mes,
+              EXTRACT(YEAR FROM created_at) as ano,
+              COALESCE(SUM(litros), 0) as total_litros,
+              COUNT(*) as total_abastecimentos,
+              COALESCE(SUM(valor_total), 0) as total_valor,
+              ROUND(COALESCE(AVG(valor_litro), 0), 2) as preco_medio
+            FROM ${nomeTabela}
+            WHERE EXTRACT(YEAR FROM created_at) = $1
+            AND EXTRACT(MONTH FROM created_at) >= 5
+            GROUP BY EXTRACT(MONTH FROM created_at), EXTRACT(YEAR FROM created_at)
+            ORDER BY mes
+          `;
+          
+          const resultado = await pool.query(queryMensal, [anoSelecionado]);
+          
+          // Adicionar nome do posto aos dados
+          resultado.rows.forEach(row => {
+            row.posto = posto.replace('_v2', '').toUpperCase();
+            row.posto_original = posto;
+            row.mes_nome = [
+              '', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+              'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ][row.mes];
+          });
+          
+          resultados.push(...resultado.rows);
+          
+          console.log(`[DADOS-MENSAIS] ${posto}: ${resultado.rows.length} registros mensais encontrados`);
+          
+        } catch (error) {
+          console.error(`[DADOS-MENSAIS] Erro ao processar ${posto}:`, error);
+        }
+      }
+      
+      // Consolidar dados por mês
+      const consolidadoPorMes = {};
+      const resumoPorPosto = {};
+      
+      resultados.forEach(registro => {
+        // Consolidação por mês
+        if (!consolidadoPorMes[registro.mes]) {
+          consolidadoPorMes[registro.mes] = {
+            mes: registro.mes,
+            mes_nome: registro.mes_nome,
+            total_litros: 0,
+            total_abastecimentos: 0,
+            total_valor: 0,
+            postos_ativos: []
+          };
+        }
+        
+        consolidadoPorMes[registro.mes].total_litros += parseFloat(registro.total_litros);
+        consolidadoPorMes[registro.mes].total_abastecimentos += parseInt(registro.total_abastecimentos);
+        consolidadoPorMes[registro.mes].total_valor += parseFloat(registro.total_valor);
+        consolidadoPorMes[registro.mes].postos_ativos.push({
+          posto: registro.posto,
+          litros: parseFloat(registro.total_litros),
+          valor: parseFloat(registro.total_valor)
+        });
+        
+        // Resumo por posto
+        if (!resumoPorPosto[registro.posto]) {
+          resumoPorPosto[registro.posto] = {
+            posto: registro.posto,
+            total_litros: 0,
+            total_abastecimentos: 0,
+            total_valor: 0,
+            meses_ativo: 0
+          };
+        }
+        
+        resumoPorPosto[registro.posto].total_litros += parseFloat(registro.total_litros);
+        resumoPorPosto[registro.posto].total_abastecimentos += parseInt(registro.total_abastecimentos);
+        resumoPorPosto[registro.posto].total_valor += parseFloat(registro.total_valor);
+        resumoPorPosto[registro.posto].meses_ativo += 1;
+      });
+      
+      // Converter para arrays
+      const dadosConsolidados = Object.values(consolidadoPorMes).sort((a, b) => a.mes - b.mes);
+      const dadosPorPosto = Object.values(resumoPorPosto);
+      
+      // Calcular totais gerais
+      const totaisGerais = {
+        total_litros: dadosPorPosto.reduce((sum, posto) => sum + posto.total_litros, 0),
+        total_abastecimentos: dadosPorPosto.reduce((sum, posto) => sum + posto.total_abastecimentos, 0),
+        total_valor: dadosPorPosto.reduce((sum, posto) => sum + posto.total_valor, 0),
+        total_postos: dadosPorPosto.length,
+        periodo: `Maio - Dezembro ${anoSelecionado}`
+      };
+      
+      console.log(`[DADOS-MENSAIS] Dados consolidados: ${dadosConsolidados.length} meses, ${dadosPorPosto.length} postos`);
+      
+      return res.json({
+        success: true,
+        data: {
+          consolidado_mensal: dadosConsolidados,
+          resumo_por_posto: dadosPorPosto,
+          totais_gerais: totaisGerais,
+          registros_individuais: resultados,
+          ano: anoSelecionado
+        }
+      });
+      
+    } catch (error) {
+      console.error('[DADOS-MENSAIS] Erro geral:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar dados mensais dos postos',
+        error: error.message
+      });
+    }
+  });
+
   // Endpoint para buscar abastecimentos por posto usando o modelo de duas tabelas
   app.get('/api/abastecimentos/:posto', async (req, res) => {
     try {

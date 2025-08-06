@@ -64,34 +64,29 @@ export default function GraficoConsumoPage() {
 
       const todosDados: DadosConsumo[] = [];
 
-      // Buscar dados de cada posto
-      for (const posto of postos) {
-        try {
-          const response = await fetch(`/api/abastecimentos/dados-mensais?posto=${posto.id}&ano=${selectedYear}`);
+      // Buscar dados consolidados de todos os postos da nova API
+      const response = await fetch(`/api/abastecimentos/dados-mensais?ano=${selectedYear}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success) {
+          const { registros_individuais } = data.data;
           
-          if (response.ok) {
-            const data = await response.json();
-            
-            if (data.success && Array.isArray(data.data)) {
-              const dadosPosto = data.data
-                .filter((item: any) => item.mes >= 5) // Filtrar a partir de maio
-                .map((item: any) => ({
-                  posto: posto.id,
-                  postoNome: posto.nome,
-                  ano: item.ano,
-                  mes: item.mes,
-                  mesNome: mesesNomes[item.mes - 1],
-                  total_litros: parseFloat(item.total_litros || 0),
-                  total_abastecimentos: parseInt(item.total_abastecimentos || 0),
-                  total_valor: parseFloat(item.total_valor || 0)
-                }));
-              
-              todosDados.push(...dadosPosto);
-              console.log(`[GRAFICO-CONSUMO] Posto ${posto.nome}: ${dadosPosto.length} registros mensais`);
-            }
-          }
-        } catch (error) {
-          console.error(`[GRAFICO-CONSUMO] Erro ao buscar dados do posto ${posto.nome}:`, error);
+          // Mapear dados para o formato esperado
+          const dadosFormatados = registros_individuais.map((item: any) => ({
+            posto: item.posto_original,
+            postoNome: item.posto,
+            ano: item.ano,
+            mes: item.mes,
+            mesNome: item.mes_nome,
+            total_litros: parseFloat(item.total_litros || 0),
+            total_abastecimentos: parseInt(item.total_abastecimentos || 0),
+            total_valor: parseFloat(item.total_valor || 0)
+          }));
+          
+          todosDados.push(...dadosFormatados);
+          console.log(`[GRAFICO-CONSUMO] Dados consolidados carregados: ${dadosFormatados.length} registros mensais`);
         }
       }
 
