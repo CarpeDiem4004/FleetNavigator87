@@ -281,12 +281,20 @@ const HistoricoGeralPage: React.FC = () => {
     setIsLoadingTendencia(true);
     setTendenciaError(null);
     try {
-      const response = await apiRequest('GET', '/api/abastecimentos/comparativo-tendencia?ano=2025');
+      // Usar ano atual automaticamente
+      const anoAtual = new Date().getFullYear();
+      const response = await apiRequest('GET', `/api/abastecimentos/comparativo-tendencia?ano=${anoAtual}`);
       const data = await response.json();
+      
+      console.log('[TENDÊNCIA] Resposta da API:', data);
       
       if (data.success) {
         setTendenciaData(data);
-        console.log('[TENDÊNCIA] Dados carregados:', data);
+        console.log('[TENDÊNCIA] Dados carregados com sucesso:', {
+          consolidado: data.data?.consolidado?.length || 0,
+          postos: data.data?.por_posto?.length || 0,
+          anos: data.data?.anos_comparados
+        });
       } else {
         const errorMsg = data.message || 'Erro na resposta da API';
         setTendenciaError(errorMsg);
@@ -2024,7 +2032,13 @@ const HistoricoGeralPage: React.FC = () => {
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <p className="text-red-800">Erro ao carregar análise: {tendenciaError}</p>
                 </div>
-            )}
+              )}
+              
+              {!isLoadingTendencia && !tendenciaError && (!tendenciaData || !tendenciaData.data) && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-yellow-800">Nenhum dado encontrado para análise de tendência. Certifique-se de que há dados suficientes para comparação.</p>
+                </div>
+              )}
           </div>
         )}
 
