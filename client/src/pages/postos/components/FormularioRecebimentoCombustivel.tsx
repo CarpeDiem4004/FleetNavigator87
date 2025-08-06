@@ -85,38 +85,46 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
     try {
       setIsSubmitting(true);
       
+      console.log('[RECEBIMENTO] Dados do formulário recebidos:', data);
       console.log('[RECEBIMENTO] Registrando recebimento para posto:', postId);
       
-      const tableName = tableMap[postId.toLowerCase()];
+      // Validar campos obrigatórios
+      if (!data.tipo_produto || !data.litros_recebidos || !data.valor_litro || !data.nome_fornecedor || !data.numero_nota_fiscal || !data.data_recebimento) {
+        throw new Error('Todos os campos obrigatórios devem ser preenchidos');
+      }
       
-      if (!tableName) {
-        throw new Error(`Posto "${postId}" não encontrado`);
+      // Usar API do Node.js em vez do Supabase direto
+      const payload = {
+        fornecedor: data.nome_fornecedor,
+        tipo_combustivel: data.tipo_produto,
+        quantidade_litros: parseFloat(data.litros_recebidos),
+        valor_litro: parseFloat(data.valor_litro),
+        valor_total: parseFloat(data.valor_total),
+        numero_nota: data.numero_nota_fiscal,
+        data_entrega: data.data_recebimento,
+        operador: data.nome_operador,
+        observacoes: data.observacoes || ''
+      };
+      
+      console.log('[RECEBIMENTO] Payload para API:', payload);
+      
+      const response = await fetch(`/api/recebimentos/${postId.toLowerCase()}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      const result = await response.json();
+      
+      console.log('[RECEBIMENTO] Resposta da API:', result);
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Erro ao registrar recebimento');
       }
 
-      // Inserir diretamente no Supabase
-      const { data: result, error } = await supabase
-        .from(tableName)
-        .insert({
-          tipo_produto: data.tipo_produto,
-          litros_recebidos: parseFloat(data.litros_recebidos),
-          valor_litro: parseFloat(data.valor_litro),
-          valor_total: parseFloat(data.valor_total),
-          nome_fornecedor: data.nome_fornecedor,
-          numero_nota_fiscal: data.numero_nota_fiscal,
-          data_recebimento: data.data_recebimento,
-          nome_operador: data.nome_operador,
-          observacoes: data.observacoes || '',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      console.log('[RECEBIMENTO] Registrado com sucesso:', result);
+      console.log('[RECEBIMENTO] Registrado com sucesso:', result.data);
 
       // Resetar formulário
       form.reset();
@@ -156,7 +164,7 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
 
   const calcularValorTotal = () => {
     const litros = parseFloat(form.watch("litros_recebidos") || "0");
-    const valorLitro = parseFloat(form.watch("valor_total") || "0") / litros;
+    const valorLitro = parseFloat(form.watch("valor_litro") || "0");
     return !isNaN(valorLitro) && litros > 0 ? (valorLitro * litros).toFixed(2) : "";
   };
 
