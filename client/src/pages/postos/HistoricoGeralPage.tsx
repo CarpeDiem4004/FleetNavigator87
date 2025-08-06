@@ -86,7 +86,7 @@ interface TendenciaResponse {
   };
 }
 
-const HistoricoGeralPage: React.FC = () => {
+const HistoricoGeralPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -1239,31 +1239,30 @@ const HistoricoGeralPage: React.FC = () => {
     
     // Função para normalizar nomes de projetos
     const normalizarNomeProjeto = (projetoRaw: string | null | undefined): string => {
-      if (projetoRaw === null || projetoRaw === undefined || projetoRaw === '' || projetoRaw === '-') {
-        return 'OUTRO';
-      }
-      
-      // Converter para string caso seja outro tipo
-      let projeto = String(projetoRaw).trim().toUpperCase();
-      
-      // Verificar se o valor parece ser um número (normalmente seria um código ou string)
-      if (projeto && !isNaN(parseFloat(projeto))) {
-        console.log("[DEBUG] Projeto com valor numérico:", projeto);
-        return 'NÃO ESPECIFICADO';
-      }
-      
-      // Limitar o tamanho da string do projeto para evitar valores muito longos
-      if (projeto.length > 100) {
-        projeto = projeto.substring(0, 100) + '...';
-      }
-      
-      // Remover valores que parecem ser litros concatenados
-      if (projeto.includes('.00')) {
-        console.log("[DEBUG] Projeto com formato suspeito de litros:", projeto);
-        return 'NÃO ESPECIFICADO';
-      }
-      
-      // Lista de projetos conhecidos para normalizar nomes - atualizada
+      try {
+        if (!projetoRaw || projetoRaw === null || projetoRaw === undefined || projetoRaw === '' || projetoRaw === '-') {
+          return 'OUTRO';
+        }
+        
+        // Converter para string caso seja outro tipo
+        let projeto = String(projetoRaw).trim().toUpperCase();
+        
+        // Verificar se o valor parece ser um número (normalmente seria um código ou string)
+        if (projeto && !isNaN(parseFloat(projeto))) {
+          return 'NÃO ESPECIFICADO';
+        }
+        
+        // Limitar o tamanho da string do projeto para evitar valores muito longos
+        if (projeto.length > 100) {
+          projeto = projeto.substring(0, 100) + '...';
+        }
+        
+        // Remover valores que parecem ser litros concatenados
+        if (projeto.includes('.00')) {
+          return 'NÃO ESPECIFICADO';
+        }
+        
+        // Lista de projetos conhecidos para normalizar nomes - atualizada
       const projetosConhecidos = [
         'SHOPEE',
         'MERCADO LIVRE',
@@ -1302,9 +1301,13 @@ const HistoricoGeralPage: React.FC = () => {
           console.log(`[NORMALIZAÇÃO] Correspondência para ${projetoConhecido}: ${projeto}`);
           return projetoConhecido;
         }
+        }
+        
+        return projeto;
+      } catch (error) {
+        console.error('[NORMALIZAÇÃO] Erro ao normalizar projeto:', error);
+        return 'OUTRO';
       }
-      
-      return projeto;
     };
     
     // Calcular consumo por projeto com tratamento adequado e melhorado
@@ -1383,14 +1386,16 @@ const HistoricoGeralPage: React.FC = () => {
       projetosOrdenados
     };
   };
+
+  // Calcular dados consolidados
+  const dadosCalculados = calcularConsolidado();
   
-  // Atualizar o estado com os dados calculados
+  // Atualizar o estado com os dados calculados quando os abastecimentos mudam
   useEffect(() => {
-    const dados = calcularConsolidado();
-    setDadosConsolidados(prev => ({
-      ...prev,
-      ...dados
-    }));
+    if (abastecimentos.length > 0) {
+      const dados = calcularConsolidado();
+      setDadosConsolidados(dados);
+    }
   }, [abastecimentos]);
   
   // Log para debug da exibição de projetos
