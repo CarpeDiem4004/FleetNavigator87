@@ -11,7 +11,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Minus, Building2 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+
 
 // Interface para os dados de recebimentos (entradas) de combustível
 interface Recebimento {
@@ -1909,7 +1909,7 @@ const HistoricoGeralPage: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Gráfico consolidado (todos os postos) */}
+                  {/* Resumo consolidado (todos os postos) */}
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -1918,41 +1918,27 @@ const HistoricoGeralPage: React.FC = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={tendenciaData.data.consolidado.map(item => ({
-                            mes: meses[item.mes - 1],
-                            [`${item.ano_anterior}`]: item.litros_anterior,
-                            [`${item.ano_atual}`]: item.litros_atual,
-                            variacao: item.variacao_litros
-                          }))}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="mes" />
-                            <YAxis />
-                            <Tooltip 
-                              formatter={(value: number, name: string) => [
-                                `${value.toLocaleString('pt-BR')} litros`,
-                                name
-                              ]}
-                            />
-                            <Legend />
-                            <Bar dataKey={tendenciaData.data.anos_comparados[0].toString()} fill="#94a3b8" name={`${tendenciaData.data.anos_comparados[0]}`} />
-                            <Bar dataKey={tendenciaData.data.anos_comparados[1].toString()} fill="#3b82f6" name={`${tendenciaData.data.anos_comparados[1]}`} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                      
                       {/* Tabela com indicadores de tendência consolidados */}
-                      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {tendenciaData.data.consolidado.slice(0, 6).map((item) => (
-                          <div key={item.mes} className="bg-gray-50 rounded-lg p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-medium text-sm text-gray-700">{meses[item.mes - 1]}</span>
+                          <div key={item.mes} className="bg-gray-50 rounded-lg p-4 border">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="font-bold text-lg text-gray-800">{meses[item.mes - 1]}</span>
                               <IndicadorTendencia variacao={item.variacao_litros} tendencia={item.tendencia_litros} />
                             </div>
-                            <div className="text-xs text-gray-600 space-y-1">
-                              <div>{item.ano_anterior}: {item.litros_anterior.toLocaleString('pt-BR')} litros</div>
-                              <div>{item.ano_atual}: {item.litros_atual.toLocaleString('pt-BR')} litros</div>
+                            <div className="text-sm text-gray-600 space-y-2">
+                              <div className="flex justify-between">
+                                <span>{item.ano_anterior}:</span>
+                                <span className="font-medium">{item.litros_anterior.toLocaleString('pt-BR')} L</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>{item.ano_atual}:</span>
+                                <span className="font-medium text-blue-600">{item.litros_atual.toLocaleString('pt-BR')} L</span>
+                              </div>
+                              <div className="flex justify-between border-t pt-2">
+                                <span>Abastecimentos:</span>
+                                <span className="font-medium">{item.abastecimentos_atual} ({item.abastecimentos_anterior})</span>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -1960,7 +1946,7 @@ const HistoricoGeralPage: React.FC = () => {
                     </CardContent>
                   </Card>
 
-                  {/* Gráficos individuais por posto */}
+                  {/* Análise individual por posto */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {tendenciaData.data.por_posto.filter(posto => posto.total_litros_atual > 0 || posto.total_litros_anterior > 0).map((posto, index) => (
                       <Card key={posto.posto}>
@@ -1976,37 +1962,42 @@ const HistoricoGeralPage: React.FC = () => {
                           </div>
                         </CardHeader>
                         <CardContent>
-                          <div className="h-48">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <LineChart data={posto.dados_mensais.map(item => ({
-                                mes: meses[item.mes - 1].substring(0, 3),
-                                atual: item.litros_atual,
-                                anterior: item.litros_anterior,
-                                variacao: item.variacao_litros
-                              }))}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="mes" />
-                                <YAxis />
-                                <Tooltip 
-                                  formatter={(value: number, name: string) => [
-                                    `${value.toLocaleString('pt-BR')} litros`,
-                                    name === 'atual' ? tendenciaData.data.anos_comparados[1] : tendenciaData.data.anos_comparados[0]
-                                  ]}
-                                />
-                                <Line type="monotone" dataKey="anterior" stroke="#94a3b8" strokeWidth={2} dot={{ r: 3 }} />
-                                <Line type="monotone" dataKey="atual" stroke={cores[index % cores.length]} strokeWidth={2} dot={{ r: 3 }} />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          </div>
-                          
-                          {/* Indicadores de tendência por posto */}
-                          <div className="mt-3 grid grid-cols-2 gap-2">
-                            {posto.dados_mensais.slice(0, 4).map((item) => (
-                              <div key={item.mes} className="flex items-center justify-between text-xs">
-                                <span className="text-gray-600">{meses[item.mes - 1].substring(0, 3)}</span>
-                                <IndicadorTendencia variacao={item.variacao_litros} tendencia={item.tendencia_litros} />
+                          {/* Indicadores de tendência por posto em grid */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {posto.dados_mensais.slice(0, 6).map((item) => (
+                              <div key={item.mes} className="bg-gray-50 rounded-lg p-3 border">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-medium text-sm text-gray-700">{meses[item.mes - 1].substring(0, 3)}</span>
+                                  <IndicadorTendencia variacao={item.variacao_litros} tendencia={item.tendencia_litros} />
+                                </div>
+                                <div className="text-xs text-gray-600 space-y-1">
+                                  <div className="flex justify-between">
+                                    <span>{item.ano_anterior}:</span>
+                                    <span className="font-medium">{item.litros_anterior.toLocaleString('pt-BR')} L</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>{item.ano_atual}:</span>
+                                    <span className="font-medium text-blue-600">{item.litros_atual.toLocaleString('pt-BR')} L</span>
+                                  </div>
+                                </div>
                               </div>
                             ))}
+                          </div>
+                          
+                          {/* Resumo do posto */}
+                          <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="flex justify-between items-center">
+                              <span className="font-medium text-blue-800">Total do Posto:</span>
+                              <div className="flex gap-2">
+                                <span className="text-sm text-blue-600">
+                                  {((posto.total_litros_atual - posto.total_litros_anterior) / posto.total_litros_anterior * 100).toFixed(1)}%
+                                </span>
+                                {posto.total_litros_atual > posto.total_litros_anterior ? 
+                                  <TrendingUp className="w-4 h-4 text-green-600" /> : 
+                                  <TrendingDown className="w-4 h-4 text-red-600" />
+                                }
+                              </div>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
