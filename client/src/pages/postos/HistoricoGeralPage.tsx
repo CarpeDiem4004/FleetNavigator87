@@ -380,7 +380,7 @@ const HistoricoGeralPage: React.FC = () => {
           valor_atual: Math.round(valorAtual * 100) / 100,
           valor_anterior: Math.round(valorAnterior * 100) / 100,
           variacao_valor: Math.round(variacaoValor * 100) / 100,
-          tendencia_litros,
+          tendencia_litros: tendenciaLitros,
           tendencia_abastecimentos: tendenciaAbast
         });
       }
@@ -423,7 +423,7 @@ const HistoricoGeralPage: React.FC = () => {
             valor_atual: Math.round(dadosAtual.valor * 100) / 100,
             valor_anterior: Math.round(dadosAnterior.valor * 100) / 100,
             variacao_valor: Math.round(variacaoValor * 100) / 100,
-            tendencia_litros,
+            tendencia_litros: tendenciaLitros,
             tendencia_abastecimentos: tendenciaAbast
           });
           
@@ -1384,8 +1384,10 @@ const HistoricoGeralPage: React.FC = () => {
             </button>
             <button
               onClick={() => {
+                console.log('[BOTÃO] Clicado - Estado atual:', { showTendencias, tendenciaData: !!tendenciaData });
                 setShowTendencias(!showTendencias);
-                if (!showTendencias && !tendenciaData) {
+                if (!showTendencias) {
+                  console.log('[BOTÃO] Processando análise local...');
                   processarTendenciaLocal();
                 }
               }}
@@ -2070,6 +2072,33 @@ const HistoricoGeralPage: React.FC = () => {
               <FaProjectDiagram className="w-6 h-6 text-blue-600" />
               <h2 className="text-xl font-bold text-gray-900">Comparativo Mensal com Indicadores de Tendência</h2>
             </div>
+
+            {/* Debug: Logs para investigar */}
+            {(() => {
+              console.log('[DEBUG TENDÊNCIAS] Estado atual:', {
+                showTendencias,
+                tendenciaData: !!tendenciaData,
+                tendenciaDataStructure: tendenciaData?.data ? Object.keys(tendenciaData.data) : null,
+                consolidado: tendenciaData?.data?.consolidado?.length || 0,
+                porPosto: tendenciaData?.data?.por_posto?.length || 0,
+                isLoadingTendencia,
+                tendenciaError
+              });
+              return null;
+            })()}
+
+            {isLoadingTendencia && (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                <p className="mt-2 text-gray-500">Processando análise de tendência...</p>
+              </div>
+            )}
+
+            {tendenciaError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                <strong>Erro na análise de tendência:</strong> {tendenciaError}
+              </div>
+            )}
 
             {tendenciaData && tendenciaData.data && (
                 <div className="space-y-6">
