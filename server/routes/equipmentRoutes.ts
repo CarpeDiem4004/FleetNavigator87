@@ -204,7 +204,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/equipment/:id - Atualizar equipamento
-router.put('/:id', unifiedAuthMiddleware, async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const equipmentId = parseInt(req.params.id);
     
@@ -240,7 +240,7 @@ router.put('/:id', unifiedAuthMiddleware, async (req, res) => {
 });
 
 // DELETE /api/equipment/:id - Deletar equipamento
-router.delete('/:id', unifiedAuthMiddleware, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const equipmentId = parseInt(req.params.id);
     
