@@ -146,6 +146,9 @@ export default function GraficoConsumoPage() {
   // Estados para drill-down de projetos
   const [selectedProjeto, setSelectedProjeto] = useState<string | null>(null);
   const [showBasesRanking, setShowBasesRanking] = useState(false);
+  
+  // Estado para seleção de mês no comparativo
+  const [selectedMes, setSelectedMes] = useState<string>('todos');
 
   const postos = [
     { id: 'campinas_v2', nome: 'CAMPINAS' },
@@ -271,7 +274,12 @@ export default function GraficoConsumoPage() {
       setIsLoadingComparativo(true);
       console.log('[COMPARATIVO] Buscando dados comparativo por projeto e base');
 
-      const response = await fetch(`/api/abastecimentos/comparativo-projeto-base?ano=${selectedYear}`);
+      let url = `/api/abastecimentos/comparativo-projeto-base?ano=${selectedYear}`;
+      if (selectedMes !== 'todos') {
+        url += `&mes=${selectedMes}`;
+      }
+      
+      const response = await fetch(url);
       
       if (response.ok) {
         const data = await response.json();
@@ -588,7 +596,7 @@ export default function GraficoConsumoPage() {
     if (activeTab === 'mensal') {
       fetchComparativoMensal();
     }
-  }, [selectedYear, activeTab]);
+  }, [selectedYear, activeTab, selectedMes]);
 
   useEffect(() => {
     if (dadosConsumo.length > 0) {
@@ -688,10 +696,32 @@ export default function GraficoConsumoPage() {
           )}
           
           {activeTab === 'comparativo' && (
-            <Button onClick={exportarComparativo} variant="outline" disabled={!comparativoData}>
-              <Download className="w-4 h-4 mr-2" />
-              Exportar Comparativo
-            </Button>
+            <>
+              <Select value={selectedMes} onValueChange={setSelectedMes}>
+                <SelectTrigger className="w-44">
+                  <SelectValue placeholder="Selecionar Mês" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Meses</SelectItem>
+                  <SelectItem value="1">Janeiro</SelectItem>
+                  <SelectItem value="2">Fevereiro</SelectItem>
+                  <SelectItem value="3">Março</SelectItem>
+                  <SelectItem value="4">Abril</SelectItem>
+                  <SelectItem value="5">Maio</SelectItem>
+                  <SelectItem value="6">Junho</SelectItem>
+                  <SelectItem value="7">Julho</SelectItem>
+                  <SelectItem value="8">Agosto</SelectItem>
+                  <SelectItem value="9">Setembro</SelectItem>
+                  <SelectItem value="10">Outubro</SelectItem>
+                  <SelectItem value="11">Novembro</SelectItem>
+                  <SelectItem value="12">Dezembro</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button onClick={exportarComparativo} variant="outline" disabled={!comparativoData}>
+                <Download className="w-4 h-4 mr-2" />
+                Exportar Comparativo
+              </Button>
+            </>
           )}
           
           {activeTab === 'mensal' && (

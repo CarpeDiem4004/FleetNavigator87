@@ -12612,10 +12612,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DEVE VIR ANTES DA ROTA GENÉRICA /api/abastecimentos/:posto
   app.get('/api/abastecimentos/comparativo-projeto-base', async (req, res) => {
     try {
-      const { ano = new Date().getFullYear().toString() } = req.query;
+      const { ano = new Date().getFullYear().toString(), mes } = req.query;
       const anoSelecionado = parseInt(ano as string);
+      const mesSelecionado = mes ? parseInt(mes as string) : null;
       
-      console.log(`[COMPARATIVO-PROJETO-BASE] Buscando dados detalhados para o ano: ${anoSelecionado}`);
+      console.log(`[COMPARATIVO-PROJETO-BASE] Buscando dados detalhados para o ano: ${anoSelecionado}${mesSelecionado ? `, mês: ${mesSelecionado}` : ''}`);
       
       const postos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2'];
       const resultadosDetalhados = [];
@@ -12674,7 +12675,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               COALESCE(array_agg(DISTINCT COALESCE(placa, 'SEM_PLACA')), '{}') as placas_envolvidas
             FROM ${nomeTabela}
             WHERE EXTRACT(YEAR FROM created_at) = $1
-            AND EXTRACT(MONTH FROM created_at) >= 5
+            ${mesSelecionado ? 'AND EXTRACT(MONTH FROM created_at) = $2' : 'AND EXTRACT(MONTH FROM created_at) >= 5'}
             GROUP BY 
               EXTRACT(MONTH FROM created_at), 
               EXTRACT(YEAR FROM created_at),
@@ -12683,7 +12684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ORDER BY mes, projeto, base
           `;
           
-          const resultado = await pool.query(queryDetalhada, [anoSelecionado]);
+          const resultado = await pool.query(queryDetalhada, mesSelecionado ? [anoSelecionado, mesSelecionado] : [anoSelecionado]);
           
           // Adicionar metadados aos dados
           resultado.rows.forEach(row => {
