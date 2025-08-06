@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Download, Calendar, TrendingUp, BarChart3, PieChart as PieChartIcon, LineChart as LineChartIcon, Car } from 'lucide-react';
+import { Download, Calendar, TrendingUp, BarChart3, PieChart as PieChartIcon, LineChart as LineChartIcon, Car, Target, Filter } from 'lucide-react';
 
 interface DadosConsumo {
   posto: string;
@@ -32,6 +33,45 @@ interface PostoResumo {
   cor: string;
 }
 
+// Interfaces para o comparativo por projeto e base
+interface ComparativoData {
+  resumo_executivo: {
+    total_registros: number;
+    total_projetos: number;
+    total_bases: number;
+    postos_analisados: number;
+    periodo: string;
+  };
+  analise_por_projeto: Array<{
+    projeto: string;
+    total_litros: number;
+    total_abastecimentos: number;
+    total_valor: number;
+    postos_atendidos: string[];
+    consumo_medio_mensal: number;
+  }>;
+  analise_por_base: Array<{
+    base: string;
+    total_litros: number;
+    total_abastecimentos: number;
+    total_valor: number;
+    postos_utilizados: string[];
+    consumo_medio_mensal: number;
+  }>;
+  top_performers: {
+    projetos: Array<{
+      projeto: string;
+      total_litros: number;
+      postos_atendidos: number;
+    }>;
+    bases: Array<{
+      base: string;
+      total_litros: number;
+      postos_utilizados: number;
+    }>;
+  };
+}
+
 export default function GraficoConsumoPage() {
   const [dadosConsumo, setDadosConsumo] = useState<DadosConsumo[]>([]);
   const [dadosGrafico, setDadosGrafico] = useState<DadosGrafico[]>([]);
@@ -40,6 +80,11 @@ export default function GraficoConsumoPage() {
   const [tipoGrafico, setTipoGrafico] = useState<'barras' | 'linha' | 'pizza'>('barras');
   const [metrica, setMetrica] = useState<'litros' | 'valor' | 'veiculos'>('litros');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Estados para o comparativo por projeto e base
+  const [comparativoData, setComparativoData] = useState<ComparativoData | null>(null);
+  const [isLoadingComparativo, setIsLoadingComparativo] = useState(false);
+  const [activeTab, setActiveTab] = useState('graficos');
 
   const postos = [
     { id: 'campinas_v2', nome: 'CAMPINAS' },
@@ -159,6 +204,31 @@ export default function GraficoConsumoPage() {
     setResumoPostos(resumo);
   };
 
+  // Função para buscar dados do comparativo por projeto e base
+  const fetchComparativo = async () => {
+    try {
+      setIsLoadingComparativo(true);
+      console.log('[COMPARATIVO] Buscando dados comparativo por projeto e base');
+
+      const response = await fetch(`/api/abastecimentos/comparativo-projeto-base?ano=${selectedYear}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success) {
+          setComparativoData(data.data);
+          console.log('[COMPARATIVO] Dados carregados:', data.data.resumo_executivo);
+        } else {
+          console.error('[COMPARATIVO] Erro na resposta:', data.message);
+        }
+      }
+    } catch (error) {
+      console.error('[COMPARATIVO] Erro ao buscar dados:', error);
+    } finally {
+      setIsLoadingComparativo(false);
+    }
+  };
+
   const exportarDados = () => {
     const dadosExport = dadosConsumo.map(d => ({
       Posto: d.postoNome,
@@ -178,6 +248,42 @@ export default function GraficoConsumoPage() {
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `consumo-postos-${selectedYear}.csv`;
+    link.click();
+  };
+
+  const exportarComparativo = () => {
+    if (!comparativoData) return;
+
+    const dadosExport = [
+      ...comparativoData.analise_por_projeto.map(p => ({
+        Tipo: 'PROJETO',
+        Nome: p.projeto,
+        'Total Litros': p.total_litros,
+        'Total Abastecimentos': p.total_abastecimentos,
+        'Total Valor (R$)': p.total_valor.toFixed(2),
+        'Consumo Médio Mensal': p.consumo_medio_mensal.toFixed(1),
+        'Postos/Bases': p.postos_atendidos.join('; ')
+      })),
+      ...comparativoData.analise_por_base.map(b => ({
+        Tipo: 'BASE',
+        Nome: b.base,
+        'Total Litros': b.total_litros,
+        'Total Abastecimentos': b.total_abastecimentos,
+        'Total Valor (R$)': b.total_valor.toFixed(2),
+        'Consumo Médio Mensal': b.consumo_medio_mensal.toFixed(1),
+        'Postos/Bases': b.postos_utilizados.join('; ')
+      }))
+    ];
+
+    const csv = [
+      Object.keys(dadosExport[0]).join(','),
+      ...dadosExport.map(row => Object.values(row).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `comparativo-projeto-base-${selectedYear}.csv`;
     link.click();
   };
 
@@ -285,7 +391,10 @@ export default function GraficoConsumoPage() {
 
   useEffect(() => {
     fetchDadosConsumo();
-  }, [selectedYear]);
+    if (activeTab === 'comparativo') {
+      fetchComparativo();
+    }
+  }, [selectedYear, activeTab]);
 
   useEffect(() => {
     if (dadosConsumo.length > 0) {
@@ -316,8 +425,8 @@ export default function GraficoConsumoPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gráfico de Consumo por Posto</h1>
-          <p className="text-gray-600">Análise visual do consumo de combustível por posto</p>
+          <h1 className="text-3xl font-bold text-gray-900">Análise de Consumo por Posto</h1>
+          <p className="text-gray-600">Análise visual e comparativa do consumo de combustível</p>
           <div className="mt-2 flex items-center gap-2">
             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
               <Calendar className="w-3 h-3 mr-1" />
@@ -338,183 +447,358 @@ export default function GraficoConsumoPage() {
             </SelectContent>
           </Select>
 
-          <Select value={metrica} onValueChange={(value: 'litros' | 'valor' | 'veiculos') => setMetrica(value)}>
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder="Métrica" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="litros">Litros</SelectItem>
-              <SelectItem value="valor">Valor (R$)</SelectItem>
-              <SelectItem value="veiculos">Veículos</SelectItem>
-            </SelectContent>
-          </Select>
+          {activeTab === 'graficos' && (
+            <>
+              <Select value={metrica} onValueChange={(value: 'litros' | 'valor' | 'veiculos') => setMetrica(value)}>
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder="Métrica" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="litros">Litros</SelectItem>
+                  <SelectItem value="valor">Valor (R$)</SelectItem>
+                  <SelectItem value="veiculos">Veículos</SelectItem>
+                </SelectContent>
+              </Select>
 
-          <Select value={tipoGrafico} onValueChange={(value: 'barras' | 'linha' | 'pizza') => setTipoGrafico(value)}>
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder="Tipo de Gráfico" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="barras">
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4" />
-                  Barras
-                </div>
-              </SelectItem>
-              <SelectItem value="linha">
-                <div className="flex items-center gap-2">
-                  <LineChartIcon className="w-4 h-4" />
-                  Linha
-                </div>
-              </SelectItem>
-              <SelectItem value="pizza">
-                <div className="flex items-center gap-2">
-                  <PieChartIcon className="w-4 h-4" />
-                  Pizza
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
+              <Select value={tipoGrafico} onValueChange={(value: 'barras' | 'linha' | 'pizza') => setTipoGrafico(value)}>
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder="Tipo de Gráfico" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="barras">
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4" />
+                      Barras
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="linha">
+                    <div className="flex items-center gap-2">
+                      <LineChartIcon className="w-4 h-4" />
+                      Linha
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="pizza">
+                    <div className="flex items-center gap-2">
+                      <PieChartIcon className="w-4 h-4" />
+                      Pizza
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
 
-          <Button onClick={exportarDados} variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Exportar CSV
-          </Button>
+              <Button onClick={exportarDados} variant="outline">
+                <Download className="w-4 h-4 mr-2" />
+                Exportar CSV
+              </Button>
+            </>
+          )}
+          
+          {activeTab === 'comparativo' && (
+            <Button onClick={exportarComparativo} variant="outline" disabled={!comparativoData}>
+              <Download className="w-4 h-4 mr-2" />
+              Exportar Comparativo
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Resumo Geral */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-500 rounded-lg">
-                <TrendingUp className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-blue-600 uppercase">Total Litros</p>
-                <p className="text-2xl font-bold text-blue-900">
-                  {totalGeral.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Tabs Navigation */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="graficos" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Gráficos por Posto
+          </TabsTrigger>
+          <TabsTrigger value="comparativo" className="flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            Comparativo Projeto & Base
+          </TabsTrigger>
+        </TabsList>
 
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-green-500 rounded-lg">
-                <BarChart3 className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-green-600 uppercase">Total Abastecimentos</p>
-                <p className="text-2xl font-bold text-green-900">
-                  {totalAbastecimentosGeral.toLocaleString('pt-BR')}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Tab Content - Gráficos por Posto */}
+        <TabsContent value="graficos" className="space-y-6">
+          {/* Resumo Geral */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-blue-500 rounded-lg">
+                    <TrendingUp className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-blue-600 uppercase">Total Litros</p>
+                    <p className="text-2xl font-bold text-blue-900">
+                      {totalGeral.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card className="bg-purple-50 border-purple-200">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-purple-500 rounded-lg">
-                <TrendingUp className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-purple-600 uppercase">Valor Total</p>
-                <p className="text-2xl font-bold text-purple-900">
-                  R$ {totalValorGeral.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-green-500 rounded-lg">
+                    <BarChart3 className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-green-600 uppercase">Total Abastecimentos</p>
+                    <p className="text-2xl font-bold text-green-900">
+                      {totalAbastecimentosGeral.toLocaleString('pt-BR')}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card className="bg-orange-50 border-orange-200">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-orange-500 rounded-lg">
-                <Car className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-orange-600 uppercase">Total Veículos</p>
-                <p className="text-2xl font-bold text-orange-900">
-                  {totalVeiculosGeral.toLocaleString('pt-BR')}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            <Card className="bg-purple-50 border-purple-200">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-purple-500 rounded-lg">
+                    <TrendingUp className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-purple-600 uppercase">Valor Total</p>
+                    <p className="text-2xl font-bold text-purple-900">
+                      R$ {totalValorGeral.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-      {/* Gráfico Principal */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {tipoGrafico === 'barras' && <BarChart3 className="h-5 w-5" />}
-            {tipoGrafico === 'linha' && <LineChartIcon className="h-5 w-5" />}
-            {tipoGrafico === 'pizza' && <PieChartIcon className="h-5 w-5" />}
-{metrica === 'litros' ? 'Consumo de Combustível' : metrica === 'valor' ? 'Valor Gasto' : 'Veículos Abastecidos'} por Posto - {selectedYear}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {renderGrafico()}
-        </CardContent>
-      </Card>
-
-      {/* Tabela de Resumo */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Resumo por Posto</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-3">Posto</th>
-                  <th className="text-right p-3">Total Litros</th>
-                  <th className="text-right p-3">Abastecimentos</th>
-                  <th className="text-right p-3">Valor Total (R$)</th>
-                  <th className="text-right p-3">Preço Médio (R$/L)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {resumoPostos.map((posto) => (
-                  <tr key={posto.nome} className="border-b hover:bg-gray-50">
-                    <td className="p-3">
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: posto.cor }}
-                        ></div>
-                        {posto.nome}
-                      </div>
-                    </td>
-                    <td className="text-right p-3">
-                      {posto.totalLitros.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
-                    </td>
-                    <td className="text-right p-3">
-                      {posto.totalAbastecimentos.toLocaleString('pt-BR')}
-                    </td>
-                    <td className="text-right p-3">
-                      {posto.totalValor.toLocaleString('pt-BR', { 
-                        style: 'currency', 
-                        currency: 'BRL' 
-                      })}
-                    </td>
-                    <td className="text-right p-3">
-                      R$ {posto.totalLitros > 0 ? (posto.totalValor / posto.totalLitros).toFixed(2) : '0.00'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <Card className="bg-orange-50 border-orange-200">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-orange-500 rounded-lg">
+                    <Car className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-orange-600 uppercase">Total Veículos</p>
+                    <p className="text-2xl font-bold text-orange-900">
+                      {totalVeiculosGeral.toLocaleString('pt-BR')}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Gráfico Principal */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {tipoGrafico === 'barras' && <BarChart3 className="h-5 w-5" />}
+                {tipoGrafico === 'linha' && <LineChartIcon className="h-5 w-5" />}
+                {tipoGrafico === 'pizza' && <PieChartIcon className="h-5 w-5" />}
+                {metrica === 'litros' ? 'Consumo de Combustível' : metrica === 'valor' ? 'Valor Gasto' : 'Veículos Abastecidos'} por Posto - {selectedYear}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {renderGrafico()}
+            </CardContent>
+          </Card>
+
+          {/* Tabela de Resumo */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Resumo por Posto</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3">Posto</th>
+                      <th className="text-right p-3">Total Litros</th>
+                      <th className="text-right p-3">Abastecimentos</th>
+                      <th className="text-right p-3">Valor Total (R$)</th>
+                      <th className="text-right p-3">Preço Médio (R$/L)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resumoPostos.map((posto) => (
+                      <tr key={posto.nome} className="border-b hover:bg-gray-50">
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: posto.cor }}
+                            ></div>
+                            {posto.nome}
+                          </div>
+                        </td>
+                        <td className="text-right p-3">
+                          {posto.totalLitros.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
+                        </td>
+                        <td className="text-right p-3">
+                          {posto.totalAbastecimentos.toLocaleString('pt-BR')}
+                        </td>
+                        <td className="text-right p-3">
+                          {posto.totalValor.toLocaleString('pt-BR', { 
+                            style: 'currency', 
+                            currency: 'BRL' 
+                          })}
+                        </td>
+                        <td className="text-right p-3">
+                          R$ {posto.totalLitros > 0 ? (posto.totalValor / posto.totalLitros).toFixed(2) : '0.00'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab Content - Comparativo por Projeto e Base */}
+        <TabsContent value="comparativo" className="space-y-6">
+          {isLoadingComparativo ? (
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p>Carregando dados comparativos...</p>
+              </div>
+            </div>
+          ) : comparativoData ? (
+            <>
+              {/* Resumo Executivo */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card className="bg-indigo-50 border-indigo-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-indigo-500 rounded-lg">
+                        <Target className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-indigo-600 uppercase">Total Registros</p>
+                        <p className="text-2xl font-bold text-indigo-900">
+                          {comparativoData.resumo_executivo.total_registros.toLocaleString('pt-BR')}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-cyan-50 border-cyan-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-cyan-500 rounded-lg">
+                        <Filter className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-cyan-600 uppercase">Total Projetos</p>
+                        <p className="text-2xl font-bold text-cyan-900">
+                          {comparativoData.resumo_executivo.total_projetos}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-emerald-50 border-emerald-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-emerald-500 rounded-lg">
+                        <TrendingUp className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-emerald-600 uppercase">Total Bases</p>
+                        <p className="text-2xl font-bold text-emerald-900">
+                          {comparativoData.resumo_executivo.total_bases}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-amber-50 border-amber-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-amber-500 rounded-lg">
+                        <BarChart3 className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-amber-600 uppercase">Postos Analisados</p>
+                        <p className="text-2xl font-bold text-amber-900">
+                          {comparativoData.resumo_executivo.postos_analisados}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Top 5 Projetos */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Top 5 Projetos por Consumo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {comparativoData.top_performers.projetos.slice(0, 5).map((projeto, index) => (
+                      <div key={projeto.projeto} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">
+                            {index + 1}
+                          </Badge>
+                          <div>
+                            <p className="font-medium">{projeto.projeto}</p>
+                            <p className="text-sm text-gray-600">{projeto.postos_atendidos} postos atendidos</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-lg">{projeto.total_litros.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}L</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Top 5 Bases */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Filter className="h-5 w-5" />
+                    Top 5 Bases por Consumo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {comparativoData.top_performers.bases.slice(0, 5).map((base, index) => (
+                      <div key={base.base} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">
+                            {index + 1}
+                          </Badge>
+                          <div>
+                            <p className="font-medium">{base.base}</p>
+                            <p className="text-sm text-gray-600">{base.postos_utilizados} postos utilizados</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-lg">{base.total_litros.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}L</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="text-gray-500">Nenhum dado comparativo disponível para este período</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
