@@ -193,8 +193,8 @@ export default function ComparativoMensalPage() {
   const processarComparativo = (dados: DadosMensais[]) => {
     const comparativo: ComparativoMensal[] = [];
 
-    // Criar estrutura base por mês
-    for (let mes = 1; mes <= 12; mes++) {
+    // Criar estrutura base por mês - A partir de maio (mês 5)
+    for (let mes = 5; mes <= 12; mes++) {
       const dadosMes: ComparativoMensal = {
         mes: meses[mes - 1],
         mesNumero: mes,
@@ -229,8 +229,8 @@ export default function ComparativoMensalPage() {
   const exportarExcel = () => {
     const wb = XLSX.utils.book_new();
 
-    // Aba 1: Resumo Unificado
-    const resumoData = comparativoData.map(mes => {
+    // Aba 1: Resumo Unificado - Apenas meses a partir de maio
+    const resumoData = comparativoData.filter(mes => mes.mesNumero >= 5).map(mes => {
       const resumo: any = {
         'Mês': mes.mes,
         'Total Abastecimentos': postos.reduce((acc, posto) => acc + (mes[`${posto.nome}_abastecimentos`] || 0), 0),
@@ -251,10 +251,10 @@ export default function ComparativoMensalPage() {
     const wsResumo = XLSX.utils.json_to_sheet(resumoData);
     XLSX.utils.book_append_sheet(wb, wsResumo, 'Resumo Unificado');
 
-    // Aba 2: Dados Detalhados por Posto
+    // Aba 2: Dados Detalhados por Posto - Apenas a partir de maio
     postos.forEach(posto => {
       const dadosPosto = dadosMensais
-        .filter(d => d.posto === posto.id && d.ano === parseInt(selectedYear))
+        .filter(d => d.posto === posto.id && d.ano === parseInt(selectedYear) && d.mes >= 5)
         .map(d => ({
           'Mês': meses[d.mes - 1],
           'Abastecimentos': d.total_abastecimentos,
@@ -285,11 +285,11 @@ export default function ComparativoMensalPage() {
     }, { abastecimentos: 0, litros: 0, valor: 0 });
   };
 
-  // Dados para gráfico de pizza (posto mais ativo)
+  // Dados para gráfico de pizza (posto mais ativo) - Apenas a partir de maio
   const dadosPizza = postos.map((posto, index) => ({
     name: posto.nome,
     value: dadosMensais
-      .filter(d => d.posto === posto.id && d.ano === parseInt(selectedYear))
+      .filter(d => d.posto === posto.id && d.ano === parseInt(selectedYear) && d.mes >= 5)
       .reduce((acc, curr) => acc + curr.total_abastecimentos, 0),
     color: cores[index]
   })).filter(item => item.value > 0);
@@ -362,6 +362,12 @@ export default function ComparativoMensalPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Comparativo Mensal</h1>
           <p className="text-gray-600">Análise comparativa de consumo por posto e mês</p>
+          <div className="mt-2 flex items-center gap-2">
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              <Calendar className="w-3 h-3 mr-1" />
+              Período: Maio a Dezembro {selectedYear}
+            </Badge>
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2">
