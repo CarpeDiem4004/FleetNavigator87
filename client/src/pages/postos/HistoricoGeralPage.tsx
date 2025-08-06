@@ -5,7 +5,7 @@ import { FaGasPump, FaMoneyBillWave, FaCar, FaWater, FaProjectDiagram, FaTruck, 
 import { BsFillFuelPumpFill } from 'react-icons/bs';
 import { RiOilFill, RiGasStationFill } from 'react-icons/ri';
 import { GiGasPump, GiWaterTank } from 'react-icons/gi';
-import { useSupabaseAuthContext } from '@/context/SupabaseAuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -42,7 +42,7 @@ interface Abastecimento {
 }
 
 const HistoricoGeralPage: React.FC = () => {
-  const { user } = useSupabaseAuthContext();
+  const { user } = useAuth();
   const { toast } = useToast();
   
   // Verificar se é admin
