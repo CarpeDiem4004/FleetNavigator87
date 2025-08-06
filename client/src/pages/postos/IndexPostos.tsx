@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Fuel, Droplets, Map } from 'lucide-react';
+import { Fuel, Droplets, Map, BarChart3, TrendingUp, Target } from 'lucide-react';
 
 const IndexPostos: React.FC = () => {
   const postos = [
@@ -81,6 +81,88 @@ const IndexPostos: React.FC = () => {
               </CardFooter>
             </Card>
           ))}
+        </div>
+        
+        {/* Seção de Relatórios e Analytics */}
+        <div className="mt-12 border-t pt-12">
+          <h2 className="text-2xl font-bold text-center mb-6">Relatórios e Analytics</h2>
+          <p className="text-center text-muted-foreground max-w-2xl mx-auto mb-8">
+            Acesse relatórios detalhados de consumo, histórico consolidado e análises comparativas por projeto e base.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-blue-600" />
+                  Histórico Consolidado
+                </CardTitle>
+                <CardDescription>
+                  Visualize o histórico consolidado de todos os postos
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Dados mensais e anuais de consumo, tendências e estatísticas gerais.
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button asChild className="w-full" variant="outline">
+                  <Link href="/postos/historico-geral">
+                    Ver Histórico
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+            
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-green-600" />
+                  Visão Geral Integrada
+                </CardTitle>
+                <CardDescription>
+                  Dashboard executivo com métricas principais
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  KPIs, gráficos de performance e resumo operacional.
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button asChild className="w-full" variant="outline">
+                  <Link href="/postos/visao-geral">
+                    Ver Dashboard
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+            
+            <Card className="hover:shadow-lg transition-shadow border-blue-200 bg-blue-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-blue-600" />
+                  Comparativo por Projeto e Base
+                </CardTitle>
+                <CardDescription className="text-blue-700">
+                  Análise detalhada por projeto e base operacional - NOVO
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-blue-600">
+                  Comparativo mensal, projeções anuais e top performers por projeto e base.
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button asChild className="w-full">
+                  <Link href="/postos/comparativo-projeto-base">
+                    Ver Comparativo
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
         </div>
       </main>
       

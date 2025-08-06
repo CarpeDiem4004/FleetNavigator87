@@ -79,6 +79,7 @@ import HistoricoConsolidado from "@/pages/postos/HistoricoConsolidado";
 import PostosVisaoGeralIntegrada from "@/pages/postos/PostosVisaoGeralIntegrada";
 import PostoDetalhesPage from "@/pages/postos/PostoDetalhesPage";
 import EntradaCombustivelPage from "@/pages/postos/EntradaCombustivelPage";
+import ComparativoProjetoBasePage from "@/pages/postos/ComparativoProjetoBasePage";
 import SupabaseDiagnostico from "@/pages/diagnostico/SupabaseDiagnosticoSimples";
 import SupabaseConsole from "@/pages/diagnostico/SupabaseConsole";
 import ComparacaoEsquemas from "@/pages/diagnostico/ComparacaoEsquemas";
@@ -888,6 +889,7 @@ function App() {
           <ProtectedRoute path="/postos/grafico-consumo" component={GraficoConsumoPage} />
           <ProtectedRoute path="/postos/visao-geral" component={PostosVisaoGeralIntegrada} />
           <ProtectedRoute path="/postos/entradas-combustivel" component={EntradaCombustivelPage} />
+          <ProtectedRoute path="/postos/comparativo-projeto-base" component={ComparativoProjetoBasePage} />
           <ProtectedRoute path="/postos/:id" component={PostoDetalhesPage} />
           <ProtectedRoute path="/diagnostico/supabase" component={SupabaseDiagnostico} />
           <ProtectedRoute path="/diagnostico/supabase-console" component={SupabaseConsole} />

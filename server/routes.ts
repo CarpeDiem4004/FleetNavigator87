@@ -12327,7 +12327,272 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para comparativo detalhado por projeto e base - dados mensais com projeções
+  // DEVE VIR ANTES DA ROTA GENÉRICA /api/abastecimentos/:posto
+  app.get('/api/abastecimentos/comparativo-projeto-base', async (req, res) => {
+    try {
+      const { ano = new Date().getFullYear().toString() } = req.query;
+      const anoSelecionado = parseInt(ano as string);
+      
+      console.log(`[COMPARATIVO-PROJETO-BASE] Buscando dados detalhados para o ano: ${anoSelecionado}`);
+      
+      const postos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2'];
+      const resultadosDetalhados = [];
+      
+      // Buscar dados detalhados para todos os postos
+      for (const posto of postos) {
+        const nomeTabela = `abastecimentos_posto_${posto}`;
+        
+        try {
+          // Verificar se a tabela existe
+          const tabelaExiste = await pool.query(`
+            SELECT EXISTS (
+              SELECT FROM information_schema.tables 
+              WHERE table_schema = 'public' 
+              AND table_name = $1
+            ) as "exists"
+          `, [nomeTabela]);
+          
+          if (!tabelaExiste.rows[0].exists) {
+            console.log(`[COMPARATIVO] Tabela ${nomeTabela} não encontrada, pulando...`);
+            continue;
+          }
+          
+          // Verificar colunas disponíveis
+          const colunasQuery = `
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = $1
+            ORDER BY ordinal_position
+          `;
+          const colunas = await pool.query(colunasQuery, [nomeTabela]);
+          const nomeColunas = colunas.rows.map(col => col.column_name);
+          
+          // Determinar quais colunas usar
+          const projetoCol = nomeColunas.includes('projeto') ? 'projeto' : 
+                            nomeColunas.includes('project') ? 'project' : 
+                            "'Não definido'";
+          const baseCol = nomeColunas.includes('base_name') ? 'base_name' : 
+                         nomeColunas.includes('base_id') ? 'CAST(base_id as text)' : 
+                         "'Base não informada'";
+          
+          // Query detalhada por projeto e base
+          const queryDetalhada = `
+            SELECT 
+              EXTRACT(MONTH FROM created_at) as mes,
+              EXTRACT(YEAR FROM created_at) as ano,
+              COALESCE(${projetoCol}, 'Não definido') as projeto,
+              COALESCE(${baseCol}, 'Base não informada') as base,
+              COALESCE(SUM(litros), 0) as total_litros,
+              COUNT(*) as total_abastecimentos,
+              COUNT(DISTINCT COALESCE(placa, 'SEM_PLACA')) as veiculos_unicos,
+              COALESCE(SUM(valor_total), 0) as total_valor,
+              ROUND(COALESCE(AVG(valor_litro), 0), 2) as preco_medio,
+              MIN(created_at) as primeira_data,
+              MAX(created_at) as ultima_data,
+              COALESCE(array_agg(DISTINCT COALESCE(placa, 'SEM_PLACA')), '{}') as placas_envolvidas
+            FROM ${nomeTabela}
+            WHERE EXTRACT(YEAR FROM created_at) = $1
+            AND EXTRACT(MONTH FROM created_at) >= 5
+            GROUP BY 
+              EXTRACT(MONTH FROM created_at), 
+              EXTRACT(YEAR FROM created_at),
+              ${projetoCol},
+              ${baseCol}
+            ORDER BY mes, projeto, base
+          `;
+          
+          const resultado = await pool.query(queryDetalhada, [anoSelecionado]);
+          
+          // Adicionar metadados aos dados
+          resultado.rows.forEach(row => {
+            row.posto = posto.replace('_v2', '').toUpperCase();
+            row.posto_original = posto;
+            row.mes_nome = [
+              '', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+              'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ][row.mes];
+            
+            // Calcular eficiência 
+            row.litros_por_veiculo = row.veiculos_unicos > 0 ? 
+              (parseFloat(row.total_litros) / parseInt(row.veiculos_unicos)).toFixed(2) : 0;
+            row.valor_por_litro = parseFloat(row.preco_medio);
+            
+            // Classificar consumo
+            const litros = parseFloat(row.total_litros);
+            row.categoria_consumo = litros >= 15000 ? 'Alto' :
+                                   litros >= 8000 ? 'Médio' :
+                                   litros >= 3000 ? 'Baixo' : 'Mínimo';
+          });
+          
+          resultadosDetalhados.push(...resultado.rows);
+          
+          console.log(`[COMPARATIVO] ${posto}: ${resultado.rows.length} registros detalhados encontrados`);
+          
+        } catch (error) {
+          console.error(`[COMPARATIVO] Erro ao processar ${posto}:`, error);
+        }
+      }
+      
+      // Análise por projeto
+      const projetoAnalise = {};
+      const baseAnalise = {};
+      const postoAnalise = {};
+      
+      resultadosDetalhados.forEach(registro => {
+        const chaveProjetoPosto = `${registro.projeto}_${registro.posto}`;
+        const chaveBasePosto = `${registro.base}_${registro.posto}`;
+        const chavePosto = registro.posto;
+        
+        // Análise por projeto
+        if (!projetoAnalise[chaveProjetoPosto]) {
+          projetoAnalise[chaveProjetoPosto] = {
+            projeto: registro.projeto,
+            posto: registro.posto,
+            total_litros: 0,
+            total_abastecimentos: 0,
+            total_veiculos: 0,
+            total_valor: 0,
+            meses_ativos: 0,
+            historico_mensal: [],
+            media_mensal_litros: 0,
+            tendencia_projecao: 0
+          };
+        }
+        
+        projetoAnalise[chaveProjetoPosto].total_litros += parseFloat(registro.total_litros);
+        projetoAnalise[chaveProjetoPosto].total_abastecimentos += parseInt(registro.total_abastecimentos);
+        projetoAnalise[chaveProjetoPosto].total_veiculos += parseInt(registro.veiculos_unicos);
+        projetoAnalise[chaveProjetoPosto].total_valor += parseFloat(registro.total_valor);
+        projetoAnalise[chaveProjetoPosto].meses_ativos += 1;
+        projetoAnalise[chaveProjetoPosto].historico_mensal.push({
+          mes: registro.mes,
+          mes_nome: registro.mes_nome,
+          litros: parseFloat(registro.total_litros),
+          valor: parseFloat(registro.total_valor)
+        });
+        
+        // Análise por base
+        if (!baseAnalise[chaveBasePosto]) {
+          baseAnalise[chaveBasePosto] = {
+            base: registro.base,
+            posto: registro.posto,
+            total_litros: 0,
+            total_abastecimentos: 0,
+            total_veiculos: 0,
+            total_valor: 0,
+            projetos_associados: new Set(),
+            meses_ativos: 0
+          };
+        }
+        
+        baseAnalise[chaveBasePosto].total_litros += parseFloat(registro.total_litros);
+        baseAnalise[chaveBasePosto].total_abastecimentos += parseInt(registro.total_abastecimentos);
+        baseAnalise[chaveBasePosto].total_veiculos += parseInt(registro.veiculos_unicos);
+        baseAnalise[chaveBasePosto].total_valor += parseFloat(registro.total_valor);
+        baseAnalise[chaveBasePosto].projetos_associados.add(registro.projeto);
+        baseAnalise[chaveBasePosto].meses_ativos += 1;
+        
+        // Análise consolidada por posto
+        if (!postoAnalise[chavePosto]) {
+          postoAnalise[chavePosto] = {
+            posto: registro.posto,
+            total_litros: 0,
+            total_abastecimentos: 0,
+            total_valor: 0,
+            projetos_unicos: new Set(),
+            bases_unicas: new Set(),
+            maior_projeto: { nome: '', litros: 0 },
+            maior_base: { nome: '', litros: 0 }
+          };
+        }
+        
+        postoAnalise[chavePosto].total_litros += parseFloat(registro.total_litros);
+        postoAnalise[chavePosto].total_abastecimentos += parseInt(registro.total_abastecimentos);
+        postoAnalise[chavePosto].total_valor += parseFloat(registro.total_valor);
+        postoAnalise[chavePosto].projetos_unicos.add(registro.projeto);
+        postoAnalise[chavePosto].bases_unicas.add(registro.base);
+        
+        // Identificar maior projeto e base por posto
+        if (parseFloat(registro.total_litros) > postoAnalise[chavePosto].maior_projeto.litros) {
+          postoAnalise[chavePosto].maior_projeto = {
+            nome: registro.projeto,
+            litros: parseFloat(registro.total_litros)
+          };
+        }
+        
+        if (parseFloat(registro.total_litros) > postoAnalise[chavePosto].maior_base.litros) {
+          postoAnalise[chavePosto].maior_base = {
+            nome: registro.base,
+            litros: parseFloat(registro.total_litros)
+          };
+        }
+      });
+      
+      // Calcular projeções e tendências
+      Object.values(projetoAnalise).forEach(projeto => {
+        if (projeto.meses_ativos > 0) {
+          projeto.media_mensal_litros = projeto.total_litros / projeto.meses_ativos;
+          // Projeção para 12 meses baseada na média atual
+          projeto.tendencia_projecao = projeto.media_mensal_litros * 12;
+        }
+      });
+      
+      // Converter Sets para arrays para JSON
+      Object.values(baseAnalise).forEach(base => {
+        base.projetos_associados = Array.from(base.projetos_associados);
+      });
+      
+      Object.values(postoAnalise).forEach(posto => {
+        posto.projetos_unicos = Array.from(posto.projetos_unicos);
+        posto.bases_unicas = Array.from(posto.bases_unicas);
+      });
+      
+      // Encontrar top performers globais
+      const topProjetos = Object.values(projetoAnalise)
+        .sort((a, b) => b.total_litros - a.total_litros)
+        .slice(0, 10);
+        
+      const topBases = Object.values(baseAnalise)
+        .sort((a, b) => b.total_litros - a.total_litros)
+        .slice(0, 10);
+      
+      console.log(`[COMPARATIVO] Análise concluída: ${Object.keys(projetoAnalise).length} projetos, ${Object.keys(baseAnalise).length} bases`);
+      
+      return res.json({
+        success: true,
+        data: {
+          resumo_executivo: {
+            total_registros: resultadosDetalhados.length,
+            total_projetos: Object.keys(projetoAnalise).length,
+            total_bases: Object.keys(baseAnalise).length,
+            postos_analisados: postos.length,
+            periodo: `Maio - Dezembro ${anoSelecionado}`
+          },
+          analise_por_projeto: Object.values(projetoAnalise),
+          analise_por_base: Object.values(baseAnalise),
+          consolidado_por_posto: Object.values(postoAnalise),
+          top_performers: {
+            projetos: topProjetos,
+            bases: topBases
+          },
+          dados_detalhados: resultadosDetalhados,
+          ano: anoSelecionado
+        }
+      });
+      
+    } catch (error) {
+      console.error('[COMPARATIVO-PROJETO-BASE] Erro geral:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao gerar comparativo por projeto e base',
+        error: error.message
+      });
+    }
+  });
+
   // Endpoint para buscar abastecimentos por posto usando o modelo de duas tabelas
+  // ROTA GENÉRICA - DEVE VIR APÓS ROTAS ESPECÍFICAS
   app.get('/api/abastecimentos/:posto', async (req, res) => {
     try {
       const { posto } = req.params;
