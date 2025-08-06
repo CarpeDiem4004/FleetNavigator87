@@ -228,6 +228,10 @@ const HistoricoGeralPage: React.FC = () => {
   const [dateStart, setDateStart] = useState<string>('');
   const [dateEnd, setDateEnd] = useState<string>('');
   
+  // Estados de paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25); // Aumentando de 10 para 25
+  
   // Estado para armazenar dados consolidados incluindo recebimentos
   const [dadosConsolidados, setDadosConsolidados] = useState({
     registros: 0,
@@ -1071,6 +1075,17 @@ const HistoricoGeralPage: React.FC = () => {
     
     return passesSearch && passesDateFilter;
   });
+
+  // Calcular dados paginados
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+
+  // Reset página quando mudar filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, dateStart, dateEnd]);
 
   // Debug logs para entender o filtro
   React.useEffect(() => {
@@ -1998,34 +2013,99 @@ const HistoricoGeralPage: React.FC = () => {
           </div>
         ) : (
           <>
-            <div className="mb-3 text-gray-600">
-              Mostrando {filteredData.length} {filteredData.length === 1 ? 'registro' : 'registros'}
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Data</th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Posto</th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Veículo</th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">KM</th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Combustível</th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Litros</th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Projeto</th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Base</th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Motorista</th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Valor</th>
-                    {isAdmin && (
-                      <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Ações</th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredData.map((abast, index) => {
-                    const projeto = abast.project || abast.projeto || '-';
-                    const baseInfo = getBaseFromAbastecimento(abast);
+            {/* Controles de paginação e visualização */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+              <div className="flex items-center gap-4">
+                <div className="text-gray-600">
+                  Mostrando {startIndex + 1}-{Math.min(endIndex, filteredData.length)} de {filteredData.length} {filteredData.length === 1 ? 'registro' : 'registros'}
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">Por página:</label>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="border border-gray-300 rounded px-2 py-1 text-sm"
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </div>
+              </div>
+              
+              {/* Controles de paginação */}
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Anterior
+                  </button>
+                  
+                  {/* Números das páginas */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                    if (pageNum > totalPages) return null;
                     
                     return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-3 py-1 text-sm border border-gray-300 rounded ${
+                          currentPage === pageNum 
+                            ? 'bg-blue-600 text-white border-blue-600' 
+                            : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Próxima
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Tabela com scroll horizontal melhorado */}
+            <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+              <div className="min-w-full overflow-hidden">
+                <table className="w-full border-collapse bg-white">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="py-3 px-4 text-left font-medium text-gray-700 whitespace-nowrap">Data</th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-700 whitespace-nowrap">Posto</th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-700 whitespace-nowrap">Veículo</th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-700 whitespace-nowrap">KM</th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-700 whitespace-nowrap">Combustível</th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-700 whitespace-nowrap">Litros</th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-700 whitespace-nowrap">Projeto</th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-700 whitespace-nowrap">Base</th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-700 whitespace-nowrap">Motorista</th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-700 whitespace-nowrap">Valor</th>
+                      {isAdmin && (
+                        <th className="py-3 px-4 text-left font-medium text-gray-700 whitespace-nowrap">Ações</th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedData.map((abast, index) => {
+                      const projeto = abast.project || abast.projeto || '-';
+                      const baseInfo = getBaseFromAbastecimento(abast);
+                      
+                      return (
                       <tr key={`${abast.posto}-${abast.id}-${index}`} className="border-b border-gray-200 hover:bg-gray-50">
                         <td className="py-3 px-4">{formatarData(abast.created_at)}</td>
                         <td className="py-3 px-4">
@@ -2043,10 +2123,10 @@ const HistoricoGeralPage: React.FC = () => {
                             {baseInfo}
                           </span>
                         </td>
-                        <td className="py-3 px-4">{abast.nome_motorista}</td>
-                        <td className="py-3 px-4">{abast.valor_total ? formatarPreco(abast.valor_total) : '-'}</td>
+                        <td className="py-3 px-4 whitespace-nowrap">{abast.nome_motorista}</td>
+                        <td className="py-3 px-4 whitespace-nowrap">{abast.valor_total ? formatarPreco(abast.valor_total) : '-'}</td>
                         {isAdmin && (
-                          <td className="py-3 px-4">
+                          <td className="py-3 px-4 whitespace-nowrap">
                             <button
                               onClick={() => handleDeleteAbastecimento(abast)}
                               className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-md transition-colors"
@@ -2056,12 +2136,53 @@ const HistoricoGeralPage: React.FC = () => {
                             </button>
                           </td>
                         )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
+
+            {/* Paginação inferior (duplicada para conveniência) */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-1 mt-4">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Anterior
+                </button>
+                
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                  if (pageNum > totalPages) return null;
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-3 py-1 text-sm border border-gray-300 rounded ${
+                        currentPage === pageNum 
+                          ? 'bg-blue-600 text-white border-blue-600' 
+                          : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Próxima
+                </button>
+              </div>
+            )}
           </>
         )}
 
