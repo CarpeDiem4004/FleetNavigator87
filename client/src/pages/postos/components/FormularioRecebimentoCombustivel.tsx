@@ -102,7 +102,7 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
         valor_total: parseFloat(data.valor_total),
         numero_nota: data.numero_nota_fiscal,
         data_entrega: data.data_recebimento,
-        operador: data.nome_operador,
+        nome_operador: data.nome_operador,
         observacoes: data.observacoes || ''
       };
       
