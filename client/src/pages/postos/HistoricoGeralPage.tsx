@@ -1896,11 +1896,14 @@ const HistoricoGeralPage: React.FC = () => {
 
           {showTendencias && (
             <>
-              {tendenciaData && (
+              {tendenciaData && tendenciaData.data && (
                 <div className="space-y-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Badge variant="outline" className="text-sm">
-                      {tendenciaData.data.anos_comparados.join(' vs ')}
+                      {tendenciaData.data.anos_comparados ? 
+                        tendenciaData.data.anos_comparados.join(' vs ') : 
+                        '2024 vs 2025'
+                      }
                     </Badge>
                     <span className="text-sm text-gray-600">
                       Comparação de consumo mensal entre anos
@@ -1918,24 +1921,24 @@ const HistoricoGeralPage: React.FC = () => {
                     <CardContent>
                       {/* Tabela com indicadores de tendência consolidados */}
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {tendenciaData.data.consolidado.slice(0, 6).map((item) => (
+                        {tendenciaData.data.consolidado && tendenciaData.data.consolidado.slice(0, 6).map((item) => (
                           <div key={item.mes} className="bg-gray-50 rounded-lg p-4 border">
                             <div className="flex items-center justify-between mb-3">
-                              <span className="font-bold text-lg text-gray-800">{meses[item.mes - 1]}</span>
-                              <IndicadorTendencia variacao={item.variacao_litros} tendencia={item.tendencia_litros} />
+                              <span className="font-bold text-lg text-gray-800">{meses[item.mes - 1] || 'Mês'}</span>
+                              <IndicadorTendencia variacao={item.variacao_litros || 0} tendencia={item.tendencia_litros || 'estavel'} />
                             </div>
                             <div className="text-sm text-gray-600 space-y-2">
                               <div className="flex justify-between">
-                                <span>{item.ano_anterior}:</span>
-                                <span className="font-medium">{item.litros_anterior.toLocaleString('pt-BR')} L</span>
+                                <span>{item.ano_anterior || '2024'}:</span>
+                                <span className="font-medium">{(item.litros_anterior || 0).toLocaleString('pt-BR')} L</span>
                               </div>
                               <div className="flex justify-between">
-                                <span>{item.ano_atual}:</span>
-                                <span className="font-medium text-blue-600">{item.litros_atual.toLocaleString('pt-BR')} L</span>
+                                <span>{item.ano_atual || '2025'}:</span>
+                                <span className="font-medium text-blue-600">{(item.litros_atual || 0).toLocaleString('pt-BR')} L</span>
                               </div>
                               <div className="flex justify-between border-t pt-2">
                                 <span>Abastecimentos:</span>
-                                <span className="font-medium">{item.abastecimentos_atual} ({item.abastecimentos_anterior})</span>
+                                <span className="font-medium">{item.abastecimentos_atual || 0} ({item.abastecimentos_anterior || 0})</span>
                               </div>
                             </div>
                           </div>
@@ -1946,36 +1949,36 @@ const HistoricoGeralPage: React.FC = () => {
 
                   {/* Análise individual por posto */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {tendenciaData.data.por_posto.filter(posto => posto.total_litros_atual > 0 || posto.total_litros_anterior > 0).map((posto, index) => (
+                    {tendenciaData.data.por_posto && tendenciaData.data.por_posto.filter(posto => posto.total_litros_atual > 0 || posto.total_litros_anterior > 0).map((posto, index) => (
                       <Card key={posto.posto}>
                         <CardHeader>
-                          <CardTitle className="text-lg">{posto.posto_nome}</CardTitle>
+                          <CardTitle className="text-lg">{posto.posto_nome || 'Posto'}</CardTitle>
                           <div className="flex gap-2">
                             <Badge variant="outline" className="text-xs">
-                              {posto.total_litros_atual.toLocaleString('pt-BR')} L ({tendenciaData.data.anos_comparados[1]})
+                              {(posto.total_litros_atual || 0).toLocaleString('pt-BR')} L ({tendenciaData.data.anos_comparados && tendenciaData.data.anos_comparados[1] || '2025'})
                             </Badge>
                             <Badge variant="outline" className="text-xs">
-                              {posto.total_litros_anterior.toLocaleString('pt-BR')} L ({tendenciaData.data.anos_comparados[0]})
+                              {(posto.total_litros_anterior || 0).toLocaleString('pt-BR')} L ({tendenciaData.data.anos_comparados && tendenciaData.data.anos_comparados[0] || '2024'})
                             </Badge>
                           </div>
                         </CardHeader>
                         <CardContent>
                           {/* Indicadores de tendência por posto em grid */}
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {posto.dados_mensais.slice(0, 6).map((item) => (
+                            {posto.dados_mensais && posto.dados_mensais.slice(0, 6).map((item) => (
                               <div key={item.mes} className="bg-gray-50 rounded-lg p-3 border">
                                 <div className="flex items-center justify-between mb-2">
-                                  <span className="font-medium text-sm text-gray-700">{meses[item.mes - 1].substring(0, 3)}</span>
-                                  <IndicadorTendencia variacao={item.variacao_litros} tendencia={item.tendencia_litros} />
+                                  <span className="font-medium text-sm text-gray-700">{(meses[item.mes - 1] || 'Mês').substring(0, 3)}</span>
+                                  <IndicadorTendencia variacao={item.variacao_litros || 0} tendencia={item.tendencia_litros || 'estavel'} />
                                 </div>
                                 <div className="text-xs text-gray-600 space-y-1">
                                   <div className="flex justify-between">
-                                    <span>{item.ano_anterior}:</span>
-                                    <span className="font-medium">{item.litros_anterior.toLocaleString('pt-BR')} L</span>
+                                    <span>{item.ano_anterior || '2024'}:</span>
+                                    <span className="font-medium">{(item.litros_anterior || 0).toLocaleString('pt-BR')} L</span>
                                   </div>
                                   <div className="flex justify-between">
-                                    <span>{item.ano_atual}:</span>
-                                    <span className="font-medium text-blue-600">{item.litros_atual.toLocaleString('pt-BR')} L</span>
+                                    <span>{item.ano_atual || '2025'}:</span>
+                                    <span className="font-medium text-blue-600">{(item.litros_atual || 0).toLocaleString('pt-BR')} L</span>
                                   </div>
                                 </div>
                               </div>
@@ -1988,14 +1991,14 @@ const HistoricoGeralPage: React.FC = () => {
                               <span className="font-medium text-blue-800">Total do Posto:</span>
                               <div className="flex gap-2">
                                 <span className="text-sm text-blue-600">
-                                  {posto.total_litros_anterior > 0 ? 
-                                    ((posto.total_litros_atual - posto.total_litros_anterior) / posto.total_litros_anterior * 100).toFixed(1) + '%' :
+                                  {(posto.total_litros_anterior || 0) > 0 ? 
+                                    (((posto.total_litros_atual || 0) - (posto.total_litros_anterior || 0)) / (posto.total_litros_anterior || 1) * 100).toFixed(1) + '%' :
                                     'N/A'
                                   }
                                 </span>
-                                {posto.total_litros_atual > posto.total_litros_anterior ? 
+                                {(posto.total_litros_atual || 0) > (posto.total_litros_anterior || 0) ? 
                                   <TrendingUp className="w-4 h-4 text-green-600" /> : 
-                                  posto.total_litros_atual < posto.total_litros_anterior ?
+                                  (posto.total_litros_atual || 0) < (posto.total_litros_anterior || 0) ?
                                   <TrendingDown className="w-4 h-4 text-red-600" /> :
                                   <Minus className="w-4 h-4 text-gray-600" />
                                 }
