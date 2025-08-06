@@ -49,9 +49,10 @@ const HistoricoGeralPage: React.FC = () => {
   const isAdmin = user?.role === 'admin';
   
   // Log temporário para debug
-  if (user) {
-    console.log('DEBUG - User role:', user.role, 'isAdmin:', isAdmin);
-  }
+  console.log('DEBUG - User object:', user, 'isAdmin:', isAdmin);
+  
+  // Forçar admin temporariamente para debug
+  const isAdminForced = true;
   
   // Função para obter a base específica registrada ou fazer fallback para mapeamento
   const getBaseFromAbastecimento = (item: any): string => {
@@ -1537,7 +1538,7 @@ const HistoricoGeralPage: React.FC = () => {
                     <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Base</th>
                     <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Motorista</th>
                     <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Valor</th>
-                    {isAdmin && (
+                    {isAdminForced && (
                       <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Ações</th>
                     )}
                   </tr>
@@ -1567,7 +1568,7 @@ const HistoricoGeralPage: React.FC = () => {
                         </td>
                         <td className="py-3 px-4">{abast.nome_motorista}</td>
                         <td className="py-3 px-4">{abast.valor_total ? formatarPreco(abast.valor_total) : '-'}</td>
-                        {isAdmin && (
+                        {isAdminForced && (
                           <td className="py-3 px-4">
                             <button
                               onClick={() => handleDeleteAbastecimento(abast)}
