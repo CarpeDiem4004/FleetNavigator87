@@ -1168,10 +1168,192 @@ const HistoricoGeralPage: React.FC = () => {
           </div>
         </div>
         
+        {/* Cards Informativos Visuais */}
+        {!isLoading && filteredData.length > 0 && (
+          <>
+            {/* Resumo de Abastecimentos */}
+            <div className="my-6">
+              <h2 className="text-lg font-semibold text-gray-700 mb-3">Resumo de Abastecimentos</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-600 font-medium">Litros Abastecidos</p>
+                      <p className="text-2xl font-bold text-blue-800">
+                        {dadosConsolidados.totalLitros?.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) || '0'}
+                      </p>
+                    </div>
+                    <BsFillFuelPumpFill className="text-blue-500 text-3xl" />
+                  </div>
+                </div>
+                
+                <div className="bg-blue-100 border border-blue-300 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-700 font-medium">Veículos Abastecidos</p>
+                      <p className="text-2xl font-bold text-blue-900">
+                        {dadosConsolidados.veiculos || 0}
+                      </p>
+                    </div>
+                    <FaCar className="text-blue-600 text-3xl" />
+                  </div>
+                </div>
+                
+                <div className="bg-blue-200 border border-blue-400 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-800 font-medium">Valor Abastecimentos</p>
+                      <p className="text-2xl font-bold text-blue-900">
+                        {dadosConsolidados.totalValor ? `R$ ${isNaN(dadosConsolidados.totalValor) ? 'NaN' : dadosConsolidados.totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'R$ 0,00'}
+                      </p>
+                    </div>
+                    <FaMoneyBillWave className="text-blue-700 text-3xl" />
+                  </div>
+                </div>
+                
+                <div className="bg-blue-300 border border-blue-500 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-900 font-medium">Abastecimentos</p>
+                      <p className="text-2xl font-bold text-blue-900">
+                        {filteredData.length}
+                      </p>
+                    </div>
+                    <BsFillFuelPumpFill className="text-blue-800 text-3xl" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Resumo de Recebimentos (Entradas) */}
+            <div className="my-6">
+              <h2 className="text-lg font-semibold text-gray-700 mb-3">Resumo de Recebimentos (Entradas)</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-green-600 font-medium">Litros Recebidos</p>
+                      <p className="text-2xl font-bold text-green-800">
+                        {dadosConsolidados.litrosRecebidos?.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) || '0,0'}
+                      </p>
+                    </div>
+                    <GiWaterTank className="text-green-500 text-3xl" />
+                  </div>
+                </div>
+                
+                <div className="bg-green-100 border border-green-300 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-green-700 font-medium">Valor Recebimentos</p>
+                      <p className="text-2xl font-bold text-green-900">
+                        {dadosConsolidados.valorRecebimentos ? `R$ ${dadosConsolidados.valorRecebimentos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'R$ 0,00'}
+                      </p>
+                    </div>
+                    <FaMoneyBillWave className="text-green-600 text-3xl" />
+                  </div>
+                </div>
+                
+                <div className="bg-green-200 border border-green-400 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-green-800 font-medium">Total Recebimentos</p>
+                      <p className="text-2xl font-bold text-green-900">
+                        {dadosConsolidados.totalRecebimentos || 0}
+                      </p>
+                    </div>
+                    <FaTruck className="text-green-700 text-3xl" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Detalhes por Tipo de Combustível */}
+            <div className="my-6">
+              <h2 className="text-lg font-semibold text-gray-700 mb-3">Detalhes por Tipo de Combustível</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {/* Diesel */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-blue-800 font-medium">Diesel</h3>
+                    <RiOilFill className="text-blue-500 text-2xl" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-blue-600">
+                      Litros: <span className="font-semibold">{dadosConsolidados.litrosDiesel?.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) || '0,0'}</span>
+                    </p>
+                    <p className="text-sm text-blue-600">
+                      Valor: <span className="font-semibold">{dadosConsolidados.valorDiesel ? `R$ ${dadosConsolidados.valorDiesel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'}</span>
+                    </p>
+                    <p className="text-sm text-blue-600">
+                      Veículos: <span className="font-semibold">{dadosConsolidados.veiculosDiesel || 0}</span>
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Gasolina */}
+                <div className="bg-blue-100 border border-blue-300 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-blue-800 font-medium">Gasolina</h3>
+                    <RiGasStationFill className="text-blue-600 text-2xl" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-blue-700">
+                      Litros: <span className="font-semibold">{dadosConsolidados.litrosGasolina?.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) || '0,0'}</span>
+                    </p>
+                    <p className="text-sm text-blue-700">
+                      Valor: <span className="font-semibold">{dadosConsolidados.valorGasolina ? `R$ ${dadosConsolidados.valorGasolina.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'}</span>
+                    </p>
+                    <p className="text-sm text-blue-700">
+                      Veículos: <span className="font-semibold">{dadosConsolidados.veiculosGasolina || 0}</span>
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Álcool */}
+                <div className="bg-blue-200 border border-blue-400 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-blue-800 font-medium">Álcool</h3>
+                    <GiGasPump className="text-blue-700 text-2xl" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-blue-800">
+                      Litros: <span className="font-semibold">{dadosConsolidados.litrosAlcool?.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) || '0,0'}</span>
+                    </p>
+                    <p className="text-sm text-blue-800">
+                      Valor: <span className="font-semibold">{dadosConsolidados.valorAlcool ? `R$ ${dadosConsolidados.valorAlcool.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'}</span>
+                    </p>
+                    <p className="text-sm text-blue-800">
+                      Veículos: <span className="font-semibold">{dadosConsolidados.veiculosAlcool || 0}</span>
+                    </p>
+                  </div>
+                </div>
+                
+                {/* ARLA */}
+                <div className="bg-blue-300 border border-blue-500 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-blue-900 font-medium">ARLA</h3>
+                    <FaWater className="text-blue-800 text-2xl" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-blue-900">
+                      Litros: <span className="font-semibold">{dadosConsolidados.litrosArla?.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) || '0,0'}</span>
+                    </p>
+                    <p className="text-sm text-blue-900">
+                      Valor: <span className="font-semibold">{dadosConsolidados.valorArla ? `R$ ${dadosConsolidados.valorArla.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'}</span>
+                    </p>
+                    <p className="text-sm text-blue-900">
+                      Veículos: <span className="font-semibold">{dadosConsolidados.veiculosArla || 0}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
         
         {!isLoading && filteredData.length > 0 && (
           <div className="my-6">
-            <h2 className="text-lg font-semibold text-gray-700 mb-3">Resumo de Abastecimentos</h2>
+            <h2 className="text-lg font-semibold text-gray-700 mb-3">Consumo de Combustível por Projeto</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {/* Card de total de litros abastecidos */}
               <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
