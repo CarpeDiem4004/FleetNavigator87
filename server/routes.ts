@@ -16200,6 +16200,189 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para dados mensais comparativos de abastecimentos
+  app.get('/api/abastecimentos/dados-mensais', async (req, res) => {
+    try {
+      const { posto, ano, mes } = req.query;
+      
+      console.log(`[DADOS MENSAIS] Solicitação recebida - Posto: ${posto}, Ano: ${ano}, Mês: ${mes}`);
+      
+      // Se posto for "unificado", buscar dados de todos os postos
+      if (posto === 'unificado') {
+        const postos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2', 'guarulhos_v2'];
+        const resultados = [];
+        
+        for (const postoAtual of postos) {
+          const nomeTabela = `abastecimentos_posto_${postoAtual}`;
+          
+          let query = '';
+          const queryParams = [];
+          
+          if (ano && mes) {
+            // Dados de um mês específico
+            query = `
+              SELECT 
+                '${postoAtual}' as posto,
+                COUNT(*) as total_abastecimentos,
+                COALESCE(SUM(litros), 0) as total_litros,
+                COALESCE(AVG(litros), 0) as media_litros_abastecimento,
+                COALESCE(SUM(valor_total), 0) as total_valor,
+                COUNT(DISTINCT placa) as veiculos_unicos,
+                COUNT(DISTINCT motorista) as motoristas_unicos
+              FROM ${nomeTabela}
+              WHERE EXTRACT(YEAR FROM created_at) = $1 
+                AND EXTRACT(MONTH FROM created_at) = $2
+            `;
+            queryParams.push(parseInt(ano as string), parseInt(mes as string));
+          } else if (ano) {
+            // Dados anuais agrupados por mês
+            query = `
+              SELECT 
+                '${postoAtual}' as posto,
+                EXTRACT(MONTH FROM created_at) as mes,
+                COUNT(*) as total_abastecimentos,
+                COALESCE(SUM(litros), 0) as total_litros,
+                COALESCE(AVG(litros), 0) as media_litros_abastecimento,
+                COALESCE(SUM(valor_total), 0) as total_valor,
+                COUNT(DISTINCT placa) as veiculos_unicos,
+                COUNT(DISTINCT motorista) as motoristas_unicos
+              FROM ${nomeTabela}
+              WHERE EXTRACT(YEAR FROM created_at) = $1
+              GROUP BY EXTRACT(MONTH FROM created_at)
+              ORDER BY mes
+            `;
+            queryParams.push(parseInt(ano as string));
+          } else {
+            // Dados gerais - últimos 12 meses
+            query = `
+              SELECT 
+                '${postoAtual}' as posto,
+                EXTRACT(YEAR FROM created_at) as ano,
+                EXTRACT(MONTH FROM created_at) as mes,
+                COUNT(*) as total_abastecimentos,
+                COALESCE(SUM(litros), 0) as total_litros,
+                COALESCE(AVG(litros), 0) as media_litros_abastecimento,
+                COALESCE(SUM(valor_total), 0) as total_valor,
+                COUNT(DISTINCT placa) as veiculos_unicos,
+                COUNT(DISTINCT motorista) as motoristas_unicos
+              FROM ${nomeTabela}
+              WHERE created_at >= CURRENT_DATE - INTERVAL '12 months'
+              GROUP BY EXTRACT(YEAR FROM created_at), EXTRACT(MONTH FROM created_at)
+              ORDER BY ano DESC, mes DESC
+            `;
+          }
+          
+          try {
+            const result = await pool.query(query, queryParams);
+            if (result.rows.length > 0) {
+              resultados.push(...result.rows);
+            }
+          } catch (error) {
+            console.log(`[DADOS MENSAIS] Tabela ${nomeTabela} não encontrada ou erro na consulta:`, error.message);
+            // Continue com próximo posto se a tabela não existir
+          }
+        }
+        
+        console.log(`[DADOS MENSAIS] Unificado - ${resultados.length} registros encontrados`);
+        return res.json({
+          success: true,
+          data: resultados,
+          posto: 'unificado',
+          parametros: { ano, mes }
+        });
+        
+      } else {
+        // Dados de um posto específico
+        const postoNormalizado = posto?.toString().toLowerCase() || '';
+        const nomeTabela = `abastecimentos_posto_${postoNormalizado}`;
+        
+        let query = '';
+        const queryParams = [];
+        
+        if (ano && mes) {
+          // Dados de um mês específico
+          query = `
+            SELECT 
+              COUNT(*) as total_abastecimentos,
+              COALESCE(SUM(litros), 0) as total_litros,
+              COALESCE(AVG(litros), 0) as media_litros_abastecimento,
+              COALESCE(SUM(valor_total), 0) as total_valor,
+              COUNT(DISTINCT placa) as veiculos_unicos,
+              COUNT(DISTINCT motorista) as motoristas_unicos,
+              COUNT(CASE WHEN tipo_combustivel = 'Diesel' THEN 1 END) as abastecimentos_diesel,
+              COUNT(CASE WHEN tipo_combustivel = 'ARLA' THEN 1 END) as abastecimentos_arla,
+              COALESCE(SUM(CASE WHEN tipo_combustivel = 'Diesel' THEN litros END), 0) as litros_diesel,
+              COALESCE(SUM(CASE WHEN tipo_combustivel = 'ARLA' THEN litros END), 0) as litros_arla
+            FROM ${nomeTabela}
+            WHERE EXTRACT(YEAR FROM created_at) = $1 
+              AND EXTRACT(MONTH FROM created_at) = $2
+          `;
+          queryParams.push(parseInt(ano as string), parseInt(mes as string));
+        } else if (ano) {
+          // Dados anuais agrupados por mês
+          query = `
+            SELECT 
+              EXTRACT(MONTH FROM created_at) as mes,
+              COUNT(*) as total_abastecimentos,
+              COALESCE(SUM(litros), 0) as total_litros,
+              COALESCE(AVG(litros), 0) as media_litros_abastecimento,
+              COALESCE(SUM(valor_total), 0) as total_valor,
+              COUNT(DISTINCT placa) as veiculos_unicos,
+              COUNT(DISTINCT motorista) as motoristas_unicos,
+              COUNT(CASE WHEN tipo_combustivel = 'Diesel' THEN 1 END) as abastecimentos_diesel,
+              COUNT(CASE WHEN tipo_combustivel = 'ARLA' THEN 1 END) as abastecimentos_arla,
+              COALESCE(SUM(CASE WHEN tipo_combustivel = 'Diesel' THEN litros END), 0) as litros_diesel,
+              COALESCE(SUM(CASE WHEN tipo_combustivel = 'ARLA' THEN litros END), 0) as litros_arla
+            FROM ${nomeTabela}
+            WHERE EXTRACT(YEAR FROM created_at) = $1
+            GROUP BY EXTRACT(MONTH FROM created_at)
+            ORDER BY mes
+          `;
+          queryParams.push(parseInt(ano as string));
+        } else {
+          // Dados gerais - últimos 12 meses
+          query = `
+            SELECT 
+              EXTRACT(YEAR FROM created_at) as ano,
+              EXTRACT(MONTH FROM created_at) as mes,
+              COUNT(*) as total_abastecimentos,
+              COALESCE(SUM(litros), 0) as total_litros,
+              COALESCE(AVG(litros), 0) as media_litros_abastecimento,
+              COALESCE(SUM(valor_total), 0) as total_valor,
+              COUNT(DISTINCT placa) as veiculos_unicos,
+              COUNT(DISTINCT motorista) as motoristas_unicos,
+              COUNT(CASE WHEN tipo_combustivel = 'Diesel' THEN 1 END) as abastecimentos_diesel,
+              COUNT(CASE WHEN tipo_combustivel = 'ARLA' THEN 1 END) as abastecimentos_arla,
+              COALESCE(SUM(CASE WHEN tipo_combustivel = 'Diesel' THEN litros END), 0) as litros_diesel,
+              COALESCE(SUM(CASE WHEN tipo_combustivel = 'ARLA' THEN litros END), 0) as litros_arla
+            FROM ${nomeTabela}
+            WHERE created_at >= CURRENT_DATE - INTERVAL '12 months'
+            GROUP BY EXTRACT(YEAR FROM created_at), EXTRACT(MONTH FROM created_at)
+            ORDER BY ano DESC, mes DESC
+          `;
+        }
+        
+        const result = await pool.query(query, queryParams);
+        
+        console.log(`[DADOS MENSAIS] ${postoNormalizado} - ${result.rows.length} registros encontrados`);
+        return res.json({
+          success: true,
+          data: result.rows,
+          posto: postoNormalizado,
+          parametros: { ano, mes }
+        });
+      }
+      
+    } catch (error) {
+      console.error('[DADOS MENSAIS] Erro:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar dados mensais',
+        error: error.message
+      });
+    }
+  });
+
   // Rota para editar motorista
   app.put('/api/drivers/:id', async (req, res) => {
     try {
