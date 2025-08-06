@@ -94,6 +94,8 @@ router.get('/api/recebimentos/osasco_v2', async (req, res) => {
 // Rota para adicionar um recebimento no posto Osasco V2
 router.post('/api/recebimentos/osasco_v2', async (req, res) => {
   try {
+    console.log("Dados recebidos no backend:", req.body);
+    
     const {
       fornecedor,
       tipo_combustivel,
@@ -106,8 +108,29 @@ router.post('/api/recebimentos/osasco_v2', async (req, res) => {
       observacoes
     } = req.body;
     
+    console.log("Campos extraídos:", {
+      fornecedor,
+      tipo_combustivel,
+      quantidade_litros,
+      valor_litro,
+      valor_total,
+      numero_nota,
+      data_entrega,
+      nome_operador,
+      observacoes
+    });
+    
     // Verificar campos obrigatórios
     if (!fornecedor || !tipo_combustivel || !quantidade_litros || !valor_litro || !numero_nota || !data_entrega || !nome_operador) {
+      console.log("Validação de campos falhou:", {
+        fornecedor: !!fornecedor,
+        tipo_combustivel: !!tipo_combustivel,
+        quantidade_litros: !!quantidade_litros,
+        valor_litro: !!valor_litro,
+        numero_nota: !!numero_nota,
+        data_entrega: !!data_entrega,
+        nome_operador: !!nome_operador
+      });
       return res.status(400).json({
         success: false,
         message: "Todos os campos são obrigatórios, exceto observações"
