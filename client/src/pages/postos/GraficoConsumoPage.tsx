@@ -142,6 +142,10 @@ export default function GraficoConsumoPage() {
   // Estados para o comparativo mensal detalhado
   const [comparativoMensalData, setComparativoMensalData] = useState<ComparativoMensalData | null>(null);
   const [isLoadingComparativoMensal, setIsLoadingComparativoMensal] = useState(false);
+  
+  // Estados para drill-down de projetos
+  const [selectedProjeto, setSelectedProjeto] = useState<string | null>(null);
+  const [showBasesRanking, setShowBasesRanking] = useState(false);
 
   const postos = [
     { id: 'campinas_v2', nome: 'CAMPINAS' },
@@ -414,6 +418,64 @@ export default function GraficoConsumoPage() {
     link.href = URL.createObjectURL(blob);
     link.download = `analise-mensal-postos-favoritos-${selectedYear}.csv`;
     link.click();
+  };
+
+  // Função para processar dados de projetos por mês
+  const getProjetosPorMes = () => {
+    if (!comparativoMensalData) return [];
+    
+    const projetosPorMes: Record<string, any> = {};
+    
+    comparativoMensalData.consolidado_mensal.forEach(mes => {
+      const chave = mes.mes_nome;
+      projetosPorMes[chave] = {
+        mes: chave,
+        total_projetos: mes.total_projetos,
+        total_litros: mes.total_litros,
+        total_valor: mes.total_valor,
+        total_abastecimentos: mes.total_abastecimentos
+      };
+    });
+    
+    return Object.values(projetosPorMes);
+  };
+
+  // Função para obter ranking das bases por projeto
+  const getBasesRankingPorProjeto = (projeto: string) => {
+    if (!comparativoMensalData) return [];
+    
+    // Buscar dados do projeto selecionado
+    const projetoData = comparativoMensalData.projetos_posto_favorito[projeto];
+    if (!projetoData) return [];
+    
+    // Processar detalhes por posto para criar ranking das bases
+    const basesRanking: Array<{
+      posto: string;
+      total_litros: number;
+      total_valor: number;
+      meses_ativo: number;
+      abastecimentos: number;
+      percentual: string;
+    }> = [];
+    
+    Object.entries(projetoData.detalhes_por_posto).forEach(([posto, dados]) => {
+      basesRanking.push({
+        posto: posto,
+        total_litros: dados.total_litros,
+        total_valor: dados.total_valor,
+        meses_ativo: dados.meses_ativo,
+        abastecimentos: dados.abastecimentos,
+        percentual: ((dados.total_litros / projetoData.consumo_posto_favorito) * 100).toFixed(1)
+      });
+    });
+    
+    return basesRanking.sort((a, b) => b.total_litros - a.total_litros);
+  };
+
+  // Função para lidar com clique no projeto
+  const handleProjetoClick = (projeto: string) => {
+    setSelectedProjeto(projeto);
+    setShowBasesRanking(true);
   };
 
   const renderGrafico = () => {
@@ -1063,6 +1125,125 @@ export default function GraficoConsumoPage() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Gráfico de Projetos por Mês - Interativo */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Projetos Ativos por Mês - {selectedYear}
+                    <Badge variant="outline" className="ml-2">Clique para ver bases</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={getProjetosPorMes()} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="mes" />
+                      <YAxis />
+                      <Tooltip formatter={(value: number, name: string) => {
+                        if (name === 'total_litros') {
+                          return [`${value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}L`, 'Total Litros'];
+                        }
+                        if (name === 'total_valor') {
+                          return [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Total Valor'];
+                        }
+                        return [value.toLocaleString('pt-BR'), name];
+                      }} />
+                      <Legend />
+                      <Bar dataKey="total_projetos" fill="#8884d8" name="Projetos Ativos" />
+                      <Bar dataKey="total_litros" fill="#82ca9d" name="Total Litros" />
+                      <Bar dataKey="total_abastecimentos" fill="#ffc658" name="Abastecimentos" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Gráfico Interativo de Projetos Clicáveis */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Ranking dos Projetos - Clique para Ver Bases
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Object.entries(comparativoMensalData.projetos_posto_favorito)
+                      .sort(([,a], [,b]) => b.consumo_posto_favorito - a.consumo_posto_favorito)
+                      .slice(0, 12)
+                      .map(([projeto, data]) => (
+                      <div 
+                        key={projeto} 
+                        className="p-4 border rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
+                        onClick={() => handleProjetoClick(projeto)}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-semibold text-sm">{projeto}</h4>
+                          <Badge variant="outline" className="text-xs">{data.total_postos_utilizados} postos</Badge>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs text-gray-600">Posto Favorito:</p>
+                          <p className="font-bold text-blue-800 text-sm">{data.posto_favorito}</p>
+                          <p className="text-xs text-gray-500">
+                            {data.consumo_posto_favorito.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}L
+                          </p>
+                        </div>
+                        <div className="mt-2 text-right">
+                          <span className="text-xs text-blue-600 hover:text-blue-800">📊 Ver Ranking →</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Modal/Dialog para Ranking das Bases */}
+              {showBasesRanking && selectedProjeto && (
+                <Card className="border-2 border-blue-200 bg-blue-50">
+                  <CardHeader>
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="flex items-center gap-2">
+                        <Filter className="h-5 w-5" />
+                        Ranking das Bases - {selectedProjeto}
+                      </CardTitle>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setShowBasesRanking(false)}
+                      >
+                        ✕ Fechar
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {getBasesRankingPorProjeto(selectedProjeto).map((base, index) => (
+                        <div key={base.posto} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">
+                              {index + 1}
+                            </Badge>
+                            <div>
+                              <p className="font-medium">{base.posto}</p>
+                              <p className="text-sm text-gray-600">
+                                {base.abastecimentos} abastecimentos em {base.meses_ativo} meses
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-lg">{base.total_litros.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}L</p>
+                            <p className="text-sm text-gray-500">{base.percentual}% do projeto</p>
+                            <p className="text-xs text-gray-400">
+                              R$ {base.total_valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Consolidado Mensal */}
               <Card>
