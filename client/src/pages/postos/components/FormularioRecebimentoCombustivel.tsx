@@ -87,9 +87,20 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
       
       console.log('[RECEBIMENTO] Dados do formulário recebidos:', data);
       console.log('[RECEBIMENTO] Registrando recebimento para posto:', postId);
+      console.log('[RECEBIMENTO] Validação de campos:', {
+        tipo_produto: data.tipo_produto ? '✓' : '✗ FALTANDO',
+        litros_recebidos: data.litros_recebidos ? '✓' : '✗ FALTANDO',
+        valor_litro: data.valor_litro ? '✓' : '✗ FALTANDO',
+        nome_fornecedor: data.nome_fornecedor ? '✓' : '✗ FALTANDO',
+        numero_nota_fiscal: data.numero_nota_fiscal ? '✓' : '✗ FALTANDO',
+        data_recebimento: data.data_recebimento ? '✓' : '✗ FALTANDO',
+        nome_operador: data.nome_operador ? '✓' : '✗ FALTANDO',
+        valor_total: data.valor_total ? '✓' : '✗ FALTANDO'
+      });
       
       // Validar campos obrigatórios
       if (!data.tipo_produto || !data.litros_recebidos || !data.valor_litro || !data.nome_fornecedor || !data.numero_nota_fiscal || !data.data_recebimento) {
+        console.error('[RECEBIMENTO] Validação falhou - campos obrigatórios faltando');
         throw new Error('Todos os campos obrigatórios devem ser preenchidos');
       }
       
