@@ -1202,6 +1202,18 @@ const HistoricoGeralPage: React.FC = () => {
               </svg>
               Atualizar
             </button>
+            <button
+              onClick={() => {
+                setShowTendencias(!showTendencias);
+                if (!showTendencias && !tendenciaData) {
+                  fetchTendenciaData();
+                }
+              }}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors flex items-center mr-2"
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              {showTendencias ? 'Ocultar Análise' : 'Análise Tendência'}
+            </button>
             <button 
               onClick={handleExportarExcel}
               className={`px-4 py-2 ${isExporting ? 'bg-gray-500 cursor-wait' : 'bg-green-600 hover:bg-green-700'} text-white rounded-md flex items-center`}
@@ -1871,32 +1883,15 @@ const HistoricoGeralPage: React.FC = () => {
           </>
         )}
 
-        {/* Nova seção: Comparativo Mensal com Indicadores de Tendência */}
-        <div className="bg-white rounded-lg shadow-md p-6 mt-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
+        {/* Seção de Comparativo Mensal com Indicadores de Tendência */}
+        {showTendencias && (
+          <div className="bg-white rounded-lg shadow-md p-6 mt-6">
+            <div className="flex items-center gap-2 mb-6">
               <FaProjectDiagram className="w-6 h-6 text-blue-600" />
               <h2 className="text-xl font-bold text-gray-900">Comparativo Mensal com Indicadores de Tendência</h2>
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowTendencias(!showTendencias);
-                  if (!showTendencias && !tendenciaData) {
-                    fetchTendenciaData();
-                  }
-                }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center gap-2"
-              >
-                <TrendingUp className="w-4 h-4" />
-                {showTendencias ? 'Ocultar Análise' : 'Mostrar Análise'}
-              </button>
-            </div>
-          </div>
 
-          {showTendencias && (
-            <>
-              {tendenciaData && tendenciaData.data && (
+            {tendenciaData && tendenciaData.data && (
                 <div className="space-y-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Badge variant="outline" className="text-sm">
@@ -2012,29 +2007,20 @@ const HistoricoGeralPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Loading state para tendências */}
-              {isLoadingTendencia && !tendenciaData && (
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-4"></div>
-                      <span>Carregando dados de tendência...</span>
-                    </div>
-                  </CardContent>
-                </Card>
+              {tendenciaLoading && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
+                  <span className="ml-2">Carregando análise de tendência...</span>
+                </div>
               )}
 
-              {/* Mensagem quando não há dados */}
-              {!isLoadingTendencia && !tendenciaData && showTendencias && (
-                <Card>
-                  <CardContent className="p-6 text-center">
-                    <p className="text-gray-500">Clique em "Mostrar Análise" para carregar os dados de tendência.</p>
-                  </CardContent>
-                </Card>
-              )}
-            </>
-          )}
-        </div>
+              {tendenciaError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-red-800">Erro ao carregar análise: {tendenciaError}</p>
+                </div>
+            )}
+          </div>
+        )}
 
       </div>
     </div>
