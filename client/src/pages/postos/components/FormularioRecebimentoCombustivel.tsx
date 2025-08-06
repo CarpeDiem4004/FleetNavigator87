@@ -263,47 +263,7 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
                     <Input
                       type="number"
                       step="0.001"
-                      placeholder="Ex: 5.00"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Valor Total */}
-            <FormField
-              control={form.control}
-              name="valor_total"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Valor Total (R$)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="Ex: 25000.00"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Nome do Fornecedor */}
-            <FormField
-              control={form.control}
-              name="nome_fornecedor"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome do Fornecedor</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Ex: Petrobras Distribuidora"
+                      placeholder="Ex: 5.50"
                       {...field}
                     />
                   </FormControl>
@@ -321,7 +281,7 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
                   <FormLabel>Número da Nota Fiscal</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Ex: 123456"
+                      placeholder="Ex: NF123456"
                       {...field}
                     />
                   </FormControl>
@@ -342,6 +302,46 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
                   <FormControl>
                     <Input
                       type="date"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Valor Total */}
+            <FormField
+              control={form.control}
+              name="valor_total"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Valor Total (R$)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="Ex: 5500.00"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Nome do Fornecedor */}
+            <FormField
+              control={form.control}
+              name="nome_fornecedor"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome do Fornecedor</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ex: Petrobras Distribuidora"
                       {...field}
                     />
                   </FormControl>
