@@ -772,11 +772,23 @@ const HistoricoGeralPage: React.FC = () => {
       
       console.log("[FETCH] Total de abastecimentos combinados:", todosAbastecimentos.length);
       
+      // Log dos primeiros 3 registros para debug
+      if (todosAbastecimentos.length > 0) {
+        console.log("[DEBUG] Primeiros 3 abastecimentos:", todosAbastecimentos.slice(0, 3).map(a => ({
+          id: a.id,
+          placa: a.placa,
+          posto: a.posto,
+          created_at: a.created_at,
+          project: a.project
+        })));
+      }
+      
       // Ordenar por data (mais recentes primeiro)
       todosAbastecimentos.sort((a, b) => {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
       
+      console.log("[SET_STATE] Definindo abastecimentos no estado, total:", todosAbastecimentos.length);
       setAbastecimentos(todosAbastecimentos);
     } catch (error) {
       console.error('Erro geral ao buscar histórico de abastecimentos:', error);
@@ -1081,6 +1093,17 @@ const HistoricoGeralPage: React.FC = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedData = filteredData.slice(startIndex, endIndex);
+  
+  // Debug logs
+  console.log("[RENDER] Estado atual:", {
+    abastecimentos: abastecimentos.length,
+    filteredData: filteredData.length,
+    paginatedData: paginatedData.length,
+    isLoading,
+    searchTerm,
+    dateStart,
+    dateEnd
+  });
 
   // Reset página quando mudar filtros
   useEffect(() => {
