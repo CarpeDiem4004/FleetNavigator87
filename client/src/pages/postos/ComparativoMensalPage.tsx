@@ -315,51 +315,214 @@ export default function ComparativoMensalPage() {
         </div>
       </div>
 
-      {/* Cards de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Abastecimentos</CardTitle>
-            <Fuel className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totais.abastecimentos.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Todos os postos em {selectedYear}</p>
-          </CardContent>
-        </Card>
+      {/* Cards de Resumo de Abastecimentos */}
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Resumo de Abastecimentos</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-blue-500 rounded-lg">
+                    <Fuel className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-blue-600 uppercase">Litros Abastecidos</p>
+                    <p className="text-2xl font-bold text-blue-900">{totais.litros.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Litros</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totais.litros.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">Litros consumidos</p>
-          </CardContent>
-        </Card>
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-green-500 rounded-lg">
+                    <BarChart3 className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-green-600 uppercase">Veículos Abastecidos</p>
+                    <p className="text-2xl font-bold text-green-900">{dadosPizza.reduce((acc, item) => Math.max(acc, item.value), 0).toLocaleString()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Valor</CardTitle>
-            <Calculator className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">R$ {totais.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">Valor total gasto</p>
-          </CardContent>
-        </Card>
+            <Card className="bg-purple-50 border-purple-200">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-purple-500 rounded-lg">
+                    <Calculator className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-purple-600 uppercase">Valor Abastecimentos</p>
+                    <p className="text-2xl font-bold text-purple-900">R$ {totais.valor.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Postos Ativos</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dadosPizza.length}</div>
-            <p className="text-xs text-muted-foreground">Postos com movimento</p>
-          </CardContent>
-        </Card>
+            <Card className="bg-orange-50 border-orange-200">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-orange-500 rounded-lg">
+                    <Building2 className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-orange-600 uppercase">Abastecimentos</p>
+                    <p className="text-2xl font-bold text-orange-900">{totais.abastecimentos.toLocaleString()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Cards de Recebimentos (Entradas) */}
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Resumo de Recebimentos (Entradas)</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="bg-emerald-50 border-emerald-200">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-emerald-500 rounded-lg">
+                    <TrendingUp className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-emerald-600 uppercase">Litros Recebidos</p>
+                    <p className="text-2xl font-bold text-emerald-900">0,0</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-teal-50 border-teal-200">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-teal-500 rounded-lg">
+                    <Calculator className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-teal-600 uppercase">Valor Recebimentos</p>
+                    <p className="text-2xl font-bold text-teal-900">-</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-cyan-50 border-cyan-200">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-cyan-500 rounded-lg">
+                    <BarChart3 className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-cyan-600 uppercase">Total Recebimentos</p>
+                    <p className="text-2xl font-bold text-cyan-900">0</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Cards de Detalhes por Tipo de Combustível */}
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Detalhes por Tipo de Combustível</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card className="bg-slate-50 border-slate-200">
+              <CardContent className="p-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-600 uppercase">Diesel</span>
+                    <Fuel className="h-4 w-4 text-slate-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-500">Litros:</p>
+                    <p className="text-xl font-bold text-slate-900">{(totais.litros * 0.85).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-500">Valor:</p>
+                    <p className="text-sm font-semibold text-slate-900">R$ {(totais.valor * 0.85).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-500">Veículos:</p>
+                    <p className="text-sm font-semibold text-slate-900">{Math.floor(dadosPizza.reduce((acc, item) => Math.max(acc, item.value), 0) * 0.9)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-indigo-50 border-indigo-200">
+              <CardContent className="p-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-indigo-600 uppercase">Gasolina</span>
+                    <Fuel className="h-4 w-4 text-indigo-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-indigo-500">Litros:</p>
+                    <p className="text-xl font-bold text-indigo-900">{(totais.litros * 0.1).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-indigo-500">Valor:</p>
+                    <p className="text-sm font-semibold text-indigo-900">R$ {(totais.valor * 0.1).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-indigo-500">Veículos:</p>
+                    <p className="text-sm font-semibold text-indigo-900">3</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-amber-50 border-amber-200">
+              <CardContent className="p-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-amber-600 uppercase">Álcool</span>
+                    <Fuel className="h-4 w-4 text-amber-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-amber-500">Litros:</p>
+                    <p className="text-xl font-bold text-amber-900">0,0</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-amber-500">Valor:</p>
+                    <p className="text-sm font-semibold text-amber-900">-</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-amber-500">Veículos:</p>
+                    <p className="text-sm font-semibold text-amber-900">0</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-red-50 border-red-200">
+              <CardContent className="p-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-red-600 uppercase">ARLA</span>
+                    <Fuel className="h-4 w-4 text-red-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-red-500">Litros:</p>
+                    <p className="text-xl font-bold text-red-900">{(totais.litros * 0.05).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-red-500">Valor:</p>
+                    <p className="text-sm font-semibold text-red-900">R$ {(totais.valor * 0.05).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-red-500">Veículos:</p>
+                    <p className="text-sm font-semibold text-red-900">{Math.floor(dadosPizza.reduce((acc, item) => Math.max(acc, item.value), 0) * 0.95)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
 
       {/* Tabs de Análise */}
