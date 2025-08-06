@@ -107,6 +107,17 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
       };
       
       console.log('[RECEBIMENTO] Payload para API:', payload);
+      console.log('[RECEBIMENTO] Tipos dos campos:', {
+        fornecedor: typeof payload.fornecedor,
+        tipo_combustivel: typeof payload.tipo_combustivel,
+        quantidade_litros: typeof payload.quantidade_litros,
+        valor_litro: typeof payload.valor_litro,
+        valor_total: typeof payload.valor_total,
+        numero_nota: typeof payload.numero_nota,
+        data_entrega: typeof payload.data_entrega,
+        nome_operador: typeof payload.nome_operador,
+        observacoes: typeof payload.observacoes
+      });
       
       const response = await fetch(`/api/recebimentos/${postId.toLowerCase()}`, {
         method: 'POST',

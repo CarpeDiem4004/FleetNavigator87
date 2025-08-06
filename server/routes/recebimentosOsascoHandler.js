@@ -120,22 +120,24 @@ router.post('/api/recebimentos/osasco_v2', async (req, res) => {
       observacoes
     });
     
-    // Verificar campos obrigatórios
-    if (!fornecedor || !tipo_combustivel || !quantidade_litros || !valor_litro || !numero_nota || !data_entrega || !nome_operador) {
-      console.log("Validação de campos falhou:", {
-        fornecedor: !!fornecedor,
-        tipo_combustivel: !!tipo_combustivel,
-        quantidade_litros: !!quantidade_litros,
-        valor_litro: !!valor_litro,
-        numero_nota: !!numero_nota,
-        data_entrega: !!data_entrega,
-        nome_operador: !!nome_operador
+    // Verificar campos obrigatórios - versão corrigida
+    if (!fornecedor || !tipo_combustivel || !quantidade_litros || !valor_litro || !numero_nota || !data_entrega) {
+      console.log("Validação falhou - campos principais:", {
+        fornecedor: !!fornecedor ? 'OK' : 'FALTANDO',
+        tipo_combustivel: !!tipo_combustivel ? 'OK' : 'FALTANDO',
+        quantidade_litros: !!quantidade_litros ? 'OK' : 'FALTANDO',
+        valor_litro: !!valor_litro ? 'OK' : 'FALTANDO',
+        numero_nota: !!numero_nota ? 'OK' : 'FALTANDO',
+        data_entrega: !!data_entrega ? 'OK' : 'FALTANDO'
       });
       return res.status(400).json({
         success: false,
-        message: "Todos os campos são obrigatórios, exceto observações"
+        message: "Campos obrigatórios faltando"
       });
     }
+
+    // nome_operador pode ser opcional, será preenchido automaticamente se não existir
+    const operadorFinal = nome_operador || 'Sistema';
     
     // Mapeamento de campos para o formato da tabela Osasco V2
     const query = `
@@ -161,7 +163,7 @@ router.post('/api/recebimentos/osasco_v2', async (req, res) => {
       valor_total,
       numero_nota,
       data_entrega,
-      nome_operador,
+      operadorFinal,
       observacoes || null
     ];
     
