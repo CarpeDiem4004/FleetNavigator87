@@ -12433,6 +12433,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rota para exclusão de abastecimento por ID e posto (apenas para admin)
+  app.delete('/api/abastecimentos/:posto/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { posto, id } = req.params;
+      const user = req.user;
+      
+      // Verificar se o usuário é admin
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: 'Acesso negado. Apenas administradores podem excluir abastecimentos.'
+        });
+      }
+      
+      console.log(`[DELETE_ABASTECIMENTO] Admin ${user.name} solicitou exclusão do ID ${id} no posto ${posto}`);
+      
+      // Determinar a tabela correta baseada no posto
+      const nomeTabela = `abastecimentos_posto_${posto.toLowerCase()}`;
+      
+      // Verificar se a tabela existe
+      const tabelaExisteQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = $1
+        ) as "exists";
+      `;
+      
+      const tabelaExisteResult = await pool.query(tabelaExisteQuery, [nomeTabela]);
+      
+      if (!tabelaExisteResult.rows[0].exists) {
+        return res.status(404).json({
+          success: false,
+          message: `Posto ${posto} não encontrado`
+        });
+      }
+      
+      // Primeiro, verificar se o registro existe e obter seus dados para log
+      const selectQuery = `SELECT * FROM ${nomeTabela} WHERE id = $1`;
+      const selectResult = await pool.query(selectQuery, [parseInt(id)]);
+      
+      if (selectResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Abastecimento não encontrado'
+        });
+      }
+      
+      const registro = selectResult.rows[0];
+      console.log(`[DELETE_ABASTECIMENTO] Excluindo registro:`, {
+        id: registro.id,
+        placa: registro.placa,
+        motorista: registro.motorista,
+        data: registro.created_at
+      });
+      
+      // Excluir o registro
+      const deleteQuery = `DELETE FROM ${nomeTabela} WHERE id = $1 RETURNING id`;
+      const deleteResult = await pool.query(deleteQuery, [parseInt(id)]);
+      
+      if (deleteResult.rowCount > 0) {
+        console.log(`[DELETE_ABASTECIMENTO] Registro ${id} excluído com sucesso pelo admin ${user.name}`);
+        
+        return res.status(200).json({
+          success: true,
+          message: 'Abastecimento excluído com sucesso',
+          deletedId: parseInt(id),
+          deletedRecord: {
+            placa: registro.placa,
+            motorista: registro.motorista,
+            data: registro.created_at
+          }
+        });
+      } else {
+        throw new Error('Falha ao excluir o registro');
+      }
+      
+    } catch (error) {
+      console.error('[DELETE_ABASTECIMENTO] Erro:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao excluir abastecimento',
+        error: error.message
+      });
+    }
+  });
+
   // Registrar rotas de teste de autenticação híbrida
   app.use('/api/auth-test', authTestRoutes);
   

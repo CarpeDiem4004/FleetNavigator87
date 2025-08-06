@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, fetchRecords } from '@/lib/supabase-compat';
 import { format } from 'date-fns';
-import { FaGasPump, FaMoneyBillWave, FaCar, FaWater, FaProjectDiagram, FaTruck } from 'react-icons/fa';
+import { FaGasPump, FaMoneyBillWave, FaCar, FaWater, FaProjectDiagram, FaTruck, FaTrash } from 'react-icons/fa';
 import { BsFillFuelPumpFill } from 'react-icons/bs';
 import { RiOilFill, RiGasStationFill } from 'react-icons/ri';
 import { GiGasPump, GiWaterTank } from 'react-icons/gi';
+import { useSupabaseAuthContext } from '@/context/SupabaseAuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 
 // Interface para os dados de recebimentos (entradas) de combustível
 interface Recebimento {
@@ -39,6 +42,12 @@ interface Abastecimento {
 }
 
 const HistoricoGeralPage: React.FC = () => {
+  const { user } = useSupabaseAuthContext();
+  const { toast } = useToast();
+  
+  // Verificar se é admin
+  const isAdmin = user?.role === 'admin';
+  
   // Função para obter a base específica registrada ou fazer fallback para mapeamento
   const getBaseFromAbastecimento = (item: any): string => {
     // Prioridade 1: Usar base_name se disponível (base específica registrada)
@@ -212,6 +221,60 @@ const HistoricoGeralPage: React.FC = () => {
 
   // Estado para armazenar dados de recebimentos
   const [recebimentos, setRecebimentos] = useState<Recebimento[]>([]);
+
+  // Função para excluir um abastecimento (apenas para admin)
+  const handleDeleteAbastecimento = async (abastecimento: Abastecimento) => {
+    if (!isAdmin) {
+      toast({
+        title: 'Acesso negado',
+        description: 'Apenas administradores podem excluir registros',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!confirm(`Tem certeza que deseja excluir o abastecimento da placa ${abastecimento.placa}?`)) {
+      return;
+    }
+
+    try {
+      console.log(`[DELETE] Excluindo abastecimento ID ${abastecimento.id} do posto ${abastecimento.posto}`);
+      
+      const response = await apiRequest(
+        'DELETE', 
+        `/api/abastecimentos/${abastecimento.posto}/${abastecimento.id}`
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('[DELETE] Sucesso:', result);
+        
+        // Remover da lista local
+        setAbastecimentos(prev => 
+          prev.filter(item => !(item.id === abastecimento.id && item.posto === abastecimento.posto))
+        );
+        
+        toast({
+          title: 'Abastecimento excluído',
+          description: `Registro da placa ${abastecimento.placa} foi removido com sucesso`,
+        });
+        
+        // Atualizar dados - recarregar tudo
+        await fetchAllAbastecimentos();
+        
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao excluir registro');
+      }
+    } catch (error) {
+      console.error('[DELETE] Erro:', error);
+      toast({
+        title: 'Erro ao excluir',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      });
+    }
+  };
   
   // Função para buscar recebimentos (entradas) de combustível de todos os postos
   const fetchAllRecebimentos = async () => {
@@ -1469,6 +1532,9 @@ const HistoricoGeralPage: React.FC = () => {
                     <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Base</th>
                     <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Motorista</th>
                     <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Valor</th>
+                    {isAdmin && (
+                      <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Ações</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -1496,6 +1562,17 @@ const HistoricoGeralPage: React.FC = () => {
                         </td>
                         <td className="py-3 px-4">{abast.nome_motorista}</td>
                         <td className="py-3 px-4">{abast.valor_total ? formatarPreco(abast.valor_total) : '-'}</td>
+                        {isAdmin && (
+                          <td className="py-3 px-4">
+                            <button
+                              onClick={() => handleDeleteAbastecimento(abast)}
+                              className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-md transition-colors"
+                              title="Excluir abastecimento"
+                            >
+                              Excluir
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
