@@ -136,16 +136,18 @@ export default function ComparativoMensalPage() {
           const data = await response.json();
           
           if (data.success && Array.isArray(data.data)) {
-            const dadosUnificados = data.data.map((item: any) => ({
-              posto: item.posto,
-              postoFormatado: item.posto.replace('_v2', '').toUpperCase(),
-              ano: item.ano,
-              mes: item.mes,
-              total_abastecimentos: parseInt(item.total_abastecimentos || 0),
-              total_litros: parseFloat(item.total_litros || 0),
-              total_valor: parseFloat(item.total_valor || 0),
-              preco_medio: item.total_litros > 0 ? (parseFloat(item.total_valor || 0) / parseFloat(item.total_litros || 1)) : 0
-            }));
+            const dadosUnificados = data.data
+              .filter((item: any) => item.mes >= 5) // Filtrar apenas a partir de maio
+              .map((item: any) => ({
+                posto: item.posto,
+                postoFormatado: item.posto.replace('_v2', '').toUpperCase(),
+                ano: item.ano,
+                mes: item.mes,
+                total_abastecimentos: parseInt(item.total_abastecimentos || 0),
+                total_litros: parseFloat(item.total_litros || 0),
+                total_valor: parseFloat(item.total_valor || 0),
+                preco_medio: item.total_litros > 0 ? (parseFloat(item.total_valor || 0) / parseFloat(item.total_litros || 1)) : 0
+              }));
             
             todosDados.push(...dadosUnificados);
             console.log(`[COMPARATIVO] Dados unificados: ${dadosUnificados.length} registros mensais`);
@@ -161,16 +163,18 @@ export default function ComparativoMensalPage() {
           if (data.success && Array.isArray(data.data)) {
             const postoNome = postos.find(p => p.id === selectedPosto)?.nome || selectedPosto;
             
-            const dadosPosto = data.data.map((item: any) => ({
-              posto: selectedPosto,
-              postoFormatado: postoNome,
-              ano: item.ano,
-              mes: item.mes,
-              total_abastecimentos: parseInt(item.total_abastecimentos || 0),
-              total_litros: parseFloat(item.total_litros || 0),
-              total_valor: parseFloat(item.total_valor || 0),
-              preco_medio: item.total_litros > 0 ? (parseFloat(item.total_valor || 0) / parseFloat(item.total_litros || 1)) : 0
-            }));
+            const dadosPosto = data.data
+              .filter((item: any) => item.mes >= 5) // Filtrar apenas a partir de maio
+              .map((item: any) => ({
+                posto: selectedPosto,
+                postoFormatado: postoNome,
+                ano: item.ano,
+                mes: item.mes,
+                total_abastecimentos: parseInt(item.total_abastecimentos || 0),
+                total_litros: parseFloat(item.total_litros || 0),
+                total_valor: parseFloat(item.total_valor || 0),
+                preco_medio: item.total_litros > 0 ? (parseFloat(item.total_valor || 0) / parseFloat(item.total_litros || 1)) : 0
+              }));
             
             todosDados.push(...dadosPosto);
             console.log(`[COMPARATIVO] Posto ${postoNome}: ${dadosPosto.length} registros mensais`);
