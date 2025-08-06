@@ -12211,6 +12211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               EXTRACT(YEAR FROM created_at) as ano,
               COALESCE(SUM(litros), 0) as total_litros,
               COUNT(*) as total_abastecimentos,
+              COUNT(DISTINCT COALESCE(placa, 'SEM_PLACA')) as veiculos_unicos,
               COALESCE(SUM(valor_total), 0) as total_valor,
               ROUND(COALESCE(AVG(valor_litro), 0), 2) as preco_medio
             FROM ${nomeTabela}
@@ -12253,6 +12254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             mes_nome: registro.mes_nome,
             total_litros: 0,
             total_abastecimentos: 0,
+            total_veiculos: 0,
             total_valor: 0,
             postos_ativos: []
           };
@@ -12260,10 +12262,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         consolidadoPorMes[registro.mes].total_litros += parseFloat(registro.total_litros);
         consolidadoPorMes[registro.mes].total_abastecimentos += parseInt(registro.total_abastecimentos);
+        consolidadoPorMes[registro.mes].total_veiculos += parseInt(registro.veiculos_unicos);
         consolidadoPorMes[registro.mes].total_valor += parseFloat(registro.total_valor);
         consolidadoPorMes[registro.mes].postos_ativos.push({
           posto: registro.posto,
           litros: parseFloat(registro.total_litros),
+          veiculos: parseInt(registro.veiculos_unicos),
           valor: parseFloat(registro.total_valor)
         });
         
@@ -12273,6 +12277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             posto: registro.posto,
             total_litros: 0,
             total_abastecimentos: 0,
+            total_veiculos: 0,
             total_valor: 0,
             meses_ativo: 0
           };
@@ -12280,6 +12285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         resumoPorPosto[registro.posto].total_litros += parseFloat(registro.total_litros);
         resumoPorPosto[registro.posto].total_abastecimentos += parseInt(registro.total_abastecimentos);
+        resumoPorPosto[registro.posto].total_veiculos += parseInt(registro.veiculos_unicos);
         resumoPorPosto[registro.posto].total_valor += parseFloat(registro.total_valor);
         resumoPorPosto[registro.posto].meses_ativo += 1;
       });
@@ -12292,6 +12298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totaisGerais = {
         total_litros: dadosPorPosto.reduce((sum, posto) => sum + posto.total_litros, 0),
         total_abastecimentos: dadosPorPosto.reduce((sum, posto) => sum + posto.total_abastecimentos, 0),
+        total_veiculos: dadosPorPosto.reduce((sum, posto) => sum + posto.total_veiculos, 0),
         total_valor: dadosPorPosto.reduce((sum, posto) => sum + posto.total_valor, 0),
         total_postos: dadosPorPosto.length,
         periodo: `Maio - Dezembro ${anoSelecionado}`

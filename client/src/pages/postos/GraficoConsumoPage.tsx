@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Download, Calendar, TrendingUp, BarChart3, PieChart as PieChartIcon, LineChart as LineChartIcon } from 'lucide-react';
+import { Download, Calendar, TrendingUp, BarChart3, PieChart as PieChartIcon, LineChart as LineChartIcon, Car } from 'lucide-react';
 
 interface DadosConsumo {
   posto: string;
@@ -14,6 +14,7 @@ interface DadosConsumo {
   mesNome: string;
   total_litros: number;
   total_abastecimentos: number;
+  total_veiculos?: number;
   total_valor: number;
 }
 
@@ -27,6 +28,7 @@ interface PostoResumo {
   totalLitros: number;
   totalValor: number;
   totalAbastecimentos: number;
+  totalVeiculos?: number;
   cor: string;
 }
 
@@ -36,6 +38,7 @@ export default function GraficoConsumoPage() {
   const [resumoPostos, setResumoPostos] = useState<PostoResumo[]>([]);
   const [selectedYear, setSelectedYear] = useState('2025');
   const [tipoGrafico, setTipoGrafico] = useState<'barras' | 'linha' | 'pizza'>('barras');
+  const [metrica, setMetrica] = useState<'litros' | 'valor' | 'veiculos'>('litros');
   const [isLoading, setIsLoading] = useState(false);
 
   const postos = [
@@ -81,6 +84,7 @@ export default function GraficoConsumoPage() {
             mesNome: item.mes_nome,
             total_litros: parseFloat(item.total_litros || 0),
             total_abastecimentos: parseInt(item.total_abastecimentos || 0),
+            total_veiculos: parseInt(item.veiculos_unicos || 0),
             total_valor: parseFloat(item.total_valor || 0)
           }));
           
@@ -110,7 +114,13 @@ export default function GraficoConsumoPage() {
       
       postos.forEach(posto => {
         const dadoPosto = dados.find(d => d.mes === mes && d.posto === posto.id);
-        dadosMes[posto.nome] = dadoPosto?.total_litros || 0;
+        if (metrica === 'litros') {
+          dadosMes[posto.nome] = dadoPosto?.total_litros || 0;
+        } else if (metrica === 'valor') {
+          dadosMes[posto.nome] = dadoPosto?.total_valor || 0;
+        } else if (metrica === 'veiculos') {
+          dadosMes[posto.nome] = dadoPosto?.total_veiculos || 0;
+        }
       });
 
       dadosProcessados.push(dadosMes);
@@ -132,11 +142,16 @@ export default function GraficoConsumoPage() {
         .filter(d => d.posto === posto.id)
         .reduce((acc, curr) => acc + curr.total_abastecimentos, 0);
 
+      const totalVeiculos = dados
+        .filter(d => d.posto === posto.id)
+        .reduce((acc, curr) => acc + (curr.total_veiculos || 0), 0);
+
       return {
         nome: posto.nome,
         totalLitros,
         totalValor,
         totalAbastecimentos,
+        totalVeiculos,
         cor: cores[index % cores.length]
       };
     }).filter(posto => posto.totalLitros > 0);
@@ -183,7 +198,13 @@ export default function GraficoConsumoPage() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="mes" />
               <YAxis />
-              <Tooltip formatter={(value: number) => [value.toLocaleString('pt-BR') + ' L', '']} />
+              <Tooltip formatter={(value: number) => {
+                const suffix = metrica === 'litros' ? ' L' : metrica === 'valor' ? '' : ' veículos';
+                const formattedValue = metrica === 'valor' 
+                  ? `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                  : value.toLocaleString('pt-BR') + suffix;
+                return [formattedValue, ''];
+              }} />
               <Legend />
               {postos.map((posto, index) => (
                 <Bar 
@@ -204,7 +225,13 @@ export default function GraficoConsumoPage() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="mes" />
               <YAxis />
-              <Tooltip formatter={(value: number) => [value.toLocaleString('pt-BR') + ' L', '']} />
+              <Tooltip formatter={(value: number) => {
+                const suffix = metrica === 'litros' ? ' L' : metrica === 'valor' ? '' : ' veículos';
+                const formattedValue = metrica === 'valor' 
+                  ? `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                  : value.toLocaleString('pt-BR') + suffix;
+                return [formattedValue, ''];
+              }} />
               <Legend />
               {postos.map((posto, index) => (
                 <Line 
@@ -234,13 +261,19 @@ export default function GraficoConsumoPage() {
                 }
                 outerRadius={120}
                 fill="#8884d8"
-                dataKey="totalLitros"
+                dataKey={metrica === 'litros' ? 'totalLitros' : metrica === 'valor' ? 'totalValor' : 'totalVeiculos'}
               >
                 {resumoPostos.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.cor} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value: number) => [value.toLocaleString('pt-BR') + ' L', 'Total']} />
+              <Tooltip formatter={(value: number) => {
+                const suffix = metrica === 'litros' ? ' L' : metrica === 'valor' ? '' : ' veículos';
+                const formattedValue = metrica === 'valor' 
+                  ? `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                  : value.toLocaleString('pt-BR') + suffix;
+                return [formattedValue, 'Total'];
+              }} />
             </PieChart>
           </ResponsiveContainer>
         );
@@ -254,9 +287,16 @@ export default function GraficoConsumoPage() {
     fetchDadosConsumo();
   }, [selectedYear]);
 
+  useEffect(() => {
+    if (dadosConsumo.length > 0) {
+      processarDadosGrafico(dadosConsumo);
+    }
+  }, [metrica]);
+
   const totalGeral = resumoPostos.reduce((acc, posto) => acc + posto.totalLitros, 0);
   const totalValorGeral = resumoPostos.reduce((acc, posto) => acc + posto.totalValor, 0);
   const totalAbastecimentosGeral = resumoPostos.reduce((acc, posto) => acc + posto.totalAbastecimentos, 0);
+  const totalVeiculosGeral = resumoPostos.reduce((acc, posto) => acc + (posto.totalVeiculos || 0), 0);
 
   if (isLoading) {
     return (
@@ -298,6 +338,17 @@ export default function GraficoConsumoPage() {
             </SelectContent>
           </Select>
 
+          <Select value={metrica} onValueChange={(value: 'litros' | 'valor' | 'veiculos') => setMetrica(value)}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="Métrica" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="litros">Litros</SelectItem>
+              <SelectItem value="valor">Valor (R$)</SelectItem>
+              <SelectItem value="veiculos">Veículos</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Select value={tipoGrafico} onValueChange={(value: 'barras' | 'linha' | 'pizza') => setTipoGrafico(value)}>
             <SelectTrigger className="w-36">
               <SelectValue placeholder="Tipo de Gráfico" />
@@ -332,7 +383,7 @@ export default function GraficoConsumoPage() {
       </div>
 
       {/* Resumo Geral */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-blue-50 border-blue-200">
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
@@ -380,6 +431,22 @@ export default function GraficoConsumoPage() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="bg-orange-50 border-orange-200">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-orange-500 rounded-lg">
+                <Car className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-orange-600 uppercase">Total Veículos</p>
+                <p className="text-2xl font-bold text-orange-900">
+                  {totalVeiculosGeral.toLocaleString('pt-BR')}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Gráfico Principal */}
@@ -389,7 +456,7 @@ export default function GraficoConsumoPage() {
             {tipoGrafico === 'barras' && <BarChart3 className="h-5 w-5" />}
             {tipoGrafico === 'linha' && <LineChartIcon className="h-5 w-5" />}
             {tipoGrafico === 'pizza' && <PieChartIcon className="h-5 w-5" />}
-            Consumo de Combustível por Posto - {selectedYear}
+{metrica === 'litros' ? 'Consumo de Combustível' : metrica === 'valor' ? 'Valor Gasto' : 'Veículos Abastecidos'} por Posto - {selectedYear}
           </CardTitle>
         </CardHeader>
         <CardContent>
