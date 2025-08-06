@@ -276,35 +276,200 @@ const HistoricoGeralPage: React.FC = () => {
   const [tendenciaError, setTendenciaError] = useState<string | null>(null);
   const [showTendencias, setShowTendencias] = useState(false);
 
-  // Função para buscar dados de tendência
-  const fetchTendenciaData = async () => {
+  // Função para processar dados de tendência localmente usando dados já carregados
+  const processarTendenciaLocal = () => {
     setIsLoadingTendencia(true);
     setTendenciaError(null);
+    
     try {
-      // Usar ano atual automaticamente
       const anoAtual = new Date().getFullYear();
-      const response = await apiRequest('GET', `/api/abastecimentos/comparativo-tendencia?ano=${anoAtual}`);
-      const data = await response.json();
+      const anoAnterior = anoAtual - 1;
       
-      console.log('[TENDÊNCIA] Resposta da API:', data);
-      console.log('[TENDÊNCIA] anos_comparados:', data.data?.anos_comparados, 'tipo:', typeof data.data?.anos_comparados);
+      console.log(`[TENDÊNCIA LOCAL] Processando dados locais para ${anoAtual} vs ${anoAnterior}`);
+      console.log(`[TENDÊNCIA LOCAL] Abastecimentos carregados: ${abastecimentos.length}`);
       
-      if (data.success) {
-        setTendenciaData(data);
-        console.log('[TENDÊNCIA] Dados carregados com sucesso:', {
-          consolidado: data.data?.consolidado?.length || 0,
-          postos: data.data?.por_posto?.length || 0,
-          anos: data.data?.anos_comparados
-        });
-      } else {
-        const errorMsg = data.message || 'Erro na resposta da API';
-        setTendenciaError(errorMsg);
-        console.error('[TENDÊNCIA] Erro na resposta:', data);
+      if (abastecimentos.length === 0) {
+        setTendenciaError('Nenhum dado de abastecimento disponível para análise');
+        return;
       }
+      
+      // Separar dados por ano e agrupar por mês e posto
+      const dadosPorAno: Record<number, Record<string, Record<number, { litros: number; valor: number; count: number }>>> = {};
+      
+      abastecimentos.forEach(abast => {
+        const dataAbast = new Date(abast.created_at);
+        const ano = dataAbast.getFullYear();
+        const mes = dataAbast.getMonth() + 1; // JavaScript months are 0-indexed
+        const posto = abast.posto || 'Posto Desconhecido';
+        const litros = parseFloat(abast.quantidade_litros?.toString() || '0') || 0;
+        const valor = parseFloat(abast.valor_total?.toString() || '0') || 0;
+        
+        // Inicializar estruturas se necessário
+        if (!dadosPorAno[ano]) dadosPorAno[ano] = {};
+        if (!dadosPorAno[ano][posto]) dadosPorAno[ano][posto] = {};
+        if (!dadosPorAno[ano][posto][mes]) {
+          dadosPorAno[ano][posto][mes] = { litros: 0, valor: 0, count: 0 };
+        }
+        
+        dadosPorAno[ano][posto][mes].litros += litros;
+        dadosPorAno[ano][posto][mes].valor += valor;
+        dadosPorAno[ano][posto][mes].count += 1;
+      });
+      
+      console.log(`[TENDÊNCIA LOCAL] Dados processados por ano:`, Object.keys(dadosPorAno));
+      
+      // Obter lista única de postos
+      const postosUnicos = new Set<string>();
+      Object.values(dadosPorAno).forEach(dadosAno => {
+        Object.keys(dadosAno).forEach(posto => postosUnicos.add(posto));
+      });
+      
+      const listaPostos = Array.from(postosUnicos);
+      console.log(`[TENDÊNCIA LOCAL] Postos identificados: ${listaPostos.join(', ')}`);
+      
+      // Processar dados consolidados (todos os postos juntos)
+      const consolidado: DadoMensal[] = [];
+      
+      for (let mes = 1; mes <= 12; mes++) {
+        let litrosAtual = 0, valorAtual = 0, abastAtual = 0;
+        let litrosAnterior = 0, valorAnterior = 0, abastAnterior = 0;
+        
+        // Somar dados de todos os postos para o mês
+        listaPostos.forEach(posto => {
+          if (dadosPorAno[anoAtual]?.[posto]?.[mes]) {
+            const dados = dadosPorAno[anoAtual][posto][mes];
+            litrosAtual += dados.litros;
+            valorAtual += dados.valor;
+            abastAtual += dados.count;
+          }
+          
+          if (dadosPorAno[anoAnterior]?.[posto]?.[mes]) {
+            const dados = dadosPorAno[anoAnterior][posto][mes];
+            litrosAnterior += dados.litros;
+            valorAnterior += dados.valor;
+            abastAnterior += dados.count;
+          }
+        });
+        
+        // Calcular variações
+        const variacaoLitros = litrosAnterior > 0 
+          ? ((litrosAtual - litrosAnterior) / litrosAnterior) * 100 
+          : (litrosAtual > 0 ? 100 : 0);
+          
+        const variacaoValor = valorAnterior > 0 
+          ? ((valorAtual - valorAnterior) / valorAnterior) * 100 
+          : (valorAtual > 0 ? 100 : 0);
+          
+        const variacaoAbast = abastAnterior > 0 
+          ? ((abastAtual - abastAnterior) / abastAnterior) * 100 
+          : (abastAtual > 0 ? 100 : 0);
+        
+        const tendenciaLitros = variacaoLitros > 5 ? 'alta' : variacaoLitros < -5 ? 'baixa' : 'estavel';
+        const tendenciaAbast = variacaoAbast > 5 ? 'alta' : variacaoAbast < -5 ? 'baixa' : 'estavel';
+        
+        consolidado.push({
+          mes,
+          ano_atual: anoAtual,
+          ano_anterior: anoAnterior,
+          litros_atual: Math.round(litrosAtual * 100) / 100,
+          litros_anterior: Math.round(litrosAnterior * 100) / 100,
+          variacao_litros: Math.round(variacaoLitros * 100) / 100,
+          abastecimentos_atual: abastAtual,
+          abastecimentos_anterior: abastAnterior,
+          variacao_abastecimentos: Math.round(variacaoAbast * 100) / 100,
+          valor_atual: Math.round(valorAtual * 100) / 100,
+          valor_anterior: Math.round(valorAnterior * 100) / 100,
+          variacao_valor: Math.round(variacaoValor * 100) / 100,
+          tendencia_litros,
+          tendencia_abastecimentos: tendenciaAbast
+        });
+      }
+      
+      // Processar dados por posto
+      const porPosto: PostoTendencia[] = listaPostos.map(posto => {
+        const dadosMensais: DadoMensal[] = [];
+        let totalLitrosAtual = 0, totalLitrosAnterior = 0;
+        let totalAbastAtual = 0, totalAbastAnterior = 0;
+        
+        for (let mes = 1; mes <= 12; mes++) {
+          const dadosAtual = dadosPorAno[anoAtual]?.[posto]?.[mes] || { litros: 0, valor: 0, count: 0 };
+          const dadosAnterior = dadosPorAno[anoAnterior]?.[posto]?.[mes] || { litros: 0, valor: 0, count: 0 };
+          
+          const variacaoLitros = dadosAnterior.litros > 0 
+            ? ((dadosAtual.litros - dadosAnterior.litros) / dadosAnterior.litros) * 100 
+            : (dadosAtual.litros > 0 ? 100 : 0);
+            
+          const variacaoValor = dadosAnterior.valor > 0 
+            ? ((dadosAtual.valor - dadosAnterior.valor) / dadosAnterior.valor) * 100 
+            : (dadosAtual.valor > 0 ? 100 : 0);
+            
+          const variacaoAbast = dadosAnterior.count > 0 
+            ? ((dadosAtual.count - dadosAnterior.count) / dadosAnterior.count) * 100 
+            : (dadosAtual.count > 0 ? 100 : 0);
+          
+          const tendenciaLitros = variacaoLitros > 5 ? 'alta' : variacaoLitros < -5 ? 'baixa' : 'estavel';
+          const tendenciaAbast = variacaoAbast > 5 ? 'alta' : variacaoAbast < -5 ? 'baixa' : 'estavel';
+          
+          dadosMensais.push({
+            mes,
+            ano_atual: anoAtual,
+            ano_anterior: anoAnterior,
+            litros_atual: Math.round(dadosAtual.litros * 100) / 100,
+            litros_anterior: Math.round(dadosAnterior.litros * 100) / 100,
+            variacao_litros: Math.round(variacaoLitros * 100) / 100,
+            abastecimentos_atual: dadosAtual.count,
+            abastecimentos_anterior: dadosAnterior.count,
+            variacao_abastecimentos: Math.round(variacaoAbast * 100) / 100,
+            valor_atual: Math.round(dadosAtual.valor * 100) / 100,
+            valor_anterior: Math.round(dadosAnterior.valor * 100) / 100,
+            variacao_valor: Math.round(variacaoValor * 100) / 100,
+            tendencia_litros,
+            tendencia_abastecimentos: tendenciaAbast
+          });
+          
+          totalLitrosAtual += dadosAtual.litros;
+          totalLitrosAnterior += dadosAnterior.litros;
+          totalAbastAtual += dadosAtual.count;
+          totalAbastAnterior += dadosAnterior.count;
+        }
+        
+        return {
+          posto,
+          posto_nome: posto.replace(/_v2/g, '').toUpperCase(),
+          dados_mensais: dadosMensais,
+          total_litros_atual: Math.round(totalLitrosAtual * 100) / 100,
+          total_litros_anterior: Math.round(totalLitrosAnterior * 100) / 100,
+          total_abastecimentos_atual: totalAbastAtual,
+          total_abastecimentos_anterior: totalAbastAnterior
+        };
+      });
+      
+      // Criar resposta no formato esperado
+      const tendenciaResponse: TendenciaResponse = {
+        success: true,
+        data: {
+          consolidado,
+          por_posto: porPosto,
+          anos_comparados: [anoAnterior, anoAtual]
+        },
+        parametros: {
+          ano_atual: anoAtual,
+          ano_anterior: anoAnterior
+        }
+      };
+      
+      setTendenciaData(tendenciaResponse);
+      
+      console.log(`[TENDÊNCIA LOCAL] Análise concluída:`, {
+        consolidado: consolidado.length,
+        porPosto: porPosto.length,
+        postos: listaPostos.length,
+        anosComparados: `${anoAnterior} vs ${anoAtual}`
+      });
+      
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
-      setTendenciaError(errorMsg);
-      console.error('[TENDÊNCIA] Erro ao buscar dados:', error);
+      console.error('[TENDÊNCIA LOCAL] Erro ao processar:', error);
+      setTendenciaError(error instanceof Error ? error.message : 'Erro desconhecido ao processar dados locais');
     } finally {
       setIsLoadingTendencia(false);
     }
@@ -1221,7 +1386,7 @@ const HistoricoGeralPage: React.FC = () => {
               onClick={() => {
                 setShowTendencias(!showTendencias);
                 if (!showTendencias && !tendenciaData) {
-                  fetchTendenciaData();
+                  processarTendenciaLocal();
                 }
               }}
               className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors flex items-center mr-2"
