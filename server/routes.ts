@@ -12449,8 +12449,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[DELETE_ABASTECIMENTO] Admin ${user.name} solicitou exclusão do ID ${id} no posto ${posto}`);
       
-      // Determinar a tabela correta baseada no posto
-      const nomeTabela = `abastecimentos_posto_${posto.toLowerCase()}`;
+      // Mapeamento de postos para nomes de tabelas
+      const postoParaTabela = {
+        'posto abc v2': 'abastecimentos_posto_abc_v2',
+        'posto osasco v2': 'abastecimentos_posto_osasco_v2',
+        'posto campinas v2': 'abastecimentos_posto_campinas_v2',
+        'posto sorocaba v2': 'abastecimentos_posto_sorocaba_v2',
+        'posto guarulhos v2': 'abastecimentos_posto_guarulhos_v2',
+        'posto remedios': 'posto_remedios_abastecimentos',
+        'abc_v2': 'abastecimentos_posto_abc_v2',
+        'osasco_v2': 'abastecimentos_posto_osasco_v2',
+        'campinas_v2': 'abastecimentos_posto_campinas_v2',
+        'sorocaba_v2': 'abastecimentos_posto_sorocaba_v2',
+        'guarulhos_v2': 'abastecimentos_posto_guarulhos_v2'
+      };
+      
+      const postoLower = posto.toLowerCase().trim();
+      const nomeTabela = postoParaTabela[postoLower] || `abastecimentos_posto_${postoLower.replace(/\s+/g, '_')}`;
+      
+      console.log(`[DELETE_ABASTECIMENTO] Mapeando posto "${posto}" -> tabela "${nomeTabela}"`);
       
       // Verificar se a tabela existe
       const tabelaExisteQuery = `
