@@ -3,7 +3,7 @@
  * Para registro de entrega de combustível nos tanques dos postos
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -16,13 +16,17 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Check } from "lucide-react";
 import { useSafeState } from "@/hooks/useSafeState";
 import { supabase } from "@/lib/supabase-compat";
+import { useAuth } from "@/context/AuthContext";
 
-// Schema de validação
+// Schema de validação atualizado para incluir todos os campos
 const recebimentoSchema = z.object({
   tipo_produto: z.string().min(1, "Tipo de produto é obrigatório"),
   litros_recebidos: z.string().min(1, "Quantidade de litros é obrigatória"),
+  valor_litro: z.string().min(1, "Valor por litro é obrigatório"),
   valor_total: z.string().min(1, "Valor total é obrigatório"),
   nome_fornecedor: z.string().min(1, "Nome do fornecedor é obrigatório"),
+  numero_nota_fiscal: z.string().min(1, "Número da nota fiscal é obrigatório"),
+  data_recebimento: z.string().min(1, "Data de recebimento é obrigatória"),
   nome_operador: z.string().min(1, "Nome do operador é obrigatório"),
   observacoes: z.string().optional(),
 });
@@ -39,6 +43,7 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
   onRegistroSucesso 
 }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useSafeState(false);
   const [registroSucesso, setRegistroSucesso] = useSafeState(false);
 
@@ -47,12 +52,23 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
     defaultValues: {
       tipo_produto: "diesel",
       litros_recebidos: "",
+      valor_litro: "",
       valor_total: "",
       nome_fornecedor: "",
+      numero_nota_fiscal: "",
+      data_recebimento: new Date().toISOString().split('T')[0],
       nome_operador: "",
       observacoes: "",
     },
   });
+
+  // Preencher automaticamente o nome do operador quando o usuário está logado
+  useEffect(() => {
+    if (user?.name) {
+      console.log('[RECEBIMENTO] Preenchendo nome do operador automaticamente:', user.name);
+      form.setValue('nome_operador', user.name);
+    }
+  }, [user, form]);
 
   // Mapa das tabelas por posto
   const tableMap: { [key: string]: string } = {
@@ -83,8 +99,11 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
         .insert({
           tipo_produto: data.tipo_produto,
           litros_recebidos: parseFloat(data.litros_recebidos),
+          valor_litro: parseFloat(data.valor_litro),
           valor_total: parseFloat(data.valor_total),
           nome_fornecedor: data.nome_fornecedor,
+          numero_nota_fiscal: data.numero_nota_fiscal,
+          data_recebimento: data.data_recebimento,
           nome_operador: data.nome_operador,
           observacoes: data.observacoes || '',
           created_at: new Date().toISOString(),
@@ -203,6 +222,26 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Valor por Litro */}
+            <FormField
+              control={form.control}
+              name="valor_litro"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Valor por Litro (R$)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.001"
+                      placeholder="Ex: 5.00"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Valor Total */}
             <FormField
               control={form.control}
@@ -222,7 +261,9 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
                 </FormItem>
               )}
             />
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Nome do Fornecedor */}
             <FormField
               control={form.control}
@@ -240,25 +281,65 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
                 </FormItem>
               )}
             />
+
+            {/* Número da Nota Fiscal */}
+            <FormField
+              control={form.control}
+              name="numero_nota_fiscal"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Número da Nota Fiscal</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ex: 123456"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
-          {/* Nome do Operador */}
-          <FormField
-            control={form.control}
-            name="nome_operador"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nome do Operador</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Nome do operador responsável"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Data de Recebimento */}
+            <FormField
+              control={form.control}
+              name="data_recebimento"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data de Recebimento</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="date"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Nome do Operador */}
+            <FormField
+              control={form.control}
+              name="nome_operador"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome do Operador</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Preenchido automaticamente"
+                      {...field}
+                      readOnly
+                      className="bg-gray-50"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           {/* Observações */}
           <FormField
