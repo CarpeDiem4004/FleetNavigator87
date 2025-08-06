@@ -16383,6 +16383,185 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para comparativo mensal com indicadores de tendência
+  app.get('/api/abastecimentos/comparativo-tendencia', async (req, res) => {
+    try {
+      const { ano = new Date().getFullYear().toString() } = req.query;
+      const anoAtual = parseInt(ano as string);
+      const anoAnterior = anoAtual - 1;
+      
+      console.log(`[TENDÊNCIA] Análise para ${anoAtual} vs ${anoAnterior}`);
+      
+      const postos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2', 'guarulhos_v2'];
+      const resultados = [];
+      
+      // Buscar dados para todos os postos
+      for (const posto of postos) {
+        const nomeTabela = `abastecimentos_posto_${posto}`;
+        
+        try {
+          // Dados do ano atual por mês
+          const queryAtual = `
+            SELECT 
+              EXTRACT(MONTH FROM created_at) as mes,
+              COALESCE(SUM(litros), 0) as total_litros,
+              COUNT(*) as total_abastecimentos,
+              COALESCE(SUM(valor_total), 0) as total_valor
+            FROM ${nomeTabela}
+            WHERE EXTRACT(YEAR FROM created_at) = $1
+            GROUP BY EXTRACT(MONTH FROM created_at)
+            ORDER BY mes
+          `;
+          
+          // Dados do ano anterior por mês
+          const queryAnterior = `
+            SELECT 
+              EXTRACT(MONTH FROM created_at) as mes,
+              COALESCE(SUM(litros), 0) as total_litros,
+              COUNT(*) as total_abastecimentos,
+              COALESCE(SUM(valor_total), 0) as total_valor
+            FROM ${nomeTabela}
+            WHERE EXTRACT(YEAR FROM created_at) = $1
+            GROUP BY EXTRACT(MONTH FROM created_at)
+            ORDER BY mes
+          `;
+          
+          const [resultAtual, resultAnterior] = await Promise.all([
+            pool.query(queryAtual, [anoAtual]),
+            pool.query(queryAnterior, [anoAnterior])
+          ]);
+          
+          // Processar dados para cada mês
+          const dadosMeses = [];
+          
+          for (let mes = 1; mes <= 12; mes++) {
+            const dadoAtual = resultAtual.rows.find(r => r.mes == mes) || { 
+              mes, total_litros: 0, total_abastecimentos: 0, total_valor: 0 
+            };
+            const dadoAnterior = resultAnterior.rows.find(r => r.mes == mes) || { 
+              mes, total_litros: 0, total_abastecimentos: 0, total_valor: 0 
+            };
+            
+            // Calcular variações percentuais
+            const calcularVariacao = (atual: number, anterior: number) => {
+              if (anterior === 0) return atual > 0 ? 100 : 0;
+              return ((atual - anterior) / anterior) * 100;
+            };
+            
+            const variacaoLitros = calcularVariacao(
+              parseFloat(dadoAtual.total_litros), 
+              parseFloat(dadoAnterior.total_litros)
+            );
+            
+            const variacaoAbastecimentos = calcularVariacao(
+              parseInt(dadoAtual.total_abastecimentos), 
+              parseInt(dadoAnterior.total_abastecimentos)
+            );
+            
+            const variacaoValor = calcularVariacao(
+              parseFloat(dadoAtual.total_valor), 
+              parseFloat(dadoAnterior.total_valor)
+            );
+            
+            dadosMeses.push({
+              mes,
+              ano_atual: anoAtual,
+              ano_anterior: anoAnterior,
+              litros_atual: parseFloat(dadoAtual.total_litros),
+              litros_anterior: parseFloat(dadoAnterior.total_litros),
+              variacao_litros: Math.round(variacaoLitros * 100) / 100,
+              abastecimentos_atual: parseInt(dadoAtual.total_abastecimentos),
+              abastecimentos_anterior: parseInt(dadoAnterior.total_abastecimentos),
+              variacao_abastecimentos: Math.round(variacaoAbastecimentos * 100) / 100,
+              valor_atual: parseFloat(dadoAtual.total_valor),
+              valor_anterior: parseFloat(dadoAnterior.total_valor),
+              variacao_valor: Math.round(variacaoValor * 100) / 100,
+              tendencia_litros: variacaoLitros > 5 ? 'alta' : variacaoLitros < -5 ? 'baixa' : 'estavel',
+              tendencia_abastecimentos: variacaoAbastecimentos > 5 ? 'alta' : variacaoAbastecimentos < -5 ? 'baixa' : 'estavel'
+            });
+          }
+          
+          resultados.push({
+            posto: posto,
+            posto_nome: posto.replace('_v2', '').toUpperCase(),
+            dados_mensais: dadosMeses,
+            // Totais anuais
+            total_litros_atual: dadosMeses.reduce((sum, m) => sum + m.litros_atual, 0),
+            total_litros_anterior: dadosMeses.reduce((sum, m) => sum + m.litros_anterior, 0),
+            total_abastecimentos_atual: dadosMeses.reduce((sum, m) => sum + m.abastecimentos_atual, 0),
+            total_abastecimentos_anterior: dadosMeses.reduce((sum, m) => sum + m.abastecimentos_anterior, 0)
+          });
+          
+        } catch (error) {
+          console.log(`[TENDÊNCIA] Erro na tabela ${nomeTabela}:`, error.message);
+        }
+      }
+      
+      // Calcular dados consolidados (todos os postos)
+      const dadosConsolidados = [];
+      
+      for (let mes = 1; mes <= 12; mes++) {
+        const totaisMes = resultados.reduce((acc, posto) => {
+          const dadoMes = posto.dados_mensais.find(d => d.mes === mes);
+          if (dadoMes) {
+            acc.litros_atual += dadoMes.litros_atual;
+            acc.litros_anterior += dadoMes.litros_anterior;
+            acc.abastecimentos_atual += dadoMes.abastecimentos_atual;
+            acc.abastecimentos_anterior += dadoMes.abastecimentos_anterior;
+            acc.valor_atual += dadoMes.valor_atual;
+            acc.valor_anterior += dadoMes.valor_anterior;
+          }
+          return acc;
+        }, {
+          litros_atual: 0, litros_anterior: 0,
+          abastecimentos_atual: 0, abastecimentos_anterior: 0,
+          valor_atual: 0, valor_anterior: 0
+        });
+        
+        const calcularVariacao = (atual: number, anterior: number) => {
+          if (anterior === 0) return atual > 0 ? 100 : 0;
+          return ((atual - anterior) / anterior) * 100;
+        };
+        
+        const variacaoLitros = calcularVariacao(totaisMes.litros_atual, totaisMes.litros_anterior);
+        const variacaoAbastecimentos = calcularVariacao(totaisMes.abastecimentos_atual, totaisMes.abastecimentos_anterior);
+        const variacaoValor = calcularVariacao(totaisMes.valor_atual, totaisMes.valor_anterior);
+        
+        dadosConsolidados.push({
+          mes,
+          ano_atual: anoAtual,
+          ano_anterior: anoAnterior,
+          ...totaisMes,
+          variacao_litros: Math.round(variacaoLitros * 100) / 100,
+          variacao_abastecimentos: Math.round(variacaoAbastecimentos * 100) / 100,
+          variacao_valor: Math.round(variacaoValor * 100) / 100,
+          tendencia_litros: variacaoLitros > 5 ? 'alta' : variacaoLitros < -5 ? 'baixa' : 'estavel',
+          tendencia_abastecimentos: variacaoAbastecimentos > 5 ? 'alta' : variacaoAbastecimentos < -5 ? 'baixa' : 'estavel'
+        });
+      }
+      
+      console.log(`[TENDÊNCIA] Processados ${resultados.length} postos, ${dadosConsolidados.length} meses consolidados`);
+      
+      return res.json({
+        success: true,
+        data: {
+          consolidado: dadosConsolidados,
+          por_posto: resultados,
+          anos_comparados: [anoAnterior, anoAtual]
+        },
+        parametros: { ano_atual: anoAtual, ano_anterior: anoAnterior }
+      });
+      
+    } catch (error) {
+      console.error('[TENDÊNCIA] Erro:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao processar comparativo de tendências',
+        error: error.message
+      });
+    }
+  });
+
   // Rota para editar motorista
   app.put('/api/drivers/:id', async (req, res) => {
     try {

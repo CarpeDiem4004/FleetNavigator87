@@ -49,12 +49,52 @@ interface ComparativoMensal {
   [posto: string]: any;
 }
 
+interface DadosTendencia {
+  mes: number;
+  ano_atual: number;
+  ano_anterior: number;
+  litros_atual: number;
+  litros_anterior: number;
+  variacao_litros: number;
+  abastecimentos_atual: number;
+  abastecimentos_anterior: number;
+  variacao_abastecimentos: number;
+  valor_atual: number;
+  valor_anterior: number;
+  variacao_valor: number;
+  tendencia_litros: 'alta' | 'baixa' | 'estavel';
+  tendencia_abastecimentos: 'alta' | 'baixa' | 'estavel';
+}
+
+interface PostoTendencia {
+  posto: string;
+  posto_nome: string;
+  dados_mensais: DadosTendencia[];
+  total_litros_atual: number;
+  total_litros_anterior: number;
+  total_abastecimentos_atual: number;
+  total_abastecimentos_anterior: number;
+}
+
+interface ResponseTendencia {
+  success: boolean;
+  data: {
+    consolidado: DadosTendencia[];
+    por_posto: PostoTendencia[];
+    anos_comparados: number[];
+  };
+}
+
 export default function ComparativoMensalPage() {
   const [dadosMensais, setDadosMensais] = useState<DadosMensais[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
   const [selectedPosto, setSelectedPosto] = useState<string>('todos');
   const [comparativoData, setComparativoData] = useState<ComparativoMensal[]>([]);
+  
+  // Estados para dados de tendência
+  const [tendenciaData, setTendenciaData] = useState<ResponseTendencia | null>(null);
+  const [isLoadingTendencia, setIsLoadingTendencia] = useState(false);
 
   const postos = [
     { id: 'sorocaba_v2', nome: 'Sorocaba' },
@@ -255,8 +295,49 @@ export default function ComparativoMensalPage() {
   })).filter(item => item.value > 0);
 
   // Inicializar componente e recarregar quando filtros mudarem
+  // Buscar dados de tendência
+  const fetchDadosTendencia = async () => {
+    try {
+      setIsLoadingTendencia(true);
+      console.log('[TENDÊNCIA] Buscando comparativo mensal com indicadores');
+      
+      const response = await fetch(`/api/abastecimentos/comparativo-tendencia?ano=${selectedYear}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success) {
+          setTendenciaData(data);
+          console.log(`[TENDÊNCIA] Dados carregados: ${data.data.por_posto.length} postos, ${data.data.consolidado.length} meses`);
+        }
+      }
+    } catch (error) {
+      console.error('[TENDÊNCIA] Erro ao buscar dados:', error);
+    } finally {
+      setIsLoadingTendencia(false);
+    }
+  };
+
+  // Componente para indicador de tendência
+  const IndicadorTendencia = ({ variacao, tendencia }: { variacao: number, tendencia: string }) => {
+    const isPositivo = variacao > 0;
+    const IconeTendencia = isPositivo ? TrendingUp : TrendingDown;
+    const corTendencia = isPositivo ? 'text-green-600' : 'text-red-600';
+    const corFundo = isPositivo ? 'bg-green-50' : 'bg-red-50';
+    
+    return (
+      <div className={`flex items-center gap-1 px-2 py-1 rounded-md ${corFundo}`}>
+        <IconeTendencia className={`w-4 h-4 ${corTendencia}`} />
+        <span className={`text-sm font-medium ${corTendencia}`}>
+          {isPositivo ? '+' : ''}{variacao.toFixed(1)}%
+        </span>
+      </div>
+    );
+  };
+
   useEffect(() => {
     fetchDadosMensais();
+    fetchDadosTendencia();
   }, [selectedYear, selectedPosto]); // Recarregar quando o ano ou posto mudar
 
   const totais = calcularTotais(comparativoData);
@@ -524,6 +605,133 @@ export default function ComparativoMensalPage() {
           </div>
         </div>
       </div>
+
+      {/* Nova seção: Comparativo Mensal com Tendências */}
+      {tendenciaData && (
+        <div className="space-y-6">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-6 h-6 text-blue-600" />
+            <h2 className="text-xl font-bold text-gray-900">Comparativo Mensal com Indicadores de Tendência</h2>
+            <Badge variant="outline">{tendenciaData.data.anos_comparados.join(' vs ')}</Badge>
+          </div>
+
+          {/* Gráfico consolidado (todos os postos) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="w-5 h-5" />
+                Consumo Consolidado - Todos os Postos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={tendenciaData.data.consolidado.map(item => ({
+                    mes: meses[item.mes - 1],
+                    [`${item.ano_anterior}`]: item.litros_anterior,
+                    [`${item.ano_atual}`]: item.litros_atual,
+                    variacao: item.variacao_litros
+                  }))}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="mes" />
+                    <YAxis />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => [
+                        `${value.toLocaleString('pt-BR')} litros`,
+                        name
+                      ]}
+                    />
+                    <Legend />
+                    <Bar dataKey={tendenciaData.data.anos_comparados[0].toString()} fill="#94a3b8" name={`${tendenciaData.data.anos_comparados[0]}`} />
+                    <Bar dataKey={tendenciaData.data.anos_comparados[1].toString()} fill="#3b82f6" name={`${tendenciaData.data.anos_comparados[1]}`} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              
+              {/* Tabela com indicadores de tendência consolidados */}
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {tendenciaData.data.consolidado.slice(0, 6).map((item) => (
+                  <div key={item.mes} className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm text-gray-700">{meses[item.mes - 1]}</span>
+                      <IndicadorTendencia variacao={item.variacao_litros} tendencia={item.tendencia_litros} />
+                    </div>
+                    <div className="text-xs text-gray-600 space-y-1">
+                      <div>{item.ano_anterior}: {item.litros_anterior.toLocaleString('pt-BR')} litros</div>
+                      <div>{item.ano_atual}: {item.litros_atual.toLocaleString('pt-BR')} litros</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Gráficos individuais por posto */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {tendenciaData.data.por_posto.filter(posto => posto.total_litros_atual > 0 || posto.total_litros_anterior > 0).map((posto, index) => (
+              <Card key={posto.posto}>
+                <CardHeader>
+                  <CardTitle className="text-lg">{posto.posto_nome}</CardTitle>
+                  <div className="flex gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {posto.total_litros_atual.toLocaleString('pt-BR')} L ({tendenciaData.data.anos_comparados[1]})
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {posto.total_litros_anterior.toLocaleString('pt-BR')} L ({tendenciaData.data.anos_comparados[0]})
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={posto.dados_mensais.map(item => ({
+                        mes: meses[item.mes - 1].substring(0, 3),
+                        atual: item.litros_atual,
+                        anterior: item.litros_anterior,
+                        variacao: item.variacao_litros
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="mes" />
+                        <YAxis />
+                        <Tooltip 
+                          formatter={(value: number, name: string) => [
+                            `${value.toLocaleString('pt-BR')} litros`,
+                            name === 'atual' ? tendenciaData.data.anos_comparados[1] : tendenciaData.data.anos_comparados[0]
+                          ]}
+                        />
+                        <Line type="monotone" dataKey="anterior" stroke="#94a3b8" strokeWidth={2} dot={{ r: 3 }} />
+                        <Line type="monotone" dataKey="atual" stroke={cores[index % cores.length]} strokeWidth={2} dot={{ r: 3 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  
+                  {/* Indicadores de tendência por posto */}
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {posto.dados_mensais.slice(0, 4).map((item) => (
+                      <div key={item.mes} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-600">{meses[item.mes - 1].substring(0, 3)}</span>
+                        <IndicadorTendencia variacao={item.variacao_litros} tendencia={item.tendencia_litros} />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Loading state para tendências */}
+      {isLoadingTendencia && !tendenciaData && (
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-4"></div>
+              <span>Carregando dados de tendência...</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Tabs de Análise */}
       <Tabs defaultValue="unificado" className="space-y-4">
