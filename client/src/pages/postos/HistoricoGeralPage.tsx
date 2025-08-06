@@ -48,6 +48,11 @@ const HistoricoGeralPage: React.FC = () => {
   // Verificar se é admin
   const isAdmin = user?.role === 'admin';
   
+  // Log temporário para debug
+  if (user) {
+    console.log('DEBUG - User role:', user.role, 'isAdmin:', isAdmin);
+  }
+  
   // Função para obter a base específica registrada ou fazer fallback para mapeamento
   const getBaseFromAbastecimento = (item: any): string => {
     // Prioridade 1: Usar base_name se disponível (base específica registrada)
