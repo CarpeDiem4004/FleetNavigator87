@@ -241,11 +241,18 @@ const HistoricoGeralPage: React.FC = () => {
     }
 
     try {
-      console.log(`[DELETE] Excluindo abastecimento ID ${abastecimento.id} do posto ${abastecimento.posto}`);
+      // Usar nome original do posto se disponível, senão tentar converter o formatado de volta
+      const postoParaAPI = (abastecimento as any).postoOriginal || 
+                          abastecimento.posto.toLowerCase()
+                            .replace('posto ', '')
+                            .replace(' v2', '_v2')
+                            .replace(' ', '_');
+      
+      console.log(`[DELETE] Excluindo abastecimento ID ${abastecimento.id} do posto ${abastecimento.posto} (API: ${postoParaAPI})`);
       
       const response = await apiRequest(
         'DELETE', 
-        `/api/abastecimentos/${abastecimento.posto}/${abastecimento.id}`
+        `/api/abastecimentos/${postoParaAPI}/${abastecimento.id}`
       );
 
       if (response.ok) {
@@ -382,7 +389,8 @@ const HistoricoGeralPage: React.FC = () => {
                 
                 return {
                   ...item,
-                  posto: postoFormatado
+                  posto: postoFormatado,
+                  postoOriginal: posto  // Guardar nome original para operações de backend
                 };
               });
               
