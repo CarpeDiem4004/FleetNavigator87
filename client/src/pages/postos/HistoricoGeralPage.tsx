@@ -287,6 +287,7 @@ const HistoricoGeralPage: React.FC = () => {
       const data = await response.json();
       
       console.log('[TENDÊNCIA] Resposta da API:', data);
+      console.log('[TENDÊNCIA] anos_comparados:', data.data?.anos_comparados, 'tipo:', typeof data.data?.anos_comparados);
       
       if (data.success) {
         setTendenciaData(data);
@@ -1909,9 +1910,9 @@ const HistoricoGeralPage: React.FC = () => {
                 <div className="space-y-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Badge variant="outline" className="text-sm">
-                      {tendenciaData.data.anos_comparados ? 
+                      {Array.isArray(tendenciaData.data.anos_comparados) ? 
                         tendenciaData.data.anos_comparados.join(' vs ') : 
-                        '2024 vs 2025'
+                        tendenciaData.data.anos_comparados || '2024 vs 2025'
                       }
                     </Badge>
                     <span className="text-sm text-gray-600">
