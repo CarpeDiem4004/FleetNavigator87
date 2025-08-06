@@ -95,6 +95,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         { href: '/posto/sorocaba_v2', label: 'Posto Sorocaba V2' },
         { href: '/postos/historico-geral', label: 'Histórico Geral' },
         { href: '/postos/historico-patio', label: 'Histórico Pátio' },
+        { href: '/postos/grafico-consumo', label: 'Gráfico de Consumo' },
         { href: '/postos/visao-geral', label: 'Visão Geral dos Postos' },
       ]
     },
