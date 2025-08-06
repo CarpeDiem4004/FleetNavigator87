@@ -43,13 +43,12 @@ export default function GraficoConsumoPage() {
     { id: 'osasco_v2', nome: 'OSASCO' },
     { id: 'abc_v2', nome: 'ABC' },
     { id: 'sorocaba_v2', nome: 'SOROCABA' },
-    { id: 'guarulhos_v2', nome: 'GUARULHOS' },
     { id: 'socorro_v2', nome: 'SOCORRO' },
     { id: 'alair_v2', nome: 'ALAIR' }
   ];
 
   const cores = [
-    '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0', '#ffb347'
+    '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0'
   ];
 
   const mesesNomes = [

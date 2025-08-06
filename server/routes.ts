@@ -12182,7 +12182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[DADOS-MENSAIS] Buscando dados para o ano: ${anoSelecionado}`);
       
-      const postos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2', 'guarulhos_v2'];
+      const postos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2'];
       const resultados = [];
       
       // Buscar dados para todos os postos
