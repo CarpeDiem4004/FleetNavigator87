@@ -273,11 +273,13 @@ const HistoricoGeralPage: React.FC = () => {
   // Estados para comparativo de tendências
   const [tendenciaData, setTendenciaData] = useState<TendenciaResponse | null>(null);
   const [isLoadingTendencia, setIsLoadingTendencia] = useState(false);
+  const [tendenciaError, setTendenciaError] = useState<string | null>(null);
   const [showTendencias, setShowTendencias] = useState(false);
 
   // Função para buscar dados de tendência
   const fetchTendenciaData = async () => {
     setIsLoadingTendencia(true);
+    setTendenciaError(null);
     try {
       const response = await apiRequest('GET', '/api/abastecimentos/comparativo-tendencia?ano=2025');
       const data = await response.json();
@@ -286,9 +288,13 @@ const HistoricoGeralPage: React.FC = () => {
         setTendenciaData(data);
         console.log('[TENDÊNCIA] Dados carregados:', data);
       } else {
+        const errorMsg = data.message || 'Erro na resposta da API';
+        setTendenciaError(errorMsg);
         console.error('[TENDÊNCIA] Erro na resposta:', data);
       }
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
+      setTendenciaError(errorMsg);
       console.error('[TENDÊNCIA] Erro ao buscar dados:', error);
     } finally {
       setIsLoadingTendencia(false);
@@ -2007,7 +2013,7 @@ const HistoricoGeralPage: React.FC = () => {
                 </div>
               )}
 
-              {tendenciaLoading && (
+              {isLoadingTendencia && (
                 <div className="flex items-center justify-center py-8">
                   <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
                   <span className="ml-2">Carregando análise de tendência...</span>
