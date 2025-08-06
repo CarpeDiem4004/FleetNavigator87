@@ -18,7 +18,7 @@ const mapRecebimentoOsascoV2 = (row) => {
     valor_litro: row.valor_litro,
     valor_total: row.valor_total,
     numero_nota: row.numero_nota_fiscal,
-    data_entrega: row.data_entrega,
+    data_entrega: row.data_recebimento,
     nome_operador: row.nome_operador,
     operador: row.nome_operador, // Duplicado para compatibilidade
     observacoes: row.observacoes,
@@ -61,7 +61,7 @@ router.get('/api/recebimentos/osasco_v2', async (req, res) => {
         COALESCE(valor_litro, 0) as valor_litro,
         valor_total,
         COALESCE(numero_nota_fiscal, '-') as numero_nota_fiscal,
-        data_entrega,
+        data_recebimento,
         nome_operador,
         observacoes,
         created_at,
@@ -123,7 +123,7 @@ router.post('/api/recebimentos/osasco_v2', async (req, res) => {
         valor_litro,
         valor_total,
         numero_nota_fiscal,
-        data_entrega,
+        data_recebimento,
         nome_operador,
         observacoes
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -243,8 +243,8 @@ const registrarRecebimentoOsascoV2 = async (dados) => {
         litros_recebidos,
         valor_litro,
         valor_total,
-        numero_nota,
-        data_entrega,
+        numero_nota_fiscal,
+        data_recebimento,
         nome_operador,
         observacoes
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
