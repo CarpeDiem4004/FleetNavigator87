@@ -15512,7 +15512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('[FleetBudgets] Buscando todos os orçamentos das oficinas...');
 
-      // Buscar todos os orçamentos com informações das oficinas
+      // Buscar todos os orçamentos com informações das oficinas e aprovador
       const query = `
         SELECT 
           wb.id,
@@ -15547,10 +15547,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cr.vehicle_model,
           cr.vehicle_type,
           cr.service_description,
-          cr.current_km
+          cr.current_km,
+          -- Dados do aprovador
+          u.name as approved_by_name,
+          u.email as approved_by_email
         FROM workshop_budgets wb
         LEFT JOIN workshops w ON wb.workshop_id = w.id
         LEFT JOIN car_receptions cr ON wb.car_reception_id = cr.id
+        LEFT JOIN users u ON wb.approved_by = u.id
         ORDER BY wb.created_at DESC
       `;
 

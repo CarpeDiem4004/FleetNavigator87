@@ -21,7 +21,9 @@ import {
   User,
   Phone,
   Mail,
-  Car
+  Car,
+  CheckCircle,
+  XCircle
 } from "lucide-react";
 
 interface PartDetail {
@@ -50,6 +52,8 @@ interface WorkshopBudget {
   status: string;
   approved_by: number;
   approved_date: string;
+  approved_by_name: string;
+  approved_by_email: string;
   rejection_reason: string;
   notes: string;
   internal_notes: string;
@@ -81,6 +85,18 @@ export default function WorkshopBudgets() {
   useEffect(() => {
     loadBudgets();
   }, []);
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/Sao_Paulo'
+    });
+  };
 
   const loadBudgets = async () => {
     try {
@@ -457,6 +473,81 @@ export default function WorkshopBudgets() {
                       </p>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+
+              {/* Status e Aprovação */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    {selectedBudget.status === 'aprovado' ? <CheckCircle className="h-5 w-5 text-green-600" /> :
+                     selectedBudget.status === 'rejeitado' ? <XCircle className="h-5 w-5 text-red-600" /> :
+                     <Clock className="h-5 w-5 text-orange-600" />}
+                    Status do Orçamento
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Badge variant={
+                        selectedBudget.status === 'aprovado' ? 'default' : 
+                        selectedBudget.status === 'rejeitado' ? 'destructive' : 
+                        selectedBudget.status === 'revisao' ? 'secondary' : 
+                        'outline'
+                      }>
+                        {selectedBudget.status === 'pendente' && 'Pendente'}
+                        {selectedBudget.status === 'aprovado' && 'Aprovado'}
+                        {selectedBudget.status === 'rejeitado' && 'Rejeitado'}
+                        {selectedBudget.status === 'revisao' && 'Em Revisão'}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground">
+                        Orçamento criado em {formatDate(selectedBudget.created_at)}
+                      </span>
+                    </div>
+
+                    {/* Informações de Aprovação/Rejeição */}
+                    {selectedBudget.status !== 'pendente' && selectedBudget.approved_by_name && (
+                      <div className={`p-4 rounded-lg border ${
+                        selectedBudget.status === 'aprovado' ? 'bg-green-50 border-green-200' :
+                        selectedBudget.status === 'rejeitado' ? 'bg-red-50 border-red-200' :
+                        'bg-blue-50 border-blue-200'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <User className={`h-4 w-4 ${
+                            selectedBudget.status === 'aprovado' ? 'text-green-700' :
+                            selectedBudget.status === 'rejeitado' ? 'text-red-700' :
+                            'text-blue-700'
+                          }`} />
+                          <span className={`font-medium ${
+                            selectedBudget.status === 'aprovado' ? 'text-green-800' :
+                            selectedBudget.status === 'rejeitado' ? 'text-red-800' :
+                            'text-blue-800'
+                          }`}>
+                            {selectedBudget.status === 'aprovado' ? 'Aprovado por:' :
+                             selectedBudget.status === 'rejeitado' ? 'Rejeitado por:' :
+                             'Processado por:'}
+                          </span>
+                        </div>
+                        <div className={`text-sm ${
+                          selectedBudget.status === 'aprovado' ? 'text-green-700' :
+                          selectedBudget.status === 'rejeitado' ? 'text-red-700' :
+                          'text-blue-700'
+                        }`}>
+                          <p className="font-semibold">{selectedBudget.approved_by_name}</p>
+                          <p>{selectedBudget.approved_by_email}</p>
+                          {selectedBudget.approved_date && (
+                            <p className="mt-1">Em {formatDate(selectedBudget.approved_date)}</p>
+                          )}
+                          {selectedBudget.rejection_reason && (
+                            <div className="mt-3 p-2 bg-red-100 border border-red-200 rounded">
+                              <p className="font-medium text-red-800">Motivo da rejeição:</p>
+                              <p className="text-red-700 italic">"{selectedBudget.rejection_reason}"</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
