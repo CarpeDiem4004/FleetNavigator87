@@ -166,7 +166,8 @@ export default function InventoryPage() {
   // Verificar se o usuário tem permissão (admin ou gestor de frota)
   const hasPermission = user && (
     user.role === 'admin' || 
-    user.role === 'gestor'
+    user.role === 'gestor' ||
+    user.role === 'gestor_frota'
   );
 
   // Se não tiver permissão, mostrar mensagem de acesso negado
