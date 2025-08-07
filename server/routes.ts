@@ -258,6 +258,9 @@ const hasTiresAccess = tiresAccessMiddleware;
 const isWorkshop = workshopMiddleware;
 const hasBaseAccess = baseAccessMiddleware;
 
+// Importar hasMaintenanceAccessV2 diretamente
+import { hasMaintenanceAccessV2 } from "./middleware/auth";
+
 // Função para criar tabela de abastecimentos do modelo Supabase
 async function criarTabelaAbastecimentosSupabase() {
   try {
@@ -15495,7 +15498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/frota', frotaEstoqueRoutes);
 
   // API para buscar todos os orçamentos das oficinas para gestão da frota
-  app.get("/api/fleet/workshop-budgets", hasMaintenanceAccess, async (req, res) => {
+  app.get("/api/fleet/workshop-budgets", hasMaintenanceAccessV2, async (req, res) => {
     try {
       const user = req.user as any;
       const { startDate, endDate } = req.query;
@@ -15504,15 +15507,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: user.id,
         email: user.email,
         role: user.role,
-        baseId: user.base_id,
+        baseId: user.base_id || user.baseId,
         startDate,
         endDate
       });
 
-      if (!user || (user.role !== 'admin' && user.role !== 'gestor_frota')) {
-        console.log('[FleetBudgets] Acesso negado: usuário sem permissão');
-        return res.status(403).json({ message: "Acesso negado" });
-      }
+      // Verificação de permissão já é feita no hasMaintenanceAccessV2 middleware
+      // Removendo verificação duplicada que estava bloqueando o acesso
 
       console.log('[FleetBudgets] Buscando orçamentos das oficinas com filtros de data...');
 
@@ -15612,7 +15613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API para aprovar/rejeitar orçamento pela gestão da frota
-  app.patch("/api/fleet/workshop-budgets/:id/status", hasMaintenanceAccess, async (req, res) => {
+  app.patch("/api/fleet/workshop-budgets/:id/status", hasMaintenanceAccessV2, async (req, res) => {
     try {
       const user = req.user as any;
       const { id } = req.params;
