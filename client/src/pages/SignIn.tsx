@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Loader2, Wrench, AlertCircle } from 'lucide-react';
 
 // Importando imagem de fundo
-import loginBackgroundImage from '@/assets/login-background.jpeg';
+import loginBackgroundImage from '@assets/image_1754587044756.png';
 
 interface SignInProps {
   oficina?: boolean;
