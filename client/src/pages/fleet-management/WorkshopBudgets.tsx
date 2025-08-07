@@ -24,8 +24,11 @@ import {
   Mail,
   Car,
   CheckCircle,
-  XCircle
+  XCircle,
+  Printer
 } from "lucide-react";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 interface PartDetail {
   id: string;
@@ -206,6 +209,170 @@ export default function WorkshopBudgets() {
     setSelectedBudget(budget);
     setStatusAction(action);
     setIsStatusDialogOpen(true);
+  };
+
+  const generatePDF = (budget: WorkshopBudget) => {
+    try {
+      // Criar novo documento PDF
+      const pdf = new jsPDF();
+      
+      // Configurações
+      const pageWidth = pdf.internal.pageSize.width;
+      const margin = 20;
+      let yPosition = margin;
+      
+      // Título
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('ORÇAMENTO DE SERVIÇO APROVADO', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 15;
+      
+      // Número do orçamento
+      pdf.setFontSize(12);
+      pdf.text(`Orçamento: ${budget.budget_number}`, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 20;
+      
+      // Informações da oficina
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('OFICINA RESPONSÁVEL', margin, yPosition);
+      yPosition += 8;
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Nome: ${budget.workshop_name}`, margin, yPosition);
+      yPosition += 5;
+      pdf.text(`CNPJ: ${budget.workshop_cnpj}`, margin, yPosition);
+      yPosition += 5;
+      if (budget.workshop_phone) {
+        pdf.text(`Telefone: ${budget.workshop_phone}`, margin, yPosition);
+        yPosition += 5;
+      }
+      if (budget.workshop_email) {
+        pdf.text(`Email: ${budget.workshop_email}`, margin, yPosition);
+        yPosition += 5;
+      }
+      yPosition += 10;
+      
+      // Informações do veículo
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('DADOS DO VEÍCULO', margin, yPosition);
+      yPosition += 8;
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Placa: ${budget.vehicle_plate}`, margin, yPosition);
+      pdf.text(`Modelo: ${budget.vehicle_model}`, margin + 80, yPosition);
+      yPosition += 5;
+      pdf.text(`Tipo: ${budget.vehicle_type}`, margin, yPosition);
+      pdf.text(`KM Atual: ${budget.current_km?.toLocaleString() || 'N/A'}`, margin + 80, yPosition);
+      yPosition += 5;
+      pdf.text(`Projeto: ${budget.project_name || 'N/A'}`, margin, yPosition);
+      pdf.text(`Base: ${budget.base_name || 'N/A'}`, margin + 80, yPosition);
+      yPosition += 15;
+      
+      // Detalhes do serviço
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('DETALHES DO SERVIÇO', margin, yPosition);
+      yPosition += 8;
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Descrição da Mão de Obra:', margin, yPosition);
+      yPosition += 5;
+      const laborLines = pdf.splitTextToSize(budget.labor_description, pageWidth - 2 * margin);
+      pdf.text(laborLines, margin, yPosition);
+      yPosition += laborLines.length * 5 + 5;
+      
+      // Custos
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('CUSTOS', margin, yPosition);
+      yPosition += 8;
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Mão de Obra: ${formatCurrency(parseFloat(budget.labor_cost))}`, margin, yPosition);
+      pdf.text(`Horas: ${budget.labor_hours}`, margin + 100, yPosition);
+      yPosition += 5;
+      pdf.text(`Peças: ${formatCurrency(parseFloat(budget.parts_cost))}`, margin, yPosition);
+      yPosition += 8;
+      
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`TOTAL: ${formatCurrency(parseFloat(budget.total_cost))}`, margin, yPosition);
+      yPosition += 10;
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Prazo Estimado: ${budget.estimated_days} dias`, margin, yPosition);
+      yPosition += 15;
+      
+      // Informações da aprovação
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('APROVAÇÃO', margin, yPosition);
+      yPosition += 8;
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Aprovado por: ${budget.approved_by_name} (${budget.approved_by_email})`, margin, yPosition);
+      yPosition += 5;
+      pdf.text(`Data da Aprovação: ${formatDate(budget.approved_date)}`, margin, yPosition);
+      yPosition += 5;
+      pdf.text(`Orçamento Criado em: ${formatDate(budget.created_at)}`, margin, yPosition);
+      yPosition += 15;
+      
+      // Detalhes das peças (se houver)
+      if (budget.parts_details && budget.parts_details.length > 0) {
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('DETALHES DAS PEÇAS', margin, yPosition);
+        yPosition += 10;
+        
+        // Criar tabela de peças
+        const tableColumns = ['Descrição', 'Qtd', 'Valor Unit.', 'Total'];
+        const tableRows = budget.parts_details.map(part => [
+          part.description,
+          part.quantity.toString(),
+          formatCurrency(part.unitPrice),
+          formatCurrency(part.total)
+        ]);
+        
+        (pdf as any).autoTable({
+          startY: yPosition,
+          head: [tableColumns],
+          body: tableRows,
+          margin: { left: margin, right: margin },
+          styles: { fontSize: 9 },
+          headStyles: { fillColor: [66, 66, 66] }
+        });
+      }
+      
+      // Rodapé
+      const finalY = pdf.internal.pageSize.height - 20;
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Documento gerado pelo sistema Murici On Fleet 2.0', pageWidth / 2, finalY, { align: 'center' });
+      pdf.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, pageWidth / 2, finalY + 5, { align: 'center' });
+      
+      // Salvar PDF
+      pdf.save(`Orçamento_${budget.budget_number}_${budget.vehicle_plate}.pdf`);
+      
+      toast({
+        title: "Sucesso",
+        description: "PDF gerado com sucesso!",
+      });
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      toast({
+        title: "Erro",
+        description: "Erro ao gerar PDF",
+        variant: "destructive",
+      });
+    }
   };
 
   const openDetailDialog = (budget: WorkshopBudget) => {
@@ -428,6 +595,19 @@ export default function WorkshopBudgets() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
+                        
+                        {budget.status === 'aprovado' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-blue-600 hover:text-blue-700"
+                            onClick={() => generatePDF(budget)}
+                            title="Imprimir PDF"
+                          >
+                            <Printer className="h-4 w-4" />
+                          </Button>
+                        )}
+                        
                         
                         {budget.status === 'pendente' && (
                           <>
