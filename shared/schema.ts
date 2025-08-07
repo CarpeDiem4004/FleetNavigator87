@@ -213,6 +213,7 @@ export const users = pgTable("users", {
 // Tabela para recebimento de carros na oficina
 export const carReceptions = pgTable("car_receptions", {
   id: serial("id").primaryKey(),
+  serviceNumber: text("service_number").notNull().unique(), // Número único do serviço gerado automaticamente
   vehiclePlate: text("vehicle_plate").notNull(),
   vehicleModel: text("vehicle_model").notNull(),
   vehicleType: vehicleTypeEnum("vehicle_type").notNull(),
@@ -228,6 +229,7 @@ export const carReceptions = pgTable("car_receptions", {
   deliveryDeadline: date("delivery_deadline"),
   status: carReceptionStatusEnum("status").notNull().default('recebido'),
   workshopId: integer("workshop_id").notNull().references(() => workshops.id),
+  workshopCnpj: text("workshop_cnpj"), // CNPJ da oficina para referência histórica
   receivedDate: timestamp("received_date").defaultNow(),
   completedDate: timestamp("completed_date"),
   deliveredDate: timestamp("delivered_date"),
@@ -236,6 +238,41 @@ export const carReceptions = pgTable("car_receptions", {
   deliveryPersonCpf: text("delivery_person_cpf"), // CPF
   deliveryPersonPhone: text("delivery_person_phone"), // Telefone
   notes: text("notes"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela para orçamentos das oficinas
+export const workshopBudgets = pgTable("workshop_budgets", {
+  id: serial("id").primaryKey(),
+  carReceptionId: integer("car_reception_id").notNull().references(() => carReceptions.id),
+  serviceNumber: text("service_number").notNull().references(() => carReceptions.serviceNumber),
+  budgetNumber: text("budget_number").notNull().unique(), // Número único do orçamento
+  workshopId: integer("workshop_id").notNull().references(() => workshops.id),
+  workshopCnpj: text("workshop_cnpj").notNull(),
+  
+  // Detalhes do orçamento
+  laborDescription: text("labor_description").notNull(),
+  laborCost: decimal("labor_cost", { precision: 10, scale: 2 }).notNull(),
+  laborHours: decimal("labor_hours", { precision: 5, scale: 2 }),
+  
+  partsDescription: text("parts_description"),
+  partsCost: decimal("parts_cost", { precision: 10, scale: 2 }).default('0'),
+  partsJson: text("parts_json"), // JSON das peças detalhadas
+  
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }).notNull(),
+  estimatedDays: integer("estimated_days"),
+  
+  // Status do orçamento
+  status: text("status").notNull().default('pendente'), // pendente, aprovado, rejeitado, revisao
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvedDate: timestamp("approved_date"),
+  rejectionReason: text("rejection_reason"),
+  
+  // Observações
+  notes: text("notes"),
+  internalNotes: text("internal_notes"), // Notas internas da oficina
+  
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
@@ -536,7 +573,7 @@ export const refuelingCardRequestRelations = relations(refuelingCardRequest, ({ 
   }),
 }));
 
-export const carReceptionsRelations = relations(carReceptions, ({ one }) => ({
+export const carReceptionsRelations = relations(carReceptions, ({ one, many }) => ({
   base: one(bases, {
     fields: [carReceptions.baseId],
     references: [bases.id],
@@ -544,6 +581,22 @@ export const carReceptionsRelations = relations(carReceptions, ({ one }) => ({
   workshop: one(workshops, {
     fields: [carReceptions.workshopId],
     references: [workshops.id],
+  }),
+  budgets: many(workshopBudgets),
+}));
+
+export const workshopBudgetsRelations = relations(workshopBudgets, ({ one }) => ({
+  carReception: one(carReceptions, {
+    fields: [workshopBudgets.carReceptionId],
+    references: [carReceptions.id],
+  }),
+  workshop: one(workshops, {
+    fields: [workshopBudgets.workshopId],
+    references: [workshops.id],
+  }),
+  approvedByUser: one(users, {
+    fields: [workshopBudgets.approvedBy],
+    references: [users.id],
   }),
 }));
 
