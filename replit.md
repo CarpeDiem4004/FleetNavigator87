@@ -35,6 +35,7 @@ Key tables include `vehicles`, `maintenance`, `towing_services`, `fuel_cards`, `
 - **Mobile External Links System**: Public access forms for fuel stations with mobile optimization, automatic project/base loading, and timezone-aware data entry.
 - **Route and Fuel Conference System**: Upload and analyze daily vehicle route reports, compare with fuel records, generate comprehensive reports with visual indicators and export capabilities (Excel/PDF). Specifically optimized for MercadoLivre report format.
 - **Line Haul Dashboard**: Dedicated page for Line Haul management including route management, vehicle tracking, maintenance workflow, and driver interface access.
+- **Workshop Budget System**: Complete workshop budget management with car reception, service number generation, budget creation, approval workflow, and external API integration for partner workshops.
 
 ### Data Flow
 - **Fuel Station External Access**: Public URLs, mobile device detection, dynamic project loading, data validation, and real-time synchronization.
@@ -69,3 +70,14 @@ Key tables include `vehicles`, `maintenance`, `towing_services`, `fuel_cards`, `
 - **Vite**: Build tool and development server.
 - **TypeScript**: For type safety.
 - **ESLint/Prettier**: For code quality and formatting.
+
+## Recent Updates (August 7, 2025)
+✅ **Workshop Budget System - Complete Implementation**
+- Full workshop external dashboard with car reception and budget management
+- Automatic service number generation (CNPJ-YYYYMMDD-NNN format)
+- Workshop budget creation, editing, and management capabilities
+- Fleet management approval/rejection workflow for budgets
+- External API integration with secure token authentication
+- Database schema optimization with proper indexing
+- Resolved SQL function ambiguity issues for production stability
+- Tested and verified: Car reception ID #18 with budget ID #1 successfully created
