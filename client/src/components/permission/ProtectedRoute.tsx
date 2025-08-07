@@ -9,6 +9,7 @@ import AuthManager from '@/lib/authManager';
 interface ProtectedRouteProps {
   path: string;
   component: React.ComponentType;
+  allowedRoles?: string[];
 }
 
 // Componente de carregamento com botão de retry
@@ -121,7 +122,7 @@ const AuthDiagnostic = ({
   </div>
 );
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component: Component }) => {
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component: Component, allowedRoles }) => {
   const { user, isLoading } = useAuth();
   const { hasPermission } = useBasePermission();
   const [isVerifyingJWT, setIsVerifyingJWT] = useState(false);
@@ -396,6 +397,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
     return <Redirect to="/acesso-negado" />;
   }
   
+  // Verificar roles específicos se allowedRoles foi fornecido
+  if (allowedRoles && allowedRoles.length > 0) {
+    if (!user.role || !allowedRoles.includes(user.role)) {
+      console.log('[ProtectedRoute] Usuário não tem role necessário para esta rota:', path, 'Role atual:', user.role, 'Roles permitidos:', allowedRoles);
+      return <Redirect to="/access-denied" />;
+    }
+  }
+
   return (
     <>
       {/* Usuário autenticado e com permissão, renderiza o componente */}

@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, useLocation, Redirect } from "wouter";
 import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -643,9 +643,16 @@ function App() {
               <FleetManagementRedirect />
             </Route>
           
-          {/* Novo Dashboard com KPIs */}
-          <ProtectedRoute path="/" component={Dashboard} />
-          <ProtectedRoute path="/executive" component={ExecutiveDashboard} />
+          {/* Dashboard Principal removido - agora só Dashboard Executivo */}
+          <ProtectedRoute 
+            path="/executive" 
+            component={ExecutiveDashboard} 
+            allowedRoles={['admin', 'ceo', 'gerente_geral']} 
+          />
+          {/* Redirecionar a rota raiz para gestão de frota */}
+          <Route path="/">
+            <Redirect to="/fleet-management" />
+          </Route>
           <ProtectedRoute path="/painel-operacional" component={PainelOperacional} />
           
           {/* Rotas protegidas com verificação de permissão de base */}

@@ -59,9 +59,16 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     }
   };
 
+  // Função para verificar se o usuário tem acesso ao Dashboard Executivo
+  const hasExecutiveDashboardAccess = () => {
+    if (!user) return false;
+    const allowedRoles = ['admin', 'ceo', 'gerente_geral'];
+    return allowedRoles.includes(user.role);
+  };
+
   // Links de navegação
   const navLinks = [
-    { href: '/', label: 'Dashboard', icon: BarChart4 },
+    ...(hasExecutiveDashboardAccess() ? [{ href: '/executive', label: 'Dashboard Executivo', icon: BarChart4 }] : []),
     { href: '/fleet-management', label: 'Gestão de Frota', icon: Truck },
     { href: '/vehicles', label: 'Veículos', icon: Car },
     // { href: '/maintenance', label: 'Manutenções', icon: Wrench },
