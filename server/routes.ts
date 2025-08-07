@@ -15109,31 +15109,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const query = `
         SELECT 
           id,
-          title,
+          vehicle_plate as title,
           description,
-          priority,
+          'normal' as priority,
           status,
-          requester_id,
+          requested_by as requester_id,
           requester_name,
           created_at,
           updated_at,
           estimated_value,
-          department,
+          'manutencao' as department,
           approved_value,
           approved_by,
           approved_at,
-          comments,
-          budget_file_url,
-          budget_file_name,
-          invoice_file_url,
-          invoice_file_name,
+          description as comments,
+          attachment_url as budget_file_url,
+          'budget_file' as budget_file_name,
+          null as invoice_file_url,
+          null as invoice_file_name,
           CASE
-            WHEN invoice_file_url IS NOT NULL THEN false
-            WHEN status = 'aprovado' AND invoice_file_url IS NULL THEN true
+            WHEN attachment_url IS NOT NULL THEN false
+            WHEN status = 'aprovado' AND attachment_url IS NULL THEN true
             ELSE false
           END as pending_invoice,
           base_id,
-          base_name,
+          workshop_name as base_name,
           'campinas' as source
         FROM 
           campinas_budget_requests
@@ -15538,10 +15538,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           wb.created_at,
           wb.updated_at,
           -- Dados da oficina
-          COALESCE(o.nome_fantasia, o.razao_social, o.nome) as workshop_name,
-          o.cnpj as workshop_cnpj_full,
-          o.telefone as workshop_phone,
-          o.email as workshop_email,
+          COALESCE(w.nome_fantasia, w.razao_social, w.nome) as workshop_name,
+          w.cnpj as workshop_cnpj_full,
+          w.telefone as workshop_phone,
+          w.email as workshop_email,
           -- Dados do recebimento do veículo
           cr.vehicle_plate,
           cr.vehicle_model,
@@ -15549,7 +15549,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cr.service_description,
           cr.current_km
         FROM workshop_budgets wb
-        LEFT JOIN oficinas o ON wb.workshop_cnpj = o.cnpj
+        LEFT JOIN workshops w ON wb.workshop_id = w.id
         LEFT JOIN car_receptions cr ON wb.car_reception_id = cr.id
         ORDER BY wb.created_at DESC
       `;

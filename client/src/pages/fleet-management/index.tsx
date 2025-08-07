@@ -122,12 +122,12 @@ export default function FleetManagement() {
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <DollarSign className="h-5 w-5 text-primary" />
-                  Negociação de Orçamentos
+                  Orçamentos de Oficinas
                 </CardTitle>
               </CardHeader>
               <CardFooter className="mt-auto">
                 <Button variant="outline" className="w-full" asChild>
-                  <Link href="/fleet-management/budgets">
+                  <Link href="/fleet-management/workshop-budgets">
                     Acessar <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
