@@ -210,21 +210,96 @@ export async function getTireStockStats(req: Request, res: Response) {
 }
 
 /**
+ * Função auxiliar para buscar dados de quilometragem por base
+ */
+async function getKmPerBaseData() {
+  try {
+    const query = `
+      SELECT 
+        project as base,
+        SUM(CASE 
+          WHEN DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE) 
+          THEN km 
+          ELSE 0 
+        END) as currentMonth,
+        SUM(CASE 
+          WHEN DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') 
+          THEN km 
+          ELSE 0 
+        END) as previousMonth
+      FROM historico_consolidado_abastecimentos
+      WHERE project IS NOT NULL 
+        AND km IS NOT NULL 
+        AND created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+      GROUP BY project
+      HAVING SUM(km) > 0
+      ORDER BY currentMonth DESC
+      LIMIT 10
+    `;
+    
+    const result = await pool.query(query);
+    
+    // Converter dados para formato esperado pelo frontend
+    return result.rows.map(row => ({
+      base: row.base,
+      currentMonth: parseInt(row.currentmonth) || 0,
+      previousMonth: parseInt(row.previousmonth) || 0
+    }));
+  } catch (error) {
+    console.error('Erro ao buscar dados de quilometragem por base:', error);
+    return [];
+  }
+}
+
+/**
+ * Endpoint para obter dados de quilometragem por base com comparativo mensal
+ */
+export async function getKmPerBase(req: Request, res: Response) {
+  try {
+    const kmPerBaseData = await getKmPerBaseData();
+    
+    return res.status(200).json({
+      success: true,
+      data: kmPerBaseData
+    });
+  } catch (error: any) {
+    console.error('Erro ao obter dados de quilometragem por base:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao obter dados de quilometragem por base',
+      error: error.message
+    });
+  }
+}
+
+/**
  * Função para registrar as rotas da API de KPIs do dashboard
  */
 export function registerDashboardKpiRoutes(app: any) {
   // Rota principal para obter todos os KPIs
   app.get('/api/dashboard/kpis', isAuthenticated, async (req, res) => {
     try {
-      const [vehicles, maintenance, tires, fuel] = await Promise.all([
+      const [vehicles, maintenance, tires, fuel, kmPerBaseData] = await Promise.all([
         getTotalVehicles(req, res).catch(() => ({ total: 0 })),
         getVehiclesInMaintenance(req, res).catch(() => ({ total: 0, previousTotal: 0, variation: 0 })),
         getTireStockStats(req, res).catch(() => ({ quantidade: 0, valor_total: 0 })),
-        getFuelConsumption(req, res).catch(() => ({ total: 0, previousTotal: 0, variation: 0 }))
+        getFuelConsumption(req, res).catch(() => ({ total: 0, previousTotal: 0, variation: 0 })),
+        getKmPerBaseData().catch(() => [])
       ]);
       
       return res.status(200).json({
         success: true,
+        kpis: [
+          { title: 'Disponibilidade e Utilização', metrics: [] },
+          { title: 'Manutenção', metrics: [] },
+          { title: 'Custos e Eficiência', metrics: [] }
+        ],
+        timeSeriesData: [],
+        fleetAvailability: [],
+        costPerKm: [],
+        maintenanceTime: [],
+        fuelEfficiency: [],
+        kmPerBase: kmPerBaseData,
         data: {
           vehicles,
           maintenance,
@@ -247,4 +322,5 @@ export function registerDashboardKpiRoutes(app: any) {
   app.get('/api/dashboard/veiculos/manutencao', isAuthenticated, getVehiclesInMaintenance);
   app.get('/api/pneus/estatisticas/estoque', isAuthenticated, getTireStockStats);
   app.get('/api/dashboard/abastecimentos/litros', isAuthenticated, getFuelConsumption);
+  app.get('/api/dashboard/km-per-base', isAuthenticated, getKmPerBase);
 }

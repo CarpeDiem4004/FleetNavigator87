@@ -113,6 +113,23 @@ export async function getFuelConsumption(): Promise<FuelConsumptionData> {
   return data.data;
 }
 
+// Função para buscar dados reais de quilometragem por base
+export async function getKmPerBase(): Promise<BaseKm[]> {
+  try {
+    const response = await apiRequest('GET', '/api/dashboard/km-per-base');
+    
+    if (!response.ok) {
+      throw new Error('Erro ao obter dados de quilometragem por base');
+    }
+    
+    const data = await response.json();
+    return data.success ? data.data : [];
+  } catch (error) {
+    console.error('Erro ao carregar quilometragem por base:', error);
+    return [];
+  }
+}
+
 // Função para buscar dados para o dashboard executivo
 export async function fetchDashboardData(dateParam?: string): Promise<DashboardData> {
   try {
@@ -126,13 +143,31 @@ export async function fetchDashboardData(dateParam?: string): Promise<DashboardD
     }
     
     const data = await response.json();
+    
+    // Tentar buscar dados reais de quilometragem por base
+    const kmPerBaseData = await getKmPerBase();
+    
+    if (kmPerBaseData.length > 0) {
+      console.log('Dados reais de quilometragem por base integrados:', kmPerBaseData);
+      data.data.kmPerBase = kmPerBaseData;
+    }
+    
     return data.data;
   } catch (error) {
     console.error('Erro ao carregar dados do dashboard executivo:', error);
     
-    // Importar e usar a função de geração de dados simulados do utilitário dashboardData
-    // para manter consistência com a implementação existente
+    // Tentar buscar dados reais de quilometragem mesmo em fallback
+    const kmPerBaseData = await getKmPerBase();
+    
+    // Importar e usar a função de geração de dados simulados
     const { generateDashboardData } = await import('@/utils/dashboardData');
-    return generateDashboardData();
+    const fallbackData = generateDashboardData();
+    
+    if (kmPerBaseData.length > 0) {
+      console.log('Usando dados reais de quilometragem em fallback:', kmPerBaseData);
+      fallbackData.kmPerBase = kmPerBaseData;
+    }
+    
+    return fallbackData;
   }
 }
