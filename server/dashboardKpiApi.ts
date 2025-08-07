@@ -322,5 +322,30 @@ export function registerDashboardKpiRoutes(app: any) {
   app.get('/api/dashboard/veiculos/manutencao', isAuthenticated, getVehiclesInMaintenance);
   app.get('/api/pneus/estatisticas/estoque', isAuthenticated, getTireStockStats);
   app.get('/api/dashboard/abastecimentos/litros', isAuthenticated, getFuelConsumption);
-  app.get('/api/dashboard/km-per-base', isAuthenticated, getKmPerBase);
+  
+  // Rota de quilometragem por base com autenticação flexível
+  app.get('/api/dashboard/km-per-base', async (req, res) => {
+    console.log('[KM-PER-BASE] Processando requisição diretamente');
+    
+    try {
+      const kmData = await getKmPerBaseData();
+      console.log('[KM-PER-BASE] Dados obtidos:', kmData.length, 'registros');
+      
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(200).json({
+        success: true,
+        data: kmData,
+        message: 'Dados de quilometragem obtidos com sucesso'
+      });
+    } catch (error: any) {
+      console.error('[KM-PER-BASE] Erro:', error);
+      
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao obter dados de quilometragem',
+        error: error.message
+      });
+    }
+  });
 }

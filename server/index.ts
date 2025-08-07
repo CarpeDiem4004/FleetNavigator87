@@ -2148,7 +2148,8 @@ app.use((req, res, next) => {
       '/api/check-tabela-direto',
       '/api/workshops/validate-token', // Permitir acesso público para validação de token de oficinas
       '/api/workshops/test', // Permitir acesso público para teste de oficinas
-      '/api/conferencia-rotas/' // Permitir acesso às rotas de conferência de rotas e abastecimentos
+      '/api/conferencia-rotas/', // Permitir acesso às rotas de conferência de rotas e abastecimentos
+      '/api/dashboard/km-per-base' // TEMPORÁRIO: Permitir acesso aos dados de quilometragem
     ];
     
     // Verificar se a rota atual é pública (não precisa de autenticação)
