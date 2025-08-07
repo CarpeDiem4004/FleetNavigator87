@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Calculator, FileText, Download, Eye, Plus, Edit } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import jsPDF from 'jspdf';
+import PartsManager, { PartItem } from "./PartsManager";
 
 const budgetSchema = z.object({
   carReceptionId: z.number(),
@@ -37,6 +38,7 @@ interface Budget {
   labor_hours?: string;
   parts_description?: string;
   parts_cost?: string;
+  parts_json?: string;
   total_cost: string;
   estimated_days?: number;
   status: string;
@@ -71,7 +73,36 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+  const [parts, setParts] = useState<PartItem[]>([]);
+  const [partsTotalValue, setPartsTotalValue] = useState(0);
   const { toast } = useToast();
+
+  // Handler para mudanças nas peças
+  const handlePartsChange = (updatedParts: PartItem[], totalValue: number) => {
+    setParts(updatedParts);
+    setPartsTotalValue(totalValue);
+    // Atualizar o valor das peças no formulário
+    form.setValue('partsCost', totalValue);
+  };
+
+  // Carregar peças de um orçamento existente
+  const loadBudgetParts = (budget: Budget) => {
+    if (budget.parts_json) {
+      try {
+        const parsedParts = JSON.parse(budget.parts_json) as PartItem[];
+        setParts(parsedParts);
+        const total = parsedParts.reduce((sum, part) => sum + part.total, 0);
+        setPartsTotalValue(total);
+      } catch (error) {
+        console.error('Erro ao carregar peças do orçamento:', error);
+        setParts([]);
+        setPartsTotalValue(0);
+      }
+    } else {
+      setParts([]);
+      setPartsTotalValue(0);
+    }
+  };
 
   const form = useForm<BudgetForm>({
     resolver: zodResolver(budgetSchema),
@@ -141,12 +172,19 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
       
       const method = editingBudget ? 'PUT' : 'POST';
       
+      // Incluir dados das peças
+      const budgetData = {
+        ...data,
+        partsJson: parts.length > 0 ? JSON.stringify(parts) : null,
+        partsCost: partsTotalValue
+      };
+      
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(budgetData),
       });
 
       const result = await response.json();
@@ -161,6 +199,8 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
         setIsDialogOpen(false);
         setEditingBudget(null);
         form.reset();
+        setParts([]);
+        setPartsTotalValue(0);
       } else {
         toast({
           title: "Erro",
@@ -274,11 +314,15 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
   const openCreateDialog = () => {
     setEditingBudget(null);
     form.reset();
+    setParts([]);
+    setPartsTotalValue(0);
     setIsDialogOpen(true);
   };
 
   const openEditDialog = (budget: Budget) => {
     setEditingBudget(budget);
+    // Carregar peças do orçamento
+    loadBudgetParts(budget);
     form.reset({
       carReceptionId: parseInt(budget.service_number.split('-')[0]) || 0, // Tentar extrair ID
       serviceNumber: budget.service_number,
@@ -436,16 +480,26 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
                   />
                 </div>
 
+                {/* Gerenciador de Peças */}
+                <PartsManager
+                  initialParts={parts}
+                  onPartsChange={handlePartsChange}
+                  disabled={isLoading}
+                />
+
                 <FormField
                   control={form.control}
-                  name="partsDescription"
+                  name="estimatedDays"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Descrição das Peças</FormLabel>
+                      <FormLabel>Prazo Estimado (dias)</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Liste as peças necessárias (opcional)"
-                          {...field} 
+                        <Input
+                          type="number"
+                          min="1"
+                          placeholder="1"
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
                         />
                       </FormControl>
                       <FormMessage />
@@ -453,48 +507,27 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
                   )}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="partsCost"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Custo das Peças (R$)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            placeholder="0.00"
-                            {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="estimatedDays"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Prazo Estimado (dias)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="1"
-                            placeholder="1"
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                {/* Resumo dos Totais */}
+                <Card className="bg-muted/30">
+                  <CardContent className="pt-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span>Mão de obra:</span>
+                        <span className="font-medium">R$ {(form.watch('laborCost') || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Peças:</span>
+                        <span className="font-medium">R$ {partsTotalValue.toFixed(2)}</span>
+                      </div>
+                      <div className="border-t pt-2">
+                        <div className="flex justify-between text-lg font-bold">
+                          <span>Total:</span>
+                          <span className="text-primary">R$ {((form.watch('laborCost') || 0) + partsTotalValue).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
                 <FormField
                   control={form.control}

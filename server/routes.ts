@@ -8872,6 +8872,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calcular custo total
       const totalCost = parseFloat(data.laborCost) + parseFloat(data.partsCost || 0);
 
+      // Processar dados das peças (se fornecidos)
+      let partsJson = null;
+      let partsDescription = data.partsDescription || '';
+      
+      if (data.partsJson) {
+        try {
+          partsJson = data.partsJson;
+          // Se há peças detalhadas, gerar descrição resumida
+          const parts = JSON.parse(data.partsJson);
+          if (parts.length > 0) {
+            partsDescription = parts.map((part: any) => 
+              `${part.description} (${part.quantity}x)`
+            ).join(', ');
+          }
+        } catch (error) {
+          console.error('[BUDGET-CREATE] Erro ao processar JSON das peças:', error);
+        }
+      }
+
       // Criar orçamento
       const budgetQuery = `
         INSERT INTO workshop_budgets (
@@ -8891,9 +8910,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data.laborDescription,
         data.laborCost,
         data.laborHours || null,
-        data.partsDescription || null,
+        partsDescription || null,
         data.partsCost || 0,
-        data.partsJson || null,
+        partsJson,
         totalCost,
         data.estimatedDays || null,
         data.notes || null,
