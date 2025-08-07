@@ -645,7 +645,7 @@ function App() {
           
           {/* Novo Dashboard com KPIs */}
           <ProtectedRoute path="/" component={Dashboard} />
-          <ProtectedRoute path="/executive-dashboard" component={ExecutiveDashboard} />
+          <ProtectedRoute path="/executive" component={ExecutiveDashboard} />
           <ProtectedRoute path="/painel-operacional" component={PainelOperacional} />
           
           {/* Rotas protegidas com verificação de permissão de base */}
