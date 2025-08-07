@@ -15498,11 +15498,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/fleet/workshop-budgets", hasMaintenanceAccess, async (req, res) => {
     try {
       const user = req.user as any;
+      const { startDate, endDate } = req.query;
+      
       console.log('[FleetBudgets] Usuário autenticado:', {
         id: user.id,
         email: user.email,
         role: user.role,
-        baseId: user.base_id
+        baseId: user.base_id,
+        startDate,
+        endDate
       });
 
       if (!user || (user.role !== 'admin' && user.role !== 'gestor_frota')) {
@@ -15510,7 +15514,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Acesso negado" });
       }
 
-      console.log('[FleetBudgets] Buscando todos os orçamentos das oficinas...');
+      console.log('[FleetBudgets] Buscando orçamentos das oficinas com filtros de data...');
 
       // Buscar todos os orçamentos com informações das oficinas e aprovador
       const query = `
@@ -15555,10 +15559,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         LEFT JOIN workshops w ON wb.workshop_id = w.id
         LEFT JOIN car_receptions cr ON wb.car_reception_id = cr.id
         LEFT JOIN users u ON wb.approved_by = u.id
+        WHERE 1=1
+        ${startDate ? "AND wb.created_at >= $1::date" : ""}
+        ${endDate ? `AND wb.created_at <= $${startDate ? "2" : "1"}::date + INTERVAL '23 hours 59 minutes 59 seconds'` : ""}
         ORDER BY wb.created_at DESC
       `;
 
-      const result = await pool.query(query);
+      // Preparar parâmetros da query
+      const queryParams = [];
+      if (startDate) queryParams.push(startDate);
+      if (endDate) queryParams.push(endDate);
+
+      const result = await pool.query(query, queryParams);
       console.log('[FleetBudgets] Orçamentos encontrados:', result.rows.length);
 
       // Processar dados das peças JSON

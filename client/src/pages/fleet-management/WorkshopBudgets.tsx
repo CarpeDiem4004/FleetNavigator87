@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/currency";
 import { 
@@ -80,6 +81,8 @@ export default function WorkshopBudgets() {
   const [statusAction, setStatusAction] = useState<'aprovado' | 'rejeitado' | 'revisao'>('aprovado');
   const [statusNotes, setStatusNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -101,7 +104,14 @@ export default function WorkshopBudgets() {
   const loadBudgets = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/fleet/workshop-budgets');
+      
+      // Construir query string com filtros de data
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      
+      const url = `/api/fleet/workshop-budgets${params.toString() ? `?${params.toString()}` : ''}`;
+      const response = await fetch(url);
       const data = await response.json();
       
       if (data.success) {
@@ -225,6 +235,53 @@ export default function WorkshopBudgets() {
           </Button>
         </div>
       </div>
+
+      {/* Filtros de Data */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+          <CardDescription>
+            Filtre os orçamentos por período de criação
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="start-date">Data Início</Label>
+              <Input
+                id="start-date"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="end-date">Data Fim</Label>
+              <Input
+                id="end-date"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+            <div className="flex items-end gap-2">
+              <Button onClick={loadBudgets} className="flex-1">
+                Aplicar Filtros
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setStartDate('');
+                  setEndDate('');
+                  loadBudgets();
+                }}
+              >
+                Limpar
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Cards de Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
