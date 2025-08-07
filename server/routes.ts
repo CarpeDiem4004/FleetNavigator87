@@ -8534,6 +8534,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Gerar número de serviço único
+      const serviceNumberResult = await pool.query(
+        'SELECT generate_service_number($1) as service_number',
+        [workshop.cnpj]
+      );
+      const serviceNumber = serviceNumberResult.rows[0].service_number;
+
+      console.log('[OFICINA-CREATE] Número de serviço gerado:', serviceNumber);
+
       // Criar objeto de recebimento com dados da oficina
       const carReceptionData = {
         vehiclePlate: data.vehiclePlate,
@@ -8551,6 +8560,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deliveryDeadline: data.deliveryDeadline || null,
         notes: data.notes || '',
         workshopId: workshop.id,
+        workshopCnpj: workshop.cnpj,
+        serviceNumber: serviceNumber,
         status: 'recebido'
       };
 
@@ -8796,6 +8807,262 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erro ao atualizar status do recebimento:", error);
       res.status(500).json({ message: 'Erro ao atualizar status' });
+    }
+  });
+
+  // === WORKSHOP BUDGET ROUTES ===
+  
+  // Criar orçamento para recebimento
+  app.post("/api/oficina/budgets", async (req, res) => {
+    try {
+      const { token } = req.query;
+      const data = req.body;
+      
+      console.log('[BUDGET-CREATE] Criando orçamento:', { token, data });
+      
+      // Validar token de acesso externo
+      if (!token) {
+        return res.status(401).json({ 
+          success: false,
+          message: 'Token de acesso obrigatório' 
+        });
+      }
+
+      // Verificar se o token é válido
+      const tokenQuery = `
+        SELECT 
+          o.id,
+          COALESCE(o.nome_fantasia, o.razao_social) as name,
+          o.cnpj,
+          o.email,
+          o.telefone as phone
+        FROM oficinas o
+        WHERE o.external_token = $1 AND o.status = 'ativo'
+      `;
+
+      const result = await pool.query(tokenQuery, [token]);
+
+      if (result.rows.length === 0) {
+        return res.status(401).json({
+          success: false,
+          message: "Token inválido ou expirado"
+        });
+      }
+
+      const workshop = result.rows[0];
+      
+      // Validar dados obrigatórios
+      if (!data.carReceptionId || !data.serviceNumber || !data.laborDescription || !data.laborCost) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'Dados obrigatórios não informados' 
+        });
+      }
+
+      // Gerar número único do orçamento
+      const budgetNumberResult = await pool.query(
+        `SELECT 'ORC-' || $1 || '-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || 
+         LPAD((SELECT COUNT(*) + 1 FROM workshop_budgets WHERE workshop_cnpj = $1 AND DATE(created_at) = CURRENT_DATE)::TEXT, 3, '0') as budget_number`,
+        [workshop.cnpj]
+      );
+      const budgetNumber = budgetNumberResult.rows[0].budget_number;
+
+      console.log('[BUDGET-CREATE] Número de orçamento gerado:', budgetNumber);
+
+      // Calcular custo total
+      const totalCost = parseFloat(data.laborCost) + parseFloat(data.partsCost || 0);
+
+      // Criar orçamento
+      const budgetQuery = `
+        INSERT INTO workshop_budgets (
+          car_reception_id, service_number, budget_number, workshop_id, workshop_cnpj,
+          labor_description, labor_cost, labor_hours, parts_description, parts_cost,
+          parts_json, total_cost, estimated_days, notes, internal_notes
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        RETURNING *
+      `;
+
+      const budgetResult = await pool.query(budgetQuery, [
+        data.carReceptionId,
+        data.serviceNumber,
+        budgetNumber,
+        workshop.id,
+        workshop.cnpj,
+        data.laborDescription,
+        data.laborCost,
+        data.laborHours || null,
+        data.partsDescription || null,
+        data.partsCost || 0,
+        data.partsJson || null,
+        totalCost,
+        data.estimatedDays || null,
+        data.notes || null,
+        data.internalNotes || null
+      ]);
+
+      res.status(201).json({ 
+        success: true,
+        message: 'Orçamento criado com sucesso',
+        budget: budgetResult.rows[0]
+      });
+    } catch (error) {
+      console.error("[BUDGET-CREATE] Erro ao criar orçamento:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  });
+
+  // Listar orçamentos da oficina
+  app.get("/api/oficina/budgets", async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      // Validar token de acesso externo
+      if (!token) {
+        return res.status(401).json({ 
+          success: false,
+          message: 'Token de acesso obrigatório' 
+        });
+      }
+
+      // Verificar se o token é válido
+      const tokenQuery = `
+        SELECT 
+          o.id,
+          COALESCE(o.nome_fantasia, o.razao_social) as name,
+          o.cnpj
+        FROM oficinas o
+        WHERE o.external_token = $1 AND o.status = 'ativo'
+      `;
+
+      const result = await pool.query(tokenQuery, [token]);
+
+      if (result.rows.length === 0) {
+        return res.status(401).json({
+          success: false,
+          message: "Token inválido ou expirado"
+        });
+      }
+
+      const workshop = result.rows[0];
+      
+      // Buscar orçamentos da oficina com informações do recebimento
+      const budgetsQuery = `
+        SELECT 
+          wb.*,
+          cr.vehicle_plate,
+          cr.vehicle_model,
+          cr.vehicle_type,
+          cr.service_description,
+          u.name as approved_by_name
+        FROM workshop_budgets wb
+        JOIN car_receptions cr ON wb.car_reception_id = cr.id
+        LEFT JOIN users u ON wb.approved_by = u.id
+        WHERE wb.workshop_id = $1
+        ORDER BY wb.created_at DESC
+      `;
+
+      const budgetsResult = await pool.query(budgetsQuery, [workshop.id]);
+      
+      res.json({
+        success: true,
+        budgets: budgetsResult.rows
+      });
+    } catch (error) {
+      console.error("Erro ao listar orçamentos:", error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Erro ao carregar orçamentos' 
+      });
+    }
+  });
+
+  // Gerar PDF do orçamento
+  app.get("/api/oficina/budgets/:id/pdf", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { token } = req.query;
+      
+      // Validar token de acesso externo
+      if (!token) {
+        return res.status(401).json({ 
+          success: false,
+          message: 'Token de acesso obrigatório' 
+        });
+      }
+
+      // Verificar se o token é válido
+      const tokenQuery = `
+        SELECT 
+          o.id,
+          COALESCE(o.nome_fantasia, o.razao_social) as name,
+          o.cnpj,
+          o.razao_social,
+          o.endereco,
+          o.telefone,
+          o.email
+        FROM oficinas o
+        WHERE o.external_token = $1 AND o.status = 'ativo'
+      `;
+
+      const result = await pool.query(tokenQuery, [token]);
+
+      if (result.rows.length === 0) {
+        return res.status(401).json({
+          success: false,
+          message: "Token inválido ou expirado"
+        });
+      }
+
+      const workshop = result.rows[0];
+
+      // Buscar dados completos do orçamento
+      const budgetQuery = `
+        SELECT 
+          wb.*,
+          cr.vehicle_plate,
+          cr.vehicle_model,
+          cr.vehicle_type,
+          cr.service_description,
+          cr.current_km,
+          b.name as base_name,
+          u.name as approved_by_name
+        FROM workshop_budgets wb
+        JOIN car_receptions cr ON wb.car_reception_id = cr.id
+        JOIN bases b ON cr.base_id = b.id
+        LEFT JOIN users u ON wb.approved_by = u.id
+        WHERE wb.id = $1 AND wb.workshop_id = $2
+      `;
+
+      const budgetResult = await pool.query(budgetQuery, [id, workshop.id]);
+
+      if (budgetResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Orçamento não encontrado ou não pertence a esta oficina"
+        });
+      }
+
+      const budget = budgetResult.rows[0];
+
+      // Retornar dados para geração do PDF no frontend
+      res.json({
+        success: true,
+        data: {
+          budget,
+          workshop,
+          generatedAt: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      console.error("Erro ao gerar PDF do orçamento:", error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Erro ao gerar PDF do orçamento' 
+      });
     }
   });
 

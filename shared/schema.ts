@@ -618,6 +618,7 @@ export const insertMaintenanceChatSchema = createInsertSchema(maintenanceChat);
 export const insertChatMessageSchema = createInsertSchema(chatMessages);
 export const insertMaintenanceLifecycleSchema = createInsertSchema(maintenanceLifecycle);
 export const insertCarReceptionSchema = createInsertSchema(carReceptions);
+export const insertWorkshopBudgetSchema = createInsertSchema(workshopBudgets);
 export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
   email: true,
@@ -658,6 +659,9 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export type CarReception = typeof carReceptions.$inferSelect;
 export type InsertCarReception = z.infer<typeof insertCarReceptionSchema>;
+
+export type WorkshopBudget = typeof workshopBudgets.$inferSelect;
+export type InsertWorkshopBudget = z.infer<typeof insertWorkshopBudgetSchema>;
 
 export type Operation = typeof operations.$inferSelect;
 export type InsertOperation = z.infer<typeof insertOperationSchema>;

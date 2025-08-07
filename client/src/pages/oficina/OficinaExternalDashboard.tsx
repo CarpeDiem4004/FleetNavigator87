@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Car, 
@@ -24,10 +25,13 @@ import {
   Eye,
   Download,
   Package2,
-  Trash2
+  Trash2,
+  Calculator
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import CarReception from './CarReception';
+import BudgetManager from './components/BudgetManager';
 
 interface WorkshopData {
   id: number;
@@ -71,6 +75,7 @@ export default function OficinaExternalDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [maintenanceRequests, setMaintenanceRequests] = useState<MaintenanceRequest[]>([]);
   const [carReceptions, setCarReceptions] = useState<CarReception[]>([]);
+  const [activeTab, setActiveTab] = useState<string>("dashboard");
   // Estado isNewOSOpen removido - Apenas sistema principal pode criar OS
 
   // Estado osFormData removido - Apenas sistema principal pode criar OS
@@ -907,6 +912,8 @@ export default function OficinaExternalDashboard() {
   const inProgressRequests = allRequests.filter(r => r.status === 'em_andamento' || r.status === 'em_reparo');
   const completedRequests = allRequests.filter(r => r.status === 'concluida' || r.status === 'entregue');
 
+  const token = new URLSearchParams(window.location.search).get('token') || '';
+
   return (
     <div className="container mx-auto py-8">
       {/* Header */}
@@ -926,6 +933,40 @@ export default function OficinaExternalDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Navigation Buttons */}
+      <div className="mb-6">
+        <div className="flex gap-2">
+          <Button 
+            variant={activeTab === "dashboard" ? "default" : "outline"}
+            onClick={() => setActiveTab("dashboard")}
+            className="flex items-center gap-2"
+          >
+            <Car className="h-4 w-4" />
+            Dashboard
+          </Button>
+          <Button 
+            variant={activeTab === "reception" ? "default" : "outline"}
+            onClick={() => setActiveTab("reception")}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Receber Veículo
+          </Button>
+          <Button 
+            variant={activeTab === "budgets" ? "default" : "outline"}
+            onClick={() => setActiveTab("budgets")}
+            className="flex items-center gap-2"
+          >
+            <Calculator className="h-4 w-4" />
+            Orçamentos
+          </Button>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === "dashboard" && (
+        <div>
 
       {/* KPIs */}
       <div className="grid gap-6 md:grid-cols-4 mb-6">
@@ -2135,6 +2176,21 @@ export default function OficinaExternalDashboard() {
         </Dialog>
       )}
       
+        </div>
+      )}
+
+      {activeTab === "reception" && (
+        <div>
+          <CarReception />
+        </div>
+      )}
+
+      {activeTab === "budgets" && (
+        <div>
+          <BudgetManager token={token} />
+        </div>
+      )}
+
       {/* Rodapé discreto */}
       <div className="mt-16 pb-8 text-center text-gray-400 text-sm">
         Desenvolvido por Carpe Diem 4004 | suporte 11 970558053

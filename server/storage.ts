@@ -1,6 +1,6 @@
 import { 
   users, vehicles as veiculos, maintenance, tires, refueling, fines, bases, workshops, painelPrincipal, operations,
-  maintenanceChat, chatMessages, baseRequests, baseRequestUpdates, carReceptions,
+  maintenanceChat, chatMessages, baseRequests, baseRequestUpdates, carReceptions, workshopBudgets,
   type User, type InsertUser, type Vehicle, type InsertVehicle,
   type Maintenance, type InsertMaintenance, type Tire, type InsertTire,
   type Refueling, type InsertRefueling, type Fine, type InsertFine,
@@ -8,7 +8,8 @@ import {
   type Workshop, type InsertWorkshop, type Operation, type InsertOperation,
   type PainelPrincipal, type InsertPainelPrincipal, type MaintenanceChat, type InsertMaintenanceChat,
   type ChatMessage, type InsertChatMessage, type BaseRequest, type InsertBaseRequest,
-  type BaseRequestUpdate, type InsertBaseRequestUpdate, type CarReception, type InsertCarReception
+  type BaseRequestUpdate, type InsertBaseRequestUpdate, type CarReception, type InsertCarReception,
+  type WorkshopBudget, type InsertWorkshopBudget
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, like, desc, sql } from "drizzle-orm";
@@ -119,6 +120,15 @@ export interface IStorage {
   createCarReception(reception: InsertCarReception): Promise<CarReception>;
   updateCarReception(id: number, reception: Partial<InsertCarReception>): Promise<CarReception | undefined>;
   deleteCarReception(id: number): Promise<boolean>;
+  
+  // Workshop Budget operations
+  getWorkshopBudget(id: number): Promise<WorkshopBudget | undefined>;
+  getWorkshopBudgetsByWorkshop(workshopId: number): Promise<WorkshopBudget[]>;
+  createWorkshopBudget(budget: InsertWorkshopBudget): Promise<WorkshopBudget>;
+  updateWorkshopBudget(id: number, budget: Partial<InsertWorkshopBudget>): Promise<WorkshopBudget | undefined>;
+  deleteWorkshopBudget(id: number): Promise<boolean>;
+  approveWorkshopBudget(id: number, approvedBy: number): Promise<WorkshopBudget | undefined>;
+  rejectWorkshopBudget(id: number, rejectedBy: number, reason: string): Promise<WorkshopBudget | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2003,6 +2013,103 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Erro ao excluir recebimento:", error);
       return false;
+    }
+  }
+
+  // Workshop Budget operations
+  async getWorkshopBudget(id: number): Promise<WorkshopBudget | undefined> {
+    try {
+      const [budget] = await db.select().from(workshopBudgets)
+        .where(eq(workshopBudgets.id, id))
+        .limit(1);
+      return budget;
+    } catch (error) {
+      console.error("Erro ao buscar orçamento:", error);
+      return undefined;
+    }
+  }
+
+  async getWorkshopBudgetsByWorkshop(workshopId: number): Promise<WorkshopBudget[]> {
+    try {
+      const budgets = await db.select().from(workshopBudgets)
+        .where(eq(workshopBudgets.workshopId, workshopId))
+        .orderBy(desc(workshopBudgets.created_at));
+      return budgets;
+    } catch (error) {
+      console.error("Erro ao buscar orçamentos da oficina:", error);
+      return [];
+    }
+  }
+
+  async createWorkshopBudget(budget: InsertWorkshopBudget): Promise<WorkshopBudget> {
+    try {
+      const [newBudget] = await db.insert(workshopBudgets).values(budget).returning();
+      return newBudget;
+    } catch (error) {
+      console.error("Erro ao criar orçamento:", error);
+      throw error;
+    }
+  }
+
+  async updateWorkshopBudget(id: number, budget: Partial<InsertWorkshopBudget>): Promise<WorkshopBudget | undefined> {
+    try {
+      const [updatedBudget] = await db.update(workshopBudgets)
+        .set({
+          ...budget,
+          updated_at: new Date()
+        })
+        .where(eq(workshopBudgets.id, id))
+        .returning();
+      return updatedBudget || undefined;
+    } catch (error) {
+      console.error("Erro ao atualizar orçamento:", error);
+      throw error;
+    }
+  }
+
+  async deleteWorkshopBudget(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(workshopBudgets).where(eq(workshopBudgets.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error("Erro ao excluir orçamento:", error);
+      return false;
+    }
+  }
+
+  async approveWorkshopBudget(id: number, approvedBy: number): Promise<WorkshopBudget | undefined> {
+    try {
+      const [approvedBudget] = await db.update(workshopBudgets)
+        .set({
+          status: 'aprovado',
+          approvedBy: approvedBy,
+          approvedDate: new Date(),
+          updated_at: new Date()
+        })
+        .where(eq(workshopBudgets.id, id))
+        .returning();
+      return approvedBudget || undefined;
+    } catch (error) {
+      console.error("Erro ao aprovar orçamento:", error);
+      throw error;
+    }
+  }
+
+  async rejectWorkshopBudget(id: number, rejectedBy: number, reason: string): Promise<WorkshopBudget | undefined> {
+    try {
+      const [rejectedBudget] = await db.update(workshopBudgets)
+        .set({
+          status: 'rejeitado',
+          approvedBy: rejectedBy,
+          rejectionReason: reason,
+          updated_at: new Date()
+        })
+        .where(eq(workshopBudgets.id, id))
+        .returning();
+      return rejectedBudget || undefined;
+    } catch (error) {
+      console.error("Erro ao rejeitar orçamento:", error);
+      throw error;
     }
   }
 }
