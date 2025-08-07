@@ -15552,12 +15552,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cr.vehicle_type,
           cr.service_description,
           cr.current_km,
+          cr.base_id,
+          cr.project_id,
+          -- Dados da base e projeto
+          b.name as base_name,
+          p.name as project_name,
           -- Dados do aprovador
           u.name as approved_by_name,
           u.email as approved_by_email
         FROM workshop_budgets wb
         LEFT JOIN workshops w ON wb.workshop_id = w.id
         LEFT JOIN car_receptions cr ON wb.car_reception_id = cr.id
+        LEFT JOIN bases b ON cr.base_id = b.id
+        LEFT JOIN projects p ON cr.project_id = p.id
         LEFT JOIN users u ON wb.approved_by = u.id
         WHERE 1=1
         ${startDate ? "AND wb.created_at >= $1::date" : ""}

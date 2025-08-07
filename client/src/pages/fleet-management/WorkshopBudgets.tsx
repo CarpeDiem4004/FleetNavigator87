@@ -69,6 +69,10 @@ interface WorkshopBudget {
   vehicle_type: string;
   service_description: string;
   current_km: number;
+  base_id: number;
+  project_id: number;
+  base_name: string;
+  project_name: string;
   parts_details: PartDetail[];
 }
 
@@ -491,6 +495,14 @@ export default function WorkshopBudgets() {
                   <div>
                     <Label className="text-sm font-medium">KM Atual</Label>
                     <p className="text-sm">{selectedBudget.current_km?.toLocaleString() || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Projeto</Label>
+                    <p className="text-sm">{selectedBudget.project_name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Base</Label>
+                    <p className="text-sm">{selectedBudget.base_name || 'N/A'}</p>
                   </div>
                 </CardContent>
               </Card>
