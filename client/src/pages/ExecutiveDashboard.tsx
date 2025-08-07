@@ -3,7 +3,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   TrendingUp, TrendingDown, DollarSign, Truck, Timer, 
-  AlertTriangle, Wrench, BarChart2, Droplets, Activity
+  AlertTriangle, Wrench, BarChart2, Droplets, Activity, 
+  ExternalLink
 } from 'lucide-react';
 import KpiCard from '@/components/dashboard/KpiCard';
 import ChartCard from '@/components/dashboard/ChartCard';
@@ -24,6 +25,7 @@ import {
 } from '@/components/ui/popover';
 import AppLayout from '@/components/layout/AppLayout';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Link } from 'wouter';
 
 export default function ExecutiveDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -351,6 +353,17 @@ export default function ExecutiveDashboard() {
           </div>
           
           <div className="flex items-center gap-2">
+            <Link href="/postos/consumo-diario">
+              <Button 
+                variant="default" 
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+              >
+                <BarChart2 className="h-4 w-4" />
+                Gráficos de Consumo dos Postos
+                <ExternalLink className="h-3 w-3" />
+              </Button>
+            </Link>
+            
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button
