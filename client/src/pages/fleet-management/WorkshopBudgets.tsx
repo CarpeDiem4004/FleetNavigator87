@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/currency";
 import { 
   Eye, 
   Check, 
@@ -257,7 +258,7 @@ export default function WorkshopBudgets() {
               <div>
                 <p className="text-sm text-muted-foreground">Valor Total</p>
                 <p className="text-2xl font-bold">
-                  R$ {budgets.reduce((sum, b) => sum + parseFloat(b.total_cost), 0).toFixed(2)}
+                  {formatCurrency(budgets.reduce((sum, b) => sum + parseFloat(b.total_cost), 0))}
                 </p>
               </div>
               <DollarSign className="h-8 w-8 text-green-600" />
@@ -327,10 +328,10 @@ export default function WorkshopBudgets() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="font-bold">R$ {parseFloat(budget.total_cost).toFixed(2)}</div>
+                      <div className="font-bold">{formatCurrency(budget.total_cost)}</div>
                       <div className="text-sm text-muted-foreground">
-                        MO: R$ {parseFloat(budget.labor_cost).toFixed(2)} | 
-                        Peças: R$ {parseFloat(budget.parts_cost || '0').toFixed(2)}
+                        MO: {formatCurrency(budget.labor_cost)} | 
+                        Peças: {formatCurrency(budget.parts_cost || '0')}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -476,18 +477,18 @@ export default function WorkshopBudgets() {
                   <div className="grid grid-cols-3 gap-4">
                     <div>
                       <Label className="text-sm font-medium">Mão de Obra</Label>
-                      <p className="text-lg font-bold">R$ {parseFloat(selectedBudget.labor_cost).toFixed(2)}</p>
+                      <p className="text-lg font-bold">{formatCurrency(selectedBudget.labor_cost)}</p>
                       {selectedBudget.labor_hours && (
                         <p className="text-sm text-muted-foreground">{selectedBudget.labor_hours}h</p>
                       )}
                     </div>
                     <div>
                       <Label className="text-sm font-medium">Peças</Label>
-                      <p className="text-lg font-bold">R$ {parseFloat(selectedBudget.parts_cost || '0').toFixed(2)}</p>
+                      <p className="text-lg font-bold">{formatCurrency(selectedBudget.parts_cost || '0')}</p>
                     </div>
                     <div>
                       <Label className="text-sm font-medium">Total</Label>
-                      <p className="text-xl font-bold text-primary">R$ {parseFloat(selectedBudget.total_cost).toFixed(2)}</p>
+                      <p className="text-xl font-bold text-primary">{formatCurrency(selectedBudget.total_cost)}</p>
                     </div>
                   </div>
 
@@ -509,8 +510,8 @@ export default function WorkshopBudgets() {
                             <TableRow key={index}>
                               <TableCell>{part.description}</TableCell>
                               <TableCell>{part.quantity}</TableCell>
-                              <TableCell>R$ {part.unitPrice.toFixed(2)}</TableCell>
-                              <TableCell>R$ {part.total.toFixed(2)}</TableCell>
+                              <TableCell>{formatCurrency(part.unitPrice)}</TableCell>
+                              <TableCell>{formatCurrency(part.total)}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -549,7 +550,7 @@ export default function WorkshopBudgets() {
               {statusAction === 'aprovado' ? 'Aprovar' : statusAction === 'rejeitado' ? 'Rejeitar' : 'Solicitar Revisão'} Orçamento
             </DialogTitle>
             <DialogDescription>
-              {selectedBudget?.budget_number} - R$ {selectedBudget?.total_cost}
+              {selectedBudget?.budget_number} - {formatCurrency(selectedBudget?.total_cost || '0')}
             </DialogDescription>
           </DialogHeader>
           

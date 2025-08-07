@@ -13,6 +13,7 @@ import { Calculator, FileText, Download, Eye, Plus, Edit } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import jsPDF from 'jspdf';
 import PartsManager, { PartItem } from "./PartsManager";
+import { formatCurrency } from "@/lib/currency";
 
 const budgetSchema = z.object({
   carReceptionId: z.number(),
@@ -254,7 +255,7 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
         // Serviços e custos
         doc.text('SERVIÇOS:', 20, 145);
         doc.text(`Mão de obra: ${budgetData.labor_description}`, 20, 155);
-        doc.text(`Custo da mão de obra: R$ ${parseFloat(budgetData.labor_cost).toFixed(2)}`, 20, 165);
+        doc.text(`Custo da mão de obra: ${formatCurrency(budgetData.labor_cost)}`, 20, 165);
         
         if (budgetData.labor_hours) {
           doc.text(`Horas de trabalho: ${budgetData.labor_hours}h`, 20, 175);
@@ -262,12 +263,12 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
         
         if (budgetData.parts_description) {
           doc.text(`Peças: ${budgetData.parts_description}`, 20, 185);
-          doc.text(`Custo das peças: R$ ${parseFloat(budgetData.parts_cost || '0').toFixed(2)}`, 20, 195);
+          doc.text(`Custo das peças: ${formatCurrency(budgetData.parts_cost || '0')}`, 20, 195);
         }
         
         // Total
         doc.setFontSize(14);
-        doc.text(`TOTAL: R$ ${parseFloat(budgetData.total_cost).toFixed(2)}`, 20, 215);
+        doc.text(`TOTAL: ${formatCurrency(budgetData.total_cost)}`, 20, 215);
         
         // Prazo estimado
         if (budgetData.estimated_days) {
@@ -513,16 +514,16 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span>Mão de obra:</span>
-                        <span className="font-medium">R$ {(form.watch('laborCost') || 0).toFixed(2)}</span>
+                        <span className="font-medium">{formatCurrency(form.watch('laborCost') || 0)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Peças:</span>
-                        <span className="font-medium">R$ {partsTotalValue.toFixed(2)}</span>
+                        <span className="font-medium">{formatCurrency(partsTotalValue)}</span>
                       </div>
                       <div className="border-t pt-2">
                         <div className="flex justify-between text-lg font-bold">
                           <span>Total:</span>
-                          <span className="text-primary">R$ {((form.watch('laborCost') || 0) + partsTotalValue).toFixed(2)}</span>
+                          <span className="text-primary">{formatCurrency((form.watch('laborCost') || 0) + partsTotalValue)}</span>
                         </div>
                       </div>
                     </div>
@@ -625,15 +626,15 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
                   
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="font-medium">Mão de obra:</span> R$ {parseFloat(budget.labor_cost).toFixed(2)}
+                      <span className="font-medium">Mão de obra:</span> {formatCurrency(budget.labor_cost)}
                     </div>
                     <div>
-                      <span className="font-medium">Peças:</span> R$ {parseFloat(budget.parts_cost || '0').toFixed(2)}
+                      <span className="font-medium">Peças:</span> {formatCurrency(budget.parts_cost || '0')}
                     </div>
                     <div className="col-span-2">
                       <span className="font-medium text-lg">Total:</span> 
                       <span className="text-lg font-bold text-green-600 ml-2">
-                        R$ {parseFloat(budget.total_cost).toFixed(2)}
+                        {formatCurrency(budget.total_cost)}
                       </span>
                     </div>
                   </div>

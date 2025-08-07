@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Trash2, Plus, Calculator } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/currency";
 
 export interface PartItem {
   id: string;
@@ -150,7 +151,7 @@ export default function PartsManager({ initialParts = [], onPartsChange, disable
                     <div className="flex-1">
                       <Label>Total</Label>
                       <div className="font-semibold text-lg text-green-600">
-                        R$ {part.total.toFixed(2)}
+                        {formatCurrency(part.total)}
                       </div>
                     </div>
                     {!disabled && (
@@ -177,7 +178,7 @@ export default function PartsManager({ initialParts = [], onPartsChange, disable
               <div className="flex justify-between items-center">
                 <div className="text-lg font-medium">Total em Peças:</div>
                 <div className="text-2xl font-bold text-primary">
-                  R$ {totalValue.toFixed(2)}
+                  {formatCurrency(totalValue)}
                 </div>
               </div>
               <div className="text-sm text-muted-foreground mt-1">
