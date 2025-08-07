@@ -142,7 +142,7 @@ const LinksExternosPostos: React.FC = () => {
   }
   
   // Verificar se o usuário tem permissão (admin ou gestor)
-  const hasPermission = user.role === 'admin' || user.role === 'gestor' || user.role === 'gestor_frota';
+  const hasPermission = user.role === 'admin' || user.role === 'gestor' || user.role === 'gestor_frota' || user.role === 'gestor_combustivel';
   
   if (!hasPermission) {
     return (
