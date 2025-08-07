@@ -26,6 +26,7 @@ import {
   RefreshCcw,
   ArrowLeft
 } from 'lucide-react';
+import { DriverAutocomplete } from '@/components/ui/driver-autocomplete';
 import lineHaulLayoutImage from '@assets/image_1754418722959.png';
 import { api } from '@/services/api';
 
@@ -1464,27 +1465,21 @@ const LineHaulPage = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Motorista *</Label>
-                  <Select value={currentTrip.motorista_nome || ''} onValueChange={(value) => {
-                    const selectedDriver = drivers.find(driver => driver.nome === value);
-                    if (selectedDriver) {
-                      setCurrentTrip(prev => ({
-                        ...prev,
-                        motorista_nome: selectedDriver.nome,
-                        motorista_id: selectedDriver.id
-                      }));
-                    }
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o motorista" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {drivers.map((driver) => (
-                        <SelectItem key={driver.id} value={driver.nome}>
-                          {driver.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <DriverAutocomplete
+                    value={currentTrip.motorista_nome || ''}
+                    onValueChange={(value) => {
+                      const selectedDriver = drivers.find(driver => driver.nome === value);
+                      if (selectedDriver) {
+                        setCurrentTrip(prev => ({
+                          ...prev,
+                          motorista_nome: selectedDriver.nome,
+                          motorista_id: selectedDriver.id
+                        }));
+                      }
+                    }}
+                    drivers={drivers}
+                    placeholder="Selecione o motorista"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Rota</Label>

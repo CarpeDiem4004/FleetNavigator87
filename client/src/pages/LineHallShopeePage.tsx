@@ -15,6 +15,7 @@ import { api } from '@/services/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/context/AuthContext';
+import { DriverAutocomplete } from '@/components/ui/driver-autocomplete';
 
 interface LineHallTrip {
   id: number;
@@ -884,10 +885,9 @@ export default function LineHallShopeePage() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="motorista_nome">Nome do Motorista *</Label>
-                      <Select 
-                        name="motorista_nome"
-                        value={currentTrip.motorista_nome || ''} 
+                      <Label htmlFor="motorista_nome">Motorista *</Label>
+                      <DriverAutocomplete
+                        value={currentTrip.motorista_nome || ''}
                         onValueChange={(value) => {
                           const selectedDriver = drivers.find(driver => driver.nome === value);
                           if (selectedDriver) {
@@ -898,18 +898,9 @@ export default function LineHallShopeePage() {
                             }));
                           }
                         }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o motorista" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {drivers.map((driver) => (
-                            <SelectItem key={driver.id} value={driver.nome}>
-                              {driver.nome} - {driver.cpf}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        drivers={drivers}
+                        placeholder="Selecione o motorista"
+                      />
                     </div>
                   </div>
                   
