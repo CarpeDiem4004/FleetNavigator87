@@ -15493,6 +15493,178 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registra as rotas para o sistema de estoque de peças
   app.use('/api/frota', frotaEstoqueRoutes);
+
+  // API para buscar todos os orçamentos das oficinas para gestão da frota
+  app.get("/api/fleet/workshop-budgets", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const user = req.user as any;
+      console.log('[FleetBudgets] Usuário autenticado:', {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        baseId: user.base_id
+      });
+
+      if (!user || (user.role !== 'admin' && user.role !== 'gestor_frota')) {
+        console.log('[FleetBudgets] Acesso negado: usuário sem permissão');
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+
+      console.log('[FleetBudgets] Buscando todos os orçamentos das oficinas...');
+
+      // Buscar todos os orçamentos com informações das oficinas
+      const query = `
+        SELECT 
+          wb.id,
+          wb.car_reception_id,
+          wb.service_number,
+          wb.budget_number,
+          wb.workshop_id,
+          wb.workshop_cnpj,
+          wb.labor_description,
+          wb.labor_cost,
+          wb.labor_hours,
+          wb.parts_description,
+          wb.parts_cost,
+          wb.parts_json,
+          wb.total_cost,
+          wb.estimated_days,
+          wb.status,
+          wb.approved_by,
+          wb.approved_date,
+          wb.rejection_reason,
+          wb.notes,
+          wb.internal_notes,
+          wb.created_at,
+          wb.updated_at,
+          -- Dados da oficina
+          COALESCE(o.nome_fantasia, o.razao_social, o.nome) as workshop_name,
+          o.cnpj as workshop_cnpj_full,
+          o.telefone as workshop_phone,
+          o.email as workshop_email,
+          -- Dados do recebimento do veículo
+          cr.vehicle_plate,
+          cr.vehicle_model,
+          cr.vehicle_type,
+          cr.service_description,
+          cr.current_km
+        FROM workshop_budgets wb
+        LEFT JOIN oficinas o ON wb.workshop_cnpj = o.cnpj
+        LEFT JOIN car_receptions cr ON wb.car_reception_id = cr.id
+        ORDER BY wb.created_at DESC
+      `;
+
+      const result = await pool.query(query);
+      console.log('[FleetBudgets] Orçamentos encontrados:', result.rows.length);
+
+      // Processar dados das peças JSON
+      const budgets = result.rows.map(budget => {
+        let parsedParts = null;
+        if (budget.parts_json) {
+          try {
+            parsedParts = JSON.parse(budget.parts_json);
+          } catch (error) {
+            console.error('[FleetBudgets] Erro ao fazer parse do JSON das peças:', error);
+          }
+        }
+
+        return {
+          ...budget,
+          parts_details: parsedParts
+        };
+      });
+
+      res.json({
+        success: true,
+        budgets
+      });
+    } catch (error) {
+      console.error("[FleetBudgets] Erro ao buscar orçamentos das oficinas:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Erro ao buscar orçamentos das oficinas",
+        error: error instanceof Error ? error.message : "Erro desconhecido"
+      });
+    }
+  });
+
+  // API para aprovar/rejeitar orçamento pela gestão da frota
+  app.patch("/api/fleet/workshop-budgets/:id/status", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { id } = req.params;
+      const { status, rejection_reason, notes } = req.body;
+
+      console.log('[FleetBudgets] Atualizando status do orçamento:', {
+        budgetId: id,
+        newStatus: status,
+        userId: user.id,
+        userEmail: user.email
+      });
+
+      if (!user || (user.role !== 'admin' && user.role !== 'gestor_frota')) {
+        return res.status(403).json({ 
+          success: false,
+          message: "Acesso negado" 
+        });
+      }
+
+      if (!['aprovado', 'rejeitado', 'pendente', 'revisao'].includes(status)) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Status inválido" 
+        });
+      }
+
+      // Atualizar status do orçamento
+      const updateQuery = `
+        UPDATE workshop_budgets 
+        SET 
+          status = $1,
+          approved_by = $2,
+          approved_date = $3,
+          rejection_reason = $4,
+          internal_notes = $5,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $6
+        RETURNING *
+      `;
+
+      const approvedBy = (status === 'aprovado') ? user.id : null;
+      const approvedDate = (status === 'aprovado') ? new Date() : null;
+
+      const result = await pool.query(updateQuery, [
+        status,
+        approvedBy,
+        approvedDate,
+        rejection_reason || null,
+        notes || null,
+        id
+      ]);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ 
+          success: false,
+          message: "Orçamento não encontrado" 
+        });
+      }
+
+      console.log('[FleetBudgets] Status atualizado com sucesso:', result.rows[0].budget_number);
+
+      res.json({ 
+        success: true,
+        message: `Orçamento ${status} com sucesso`,
+        budget: result.rows[0]
+      });
+    } catch (error) {
+      console.error("[FleetBudgets] Erro ao atualizar status do orçamento:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Erro ao atualizar status do orçamento",
+        error: error instanceof Error ? error.message : "Erro desconhecido"
+      });
+    }
+  });
   
   // Registrar rotas para assistente de migração de anexos
   // Comentado temporariamente devido à incompatibilidade de módulos
