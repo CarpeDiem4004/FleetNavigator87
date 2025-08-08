@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +22,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, FileEdit, Trash2 } from 'lucide-react';
+import { Search, Plus, FileEdit, Trash2, Filter, X } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { 
   Select,
@@ -30,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 // Tipo para manutenção
 interface Maintenance {
@@ -148,8 +150,9 @@ const formatDate = (dateString: string): string => {
 };
 
 const MaintenanceNew: React.FC = () => {
-  const [maintenance, setMaintenance] = useState<Maintenance[]>(mockMaintenance);
   const [searchTerm, setSearchTerm] = useState('');
+  const [plateFilter, setPlateFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newMaintenance, setNewMaintenance] = useState<Partial<Maintenance>>({
     vehiclePlate: '',
@@ -160,12 +163,37 @@ const MaintenanceNew: React.FC = () => {
     status: 'em_andamento'
   });
 
-  // Filtrar manutenções com base no termo de busca
-  const filteredMaintenance = maintenance.filter(
-    (item) => 
-      item.vehiclePlate.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      item.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Buscar dados reais da API de manutenção
+  const { data: maintenanceData = [], isLoading, error } = useQuery({
+    queryKey: ['/api/maintenance'],
+    queryFn: async () => {
+      const response = await fetch('/api/maintenance');
+      if (!response.ok) {
+        throw new Error('Erro ao carregar manutenções');
+      }
+      return response.json();
+    }
+  });
+
+  // Filtrar manutenções com base nos filtros aplicados
+  const filteredMaintenance = maintenanceData.filter((item: any) => {
+    const matchesSearch = item.vehiclePlate?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPlate = !plateFilter || item.vehiclePlate?.toLowerCase().includes(plateFilter.toLowerCase());
+    const matchesStatus = !statusFilter || item.status === statusFilter;
+    
+    return matchesSearch && matchesPlate && matchesStatus;
+  });
+
+  // Obter lista única de placas para o filtro
+  const uniquePlates = Array.from(new Set(maintenanceData.map((item: any) => item.vehiclePlate).filter(Boolean)));
+
+  // Limpar todos os filtros
+  const clearFilters = () => {
+    setSearchTerm('');
+    setPlateFilter('');
+    setStatusFilter('');
+  };
 
   // Adicionar nova manutenção
   const handleAddMaintenance = () => {
@@ -191,230 +219,256 @@ const MaintenanceNew: React.FC = () => {
   return (
     <MainLayoutSimple>
       <div className="space-y-6 px-4 py-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold mb-2">Manutenções</h1>
+            <h1 className="text-2xl font-bold mb-2">Oficina Murici</h1>
             <p className="text-gray-500">
-              Gestão de manutenções da frota
+              Gerenciamento de manutenções da frota
             </p>
           </div>
 
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center">
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar Manutenção
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Registrar Nova Manutenção</DialogTitle>
-                <DialogDescription>
-                  Preencha os detalhes da manutenção abaixo
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="vehiclePlate" className="text-right">
-                    Placa do Veículo
-                  </Label>
-                  <Input
-                    id="vehiclePlate"
-                    value={newMaintenance.vehiclePlate}
-                    onChange={(e) => setNewMaintenance({...newMaintenance, vehiclePlate: e.target.value})}
-                    className="col-span-3"
-                    placeholder="ABC-1234"
-                  />
+          {/* Estatísticas rápidas */}
+          <div className="flex gap-4">
+            <Card className="p-4 min-w-[120px]">
+              <CardContent className="p-0">
+                <div className="text-2xl font-bold text-blue-600">{maintenanceData.length}</div>
+                <div className="text-sm text-gray-500">Total</div>
+              </CardContent>
+            </Card>
+            <Card className="p-4 min-w-[120px]">
+              <CardContent className="p-0">
+                <div className="text-2xl font-bold text-yellow-600">
+                  {maintenanceData.filter((item: any) => item.status === 'em_andamento').length}
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="type" className="text-right">
-                    Tipo
-                  </Label>
-                  <Select 
-                    value={newMaintenance.type}
-                    onValueChange={(value: 'preventiva' | 'corretiva') => setNewMaintenance({...newMaintenance, type: value})}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="preventiva">Preventiva</SelectItem>
-                      <SelectItem value="corretiva">Corretiva</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="text-sm text-gray-500">Em Andamento</div>
+              </CardContent>
+            </Card>
+            <Card className="p-4 min-w-[120px]">
+              <CardContent className="p-0">
+                <div className="text-2xl font-bold text-green-600">
+                  {maintenanceData.filter((item: any) => item.status === 'concluida').length}
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="description" className="text-right">
-                    Descrição
-                  </Label>
-                  <Input
-                    id="description"
-                    value={newMaintenance.description}
-                    onChange={(e) => setNewMaintenance({...newMaintenance, description: e.target.value})}
-                    className="col-span-3"
-                    placeholder="Troca de óleo e filtros"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="date" className="text-right">
-                    Data
-                  </Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={newMaintenance.date}
-                    onChange={(e) => setNewMaintenance({...newMaintenance, date: e.target.value})}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="cost" className="text-right">
-                    Custo (R$)
-                  </Label>
-                  <Input
-                    id="cost"
-                    type="number"
-                    value={newMaintenance.cost}
-                    onChange={(e) => setNewMaintenance({...newMaintenance, cost: parseFloat(e.target.value)})}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="status" className="text-right">
-                    Status
-                  </Label>
-                  <Select 
-                    value={newMaintenance.status}
-                    onValueChange={(value: 'concluida' | 'em_andamento' | 'aguardando_pecas' | 'motor' | 'turbina' | 'funilaria' | 'bomba' | 'bico') => 
-                      setNewMaintenance({...newMaintenance, status: value})
-                    }
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="concluida">Concluída</SelectItem>
-                      <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                      <SelectItem value="aguardando_pecas">Aguardando Peças</SelectItem>
-                      <SelectItem value="motor">Motor</SelectItem>
-                      <SelectItem value="turbina">Turbina</SelectItem>
-                      <SelectItem value="funilaria">Funilaria</SelectItem>
-                      <SelectItem value="bomba">Bomba</SelectItem>
-                      <SelectItem value="bico">Bico</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {['motor', 'turbina', 'funilaria', 'bomba', 'bico'].includes(newMaintenance.status) && (
-                  <div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="workshop_name" className="text-right">Nome da Oficina</Label>
-                      <Input
-                        id="workshop_name"
-                        value={newMaintenance.workshopName || ""}
-                        onChange={(e) => setNewMaintenance({...newMaintenance, workshopName: e.target.value})}
-                        className="col-span-3"
-                        placeholder="Nome da oficina"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="deadline" className="text-right">Prazo</Label>
-                      <Input
-                        id="deadline"
-                        type="date"
-                        value={newMaintenance.deadline || ""}
-                        onChange={(e) => setNewMaintenance({...newMaintenance, deadline: e.target.value})}
-                        className="col-span-3"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="valor" className="text-right">Valor</Label>
-                      <Input
-                        id="valor"
-                        type="number"
-                        value={newMaintenance.valor || ""}
-                        onChange={(e) => setNewMaintenance({...newMaintenance, valor: parseFloat(e.target.value)})}
-                        className="col-span-3"
-                        placeholder="Valor"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleAddMaintenance}>
-                  Adicionar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                <div className="text-sm text-gray-500">Finalizadas</div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
+        {/* Sistema de busca e filtros */}
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Registros de Manutenção</CardTitle>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input
-                  type="search"
-                  placeholder="Buscar manutenções..."
-                  className="pl-8 w-[250px]"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              Buscar por Placa de Veículo
+            </CardTitle>
+            <CardDescription>
+              Encontre o histórico de manutenções de um veículo específico
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableCaption>Lista de manutenções registradas</TableCaption>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Veículo</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Custo</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Oficina</TableHead> {/* Added Oficina column */}
-                  <TableHead>Prazo</TableHead> {/* Added Prazo column */}
-                  <TableHead>Valor</TableHead> {/* Added Valor column */}
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredMaintenance.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.vehiclePlate}</TableCell>
-                    <TableCell>{translateMaintenanceType(item.type)}</TableCell>
-                    <TableCell>{item.description}</TableCell>
-                    <TableCell>{formatDate(item.date)}</TableCell>
-                    <TableCell>{formatCurrency(item.cost)}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(item.status)}`}>
-                        {translateMaintenanceStatus(item.status)}
-                      </span>
-                    </TableCell>
-                    <TableCell>{item.workshopName}</TableCell> {/* Display workshop name */}
-                    <TableCell>{item.deadline}</TableCell> {/* Display deadline */}
-                    <TableCell>{item.valor ? formatCurrency(item.valor) : ""}</TableCell> {/* Display valor */}
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="outline" size="icon">
-                          <FileEdit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="icon">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {/* Campo de busca geral */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Buscar por placa ou descrição..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Filtro por placa específica */}
+              <Select value={plateFilter} onValueChange={setPlateFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filtrar por placa" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas as placas</SelectItem>
+                  {uniquePlates.map((plate: string) => (
+                    <SelectItem key={plate} value={plate}>
+                      {plate}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Filtro por status */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="concluida">Concluída</SelectItem>
+                  <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                  <SelectItem value="aguardando_pecas">Aguardando Peças</SelectItem>
+                  <SelectItem value="motor">Motor</SelectItem>
+                  <SelectItem value="turbina">Turbina</SelectItem>
+                  <SelectItem value="funilaria">Funilaria</SelectItem>
+                  <SelectItem value="bomba">Bomba</SelectItem>
+                  <SelectItem value="bico">Bico</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Botão limpar filtros */}
+              <Button 
+                variant="outline" 
+                onClick={clearFilters}
+                className="flex items-center gap-2"
+              >
+                <X className="h-4 w-4" />
+                Limpar
+              </Button>
+            </div>
+
+            {/* Filtros ativos */}
+            {(searchTerm || plateFilter || statusFilter) && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {searchTerm && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    Busca: "{searchTerm}"
+                    <X 
+                      className="h-3 w-3 cursor-pointer" 
+                      onClick={() => setSearchTerm('')}
+                    />
+                  </Badge>
+                )}
+                {plateFilter && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    Placa: {plateFilter}
+                    <X 
+                      className="h-3 w-3 cursor-pointer" 
+                      onClick={() => setPlateFilter('')}
+                    />
+                  </Badge>
+                )}
+                {statusFilter && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    Status: {translateMaintenanceStatus(statusFilter)}
+                    <X 
+                      className="h-3 w-3 cursor-pointer" 
+                      onClick={() => setStatusFilter('')}
+                    />
+                  </Badge>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Resultados da busca */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Histórico de Manutenções</span>
+              <span className="text-sm font-normal text-gray-500">
+                {filteredMaintenance.length} de {maintenanceData.length} registros
+              </span>
+            </CardTitle>
+            <CardDescription>
+              {plateFilter ? 
+                `Histórico de manutenções do veículo ${plateFilter}` : 
+                'Histórico completo das manutenções realizadas'
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading && (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-500">Carregando manutenções...</p>
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <p className="text-red-500 mb-2">Erro ao carregar manutenções</p>
+                  <p className="text-gray-500 text-sm">{error.message}</p>
+                </div>
+              </div>
+            )}
+
+            {!isLoading && !error && filteredMaintenance.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Nenhuma manutenção encontrada</p>
+                {(searchTerm || plateFilter || statusFilter) && (
+                  <Button 
+                    variant="link" 
+                    onClick={clearFilters}
+                    className="mt-2"
+                  >
+                    Limpar filtros para ver todas
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {!isLoading && !error && filteredMaintenance.length > 0 && (
+              <Table>
+                <TableCaption>Lista de manutenções registradas</TableCaption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Placa</TableHead>
+                    <TableHead>KM</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Mecânico</TableHead>
+                    <TableHead>Prazo</TableHead>
+                    <TableHead>Início</TableHead>
+                    <TableHead>Custo</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredMaintenance.map((item: any) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.vehiclePlate || item.placa}</TableCell>
+                      <TableCell>{item.km_atual || 0}</TableCell>
+                      <TableCell>{item.description || item.descricao}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={item.status === 'concluida' ? 'default' : 
+                                  item.status === 'em_andamento' ? 'secondary' : 'outline'}
+                          className={getStatusBadgeClass(item.status)}
+                        >
+                          {translateMaintenanceStatus(item.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{item.responsavel || '-'}</TableCell>
+                      <TableCell>
+                        {item.data_agendada ? 
+                          formatDate(item.data_agendada) : 
+                          '-'
+                        }
+                      </TableCell>
+                      <TableCell>
+                        {item.data_solicitacao ? 
+                          formatDate(item.data_solicitacao) : 
+                          '-'
+                        }
+                      </TableCell>
+                      <TableCell>
+                        {item.cost || item.custo ? 
+                          formatCurrency(parseFloat(item.cost || item.custo)) : 
+                          '-'
+                        }
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
+                          <Button variant="outline" size="icon">
+                            <FileEdit className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>
