@@ -21,11 +21,12 @@ const recebimentoSchema = z.object({
   litros_recebidos: z.string().min(1, 'A quantidade é obrigatória').refine((val) => !isNaN(Number(val)), {
     message: 'Quantidade deve ser um número válido',
   }),
-  valor_total: z.string().min(1, 'O valor total é obrigatório').refine((val) => !isNaN(Number(val)), {
-    message: 'Valor total deve ser um número válido',
+  valor_litro: z.string().min(1, 'O valor por litro é obrigatório').refine((val) => !isNaN(Number(val)), {
+    message: 'Valor por litro deve ser um número válido',
   }),
   nome_fornecedor: z.string().min(3, 'O nome do fornecedor deve ter no mínimo 3 caracteres'),
   nome_operador: z.string().min(3, 'O nome do operador deve ter no mínimo 3 caracteres'),
+  numero_nota: z.string().min(3, 'O número da nota fiscal é obrigatório'),
   observacoes: z.string().optional(),
 });
 
@@ -45,9 +46,10 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
     defaultValues: {
       tipo_produto: undefined,
       litros_recebidos: '',
-      valor_total: '',
+      valor_litro: '',
       nome_fornecedor: '',
       nome_operador: '',
+      numero_nota: '',
       observacoes: '',
     },
   });
@@ -55,11 +57,20 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
   // Usando TanStack Query para mutação
   const mutation = useMutation({
     mutationFn: async (data: RecebimentoValues) => {
+      // Converter dados para o formato que a API espera
       const formattedData = {
-        ...data,
-        litros_recebidos: Number(data.litros_recebidos),
-        valor_total: Number(data.valor_total),
+        fornecedor: data.nome_fornecedor,
+        tipo_combustivel: data.tipo_produto.toLowerCase(),
+        quantidade_litros: Number(data.litros_recebidos),
+        valor_litro: Number(data.valor_litro),
+        valor_total: Number(data.litros_recebidos) * Number(data.valor_litro),
+        numero_nota: data.numero_nota,
+        operador: data.nome_operador,
+        observacoes: data.observacoes || '',
+        data_entrega: new Date().toISOString().split('T')[0]
       };
+      
+      console.log('Dados formatados para API:', formattedData);
       
       const response = await apiRequest('POST', `/api/recebimentos/${postId.toLowerCase()}`, formattedData);
       return response.json();
@@ -156,15 +167,32 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
 
                 <FormField
                   control={form.control}
-                  name="valor_total"
+                  name="valor_litro"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Valor Total (R$)</FormLabel>
+                      <FormLabel>Valor por Litro (R$)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="5000.00" step="0.01" {...field} />
+                        <Input type="number" placeholder="6.50" step="0.01" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Digite o valor total da compra
+                        Digite o valor por litro
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="numero_nota"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número da Nota Fiscal</FormLabel>
+                      <FormControl>
+                        <Input placeholder="NF123456" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Digite o número da nota fiscal
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -224,8 +252,8 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
               </div>
               
               <div className="flex justify-end">
-                <Button type="submit" size="lg" className="w-full md:w-auto">
-                  Registrar Recebimento no Tanque
+                <Button type="submit" size="lg" className="w-full md:w-auto" disabled={mutation.isPending}>
+                  {mutation.isPending ? 'Registrando...' : 'Registrar Recebimento no Tanque'}
                 </Button>
               </div>
             </form>
@@ -233,6 +261,9 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
         </CardContent>
         <CardFooter className="flex justify-between border-t pt-4 text-sm text-muted-foreground">
           <p>Data e hora serão registradas automaticamente.</p>
+          <p>Valor total: {form.watch('litros_recebidos') && form.watch('valor_litro') 
+            ? `R$ ${(Number(form.watch('litros_recebidos')) * Number(form.watch('valor_litro'))).toFixed(2)}` 
+            : 'R$ 0,00'}</p>
         </CardFooter>
       </Card>
     </TabsContent>
