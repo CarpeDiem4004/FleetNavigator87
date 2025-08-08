@@ -18,15 +18,13 @@ import { useSafeState } from "@/hooks/useSafeState";
 import { supabase } from "@/lib/supabase-compat";
 import { useAuth } from "@/context/AuthContext";
 
-// Schema de validação atualizado para incluir todos os campos
+// Schema de validação - simplificado para 7 campos para Campinas V2
 const recebimentoSchema = z.object({
   tipo_produto: z.string().min(1, "Tipo de produto é obrigatório"),
   litros_recebidos: z.string().min(1, "Quantidade de litros é obrigatória"),
-  valor_litro: z.string().min(1, "Valor por litro é obrigatório"),
   valor_total: z.string().min(1, "Valor total é obrigatório"),
-  nome_fornecedor: z.string().min(1, "Nome do fornecedor é obrigatório"),
   numero_nota_fiscal: z.string().min(1, "Número da nota fiscal é obrigatório"),
-  data_recebimento: z.string().min(1, "Data de recebimento é obrigatória"),
+  nome_fornecedor: z.string().min(1, "Nome do fornecedor é obrigatório"),
   nome_operador: z.string().min(1, "Nome do operador é obrigatório"),
   observacoes: z.string().optional(),
 });
@@ -52,23 +50,24 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
     defaultValues: {
       tipo_produto: "diesel",
       litros_recebidos: "",
-      valor_litro: "",
       valor_total: "",
       nome_fornecedor: "",
       numero_nota_fiscal: "",
-      data_recebimento: new Date().toISOString().split('T')[0],
-      nome_operador: "",
+      nome_operador: postId === 'campinas_v2' ? "Operador Campinas V2" : "",
       observacoes: "",
     },
   });
 
-  // Preencher automaticamente o nome do operador quando o usuário está logado
+  // Preencher automaticamente o nome do operador específico para cada posto
   useEffect(() => {
-    if (user?.name) {
+    if (postId === 'campinas_v2') {
+      console.log('[RECEBIMENTO] Preenchendo nome do operador automaticamente para Campinas V2');
+      form.setValue('nome_operador', 'Operador Campinas V2');
+    } else if (user?.name) {
       console.log('[RECEBIMENTO] Preenchendo nome do operador automaticamente:', user.name);
       form.setValue('nome_operador', user.name);
     }
-  }, [user, form]);
+  }, [user, form, postId]);
 
   // Mapa das tabelas por posto
   const tableMap: { [key: string]: string } = {
@@ -98,21 +97,79 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
         valor_total: data.valor_total ? '✓' : '✗ FALTANDO'
       });
       
-      // Validar campos obrigatórios
-      if (!data.tipo_produto || !data.litros_recebidos || !data.valor_litro || !data.nome_fornecedor || !data.numero_nota_fiscal || !data.data_recebimento) {
+      // Validar campos obrigatórios (7 campos para Campinas V2)
+      if (!data.tipo_produto || !data.litros_recebidos || !data.valor_total || !data.nome_fornecedor || !data.numero_nota_fiscal || !data.nome_operador) {
         console.error('[RECEBIMENTO] Validação falhou - campos obrigatórios faltando');
         throw new Error('Todos os campos obrigatórios devem ser preenchidos');
       }
       
-      // Usar API do Node.js em vez do Supabase direto
+      // Calcular valor por litro automaticamente
+      const litros = parseFloat(data.litros_recebidos);
+      const valorTotal = parseFloat(data.valor_total);
+      const valorLitro = valorTotal / litros;
+      
+      // Para Campinas V2, usar a API específica de recebimentos
+      if (postId === 'campinas_v2') {
+        const payload = {
+          posto: 'campinas_v2',
+          tipo_produto: data.tipo_produto,
+          litros_recebidos: data.litros_recebidos,
+          valor_total: data.valor_total,
+          numero_nota_fiscal: data.numero_nota_fiscal,
+          nome_fornecedor: data.nome_fornecedor,
+          nome_operador: data.nome_operador,
+          observacoes: data.observacoes || ''
+        };
+        
+        console.log('[RECEBIMENTO] Usando API específica para Campinas V2:', payload);
+        
+        const response = await fetch('/api/recebimentos-postos/campinas-v2', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `Erro HTTP: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('[RECEBIMENTO] Resultado da API:', result);
+        
+        if (!result.success) {
+          throw new Error(result.message || 'Erro ao registrar recebimento');
+        }
+        
+        setRegistroSucesso(true);
+        form.reset({
+          tipo_produto: "diesel",
+          litros_recebidos: "",
+          valor_total: "",
+          nome_fornecedor: "",
+          numero_nota_fiscal: "",
+          nome_operador: "Operador Campinas V2",
+          observacoes: "",
+        });
+        
+        toast({
+          title: "Sucesso!",
+          description: "Recebimento de combustível registrado com sucesso!",
+        });
+        
+        if (onRegistroSucesso) onRegistroSucesso();
+        return;
+      }
+      
+      // Para outros postos, usar o código original
       const payload = {
         fornecedor: data.nome_fornecedor,
         tipo_combustivel: data.tipo_produto,
         quantidade_litros: parseFloat(data.litros_recebidos),
-        valor_litro: parseFloat(data.valor_litro),
+        valor_litro: valorLitro,
         valor_total: parseFloat(data.valor_total),
         numero_nota: data.numero_nota_fiscal,
-        data_entrega: data.data_recebimento,
+        data_entrega: new Date().toISOString().split('T')[0],
         nome_operador: data.nome_operador,
         observacoes: data.observacoes || ''
       };
@@ -197,32 +254,41 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
           Recebimento de Combustível no Tanque
         </h2>
         <p className="text-gray-600 mt-2">
-          Registre a entrega de combustível no posto {postId.replace('_v2', '').toUpperCase()}
+          Registre o recebimento de combustível no tanque do posto {postId.replace('_v2', '').toUpperCase()}_V2
         </p>
       </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Tipo de Produto */}
+            {/* Tipo de Produto Recebido */}
             <FormField
               control={form.control}
               name="tipo_produto"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tipo de Combustível</FormLabel>
+                  <FormLabel>Tipo de Produto Recebido</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
+                        <SelectValue placeholder="Selecione o produto" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="diesel">Diesel</SelectItem>
-                      <SelectItem value="gasolina_comum">Gasolina Comum</SelectItem>
-                      <SelectItem value="gasolina_aditivada">Gasolina Aditivada</SelectItem>
-                      <SelectItem value="etanol">Etanol</SelectItem>
-                      <SelectItem value="arla32">Arla 32</SelectItem>
+                      {postId === 'campinas_v2' ? (
+                        <>
+                          <SelectItem value="diesel">Diesel</SelectItem>
+                          <SelectItem value="arla32">Arla 32</SelectItem>
+                        </>
+                      ) : (
+                        <>
+                          <SelectItem value="diesel">Diesel</SelectItem>
+                          <SelectItem value="gasolina_comum">Gasolina Comum</SelectItem>
+                          <SelectItem value="gasolina_aditivada">Gasolina Aditivada</SelectItem>
+                          <SelectItem value="etanol">Etanol</SelectItem>
+                          <SelectItem value="arla32">Arla 32</SelectItem>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -230,13 +296,13 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
               )}
             />
 
-            {/* Litros Recebidos */}
+            {/* Quantidade Recebida (Litros) */}
             <FormField
               control={form.control}
               name="litros_recebidos"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Litros Recebidos</FormLabel>
+                  <FormLabel>Quantidade Recebida (Litros)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -252,18 +318,18 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Valor por Litro */}
+            {/* Valor Total (R$) */}
             <FormField
               control={form.control}
-              name="valor_litro"
+              name="valor_total"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valor por Litro (R$)</FormLabel>
+                  <FormLabel>Valor Total (R$)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
-                      step="0.001"
-                      placeholder="Ex: 5.50"
+                      step="0.01"
+                      placeholder="Ex: 5500.00"
                       {...field}
                     />
                   </FormControl>
@@ -292,46 +358,6 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Data de Recebimento */}
-            <FormField
-              control={form.control}
-              name="data_recebimento"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data de Recebimento</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="date"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Valor Total */}
-            <FormField
-              control={form.control}
-              name="valor_total"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Valor Total (R$)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="Ex: 5500.00"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Nome do Fornecedor */}
             <FormField
               control={form.control}
@@ -341,7 +367,7 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
                   <FormLabel>Nome do Fornecedor</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Ex: Petrobras Distribuidora"
+                      placeholder="Ex: Petrobras, Shell, etc"
                       {...field}
                     />
                   </FormControl>
@@ -359,10 +385,10 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
                   <FormLabel>Nome do Operador</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Preenchido automaticamente"
+                      placeholder="Preenchimento automático - Nome do operador responsável"
                       {...field}
                       readOnly
-                      className="bg-gray-50"
+                      className="bg-blue-50"
                     />
                   </FormControl>
                   <FormMessage />
@@ -404,9 +430,14 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
                 ? "Registrado com Sucesso!" 
                 : isSubmitting 
                 ? "Registrando..." 
-                : "Registrar Recebimento"
+                : "Registrar Recebimento no Tanque"
               }
             </Button>
+          </div>
+          
+          {/* Nota sobre data e hora automáticas */}
+          <div className="text-center text-sm text-gray-500 mt-4">
+            📅 Data e hora serão registradas automaticamente.
           </div>
         </form>
       </Form>
