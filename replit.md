@@ -160,3 +160,13 @@ Key tables include `vehicles`, `maintenance`, `towing_services`, `fuel_cards`, `
 - Access patterns: /bases/GP03 (basename) or /bases/151 (ID) both work seamlessly
 - All bases now have consistent sidebar navigation: Operacional, Financeiro, Gestão sections
 - Successfully tested with GP03 Hortolândia base (ID: 151, basename: GP03)
+
+✅ **Universal Fuel Card System - GP3 Configuration Applied to All Bases (August 8, 2025)**
+- Replicated GP3's complete fuel card access configuration to all 112 bases
+- Created CartaoCombustivelGenerico component with identical GP3 functionality
+- Applied GP3 access rules: type='operacional', active=true, requests_enabled=true, operation='GRUPO PEREIRA'
+- Updated 111 bases to match GP3 standard configuration (GP3 already configured)
+- Universal routing system: /bases/:baseId/cartao-combustivel works for all bases
+- All bases now have same fuel card features: providers, card types, project assignment, history tracking
+- Fuel card functionality standardized with automatic user filling, validation, and status management
+- Database: All 112 bases configured with identical access permissions and operational settings
