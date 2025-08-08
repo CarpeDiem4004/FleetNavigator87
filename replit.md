@@ -102,3 +102,13 @@ Key tables include `vehicles`, `maintenance`, `towing_services`, `fuel_cards`, `
 - Excel date conversion handling for admission dates
 - CPF duplicate prevention and data integrity checks
 - All drivers added to motoristas table with proper formatting
+
+✅ **Automatic Tank Level Management System (August 8, 2025)**
+- Implemented real-time automatic fuel tank level updates for Campinas V2 station
+- PostgreSQL triggers automatically update tank levels on every fuel transaction
+- Entry transactions (recebimentos_posto_campinas_v2): Add fuel to tank levels, respecting maximum capacity
+- Exit transactions (abastecimentos_posto_campinas_v2): Subtract fuel from tank levels, preventing negative values
+- Tank configuration updated: Diesel 10,000L capacity (currently 10,000L), ARLA 520L capacity (currently 500L)
+- System tested and verified: Fuel levels update in real-time without manual intervention
+- Database functions: atualizar_nivel_recebimento() and atualizar_nivel_abastecimento()
+- Comprehensive logging with NOTICE statements for transaction tracking
