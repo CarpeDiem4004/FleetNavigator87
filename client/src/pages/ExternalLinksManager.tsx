@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, ExternalLink, Copy, CheckCircle } from 'lucide-react';
+import { Search, ExternalLink, Copy, CheckCircle, Power, PowerOff } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { useToast } from '@/hooks/use-toast';
 
@@ -13,12 +14,13 @@ const ExternalLinksManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Buscar todas as bases ativas (exceto manutenção)
+  // Buscar todas as bases (ativas e inativas)
   const { data: basesResponse, isLoading, error } = useQuery({
-    queryKey: ['/api/external-bases'],
+    queryKey: ['/api/bases'],
     queryFn: async () => {
-      const response = await fetch('/api/external-bases');
+      const response = await fetch('/api/bases');
       if (!response.ok) {
         throw new Error('Erro ao carregar bases');
       }
@@ -26,12 +28,11 @@ const ExternalLinksManager: React.FC = () => {
     }
   });
 
-  const bases = basesResponse || [];
+  const bases = basesResponse?.data || [];
 
-  // Filtrar bases para acesso externo (excluir manutenção)
+  // Filtrar bases para acesso externo (excluir apenas bases de manutenção)
   const externalBases = bases.filter((base: any) => 
     !base.has_maintenance && 
-    base.active &&
     base.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -41,6 +42,39 @@ const ExternalLinksManager: React.FC = () => {
     const baseName = base.basename || base.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
     return `${baseUrl}/bases/${baseName}`;
   };
+
+  // Mutation para ativar/desativar base
+  const toggleBaseMutation = useMutation({
+    mutationFn: async ({ baseId, active }: { baseId: number; active: boolean }) => {
+      const response = await fetch(`/api/bases/${baseId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ active }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar base');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/bases'] });
+      toast({
+        title: variables.active ? "Base ativada!" : "Base desativada!",
+        description: `Base ${data.data?.name} foi ${variables.active ? 'ativada' : 'desativada'} com sucesso.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao atualizar status da base",
+        variant: "destructive"
+      });
+    }
+  });
 
   // Copiar link para clipboard
   const copyToClipboard = async (url: string, baseName: string) => {
@@ -170,7 +204,7 @@ const ExternalLinksManager: React.FC = () => {
                     <TableHead>ID</TableHead>
                     <TableHead>Base</TableHead>
                     <TableHead>Localização</TableHead>
-                    <TableHead>Código</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Link PWA</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -195,7 +229,18 @@ const ExternalLinksManager: React.FC = () => {
                         </TableCell>
                         <TableCell className="text-gray-600">{base.location || '-'}</TableCell>
                         <TableCell>
-                          <Badge variant="secondary">{base.basename || 'AUTO'}</Badge>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={base.active}
+                              onCheckedChange={(checked) => 
+                                toggleBaseMutation.mutate({ baseId: base.id, active: checked })
+                              }
+                              disabled={toggleBaseMutation.isPending}
+                            />
+                            <Badge variant={base.active ? "default" : "secondary"}>
+                              {base.active ? 'Ativo' : 'Inativo'}
+                            </Badge>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <code className="text-xs bg-gray-100 px-2 py-1 rounded max-w-xs overflow-hidden">
