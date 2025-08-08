@@ -15945,9 +15945,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/posto-supabase', postoSupabaseRoutes);
 
   // ===== ROTAS PARA ACESSO DE MOTORISTAS LINE HALL SHOPEE =====
+  // NOTA: Rota movida para lineHallRoutes.ts para melhor organização
   
-  // Login de motorista por CPF
-  app.post('/api/line-hall/motorista/login', async (req, res) => {
+  // Login de motorista por CPF - REMOVIDA - Agora está em lineHallRoutes.ts
+  /* app.post('/api/line-hall/motorista/login', async (req, res) => {
     try {
       const { cpf } = req.body;
 
@@ -16030,7 +16031,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: 'Erro interno do servidor'
       });
     }
-  });
+  }); */
 
   // Salvar checklist do motorista
   app.post('/api/line-hall/checklist', async (req, res) => {
