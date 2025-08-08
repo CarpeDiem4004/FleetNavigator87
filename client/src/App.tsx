@@ -1065,7 +1065,7 @@ function App() {
             <CampinasPublic />
           </Route>
           <Route path="/posto/campinas_v2/public">
-            <CampinasV2Public />
+            <PostoCampinasV2External />
           </Route>
           <Route path="/posto/abc/public">
             <ABCPublic />
