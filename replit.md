@@ -170,3 +170,14 @@ Key tables include `vehicles`, `maintenance`, `towing_services`, `fuel_cards`, `
 - All bases now have same fuel card features: providers, card types, project assignment, history tracking
 - Fuel card functionality standardized with automatic user filling, validation, and status management
 - Database: All 112 bases configured with identical access permissions and operational settings
+
+✅ **Golden Rule Security Implementation - Universal Base Access Control (August 8, 2025)**
+- Implemented comprehensive security system enforcing "golden rule": each base accessible only through specific login credentials
+- Created BaseSecurityGuard component for universal access control across all base interfaces
+- Developed BaseAccessController with sophisticated permission validation and user-base relationship verification
+- Applied security controls to BaseRouter and CartaoCombustivelGenerico ensuring base-specific authentication
+- Database function check_user_base_access() provides server-side access validation with role-based permissions
+- Admin users maintain universal access while operators restricted to their assigned base only
+- API endpoint /api/bases/:baseId/check-access for secure access verification with detailed logging
+- Universal security wrapper protects all base-specific routes and components
+- System prevents unauthorized cross-base access while maintaining operational flexibility for authorized users

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRoute } from 'wouter';
 import BaseDashboardGenerico from './BaseDashboardGenerico';
+import BaseAccessController from '@/components/permission/BaseAccessController';
 import { Loader2 } from 'lucide-react';
 
 interface BaseInfo {
@@ -121,7 +122,11 @@ const BaseRouter: React.FC = () => {
     );
   }
 
-  return <BaseDashboardGenerico baseInfo={baseInfo} />;
+  return (
+    <BaseAccessController baseId={baseInfo.id}>
+      <BaseDashboardGenerico baseInfo={baseInfo} />
+    </BaseAccessController>
+  );
 };
 
 export default BaseRouter;

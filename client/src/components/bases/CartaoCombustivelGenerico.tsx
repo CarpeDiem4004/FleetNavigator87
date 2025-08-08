@@ -14,6 +14,7 @@ import { CreditCard, ArrowLeft, CheckCircle, History, FileText, Calendar, Dollar
 import { Link } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
+import BaseAccessController from '@/components/permission/BaseAccessController';
 
 interface BaseInfo {
   id: number;
@@ -74,7 +75,7 @@ interface CartaoCombustivelGenericoProps {
   baseId: string | number;
 }
 
-export default function CartaoCombustivelGenerico({ baseId }: CartaoCombustivelGenericoProps) {
+function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [baseInfo, setBaseInfo] = useState<BaseInfo | null>(null);
@@ -926,5 +927,14 @@ export default function CartaoCombustivelGenerico({ baseId }: CartaoCombustivelG
         </Tabs>
       </div>
     </div>
+  );
+}
+
+// Wrapper principal com controle de acesso baseado na regra de ouro
+export default function CartaoCombustivelGenerico({ baseId }: CartaoCombustivelGenericoProps) {
+  return (
+    <BaseAccessController baseId={baseId}>
+      <CartaoCombustivelGenericoContent baseId={baseId} />
+    </BaseAccessController>
   );
 }

@@ -44,6 +44,77 @@ router.get('/api/bases', async (req, res) => {
   }
 });
 
+// Rota para verificar acesso de usuário a uma base específica - REGRA DE OURO
+router.post('/api/bases/:baseId/check-access', async (req, res) => {
+  try {
+    const { baseId } = req.params;
+    const user = req.user;
+    
+    console.log(`[API/BASES] Verificando acesso à base ${baseId} para usuário:`, user?.id);
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuário não autenticado'
+      });
+    }
+    
+    const { pool } = await import('../database.js');
+    
+    // Usar função do banco para verificar acesso
+    const accessQuery = `SELECT check_user_base_access($1, $2) as has_access`;
+    const accessResult = await pool.query(accessQuery, [user.id, parseInt(baseId)]);
+    const hasAccess = accessResult.rows[0]?.has_access || false;
+    
+    console.log(`[API/BASES] Acesso à base ${baseId}: ${hasAccess ? 'PERMITIDO' : 'NEGADO'}`);
+    
+    if (!hasAccess) {
+      // Buscar informações da base para retornar detalhes
+      const baseQuery = `SELECT id, name, basename FROM bases WHERE id = $1`;
+      const baseResult = await pool.query(baseQuery, [baseId]);
+      const baseInfo = baseResult.rows[0];
+      
+      return res.status(403).json({
+        success: false,
+        message: 'Acesso negado à base',
+        data: {
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            base_id: user.base_id,
+            basename: user.basename
+          },
+          base: baseInfo,
+          reason: 'Usuário não tem permissão para acessar esta base'
+        }
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Acesso permitido',
+      data: {
+        hasAccess: true,
+        user: {
+          id: user.id,
+          name: user.name,
+          role: user.role
+        }
+      }
+    });
+    
+  } catch (error: any) {
+    console.error('[API/BASES] Erro na verificação de acesso:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: error.message
+    });
+  }
+});
+
 // Rota para buscar uma base específica por ID ou basename
 router.get('/api/bases/:identifier', async (req, res) => {
   try {
