@@ -28,13 +28,23 @@ const BaseRouter: React.FC = () => {
       setLoading(true);
       setError(null);
 
+      // Extrai ID da URL se estiver no formato /base/42/public
+      let targetId = baseCode;
+      if (window.location.pathname.includes('/base/')) {
+        const urlParts = window.location.pathname.split('/');
+        const baseIndex = urlParts.indexOf('base');
+        if (baseIndex !== -1 && urlParts[baseIndex + 1]) {
+          targetId = urlParts[baseIndex + 1];
+        }
+      }
+
       // Primeiro tenta buscar por basename
-      let response = await fetch(`/api/bases?basename=${baseCode}`);
+      let response = await fetch(`/api/bases?basename=${targetId}`);
       let data = await response.json();
 
       if (!data.success || !data.data || data.data.length === 0) {
         // Se não encontrar por basename, tenta buscar por ID
-        const baseId = parseInt(baseCode.replace(/\D/g, ''));
+        const baseId = parseInt(targetId.replace(/\D/g, ''));
         if (!isNaN(baseId)) {
           response = await fetch(`/api/bases/${baseId}`);
           data = await response.json();
@@ -54,10 +64,10 @@ const BaseRouter: React.FC = () => {
             operation: base.operation || 'GRUPO PEREIRA'
           });
         } else {
-          setError(`Base não encontrada: ${baseCode}`);
+          setError(`Base não encontrada: ${targetId}`);
         }
       } else {
-        setError(`Base não encontrada: ${baseCode}`);
+        setError(`Base não encontrada: ${targetId}`);
       }
     } catch (err) {
       console.error('Erro ao buscar informações da base:', err);

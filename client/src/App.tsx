@@ -720,12 +720,12 @@ function App() {
           <Route path="/bases/alair/external/cartao-combustivel" component={CartaoCombustivelAlairExterno} />
           <Route path="/posto/alair/externo" component={CartaoCombustivelAlairExterno} />
           
-          {/* Rotas públicas para bases - acesso externo */}
+          {/* Rotas públicas para bases - acesso externo - AGORA USANDO DASHBOARD PADRONIZADO */}
           <Route path="/base/:id/:slug/public">
-            {(params) => <BasePublic baseId={parseInt(params.id || '0')} slug={params.slug} />}
+            {(params) => <BaseRouter />}
           </Route>
           <Route path="/base/:id/public">
-            {(params) => <BasePublic baseId={parseInt(params.id || '0')} />}
+            {(params) => <BaseRouter />}
           </Route>
           
           {/* Rotas para a Base Goiânia */}
