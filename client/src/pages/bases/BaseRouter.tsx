@@ -12,50 +12,36 @@ interface BaseInfo {
 }
 
 const BaseRouter: React.FC = () => {
-  const [match, params] = useRoute('/bases/:baseCode');
+  const [matchBases, paramsBases] = useRoute('/bases/:baseCode');
+  const [matchBase, paramsBase] = useRoute('/base/:id/:slug?');
   const [baseInfo, setBaseInfo] = useState<BaseInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (match && params?.baseCode) {
-      fetchBaseInfo(params.baseCode);
+    if (matchBases && paramsBases?.baseCode) {
+      fetchBaseInfo(paramsBases.baseCode);
+    } else if (matchBase && paramsBase?.id) {
+      fetchBaseInfo(paramsBase.id);
     }
-  }, [match, params?.baseCode]);
+  }, [matchBases, paramsBases?.baseCode, matchBase, paramsBase?.id]);
 
   const fetchBaseInfo = async (baseCode: string) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Extrai ID da URL se estiver no formato /base/42/public
-      let targetId = baseCode;
-      if (window.location.pathname.includes('/base/')) {
-        const urlParts = window.location.pathname.split('/');
-        const baseIndex = urlParts.indexOf('base');
-        if (baseIndex !== -1 && urlParts[baseIndex + 1]) {
-          targetId = urlParts[baseIndex + 1];
-        }
-      }
+      console.log('[BaseRouter] Buscando base:', baseCode);
 
-      // Primeiro tenta buscar por basename
-      let response = await fetch(`/api/bases?basename=${targetId}`);
-      let data = await response.json();
-
-      if (!data.success || !data.data || data.data.length === 0) {
-        // Se não encontrar por basename, tenta buscar por ID
-        const baseId = parseInt(targetId.replace(/\D/g, ''));
-        if (!isNaN(baseId)) {
-          response = await fetch(`/api/bases/${baseId}`);
-          data = await response.json();
-        }
-      }
-
-      if (data.success && data.data) {
-        // Se data.data é um array, pega o primeiro item; senão é um objeto único
-        const base = Array.isArray(data.data) ? data.data[0] : data.data;
+      // Se baseCode é um número puro, busca diretamente por ID
+      const baseId = parseInt(baseCode);
+      if (!isNaN(baseId)) {
+        console.log('[BaseRouter] Buscando por ID:', baseId);
+        const response = await fetch(`/api/bases/${baseId}`);
+        const data = await response.json();
         
-        if (base) {
+        if (data.success && data.data) {
+          const base = data.data;
           setBaseInfo({
             id: base.id,
             name: base.name,
@@ -63,30 +49,55 @@ const BaseRouter: React.FC = () => {
             basename: base.basename,
             operation: base.operation || 'GRUPO PEREIRA'
           });
-        } else {
-          setError(`Base não encontrada: ${targetId}`);
+          console.log('[BaseRouter] Base encontrada por ID:', base.name);
+          return;
         }
+      }
+
+      // Se não é número ou não encontrou por ID, tenta buscar por basename
+      console.log('[BaseRouter] Buscando por basename:', baseCode);
+      const response = await fetch(`/api/bases?basename=${baseCode}`);
+      const data = await response.json();
+
+      if (data.success && data.data && data.data.length > 0) {
+        const base = data.data[0];
+        setBaseInfo({
+          id: base.id,
+          name: base.name,
+          location: base.location,
+          basename: base.basename,
+          operation: base.operation || 'GRUPO PEREIRA'
+        });
+        console.log('[BaseRouter] Base encontrada por basename:', base.name);
       } else {
-        setError(`Base não encontrada: ${targetId}`);
+        setError(`Base não encontrada: ${baseCode}`);
+        console.error('[BaseRouter] Base não encontrada:', baseCode);
       }
     } catch (err) {
-      console.error('Erro ao buscar informações da base:', err);
+      console.error('[BaseRouter] Erro ao buscar informações da base:', err);
       setError('Erro ao carregar informações da base');
     } finally {
       setLoading(false);
     }
   };
 
-  if (!match) {
+  // Debug: Mostrar status das rotas
+  const currentPath = window.location.pathname;
+  console.log('[BaseRouter] Rota atual:', currentPath);
+  console.log('[BaseRouter] Match /bases/*:', matchBases, paramsBases);
+  console.log('[BaseRouter] Match /base/*:', matchBase, paramsBase);
+
+  if (!matchBases && !matchBase) {
     return null;
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
           <p className="text-gray-600">Carregando informações da base...</p>
+          <p className="text-sm text-gray-500 mt-2">Rota: {currentPath}</p>
         </div>
       </div>
     );
@@ -94,15 +105,16 @@ const BaseRouter: React.FC = () => {
 
   if (error || !baseInfo) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Erro</h1>
-          <p className="text-gray-600 mb-4">{error || 'Base não encontrada'}</p>
+          <h1 className="text-2xl font-bold text-red-900 mb-2">Erro</h1>
+          <p className="text-red-600 mb-2">{error || 'Base não encontrada'}</p>
+          <p className="text-sm text-gray-500 mb-4">Rota: {currentPath}</p>
           <button 
-            onClick={() => window.history.back()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
-            Voltar
+            Tentar novamente
           </button>
         </div>
       </div>
