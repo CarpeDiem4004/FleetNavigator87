@@ -971,6 +971,44 @@ app.use((req, res, next) => {
       });
   });
 
+  // Rota específica para bases externas ANTES do registerRoutes
+  app.get('/api/external-bases', async (req, res) => {
+    try {
+      console.log('[API/EXTERNAL-BASES] Buscando bases para links externos...');
+      
+      const query = `
+        SELECT id, name, location, basename, type, active, operation, 
+               has_maintenance, has_tires, requests_enabled, 
+               created_at, project_id
+        FROM bases 
+        WHERE active = true 
+        ORDER BY name
+      `;
+      
+      const result = await pool.query(query);
+      const bases = result.rows;
+
+      // Filtrar bases para acesso externo (sem manutenção)
+      const externalBases = bases.filter((base: any) => 
+        !base.has_maintenance && 
+        base.active &&
+        base.name && 
+        base.name !== 'Base Manutenção'
+      );
+
+      console.log(`[API/EXTERNAL-BASES] ${externalBases.length} bases para links externos encontradas`);
+      res.json(externalBases);
+      
+    } catch (error: any) {
+      console.error('[API/EXTERNAL-BASES] Erro interno:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro interno do servidor', 
+        error: error.message 
+      });
+    }
+  });
+
   const server = await registerRoutes(app);
   
   // Agora podemos aplicar o middleware de diagnóstico 

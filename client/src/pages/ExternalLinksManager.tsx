@@ -16,9 +16,9 @@ const ExternalLinksManager: React.FC = () => {
 
   // Buscar todas as bases ativas (exceto manutenção)
   const { data: basesResponse, isLoading, error } = useQuery({
-    queryKey: ['/api/bases'],
+    queryKey: ['/api/external-bases'],
     queryFn: async () => {
-      const response = await fetch('/api/bases');
+      const response = await fetch('/api/external-bases');
       if (!response.ok) {
         throw new Error('Erro ao carregar bases');
       }

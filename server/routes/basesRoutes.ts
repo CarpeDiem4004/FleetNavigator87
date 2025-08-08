@@ -1,10 +1,10 @@
 import express from 'express';
 const router = express.Router();
 
-// Rota para buscar todas as bases ativas
+// Rota para buscar todas as bases
 router.get('/api/bases', async (req, res) => {
   try {
-    console.log('[API/BASES] Buscando todas as bases ativas...');
+    console.log('[API/BASES] Buscando todas as bases...');
     
     const { pool } = await import('../database.js');
     
@@ -13,7 +13,6 @@ router.get('/api/bases', async (req, res) => {
              has_maintenance, has_tires, requests_enabled, 
              created_at, project_id
       FROM bases 
-      WHERE active = true 
       ORDER BY name
     `;
     
@@ -21,23 +20,8 @@ router.get('/api/bases', async (req, res) => {
     const bases = result.rows;
 
     console.log(`[API/BASES] ${bases?.length || 0} bases encontradas`);
-    
-    // Filtrar bases para acesso externo (sem manutenção)
-    const externalBases = bases.filter((base: any) => {
-      const shouldInclude = base.active && base.name && !base.name.toLowerCase().includes('manutenção');
-      if (!shouldInclude && base.name?.toLowerCase().includes('manutenção')) {
-        console.log(`[API/BASES] Removendo base de manutenção: ${base.name}`);
-      }
-      return shouldInclude;
-    });
-    
-    console.log(`[API/BASES] Bases filtradas para acesso externo: ${externalBases.length}`);
 
-    res.json({
-      success: true,
-      data: externalBases,
-      count: externalBases.length
-    });
+    res.json(bases);
     
   } catch (error: any) {
     console.error('[API/BASES] Erro interno:', error);
@@ -95,6 +79,63 @@ router.get('/api/bases/:identifier', async (req, res) => {
       success: false, 
       message: 'Erro interno do servidor', 
       error: error.message 
+    });
+  }
+});
+
+// Rota para atualizar uma base específica
+router.put('/api/bases/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    
+    console.log(`[API/BASES] Atualizando base ID ${id}:`, updateData);
+    
+    const { pool } = await import('../database.js');
+    
+    // Construir query de atualização dinamicamente
+    const fields = Object.keys(updateData);
+    const values = Object.values(updateData);
+    
+    if (fields.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nenhum campo para atualizar fornecido'
+      });
+    }
+    
+    const setClause = fields.map((field, index) => `${field} = $${index + 2}`).join(', ');
+    const query = `
+      UPDATE bases 
+      SET ${setClause}, updated_at = NOW()
+      WHERE id = $1
+      RETURNING *
+    `;
+    
+    const result = await pool.query(query, [parseInt(id), ...values]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Base não encontrada'
+      });
+    }
+    
+    const updatedBase = result.rows[0];
+    console.log(`[API/BASES] Base atualizada com sucesso: ${updatedBase.name}`);
+    
+    res.json({
+      success: true,
+      message: 'Base atualizada com sucesso',
+      data: updatedBase
+    });
+    
+  } catch (error: any) {
+    console.error('[API/BASES] Erro ao atualizar base:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: error.message
     });
   }
 });
