@@ -43,6 +43,12 @@ const ExternalLinksManager: React.FC = () => {
     return `${baseUrl}/bases/${baseName}`;
   };
 
+  // Gerar URL direta para cartão combustível
+  const generateFuelCardUrl = (base: any): string => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/cartao-combustivel/${base.id}`;
+  };
+
   // Mutation para ativar/desativar base
   const toggleBaseMutation = useMutation({
     mutationFn: async ({ baseId, active }: { baseId: number; active: boolean }) => {
@@ -206,6 +212,7 @@ const ExternalLinksManager: React.FC = () => {
                     <TableHead>Localização</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Link PWA</TableHead>
+                    <TableHead>Cartão Combustível</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -252,8 +259,13 @@ const ExternalLinksManager: React.FC = () => {
                             {externalUrl}
                           </code>
                         </TableCell>
+                        <TableCell>
+                          <code className="text-xs bg-cyan-50 px-2 py-1 rounded max-w-xs overflow-hidden border border-cyan-200">
+                            {generateFuelCardUrl(base)}
+                          </code>
+                        </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-1">
                             <Button
                               variant="outline"
                               size="sm"
@@ -265,7 +277,20 @@ const ExternalLinksManager: React.FC = () => {
                               ) : (
                                 <Copy className="h-3 w-3" />
                               )}
-                              {copiedLink === externalUrl ? 'Copiado' : 'Copiar'}
+                              PWA
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => copyToClipboard(generateFuelCardUrl(base), `${base.name} - Cartão`)}
+                              className="flex items-center gap-1 bg-cyan-50 hover:bg-cyan-100 border-cyan-200"
+                            >
+                              {copiedLink === generateFuelCardUrl(base) ? (
+                                <CheckCircle className="h-3 w-3 text-green-600" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                              Cartão
                             </Button>
                             <Button
                               variant="outline"

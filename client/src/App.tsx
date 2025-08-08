@@ -384,6 +384,7 @@ import BaseRouter from "@/pages/bases/BaseRouter";
 import PartnerLogin from "@/pages/partner-login";
 import PartnerDashboard from "@/pages/partner-dashboard";
 import FuelCardRedirect from "@/components/FuelCardRedirect";
+import DirectFuelCardAccess from "@/components/DirectFuelCardAccess";
 import MaintenanceSystem from "@/pages/maintenance";
 import TestLogout from "@/pages/TestLogout";
 import TestCampinasLogin from "@/pages/TestCampinasLogin";
@@ -898,6 +899,7 @@ function App() {
           {/* Rotas para os postos de abastecimento - protegidas */}
           <ProtectedRoute path="/postos" component={IndexPostos} />
           <ProtectedRoute path="/postos/links-externos" component={LinksExternosPostos} />
+          <ProtectedRoute path="/external-links-manager" component={ExternalLinksManager} />
           <ProtectedRoute path="/posto/osasco" component={PostoOsasco} />
           <ProtectedRoute path="/posto/osasco_v2" component={PostoOsascoV2} />
           <ProtectedRoute path="/posto/guarulhos" component={PostoGuarulhos} />
@@ -1180,6 +1182,16 @@ function App() {
           {/* Redirecionamento da rota antiga para a definitiva */}
           <Route path="/fuel-card">
             <FuelCardRedirect />
+          </Route>
+          
+          {/* Acesso direto ao cartão combustível */}
+          <Route path="/cartao-combustivel">
+            <DirectFuelCardAccess />
+          </Route>
+          
+          {/* Acesso direto ao cartão combustível de uma base específica */}
+          <Route path="/cartao-combustivel/:baseId">
+            {(params) => <DirectFuelCardAccess baseId={params.baseId} />}
           </Route>
           
           {/* Rota pública para solicitação de cartão combustível - acessível sem login */}
