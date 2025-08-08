@@ -112,9 +112,23 @@ app.use((req, res, next) => {
           res.setHeader('Content-Type', 'application/json');
           res.setHeader('Access-Control-Allow-Origin', '*');
           
+          // Mapear nomes de campos do frontend (camelCase) para backend (snake_case)
+          const fieldMapping = {
+            'hasMaintenance': 'has_maintenance',
+            'hasTires': 'has_tires',
+            'requestsEnabled': 'requests_enabled',
+            'projectId': 'project_id'
+          };
+          
           // Construir query de atualização dinamicamente
-          const fields = Object.keys(updateData);
-          const values = Object.values(updateData);
+          const mappedData = {};
+          Object.keys(updateData).forEach(key => {
+            const mappedKey = fieldMapping[key] || key;
+            mappedData[mappedKey] = updateData[key];
+          });
+          
+          const fields = Object.keys(mappedData);
+          const values = Object.values(mappedData);
           
           if (fields.length === 0) {
             return res.status(400).end(JSON.stringify({
