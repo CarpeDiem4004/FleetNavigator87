@@ -71,6 +71,8 @@ import fuelCardRoutes from './routes/fuelCardRoutes';
 import operationalDashboardRoutes from './routes/operationalDashboard';
 // Importar rotas do Line Hall
 import lineHallRoutes from './routes/lineHallRoutes';
+// Importar rotas das bases
+import basesRoutes from './routes/basesRoutes';
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
@@ -1255,6 +1257,9 @@ app.use((req, res, next) => {
   // Registrar rotas do Line Hall
   console.log('[LINE-HALL] Registrando rotas do Line Hall');
   app.use('/api/line-hall', lineHallRoutes);
+  
+  // Registrar rotas das bases
+  app.use(basesRoutes);
   
   // Rota pública para visão geral dos postos (sem autenticação)
   app.get('/api/postos-publico', async (req, res) => {

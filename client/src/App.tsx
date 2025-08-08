@@ -151,6 +151,7 @@ import Equipment from "@/pages/Equipment";
 import CoordinatorManagement from "@/pages/CoordinatorManagement";
 import TestMaintenancePlates from "@/pages/TestMaintenancePlates";
 import TestLoginBase from "@/pages/TestLoginBase";
+import ExternalLinksManager from "@/pages/ExternalLinksManager";
 
 // Importação das páginas de Abastecimento Terceiros
 import AbastecimentoTerceirosLogin from "@/pages/AbastecimentoTerceirosLogin";
@@ -695,6 +696,7 @@ function App() {
           <ProtectedRoute path="/users" component={UsersNew} />
           <ProtectedRoute path="/bases" component={Bases} />
           <ProtectedRoute path="/bases/links-externos" component={LinksExternosBases} />
+          <ProtectedRoute path="/external-links" component={ExternalLinksManager} />
           <ProtectedRoute path="/bases/campinas" component={BaseCampinas} />
           <ProtectedRoute path="/bases/campinas/despesas" component={DespesasCampinas} />
           <ProtectedRoute path="/bases/campinas/multas" component={MultasCampinas} />
