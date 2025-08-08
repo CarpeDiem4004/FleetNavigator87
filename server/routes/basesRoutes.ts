@@ -1,27 +1,38 @@
 import express from 'express';
 const router = express.Router();
 
-// Rota para buscar todas as bases
+// Rota para buscar todas as bases ou por basename
 router.get('/api/bases', async (req, res) => {
   try {
-    console.log('[API/BASES] Buscando todas as bases...');
+    const { basename } = req.query;
+    console.log('[API/BASES] Buscando bases...', { basename });
     
     const { pool } = await import('../database.js');
     
-    const query = `
+    let query = `
       SELECT id, name, location, basename, type, active, operation, 
              has_maintenance, has_tires, requests_enabled, 
              created_at, project_id
       FROM bases 
-      ORDER BY name
     `;
+    let params: any[] = [];
     
-    const result = await pool.query(query);
+    if (basename && typeof basename === 'string') {
+      query += ` WHERE basename = $1`;
+      params = [basename];
+    }
+    
+    query += ` ORDER BY name`;
+    
+    const result = await pool.query(query, params);
     const bases = result.rows;
 
     console.log(`[API/BASES] ${bases?.length || 0} bases encontradas`);
 
-    res.json(bases);
+    res.json({ 
+      success: true, 
+      data: bases 
+    });
     
   } catch (error: any) {
     console.error('[API/BASES] Erro interno:', error);
@@ -66,12 +77,16 @@ router.get('/api/bases/:identifier', async (req, res) => {
       console.log(`[API/BASES] Base não encontrada: ${identifier}`);
       return res.status(404).json({ 
         success: false, 
-        message: 'Base não encontrada' 
+        message: 'Base não encontrada',
+        data: null
       });
     }
 
     console.log(`[API/BASES] Base encontrada: ${base.name}`);
-    res.json(base);
+    res.json({ 
+      success: true, 
+      data: base 
+    });
     
   } catch (error: any) {
     console.error('[API/BASES] Erro interno:', error);

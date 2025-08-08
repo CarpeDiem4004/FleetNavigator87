@@ -379,6 +379,7 @@ import PostoAcessoDireto from "@/pages/PostoAcessoDireto";
 import LinksExternosPostos from "@/pages/postos/LinksExternosPostos";
 import LinksExternosBases from "@/pages/bases/LinksExternosBases";
 import BasePublic from "@/pages/bases/BasePublic";
+import BaseRouter from "@/pages/bases/BaseRouter";
 import PartnerLogin from "@/pages/partner-login";
 import PartnerDashboard from "@/pages/partner-dashboard";
 import FuelCardRedirect from "@/components/FuelCardRedirect";
@@ -720,8 +721,12 @@ function App() {
           <Route path="/posto/alair/externo" component={CartaoCombustivelAlairExterno} />
           
           {/* Rotas públicas para bases - acesso externo */}
-          <Route path="/base/:id/:slug/public" component={BasePublic} />
-          <Route path="/base/:id/public" component={BasePublic} />
+          <Route path="/base/:id/:slug/public">
+            {(params) => <BasePublic baseId={parseInt(params.id || '0')} slug={params.slug} />}
+          </Route>
+          <Route path="/base/:id/public">
+            {(params) => <BasePublic baseId={parseInt(params.id || '0')} />}
+          </Route>
           
           {/* Rotas para a Base Goiânia */}
           <ProtectedRoute path="/bases/goiania" component={BaseGoiania} />
@@ -870,8 +875,10 @@ function App() {
           <ProtectedRoute path="/bases/gp02/cartao-combustivel" component={CartaoCombustivelGP02} />
           <ProtectedRoute path="/bases/gp03/cartao-combustivel" component={CartaoCombustivelGP03} />
           
-          {/* Rotas genéricas para todas as bases por ID - DEVE VIR DEPOIS DAS ESPECÍFICAS */}
-          <ProtectedRoute path="/bases/:id" component={() => <BaseRouteHandler mode="home" />} />
+          {/* NOVA ROTA GENÉRICA: Dashboard padronizado para TODAS as bases - DEVE VIR DEPOIS DAS ESPECÍFICAS */}
+          <ProtectedRoute path="/bases/:baseCode" component={BaseRouter} />
+          
+          {/* Rotas genéricas antigas para compatibilidade por ID - DEVE VIR DEPOIS DAS ESPECÍFICAS */}
           <ProtectedRoute path="/bases/:id/cartao-combustivel" component={() => <BaseRouteHandler mode="fuel-card" />} />
           <Route path="/bases/:id/login" component={() => <BaseRouteHandler mode="login" />} />
           
