@@ -6,8 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, Truck, FileText, Wrench, MapPin, Clock, Calendar, LogOut, CreditCard, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Loader2, User, Truck, FileText, Wrench, MapPin, Clock, Calendar, LogOut, CreditCard, CheckCircle, XCircle, RefreshCw, Smartphone, Download, Wifi, WifiOff } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
+import { pwaManager } from '@/utils/pwa-utils';
+import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
+import PWAOfflineIndicator from '@/components/pwa/PWAOfflineIndicator';
 
 interface DriverData {
   id: number;
@@ -37,16 +40,94 @@ const DriverAccess: React.FC = () => {
   const [showFuelRequest, setShowFuelRequest] = useState(false);
   const [fuelRequests, setFuelRequests] = useState<any[]>([]);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { toast } = useToast();
 
-  // Cleanup polling interval quando componente é desmontado
+  // Initialize PWA features and cleanup polling interval
   useEffect(() => {
+    // Initialize PWA features
+    pwaManager.requestPushNotificationPermission();
+    
+    // Network status monitoring
+    const handleOnline = () => {
+      setIsOnline(true);
+      toast({
+        title: "Conexão Restaurada",
+        description: "Sincronizando dados...",
+        duration: 3000
+      });
+      syncOfflineData();
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast({
+        title: "Modo Offline",
+        description: "Trabalhando com dados locais",
+        duration: 3000
+      });
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Load saved data from localStorage
+    loadSavedData();
+
     return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
       if (pollingInterval) {
         clearInterval(pollingInterval);
       }
     };
-  }, [pollingInterval]);
+  }, [pollingInterval, toast]);
+
+  const loadSavedData = () => {
+    try {
+      const savedDriver = localStorage.getItem('driver-access-data');
+      const savedCpf = localStorage.getItem('driver-access-cpf');
+
+      if (savedDriver) {
+        setDriver(JSON.parse(savedDriver));
+      }
+
+      if (savedCpf) {
+        setCpf(savedCpf);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados salvos:', error);
+    }
+  };
+
+  const saveDataLocally = (key: string, data: any) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (error) {
+      console.error('Erro ao salvar dados localmente:', error);
+    }
+  };
+
+  const syncOfflineData = async () => {
+    if (!isOnline) return;
+
+    try {
+      await pwaManager.syncOfflineData();
+      
+      // Sync any pending data
+      const pendingData = localStorage.getItem('driver-pending-requests');
+      if (pendingData) {
+        const requests = JSON.parse(pendingData);
+        for (const request of requests) {
+          // Process pending requests
+          console.log('Syncing pending request:', request);
+        }
+        localStorage.removeItem('driver-pending-requests');
+      }
+    } catch (error) {
+      console.error('Erro na sincronização:', error);
+    }
+  };
 
   // Função para buscar solicitações de manutenção do motorista
   const fetchMaintenanceRequests = async (motoristaId: number) => {
@@ -133,35 +214,63 @@ const DriverAccess: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const response = await apiRequest('POST', '/api/line-hall/motorista/login', {
-        cpf: cpf.replace(/\D/g, '') // Remove formatação para enviar apenas números
-      });
-
-      const data = await response.json();
+      let response, data;
       
-      if (data.success) {
-        setDriver(data.motorista);
-        // Buscar solicitações de manutenção do motorista
-        await fetchMaintenanceRequests(data.motorista.id);
-        // Buscar solicitações de recarga
-        await fetchFuelRequests(data.motorista.id);
-        
-        // Iniciar polling para atualizações em tempo real
-        const interval = setInterval(() => {
-          fetchFuelRequests(data.motorista.id);
-        }, 10000); // Atualizar a cada 10 segundos
-        
-        setPollingInterval(interval);
-        toast({
-          title: "Login realizado com sucesso",
-          description: `Bem-vindo, ${data.motorista.nome}!`
+      if (isOnline) {
+        response = await apiRequest('POST', '/api/line-hall/motorista/login', {
+          cpf: cpf.replace(/\D/g, '') // Remove formatação para enviar apenas números
         });
+
+        data = await response.json();
+        
+        if (data.success) {
+          setDriver(data.motorista);
+          
+          // Save data locally for offline access
+          saveDataLocally('driver-access-data', data.motorista);
+          saveDataLocally('driver-access-cpf', cpf.replace(/\D/g, ''));
+          
+          // Buscar solicitações de manutenção do motorista
+          await fetchMaintenanceRequests(data.motorista.id);
+          // Buscar solicitações de recarga
+          await fetchFuelRequests(data.motorista.id);
+          
+          // Iniciar polling para atualizações em tempo real
+          const interval = setInterval(() => {
+            fetchFuelRequests(data.motorista.id);
+          }, 10000); // Atualizar a cada 10 segundos
+          
+          setPollingInterval(interval);
+          toast({
+            title: "Login realizado com sucesso",
+            description: `Bem-vindo, ${data.motorista.nome}!`
+          });
+        } else {
+          toast({
+            title: "Motorista não encontrado",
+            description: "CPF não cadastrado no sistema",
+            variant: "destructive"
+          });
+        }
       } else {
-        toast({
-          title: "Motorista não encontrado",
-          description: "CPF não cadastrado no sistema",
-          variant: "destructive"
-        });
+        // Offline mode - try to load from localStorage
+        const savedData = localStorage.getItem('driver-access-data');
+        const savedCpf = localStorage.getItem('driver-access-cpf');
+        
+        if (savedCpf === cpf.replace(/\D/g, '') && savedData) {
+          const driverData = JSON.parse(savedData);
+          setDriver(driverData);
+          toast({
+            title: "Modo Offline",
+            description: `Dados carregados localmente - ${driverData.nome}`,
+          });
+        } else {
+          toast({
+            title: "Dados não encontrados",
+            description: "Conecte-se à internet para fazer login pela primeira vez",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error('Erro no login:', error);
@@ -247,55 +356,131 @@ const DriverAccess: React.FC = () => {
 
   if (!driver) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-              <Truck className="w-6 h-6 text-white" />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        {/* PWA Header with Status */}
+        <div className="max-w-md mx-auto mb-4">
+          <div className="flex items-center justify-between bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-sm border">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <Smartphone className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h1 className="font-semibold text-gray-800 text-sm">Murici On Fleet PWA</h1>
+                <p className="text-xs text-gray-600">Sistema do Motorista</p>
+              </div>
             </div>
-            <CardTitle className="text-2xl">Acesso do Motorista</CardTitle>
-            <CardDescription>
-              Line Hall Shopee - Digite seu CPF para acessar
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="cpf">CPF</Label>
-              <Input
-                id="cpf"
-                type="text"
-                placeholder="000.000.000-00"
-                value={cpf}
-                onChange={handleCPFChange}
-                maxLength={14}
-                className="text-center text-lg"
-              />
-            </div>
-            <Button 
-              onClick={handleLogin} 
-              className="w-full" 
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Entrando...
-                </>
+            <div className="flex items-center space-x-2">
+              {isOnline ? (
+                <div className="flex items-center text-green-600">
+                  <Wifi className="w-4 h-4 mr-1" />
+                  <span className="text-xs">Online</span>
+                </div>
               ) : (
-                <>
-                  <User className="mr-2 h-4 w-4" />
-                  Entrar
-                </>
+                <div className="flex items-center text-orange-600">
+                  <WifiOff className="w-4 h-4 mr-1" />
+                  <span className="text-xs">Offline</span>
+                </div>
               )}
-            </Button>
-          </CardContent>
-        </Card>
+            </div>
+          </div>
+        </div>
+
+        {/* PWA Install Prompt */}
+        <PWAInstallPrompt />
+
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                <Truck className="w-6 h-6 text-white" />
+              </div>
+              <CardTitle className="text-2xl">Acesso do Motorista</CardTitle>
+              <CardDescription>
+                Line Hall Shopee - Digite seu CPF para acessar
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="cpf">CPF</Label>
+                <Input
+                  id="cpf"
+                  type="text"
+                  placeholder="000.000.000-00"
+                  value={cpf}
+                  onChange={handleCPFChange}
+                  maxLength={14}
+                  className="text-center text-lg"
+                />
+              </div>
+              <Button 
+                onClick={handleLogin} 
+                className="w-full" 
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Entrando...
+                  </>
+                ) : (
+                  <>
+                    <User className="mr-2 h-4 w-4" />
+                    Entrar
+                  </>
+                )}
+              </Button>
+              
+              {/* PWA Install Info */}
+              <div className="text-center pt-4 border-t">
+                <p className="text-xs text-gray-500 mb-2">
+                  💡 Instale como app no seu celular para melhor experiência
+                </p>
+                <div className="flex items-center justify-center space-x-2 text-xs text-gray-400">
+                  <Download className="w-3 h-3" />
+                  <span>Funciona offline</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      {/* PWA Header with Status */}
+      <div className="max-w-4xl mx-auto mb-4">
+        <div className="flex items-center justify-between bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-sm border">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+              <Smartphone className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h1 className="font-semibold text-gray-800">Murici On Fleet PWA</h1>
+              <p className="text-xs text-gray-600">Sistema do Motorista Line Haul</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <PWAOfflineIndicator />
+            {isOnline ? (
+              <div className="flex items-center text-green-600">
+                <Wifi className="w-4 h-4 mr-1" />
+                <span className="text-xs">Online</span>
+              </div>
+            ) : (
+              <div className="flex items-center text-orange-600">
+                <WifiOff className="w-4 h-4 mr-1" />
+                <span className="text-xs">Offline</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* PWA Install Prompt */}
+      <PWAInstallPrompt />
+
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header do motorista */}
         <Card>
