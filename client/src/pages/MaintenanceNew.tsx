@@ -22,7 +22,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, FileEdit, Trash2, Filter, X, Download, Upload, Eye, FileSpreadsheet } from 'lucide-react';
+import { Search, Plus, FileEdit, Trash2, Filter, X, Download, Upload, Eye, FileSpreadsheet, Clock, Package, CheckCircle, DollarSign } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { 
   Select,
@@ -244,32 +244,74 @@ const MaintenanceNew: React.FC = () => {
           </div>
         </div>
 
-        {/* Estatísticas rápidas - Layout horizontal melhorado */}
+        {/* Cards de estatísticas melhorados */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <Card>
+          <Card className="border-l-4 border-l-blue-500">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm text-gray-500 mb-1">Total de Manutenções</div>
-                  <div className="text-2xl font-bold text-blue-600">{maintenanceData.length}</div>
+                  <div className="text-2xl font-bold">{maintenanceData.length}</div>
                 </div>
-                <FileEdit className="h-8 w-8 text-blue-600 opacity-60" />
+                <FileEdit className="h-6 w-6 text-gray-400" />
               </div>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="border-l-4 border-l-amber-500">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm text-gray-500 mb-1">Em Andamento</div>
-                  <div className="text-2xl font-bold text-yellow-600">
+                  <div className="text-2xl font-bold">
                     {maintenanceData.filter((item: any) => item.status === 'em_andamento').length}
                   </div>
                 </div>
-                <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <div className="h-4 w-4 bg-yellow-600 rounded-full animate-pulse"></div>
+                <Clock className="h-6 w-6 text-amber-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-blue-500">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">Aguardando Peça</div>
+                  <div className="text-2xl font-bold">
+                    {maintenanceData.filter((item: any) => item.status === 'aguardando_peca').length}
+                  </div>
                 </div>
+                <Package className="h-6 w-6 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-green-500">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">Finalizadas</div>
+                  <div className="text-2xl font-bold">
+                    {maintenanceData.filter((item: any) => item.status === 'concluida').length}
+                  </div>
+                </div>
+                <CheckCircle className="h-6 w-6 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-red-500">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">Valor Total</div>
+                  <div className="text-lg font-bold text-red-600">
+                    R$ {maintenanceData.reduce((total: number, m: any) => 
+                      total + parseFloat(m.cost || m.custo || '0'), 0
+                    ).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
+                <span className="text-lg font-bold text-red-600">R$</span>
               </div>
             </CardContent>
           </Card>
@@ -325,45 +367,41 @@ const MaintenanceNew: React.FC = () => {
           </Card>
         </div>
 
-        {/* Filtros rápidos por status */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex flex-wrap gap-2">
-              <Button 
-                size="sm" 
-                variant={statusFilter === '' ? 'default' : 'outline'}
-                onClick={() => setStatusFilter('')}
-                className="text-xs"
-              >
-                Todas ({maintenanceData.length})
-              </Button>
-              <Button 
-                size="sm" 
-                variant={statusFilter === 'em_andamento' ? 'default' : 'outline'}
-                onClick={() => setStatusFilter('em_andamento')}
-                className="text-xs"
-              >
-                Em Andamento ({maintenanceData.filter((item: any) => item.status === 'em_andamento').length})
-              </Button>
-              <Button 
-                size="sm" 
-                variant={statusFilter === 'aguardando_pecas' ? 'default' : 'outline'}
-                onClick={() => setStatusFilter('aguardando_pecas')}
-                className="text-xs"
-              >
-                Ag. Peça ({maintenanceData.filter((item: any) => item.status === 'aguardando_pecas').length})
-              </Button>
-              <Button 
-                size="sm" 
-                variant={statusFilter === 'concluida' ? 'default' : 'outline'}
-                onClick={() => setStatusFilter('concluida')}
-                className="text-xs"
-              >
-                Finalizadas ({maintenanceData.filter((item: any) => item.status === 'concluida').length})
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Botões de filtros rápidos */}
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            size="sm" 
+            variant={statusFilter === '' ? 'default' : 'outline'}
+            onClick={() => setStatusFilter('')}
+            className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+          >
+            Todas ({maintenanceData.length})
+          </Button>
+          <Button 
+            size="sm" 
+            variant={statusFilter === 'em_andamento' ? 'default' : 'outline'}
+            onClick={() => setStatusFilter('em_andamento')}
+            className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+          >
+            Em Andamento ({maintenanceData.filter((item: any) => item.status === 'em_andamento').length})
+          </Button>
+          <Button 
+            size="sm" 
+            variant={statusFilter === 'aguardando_peca' ? 'default' : 'outline'}
+            onClick={() => setStatusFilter('aguardando_peca')}
+            className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+          >
+            Ag. Peça ({maintenanceData.filter((item: any) => item.status === 'aguardando_peca').length})
+          </Button>
+          <Button 
+            size="sm" 
+            variant={statusFilter === 'concluida' ? 'default' : 'outline'}
+            onClick={() => setStatusFilter('concluida')}
+            className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+          >
+            Finalizadas ({maintenanceData.filter((item: any) => item.status === 'concluida').length})
+          </Button>
+        </div>
 
         {/* Sistema de busca */}
         <Card>
