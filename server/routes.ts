@@ -16,29 +16,11 @@ import bcrypt from "bcrypt";
 
 // Função utilitária para obter data/hora no fuso horário de Brasília (UTC-3)
 function getCurrentDateBrasilia() {
+  // Obter data atual em Brasília usando o timezone correto
   const now = new Date();
+  const brasiliaTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
   
-  // Ajustar para o fuso horário de Brasília (UTC-3)
-  const brasiliaOffset = -3 * 60; // -3 horas em minutos
-  const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
-  const brasiliaTime = new Date(utcTime + (brasiliaOffset * 60000));
-  
-  // Usar data atual do sistema (27 de maio de 2025)
-  const currentYear = 2025;
-  const currentMonth = 4; // Maio (0-indexado)
-  const currentDay = 27;
-  
-  // Criar data correta de Brasília
-  const correctedBrasiliaDate = new Date(
-    currentYear, 
-    currentMonth, 
-    currentDay, 
-    brasiliaTime.getHours(), 
-    brasiliaTime.getMinutes(), 
-    brasiliaTime.getSeconds()
-  );
-  
-  return correctedBrasiliaDate;
+  return brasiliaTime;
 }
 
 function formatDateForDB(date?: Date) {
@@ -1988,9 +1970,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Buscando movimentações de pátio para posto: ${formattedPosto}`);
       
-      // Consulta SQL para buscar registros
+      // Consulta SQL para buscar registros com timezone correto para Brasília
       const query = `
-        SELECT * FROM movimentacoes_patio 
+        SELECT 
+          id,
+          placa,
+          tipo_movimento as tipo,
+          nome_motorista as motorista,
+          nome_operador as operador,
+          to_char(created_at + INTERVAL '3 hours', 'DD/MM/YYYY HH24:MI') as data_hora,
+          data_entrada,
+          data_saida,
+          motivo,
+          observacoes,
+          posto,
+          created_at,
+          updated_at
+        FROM movimentacoes_patio 
         WHERE posto = $1
         ORDER BY created_at DESC
         LIMIT 100
