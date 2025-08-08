@@ -30,11 +30,11 @@ const ExternalLinksManager: React.FC = () => {
 
   const bases = basesResponse?.data || [];
 
-  // Filtrar bases para acesso externo (excluir apenas bases de manutenção)
-  const externalBases = bases.filter((base: any) => 
-    !base.has_maintenance && 
-    base.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Mostrar TODAS as bases, incluindo inativas e de manutenção
+  const externalBases = bases.filter((base: any) => {
+    const matchesSearch = searchTerm === '' || base.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
 
   // Gerar URL externa para cada base
   const generateExternalUrl = (base: any): string => {
@@ -170,9 +170,9 @@ const ExternalLinksManager: React.FC = () => {
         {/* Tabela de bases e links */}
         <Card>
           <CardHeader>
-            <CardTitle>Bases com Acesso Externo PWA</CardTitle>
+            <CardTitle>Todas as Bases do Sistema</CardTitle>
             <CardDescription>
-              Lista completa de bases com links PWA individuais para acesso externo
+              Lista completa de todas as bases (ativas, inativas e manutenção) com links PWA individuais e controles de status
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -231,15 +231,20 @@ const ExternalLinksManager: React.FC = () => {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Switch
-                              checked={base.active}
+                              checked={base.active === true}
                               onCheckedChange={(checked) => 
                                 toggleBaseMutation.mutate({ baseId: base.id, active: checked })
                               }
                               disabled={toggleBaseMutation.isPending}
                             />
-                            <Badge variant={base.active ? "default" : "secondary"}>
-                              {base.active ? 'Ativo' : 'Inativo'}
+                            <Badge variant={base.active === true ? "default" : "secondary"}>
+                              {base.active === true ? 'Ativo' : 'Inativo'}
                             </Badge>
+                            {base.has_maintenance === true && (
+                              <Badge variant="outline" className="text-orange-600 border-orange-600">
+                                Manutenção
+                              </Badge>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
