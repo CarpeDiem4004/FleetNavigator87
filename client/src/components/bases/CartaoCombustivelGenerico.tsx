@@ -256,10 +256,20 @@ export default function CartaoCombustivelGenerico({ baseId }: CartaoCombustivelG
   // Filtrar bases baseado no projeto selecionado
   useEffect(() => {
     if (formData.projeto && Array.isArray(projects)) {
-      const project = projects.find(p => p.id && p.id.toString() === formData.projeto);
-      if (project) {
-        setSelectedProject(project);
-        setFilteredBases(project.bases || []);
+      const projectBases = projects.filter(p => p.project_id && p.project_id.toString() === formData.projeto);
+      if (projectBases.length > 0) {
+        const firstProject = projectBases[0];
+        const projectData = {
+          id: firstProject.project_id,
+          name: firstProject.project_name,
+          bases: projectBases.map(p => ({
+            id: p.base_id,
+            base_name: p.base_name,
+            base_code: p.base_code
+          }))
+        };
+        setSelectedProject(projectData);
+        setFilteredBases(projectData.bases);
         if (!formData.base) {
           setFormData(prev => ({ ...prev, base: '' }));
         }
@@ -753,9 +763,20 @@ export default function CartaoCombustivelGenerico({ baseId }: CartaoCombustivelG
                                 <SelectValue placeholder={loadingProjects ? "Carregando..." : "Selecione o projeto"} />
                               </SelectTrigger>
                               <SelectContent>
-                                {Array.isArray(projects) && projects.map((project) => (
-                                  <SelectItem key={project.id} value={project.id.toString()}>
-                                    {project.name}
+                                {Array.isArray(projects) && projects.length > 0 && projects
+                                .reduce((unique, project) => {
+                                  const exists = unique.find(p => p.project_id === project.project_id);
+                                  if (!exists) {
+                                    unique.push({
+                                      project_id: project.project_id,
+                                      project_name: project.project_name
+                                    });
+                                  }
+                                  return unique;
+                                }, [])
+                                .map((project) => (
+                                  <SelectItem key={project.project_id} value={project.project_id.toString()}>
+                                    {project.project_name}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
