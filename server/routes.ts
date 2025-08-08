@@ -19591,34 +19591,52 @@ async function createFuelRequestNotification(fuelRequest) {
         litros_recebidos, 
         valor_total, 
         nome_fornecedor, 
-        nome_operador, 
+        nome_operador,
+        numero_nota_fiscal,
         observacoes 
       } = req.body;
 
-      if (!tipo_produto || !litros_recebidos || !valor_total || !nome_fornecedor || !nome_operador) {
+      console.log('[POSTO CAMPINAS V2] Dados recebidos:', {
+        tipo_produto, 
+        litros_recebidos, 
+        valor_total, 
+        nome_fornecedor, 
+        nome_operador,
+        numero_nota_fiscal,
+        observacoes
+      });
+
+      if (!tipo_produto || !litros_recebidos || !valor_total || !nome_fornecedor || !nome_operador || !numero_nota_fiscal) {
         return res.status(400).json({
           success: false,
           message: 'Todos os campos obrigatórios devem ser preenchidos'
         });
       }
 
+      // Calcular valor por litro
+      const litros = parseFloat(litros_recebidos);
+      const total = parseFloat(valor_total);
+      const valor_litro = litros > 0 ? total / litros : 0;
+
       const query = `
         INSERT INTO recebimentos_posto_campinas_v2
-        (tipo_produto, litros_recebidos, valor_total, nome_fornecedor, nome_operador, observacoes, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+        (tipo_produto, litros_recebidos, valor_litro, valor_total, nome_fornecedor, nome_operador, numero_nota_fiscal, observacoes, data_recebimento, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW(), NOW())
         RETURNING *
       `;
 
       const result = await pool.query(query, [
         tipo_produto,
-        parseFloat(litros_recebidos),
-        parseFloat(valor_total),
+        litros,
+        valor_litro,
+        total,
         nome_fornecedor,
         nome_operador,
+        numero_nota_fiscal,
         observacoes || ''
       ]);
 
-      console.log(`[POSTO CAMPINAS V2] Novo recebimento registrado: ${litros_recebidos}L de ${tipo_produto} - R$ ${valor_total}`);
+      console.log(`[POSTO CAMPINAS V2] Novo recebimento registrado: ${litros_recebidos}L de ${tipo_produto} - R$ ${valor_total} - NF: ${numero_nota_fiscal}`);
 
       return res.status(201).json({
         success: true,

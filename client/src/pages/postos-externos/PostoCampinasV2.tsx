@@ -15,6 +15,7 @@ interface RecebimentoData {
   valor_total: number;
   nome_fornecedor: string;
   nome_operador: string;
+  numero_nota_fiscal: string;
   observacoes: string;
 }
 
@@ -25,6 +26,7 @@ export default function PostoCampinasV2() {
     valor_total: 0,
     nome_fornecedor: '',
     nome_operador: '',
+    numero_nota_fiscal: '',
     observacoes: ''
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -61,6 +63,7 @@ export default function PostoCampinasV2() {
         valor_total: 0,
         nome_fornecedor: '',
         nome_operador: '',
+        numero_nota_fiscal: '',
         observacoes: ''
       });
     } catch (error) {
@@ -191,20 +194,39 @@ export default function PostoCampinasV2() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="nome_operador" className="text-sm font-medium">
-                  Nome do Operador
-                </Label>
-                <Input
-                  id="nome_operador"
-                  type="text"
-                  placeholder="Nome do operador responsável"
-                  value={formData.nome_operador}
-                  onChange={(e) => handleInputChange('nome_operador', e.target.value)}
-                  required
-                  className="bg-sky-100 border-sky-200 text-sky-900 text-lg"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="numero_nota_fiscal" className="text-sm font-medium">
+                    Número da Nota Fiscal
+                  </Label>
+                  <Input
+                    id="numero_nota_fiscal"
+                    type="text"
+                    placeholder="Ex: NF123456"
+                    value={formData.numero_nota_fiscal}
+                    onChange={(e) => handleInputChange('numero_nota_fiscal', e.target.value)}
+                    required
+                    className="bg-sky-100 border-sky-200 text-sky-900 text-lg"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="nome_operador" className="text-sm font-medium">
+                    Nome do Operador
+                  </Label>
+                  <Input
+                    id="nome_operador"
+                    type="text"
+                    placeholder="Nome do operador responsável"
+                    value={formData.nome_operador}
+                    onChange={(e) => handleInputChange('nome_operador', e.target.value)}
+                    required
+                    className="bg-sky-100 border-sky-200 text-sky-900 text-lg"
+                  />
+                </div>
               </div>
+
+
 
               <div className="space-y-2">
                 <Label htmlFor="observacoes" className="text-sm font-medium">
