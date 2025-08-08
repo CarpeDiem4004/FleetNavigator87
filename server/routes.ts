@@ -1092,6 +1092,104 @@ import sqlSeguroRouter from './routes/sql-seguro';
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
+  // API específica para formulário externo de recebimento de combustível - Campinas V2 (deve vir antes dos middlewares de autenticação)
+  app.post('/api/recebimentos-externos/campinas-v2', (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-cache');
+    
+    Promise.resolve().then(async () => {
+      console.log('[RecebimentoCampinasV2] Dados recebidos:', req.body);
+      
+      const { 
+        tipo_produto, 
+        litros_recebidos, 
+        valor_total, 
+        numero_nota_fiscal, 
+        nome_fornecedor, 
+        nome_operador, 
+        observacoes 
+      } = req.body;
+
+      // Validação dos campos obrigatórios
+      if (!tipo_produto || !litros_recebidos || !valor_total || !numero_nota_fiscal || !nome_fornecedor || !nome_operador) {
+        return res.status(400).json({
+          success: false,
+          message: 'Todos os campos obrigatórios devem ser preenchidos',
+          required_fields: ['tipo_produto', 'litros_recebidos', 'valor_total', 'numero_nota_fiscal', 'nome_fornecedor', 'nome_operador']
+        });
+      }
+
+      // Validar produtos permitidos (apenas diesel e arla)
+      const produtosPermitidos = ['diesel', 'arla32'];
+      if (!produtosPermitidos.includes(tipo_produto.toLowerCase())) {
+        return res.status(400).json({
+          success: false,
+          message: 'Tipo de produto inválido. Permitidos apenas: diesel, arla32'
+        });
+      }
+
+      // Calcular valor por litro
+      const litros = parseFloat(litros_recebidos);
+      const valorTotal = parseFloat(valor_total);
+      const valorLitro = valorTotal / litros;
+
+      // Verificar se a tabela existe, caso não exista, criar
+      const createTableQuery = `
+        CREATE TABLE IF NOT EXISTS recebimentos_posto_campinas_v2 (
+          id SERIAL PRIMARY KEY,
+          tipo_produto VARCHAR(50) NOT NULL,
+          litros_recebidos DECIMAL(10,2) NOT NULL,
+          valor_litro DECIMAL(10,2) NOT NULL,
+          valor_total DECIMAL(10,2) NOT NULL,
+          numero_nota_fiscal VARCHAR(100) NOT NULL,
+          nome_fornecedor VARCHAR(255) NOT NULL,
+          nome_operador VARCHAR(255) NOT NULL,
+          observacoes TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `;
+      
+      await pool.query(createTableQuery);
+
+      // Inserir o novo recebimento
+      const insertQuery = `
+        INSERT INTO recebimentos_posto_campinas_v2 
+        (tipo_produto, litros_recebidos, valor_litro, valor_total, numero_nota_fiscal, nome_fornecedor, nome_operador, observacoes, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        RETURNING *
+      `;
+
+      const result = await pool.query(insertQuery, [
+        tipo_produto,
+        litros,
+        valorLitro,
+        valorTotal,
+        numero_nota_fiscal,
+        nome_fornecedor,
+        nome_operador,
+        observacoes || ''
+      ]);
+
+      const novoRecebimento = result.rows[0];
+
+      console.log('[RecebimentoCampinasV2] Registro criado com sucesso:', novoRecebimento.id);
+
+      res.status(201).json({
+        success: true,
+        data: novoRecebimento,
+        message: 'Recebimento de combustível registrado com sucesso!'
+      });
+
+    }).catch(error => {
+      console.error('[RecebimentoCampinasV2] Erro ao registrar recebimento:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor ao registrar recebimento',
+        error: error.message
+      });
+    });
+  });
 
   // ENDPOINT PARA REGISTRAR RECEBIMENTOS DE COMBUSTÍVEL (PÚBLICO - SEM AUTENTICAÇÃO)
   app.post('/recebimentos-combustivel', async (req, res) => {
@@ -20633,6 +20731,8 @@ async function createFuelRequestNotification(fuelRequest) {
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
+
+
 
 
 

@@ -13,9 +13,9 @@ interface RecebimentoData {
   tipo_produto: string;
   litros_recebidos: string;
   valor_total: string;
+  numero_nota_fiscal: string;
   nome_fornecedor: string;
   nome_operador: string;
-  numero_nota_fiscal: string;
   observacoes: string;
 }
 
@@ -24,9 +24,9 @@ export default function PostoCampinasV2() {
     tipo_produto: '',
     litros_recebidos: '',
     valor_total: '',
-    nome_fornecedor: '',
-    nome_operador: '',
     numero_nota_fiscal: '',
+    nome_fornecedor: '',
+    nome_operador: 'Operador Campinas V2', // Preenchimento automático
     observacoes: ''
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -51,12 +51,24 @@ export default function PostoCampinasV2() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/postos-externos/campinas-v2/recebimentos', {
+      // Preparar dados para a API existente
+      const apiData = {
+        posto: 'campinas_v2',
+        tipo_produto: formData.tipo_produto,
+        litros_recebidos: formData.litros_recebidos,
+        valor_total: formData.valor_total,
+        nome_fornecedor: formData.nome_fornecedor,
+        nome_operador: formData.nome_operador,
+        observacoes: formData.observacoes,
+        numero_nota_fiscal: formData.numero_nota_fiscal
+      };
+
+      const response = await fetch('/recebimentos-combustivel', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(apiData),
       });
 
       if (!response.ok) {
@@ -74,9 +86,9 @@ export default function PostoCampinasV2() {
         tipo_produto: '',
         litros_recebidos: '',
         valor_total: '',
-        nome_fornecedor: '',
-        nome_operador: '',
         numero_nota_fiscal: '',
+        nome_fornecedor: '',
+        nome_operador: 'Operador Campinas V2', // Mantém preenchimento automático
         observacoes: ''
       });
     } catch (error) {
@@ -144,9 +156,6 @@ export default function PostoCampinasV2() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="diesel">Diesel</SelectItem>
-                        <SelectItem value="gasolina_comum">Gasolina Comum</SelectItem>
-                        <SelectItem value="gasolina_aditivada">Gasolina Aditivada</SelectItem>
-                        <SelectItem value="etanol">Etanol</SelectItem>
                         <SelectItem value="arla32">ARLA 32</SelectItem>
                       </SelectContent>
                     </Select>
@@ -221,20 +230,21 @@ export default function PostoCampinasV2() {
                     <p className="text-xs text-gray-500">Digite o nome do fornecedor</p>
                   </div>
 
-                  {/* Nome do Operador */}
+                  {/* Nome do Operador - Preenchimento Automático */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-700">
                       Nome do Operador
                     </Label>
                     <Input
                       type="text"
-                      placeholder="Carlos Oliveira"
+                      placeholder="Operador Campinas V2"
                       value={formData.nome_operador}
                       onChange={(e) => handleInputChange('nome_operador', e.target.value)}
                       required
                       className="h-12 bg-blue-100 border-blue-200"
+                      disabled
                     />
-                    <p className="text-xs text-gray-500">Digite o nome do operador responsável pelo recebimento</p>
+                    <p className="text-xs text-gray-500">Preenchimento automático - Nome do operador responsável</p>
                   </div>
                 </div>
 

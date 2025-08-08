@@ -400,6 +400,8 @@ app.get('/consumo-data/postos', async (req, res) => {
   }
 });
 
+
+
 // Aplicar middleware CORS personalizado
 app.use(corsMiddleware);
 // Aplicar middleware de correção de cookies

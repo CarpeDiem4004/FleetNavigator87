@@ -48,7 +48,8 @@ export async function unifiedAuthMiddleware(req, res, next) {
       '/api/projects-with-bases',
       '/api/public/projects-with-bases',
       '/api/mobile/test-projects',
-      '/api/status'
+      '/api/status',
+      '/api/recebimentos-externos/campinas-v2'
     ];
     
     // Verificar se a rota atual é pública
