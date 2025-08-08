@@ -83,7 +83,7 @@ export default function PostoCampinasV2() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-sky-100 p-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <div className="flex justify-center items-center gap-3 mb-4">
@@ -107,97 +107,102 @@ export default function PostoCampinasV2() {
         )}
 
         <Card className="shadow-xl border-0">
-          <CardHeader className="bg-green-600 text-white rounded-t-lg">
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="bg-blue-600 text-white rounded-t-lg">
+            <CardTitle className="flex items-center gap-2 text-xl">
               <Fuel className="w-6 h-6" />
-              Registrar Recebimento de Combustível
+              Recebimento de Combustível no Tanque
             </CardTitle>
-            <CardDescription className="text-green-100">
-              Preencha os dados do recebimento de combustível no Posto Campinas V2
+            <CardDescription className="text-blue-100">
+              Registre a entrega de combustível no posto CAMPINAS
             </CardDescription>
           </CardHeader>
           
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="tipo_produto" className="text-sm font-medium">
-                  Tipo de Produto *
-                </Label>
-                <Select 
-                  value={formData.tipo_produto} 
-                  onValueChange={(value) => handleInputChange('tipo_produto', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo de combustível" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="diesel">Diesel</SelectItem>
-                    <SelectItem value="gasolina">Gasolina</SelectItem>
-                    <SelectItem value="etanol">Etanol</SelectItem>
-                    <SelectItem value="arla32">ARLA 32</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="tipo_produto" className="text-sm font-medium">
+                    Tipo de Combustível
+                  </Label>
+                  <Select 
+                    value={formData.tipo_produto} 
+                    onValueChange={(value) => handleInputChange('tipo_produto', value)}
+                  >
+                    <SelectTrigger className="bg-sky-100 border-sky-200 text-sky-900">
+                      <SelectValue placeholder="Diesel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="diesel">Diesel</SelectItem>
+                      <SelectItem value="gasolina_comum">Gasolina Comum</SelectItem>
+                      <SelectItem value="gasolina_aditivada">Gasolina Aditivada</SelectItem>
+                      <SelectItem value="etanol">Etanol</SelectItem>
+                      <SelectItem value="arla32">ARLA 32</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="litros_recebidos" className="text-sm font-medium">
+                    Litros Recebidos
+                  </Label>
+                  <Input
+                    id="litros_recebidos"
+                    type="number"
+                    step="0.01"
+                    placeholder="Ex: 5000"
+                    value={formData.litros_recebidos || ''}
+                    onChange={(e) => handleInputChange('litros_recebidos', parseFloat(e.target.value) || 0)}
+                    required
+                    className="bg-sky-100 border-sky-200 text-sky-900 text-lg"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="litros_recebidos" className="text-sm font-medium">
-                  Litros Recebidos *
-                </Label>
-                <Input
-                  id="litros_recebidos"
-                  type="number"
-                  step="0.01"
-                  placeholder="Ex: 1500.00"
-                  value={formData.litros_recebidos || ''}
-                  onChange={(e) => handleInputChange('litros_recebidos', parseFloat(e.target.value) || 0)}
-                  required
-                  className="text-lg"
-                />
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="valor_total" className="text-sm font-medium">
+                    Valor Total (R$)
+                  </Label>
+                  <Input
+                    id="valor_total"
+                    type="number"
+                    step="0.01"
+                    placeholder="Ex: 25000.00"
+                    value={formData.valor_total || ''}
+                    onChange={(e) => handleInputChange('valor_total', parseFloat(e.target.value) || 0)}
+                    required
+                    className="bg-sky-100 border-sky-200 text-sky-900 text-lg"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="valor_total" className="text-sm font-medium">
-                  Valor Total (R$) *
-                </Label>
-                <Input
-                  id="valor_total"
-                  type="number"
-                  step="0.01"
-                  placeholder="Ex: 7500.00"
-                  value={formData.valor_total || ''}
-                  onChange={(e) => handleInputChange('valor_total', parseFloat(e.target.value) || 0)}
-                  required
-                  className="text-lg"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="nome_fornecedor" className="text-sm font-medium">
-                  Nome do Fornecedor *
-                </Label>
-                <Input
-                  id="nome_fornecedor"
-                  type="text"
-                  placeholder="Ex: Distribuidora de Combustíveis Campinas Ltda"
-                  value={formData.nome_fornecedor}
-                  onChange={(e) => handleInputChange('nome_fornecedor', e.target.value)}
-                  required
-                  className="text-lg"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="nome_fornecedor" className="text-sm font-medium">
+                    Nome do Fornecedor
+                  </Label>
+                  <Input
+                    id="nome_fornecedor"
+                    type="text"
+                    placeholder="Ex: Petrobras Distribuidora"
+                    value={formData.nome_fornecedor}
+                    onChange={(e) => handleInputChange('nome_fornecedor', e.target.value)}
+                    required
+                    className="bg-sky-100 border-sky-200 text-sky-900 text-lg"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="nome_operador" className="text-sm font-medium">
-                  Nome do Operador *
+                  Nome do Operador
                 </Label>
                 <Input
                   id="nome_operador"
                   type="text"
-                  placeholder="Ex: Maria Silva"
+                  placeholder="Nome do operador responsável"
                   value={formData.nome_operador}
                   onChange={(e) => handleInputChange('nome_operador', e.target.value)}
                   required
-                  className="text-lg"
+                  className="bg-sky-100 border-sky-200 text-sky-900 text-lg"
                 />
               </div>
 
@@ -207,18 +212,18 @@ export default function PostoCampinasV2() {
                 </Label>
                 <Textarea
                   id="observacoes"
-                  placeholder="Informações adicionais sobre o recebimento..."
+                  placeholder="Observações adicionais sobre o recebimento..."
                   value={formData.observacoes}
                   onChange={(e) => handleInputChange('observacoes', e.target.value)}
                   rows={3}
-                  className="resize-none"
+                  className="bg-sky-100 border-sky-200 text-sky-900 resize-none"
                 />
               </div>
 
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-medium"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">
@@ -236,15 +241,16 @@ export default function PostoCampinasV2() {
           </CardContent>
         </Card>
 
-        <Card className="mt-6 border-green-200 bg-green-50">
+        <Card className="mt-6 border-blue-200 bg-blue-50">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-green-600 mt-0.5" />
-              <div className="text-sm text-green-800">
+              <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div className="text-sm text-blue-800">
                 <p className="font-medium mb-1">Informações Importantes:</p>
-                <ul className="space-y-1 text-green-700">
-                  <li>• Todos os campos marcados com (*) são obrigatórios</li>
+                <ul className="space-y-1 text-blue-700">
+                  <li>• Todos os campos são obrigatórios</li>
                   <li>• Os dados serão registrados em tempo real no sistema</li>
+                  <li>• Data e hora serão registradas automaticamente</li>
                   <li>• Em caso de dúvidas, entre em contato com o suporte</li>
                 </ul>
               </div>
