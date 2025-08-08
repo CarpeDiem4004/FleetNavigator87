@@ -123,7 +123,7 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
         
         console.log('[RECEBIMENTO] Usando API específica para Campinas V2:', payload);
         
-        const response = await fetch('/api/recebimentos-postos/campinas-v2', {
+        const response = await fetch('/api/recebimentos-externos/campinas-v2', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
