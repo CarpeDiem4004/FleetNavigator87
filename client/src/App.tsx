@@ -379,6 +379,7 @@ import RedirectToPosto from "@/pages/RedirectToPosto";
 import PostoAcessoDireto from "@/pages/PostoAcessoDireto";
 import LinksExternosPostos from "@/pages/postos/LinksExternosPostos";
 import LinksExternosBases from "@/pages/bases/LinksExternosBases";
+import LoginBaseGenerico from "@/pages/bases/LoginBaseGenerico";
 import BasePublic from "@/pages/bases/BasePublic";
 import BaseRouter from "@/pages/bases/BaseRouter";
 import PartnerLogin from "@/pages/partner-login";
@@ -890,6 +891,9 @@ function App() {
           
           {/* NOVA ROTA GENÉRICA: Dashboard padronizado para TODAS as bases - DEVE VIR DEPOIS DAS ESPECÍFICAS */}
           <ProtectedRoute path="/bases/:baseCode" component={BaseRouter} />
+          
+          {/* ROTA GENÉRICA DE LOGIN UNIVERSAL PARA TODAS AS BASES */}
+          <Route path="/bases/:baseId/login" component={LoginBaseGenerico} />
           
           {/* Rotas genéricas antigas para compatibilidade por ID - DEVE VIR DEPOIS DAS ESPECÍFICAS */}
           <Route path="/bases/:id/login" component={() => <BaseRouteHandler mode="login" />} />
