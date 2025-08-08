@@ -129,3 +129,17 @@ Key tables include `vehicles`, `maintenance`, `towing_services`, `fuel_cards`, `
 - All 100+ registered bases available for individual PWA external access
 - Maintenance bases properly excluded from external PWA access as designed
 - API properly returns JSON responses with comprehensive base data including project assignments
+
+✅ **External Links Manager Enhanced (August 8, 2025)**
+- Updated ExternalLinksManager interface to display ALL bases (active and inactive)
+- Added individual activation/deactivation controls with visual switches for each base
+- Implemented real-time status updates with comprehensive mutation handling
+- Complete list of 112 bases now visible with PWA links and status controls
+- Enhanced table includes status column with toggle switches and visual badges
+- Search functionality maintained for filtering by name or location
+
+✅ **Osasco V2 Tank Capacity Update (August 8, 2025)**
+- Updated diesel tank capacity from 20,000L to 16,000L total capacity
+- Set current diesel level to 1,200L (7.5% capacity)
+- ARLA tank remains unchanged: 1,000L capacity with 730L current level
+- Database update confirmed and operational in configuracao_tanques table
