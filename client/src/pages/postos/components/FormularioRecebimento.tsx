@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -40,6 +41,7 @@ interface FormularioRecebimentoProps {
 export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ postId, onSuccess }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   const form = useForm<RecebimentoValues>({
     resolver: zodResolver(recebimentoSchema),
@@ -53,6 +55,13 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
       observacoes: '',
     },
   });
+
+  // Preencher automaticamente o nome do operador baseado no usuário logado
+  useEffect(() => {
+    if (user?.name) {
+      form.setValue('nome_operador', user.name);
+    }
+  }, [user, form]);
 
   // Usando TanStack Query para mutação
   const mutation = useMutation({
