@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRoute } from 'wouter';
+import CartaoCombustivelGenerico from './CartaoCombustivelGenerico';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -182,39 +183,7 @@ const BaseRouteHandler: React.FC<BaseRouteHandlerProps> = ({ mode }) => {
         );
 
       case 'cartao-combustivel':
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="numero_cartao">Número do Cartão</Label>
-              <Input
-                id="numero_cartao"
-                value={formData.numero_cartao || ''}
-                onChange={(e) => setFormData({...formData, numero_cartao: e.target.value})}
-                placeholder="Digite o número do cartão"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="valor_recarga">Valor da Recarga (R$)</Label>
-              <Input
-                id="valor_recarga"
-                type="number"
-                step="0.01"
-                value={formData.valor_recarga || ''}
-                onChange={(e) => setFormData({...formData, valor_recarga: e.target.value})}
-                placeholder="0,00"
-              />
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="observacoes">Observações</Label>
-              <Textarea
-                id="observacoes"
-                value={formData.observacoes || ''}
-                onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
-                placeholder="Observações adicionais..."
-              />
-            </div>
-          </div>
-        );
+        return <CartaoCombustivelGenerico baseId={baseInfo.id} />;
 
       case 'sinistros':
         return (
