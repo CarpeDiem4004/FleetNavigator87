@@ -71,52 +71,36 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
     setIsDeleting(true);
     
     try {
-      console.log(`[DELETE SUPABASE] Excluindo registro ${deleteItemId} do posto ${postId} via Supabase`);
+      console.log(`[DELETE API] Excluindo registro ${deleteItemId} do posto ${postId} via API`);
       
-      // Mapear posto para nome da tabela de recebimentos
-      const tableMap: { [key: string]: string } = {
-        'osasco_v2': 'recebimentos_posto_osasco_v2',
-        'abc_v2': 'recebimentos_posto_abc_v2',
-        'alair_v2': 'recebimentos_posto_alair_v2',
-        'campinas_v2': 'recebimentos_posto_campinas_v2',
-        'socorro_v2': 'recebimentos_posto_socorro_v2',
-        'sorocaba_v2': 'recebimentos_posto_sorocaba_v2',
-        'guarulhos_v2': 'recebimentos_posto_guarulhos_v2'
-      };
+      // Usar a API de exclusão do backend
+      const response = await fetch(`/api/recebimentos/${postId.toLowerCase()}/${deleteItemId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      });
+
+      const result = await response.json();
       
-      const tableName = tableMap[postId.toLowerCase()];
-      
-      if (!tableName) {
-        throw new Error(`Posto "${postId}" não encontrado no mapeamento de tabelas`);
+      if (!response.ok) {
+        throw new Error(result.message || `Erro HTTP: ${response.status}`);
       }
       
-      // Excluir diretamente via Supabase
-      const { data, error } = await supabaseAdmin
-        .from(tableName)
-        .delete()
-        .eq('id', deleteItemId)
-        .select();
-      
-      if (error) {
-        console.error('[DELETE SUPABASE] Erro na exclusão:', error);
-        throw new Error(error.message || 'Erro ao executar exclusão no banco');
+      if (!result.success) {
+        throw new Error(result.message || 'Erro ao excluir registro');
       }
       
-      // Verificar se algum registro foi afetado pela operação de DELETE
-      console.log(`[DELETE SUPABASE] Operação executada. Registros afetados:`, data ? data.length : 0);
+      console.log(`[DELETE API] Registro ${deleteItemId} excluído com sucesso`);
       
-      // Sempre invalidar a query para recarregar os dados atualizados
+      // Invalidar a query para recarregar os dados atualizados
       queryClient.invalidateQueries({ queryKey: [`/api/recebimentos/${postId.toLowerCase()}`] });
       setIsDeleteDialogOpen(false);
       setDeleteItemId(null);
       
-      if (data && data.length > 0) {
-        console.log(`[DELETE SUPABASE] Registro ${deleteItemId} excluído com sucesso`);
-        alert('Registro excluído com sucesso!');
-      } else {
-        console.log(`[DELETE SUPABASE] Registro ${deleteItemId} não encontrado - pode ter sido removido por outra operação`);
-        alert('Registro não encontrado. A lista foi atualizada.');
-      }
+      alert('Registro excluído com sucesso!');
+      
     } catch (err: any) {
       console.error('❌ Erro ao excluir recebimento:', err);
       
