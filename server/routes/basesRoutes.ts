@@ -83,8 +83,17 @@ router.get('/api/bases/:identifier', async (req, res) => {
   }
 });
 
-// Rota para atualizar uma base específica
+// Rota para atualizar uma base específica (PUT e PATCH)
 router.put('/api/bases/:id', async (req, res) => {
+  await handleBaseUpdate(req, res);
+});
+
+router.patch('/api/bases/:id', async (req, res) => {
+  await handleBaseUpdate(req, res);
+});
+
+// Função para lidar com atualização de base
+async function handleBaseUpdate(req: any, res: any) {
   try {
     const { id } = req.params;
     const updateData = req.body;
@@ -138,6 +147,6 @@ router.put('/api/bases/:id', async (req, res) => {
       error: error.message
     });
   }
-});
+}
 
 export default router;

@@ -89,6 +89,83 @@ console.log(`[SISTEMA] TZ environment: ${process.env.TZ}`);
 
 const app = express();
 
+// INTERCEPTOR CRÍTICO PARA BASES - REGISTRAR ANTES DE QUALQUER MIDDLEWARE
+app.use((req, res, next) => {
+  // Interceptar PATCH /api/bases/:id especificamente  
+  if (req.method === 'PATCH' && req.path.match(/^\/api\/bases\/\d+$/)) {
+    console.log(`[INTERCEPTOR-CRITICO] Capturada requisição PATCH para ${req.path}`);
+    
+    // Processar JSON manualmente se necessário
+    if (req.headers['content-type']?.includes('application/json')) {
+      let body = '';
+      req.on('data', chunk => {
+        body += chunk.toString();
+      });
+      req.on('end', async () => {
+        try {
+          const updateData = JSON.parse(body);
+          const id = req.path.split('/').pop();
+          
+          console.log(`[INTERCEPTOR-CRITICO] Atualizando base ${id}:`, updateData);
+          
+          // Forçar headers JSON
+          res.setHeader('Content-Type', 'application/json');
+          res.setHeader('Access-Control-Allow-Origin', '*');
+          
+          // Construir query de atualização dinamicamente
+          const fields = Object.keys(updateData);
+          const values = Object.values(updateData);
+          
+          if (fields.length === 0) {
+            return res.status(400).end(JSON.stringify({
+              success: false,
+              message: 'Nenhum campo para atualizar fornecido'
+            }));
+          }
+          
+          const setClause = fields.map((field, index) => `${field} = $${index + 2}`).join(', ');
+          const query = `
+            UPDATE bases 
+            SET ${setClause}
+            WHERE id = $1
+            RETURNING *
+          `;
+          
+          const result = await pool.query(query, [parseInt(id), ...values]);
+          
+          if (result.rows.length === 0) {
+            return res.status(404).end(JSON.stringify({
+              success: false,
+              message: 'Base não encontrada'
+            }));
+          }
+          
+          const updatedBase = result.rows[0];
+          console.log(`[INTERCEPTOR-CRITICO] Base atualizada com sucesso: ${updatedBase.name}`);
+          
+          return res.status(200).end(JSON.stringify({
+            success: true,
+            message: 'Base atualizada com sucesso',
+            data: updatedBase
+          }));
+          
+        } catch (error) {
+          console.error('[INTERCEPTOR-CRITICO] Erro ao atualizar base:', error);
+          return res.status(500).end(JSON.stringify({
+            success: false,
+            message: 'Erro interno do servidor',
+            error: error?.message || 'Erro desconhecido'
+          }));
+        }
+      });
+      return; // Não chamar next() para evitar processamento adicional
+    }
+  }
+  
+  // Para outras requisições, continuar normalmente
+  next();
+});
+
 // Middleware para processar JSON ANTES dos endpoints críticos
 // Aumentar limite para suportar exportações Excel grandes
 app.use(express.json({ limit: '50mb' }));
@@ -96,6 +173,8 @@ app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
 // Aplicar middleware UTC para garantir que todas as datas sejam processadas em UTC
 app.use(utcMiddleware);
+
+
 
 // ENDPOINT DE DIAGNÓSTICO DE TIMEZONE - Registrar ANTES de todos os middlewares
 app.get('/api/timezone-status', (req, res) => {
@@ -970,6 +1049,8 @@ app.use((req, res, next) => {
         }));
       });
   });
+
+
 
   // Rota específica para bases externas ANTES do registerRoutes
   app.get('/api/external-bases', async (req, res) => {

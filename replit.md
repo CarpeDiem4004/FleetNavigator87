@@ -119,3 +119,13 @@ Key tables include `vehicles`, `maintenance`, `towing_services`, `fuel_cards`, `
 - Form automatically populates 'nome_operador' field with user.name
 - Reduces manual data entry and improves data accuracy
 - Tested and verified with FormularioRecebimento component
+
+✅ **External Links PWA Base Management System (August 8, 2025)**
+- Resolved persistent API route conflicts between /api/bases endpoints
+- Created critical interceptor middleware to handle PATCH /api/bases/:id requests before Vite middleware
+- Fixed "DOCTYPE not valid JSON" errors by implementing early request interception
+- External Links Manager interface now fully functional for base activation/deactivation
+- Successfully tested base ID 51 (COCA COLA - JURUBATUBA) activation and deactivation
+- All 100+ registered bases available for individual PWA external access
+- Maintenance bases properly excluded from external PWA access as designed
+- API properly returns JSON responses with comprehensive base data including project assignments
