@@ -108,7 +108,14 @@ Key tables include `vehicles`, `maintenance`, `towing_services`, `fuel_cards`, `
 - PostgreSQL triggers automatically update tank levels on every fuel transaction
 - Entry transactions (recebimentos_posto_campinas_v2): Add fuel to tank levels, respecting maximum capacity
 - Exit transactions (abastecimentos_posto_campinas_v2): Subtract fuel from tank levels, preventing negative values
-- Tank configuration updated: Diesel 10,000L capacity (currently 10,000L), ARLA 520L capacity (currently 500L)
+- Tank configuration final: Diesel 6,300L/10,000L capacity, ARLA 520L/520L capacity (100% full)
 - System tested and verified: Fuel levels update in real-time without manual intervention
 - Database functions: atualizar_nivel_recebimento() and atualizar_nivel_abastecimento()
 - Comprehensive logging with NOTICE statements for transaction tracking
+
+✅ **Operator Auto-Fill Feature (August 8, 2025)**
+- Implemented automatic operator name filling in fuel receipt forms
+- Uses useAuth hook to retrieve logged-in user information
+- Form automatically populates 'nome_operador' field with user.name
+- Reduces manual data entry and improves data accuracy
+- Tested and verified with FormularioRecebimento component
