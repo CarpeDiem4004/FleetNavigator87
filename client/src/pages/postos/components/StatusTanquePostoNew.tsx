@@ -25,8 +25,8 @@ interface AbastecimentoData {
 }
 
 interface RecebimentoData {
-  tipo_produto: string;
-  litros_recebidos: number;
+  tipo_combustivel: string;
+  quantidade_litros: string;
 }
 
 interface StatusTanque {
@@ -417,14 +417,14 @@ export const StatusTanquePostoNew: React.FC<StatusTanqueProps> = ({ postId }) =>
         
       const totalDieselRecebido = Array.isArray(recebimentos)
         ? recebimentos
-            .filter((r: RecebimentoData) => r.tipo_produto === 'Diesel')
-            .reduce((acc: number, curr: RecebimentoData) => acc + curr.litros_recebidos, 0)
+            .filter((r: RecebimentoData) => r.tipo_combustivel?.toLowerCase() === 'diesel')
+            .reduce((acc: number, curr: RecebimentoData) => acc + parseFloat(curr.quantidade_litros || '0'), 0)
         : 0;
         
       const totalArlaRecebido = Array.isArray(recebimentos)
         ? recebimentos
-            .filter((r: RecebimentoData) => r.tipo_produto === 'ARLA')
-            .reduce((acc: number, curr: RecebimentoData) => acc + curr.litros_recebidos, 0)
+            .filter((r: RecebimentoData) => r.tipo_combustivel?.toLowerCase() === 'arla')
+            .reduce((acc: number, curr: RecebimentoData) => acc + parseFloat(curr.quantidade_litros || '0'), 0)
         : 0;
         
       // Determinar capacidade e nível base com base nas configurações ou valores padrão
