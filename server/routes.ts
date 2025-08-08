@@ -5098,8 +5098,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Temporariamente sem autenticação para testes
   app.get("/api/bases", async (req, res) => {
     try {
+      console.log("[BASES-API] Chamando storage.getAllBases()...");
       const bases = await storage.getAllBases();
-      console.log("Direct Bases API - Found", bases.length, "bases");
+      console.log("Direct Bases API - Found", bases.length, "bases from storage");
+      
       return res.status(200).json({
         success: true,
         data: bases,
@@ -5108,6 +5110,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching bases:", error);
       return res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Rota de teste para forçar verificação direta
+  app.get("/api/bases-debug", async (req, res) => {
+    try {
+      console.log("[TEST] Chamando storage.getAllBases() diretamente...");
+      const bases = await storage.getAllBases();
+      console.log("[TEST] Retornadas", bases.length, "bases");
+      
+      // Verificar primeiras 3 bases
+      const primeiras = bases.slice(0, 3).map(b => ({ id: b.id, name: b.name }));
+      console.log("[TEST] Primeiras 3 bases:", primeiras);
+      
+      return res.status(200).json({
+        success: true,
+        total: bases.length,
+        primeiras
+      });
+    } catch (error) {
+      console.error("[TEST] Error:", error);
+      return res.status(500).json({ message: "Test error" });
     }
   });
   

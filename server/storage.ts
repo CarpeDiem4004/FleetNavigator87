@@ -439,7 +439,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllBases(): Promise<Base[]> {
-    return await db.select().from(bases);
+    console.log(`[STORAGE] getAllBases() CHAMADO - Iniciando filtro...`);
+    
+    // Filtrar bases para acesso externo (sem manutenção)
+    const allBases = await db.select().from(bases);
+    console.log(`[STORAGE] Total bases no banco: ${allBases.length}`);
+    
+    const externalBases = allBases.filter(base => {
+      const shouldInclude = base.active && base.name && !base.name.toLowerCase().includes('manutenção');
+      if (!shouldInclude && base.name?.toLowerCase().includes('manutenção')) {
+        console.log(`[STORAGE] Removendo base de manutenção: ${base.name}`);
+      }
+      return shouldInclude;
+    });
+    
+    console.log(`[STORAGE] Bases após filtro: ${externalBases.length}`);
+    return externalBases;
   }
 
   async createBase(base: InsertBase): Promise<Base> {

@@ -23,14 +23,21 @@ router.get('/api/bases', async (req, res) => {
     console.log(`[API/BASES] ${bases?.length || 0} bases encontradas`);
     
     // Filtrar bases para acesso externo (sem manutenção)
-    const externalBases = bases.filter((base: any) => 
-      !base.has_maintenance && 
-      base.active &&
-      base.name && 
-      base.name !== 'Base Manutenção'
-    );
+    const externalBases = bases.filter((base: any) => {
+      const shouldInclude = base.active && base.name && !base.name.toLowerCase().includes('manutenção');
+      if (!shouldInclude && base.name?.toLowerCase().includes('manutenção')) {
+        console.log(`[API/BASES] Removendo base de manutenção: ${base.name}`);
+      }
+      return shouldInclude;
+    });
+    
+    console.log(`[API/BASES] Bases filtradas para acesso externo: ${externalBases.length}`);
 
-    res.json(externalBases);
+    res.json({
+      success: true,
+      data: externalBases,
+      count: externalBases.length
+    });
     
   } catch (error: any) {
     console.error('[API/BASES] Erro interno:', error);

@@ -15,7 +15,7 @@ const ExternalLinksManager: React.FC = () => {
   const { toast } = useToast();
 
   // Buscar todas as bases ativas (exceto manutenção)
-  const { data: bases = [], isLoading, error } = useQuery({
+  const { data: basesResponse, isLoading, error } = useQuery({
     queryKey: ['/api/bases'],
     queryFn: async () => {
       const response = await fetch('/api/bases');
@@ -25,6 +25,8 @@ const ExternalLinksManager: React.FC = () => {
       return response.json();
     }
   });
+
+  const bases = basesResponse || [];
 
   // Filtrar bases para acesso externo (excluir manutenção)
   const externalBases = bases.filter((base: any) => 

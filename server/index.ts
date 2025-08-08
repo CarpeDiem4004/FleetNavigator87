@@ -1258,8 +1258,7 @@ app.use((req, res, next) => {
   console.log('[LINE-HALL] Registrando rotas do Line Hall');
   app.use('/api/line-hall', lineHallRoutes);
   
-  // Registrar rotas das bases
-  app.use(basesRoutes);
+  // Rota de bases já registrada acima no arquivo principal
   
   // Rota pública para visão geral dos postos (sem autenticação)
   app.get('/api/postos-publico', async (req, res) => {
@@ -2029,19 +2028,39 @@ app.use((req, res, next) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
       
       const query = `
-        SELECT id, name, basename, description, is_active 
+        SELECT id, name, basename, location, type, active, operation, 
+               has_maintenance, has_tires, requests_enabled, 
+               created_at, project_id
         FROM bases 
-        WHERE is_active = true 
+        WHERE active = true 
         ORDER BY name ASC
       `;
       const result = await pool.query(query);
       
       console.log('Direct Bases API - Found', result.rows.length, 'bases');
+      console.log('========== DEBUG: ANTES DO FILTRO ==========');
+      
+      // Debug: mostrar algumas bases antes do filtro
+      const firstThree = result.rows.slice(0, 3).map((b: any) => ({ id: b.id, name: b.name }));
+      console.log('Primeiras 3 bases:', firstThree);
+      console.log('Bases com manutenção antes do filtro:', result.rows.filter((b: any) => b.name?.toLowerCase().includes('manutenção')).length);
+      console.log('========== INICIANDO FILTRO ==========');
+      
+      // Filtrar bases para acesso externo (sem manutenção)
+      const externalBases = result.rows.filter((base: any) => {
+        const shouldInclude = base.active && base.name && !base.name.toLowerCase().includes('manutenção');
+        if (!shouldInclude && base.name?.toLowerCase().includes('manutenção')) {
+          console.log(`Removendo base de manutenção: ${base.name}`);
+        }
+        return shouldInclude;
+      });
+      
+      console.log(`Bases filtradas para acesso externo: ${externalBases.length}`);
       
       return res.status(200).json({
         success: true,
-        data: result.rows,
-        count: result.rowCount || 0
+        data: externalBases,
+        count: externalBases.length
       });
     } catch (error) {
       console.error('Direct Bases API - Error:', error);
