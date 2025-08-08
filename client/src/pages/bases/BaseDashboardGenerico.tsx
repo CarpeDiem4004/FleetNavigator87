@@ -61,8 +61,8 @@ const BaseDashboardGenerico: React.FC<BaseDashboardProps> = ({ baseInfo }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['operational']);
 
-  // Gerar código único da base para rotas
-  const baseCode = baseInfo.basename || `base${baseInfo.id}`;
+  // Gerar código único da base para rotas - usar ID diretamente para compatibilidade
+  const baseCode = baseInfo.id.toString();
 
   const menuCategories: MenuCategory[] = [
     {

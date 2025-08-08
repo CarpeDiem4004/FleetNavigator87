@@ -51,6 +51,7 @@ import ProtectedBaseRoute from "@/components/ProtectedBaseRoute";
 import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
 import { AuthProvider } from "@/context/AuthContext";
 import { SupabaseAuthProvider } from "@/context/SupabaseAuthContext";
+
 // Importação do hook para injetar token JWT em todas as requisições
 import { useFetchWithAuth } from "@/hooks/useFetchWithAuth";
 
@@ -323,7 +324,7 @@ import BaseZSul from "@/pages/bases/BaseZSul";
 import LoginZSul from "@/pages/bases/LoginZSul";
 
 // Importação do sistema genérico de bases
-import BaseRouteHandler from "@/components/base/BaseRouteHandler";
+import BaseRouteHandler from "@/components/bases/BaseRouteHandler";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -875,11 +876,21 @@ function App() {
           <ProtectedRoute path="/bases/gp02/cartao-combustivel" component={CartaoCombustivelGP02} />
           <ProtectedRoute path="/bases/gp03/cartao-combustivel" component={CartaoCombustivelGP03} />
           
+          {/* ROTAS GENÉRICAS UNIVERSAIS PARA TODAS AS BASES */}
+          <ProtectedRoute path="/bases/:baseId/despesas" component={() => <BaseRouteHandler mode="despesas" />} />
+          <ProtectedRoute path="/bases/:baseId/multas" component={() => <BaseRouteHandler mode="multas" />} />
+          <ProtectedRoute path="/bases/:baseId/sinistros" component={() => <BaseRouteHandler mode="sinistros" />} />
+          <ProtectedRoute path="/bases/:baseId/acidentes-trabalho" component={() => <BaseRouteHandler mode="acidentes" />} />
+          <ProtectedRoute path="/bases/:baseId/solicitacao-pneus" component={() => <BaseRouteHandler mode="pneus" />} />
+          <ProtectedRoute path="/bases/:baseId/solicitacao-orcamento" component={() => <BaseRouteHandler mode="orcamentos" />} />
+          <ProtectedRoute path="/bases/:baseId/manutencao-frota" component={() => <BaseRouteHandler mode="manutencao" />} />
+          <ProtectedRoute path="/bases/:baseId/cartao-combustivel" component={() => <BaseRouteHandler mode="cartao-combustivel" />} />
+          <ProtectedRoute path="/bases/:baseId/cartoes-ativos" component={() => <BaseRouteHandler mode="cartoes-ativos" />} />
+          
           {/* NOVA ROTA GENÉRICA: Dashboard padronizado para TODAS as bases - DEVE VIR DEPOIS DAS ESPECÍFICAS */}
           <ProtectedRoute path="/bases/:baseCode" component={BaseRouter} />
           
           {/* Rotas genéricas antigas para compatibilidade por ID - DEVE VIR DEPOIS DAS ESPECÍFICAS */}
-          <ProtectedRoute path="/bases/:id/cartao-combustivel" component={() => <BaseRouteHandler mode="fuel-card" />} />
           <Route path="/bases/:id/login" component={() => <BaseRouteHandler mode="login" />} />
           
           <ProtectedRoute path="/solicitacoes" component={BaseRequests} />
