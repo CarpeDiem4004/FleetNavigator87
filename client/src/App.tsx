@@ -110,6 +110,7 @@ import LineHallShopeePage from "@/pages/LineHallShopeePage";
 import LineHallDriverPage from "@/pages/LineHallDriverPage";
 import LineHallMaintenanceManager from "@/pages/LineHallMaintenanceManager";
 import MotoristaLineHall from "@/pages/MotoristaLineHall";
+import MotoristaLineHallPWA from "@/pages/MotoristaLineHallPWA";
 import LineHallChecklistManager from "@/pages/LineHallChecklistManager";
 import FuelCardPage from "@/pages/FuelCardPage";
 import FuelCard from "@/pages/FuelCard";
@@ -948,6 +949,11 @@ function App() {
           {/* Rota pública para acesso do motorista Line Haul */}
           <Route path="/line-hall-driver">
             <MotoristaLineHall />
+          </Route>
+          
+          {/* Rota PWA para motoristas Line Haul - versão otimizada para mobile */}
+          <Route path="/motorista-line-hall">
+            <MotoristaLineHallPWA />
           </Route>
           
           {/* Rota para o perfil do usuário Supabase */}
