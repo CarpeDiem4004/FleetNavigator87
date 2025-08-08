@@ -71,26 +71,12 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
     setIsDeleting(true);
     
     try {
-      console.log(`[DELETE API] Excluindo registro ${deleteItemId} do posto ${postId} via API`);
+      console.log(`[DELETE API] Excluindo registro ${deleteItemId} do posto ${postId} via apiRequest`);
       
-      // Usar a API de exclusão do backend
-      const response = await fetch(`/api/recebimentos/${postId.toLowerCase()}/${deleteItemId}`, {
+      // Usar a função apiRequest que já tem autenticação integrada
+      await apiRequest(`/api/recebimentos/${postId.toLowerCase()}/${deleteItemId}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
       });
-
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.message || `Erro HTTP: ${response.status}`);
-      }
-      
-      if (!result.success) {
-        throw new Error(result.message || 'Erro ao excluir registro');
-      }
       
       console.log(`[DELETE API] Registro ${deleteItemId} excluído com sucesso`);
       
