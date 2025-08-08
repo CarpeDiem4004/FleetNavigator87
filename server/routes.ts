@@ -1670,8 +1670,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Endpoint DELETE específico para recebimentos de combustível
-  app.delete('/api/recebimentos/:posto/:id', unifiedAuthMiddleware, async (req, res) => {
+  // Endpoint DELETE específico para recebimentos de combustível (público para postos)
+  app.delete('/api/recebimentos/:posto/:id', async (req, res) => {
     try {
       const { posto, id } = req.params;
       

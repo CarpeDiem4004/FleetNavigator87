@@ -74,9 +74,7 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
       console.log(`[DELETE API] Excluindo registro ${deleteItemId} do posto ${postId} via apiRequest`);
       
       // Usar a função apiRequest que já tem autenticação integrada
-      await apiRequest(`/api/recebimentos/${postId.toLowerCase()}/${deleteItemId}`, {
-        method: 'DELETE',
-      });
+      await apiRequest('DELETE', `/api/recebimentos/${postId.toLowerCase()}/${deleteItemId}`);
       
       console.log(`[DELETE API] Registro ${deleteItemId} excluído com sucesso`);
       
