@@ -270,9 +270,9 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
       return res.status(401).json({ message: "Usuário não autenticado" });
     }
     
-    // Verificar se o usuário é admin
-    if (user.role === 'admin') {
-      console.log(`[isAdmin] Acesso autorizado para admin: ${user.email}, role: ${user.role}`);
+    // Verificar se o usuário é admin, CEO ou gerente geral (todos com mesmo nível de acesso)
+    if (user.role === 'admin' || user.role === 'ceo' || user.role === 'gerente_geral') {
+      console.log(`[isAdmin] Acesso autorizado para ${user.role}: ${user.email}, role: ${user.role}`);
       return next();
     }
     

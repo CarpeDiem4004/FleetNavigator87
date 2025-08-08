@@ -46,7 +46,7 @@ interface User {
   id: number;
   name: string;
   email: string;
-  role: 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall' | 'coordenador' | 'gestor_equipamentos';
+  role: 'admin' | 'ceo' | 'gerente_geral' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall' | 'coordenador' | 'gestor_equipamentos';
   baseId: number | null;
   baseName: string | null;
   lastLogin: string | null;
@@ -76,6 +76,8 @@ interface Base {
 const translateUserRole = (role: string): string => {
   const roles: Record<string, string> = {
     admin: 'Administrador',
+    ceo: 'CEO',
+    gerente_geral: 'Gerente Geral',
     gestor: 'Gestor',
     gestor_combustivel: 'Gestor de Combustível',
     gestor_frota: 'Gestor de Frota',
@@ -93,6 +95,8 @@ const translateUserRole = (role: string): string => {
 const getRoleBadgeClass = (role: string): string => {
   const classes: Record<string, string> = {
     admin: 'bg-purple-100 text-purple-800',
+    ceo: 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 font-bold',
+    gerente_geral: 'bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 font-bold',
     gestor: 'bg-blue-100 text-blue-800',
     gestor_combustivel: 'bg-orange-100 text-orange-800',
     gestor_frota: 'bg-indigo-100 text-indigo-800',
@@ -181,7 +185,7 @@ const UsersNew: React.FC = () => {
           id: user.id,
           name: user.name,
           email: user.email,
-          role: (user.role || 'operador') as 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall',
+          role: (user.role || 'operador') as 'admin' | 'ceo' | 'gerente_geral' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall' | 'coordenador' | 'gestor_equipamentos',
           baseId: user.baseId || user.base_id || null,
           baseName: user.baseName || user.basename || null,
           lastLogin: user.lastLogin || user.last_login || null,
@@ -692,9 +696,11 @@ const UsersNew: React.FC = () => {
                     <NativeSelect
                       id="role"
                       value={newUser.role}
-                      onChange={(e) => setNewUser({...newUser, role: e.target.value as 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall' | 'coordenador' | 'gestor_equipamentos'})}
+                      onChange={(e) => setNewUser({...newUser, role: e.target.value as 'admin' | 'ceo' | 'gerente_geral' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall' | 'coordenador' | 'gestor_equipamentos'})}
                       options={[
                         { value: 'admin', label: 'Administrador' },
+                        { value: 'ceo', label: 'CEO' },
+                        { value: 'gerente_geral', label: 'Gerente Geral' },
                         { value: 'gestor', label: 'Gestor' },
                         { value: 'gestor_frota', label: 'Gestor de Frota' },
                         { value: 'gestor_combustivel', label: 'Gestor de Combustível' },

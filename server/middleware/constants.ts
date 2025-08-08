@@ -17,8 +17,11 @@ export function isUserAdmin(user: any): boolean {
   if (!user) return false;
   
   return (
-    // Role contém 'admin' (case insensitive)
-    (user.role && typeof user.role === 'string' && user.role.toLowerCase().includes('admin')) ||
+    // Role é admin, CEO ou gerente geral (todos com mesmo nível de acesso)
+    (user.role && typeof user.role === 'string' && 
+     (user.role.toLowerCase() === 'admin' || 
+      user.role.toLowerCase() === 'ceo' || 
+      user.role.toLowerCase() === 'gerente_geral')) ||
     // Email está na lista de emails de administradores
     (user.email && typeof user.email === 'string' && ADMIN_EMAILS.includes(user.email.toLowerCase()))
   );

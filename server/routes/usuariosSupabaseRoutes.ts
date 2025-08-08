@@ -66,10 +66,10 @@ export function registerUsuariosSupabaseRoutes(app: Express) {
     
     const user = req.user as any;
     
-    if (user.role !== "admin") {
+    if (user.role !== "admin" && user.role !== "ceo" && user.role !== "gerente_geral") {
       return res.status(403).json({ 
         success: false, 
-        message: "Acesso negado. Apenas administradores podem acessar esta rota." 
+        message: "Acesso negado. Apenas administradores, CEOs ou gerentes gerais podem acessar esta rota." 
       });
     }
     
