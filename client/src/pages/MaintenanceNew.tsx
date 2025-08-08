@@ -22,7 +22,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, FileEdit, Trash2, Filter, X } from 'lucide-react';
+import { Search, Plus, FileEdit, Trash2, Filter, X, Download, Upload, Eye, FileSpreadsheet } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { 
   Select,
@@ -227,133 +227,187 @@ const MaintenanceNew: React.FC = () => {
             </p>
           </div>
 
-          {/* Estatísticas rápidas */}
-          <div className="flex gap-4">
-            <Card className="p-4 min-w-[120px]">
-              <CardContent className="p-0">
-                <div className="text-2xl font-bold text-blue-600">{maintenanceData.length}</div>
-                <div className="text-sm text-gray-500">Total</div>
-              </CardContent>
-            </Card>
-            <Card className="p-4 min-w-[120px]">
-              <CardContent className="p-0">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {maintenanceData.filter((item: any) => item.status === 'em_andamento').length}
-                </div>
-                <div className="text-sm text-gray-500">Em Andamento</div>
-              </CardContent>
-            </Card>
-            <Card className="p-4 min-w-[120px]">
-              <CardContent className="p-0">
-                <div className="text-2xl font-bold text-green-600">
-                  {maintenanceData.filter((item: any) => item.status === 'concluida').length}
-                </div>
-                <div className="text-sm text-gray-500">Finalizadas</div>
-              </CardContent>
-            </Card>
+          {/* Botões de ação */}
+          <div className="flex gap-3">
+            <Button className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Exportar Excel
+            </Button>
+            <Button variant="outline" className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Importar Excel
+            </Button>
+            <Button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-4 w-4" />
+              Nova Manutenção
+            </Button>
           </div>
         </div>
 
-        {/* Sistema de busca e filtros */}
+        {/* Estatísticas rápidas - Layout horizontal melhorado */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">Total de Manutenções</div>
+                  <div className="text-2xl font-bold text-blue-600">{maintenanceData.length}</div>
+                </div>
+                <FileEdit className="h-8 w-8 text-blue-600 opacity-60" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">Em Andamento</div>
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {maintenanceData.filter((item: any) => item.status === 'em_andamento').length}
+                  </div>
+                </div>
+                <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <div className="h-4 w-4 bg-yellow-600 rounded-full animate-pulse"></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">Aguardando Peça</div>
+                  <div className="text-2xl font-bold text-blue-500">
+                    {maintenanceData.filter((item: any) => item.status === 'aguardando_pecas').length}
+                  </div>
+                </div>
+                <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <div className="h-4 w-4 bg-blue-500 rounded-full"></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">Finalizadas</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {maintenanceData.filter((item: any) => item.status === 'concluida').length}
+                  </div>
+                </div>
+                <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <div className="h-4 w-4 bg-green-600 rounded-full"></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">Valor Total</div>
+                  <div className="text-lg font-bold text-red-600">
+                    {formatCurrency(
+                      maintenanceData.reduce((sum: number, item: any) => 
+                        sum + parseFloat(item.cost || item.custo || 0), 0
+                      )
+                    )}
+                  </div>
+                </div>
+                <div className="text-xs text-red-600 font-medium">R$</div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filtros rápidos por status */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Search className="h-5 w-5" />
-              Buscar por Placa de Veículo
-            </CardTitle>
-            <CardDescription>
-              Encontre o histórico de manutenções de um veículo específico
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {/* Campo de busca geral */}
-              <div className="relative">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                size="sm" 
+                variant={statusFilter === '' ? 'default' : 'outline'}
+                onClick={() => setStatusFilter('')}
+                className="text-xs"
+              >
+                Todas ({maintenanceData.length})
+              </Button>
+              <Button 
+                size="sm" 
+                variant={statusFilter === 'em_andamento' ? 'default' : 'outline'}
+                onClick={() => setStatusFilter('em_andamento')}
+                className="text-xs"
+              >
+                Em Andamento ({maintenanceData.filter((item: any) => item.status === 'em_andamento').length})
+              </Button>
+              <Button 
+                size="sm" 
+                variant={statusFilter === 'aguardando_pecas' ? 'default' : 'outline'}
+                onClick={() => setStatusFilter('aguardando_pecas')}
+                className="text-xs"
+              >
+                Ag. Peça ({maintenanceData.filter((item: any) => item.status === 'aguardando_pecas').length})
+              </Button>
+              <Button 
+                size="sm" 
+                variant={statusFilter === 'concluida' ? 'default' : 'outline'}
+                onClick={() => setStatusFilter('concluida')}
+                className="text-xs"
+              >
+                Finalizadas ({maintenanceData.filter((item: any) => item.status === 'concluida').length})
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Sistema de busca */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex gap-4">
+              <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Buscar por placa ou descrição..."
+                  placeholder="Buscar por placa, mecânico..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 text-sm"
                 />
               </div>
 
               {/* Filtro por placa específica */}
               <Select value={plateFilter} onValueChange={setPlateFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="w-48">
                   <SelectValue placeholder="Filtrar por placa" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todas as placas</SelectItem>
-                  {uniquePlates.map((plate: string) => (
-                    <SelectItem key={plate} value={plate}>
+                  {uniquePlates.map((plate: string, index: number) => (
+                    <SelectItem key={`${plate}-${index}`} value={plate}>
                       {plate}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              {/* Filtro por status */}
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filtrar por status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todos os status</SelectItem>
-                  <SelectItem value="concluida">Concluída</SelectItem>
-                  <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                  <SelectItem value="aguardando_pecas">Aguardando Peças</SelectItem>
-                  <SelectItem value="motor">Motor</SelectItem>
-                  <SelectItem value="turbina">Turbina</SelectItem>
-                  <SelectItem value="funilaria">Funilaria</SelectItem>
-                  <SelectItem value="bomba">Bomba</SelectItem>
-                  <SelectItem value="bico">Bico</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Botão limpar filtros */}
+              {/* Botão ver todas as manutenções */}
               <Button 
                 variant="outline" 
-                onClick={clearFilters}
                 className="flex items-center gap-2"
+                onClick={() => {
+                  setSearchTerm('');
+                  setPlateFilter('');
+                  setStatusFilter('');
+                }}
               >
-                <X className="h-4 w-4" />
-                Limpar
+                <Eye className="h-4 w-4" />
+                Ver Todas
               </Button>
             </div>
-
-            {/* Filtros ativos */}
-            {(searchTerm || plateFilter || statusFilter) && (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {searchTerm && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    Busca: "{searchTerm}"
-                    <X 
-                      className="h-3 w-3 cursor-pointer" 
-                      onClick={() => setSearchTerm('')}
-                    />
-                  </Badge>
-                )}
-                {plateFilter && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    Placa: {plateFilter}
-                    <X 
-                      className="h-3 w-3 cursor-pointer" 
-                      onClick={() => setPlateFilter('')}
-                    />
-                  </Badge>
-                )}
-                {statusFilter && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    Status: {translateMaintenanceStatus(statusFilter)}
-                    <X 
-                      className="h-3 w-3 cursor-pointer" 
-                      onClick={() => setStatusFilter('')}
-                    />
-                  </Badge>
-                )}
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -458,9 +512,32 @@ const MaintenanceNew: React.FC = () => {
                         }
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end space-x-2">
-                          <Button variant="outline" size="icon">
-                            <FileEdit className="h-4 w-4" />
+                        <div className="flex justify-end space-x-1">
+                          {/* Botão de visualizar sempre disponível */}
+                          <Button variant="outline" size="icon" className="h-8 w-8">
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          
+                          {/* Botão de imprimir sempre disponível */}
+                          <Button variant="outline" size="icon" className="h-8 w-8">
+                            <FileSpreadsheet className="h-3 w-3" />
+                          </Button>
+                          
+                          {/* Botão de editar apenas se não estiver finalizada */}
+                          {item.status !== 'concluida' && (
+                            <Button variant="outline" size="icon" className="h-8 w-8">
+                              <FileEdit className="h-3 w-3" />
+                            </Button>
+                          )}
+                          
+                          {/* Botão de excluir apenas para admin */}
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            disabled={item.status === 'concluida'}
+                          >
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
                       </TableCell>
