@@ -15,6 +15,7 @@ interface BaseInfo {
 const BaseRouter: React.FC = () => {
   const [matchBases, paramsBases] = useRoute('/bases/:baseCode');
   const [matchBase, paramsBase] = useRoute('/base/:id/:slug?');
+  const [matchBasePublic, paramsBasePublic] = useRoute('/base/:id/public');
   const [baseInfo, setBaseInfo] = useState<BaseInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,8 +25,10 @@ const BaseRouter: React.FC = () => {
       fetchBaseInfo(paramsBases.baseCode);
     } else if (matchBase && paramsBase?.id) {
       fetchBaseInfo(paramsBase.id);
+    } else if (matchBasePublic && paramsBasePublic?.id) {
+      fetchBaseInfo(paramsBasePublic.id);
     }
-  }, [matchBases, paramsBases?.baseCode, matchBase, paramsBase?.id]);
+  }, [matchBases, paramsBases?.baseCode, matchBase, paramsBase?.id, matchBasePublic, paramsBasePublic?.id]);
 
   const fetchBaseInfo = async (baseCode: string) => {
     try {
@@ -87,8 +90,9 @@ const BaseRouter: React.FC = () => {
   console.log('[BaseRouter] Rota atual:', currentPath);
   console.log('[BaseRouter] Match /bases/*:', matchBases, paramsBases);
   console.log('[BaseRouter] Match /base/*:', matchBase, paramsBase);
+  console.log('[BaseRouter] Match /base/*/public:', matchBasePublic, paramsBasePublic);
 
-  if (!matchBases && !matchBase) {
+  if (!matchBases && !matchBase && !matchBasePublic) {
     return null;
   }
 
