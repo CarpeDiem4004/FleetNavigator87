@@ -749,65 +749,57 @@ export default function LineHallShopeePage() {
                       onChange={(e) => setCurrentRoute(prev => ({ ...prev, nome_ponto_b: e.target.value }))}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="km_total">Distância Total (KM) *</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="km_total"
-                        type="number"
-                        placeholder="Ex: 450"
-                        value={currentRoute.km_total || ''}
-                        onChange={(e) => setCurrentRoute(prev => ({ ...prev, km_total: parseFloat(e.target.value) || 0 }))}
-                        className="flex-1"
-                      />
-                      {currentRoute.nome_ponto_a && currentRoute.nome_ponto_b && (
+                  
+                  {/* Botão Google Maps aparece assim que ambos os campos são preenchidos */}
+                  {currentRoute.nome_ponto_a && currentRoute.nome_ponto_b && (
+                    <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border-2 border-blue-200 animate-in slide-in-from-top-2 duration-300">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <MapPin className="h-5 w-5 text-blue-600" />
+                          <div>
+                            <p className="font-medium text-gray-900">Consultar Distância no Google Maps</p>
+                            <p className="text-sm text-gray-600">Verifique a distância exata entre {currentRoute.nome_ponto_a} e {currentRoute.nome_ponto_b}</p>
+                          </div>
+                        </div>
                         <Button 
                           type="button"
-                          variant="outline" 
-                          size="sm"
                           onClick={() => {
                             const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(currentRoute.nome_ponto_a)}/${encodeURIComponent(currentRoute.nome_ponto_b)}`;
                             window.open(mapsUrl, '_blank');
                           }}
-                          className="text-blue-600 hover:text-blue-800 shrink-0 px-3"
-                          title="Abrir no Google Maps para ver distância exata"
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
                         >
-                          <MapPin className="h-4 w-4 mr-1" />
-                          Maps
+                          <MapPin className="mr-2 h-4 w-4" />
+                          Abrir Maps
                         </Button>
-                      )}
+                      </div>
                     </div>
-                    {currentRoute.nome_ponto_a && currentRoute.nome_ponto_b && (
-                      <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded border border-blue-200">
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          <span className="font-medium">Dica:</span>
-                        </div>
-                        <span>Clique no botão "Maps" acima para abrir a rota no Google Maps e verificar a distância exata entre {currentRoute.nome_ponto_a} e {currentRoute.nome_ponto_b}</span>
+                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="km_total">Distância Total (KM) *</Label>
+                    <Input
+                      id="km_total"
+                      type="number"
+                      placeholder="Ex: 450"
+                      value={currentRoute.km_total || ''}
+                      onChange={(e) => setCurrentRoute(prev => ({ ...prev, km_total: parseFloat(e.target.value) || 0 }))}
+                      className="w-full"
+                    />
+                    {currentRoute.nome_ponto_a && currentRoute.nome_ponto_b && !currentRoute.km_total && (
+                      <div className="text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200 flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        <span>Use o botão "Abrir Maps" acima para consultar a distância exata</span>
                       </div>
                     )}
                   </div>
                 </div>
                 <DialogFooter className="flex gap-2">
                   <Button type="button" variant="outline" onClick={() => setIsCreatingRoute(false)}>Cancelar</Button>
-                  {currentRoute.nome_ponto_a && currentRoute.nome_ponto_b && (
-                    <Button 
-                      type="button"
-                      variant="outline" 
-                      onClick={() => {
-                        const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(currentRoute.nome_ponto_a)}/${encodeURIComponent(currentRoute.nome_ponto_b)}`;
-                        window.open(mapsUrl, '_blank');
-                      }}
-                      className="text-blue-600 hover:text-blue-800 border-blue-200 bg-blue-50 hover:bg-blue-100"
-                    >
-                      <MapPin className="mr-2 h-4 w-4" />
-                      Consultar Distância
-                    </Button>
-                  )}
                   <Button 
                     type="button" 
                     onClick={handleCreateRoute}
                     disabled={!currentRoute.nome_ponto_a || !currentRoute.nome_ponto_b || !currentRoute.km_total}
+                    className="bg-green-600 hover:bg-green-700 text-white"
                   >
                     Cadastrar Rota
                   </Button>
