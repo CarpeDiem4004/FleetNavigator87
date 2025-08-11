@@ -729,8 +729,11 @@ export default function LineHallShopeePage() {
         <Dialog 
           open={isCreatingRoute} 
           onOpenChange={(open) => {
-            console.log('🔄 Dialog onOpenChange:', open);
+            console.log('🔄 Dialog onOpenChange:', open, 'Estado atual:', isCreatingRoute);
             setIsCreatingRoute(open);
+            if (open) {
+              console.log('📋 Dialog Nova Rota ABRIU - Estado currentRoute:', currentRoute);
+            }
           }}
         >
               <DialogContent className="sm:max-w-[500px]">
@@ -741,6 +744,11 @@ export default function LineHallShopeePage() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
+                  <div className="bg-red-100 border border-red-300 p-2 rounded text-xs text-red-800">
+                    <p><strong>🔧 TESTE DE RENDERIZAÇÃO:</strong></p>
+                    <p>Este bloco deve aparecer sempre que o Dialog abrir</p>
+                    <p>isCreatingRoute: {isCreatingRoute ? 'TRUE' : 'FALSE'}</p>
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="nome_ponto_a">Ponto de Origem *</Label>
                     <Input
