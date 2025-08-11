@@ -750,41 +750,53 @@ export default function LineHallShopeePage() {
                     />
                   </div>
                   
-                  {/* Google Maps Integration - Always shows when both fields are filled */}
-                  {currentRoute.nome_ponto_a.trim() !== '' && currentRoute.nome_ponto_b.trim() !== '' ? (
-                    <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border-2 border-blue-300 shadow-md">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="bg-blue-100 p-2 rounded-full">
-                            <MapPin className="h-5 w-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-gray-900">Consultar Google Maps</p>
-                            <p className="text-sm text-gray-600">Clique para ver a rota de <span className="font-medium">{currentRoute.nome_ponto_a}</span> até <span className="font-medium">{currentRoute.nome_ponto_b}</span></p>
-                          </div>
+                  {/* DEBUG: Valores atuais */}
+                  <div className="text-xs bg-yellow-100 p-2 border border-yellow-300 rounded">
+                    <strong>DEBUG:</strong><br/>
+                    • Origem: "{currentRoute.nome_ponto_a}" (length: {currentRoute.nome_ponto_a?.length || 0})<br/>
+                    • Destino: "{currentRoute.nome_ponto_b}" (length: {currentRoute.nome_ponto_b?.length || 0})<br/>
+                    • Origem trimmed: "{currentRoute.nome_ponto_a?.trim()}" (isEmpty: {currentRoute.nome_ponto_a?.trim() === ''})<br/>
+                    • Destino trimmed: "{currentRoute.nome_ponto_b?.trim()}" (isEmpty: {currentRoute.nome_ponto_b?.trim() === ''})<br/>
+                    • Condição A: {String(currentRoute.nome_ponto_a && currentRoute.nome_ponto_a.trim() !== '')}<br/>
+                    • Condição B: {String(currentRoute.nome_ponto_b && currentRoute.nome_ponto_b.trim() !== '')}<br/>
+                    • Mostrar Maps: {String(currentRoute.nome_ponto_a && currentRoute.nome_ponto_a.trim() !== '' && currentRoute.nome_ponto_b && currentRoute.nome_ponto_b.trim() !== '')}
+                  </div>
+
+                  {/* Google Maps Integration - SEMPRE VISÍVEL PARA TESTE */}
+                  <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border-2 border-blue-300 shadow-md">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="bg-blue-100 p-2 rounded-full">
+                          <MapPin className="h-5 w-5 text-blue-600" />
                         </div>
-                        <Button 
-                          type="button"
-                          onClick={() => {
-                            const origem = currentRoute.nome_ponto_a.trim();
-                            const destino = currentRoute.nome_ponto_b.trim();
-                            const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(origem)}/${encodeURIComponent(destino)}`;
-                            console.log('Abrindo Maps:', mapsUrl);
-                            window.open(mapsUrl, '_blank');
-                          }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-                        >
-                          <MapPin className="mr-2 h-4 w-4" />
-                          Abrir Maps
-                        </Button>
+                        <div>
+                          <p className="font-semibold text-gray-900">🗺️ Google Maps (SEMPRE VISÍVEL)</p>
+                          <p className="text-sm text-gray-600">De: {currentRoute.nome_ponto_a || '(vazio)'} → Para: {currentRoute.nome_ponto_b || '(vazio)'}</p>
+                        </div>
                       </div>
+                      <Button 
+                        type="button"
+                        onClick={() => {
+                          const origem = currentRoute.nome_ponto_a?.trim() || 'São Paulo, SP';
+                          const destino = currentRoute.nome_ponto_b?.trim() || 'Rio de Janeiro, RJ';
+                          const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(origem)}/${encodeURIComponent(destino)}`;
+                          console.log('🗺️ Abrindo Maps:', mapsUrl);
+                          alert(`Abrindo: ${mapsUrl}`);
+                          window.open(mapsUrl, '_blank');
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg"
+                      >
+                        <MapPin className="mr-2 h-4 w-4" />
+                        TESTAR MAPS
+                      </Button>
                     </div>
-                  ) : (
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                      <div className="flex items-center space-x-2 text-gray-500">
-                        <MapPin className="h-4 w-4" />
-                        <p className="text-sm">Preencha origem e destino para consultar no Google Maps</p>
-                      </div>
+                  </div>
+
+                  {/* Versão condicional */}
+                  {currentRoute.nome_ponto_a && currentRoute.nome_ponto_a.trim() !== '' && currentRoute.nome_ponto_b && currentRoute.nome_ponto_b.trim() !== '' && (
+                    <div className="bg-green-100 p-4 rounded-lg border-2 border-green-300">
+                      <p className="font-bold text-green-800">✅ CONDICIONAL FUNCIONANDO!</p>
+                      <p className="text-sm text-green-600">Ambos campos preenchidos - Maps deve aparecer aqui</p>
                     </div>
                   )}
                   <div className="space-y-2">
