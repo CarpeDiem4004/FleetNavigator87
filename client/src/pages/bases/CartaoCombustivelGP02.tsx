@@ -56,6 +56,7 @@ interface SolicitacaoFormData {
   tipoCombustivel: string;
   horarioAbastecimento: string;
   nomeMotorista: string;
+  nomeSolicitante: string; // Campo separado para o nome do solicitante
   celularWhatsApp: string;
   projeto: string;
   base: string;
@@ -85,6 +86,7 @@ export default function CartaoCombustivelGP02() {
     tipoCombustivel: 'Diesel',
     horarioAbastecimento: '',
     nomeMotorista: '',
+    nomeSolicitante: '', // Campo separado para o nome do solicitante
     celularWhatsApp: '',
     projeto: '',
     base: ''
@@ -146,12 +148,12 @@ export default function CartaoCombustivelGP02() {
     loadFuelCardHistory();
   }, []);
 
-  // Preencher automaticamente o nome do usuário logado
+  // Preencher automaticamente o nome do usuário logado como SOLICITANTE
   useEffect(() => {
     if (user && user.name) {
       setFormData(prev => ({ 
         ...prev, 
-        nomeMotorista: user.name 
+        nomeSolicitante: user.name 
       }));
     }
   }, [user]);
@@ -296,6 +298,7 @@ export default function CartaoCombustivelGP02() {
         fuelType: formData.tipoCombustivel,
         fuelTime: formData.horarioAbastecimento,
         driverName: formData.nomeMotorista,
+        requesterName: formData.nomeSolicitante, // Nome do solicitante (usuário logado)
         driverPhone: formData.celularWhatsApp,
         reason: 'Solicitação de recarga de cartão combustível',
         specificCardData: formData.tipoCartao === 'especifico' ? formData.numeroCartaoEspecifico : '',
@@ -303,7 +306,7 @@ export default function CartaoCombustivelGP02() {
         baseId: selectedProject?.bases.find(b => b.id.toString() === formData.base)?.id || 150,
         observations: formData.observacoes || '',
         origem: 'base_system',
-        solicitante: 'GP02 - Jacarei'
+        solicitante: formData.nomeSolicitante || 'GP02 - Jacarei' // Usar nome do solicitante aqui
       };
 
       console.log('Enviando solicitação para API:', requestData);
@@ -646,14 +649,14 @@ export default function CartaoCombustivelGP02() {
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="nomeMotorista" className="text-yellow-600 font-medium">
+                            <Label htmlFor="nomeSolicitante" className="text-yellow-600 font-medium">
                               Nome
                             </Label>
                             <Input
-                              id="nomeMotorista"
+                              id="nomeSolicitante"
                               placeholder="João da Silva"
-                              value={formData.nomeMotorista}
-                              onChange={(e) => setFormData(prev => ({ ...prev, nomeMotorista: e.target.value }))}
+                              value={formData.nomeSolicitante}
+                              onChange={(e) => setFormData(prev => ({ ...prev, nomeSolicitante: e.target.value }))}
                               className="h-11 bg-green-50"
                               required
                               readOnly
