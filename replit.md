@@ -181,3 +181,11 @@ Key tables include `vehicles`, `maintenance`, `towing_services`, `fuel_cards`, `
 - API endpoint /api/bases/:baseId/check-access for secure access verification with detailed logging
 - Universal security wrapper protects all base-specific routes and components
 - System prevents unauthorized cross-base access while maintaining operational flexibility for authorized users
+
+✅ **Authentication Fix for GP2 and GP3 Bases (August 11, 2025)**
+- RESOLVED: GP2 login credentials - renato.miyata@muricionfleet.com / 8S&n#HBhAi fully functional
+- RESOLVED: GP3 login credentials - bruno.machado@muricionfleet.com / password123 fully functional
+- Updated password hashes from legacy format to modern bcrypt encryption for both users
+- Both bases now support complete operational workflows including fuel card requests
+- Fixed fuel card request filtering to display all bases with actual solicitations in admin panel
+- Verified complete authentication flow from login to fuel card access for both GP2 and GP3
