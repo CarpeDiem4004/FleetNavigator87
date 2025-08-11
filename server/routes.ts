@@ -5145,16 +5145,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rota para buscar base por ID numérico ou por basename
   app.get("/api/bases/:id", isAuthenticated, async (req, res) => {
     try {
-      const base = await storage.getBase(parseInt(req.params.id));
-      if (!base) {
-        return res.status(404).json({ message: "Base not found" });
+      const idParam = req.params.id;
+      let base = null;
+      
+      // Verifica se é um número (ID) ou string (basename)
+      if (!isNaN(parseInt(idParam))) {
+        // É um ID numérico
+        base = await storage.getBase(parseInt(idParam));
+      } else {
+        // É um basename (ex: lajeado, campinas, etc)
+        console.log(`[API/BASES] Buscando base por basename: ${idParam}`);
+        const bases = await storage.getAllBases();
+        base = bases.find(b => b.basename?.toLowerCase() === idParam.toLowerCase());
+        
+        if (base) {
+          console.log(`[API/BASES] Base encontrada: ${base.name} (ID: ${base.id})`);
+        } else {
+          console.log(`[API/BASES] Base não encontrada para basename: ${idParam}`);
+        }
       }
-      return res.status(200).json(base);
+      
+      if (!base) {
+        return res.status(404).json({ 
+          success: false,
+          message: "Base not found",
+          data: null
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        data: base
+      });
     } catch (error) {
       console.error("Error fetching base:", error);
-      return res.status(500).json({ message: "Server error" });
+      return res.status(500).json({ 
+        success: false,
+        message: "Server error",
+        error: String(error)
+      });
     }
   });
   

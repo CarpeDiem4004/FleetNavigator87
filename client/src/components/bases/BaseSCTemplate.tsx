@@ -21,13 +21,15 @@ interface BaseSCTemplateProps {
   baseCode: string;
   baseLocation: string;
   baseSlug: string;
+  baseId?: number;
 }
 
 const BaseSCTemplate: React.FC<BaseSCTemplateProps> = ({ 
   baseName, 
   baseCode, 
   baseLocation, 
-  baseSlug 
+  baseSlug,
+  baseId 
 }) => {
   const { user } = useAuth();
   
