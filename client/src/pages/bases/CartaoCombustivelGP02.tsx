@@ -13,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CreditCard, ArrowLeft, CheckCircle, History, FileText, Calendar, DollarSign, Clock, User, Car, X } from "lucide-react";
 import { Link } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 
 interface SolicitacaoHistorico {
   id: string;
@@ -62,6 +63,7 @@ interface SolicitacaoFormData {
 
 export default function CartaoCombustivelGP02() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('solicitacao');
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -143,6 +145,16 @@ export default function CartaoCombustivelGP02() {
   useEffect(() => {
     loadFuelCardHistory();
   }, []);
+
+  // Preencher automaticamente o nome do usuário logado
+  useEffect(() => {
+    if (user && user.name) {
+      setFormData(prev => ({ 
+        ...prev, 
+        nomeMotorista: user.name 
+      }));
+    }
+  }, [user]);
 
   // Atualizar histórico a cada 10 segundos para mostrar mudanças de status
   useEffect(() => {
@@ -642,10 +654,11 @@ export default function CartaoCombustivelGP02() {
                               placeholder="João da Silva"
                               value={formData.nomeMotorista}
                               onChange={(e) => setFormData(prev => ({ ...prev, nomeMotorista: e.target.value }))}
-                              className="h-11"
+                              className="h-11 bg-green-50"
                               required
+                              readOnly
                             />
-                            <p className="text-xs text-gray-500">Nome completo do solicitante</p>
+                            <p className="text-xs text-green-600">✓ Nome preenchido automaticamente com base no login</p>
                           </div>
 
                           <div className="space-y-2">
