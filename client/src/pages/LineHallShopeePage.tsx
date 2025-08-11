@@ -727,24 +727,24 @@ export default function LineHallShopeePage() {
                 <DialogHeader>
                   <DialogTitle>Cadastrar Nova Rota</DialogTitle>
                   <DialogDescription>
-                    Cadastre uma nova rota do Line Hall Shopee
+                    Preencha os dados da nova rota Line Haul. Use o botão Google Maps para consultar a distância exata.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="space-y-2">
-                    <Label htmlFor="nome_ponto_a">Ponto A (Origem) *</Label>
+                    <Label htmlFor="nome_ponto_a">Ponto de Origem *</Label>
                     <Input
                       id="nome_ponto_a"
-                      placeholder="Ex: São Paulo - SP"
+                      placeholder="Ex: Rio de Janeiro, RJ"
                       value={currentRoute.nome_ponto_a}
                       onChange={(e) => setCurrentRoute(prev => ({ ...prev, nome_ponto_a: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="nome_ponto_b">Ponto B (Destino) *</Label>
+                    <Label htmlFor="nome_ponto_b">Ponto de Destino *</Label>
                     <Input
                       id="nome_ponto_b"
-                      placeholder="Ex: Rio de Janeiro - RJ"
+                      placeholder="Ex: São Paulo, SP"
                       value={currentRoute.nome_ponto_b}
                       onChange={(e) => setCurrentRoute(prev => ({ ...prev, nome_ponto_b: e.target.value }))}
                     />
@@ -764,22 +764,28 @@ export default function LineHallShopeePage() {
                         <Button 
                           type="button"
                           variant="outline" 
-                          size="icon"
+                          size="sm"
                           onClick={() => {
                             const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(currentRoute.nome_ponto_a)}/${encodeURIComponent(currentRoute.nome_ponto_b)}`;
                             window.open(mapsUrl, '_blank');
                           }}
-                          className="text-blue-600 hover:text-blue-800 shrink-0"
-                          title="Ver rota no Google Maps"
+                          className="text-blue-600 hover:text-blue-800 shrink-0 px-3"
+                          title="Abrir no Google Maps para ver distância exata"
                         >
-                          <MapPin className="h-4 w-4" />
+                          <MapPin className="h-4 w-4 mr-1" />
+                          Maps
                         </Button>
                       )}
                     </div>
-                  </div>
-                  
-                  <div className="text-sm text-muted-foreground text-center">
-                    💡 Preencha origem e destino, depois clique no ícone ao lado do campo distância para consultar no Google Maps
+                    {currentRoute.nome_ponto_a && currentRoute.nome_ponto_b && (
+                      <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded border border-blue-200">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          <span className="font-medium">Dica:</span>
+                        </div>
+                        <span>Clique no botão "Maps" acima para abrir a rota no Google Maps e verificar a distância exata entre {currentRoute.nome_ponto_a} e {currentRoute.nome_ponto_b}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <DialogFooter className="flex gap-2">
@@ -792,13 +798,19 @@ export default function LineHallShopeePage() {
                         const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(currentRoute.nome_ponto_a)}/${encodeURIComponent(currentRoute.nome_ponto_b)}`;
                         window.open(mapsUrl, '_blank');
                       }}
-                      className="text-blue-600 hover:text-blue-800"
+                      className="text-blue-600 hover:text-blue-800 border-blue-200 bg-blue-50 hover:bg-blue-100"
                     >
                       <MapPin className="mr-2 h-4 w-4" />
-                      Ver no Maps
+                      Consultar Distância
                     </Button>
                   )}
-                  <Button type="button" onClick={handleCreateRoute}>Cadastrar Rota</Button>
+                  <Button 
+                    type="button" 
+                    onClick={handleCreateRoute}
+                    disabled={!currentRoute.nome_ponto_a || !currentRoute.nome_ponto_b || !currentRoute.km_total}
+                  >
+                    Cadastrar Rota
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
