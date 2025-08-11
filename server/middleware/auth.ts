@@ -178,7 +178,8 @@ export const hasMaintenanceAccess = async (req: Request, res: Response, next: Ne
         (user.role && user.role.toLowerCase() === 'gestor') || 
         (user.role && user.role.toLowerCase() === 'admin') || 
         user.baseId === FLEET_MANAGEMENT_BASE_ID || 
-        (user.role && user.role.toLowerCase() === 'oficina')
+        (user.role && user.role.toLowerCase() === 'oficina') ||
+        (user.role && user.role.toLowerCase() === 'line_hall')
       )) {
       console.log('[hasMaintenanceAccess] Acesso concedido para usuário:', user.email);
       return next();
@@ -192,7 +193,7 @@ export const hasMaintenanceAccess = async (req: Request, res: Response, next: Ne
       email: user?.email
     });
     
-    return res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin, gestor ou oficina necessária." });
+    return res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin, gestor, oficina ou line_hall necessária." });
   } catch (error) {
     const serverError = error as Error;
     console.error('[hasMaintenanceAccess] Erro inesperado:', serverError.message);
