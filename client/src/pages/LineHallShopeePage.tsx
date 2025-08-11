@@ -766,6 +766,7 @@ export default function LineHallShopeePage() {
                     <p>• Origem: "{currentRoute.nome_ponto_a}" (tipo: {typeof currentRoute.nome_ponto_a}, length: {currentRoute.nome_ponto_a?.length || 0})</p>
                     <p>• Destino: "{currentRoute.nome_ponto_b}" (tipo: {typeof currentRoute.nome_ponto_b}, length: {currentRoute.nome_ponto_b?.length || 0})</p>
                     <p>• Condição: {currentRoute.nome_ponto_a && currentRoute.nome_ponto_a.length > 0 && currentRoute.nome_ponto_b && currentRoute.nome_ponto_b.length > 0 ? "✅ VERDADEIRO" : "❌ FALSO"}</p>
+                    <p>• Estado Dialog: isCreatingRoute={isCreatingRoute.toString()}</p>
                   </div>
 
                   {/* Google Maps Integration - SEMPRE MOSTRAR PARA TESTE */}
@@ -778,6 +779,7 @@ export default function LineHallShopeePage() {
                         <div>
                           <p className="font-semibold text-gray-900">🗺️ Google Maps (SEMPRE VISÍVEL)</p>
                           <p className="text-sm text-gray-600">Origem: "{currentRoute.nome_ponto_a || 'vazio'}" → Destino: "{currentRoute.nome_ponto_b || 'vazio'}"</p>
+                          <p className="text-xs text-gray-500">Dialog: {isCreatingRoute ? 'ABERTO' : 'FECHADO'}</p>
                         </div>
                       </div>
                       <Button 
