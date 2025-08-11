@@ -722,7 +722,13 @@ export default function LineHallShopeePage() {
               <LogOut className="mr-2 h-4 w-4" />
               Sair
             </Button>
-            <Dialog open={isCreatingRoute} onOpenChange={setIsCreatingRoute}>
+            <Dialog 
+              open={isCreatingRoute} 
+              onOpenChange={(open) => {
+                console.log('🔄 Dialog onOpenChange:', open);
+                setIsCreatingRoute(open);
+              }}
+            >
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                   <DialogTitle>Cadastrar Nova Rota</DialogTitle>
@@ -1217,7 +1223,16 @@ export default function LineHallShopeePage() {
                     <FileText className="mr-2 h-4 w-4" />
                     {showRoutes ? 'Ocultar' : 'Ver Rotas'}
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setIsCreatingRoute(true)}>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      console.log('🚀 Clicando em Nova Rota - Estado atual:', isCreatingRoute);
+                      setIsCreatingRoute(true);
+                      console.log('🚀 Estado após clique deve ser true');
+                    }}
+                    className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                  >
                     <Plus className="mr-2 h-4 w-4" />
                     Nova Rota
                   </Button>
