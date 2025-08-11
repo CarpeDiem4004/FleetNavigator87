@@ -750,6 +750,11 @@ export default function LineHallShopeePage() {
                     />
                   </div>
                   
+                  {/* Debug para verificar os valores */}
+                  <div className="text-xs text-gray-400 p-2 border rounded">
+                    Debug: Origem="{currentRoute.nome_ponto_a || 'vazio'}" | Destino="{currentRoute.nome_ponto_b || 'vazio'}" | Mostrar={currentRoute.nome_ponto_a && currentRoute.nome_ponto_b ? 'SIM' : 'NÃO'}
+                  </div>
+                  
                   {/* Botão Google Maps aparece assim que ambos os campos são preenchidos */}
                   {currentRoute.nome_ponto_a && currentRoute.nome_ponto_b && (
                     <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border-2 border-blue-200 animate-in slide-in-from-top-2 duration-300">
@@ -775,6 +780,24 @@ export default function LineHallShopeePage() {
                       </div>
                     </div>
                   )}
+                  
+                  {/* Botão alternativo sempre visível para testar */}
+                  <div className="bg-yellow-50 p-3 border border-yellow-200 rounded-lg">
+                    <p className="text-sm font-medium text-yellow-800 mb-2">Botão de Teste - Google Maps</p>
+                    <Button 
+                      type="button"
+                      onClick={() => {
+                        const origem = currentRoute.nome_ponto_a || 'São Paulo, SP';
+                        const destino = currentRoute.nome_ponto_b || 'Rio de Janeiro, RJ';
+                        const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(origem)}/${encodeURIComponent(destino)}`;
+                        window.open(mapsUrl, '_blank');
+                      }}
+                      className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                    >
+                      <MapPin className="mr-2 h-4 w-4" />
+                      Testar Maps (sempre visível)
+                    </Button>
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="km_total">Distância Total (KM) *</Label>
                     <Input
