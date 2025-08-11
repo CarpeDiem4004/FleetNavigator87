@@ -744,11 +744,7 @@ export default function LineHallShopeePage() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="bg-red-100 border border-red-300 p-2 rounded text-xs text-red-800">
-                    <p><strong>🔧 TESTE DE RENDERIZAÇÃO:</strong></p>
-                    <p>Este bloco deve aparecer sempre que o Dialog abrir</p>
-                    <p>isCreatingRoute: {isCreatingRoute ? 'TRUE' : 'FALSE'}</p>
-                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="nome_ponto_a">Ponto de Origem *</Label>
                     <Input
@@ -768,53 +764,88 @@ export default function LineHallShopeePage() {
                     />
                   </div>
                   
-                  {/* DEBUG VISUAL - SEMPRE VISÍVEL */}
-                  <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg text-xs">
-                    <p><strong>🔍 DEBUG VISUAL:</strong></p>
-                    <p>• Origem: "{currentRoute.nome_ponto_a}" (tipo: {typeof currentRoute.nome_ponto_a}, length: {currentRoute.nome_ponto_a?.length || 0})</p>
-                    <p>• Destino: "{currentRoute.nome_ponto_b}" (tipo: {typeof currentRoute.nome_ponto_b}, length: {currentRoute.nome_ponto_b?.length || 0})</p>
-                    <p>• Condição: {currentRoute.nome_ponto_a && currentRoute.nome_ponto_a.length > 0 && currentRoute.nome_ponto_b && currentRoute.nome_ponto_b.length > 0 ? "✅ VERDADEIRO" : "❌ FALSO"}</p>
-                    <p>• Estado Dialog: isCreatingRoute={isCreatingRoute.toString()}</p>
-                  </div>
 
-                  {/* Google Maps Integration - SEMPRE MOSTRAR PARA TESTE */}
-                  <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border-2 border-blue-300 shadow-md">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="bg-blue-100 p-2 rounded-full">
-                          <MapPin className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900">🗺️ Google Maps (SEMPRE VISÍVEL)</p>
-                          <p className="text-sm text-gray-600">Origem: "{currentRoute.nome_ponto_a || 'vazio'}" → Destino: "{currentRoute.nome_ponto_b || 'vazio'}"</p>
-                          <p className="text-xs text-gray-500">Dialog: {isCreatingRoute ? 'ABERTO' : 'FECHADO'}</p>
-                        </div>
-                      </div>
-                      <Button 
-                        type="button"
-                        onClick={() => {
-                          const origem = currentRoute.nome_ponto_a?.trim() || 'São Paulo, SP';
-                          const destino = currentRoute.nome_ponto_b?.trim() || 'Rio de Janeiro, RJ';
-                          const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(origem)}/${encodeURIComponent(destino)}`;
-                          console.log('🗺️ Abrindo Maps:', { origem, destino, mapsUrl });
-                          window.open(mapsUrl, '_blank');
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-                      >
-                        <MapPin className="mr-2 h-4 w-4" />
-                        ABRIR MAPS
-                      </Button>
-                    </div>
-                  </div>
 
-                  {/* Versão condicional para comparar */}
+                  {/* Google Maps Distância Automática */}
                   {currentRoute.nome_ponto_a && currentRoute.nome_ponto_a.length > 0 && 
                    currentRoute.nome_ponto_b && currentRoute.nome_ponto_b.length > 0 && (
-                    <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
-                      <p className="text-green-800 font-bold">✅ VERSÃO CONDICIONAL APARECEU!</p>
-                      <p className="text-sm text-green-600">A lógica condicional funcionou corretamente</p>
+                    <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border-2 border-blue-300 shadow-md">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="bg-blue-100 p-2 rounded-full">
+                            <MapPin className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">Google Maps - Consultar Distância</p>
+                            <p className="text-sm text-gray-600">
+                              {currentRoute.nome_ponto_a} → {currentRoute.nome_ponto_b}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            type="button"
+                            onClick={async () => {
+                              const origem = currentRoute.nome_ponto_a?.trim();
+                              const destino = currentRoute.nome_ponto_b?.trim();
+                              
+                              if (!origem || !destino) {
+                                alert("Preencha origem e destino antes de consultar.");
+                                return;
+                              }
+
+                              try {
+                                console.log('🗺️ Consultando distância:', { origem, destino });
+                                
+                                // Usando a API do Google Maps via proxy para evitar CORS
+                                const apiKey = "AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY"; // Chave pública de exemplo
+                                const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origem)}&destination=${encodeURIComponent(destino)}&key=${apiKey}`;
+                                
+                                const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+                                const data = await response.json();
+                                const jsonData = JSON.parse(data.contents);
+                                
+                                if (jsonData.routes && jsonData.routes.length > 0) {
+                                  const distanciaMetros = jsonData.routes[0].legs[0].distance.value;
+                                  const distanciaKm = Math.round(distanciaMetros / 1000);
+                                  
+                                  console.log('✅ Distância calculada:', distanciaKm + 'km');
+                                  setCurrentRoute(prev => ({ ...prev, km_total: distanciaKm }));
+                                  
+                                  alert(`Distância calculada: ${distanciaKm} km`);
+                                } else {
+                                  console.error('❌ Erro na resposta da API:', jsonData);
+                                  alert("Não foi possível calcular a rota. Tente novamente.");
+                                }
+                              } catch (error) {
+                                console.error('❌ Erro ao consultar Google Maps:', error);
+                                alert("Erro ao consultar a rota. Verifique sua conexão.");
+                              }
+                            }}
+                            className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                          >
+                            <MapPin className="mr-2 h-4 w-4" />
+                            Calcular KM
+                          </Button>
+                          
+                          <Button 
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(currentRoute.nome_ponto_a)}/${encodeURIComponent(currentRoute.nome_ponto_b)}`;
+                              window.open(mapsUrl, '_blank');
+                            }}
+                            className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-300"
+                          >
+                            <MapPin className="mr-2 h-4 w-4" />
+                            Ver no Maps
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   )}
+
+
                   <div className="space-y-2">
                     <Label htmlFor="km_total">Distância Total (KM) *</Label>
                     <Input
@@ -828,7 +859,7 @@ export default function LineHallShopeePage() {
                     {currentRoute.nome_ponto_a && currentRoute.nome_ponto_a.length > 0 && currentRoute.nome_ponto_b && currentRoute.nome_ponto_b.length > 0 && !currentRoute.km_total && (
                       <div className="text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200 flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
-                        <span>Use o botão "Abrir Maps" acima para consultar a distância exata</span>
+                        <span>Use o botão "Calcular KM" acima para obter a distância automaticamente</span>
                       </div>
                     )}
                   </div>
