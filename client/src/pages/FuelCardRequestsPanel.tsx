@@ -728,23 +728,56 @@ const FuelCardRequestsPanel: React.FC = () => {
   // Get filtered bases based on selected project
   const getFilteredBases = () => {
     if (projectFilter === 'all') {
-      // Return all unique bases from all projects
+      // Return all unique bases from solicitations + projects
       const allBases = new Set<string>();
+      
+      // Add bases from solicitations (real data from database)
+      solicitations.forEach(sol => {
+        if (sol.base && sol.base.trim() !== '') {
+          allBases.add(sol.base);
+        }
+      });
+      
+      // Also add bases from projects for completeness
       projects.forEach(project => {
         if (project.bases) {
           project.bases.forEach((base: any) => {
-            allBases.add(base.base_name);
+            if (base.base_name) {
+              allBases.add(base.base_name);
+            }
           });
         }
       });
+      
       return Array.from(allBases).sort();
     } else {
-      // Return bases from selected project
+      // Return bases from selected project + solicitations matching that project
       const selectedProject = projects.find(p => p.id.toString() === projectFilter);
+      const projectBases = new Set<string>();
+      
+      // Add bases from the selected project
       if (selectedProject && selectedProject.bases) {
-        return selectedProject.bases.map((base: any) => base.base_name).sort();
+        selectedProject.bases.forEach((base: any) => {
+          if (base.base_name) {
+            projectBases.add(base.base_name);
+          }
+        });
       }
-      return [];
+      
+      // Add bases from solicitations that belong to this project
+      solicitations.forEach(sol => {
+        if (sol.base && sol.base.trim() !== '') {
+          // Check if this solicitation's base belongs to the selected project
+          if (selectedProject && selectedProject.bases) {
+            const belongsToProject = selectedProject.bases.some((base: any) => base.base_name === sol.base);
+            if (belongsToProject) {
+              projectBases.add(sol.base);
+            }
+          }
+        }
+      });
+      
+      return Array.from(projectBases).sort();
     }
   };
 
