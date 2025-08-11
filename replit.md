@@ -35,11 +35,11 @@ The system is built with a React/TypeScript frontend and a Node.js/Express backe
 - **Line Haul Dashboard**: Dedicated page for Line Haul management including route management, vehicle tracking, maintenance workflow, and driver interface access.
 - **Universal Base Dashboard System**: Standardized operational dashboards for all bases with consistent navigation and security controls.
 - **Universal Fuel Card System**: Standardized fuel card access configuration and functionality across all bases.
-- **Security Implementation**: Comprehensive "golden rule" security system enforcing base-specific access control through BaseSecurityGuard and BaseAccessController components, ensuring each base is accessible only through specific login credentials.
+- **Security Implementation**: Comprehensive "golden rule" security system with COMPLETE PRIVATE ACCESS enforcement. ALL base and posto routes now require authentication - NO public access allowed. BaseSecurityGuard and BaseAccessController components ensure each base is accessible only through specific login credentials.
 - **Google Maps Integration**: Enhanced integration for route registration, automatically activating a Google Maps button for distance verification.
 
 ### Data Flow
-- **Fuel Station External Access**: Public URLs, mobile device detection, dynamic project loading, data validation, and real-time synchronization.
+- **Fuel Station Access**: PRIVATE authenticated access only, mobile device detection, dynamic project loading, data validation, and real-time synchronization. All external links now require valid user login.
 - **Authentication**: Public access for external forms, Express sessions with Supabase JWT tokens.
 - **Deployment Strategy**: Local development with Replit, production on Replit autoscale with Supabase cloud hosting.
 
