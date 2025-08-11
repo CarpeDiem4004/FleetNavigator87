@@ -27,14 +27,14 @@ const LoginLajeado: React.FC = () => {
     try {
       const result = await login(email, password);
       
-      if (result.success) {
+      if (result) {
         toast({
           title: "Login realizado com sucesso!",
           description: "Redirecionando para a Base LAJEADO SRS10-SDD...",
         });
         navigate('/bases/lajeado');
       } else {
-        setError(result.message || 'Erro ao fazer login');
+        setError('Credenciais inválidas ou erro no servidor');
       }
     } catch (err) {
       setError('Erro inesperado. Tente novamente.');

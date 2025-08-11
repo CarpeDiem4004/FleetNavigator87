@@ -1,8 +1,8 @@
 {
-  "name": "Murici On Fleet - Line Haul Motoristas",
-  "short_name": "Line Haul",
-  "description": "Aplicativo PWA para motoristas do Line Haul - Checklist e gestão de viagens",
-  "start_url": "/motorista-line-hall",
+  "name": "Murici On Fleet 2.0 - Sistema de Gestão de Frota",
+  "short_name": "Murici Fleet",
+  "description": "Sistema completo de gestão de frotas com controle de combustível, manutenção e operações",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
