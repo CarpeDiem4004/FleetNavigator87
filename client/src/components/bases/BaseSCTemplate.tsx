@@ -14,6 +14,7 @@ import {
   Truck
 } from "lucide-react";
 import { Link } from 'wouter';
+import { useAuth } from '@/context/AuthContext';
 
 interface BaseSCTemplateProps {
   baseName: string;
@@ -28,6 +29,15 @@ const BaseSCTemplate: React.FC<BaseSCTemplateProps> = ({
   baseLocation, 
   baseSlug 
 }) => {
+  const { user } = useAuth();
+  
+  // Função para determinar saudação baseada no horário
+  const getSaudacao = () => {
+    const hora = new Date().getHours();
+    if (hora < 12) return "Bom dia";
+    if (hora < 18) return "Boa tarde";
+    return "Boa noite";
+  };
   const functionalities = [
     {
       id: 1,
@@ -125,6 +135,16 @@ const BaseSCTemplate: React.FC<BaseSCTemplateProps> = ({
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
+          {user && (
+            <div className="mb-6">
+              <h2 className="text-2xl font-semibold text-blue-700 mb-2">
+                {getSaudacao()}, {user.name}!
+              </h2>
+              <p className="text-gray-600">
+                Bem-vindo ao painel da base {baseName}
+              </p>
+            </div>
+          )}
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             {baseName} {baseCode}
           </h1>
@@ -173,16 +193,7 @@ const BaseSCTemplate: React.FC<BaseSCTemplateProps> = ({
           })}
         </div>
 
-        <div className="text-center">
-          <Link to="/dashboard">
-            <Button 
-              variant="outline" 
-              className="bg-white/80 backdrop-blur-sm border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-6 rounded-md transition-colors duration-200"
-            >
-              Voltar ao Sistema Principal
-            </Button>
-          </Link>
-        </div>
+
       </div>
     </div>
   );
