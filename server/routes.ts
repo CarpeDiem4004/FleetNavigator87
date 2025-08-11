@@ -5158,14 +5158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // É um basename (ex: lajeado, campinas, etc)
         console.log(`[API/BASES] Buscando base por basename: ${idParam}`);
-        const bases = await storage.getAllBases();
-        base = bases.find(b => b.basename?.toLowerCase() === idParam.toLowerCase());
-        
-        if (base) {
-          console.log(`[API/BASES] Base encontrada: ${base.name} (ID: ${base.id})`);
-        } else {
-          console.log(`[API/BASES] Base não encontrada para basename: ${idParam}`);
-        }
+        base = await storage.getBaseByBasename(idParam.toLowerCase());
       }
       
       if (!base) {

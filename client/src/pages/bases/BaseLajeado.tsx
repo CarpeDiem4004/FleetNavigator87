@@ -7,7 +7,7 @@ const BaseLajeado: React.FC = () => {
       baseName="SC (LAJEADO) SRS10-SDD"
       baseCode="SRS10-SDD"
       baseLocation="Lajeado, RS"
-      baseSlug="lajeado"
+      baseSlug="102"
       baseId={102}
     />
   );

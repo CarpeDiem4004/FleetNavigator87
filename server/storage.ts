@@ -26,6 +26,7 @@ export interface IStorage {
   
   // Base operations
   getBase(id: number): Promise<Base | undefined>;
+  getBaseByBasename(basename: string): Promise<Base | undefined>;
   getAllBases(): Promise<Base[]>;
   createBase(base: InsertBase): Promise<Base>;
   updateBase(id: number, base: Partial<InsertBase>): Promise<Base | undefined>;
@@ -435,6 +436,37 @@ export class DatabaseStorage implements IStorage {
   // Base operations
   async getBase(id: number): Promise<Base | undefined> {
     const [base] = await db.select().from(bases).where(eq(bases.id, id));
+    return base || undefined;
+  }
+
+  async getBaseByBasename(basename: string): Promise<Base | undefined> {
+    console.log(`[STORAGE] Buscando base por basename: ${basename}`);
+    
+    // Busca flexível: por basename exato, contendo o termo, ou por nome
+    const basenameLower = basename.toLowerCase();
+    const allBases = await db.select().from(bases);
+    
+    const base = allBases.find(b => {
+      if (!b.basename && !b.name) return false;
+      
+      // Busca exata por basename
+      if (b.basename?.toLowerCase() === basenameLower) return true;
+      
+      // Busca contendo o termo no basename
+      if (b.basename?.toLowerCase().includes(basenameLower)) return true;
+      
+      // Busca contendo o termo no nome
+      if (b.name?.toLowerCase().includes(basenameLower)) return true;
+      
+      return false;
+    });
+    
+    if (base) {
+      console.log(`[STORAGE] Base encontrada: ${base.name} (ID: ${base.id}) - Basename: ${base.basename}`);
+    } else {
+      console.log(`[STORAGE] Base não encontrada para termo: ${basename}`);
+      console.log(`[STORAGE] Bases disponíveis: ${allBases.map(b => `${b.name} (${b.basename})`).join(', ')}`);
+    }
     return base || undefined;
   }
 
