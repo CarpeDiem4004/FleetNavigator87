@@ -4216,13 +4216,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('[FUEL-CARD-REQUEST] Base encontrada:', baseName);
       }
       
-      // Criar a solicitação
+      // Criar a solicitação na tabela principal (solicitacoes_fuel_card) para integração com o painel
       const query = `
-        INSERT INTO fuel_card_requests (
-          plate, odometer, card_number, card_type, amount, provider, fuel_type, fuel_time,
-          driver_name, driver_phone, project_id, project_name, base_id, base_name,
-          reason, requested_by, specific_card_data, status, requested_at, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'pendente', NOW(), NOW(), NOW())
+        INSERT INTO solicitacoes_fuel_card (
+          placa, km, numero_cartao, tipo_cartao, valor_solicitado, provedor_cartao, tipo_combustivel, 
+          motorista, solicitante, telefone_celular, observacoes, status, data_solicitacao, base, id_rota
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'Pendente', NOW(), $12, 'GP02-REQUEST')
         RETURNING *
       `;
       
@@ -4231,10 +4230,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('[FUEL-CARD-REQUEST] Executando query INSERT...');
       console.log('[FUEL-CARD-REQUEST] Solicitante identificado como:', requestedByName);
+      console.log('[FUEL-CARD-REQUEST] Base identificada como:', baseName);
+      
       const result = await pool.query(query, [
-        plate, odometer, cardNumber, cardType, amount, provider, fuelType, fuelTime,
-        driverName, driverPhone, projectId, projectName, baseId, baseName,
-        reason, requestedByName, specificCardData
+        plate,                  // $1 - placa
+        odometer,              // $2 - km
+        cardNumber,            // $3 - numero_cartao
+        cardType,              // $4 - tipo_cartao
+        amount,                // $5 - valor_solicitado
+        provider,              // $6 - provedor_cartao
+        fuelType,              // $7 - tipo_combustivel
+        driverName,            // $8 - motorista
+        requestedByName,       // $9 - solicitante
+        driverPhone,           // $10 - telefone_celular
+        reason,                // $11 - observacoes
+        baseName || 'GP02 JACAREI (GRUPO PEREIRA)' // $12 - base (usar nome completo da base GP02)
       ]);
       
       console.log('[FUEL-CARD-REQUEST] Solicitação criada com sucesso:', result.rows[0]);
