@@ -41,9 +41,23 @@ export const BaseAccessController: React.FC<BaseAccessControllerProps> = ({
         setBaseData(base);
 
         // Definir caminho de redirecionamento específico da base
-        const loginPath = base.basename 
-          ? `/bases/${base.basename.toLowerCase()}/login`
-          : `/bases/${baseId}/login`;
+        // Converter basename para o formato correto da rota
+        let loginPath = `/bases/${baseId}/login`;
+        
+        if (base.basename) {
+          // Mapear basenames específicos para rotas conhecidas
+          const baseNameRouteMap: { [key: string]: string } = {
+            'SC_LAJEADO_SRS10SDD': 'lajeado',
+            'GP02_JACAREI': 'gp02',
+            'GP03_HORTOLANDIA': 'gp03',
+            'GP01_VARGEM_GRANDE': 'gp01'
+          };
+          
+          const routeName = baseNameRouteMap[base.basename] || base.basename.toLowerCase().replace(/_/g, '-');
+          loginPath = `/bases/${routeName}/login`;
+        }
+        
+        console.log('[BaseAccessController] Redirecionando para:', loginPath);
         setRedirectPath(loginPath);
 
         // APLICAR REGRA DE OURO: Verificação rigorosa de acesso

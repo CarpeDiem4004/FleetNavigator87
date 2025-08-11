@@ -524,6 +524,9 @@ function App() {
             <Route path="/bases/lajeado/login">
               <LoginLajeado />
             </Route>
+            <Route path="/bases/102/login">
+              <LoginLajeado />
+            </Route>
             <Route path="/bases/londrina/login">
               <LoginLondrina />
             </Route>
