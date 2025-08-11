@@ -36,11 +36,12 @@ The system is built with a React/TypeScript frontend and a Node.js/Express backe
 - **Universal Base Dashboard System**: Standardized operational dashboards for all bases with consistent navigation and security controls.
 - **Universal Fuel Card System**: Standardized fuel card access configuration and functionality across all bases.
 - **Security Implementation**: Comprehensive "golden rule" security system with COMPLETE PRIVATE ACCESS enforcement. ALL base and posto routes now require authentication - NO public access allowed. BaseSecurityGuard and BaseAccessController components ensure each base is accessible only through specific login credentials.
+- **Base Independence System**: Complete implementation of base independence with removal of all "Voltar ao Sistema Principal" buttons from 65+ login components and 3 base dashboard components. Each base operates independently without any connection to the main system, ensuring pure base-specific authentication and navigation.
 - **Google Maps Integration**: Enhanced integration for route registration, automatically activating a Google Maps button for distance verification.
 
 ### Data Flow
 - **Fuel Station Access**: PRIVATE authenticated access only, mobile device detection, dynamic project loading, data validation, and real-time synchronization. All external links now require valid user login.
-- **Authentication**: Public access for external forms, Express sessions with Supabase JWT tokens.
+- **Authentication**: Express sessions with Supabase JWT tokens. Complete base independence with no system principal access links.
 - **Deployment Strategy**: Local development with Replit, production on Replit autoscale with Supabase cloud hosting.
 
 ## External Dependencies

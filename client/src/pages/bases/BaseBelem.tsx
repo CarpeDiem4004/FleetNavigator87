@@ -158,16 +158,7 @@ const BaseBelem: React.FC = () => {
           })}
         </div>
 
-        <div className="text-center">
-          <Link to="/dashboard">
-            <Button 
-              variant="outline" 
-              className="bg-white/80 backdrop-blur-sm border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-6 rounded-md transition-colors duration-200"
-            >
-              Voltar ao Sistema Principal
-            </Button>
-          </Link>
-        </div>
+
       </div>
     </div>
   );

@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from '@/context/AuthContext';
-import { Link, useLocation } from 'wouter';
-import { Eye, EyeOff, LogIn, ArrowLeft } from 'lucide-react';
+import { useLocation } from 'wouter';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const LoginPresidentePrudente: React.FC = () => {
@@ -117,17 +117,7 @@ const LoginPresidentePrudente: React.FC = () => {
               {isLoading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
-          <div className="mt-6 text-center">
-            <Link to="/dashboard">
-              <Button
-                variant="outline"
-                className="text-gray-600 hover:text-gray-800 bg-white/80 backdrop-blur-sm border-gray-300 hover:bg-gray-50"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar ao Sistema Principal
-              </Button>
-            </Link>
-          </div>
+
         </CardContent>
       </Card>
     </div>

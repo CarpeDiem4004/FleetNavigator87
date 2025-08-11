@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Eye, EyeOff, AlertCircle, ArrowLeft } from "lucide-react";
-import { Link } from 'wouter';
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
+// // import { Link } from 'wouter';
 
 const LoginSC: React.FC = () => {
   const [email, setEmail] = useState('');
