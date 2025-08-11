@@ -722,13 +722,17 @@ export default function LineHallShopeePage() {
               <LogOut className="mr-2 h-4 w-4" />
               Sair
             </Button>
-            <Dialog 
-              open={isCreatingRoute} 
-              onOpenChange={(open) => {
-                console.log('🔄 Dialog onOpenChange:', open);
-                setIsCreatingRoute(open);
-              }}
-            >
+          </div>
+        </div>
+        
+        {/* Dialog para Nova Rota - Movido para fora da div dos botões */}
+        <Dialog 
+          open={isCreatingRoute} 
+          onOpenChange={(open) => {
+            console.log('🔄 Dialog onOpenChange:', open);
+            setIsCreatingRoute(open);
+          }}
+        >
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                   <DialogTitle>Cadastrar Nova Rota</DialogTitle>
@@ -1812,8 +1816,6 @@ export default function LineHallShopeePage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        </div>
-      </div>
     </MainLayoutSimple>
   );
 }
