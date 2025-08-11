@@ -756,41 +756,49 @@ export default function LineHallShopeePage() {
                     />
                   </div>
                   
-                  {/* Google Maps Integration */}
-                  {currentRoute.nome_ponto_a && currentRoute.nome_ponto_a.length > 0 && 
-                   currentRoute.nome_ponto_b && currentRoute.nome_ponto_b.length > 0 ? (
-                    <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border-2 border-blue-300 shadow-md">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="bg-blue-100 p-2 rounded-full">
-                            <MapPin className="h-5 w-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-gray-900">Consultar Google Maps</p>
-                            <p className="text-sm text-gray-600">Ver rota de {currentRoute.nome_ponto_a} até {currentRoute.nome_ponto_b}</p>
-                          </div>
+                  {/* DEBUG VISUAL - SEMPRE VISÍVEL */}
+                  <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg text-xs">
+                    <p><strong>🔍 DEBUG VISUAL:</strong></p>
+                    <p>• Origem: "{currentRoute.nome_ponto_a}" (tipo: {typeof currentRoute.nome_ponto_a}, length: {currentRoute.nome_ponto_a?.length || 0})</p>
+                    <p>• Destino: "{currentRoute.nome_ponto_b}" (tipo: {typeof currentRoute.nome_ponto_b}, length: {currentRoute.nome_ponto_b?.length || 0})</p>
+                    <p>• Condição: {currentRoute.nome_ponto_a && currentRoute.nome_ponto_a.length > 0 && currentRoute.nome_ponto_b && currentRoute.nome_ponto_b.length > 0 ? "✅ VERDADEIRO" : "❌ FALSO"}</p>
+                  </div>
+
+                  {/* Google Maps Integration - SEMPRE MOSTRAR PARA TESTE */}
+                  <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border-2 border-blue-300 shadow-md">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="bg-blue-100 p-2 rounded-full">
+                          <MapPin className="h-5 w-5 text-blue-600" />
                         </div>
-                        <Button 
-                          type="button"
-                          onClick={() => {
-                            const origem = currentRoute.nome_ponto_a.trim();
-                            const destino = currentRoute.nome_ponto_b.trim();
-                            const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(origem)}/${encodeURIComponent(destino)}`;
-                            window.open(mapsUrl, '_blank');
-                          }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-                        >
-                          <MapPin className="mr-2 h-4 w-4" />
-                          Abrir Maps
-                        </Button>
+                        <div>
+                          <p className="font-semibold text-gray-900">🗺️ Google Maps (SEMPRE VISÍVEL)</p>
+                          <p className="text-sm text-gray-600">Origem: "{currentRoute.nome_ponto_a || 'vazio'}" → Destino: "{currentRoute.nome_ponto_b || 'vazio'}"</p>
+                        </div>
                       </div>
+                      <Button 
+                        type="button"
+                        onClick={() => {
+                          const origem = currentRoute.nome_ponto_a?.trim() || 'São Paulo, SP';
+                          const destino = currentRoute.nome_ponto_b?.trim() || 'Rio de Janeiro, RJ';
+                          const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(origem)}/${encodeURIComponent(destino)}`;
+                          console.log('🗺️ Abrindo Maps:', { origem, destino, mapsUrl });
+                          window.open(mapsUrl, '_blank');
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                      >
+                        <MapPin className="mr-2 h-4 w-4" />
+                        ABRIR MAPS
+                      </Button>
                     </div>
-                  ) : (
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                      <div className="flex items-center space-x-2 text-gray-500">
-                        <MapPin className="h-4 w-4" />
-                        <p className="text-sm">Preencha origem e destino para consultar no Google Maps</p>
-                      </div>
+                  </div>
+
+                  {/* Versão condicional para comparar */}
+                  {currentRoute.nome_ponto_a && currentRoute.nome_ponto_a.length > 0 && 
+                   currentRoute.nome_ponto_b && currentRoute.nome_ponto_b.length > 0 && (
+                    <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
+                      <p className="text-green-800 font-bold">✅ VERSÃO CONDICIONAL APARECEU!</p>
+                      <p className="text-sm text-green-600">A lógica condicional funcionou corretamente</p>
                     </div>
                   )}
                   <div className="space-y-2">
