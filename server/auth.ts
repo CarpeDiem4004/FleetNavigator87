@@ -14,7 +14,17 @@ import { createClient } from '@supabase/supabase-js';
 
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
+    interface User {
+      id: number;
+      name: string;
+      email: string;
+      role: string;
+      baseId?: number | null;
+      basename?: string | null;
+      password?: string;
+      oficina_id?: number | null;
+      isActive?: boolean | null;
+    }
   }
 }
 
@@ -745,8 +755,8 @@ export function setupAuth(app: Express) {
     }
 
     // MÉTODO 2: Tentar recuperar Token JWT do cabeçalho Authorization
-    if (hasAuthHeader && req.headers.authorization.startsWith('Bearer ')) {
-      const jwtToken = req.headers.authorization.split(' ')[1];
+    if (hasAuthHeader && req.headers.authorization?.startsWith('Bearer ')) {
+      const jwtToken = req.headers.authorization?.split(' ')[1] || '';
       console.log('[API/USER] Tentando autenticação via token JWT');
       
       try {
@@ -754,7 +764,7 @@ export function setupAuth(app: Express) {
         const supabaseUrl = process.env.SUPABASE_URL;
         const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
         
-        if (supabaseUrl && supabaseKey) {
+        if (supabaseUrl && supabaseKey && jwtToken) {
           const supabase = createClient(supabaseUrl, supabaseKey);
           const { data: { user: supaUser }, error } = await supabase.auth.getUser(jwtToken);
           
@@ -854,7 +864,7 @@ export function setupAuth(app: Express) {
         
         if (supabaseUrl && supabaseKey) {
           const supabase = createClient(supabaseUrl, supabaseKey);
-          const { data: { user: supaUser }, error } = await supabase.auth.getUser(emergencyToken);
+          const { data: { user: supaUser }, error } = await supabase.auth.getUser(emergencyToken || '');
           
           if (supaUser && !error) {
             console.log(`[API/USER] Token emergencial válido para: ${supaUser.email}`);
