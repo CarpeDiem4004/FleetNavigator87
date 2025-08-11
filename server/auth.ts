@@ -772,7 +772,7 @@ export function setupAuth(app: Express) {
             console.log(`[API/USER] Token JWT válido para: ${supaUser.email}`);
             
             // Buscar usuário no banco
-            const dbUser = await storage.getUserByEmail(supaUser.email);
+            const dbUser = await storage.getUserByEmail(supaUser.email || '');
             
             if (dbUser) {
               console.log(`[API/USER] Usuário encontrado no banco: ${dbUser.id} (${dbUser.email})`);
@@ -870,7 +870,7 @@ export function setupAuth(app: Express) {
             console.log(`[API/USER] Token emergencial válido para: ${supaUser.email}`);
             
             // Buscar usuário no banco
-            const dbUser = await storage.getUserByEmail(supaUser.email);
+            const dbUser = await storage.getUserByEmail(supaUser.email || '');
             
             if (dbUser) {
               console.log(`[API/USER] Usuário recuperado via emergência: ${dbUser.id}`);
