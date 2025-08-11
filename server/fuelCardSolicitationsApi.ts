@@ -60,9 +60,33 @@ function getConsumoByModel(modelo: string): number {
 
 /**
  * Obtém todas as solicitações de cartão de combustível (incluindo Line Hall Shopee)
+ * Aplica filtros por base para usuários não-admin
  */
 export async function getFuelCardSolicitations(req: Request, res: Response) {
   try {
+    console.log('[FUEL-CARD-API] Buscando solicitações para usuário:', req.user);
+    
+    // Verificar se o usuário é admin ou de uma base específica
+    const isAdmin = req.user?.role === 'admin';
+    const userBaseId = req.user?.base_id;
+    const userBaseName = req.user?.basename;
+    
+    console.log('[FUEL-CARD-API] Permissões do usuário:', { 
+      isAdmin, 
+      userBaseId, 
+      userBaseName,
+      role: req.user?.role 
+    });
+
+    // Construir condições WHERE baseadas nas permissões do usuário
+    let whereConditions = '';
+    if (!isAdmin && userBaseName) {
+      // Se não for admin e tiver base específica, filtrar apenas solicitações da base
+      const baseNameForFilter = userBaseName.toUpperCase().includes('GP') ? 
+        userBaseName : `${userBaseName}%`;
+      whereConditions = `WHERE (s.base ILIKE '%${baseNameForFilter}%' OR s.base ILIKE '%${userBaseName}%')`;
+    }
+    
     const query = `
       SELECT * FROM (
         SELECT 
@@ -101,6 +125,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           COALESCE(v.cartao_abastecimento, s.numero_cartao, '') as cartao_combustivel
         FROM solicitacoes_fuel_card s
         LEFT JOIN veiculos v ON s.placa = v.placa
+        ${whereConditions}
 
         UNION ALL
 
@@ -197,6 +222,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
         FROM fuel_card_requests fcr
         LEFT JOIN bases b ON fcr.base_id = b.id
         LEFT JOIN veiculos v ON fcr.plate = v.placa
+        ${!isAdmin && userBaseId ? `WHERE fcr.base_id = ${userBaseId}` : ''}
       ) unified_requests
       ORDER BY 
         CASE 
@@ -216,12 +242,28 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
     }));
     
     // Debug: verificar se dados estão sendo retornados
-    console.log(`Total de solicitações retornadas: ${normalizedData.length}`);
+    console.log(`[FUEL-CARD-API] Total de solicitações retornadas: ${normalizedData.length}`);
+    console.log(`[FUEL-CARD-API] Filtros aplicados:`, { 
+      isAdmin, 
+      userBaseId, 
+      userBaseName, 
+      whereConditions: whereConditions || 'Nenhum (admin)' 
+    });
+    
+    // Verificar se há dados para a base específica
+    if (!isAdmin && normalizedData.length === 0) {
+      console.log(`[FUEL-CARD-API] ATENÇÃO: Nenhuma solicitação encontrada para base ${userBaseName} (ID: ${userBaseId})`);
+    }
     
     return res.status(200).json({
       success: true,
       data: normalizedData,
-      count: normalizedData.length
+      count: normalizedData.length,
+      user_info: {
+        is_admin: isAdmin,
+        base_id: userBaseId,
+        base_name: userBaseName
+      }
     });
   } catch (error: any) {
     console.error('Erro ao buscar solicitações de cartão:', error);

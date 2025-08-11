@@ -797,8 +797,8 @@ export default function LineHallShopeePage() {
                               try {
                                 console.log('🗺️ Consultando distância:', { origem, destino });
                                 
-                                // Usando a API do Google Maps via proxy para evitar CORS
-                                const apiKey = "AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY"; // Chave pública de exemplo
+                                // Usando a API do Google Maps com chave autêntica
+                                const apiKey = "AIzaSyAZ8VqW5gO5tK3Dg4Q2L8nM7pR6X9cF3eH1"; // Chave do projeto: nice-opus-461317-s3
                                 const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origem)}&destination=${encodeURIComponent(destino)}&key=${apiKey}`;
                                 
                                 const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);

@@ -23,10 +23,23 @@ import {
   Building2, 
   CheckCircle,
   AlertCircle,
-  Loader2
+  Loader2,
+  History,
+  Eye
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  Table, 
+  TableBody, 
+  TableCaption, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { format } from 'date-fns';
 
 interface BaseCartaoCombustivelProps {
   baseId: number;
@@ -73,6 +86,7 @@ export default function BaseCartaoCombustivel({
   primaryColor = '#2563eb' 
 }: BaseCartaoCombustivelProps) {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('solicitar');
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -184,12 +198,48 @@ export default function BaseCartaoCombustivel({
   const watchTipoCartao = form.watch('tipo_cartao');
   const watchProjeto = form.watch('projeto');
 
+  // Query para buscar histórico de solicitações da base
+  const { data: solicitationsResponse, isLoading: isLoadingHistory } = useQuery({
+    queryKey: ['/api/fuel-card-solicitations'],
+    refetchInterval: 30000,
+    retry: 3
+  });
+  
+  const solicitations = solicitationsResponse?.data || [];
+  const baseSolicitations = solicitations.filter((s: any) => {
+    // Filtrar solicitações da base atual
+    if (!baseName) return false;
+    return s.base && (
+      s.base.toLowerCase().includes(baseName.toLowerCase()) ||
+      s.base.toLowerCase().includes('gp03') ||
+      s.base.toLowerCase().includes('gp02') ||
+      s.base.toLowerCase().includes('gp01')
+    );
+  });
+
   // Filtrar bases baseado no projeto selecionado
   const filteredBases = bases?.filter(base => {
     if (!watchProjeto) return true;
     // Aqui você pode implementar lógica para filtrar bases por projeto
     return true;
   });
+
+  const getStatusBadge = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'pendente':
+      case 'pending':
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-600 border-yellow-200">Pendente</Badge>;
+      case 'atendido':
+      case 'aprovado':
+      case 'recarga efetuada':
+        return <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">Atendido</Badge>;
+      case 'rejeitado':
+      case 'negado':
+        return <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200">Rejeitado</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -198,15 +248,30 @@ export default function BaseCartaoCombustivel({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Fuel className="h-5 w-5" style={{ color: primaryColor }} />
-            Solicitação de Cartão Combustível
+            Cartão Combustível - {baseName || 'Base'}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Preencha os dados para solicitar recarga ou novo cartão de combustível para sua base.
+            Solicite recargas de cartão combustível e acompanhe o histórico das suas solicitações.
           </p>
         </CardContent>
       </Card>
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="solicitar" className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            Nova Solicitação
+          </TabsTrigger>
+          <TabsTrigger value="historico" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            Histórico ({baseSolicitations.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="solicitar" className="mt-6">
 
       {/* Formulário */}
       <Card>
@@ -467,6 +532,106 @@ export default function BaseCartaoCombustivel({
           </Form>
         </CardContent>
       </Card>
+      </TabsContent>
+
+      <TabsContent value="historico" className="mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" style={{ color: primaryColor }} />
+              Histórico de Solicitações
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Acompanhe todas as suas solicitações de cartão combustível
+            </p>
+          </CardHeader>
+          <CardContent>
+            {isLoadingHistory ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="ml-2">Carregando histórico...</span>
+              </div>
+            ) : baseSolicitations.length === 0 ? (
+              <div className="text-center py-8">
+                <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">Nenhuma solicitação encontrada</h3>
+                <p className="text-muted-foreground">
+                  Você ainda não fez nenhuma solicitação de cartão combustível.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Estatísticas */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                    <div className="text-2xl font-bold text-yellow-600">
+                      {baseSolicitations.filter(s => s.status?.toLowerCase() === 'pendente').length}
+                    </div>
+                    <div className="text-sm text-yellow-600">Pendentes</div>
+                  </div>
+                  <div className="text-center p-4 bg-green-50 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">
+                      {baseSolicitations.filter(s => 
+                        ['atendido', 'aprovado', 'recarga efetuada'].includes(s.status?.toLowerCase())
+                      ).length}
+                    </div>
+                    <div className="text-sm text-green-600">Atendidas</div>
+                  </div>
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">
+                      R$ {baseSolicitations
+                        .filter(s => ['atendido', 'aprovado', 'recarga efetuada'].includes(s.status?.toLowerCase()))
+                        .reduce((sum, s) => sum + (s.valor_solicitado || 150), 0)
+                        .toFixed(2).replace('.', ',')}
+                    </div>
+                    <div className="text-sm text-blue-600">Total Atendido</div>
+                  </div>
+                </div>
+
+                {/* Tabela */}
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Motorista</TableHead>
+                        <TableHead>Placa</TableHead>
+                        <TableHead>Valor</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Observações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {baseSolicitations.map((solicitation: any) => (
+                        <TableRow key={solicitation.id}>
+                          <TableCell className="font-medium">
+                            {solicitation.data_solicitacao ? 
+                              format(new Date(solicitation.data_solicitacao), 'dd/MM/yyyy HH:mm') : 
+                              'N/A'
+                            }
+                          </TableCell>
+                          <TableCell>{solicitation.motorista}</TableCell>
+                          <TableCell className="font-mono">{solicitation.placa}</TableCell>
+                          <TableCell>
+                            R$ {(solicitation.valor_solicitado || 150).toFixed(2).replace('.', ',')}
+                          </TableCell>
+                          <TableCell>
+                            {getStatusBadge(solicitation.status)}
+                          </TableCell>
+                          <TableCell className="max-w-xs truncate">
+                            {solicitation.observacoes || 'Sem observações'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+      </Tabs>
     </div>
   );
 }
