@@ -306,64 +306,24 @@ export const useBasePermission = (): BasePermissionHook => {
       return true;
     }
     
-    // Line Hall Role - acesso completo a todas as funcionalidades
+    // Line Hall Role - acesso completo a todas as funcionalidades do sistema
     if (user.role === 'line_hall') {
-      const lineHallRoutes = [
-        '/',                          // Dashboard
-        '/executive-dashboard',       // Dashboard Executivo
-        '/line-hall',                 // Line Hall (antigo)
-        '/line-hall-shopee',          // Line Hall Shopee (novo)
-        '/vehicles',                  // Cadastro de veículos
-        '/drivers',                   // Cadastro de motoristas
-        '/maintenance',               // Manutenções
-        '/manutencao',               // Alias para Manutenções
-        '/fuel-card-requests',        // Liberação de solicitações de cartão
-        '/line-hall-fuel-requests',   // Página dedicada de solicitações Line Hall
-        '/fuel-card',                 // Cartão de Combustível
-        '/fuel-card-dashboard',       // Dashboard do Cartão de Combustível
-        '/cartao-abastecimento',      // Cartão de Abastecimento
-        '/refueling',                 // Abastecimentos
-        '/abastecimento',             // Alias para abastecimentos
-        '/abastecimentos',            // Página de abastecimentos
-        '/tires',                     // Pneus
-        '/pneus',                     // Alias para Pneus
-        '/fines',                     // Multas
-        '/multas',                    // Alias para Multas
-        '/fleet-management',          // Gestão de Frota
-        '/gestao-de-frotas',          // Alias para Gestão de Frota
-        '/fleet-management/inventory', // Gestão de Estoque
-        '/fleet-management/maintenance', // Sistema de Manutenção
-        '/fleet-management/drivers',  // Gestão de Motoristas
-        '/fleet-management/vehicles', // Gestão de Veículos
-        '/fleet-management/reports',  // Relatórios de Frota
-        '/line-hall-maintenance',     // Gerenciamento de manutenções do Line Hall
-        '/line-hall-checklists',      // Gerenciamento de checklists do Line Hall
-        '/posto-remedios',            // Posto Remédios
-        '/postos',                    // Postos de Abastecimento
-        '/postos/visao-geral',        // Visão Geral dos Postos
-        '/postos/historico-consolidado', // Histórico Consolidado
-        '/postos/historico-geral',    // Histórico Geral
-        '/postos/historico-patio',    // Histórico Pátio
-        '/postos/consumo-diario',     // Consumo Diário
-        '/postos/entradas-combustivel', // Entradas de Combustível
-        '/bases',                     // Bases (acesso aos dados das bases)
-        '/bases/campinas',            // Base Campinas
-        '/bases/campinas/despesas',   // Despesas Campinas
-        '/bases/campinas/solicitacao-pneus', // Solicitação de Pneus
-        '/bases/campinas/solicitacao-orcamento', // Solicitação de Orçamento
-        '/bases/campinas/manutencao-frota', // Manutenção de Frota
-        '/bases/goiania',             // Base Goiânia
-        '/bases/goiania/despesas',    // Despesas Goiânia
-        '/bases/goiania/multas',      // Multas Goiânia
-        '/bases/goiania/acidentes-trabalho', // Acidentes de Trabalho Goiânia
-        '/bases/goiania/sinistros',   // Sinistros Goiânia
-        '/bases/goiania/solicitacao-pneus', // Solicitação de Pneus Goiânia
-        '/bases/goiania/solicitacao-orcamento', // Solicitação de Orçamento Goiânia
-        '/bases/goiania/manutencao-frota' // Manutenção de Frota Goiânia
+      // Para o role line_hall (Aline Ribeiro), dar acesso completo ao sistema exceto rotas administrativas específicas
+      const restrictedRoutes = [
+        '/users',      // Página de usuários - só para admin
+        '/admin',      // Rotas de admin
+        '/admin/utils' // Utilitários de admin
       ];
-      const hasAccess = lineHallRoutes.includes(route);
-      console.log(`Line Hall role permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (role=${user.role})`);
-      return hasAccess;
+      
+      // Se for uma rota restrita, negar acesso
+      if (restrictedRoutes.some(restrictedRoute => route.startsWith(restrictedRoute))) {
+        console.log(`Line Hall role denied access to restricted admin route: ${route}`);
+        return false;
+      }
+      
+      // Para todas as outras rotas, conceder acesso total
+      console.log(`Line Hall role granted access to route: ${route} (role=${user.role})`);
+      return true;
     }
     
     // Line Hall Base - permite acesso somente ao Line Hall e bloqueia outras rotas específicas
