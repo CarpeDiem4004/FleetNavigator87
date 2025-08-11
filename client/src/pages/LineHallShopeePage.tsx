@@ -750,54 +750,43 @@ export default function LineHallShopeePage() {
                     />
                   </div>
                   
-                  {/* Debug para verificar os valores */}
-                  <div className="text-xs text-gray-400 p-2 border rounded">
-                    Debug: Origem="{currentRoute.nome_ponto_a || 'vazio'}" | Destino="{currentRoute.nome_ponto_b || 'vazio'}" | Mostrar={currentRoute.nome_ponto_a && currentRoute.nome_ponto_b ? 'SIM' : 'NÃO'}
-                  </div>
-                  
-                  {/* Botão Google Maps aparece assim que ambos os campos são preenchidos */}
-                  {currentRoute.nome_ponto_a && currentRoute.nome_ponto_b && (
-                    <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border-2 border-blue-200 animate-in slide-in-from-top-2 duration-300">
+                  {/* Google Maps Integration - Always shows when both fields are filled */}
+                  {currentRoute.nome_ponto_a.trim() !== '' && currentRoute.nome_ponto_b.trim() !== '' ? (
+                    <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border-2 border-blue-300 shadow-md">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <MapPin className="h-5 w-5 text-blue-600" />
+                        <div className="flex items-center space-x-3">
+                          <div className="bg-blue-100 p-2 rounded-full">
+                            <MapPin className="h-5 w-5 text-blue-600" />
+                          </div>
                           <div>
-                            <p className="font-medium text-gray-900">Consultar Distância no Google Maps</p>
-                            <p className="text-sm text-gray-600">Verifique a distância exata entre {currentRoute.nome_ponto_a} e {currentRoute.nome_ponto_b}</p>
+                            <p className="font-semibold text-gray-900">Consultar Google Maps</p>
+                            <p className="text-sm text-gray-600">Clique para ver a rota de <span className="font-medium">{currentRoute.nome_ponto_a}</span> até <span className="font-medium">{currentRoute.nome_ponto_b}</span></p>
                           </div>
                         </div>
                         <Button 
                           type="button"
                           onClick={() => {
-                            const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(currentRoute.nome_ponto_a)}/${encodeURIComponent(currentRoute.nome_ponto_b)}`;
+                            const origem = currentRoute.nome_ponto_a.trim();
+                            const destino = currentRoute.nome_ponto_b.trim();
+                            const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(origem)}/${encodeURIComponent(destino)}`;
+                            console.log('Abrindo Maps:', mapsUrl);
                             window.open(mapsUrl, '_blank');
                           }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                         >
                           <MapPin className="mr-2 h-4 w-4" />
                           Abrir Maps
                         </Button>
                       </div>
                     </div>
+                  ) : (
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <div className="flex items-center space-x-2 text-gray-500">
+                        <MapPin className="h-4 w-4" />
+                        <p className="text-sm">Preencha origem e destino para consultar no Google Maps</p>
+                      </div>
+                    </div>
                   )}
-                  
-                  {/* Botão alternativo sempre visível para testar */}
-                  <div className="bg-yellow-50 p-3 border border-yellow-200 rounded-lg">
-                    <p className="text-sm font-medium text-yellow-800 mb-2">Botão de Teste - Google Maps</p>
-                    <Button 
-                      type="button"
-                      onClick={() => {
-                        const origem = currentRoute.nome_ponto_a || 'São Paulo, SP';
-                        const destino = currentRoute.nome_ponto_b || 'Rio de Janeiro, RJ';
-                        const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(origem)}/${encodeURIComponent(destino)}`;
-                        window.open(mapsUrl, '_blank');
-                      }}
-                      className="bg-yellow-600 hover:bg-yellow-700 text-white"
-                    >
-                      <MapPin className="mr-2 h-4 w-4" />
-                      Testar Maps (sempre visível)
-                    </Button>
-                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="km_total">Distância Total (KM) *</Label>
                     <Input
@@ -808,7 +797,7 @@ export default function LineHallShopeePage() {
                       onChange={(e) => setCurrentRoute(prev => ({ ...prev, km_total: parseFloat(e.target.value) || 0 }))}
                       className="w-full"
                     />
-                    {currentRoute.nome_ponto_a && currentRoute.nome_ponto_b && !currentRoute.km_total && (
+                    {currentRoute.nome_ponto_a.trim() !== '' && currentRoute.nome_ponto_b.trim() !== '' && !currentRoute.km_total && (
                       <div className="text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200 flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
                         <span>Use o botão "Abrir Maps" acima para consultar a distância exata</span>
