@@ -3,7 +3,7 @@
  * Pode ser usado por qualquer base com customização de nome e cor
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -90,6 +90,15 @@ export default function BaseCartaoCombustivel({
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Buscar usuário logado
+  const { data: currentUser } = useQuery({
+    queryKey: ['/api/user'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/user');
+      return res.json();
+    },
+  });
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -98,8 +107,8 @@ export default function BaseCartaoCombustivel({
       telefone_celular: '',
       placa: '',
       valor: '',
-      projeto: '',
-      base: '',
+      projeto: '3', // Fixo para MERCADO LIVRE baseado na base
+      base: baseId.toString(), // Fixo baseado na baseId passada
       tipo_cartao: 'vinculado',
       provedor_cartao: 'Ticket',
       numero_cartao: '',
@@ -108,6 +117,13 @@ export default function BaseCartaoCombustivel({
       observacoes: '',
     },
   });
+
+  // Auto-preencher solicitante quando usuário for carregado
+  useEffect(() => {
+    if (currentUser?.name) {
+      form.setValue('solicitante', currentUser.name);
+    }
+  }, [currentUser, form]);
 
   // Buscar projetos
   const { data: projects } = useQuery<Project[]>({
@@ -303,7 +319,11 @@ export default function BaseCartaoCombustivel({
                     <FormItem>
                       <FormLabel>Nome do Solicitante</FormLabel>
                       <FormControl>
-                        <Input placeholder="Quem está fazendo a solicitação" {...field} />
+                        <Input 
+                          {...field}
+                          placeholder="Nome completo do solicitante (preenchido automaticamente)"
+                          className="bg-gray-50"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -362,20 +382,13 @@ export default function BaseCartaoCombustivel({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Projeto</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o projeto" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {projects?.map((project) => (
-                            <SelectItem key={project.id} value={project.id.toString()}>
-                              {project.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <Input 
+                          value="MERCADO LIVRE" 
+                          disabled 
+                          className="bg-gray-100 text-gray-600"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -387,21 +400,14 @@ export default function BaseCartaoCombustivel({
                 name="base"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Base</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione a base" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {filteredBases?.map((base) => (
-                          <SelectItem key={base.id} value={base.id.toString()}>
-                            {base.name} - {base.location}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Base operacional</FormLabel>
+                    <FormControl>
+                      <Input 
+                        value={baseName || `Base ${baseId}`} 
+                        disabled 
+                        className="bg-gray-100 text-gray-600"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
