@@ -105,10 +105,9 @@ export default function CartaoCombustivelGP03() {
         const allData = result.data || [];
         console.log('Histórico carregado da API:', allData);
         
-        // Filtrar apenas solicitações do GP03 (base system)
+        // Filtrar apenas solicitações do GP03 (incluindo todas as origens)
         const gp03Requests = allData.filter((item: any) => 
-          item.origem_tipo === 'base_system' && 
-          (item.base?.includes('GP03') || item.base?.includes('HORTOLANDIA'))
+          item.base?.includes('GP03') || item.base?.includes('HORTOLANDIA')
         );
         
         console.log('Solicitações GP03 filtradas:', gp03Requests);
