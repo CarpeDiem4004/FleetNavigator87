@@ -141,12 +141,19 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
   const loadFuelCardHistory = async () => {
     try {
       setLoadingHistorico(true);
-      // Simular carregamento de histórico
-      // Em produção, fazer chamada real para a API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setHistorico([]);
+      const response = await fetch(`/api/fuel-card/requests?baseId=${baseId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setHistorico(data.data || []);
+        console.log('Histórico carregado:', data.data);
+      } else {
+        console.error('Erro na API:', data.message);
+        setHistorico([]);
+      }
     } catch (error) {
       console.error('Erro ao carregar histórico:', error);
+      setHistorico([]);
     } finally {
       setLoadingHistorico(false);
     }
@@ -275,7 +282,7 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
         bases: [{
           id: baseInfo.id,
           base_name: baseInfo.name,
-          base_code: baseInfo.code || ''
+          base_code: baseInfo.basename || ''
         }]
       });
     }
@@ -363,8 +370,11 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
       loadFuelCardHistory();
 
       // Resetar formulário após 3 segundos
-      setTimeout(() => {
+      setTimeout(async () => {
         const currentUserName = user?.name || '';
+        
+        // Recarregar histórico após envio bem-sucedido
+        await loadFuelCardHistory();
         
         setFormData({
           placaVeiculo: '',
