@@ -760,9 +760,9 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
                             </Label>
                             <Input
                               id="projeto"
-                              value={selectedProject ? selectedProject.name : (loadingProjects ? "Carregando..." : "MERCADO LIVRE")}
+                              value="MERCADO LIVRE"
                               disabled
-                              className="bg-gray-100 cursor-not-allowed"
+                              className="h-11 bg-gray-100 cursor-not-allowed opacity-75 text-gray-700"
                             />
                             <p className="text-xs text-gray-500">Projeto fixo da base operacional</p>
                           </div>
@@ -773,9 +773,9 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
                             </Label>
                             <Input
                               id="base"
-                              value={baseInfo ? baseInfo.name : "Carregando..."}
+                              value="SC (LAJEADO) SRS10-SDD"
                               disabled
-                              className="bg-gray-100 cursor-not-allowed"
+                              className="h-11 bg-gray-100 cursor-not-allowed opacity-75 text-gray-700"
                             />
                             <p className="text-xs text-gray-500">Base operacional fixa</p>
                           </div>
