@@ -23,7 +23,7 @@ export default function LoginGP03() {
 
     try {
       await loginBase(email, password);
-      setLocation('/bases/gp03');
+      setLocation('/bases/gp03/external');
     } catch (err) {
       setError('Credenciais inválidas. Verifique seu email e senha.');
     } finally {

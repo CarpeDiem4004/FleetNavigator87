@@ -32,8 +32,8 @@ export default function LoginGP02() {
         throw new Error('Usuário não tem acesso a esta base');
       }
       
-      console.log('[LoginGP02] Redirecionando para /bases/gp02');
-      setLocation('/bases/gp02'); // Redireciona para a dashboard principal da base GP02
+      console.log('[LoginGP02] Redirecionando para /bases/gp02/external');
+      setLocation('/bases/gp02/external'); // Redireciona para a página externa da base GP02
     } catch (err: any) {
       console.error('[LoginGP02] Erro durante login:', err);
       
@@ -64,7 +64,7 @@ export default function LoginGP02() {
             setError('Login realizado com sucesso! Redirecionando...');
             
             setTimeout(() => {
-              setLocation('/bases/gp02');
+              setLocation('/bases/gp02/external');
             }, 1000);
             return;
           }
