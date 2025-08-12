@@ -5,7 +5,7 @@ import { Redirect } from 'wouter';
 interface BaseAccessControllerProps {
   children: React.ReactNode;
   baseId: string | number;
-  requiredRole?: 'admin' | 'operador' | 'oficina' | 'parceiro';
+  requiredRole?: 'admin' | 'operador' | 'oficina' | 'parceiro' | 'posto';
   allowedRoles?: string[];
 }
 
@@ -13,7 +13,7 @@ export const BaseAccessController: React.FC<BaseAccessControllerProps> = ({
   children,
   baseId,
   requiredRole,
-  allowedRoles = ['admin', 'operador']
+  allowedRoles = ['admin', 'operador', 'posto']
 }) => {
   const { user, isLoading } = useAuth();
   const [accessGranted, setAccessGranted] = useState<boolean | null>(null);
@@ -97,6 +97,21 @@ export const BaseAccessController: React.FC<BaseAccessControllerProps> = ({
       }
       
       return false; // Operador sem base correspondente = ACESSO NEGADO
+    }
+
+    // 3.5. POSTO: Acesso para operadores de posto com mesmas regras que operador
+    if (user.role === 'posto') {
+      // Verificar por ID da base
+      if (user.base_id && user.base_id.toString() === base.id.toString()) {
+        return true;
+      }
+      
+      // Verificar por basename
+      if (user.basename && base.basename && user.basename === base.basename) {
+        return true;
+      }
+      
+      return false; // Posto sem base correspondente = ACESSO NEGADO
     }
 
     // 4. Oficina: apenas bases associadas
