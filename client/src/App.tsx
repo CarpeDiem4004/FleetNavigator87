@@ -1074,28 +1074,28 @@ function App() {
           <ProtectedRoute path="/oficinas/murici" component={OficinaMurici} /> {/* Rota alternativa para compatibilidade */}
           <ProtectedRoute path="/oficina-alair-estoque" component={OficinaAlairEstoque} />
           
-          {/* Rotas PRIVADAS para os postos de abastecimento - agora com autenticação obrigatória */}
-          <ProtectedRoute path="/posto/osasco/public" component={OsascoPublic} />
-          <ProtectedRoute path="/posto/osasco_v2/public" component={OsascoV2Public} />
+          {/* Rotas PÚBLICAS para os postos de abastecimento - acesso externo SEM autenticação obrigatória */}
+          <Route path="/posto/osasco/public" component={OsascoPublic} />
+          <Route path="/posto/osasco_v2/public" component={OsascoV2Public} />
           <Route path="/posto-externo/osasco_v2">
             <OsascoV2Public />
           </Route>
-          <ProtectedRoute path="/posto/guarulhos/public" component={GuarulhosPublic} />
-          <ProtectedRoute path="/posto/guarulhos_v2/public" component={GuarulhosV2Public} />
-          <ProtectedRoute path="/posto/alair_v2/public" component={AlairV2Public} />
-          <ProtectedRoute path="/posto/saopaulo/public" component={SaoPauloPublic} />
-          <ProtectedRoute path="/posto/campinas/public" component={CampinasPublic} />
-          <ProtectedRoute path="/posto/campinas_v2/public" component={CampinasV2Public} />
-          <ProtectedRoute path="/posto/abc/public" component={ABCPublic} />
-          <ProtectedRoute path="/posto/abc_v2/public" component={ABCV2Public} />
-          <ProtectedRoute path="/posto/socorro/public" component={SocorroPublic} />
-          <ProtectedRoute path="/posto/socorro_v2/public" component={SocorroV2Public} />
-          <ProtectedRoute path="/posto/sorocaba_v2/public" component={SorocabaV2Public} />
+          <Route path="/posto/guarulhos/public" component={GuarulhosPublic} />
+          <Route path="/posto/guarulhos_v2/public" component={GuarulhosV2Public} />
+          <Route path="/posto/alair_v2/public" component={AlairV2Public} />
+          <Route path="/posto/saopaulo/public" component={SaoPauloPublic} />
+          <Route path="/posto/campinas/public" component={CampinasPublic} />
+          <Route path="/posto/campinas_v2/public" component={CampinasV2Public} />
+          <Route path="/posto/abc/public" component={ABCPublic} />
+          <Route path="/posto/abc_v2/public" component={ABCV2Public} />
+          <Route path="/posto/socorro/public" component={SocorroPublic} />
+          <Route path="/posto/socorro_v2/public" component={SocorroV2Public} />
+          <Route path="/posto/sorocaba_v2/public" component={SorocabaV2Public} />
           
-          {/* Rotas PRIVADAS para o GRUPO PEREIRA */}
-          <ProtectedRoute path="/posto/gp01/public" component={PublicPostoGP01} />
-          <ProtectedRoute path="/posto/gp02/public" component={PublicPostoGP02} />
-          <ProtectedRoute path="/posto/gp03/public" component={PublicPostoGP03} />
+          {/* Rotas PÚBLICAS para o GRUPO PEREIRA - acesso externo SEM autenticação */}
+          <Route path="/posto/gp01/public" component={PublicPostoGP01} />
+          <Route path="/posto/gp02/public" component={PublicPostoGP02} />
+          <Route path="/posto/gp03/public" component={PublicPostoGP03} />
           
 
           
