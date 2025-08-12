@@ -309,31 +309,30 @@ export default function CartaoCombustivelGP03() {
         return;
       }
 
-      // Enviar solicitação para API
+      // Enviar solicitação para API usando o endpoint padrão
       const requestData = {
-        plate: formData.placaVeiculo,
-        odometer: formData.quilometragem,
-        amount: parseFloat(formData.valor),
-        cardType: formData.tipoCartao,
-        cardNumber: formData.tipoCartao === 'especifico' ? formData.numeroCartaoEspecifico : formData.placaVeiculo,
-        provider: formData.provedorCartao,
-        fuelType: formData.tipoCombustivel,
-        fuelTime: formData.horarioAbastecimento,
-        driverName: formData.nomeMotorista,
-        requesterName: formData.nomeSolicitante,
-        driverPhone: formData.celularWhatsApp,
-        reason: 'Solicitação de recarga de cartão combustível',
-        specificCardData: formData.tipoCartao === 'especifico' ? formData.numeroCartaoEspecifico : '',
-        projectId: selectedProject?.id || 1,
-        baseId: selectedProject?.bases.find(b => b.id.toString() === formData.base)?.id || 151,
-        observations: formData.observacoes || '',
-        origem: 'base_system',
-        solicitante: formData.nomeSolicitante
+        placa: formData.placaVeiculo,
+        km: formData.quilometragem ? parseInt(formData.quilometragem) : 0,
+        tipo_cartao: formData.tipoCartao,
+        provedor_cartao: formData.provedorCartao,
+        numero_cartao: formData.tipoCartao === 'especifico' ? formData.numeroCartaoEspecifico : '',
+        motorista: formData.nomeMotorista,
+        solicitante: formData.nomeSolicitante,
+        telefone_celular: formData.celularWhatsApp,
+        observacoes: formData.observacoesCartao || 'Solicitação de recarga de cartão combustível',
+        status: 'Pendente',
+        valor_solicitado: parseFloat(formData.valor),
+        base: 'GP03 HORTOLANDIA (GRUPO PEREIRA)',
+        id_rota: 'GP03',
+        origem_tipo: 'base_system',
+        tipo_combustivel: formData.tipoCombustivel.toLowerCase(),
+        horario_abastecimento: formData.horarioAbastecimento,
+        cartao_combustivel: formData.tipoCartao === 'especifico' ? formData.numeroCartaoEspecifico : formData.placaVeiculo
       };
 
       console.log('Enviando solicitação para API:', requestData);
 
-      const response = await fetch('/api/fuel-card/request', {
+      const response = await fetch('/api/fuel-card-solicitations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
