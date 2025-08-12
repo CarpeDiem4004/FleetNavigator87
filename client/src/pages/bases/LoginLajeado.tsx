@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,9 +15,17 @@ const LoginLajeado: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, user, isLoading: authLoading } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
+
+  // Verificar se usuário já está autenticado e redirecionar
+  useEffect(() => {
+    if (!authLoading && user && user.basename === 'SC_LAJEADO_SRS10SDD') {
+      console.log('[LoginLajeado] Usuário já autenticado, redirecionando para dashboard');
+      navigate('/bases/sc_lajeado_srs10sdd');
+    }
+  }, [user, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +40,7 @@ const LoginLajeado: React.FC = () => {
           title: "Login realizado com sucesso!",
           description: "Redirecionando para a Base SC (LAJEADO) SRS10-SDD...",
         });
-        navigate('/bases/lajeado');
+        navigate('/bases/sc_lajeado_srs10sdd');
       } else {
         setError('Credenciais inválidas ou erro no servidor');
       }

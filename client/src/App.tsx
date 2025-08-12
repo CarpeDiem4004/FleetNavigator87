@@ -794,6 +794,7 @@ function App() {
           <ProtectedRoute path="/bases/jales" component={BaseJales} />
           <ProtectedRoute path="/bases/joinville" component={BaseJoinville} />
           <ProtectedRoute path="/bases/lajeado" component={BaseLajeado} />
+          <ProtectedRoute path="/bases/sc_lajeado_srs10sdd" component={BaseLajeado} />
           <ProtectedRoute path="/bases/londrina" component={BaseLondrina} />
           <ProtectedRoute path="/bases/manaus" component={BaseManaus} />
           <ProtectedRoute path="/bases/marilia" component={BaseMarilia} />
