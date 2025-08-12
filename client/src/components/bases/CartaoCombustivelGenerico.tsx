@@ -877,7 +877,7 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                           <div>
                             <span className="text-gray-500">Solicitante:</span>
-                            <p className="font-medium">{item.requested_by}</p>
+                            <p className="font-medium">{user?.name || 'Usuário não identificado'}</p>
                           </div>
                           <div>
                             <span className="text-gray-500">Motorista:</span>
