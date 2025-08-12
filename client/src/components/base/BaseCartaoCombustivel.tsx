@@ -585,9 +585,9 @@ export default function BaseCartaoCombustivel({
                   </div>
                   <div className="text-center p-4 bg-blue-50 rounded-lg">
                     <div className="text-2xl font-bold text-blue-600">
-                      R$ {baseSolicitations
+                      R$ {(baseSolicitations
                         .filter(s => ['atendido', 'aprovado', 'recarga efetuada'].includes(s.status?.toLowerCase()))
-                        .reduce((sum, s) => sum + (s.valor_solicitado || 150), 0)
+                        .reduce((sum, s) => sum + (parseFloat(s.valor_solicitado || s.valor || 150)), 0) || 0)
                         .toFixed(2).replace('.', ',')}
                     </div>
                     <div className="text-sm text-blue-600">Total Atendido</div>
@@ -619,7 +619,7 @@ export default function BaseCartaoCombustivel({
                           <TableCell>{solicitation.motorista}</TableCell>
                           <TableCell className="font-mono">{solicitation.placa}</TableCell>
                           <TableCell>
-                            R$ {(solicitation.valor_solicitado || 150).toFixed(2).replace('.', ',')}
+                            R$ {(parseFloat(solicitation.valor_solicitado || solicitation.valor || 150) || 150).toFixed(2).replace('.', ',')}
                           </TableCell>
                           <TableCell>
                             {getStatusBadge(solicitation.status)}
