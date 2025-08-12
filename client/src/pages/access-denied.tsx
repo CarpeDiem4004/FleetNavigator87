@@ -21,7 +21,38 @@ const AccessDeniedPage: React.FC = () => {
       }
     }
     
-    // Se estava tentando acessar GP01, GP02, GP03
+    // Se o usuário tem uma base específica definida, usar o login da base
+    if (user?.basename) {
+      // Mapeamento de basenames para slugs de login
+      const baseLoginMap: { [key: string]: string } = {
+        'SC_LAJEADO_SRS10SDD': '/bases/sc_lajeado_srs10sdd/login',
+        'BLUMENAU_SSC3': '/bases/blumenau/login',
+        'JOINVILLE_SSC1': '/bases/joinville/login',
+        'FLORIANOPOLIS_SSC2': '/bases/florianopolis/login',
+        'CASCAVEL_SPR3': '/bases/cascavel/login',
+        'CHAPECO_SSC4': '/bases/chapeco/login',
+        'GP01_VARGEM_GRANDE': '/bases/gp01/login',
+        'GP02_JACAREI': '/bases/gp02/login',
+        'GP03_HORTOLANDIA': '/bases/gp03/login',
+        'CAMPINAS_SSP2': '/bases/campinas/login',
+        'GOIANIA_SGO1': '/bases/goiania/login',
+        'CURITIBA_SPR1': '/bases/curitiba/login',
+        'SANTOS_SSP15SDD': '/bases/santos/login',
+        'PORTO_ALEGRE_SRS1': '/bases/porto-alegre/login',
+        'RECIFE_SPE1': '/bases/recife/login',
+        'MANAUS_SAM1': '/bases/manaus/login',
+        'FORTALEZA_SCE1': '/bases/fortaleza/login',
+        'VITORIA_SES1SDD': '/bases/vitoria/login',
+        'BRASILIA_SDP1': '/bases/brasilia/login'
+      };
+      
+      const loginUrl = baseLoginMap[user.basename];
+      if (loginUrl) {
+        return loginUrl;
+      }
+    }
+    
+    // Se estava tentando acessar GP01, GP02, GP03 diretamente
     if (currentUrl.includes('/gp01')) return '/bases/gp01/login';
     if (currentUrl.includes('/gp02')) return '/bases/gp02/login';
     if (currentUrl.includes('/gp03')) return '/bases/gp03/login';
