@@ -874,10 +874,14 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
                           </span>
                         </div>
                         
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-500">Solicitante:</span>
+                            <p className="font-medium">{item.requested_by}</p>
+                          </div>
                           <div>
                             <span className="text-gray-500">Motorista:</span>
-                            <p className="font-medium">{item.driver_name || item.requested_by}</p>
+                            <p className="font-medium">{item.driver_name}</p>
                           </div>
                           <div>
                             <span className="text-gray-500">Valor:</span>
