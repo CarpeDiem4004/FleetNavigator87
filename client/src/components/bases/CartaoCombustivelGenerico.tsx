@@ -336,7 +336,7 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
 
       console.log('Enviando solicitação de cartão combustível:', requestData);
 
-      const response = await fetch('/api/fuel-card-request', {
+      const response = await fetch('/api/fuel-card-requests', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
