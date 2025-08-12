@@ -254,31 +254,32 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
     }
   }, [baseInfo, toast]);
 
-  // Filtrar bases baseado no projeto selecionado
+  // Definir projeto e base fixos baseado na base atual
   useEffect(() => {
-    if (formData.projeto && Array.isArray(projects)) {
-      const projectBases = projects.filter(p => p.project_id && p.project_id.toString() === formData.projeto);
-      if (projectBases.length > 0) {
-        const firstProject = projectBases[0];
-        const projectData = {
-          id: firstProject.project_id,
-          name: firstProject.project_name,
-          bases: projectBases.map(p => ({
-            id: p.base_id,
-            base_name: p.base_name,
-            base_code: p.base_code
-          }))
-        };
-        setSelectedProject(projectData);
-        setFilteredBases(projectData.bases);
-        if (!formData.base) {
-          setFormData(prev => ({ ...prev, base: '' }));
-        }
-      }
-    } else {
-      setFilteredBases([]);
+    if (baseInfo) {
+      // Definir valores fixos baseados na base atual
+      const projetoFixo = "MERCADO LIVRE";
+      const baseFixa = baseInfo.name;
+      
+      // Atualizar formData com valores fixos
+      setFormData(prev => ({
+        ...prev,
+        projeto: "1", // ID fixo para Mercado Livre
+        base: baseInfo.id.toString()
+      }));
+      
+      // Definir projeto selecionado
+      setSelectedProject({
+        id: 1,
+        name: projetoFixo,
+        bases: [{
+          id: baseInfo.id,
+          base_name: baseInfo.name,
+          base_code: baseInfo.code || ''
+        }]
+      });
     }
-  }, [formData.projeto, projects]);
+  }, [baseInfo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
