@@ -237,6 +237,92 @@ const BaseGP3Template: React.FC<BaseGP3TemplateProps> = ({
     }
 
     if (selectedMenuItem) {
+      // Formulário específico para Cartão Combustível
+      if (selectedMenuItem.id === 'cartao-combustivel') {
+        return (
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-lg shadow">
+              <div className="flex items-center mb-4">
+                {selectedMenuItem.icon}
+                <h2 className="text-2xl font-bold ml-3">{selectedMenuItem.title}</h2>
+              </div>
+              <p className="text-gray-600 mb-6">{selectedMenuItem.description}</p>
+              
+              {/* Formulário de Cartão Combustível */}
+              <form className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
+                    <input 
+                      type="text"
+                      defaultValue={user?.name || 'Nome do Operador'}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Nome do solicitante (preenchido automaticamente)"
+                      readOnly
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Nome do solicitante (preenchido automaticamente)</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
+                    <input 
+                      type="tel"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="11999999999"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Para receber notificação quando aprovado</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Horário de Abastecimento</label>
+                  <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Selecione o horário</option>
+                    <option value="antes-17h">Antes das 17h</option>
+                    <option value="apos-18h">Após as 18h</option>
+                  </select>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Projeto</label>
+                    <input 
+                      type="text"
+                      value="MERCADO LIVRE"
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-600"
+                      readOnly
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Projeto associado à operação</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Base</label>
+                    <input 
+                      type="text"
+                      value={baseName}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-600"
+                      readOnly
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Base operacional</p>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-4">
+                  <Button 
+                    type="submit"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    style={{ backgroundColor: primaryColor }}
+                  >
+                    Solicitar Cartão Combustível
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        );
+      }
+      
+      // Conteúdo padrão para outros itens
       return (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-lg shadow">
