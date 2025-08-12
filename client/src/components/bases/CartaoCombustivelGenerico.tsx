@@ -315,23 +315,21 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
         return;
       }
 
-      // Enviar solicitação para API
+      // Enviar solicitação para API (campos conforme esperado pela API createFuelCardRequest)
       const requestData = {
         plate: formData.placaVeiculo,
-        odometer: formData.quilometragem,
+        odometer: parseInt(formData.quilometragem) || 0,
         amount: parseFloat(formData.valor),
-        cardType: formData.tipoCartao,
-        cardNumber: formData.tipoCartao === 'especifico' ? formData.numeroCartaoEspecifico : formData.placaVeiculo,
+        card_type: formData.tipoCartao,
+        card_number: formData.tipoCartao === 'especifico' ? formData.numeroCartaoEspecifico : formData.placaVeiculo,
         provider: formData.provedorCartao,
-        fuelType: formData.tipoCombustivel,
-        fuelTime: formData.horarioAbastecimento,
-        driverName: formData.nomeMotorista,
-        requesterName: formData.nomeSolicitante,
-        driverPhone: formData.celularWhatsApp,
-        projectId: parseInt(formData.projeto),
-        baseId: parseInt(formData.base),
-        observations: formData.observacoesCartao,
-        requestDate: new Date().toISOString(),
+        fuel_type: formData.tipoCombustivel,
+        fuel_time: formData.horarioAbastecimento,
+        driver_name: formData.nomeMotorista,
+        driver_phone: formData.celularWhatsApp,
+        project_id: 3, // ID fixo do MERCADO LIVRE
+        base_id: 102, // ID fixo da base SC LAJEADO
+        reason: formData.observacoesCartao || 'Solicitação de recarga',
         status: 'pendente'
       };
 
