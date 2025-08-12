@@ -738,10 +738,8 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
                               <SelectValue placeholder="Selecione o horário" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="madrugada">Madrugada (00:00 - 06:00)</SelectItem>
-                              <SelectItem value="manha">Manhã (06:00 - 12:00)</SelectItem>
-                              <SelectItem value="tarde">Tarde (12:00 - 18:00)</SelectItem>
-                              <SelectItem value="noite">Noite (18:00 - 24:00)</SelectItem>
+                              <SelectItem value="antes-17h">Antes das 17h</SelectItem>
+                              <SelectItem value="apos-18h">Após as 18h</SelectItem>
                             </SelectContent>
                           </Select>
                           <p className="text-xs text-gray-500">Período em que pretende abastecer</p>
@@ -759,49 +757,26 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
                             <Label htmlFor="projeto" className="text-gray-700 font-medium">
                               Projeto
                             </Label>
-                            <Select value={formData.projeto} onValueChange={(value) => setFormData(prev => ({ ...prev, projeto: value }))}>
-                              <SelectTrigger>
-                                <SelectValue placeholder={loadingProjects ? "Carregando..." : "Selecione o projeto"} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {Array.isArray(projects) && projects.length > 0 && projects
-                                .reduce((unique, project) => {
-                                  const exists = unique.find(p => p.project_id === project.project_id);
-                                  if (!exists) {
-                                    unique.push({
-                                      project_id: project.project_id,
-                                      project_name: project.project_name
-                                    });
-                                  }
-                                  return unique;
-                                }, [])
-                                .map((project) => (
-                                  <SelectItem key={project.project_id} value={project.project_id.toString()}>
-                                    {project.project_name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <p className="text-xs text-gray-500">Projeto associado à operação</p>
+                            <Input
+                              id="projeto"
+                              value={selectedProject ? selectedProject.name : (loadingProjects ? "Carregando..." : "MERCADO LIVRE")}
+                              disabled
+                              className="bg-gray-100 cursor-not-allowed"
+                            />
+                            <p className="text-xs text-gray-500">Projeto fixo da base operacional</p>
                           </div>
 
                           <div className="space-y-2">
                             <Label htmlFor="base" className="text-gray-700 font-medium">
                               Base
                             </Label>
-                            <Select value={formData.base} onValueChange={(value) => setFormData(prev => ({ ...prev, base: value }))}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione a base" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {filteredBases.map((base) => (
-                                  <SelectItem key={base.id} value={base.id.toString()}>
-                                    {base.base_name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <p className="text-xs text-gray-500">Base operacional</p>
+                            <Input
+                              id="base"
+                              value={baseInfo ? baseInfo.name : "Carregando..."}
+                              disabled
+                              className="bg-gray-100 cursor-not-allowed"
+                            />
+                            <p className="text-xs text-gray-500">Base operacional fixa</p>
                           </div>
                         </div>
 
