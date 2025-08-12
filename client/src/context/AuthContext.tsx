@@ -238,7 +238,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 redirectUrl = '/bases/brasilia/external';
                 break;
               case 'SC':
-                redirectUrl = '/bases/sc/external';
+              case 'SC_LAJEADO_SRS10SDD':
+                redirectUrl = '/bases/sc_lajeado_srs10sdd/external';
                 break;
               default:
                 // Para outras bases, tentar construir URL baseada no nome
@@ -438,7 +439,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 redirectUrl = '/bases/brasilia/external';
                 break;
               case 'SC':
-                redirectUrl = '/bases/sc/external';
+              case 'SC_LAJEADO_SRS10SDD':
+                redirectUrl = '/bases/sc_lajeado_srs10sdd/external';
                 break;
               default:
                 // Para outras bases, tentar construir URL baseada no nome
