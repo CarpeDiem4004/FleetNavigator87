@@ -34,12 +34,24 @@ export default function BaseScLajeadoExternal() {
             </CardHeader>
           </Card>
 
-          {/* Componente de cartão combustível */}
+          {/* Componente de cartão combustível otimizado para SC Lajeado */}
           <BaseCartaoCombustivel 
             baseId={102}
             baseName="SC (LAJEADO) SRS10-SDD"
             primaryColor="#2563eb"
           />
+          
+          {/* Mensagem informativa específica para a base */}
+          <Card className="mt-6 border-blue-200">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
+                <Fuel className="h-5 w-5 text-blue-600" />
+                <div className="text-sm text-blue-800">
+                  <strong>Base SC (LAJEADO) SRS10-SDD:</strong> Sistema específico para solicitações de cartão combustível da operação Mercado Livre em Lajeado, RS.
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

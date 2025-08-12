@@ -214,22 +214,32 @@ export default function BaseCartaoCombustivel({
   const watchTipoCartao = form.watch('tipo_cartao');
   const watchProjeto = form.watch('projeto');
 
-  // Query para buscar histórico de solicitações da base
-  const { data: solicitationsResponse, isLoading: isLoadingHistory } = useQuery({
+  // Query para buscar histórico de solicitações da base - usando retry false para evitar múltiplas tentativas em caso de 401
+  const { data: solicitationsResponse, isLoading: isLoadingHistory, error: historyError } = useQuery({
     queryKey: ['/api/fuel-card-solicitations'],
     refetchInterval: 30000,
-    retry: 3
+    retry: false, // Não retry em caso de 401 - pode ser acesso externo
+    refetchOnWindowFocus: false
   });
   
-  const solicitations = solicitationsResponse?.data || [];
+  const solicitations = (solicitationsResponse as any)?.data || [];
   const baseSolicitations = solicitations.filter((s: any) => {
     // Filtrar solicitações da base atual
     if (!baseName) return false;
+    
+    // Normalizar nomes para comparação
+    const baseNameNormalized = baseName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const solicBaseNormalized = s.base?.toLowerCase().replace(/[^a-z0-9]/g, '') || '';
+    
     return s.base && (
-      s.base.toLowerCase().includes(baseName.toLowerCase()) ||
+      solicBaseNormalized.includes(baseNameNormalized) ||
+      solicBaseNormalized.includes('lajeado') ||
+      solicBaseNormalized.includes('srs10') ||
+      baseNameNormalized.includes('lajeado') ||
       s.base.toLowerCase().includes('gp03') ||
       s.base.toLowerCase().includes('gp02') ||
-      s.base.toLowerCase().includes('gp01')
+      s.base.toLowerCase().includes('gp01') ||
+      s.base.toLowerCase().includes('sc')
     );
   });
 
@@ -557,6 +567,15 @@ export default function BaseCartaoCombustivel({
                 <Loader2 className="h-6 w-6 animate-spin" />
                 <span className="ml-2">Carregando histórico...</span>
               </div>
+            ) : historyError ? (
+              <div className="text-center py-8">
+                <AlertCircle className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">Histórico não disponível</h3>
+                <p className="text-muted-foreground">
+                  O histórico será exibido após fazer login no sistema. <br />
+                  Você pode continuar fazendo sua solicitação normalmente.
+                </p>
+              </div>
             ) : baseSolicitations.length === 0 ? (
               <div className="text-center py-8">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -571,13 +590,13 @@ export default function BaseCartaoCombustivel({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <div className="text-center p-4 bg-yellow-50 rounded-lg">
                     <div className="text-2xl font-bold text-yellow-600">
-                      {baseSolicitations.filter(s => s.status?.toLowerCase() === 'pendente').length}
+                      {baseSolicitations.filter((s: any) => s.status?.toLowerCase() === 'pendente').length}
                     </div>
                     <div className="text-sm text-yellow-600">Pendentes</div>
                   </div>
                   <div className="text-center p-4 bg-green-50 rounded-lg">
                     <div className="text-2xl font-bold text-green-600">
-                      {baseSolicitations.filter(s => 
+                      {baseSolicitations.filter((s: any) => 
                         ['atendido', 'aprovado', 'recarga efetuada'].includes(s.status?.toLowerCase())
                       ).length}
                     </div>
@@ -586,8 +605,8 @@ export default function BaseCartaoCombustivel({
                   <div className="text-center p-4 bg-blue-50 rounded-lg">
                     <div className="text-2xl font-bold text-blue-600">
                       R$ {(baseSolicitations
-                        .filter(s => ['atendido', 'aprovado', 'recarga efetuada'].includes(s.status?.toLowerCase()))
-                        .reduce((sum, s) => sum + (parseFloat(s.valor_solicitado || s.valor || 150)), 0) || 0)
+                        .filter((s: any) => ['atendido', 'aprovado', 'recarga efetuada'].includes(s.status?.toLowerCase()))
+                        .reduce((sum: number, s: any) => sum + (parseFloat(s.valor_solicitado || s.valor || 150)), 0) || 0)
                         .toFixed(2).replace('.', ',')}
                     </div>
                     <div className="text-sm text-blue-600">Total Atendido</div>
