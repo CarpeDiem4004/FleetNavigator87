@@ -17,11 +17,22 @@ export default function BaseScLajeadoExternal() {
 
   // Redirecionar usuários autenticados da base SC Lajeado para o menu principal
   useEffect(() => {
-    console.log('[BaseScLajeadoExternal] Verificando usuário:', { user, isLoading });
-    const userBaseId = user?.baseId || user?.base_id;
-    if (!isLoading && user && userBaseId === 102 && user.basename === 'SC_LAJEADO_SRS10SDD') {
-      console.log('[BaseScLajeadoExternal] Usuário da base SC Lajeado autenticado, redirecionando para menu principal');
-      setLocation('/bases/sc_lajeado_srs10sdd');
+    console.log('[BaseScLajeadoExternal] Estado atual:', { 
+      user: user ? { id: user.id, name: user.name, baseId: user.baseId, base_id: user.base_id, basename: user.basename } : null, 
+      isLoading 
+    });
+    
+    if (!isLoading && user) {
+      const userBaseId = user.baseId || user.base_id;
+      console.log('[BaseScLajeadoExternal] Verificando base do usuário:', { userBaseId, basename: user.basename });
+      
+      if (userBaseId === 102 && user.basename === 'SC_LAJEADO_SRS10SDD') {
+        console.log('[BaseScLajeadoExternal] REDIRECIONANDO para menu principal...');
+        setTimeout(() => {
+          setLocation('/bases/sc_lajeado_srs10sdd');
+        }, 1000);
+        return;
+      }
     }
   }, [user, isLoading, setLocation]);
 

@@ -354,7 +354,7 @@ import PublicPostoGP03 from "@/pages/postos/PublicPostoGP03";
 
 // Importação das páginas externas das bases GRUPO PEREIRA
 import BaseGP01External from "@/pages/bases/BaseGP01External";
-import BaseGP02External from "@/pages/bases/BaseGP02External";
+import BaseGP02External from "@/pages/bases/external/BaseGP02External";
 import BaseGP03External from "@/pages/bases/BaseGP03External";
 
 // Importação das páginas externas das bases SC
@@ -852,10 +852,12 @@ function App() {
             <LoginGP03 />
           </Route>
           
-          {/* Rotas externas protegidas para as bases GRUPO PEREIRA */}
-          <ProtectedRoute path="/bases/gp01/external" component={BaseGP01External} />
-          <ProtectedRoute path="/bases/gp02/external" component={BaseGP02External} />
-          <ProtectedRoute path="/bases/gp03/external" component={BaseGP03External} />
+          {/* Rotas externas para bases GRUPO PEREIRA - PÚBLICAS para acesso externo */}
+          <Route path="/bases/gp01/external" component={BaseGP01External} />
+          <Route path="/bases/gp02/external">
+            <BaseGP02External />
+          </Route>
+          <Route path="/bases/gp03/external" component={BaseGP03External} />
           
           {/* Rotas externas para bases SC - PÚBLICAS para acesso externo */}
           <Route path="/bases/sc_lajeado_srs10sdd/external" component={BaseScLajeadoExternal} />
