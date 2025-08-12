@@ -1,13 +1,16 @@
 import React from 'react';
-import BaseSCTemplate from '@/components/bases/BaseSCTemplate';
+import BaseGP3Template from '@/components/bases/BaseGP3Template';
 
 const BaseBlumenau: React.FC = () => {
   return (
-    <BaseSCTemplate 
+    <BaseGP3Template 
       baseName="BLUMENAU SSC3"
       baseCode="SSC3"
       baseLocation="Blumenau, SC"
       baseSlug="blumenau"
+      primaryColor="#1e40af"
+      portalTrabalho="Portal Blumenau"
+      workspaceId="WS_BLUMENAU_SSC3"
     />
   );
 };

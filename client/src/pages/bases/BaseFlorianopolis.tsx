@@ -1,13 +1,16 @@
 import React from 'react';
-import BaseSCTemplate from '@/components/bases/BaseSCTemplate';
+import BaseGP3Template from '@/components/bases/BaseGP3Template';
 
 const BaseFlorianopolis: React.FC = () => {
   return (
-    <BaseSCTemplate 
+    <BaseGP3Template 
       baseName="FLORIANÓPOLIS SSC2"
       baseCode="SSC2"
       baseLocation="Florianópolis, SC"
       baseSlug="florianopolis"
+      primaryColor="#1e40af"
+      portalTrabalho="Portal Florianópolis"
+      workspaceId="WS_FLORIANOPOLIS_SSC2"
     />
   );
 };

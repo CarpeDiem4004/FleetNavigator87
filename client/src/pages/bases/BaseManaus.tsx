@@ -1,13 +1,16 @@
 import React from 'react';
-import BaseSCTemplate from '@/components/bases/BaseSCTemplate';
+import BaseGP3Template from '@/components/bases/BaseGP3Template';
 
 const BaseManaus: React.FC = () => {
   return (
-    <BaseSCTemplate 
+    <BaseGP3Template 
       baseName="MANAUS SAM1"
       baseCode="SAM1"
       baseLocation="Manaus, AM"
       baseSlug="manaus"
+      primaryColor="#1e40af"
+      portalTrabalho="Portal Manaus"
+      workspaceId="WS_MANAUS_SAM1"
     />
   );
 };
