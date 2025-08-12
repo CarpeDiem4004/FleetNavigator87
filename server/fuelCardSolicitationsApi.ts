@@ -81,10 +81,29 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
     // Construir condições WHERE baseadas nas permissões do usuário
     let whereConditions = '';
     if (!isAdmin && userBaseName) {
-      // Se não for admin e tiver base específica, filtrar apenas solicitações da base
-      const baseNameForFilter = userBaseName.toUpperCase().includes('GP') ? 
-        userBaseName : `${userBaseName}%`;
-      whereConditions = `WHERE (s.base ILIKE '%${baseNameForFilter}%' OR s.base ILIKE '%${userBaseName}%')`;
+      // Mapear base names para filtros mais específicos
+      let baseFilter = '';
+      
+      switch (userBaseName.toUpperCase()) {
+        case 'GP03':
+          baseFilter = `(s.base ILIKE '%GP03%' OR s.base ILIKE '%HORTOLANDIA%')`;
+          break;
+        case 'GP02':
+          baseFilter = `(s.base ILIKE '%GP02%' OR s.base ILIKE '%JACAREI%')`;
+          break;
+        case 'GP01':
+          baseFilter = `(s.base ILIKE '%GP01%' OR s.base ILIKE '%VARGEM%')`;
+          break;
+        case 'SC_LAJEADO_SRS10SDD':
+        case 'SC':
+          baseFilter = `(s.base ILIKE '%SC%' OR s.base ILIKE '%LAJEADO%' OR s.base ILIKE '%JOINVILLE%')`;
+          break;
+        default:
+          // Para outras bases, usar filtro genérico
+          baseFilter = `(s.base ILIKE '%${userBaseName}%')`;
+      }
+      
+      whereConditions = `WHERE ${baseFilter}`;
     }
     
     const query = `
