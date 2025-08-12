@@ -489,7 +489,12 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
         )}
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={(tab) => {
+          setActiveTab(tab);
+          if (tab === 'historico') {
+            loadFuelCardHistory();
+          }
+        }} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="solicitacao" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
@@ -861,44 +866,44 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
                             <CreditCard className="h-5 w-5 text-blue-600" />
-                            <span className="font-medium">{item.placaVeiculo}</span>
+                            <span className="font-medium">{item.plate}</span>
                             {getStatusBadge(item.status)}
                           </div>
                           <span className="text-sm text-gray-500">
-                            {formatDate(item.dataSolicitacao)}
+                            {formatDate(item.requested_at || item.created_at)}
                           </span>
                         </div>
                         
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                           <div>
                             <span className="text-gray-500">Motorista:</span>
-                            <p className="font-medium">{item.nomeMotorista}</p>
+                            <p className="font-medium">{item.driver_name || item.requested_by}</p>
                           </div>
                           <div>
                             <span className="text-gray-500">Valor:</span>
-                            <p className="font-medium">{formatCurrency(item.valorSolicitado)}</p>
+                            <p className="font-medium">{formatCurrency(item.amount)}</p>
                           </div>
                           <div>
                             <span className="text-gray-500">Cartão:</span>
-                            <p className="font-medium">{item.numeroCartao}</p>
+                            <p className="font-medium">{item.plate || item.card_number}</p>
                           </div>
                           <div>
                             <span className="text-gray-500">Tipo:</span>
-                            <p className="font-medium">{item.tipoSolicitacao}</p>
+                            <p className="font-medium">{item.card_type}</p>
                           </div>
                         </div>
 
-                        {item.justificativa && (
+                        {item.reason && (
                           <div className="mt-3 p-3 bg-gray-50 rounded">
-                            <span className="text-gray-500 text-sm">Justificativa:</span>
-                            <p className="text-sm">{item.justificativa}</p>
+                            <span className="text-gray-500 text-sm">Motivo:</span>
+                            <p className="text-sm">{item.reason}</p>
                           </div>
                         )}
 
-                        {item.observacoesGestao && (
-                          <div className="mt-3 p-3 bg-blue-50 rounded">
-                            <span className="text-blue-600 text-sm font-medium">Observações da Gestão:</span>
-                            <p className="text-sm text-blue-800">{item.observacoesGestao}</p>
+                        {item.rejection_reason && (
+                          <div className="mt-3 p-3 bg-red-50 rounded">
+                            <span className="text-red-600 text-sm font-medium">Motivo da Rejeição:</span>
+                            <p className="text-sm text-red-800">{item.rejection_reason}</p>
                           </div>
                         )}
                       </div>
