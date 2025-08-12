@@ -98,6 +98,17 @@ const baseRouteMapping = {
     '/bases/sc_lajeado_srs10sdd/cartoes-ativos',
     '/bases/sc_lajeado_srs10sdd/veiculos',
     '/bases/sc_lajeado_srs10sdd/external',
+    // Rotas com parâmetro dinâmico (formato /bases/:baseId/...)
+    '/bases/:baseId/cartao-combustivel',
+    '/bases/:baseId/despesas',
+    '/bases/:baseId/multas',
+    '/bases/:baseId/acidentes-trabalho',
+    '/bases/:baseId/sinistros',
+    '/bases/:baseId/solicitacao-pneus',
+    '/bases/:baseId/solicitacao-orcamento',
+    '/bases/:baseId/manutencao-frota',
+    '/bases/:baseId/veiculos',
+    '/bases/:baseId/external',
     // Rotas globais do sistema acessíveis pelos templates
     '/sinister',
     '/sinistro', 
@@ -289,9 +300,24 @@ export const useBasePermission = (): BasePermissionHook => {
     for (const base in baseRouteMapping) {
       if (baseLower.includes(base)) {
         const routesForBase = baseRouteMapping[base as keyof typeof baseRouteMapping];
+        
+        // Verificar correspondência exata
         if (routesForBase.includes(route)) {
           console.log(`Rota ${route} permitida para base: ${baseLower}`);
           return true;
+        }
+        
+        // Verificar rotas com parâmetros dinâmicos
+        for (const allowedRoute of routesForBase) {
+          if (allowedRoute.includes(':baseId')) {
+            // Transformar rota com parâmetro em regex para comparar
+            const routePattern = allowedRoute.replace(':baseId', '[^/]+');
+            const regex = new RegExp(`^${routePattern}$`);
+            if (regex.test(route)) {
+              console.log(`Rota dinâmica ${route} permitida para base: ${baseLower} (padrão: ${allowedRoute})`);
+              return true;
+            }
+          }
         }
       }
     }
