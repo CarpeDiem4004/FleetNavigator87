@@ -30,7 +30,7 @@ const LoginLajeado: React.FC = () => {
       if (result) {
         toast({
           title: "Login realizado com sucesso!",
-          description: "Redirecionando para a Base LAJEADO SRS10-SDD...",
+          description: "Redirecionando para a Base SC (LAJEADO) SRS10-SDD...",
         });
         navigate('/bases/lajeado');
       } else {
@@ -53,10 +53,10 @@ const LoginLajeado: React.FC = () => {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
-            LAJEADO SRS10-SDD SRS10-SDD
+            SC (LAJEADO) SRS10-SDD
           </CardTitle>
           <p className="text-gray-600">
-            Faça login para acessar a Base LAJEADO SRS10-SDD
+            Faça login para acessar a Base SC (LAJEADO) SRS10-SDD
           </p>
         </CardHeader>
         <CardContent>
