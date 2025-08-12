@@ -120,10 +120,33 @@ export default function BaseGP02External() {
             </CardContent>
           </Card>
 
-          {/* Cadastro de Veículos */}
+          {/* Cartão Combustível */}
           <Card className="shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="bg-green-50 border-b border-green-200">
               <CardTitle className="flex items-center text-green-700">
+                <CreditCard className="w-5 h-5 mr-2" />
+                Cartão Combustível - GP02
+              </CardTitle>
+              <CardDescription>
+                Solicitação de recarga para cartões de combustível
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Faça solicitações de recarga para cartões de combustível da base GP02 Jacarei. Sistema completo com histórico e acompanhamento.
+              </p>
+              <Link href="/bases/gp02/cartao-combustivel">
+                <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                  Acessar Sistema
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Cadastro de Veículos */}
+          <Card className="shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader className="bg-blue-50 border-b border-blue-200">
+              <CardTitle className="flex items-center text-blue-700">
                 <Car className="w-5 h-5 mr-2" />
                 Cadastro de Veículos
               </CardTitle>
@@ -136,7 +159,7 @@ export default function BaseGP02External() {
                 Cadastre, atualize e gerencie os veículos da Base GP02. Registre modelos, placas, status operacional e informações técnicas.
               </p>
               <Link href="/vehicles">
-                <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                   Gerenciar Veículos
                 </Button>
               </Link>
@@ -145,8 +168,8 @@ export default function BaseGP02External() {
 
           {/* Despesas Mensais */}
           <Card className="shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader className="bg-blue-50 border-b border-blue-200">
-              <CardTitle className="flex items-center text-blue-700">
+            <CardHeader className="bg-teal-50 border-b border-teal-200">
+              <CardTitle className="flex items-center text-teal-700">
                 <TrendingUp className="w-5 h-5 mr-2" />
                 Despesas Mensais
               </CardTitle>
@@ -159,7 +182,7 @@ export default function BaseGP02External() {
                 Registre e acompanhe despesas mensais como água, energia, funcionários, PJ, aluguel, internet e extras.
               </p>
               <Link href="/bases/gp02/despesas">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white">
                   Controlar Despesas
                 </Button>
               </Link>
@@ -212,28 +235,7 @@ export default function BaseGP02External() {
             </CardContent>
           </Card>
 
-          {/* Cartão Combustível */}
-          <Card className="shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader className="bg-cyan-50 border-b border-cyan-200">
-              <CardTitle className="flex items-center text-cyan-700">
-                <CreditCard className="w-5 h-5 mr-2" />
-                Cartão Combustível
-              </CardTitle>
-              <CardDescription>
-                Solicitação de saldo e histórico
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4">
-              <p className="text-sm text-gray-600 mb-4">
-                Solicite recarga de saldo para cartões de combustível e acompanhe o histórico de solicitações e aprovações.
-              </p>
-              <Link href="/bases/gp02/cartao-combustivel">
-                <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white">
-                  Gerenciar Cartão
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+
 
           {/* Manutenção de Frota */}
           <Card className="shadow-lg hover:shadow-xl transition-shadow">
