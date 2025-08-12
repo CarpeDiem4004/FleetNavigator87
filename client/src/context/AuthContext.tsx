@@ -196,9 +196,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         
         if (response.ok) {
           userData = await response.json();
+          // Garantir que baseId esteja sempre disponível
+          if (userData.base_id && !userData.baseId) {
+            userData.baseId = userData.base_id;
+          }
           isAuthenticated = true;
           authSource = 'sessão';
-          console.log("Sessão tradicional verificada com sucesso");
+          console.log("Sessão tradicional verificada com sucesso", { 
+            userBaseId: userData.baseId, 
+            userBase_id: userData.base_id,
+            basename: userData.basename 
+          });
         } else {
           if (response.status === 401) {
             console.log('Nenhuma sessão de usuário encontrada');

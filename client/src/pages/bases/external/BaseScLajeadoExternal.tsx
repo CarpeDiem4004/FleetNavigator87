@@ -18,21 +18,41 @@ export default function BaseScLajeadoExternal() {
   // Redirecionar usuários autenticados da base SC Lajeado para o menu principal
   useEffect(() => {
     console.log('[BaseScLajeadoExternal] Estado atual:', { 
-      user: user ? { id: user.id, name: user.name, baseId: user.baseId, base_id: user.base_id, basename: user.basename } : null, 
+      user: user ? { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email,
+        baseId: user.baseId, 
+        basename: user.basename,
+        // Verificando se há propriedades alternativas
+        ...Object.keys(user).reduce((acc, key) => {
+          if (key.includes('base')) acc[key] = user[key];
+          return acc;
+        }, {})
+      } : null, 
       isLoading 
     });
     
     if (!isLoading && user) {
-      const userBaseId = user.baseId || user.base_id;
-      console.log('[BaseScLajeadoExternal] Verificando base do usuário:', { userBaseId, basename: user.basename });
+      // Verificar múltiplas formas da base ID
+      const userBaseId = user.baseId || (user as any).base_id;
+      console.log('[BaseScLajeadoExternal] Dados completos do usuário:', user);
+      console.log('[BaseScLajeadoExternal] Verificando base do usuário:', { 
+        userBaseId, 
+        basename: user.basename,
+        shouldRedirect: userBaseId === 102 && user.basename === 'SC_LAJEADO_SRS10SDD'
+      });
       
       if (userBaseId === 102 && user.basename === 'SC_LAJEADO_SRS10SDD') {
-        console.log('[BaseScLajeadoExternal] REDIRECIONANDO para menu principal...');
-        setTimeout(() => {
-          setLocation('/bases/sc_lajeado_srs10sdd');
-        }, 1000);
+        console.log('[BaseScLajeadoExternal] ✅ REDIRECIONANDO AGORA para menu principal...');
+        // Redirecionamento imediato
+        setLocation('/bases/sc_lajeado_srs10sdd');
         return;
+      } else {
+        console.log('[BaseScLajeadoExternal] ❌ Condições não atendidas para redirecionamento');
       }
+    } else {
+      console.log('[BaseScLajeadoExternal] Ainda carregando ou usuário não encontrado');
     }
   }, [user, isLoading, setLocation]);
 
