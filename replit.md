@@ -11,6 +11,8 @@ The system is built with a React/TypeScript frontend and a Node.js/Express backe
 
 ### Recent Fixes (August 12, 2025)
 - **GP02 Login Issue Resolved**: Fixed password hash for renato.miyata@muricionfleet.com to enable login with "j!8H#eNvVo"
+- **GP03 Login Issue Resolved**: Fixed password hash for bruno.machado@muricionfleet.com to enable login with "j!8H#eNvVo"
+- **Fuel Card Integration Fixed**: Corrected API filtering in fuelCardSolicitationsApi.ts to properly display fuel card requests from external forms in GP03 base panel
 - **External Link Redirection Fixed**: SC Lajeado users (fernanda.silva@muricionfleet.com) now automatically redirect from external link to main dashboard
 - **BaseGP02External Created**: New external page component for GP02 base at /bases/gp02/external route
 - **AuthContext Enhanced**: Added baseId fallback mapping (base_id → baseId) to ensure consistent user object properties
