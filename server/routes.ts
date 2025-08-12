@@ -1074,6 +1074,85 @@ import sqlSeguroRouter from './routes/sql-seguro';
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
+  // API específica para verificação de acesso à base específica
+  app.post('/api/verify-base-access', (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-cache');
+    
+    Promise.resolve().then(async () => {
+      console.log('[VerifyBaseAccess] Dados recebidos:', req.body);
+      
+      const { email, baseId, basename } = req.body;
+
+      // Validação dos campos obrigatórios
+      if (!email || !baseId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email e baseId são obrigatórios'
+        });
+      }
+
+      try {
+        // Buscar usuário no banco
+        const userQuery = 'SELECT * FROM users WHERE email = $1 AND is_active = true';
+        const userResult = await pool.query(userQuery, [email]);
+        
+        if (userResult.rows.length === 0) {
+          console.log('[VerifyBaseAccess] Usuário não encontrado:', email);
+          return res.status(404).json({
+            success: false,
+            message: 'Usuário não encontrado'
+          });
+        }
+
+        const user = userResult.rows[0];
+        console.log('[VerifyBaseAccess] Usuário encontrado:', user.name, user.email, 'Base:', user.base_id, user.basename);
+        
+        // Verificar se o usuário pertence à base solicitada
+        const belongsToBase = user.base_id === parseInt(baseId) || user.basename === basename;
+        
+        if (!belongsToBase) {
+          console.log('[VerifyBaseAccess] Usuário não pertence à base solicitada. User base:', user.base_id, user.basename, 'Requested:', baseId, basename);
+          return res.status(403).json({
+            success: false,
+            message: 'Usuário não tem acesso a esta base',
+            userBase: user.basename,
+            requestedBase: basename
+          });
+        }
+
+        // Usuário tem acesso à base solicitada
+        console.log('[VerifyBaseAccess] Acesso à base verificado com sucesso para:', user.email);
+        
+        // Retornar dados do usuário sem a senha
+        const { password, ...userWithoutPassword } = user;
+        
+        return res.json({
+          success: true,
+          message: 'Acesso à base verificado com sucesso',
+          user: {
+            id: userWithoutPassword.id,
+            name: userWithoutPassword.name,
+            email: userWithoutPassword.email,
+            role: userWithoutPassword.role,
+            baseId: userWithoutPassword.base_id,
+            basename: userWithoutPassword.basename,
+            oficina_id: userWithoutPassword.oficina_id,
+            isActive: userWithoutPassword.is_active
+          }
+        });
+
+      } catch (error) {
+        console.error('[VerifyBaseAccess] Erro ao verificar acesso à base:', error);
+        return res.status(500).json({
+          success: false,
+          message: 'Erro interno do servidor'
+        });
+      }
+      
+    }).catch(next);
+  });
+
   // API específica para formulário externo de recebimento de combustível - Campinas V2 (deve vir antes dos middlewares de autenticação)
   app.post('/api/recebimentos-externos/campinas-v2', (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');

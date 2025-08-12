@@ -22,9 +22,60 @@ export default function LoginGP02() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
-      setLocation('/bases/gp02/external');
-    } catch (err) {
+      console.log('[LoginGP02] Tentando fazer login com email:', email);
+      const user = await login(email, password);
+      console.log('[LoginGP02] Login bem-sucedido, usuário:', user);
+      
+      // Verificar se o usuário pertence à base GP02 (ID 150)
+      if (user.baseId !== 150 && user.basename !== 'GP02') {
+        console.log('[LoginGP02] Usuário não pertence à base GP02. BaseId:', user.baseId, 'Basename:', user.basename);
+        throw new Error('Usuário não tem acesso a esta base');
+      }
+      
+      console.log('[LoginGP02] Redirecionando para /bases/gp02');
+      setLocation('/bases/gp02'); // Redireciona para a dashboard principal da base GP02
+    } catch (err: any) {
+      console.error('[LoginGP02] Erro durante login:', err);
+      
+      // Verificar se é um erro específico de operador que precisa ser redirecionado
+      if (err.message === 'OPERADOR_REDIRECT_REQUIRED') {
+        console.log('[LoginGP02] Operador detectado - login válido, redirecionando para base GP02');
+        
+        // Para operadores, tentamos primeiro verificar se é da base GP02
+        const errorData = (err as any).errorData;
+        console.log('[LoginGP02] Dados do erro do operador:', errorData);
+        
+        // Fazer uma verificação direta se o usuário pertence à base GP02
+        try {
+          const verifyResponse = await fetch('/api/verify-base-access', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ 
+              email: email, 
+              baseId: 150, 
+              basename: 'GP02'
+            })
+          });
+          
+          if (verifyResponse.ok) {
+            const userData = await verifyResponse.json();
+            console.log('[LoginGP02] Usuário GP02 verificado:', userData);
+            setError('Login realizado com sucesso! Redirecionando...');
+            
+            setTimeout(() => {
+              setLocation('/bases/gp02');
+            }, 1000);
+            return;
+          }
+        } catch (verifyError) {
+          console.error('[LoginGP02] Erro ao verificar acesso à base:', verifyError);
+        }
+        
+        setError('Usuário não tem acesso à base GP02 - Jacarei');
+        return;
+      }
+      
       setError('Credenciais inválidas. Verifique seu email e senha.');
     } finally {
       setIsLoading(false);

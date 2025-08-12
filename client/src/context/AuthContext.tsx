@@ -310,8 +310,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             try {
               const errorData = await response.json();
               if (errorData.message && errorData.message.includes('Operadores devem acessar apenas a base designada')) {
-                console.log("Operador tentou acessar sistema principal - redirecionando para base");
-                throw new Error(errorData.message);
+                console.log("Operador detectado tentando acessar sistema principal. Login válido mas requer redirecionamento para base.");
+                
+                // Lançar erro específico com informação suficiente para redirect  
+                const error = new Error('OPERADOR_REDIRECT_REQUIRED');
+                (error as any).originalMessage = errorData.message;
+                (error as any).errorData = errorData;
+                throw error;
               }
             } catch (parseError) {
               console.warn("Erro ao parsear resposta de erro:", parseError);
@@ -322,7 +327,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       } catch (tradError) {
         console.error("Erro na autenticação tradicional:", tradError);
         // Se for um erro de acesso negado para operadores, rejeitar imediatamente
-        if (tradError instanceof Error && tradError.message && tradError.message.includes('Operadores devem acessar apenas a base designada')) {
+        if (tradError instanceof Error && tradError.message === 'OPERADOR_REDIRECT_REQUIRED') {
           throw tradError;
         }
       }
