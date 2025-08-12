@@ -83,6 +83,20 @@ const allRoutes = [
 // Regras de correspondência entre bases e rotas específicas
 const baseRouteMapping = {
   'line hall': ['/line-hall', '/line-hall-shopee'],
+  'sc_lajeado_srs10sdd': [
+    '/bases/sc_lajeado_srs10sdd',
+    '/bases/lajeado',
+    '/bases/sc_lajeado_srs10sdd/cartao-combustivel',
+    '/bases/sc_lajeado_srs10sdd/despesas',
+    '/bases/sc_lajeado_srs10sdd/multas',
+    '/bases/sc_lajeado_srs10sdd/acidentes-trabalho',
+    '/bases/sc_lajeado_srs10sdd/sinistros',
+    '/bases/sc_lajeado_srs10sdd/solicitacao-pneus',
+    '/bases/sc_lajeado_srs10sdd/solicitacao-orcamento',
+    '/bases/sc_lajeado_srs10sdd/manutencao-frota',
+    '/bases/sc_lajeado_srs10sdd/veiculos',
+    '/bases/sc_lajeado_srs10sdd/external'
+  ],
   'multas': ['/multas', '/fines'],
   'pneus': ['/pneus', '/tires'],
   'campinas': [
