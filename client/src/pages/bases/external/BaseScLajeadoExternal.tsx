@@ -17,7 +17,9 @@ export default function BaseScLajeadoExternal() {
 
   // Redirecionar usuários autenticados da base SC Lajeado para o menu principal
   useEffect(() => {
-    if (!isLoading && user && user.baseId === 102 && user.basename === 'SC_LAJEADO_SRS10SDD') {
+    console.log('[BaseScLajeadoExternal] Verificando usuário:', { user, isLoading });
+    const userBaseId = user?.baseId || user?.base_id;
+    if (!isLoading && user && userBaseId === 102 && user.basename === 'SC_LAJEADO_SRS10SDD') {
       console.log('[BaseScLajeadoExternal] Usuário da base SC Lajeado autenticado, redirecionando para menu principal');
       setLocation('/bases/sc_lajeado_srs10sdd');
     }
@@ -40,7 +42,7 @@ export default function BaseScLajeadoExternal() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Botão para ir ao menu principal se usuário autenticado */}
-          {user && user.baseId === 102 && (
+          {user && (user.baseId === 102 || user.base_id === 102) && (
             <Card className="mb-6 border-green-200 bg-gradient-to-r from-green-50 to-green-100">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">

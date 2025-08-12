@@ -11,6 +11,7 @@ interface User {
   email: string;
   role: string;
   baseId?: number;
+  base_id?: number;  // Campo alternativo do servidor
   basename?: string;
   oficina_id?: number;  // ID da oficina associada ao usuário (se for oficina)
   // Relação com a base
