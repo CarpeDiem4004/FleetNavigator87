@@ -9,6 +9,12 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 The system is built with a React/TypeScript frontend and a Node.js/Express backend, utilizing Supabase as the primary database.
 
+### Recent Fixes (August 12, 2025)
+- **GP02 Login Issue Resolved**: Fixed password hash for renato.miyata@muricionfleet.com to enable login with "j!8H#eNvVo"
+- **External Link Redirection Fixed**: SC Lajeado users (fernanda.silva@muricionfleet.com) now automatically redirect from external link to main dashboard
+- **BaseGP02External Created**: New external page component for GP02 base at /bases/gp02/external route
+- **AuthContext Enhanced**: Added baseId fallback mapping (base_id → baseId) to ensure consistent user object properties
+
 ### Frontend Architecture
 - **Framework**: React with TypeScript
 - **UI Components**: Shadcn/ui for a modern, responsive interface, optimized for mobile with specific mobile components.
