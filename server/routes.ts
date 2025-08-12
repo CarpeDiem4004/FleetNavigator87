@@ -4225,8 +4225,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         RETURNING *
       `;
       
-      // Usar o nome do solicitante enviado pelo formulário, caso contrário usar o nome do usuário logado
-      const requestedByName = requesterName || solicitante || user.name || 'Usuário não identificado';
+      // SEMPRE usar o nome do usuário logado como solicitante (regra de segurança)
+      const requestedByName = user.name || 'Usuário não identificado';
       
       console.log('[FUEL-CARD-REQUEST] Executando query INSERT...');
       console.log('[FUEL-CARD-REQUEST] Solicitante identificado como:', requestedByName);

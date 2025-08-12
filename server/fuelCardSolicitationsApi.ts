@@ -1368,7 +1368,7 @@ export async function createFuelCardRequest(req: Request, res: Response) {
       base_id,
       base_name,
       status,
-      driver_name || 'Sistema SC'
+      req.user?.name || 'Sistema SC'
     ];
 
     const result = await pool.query(insertQuery, values);
