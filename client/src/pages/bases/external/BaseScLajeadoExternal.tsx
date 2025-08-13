@@ -24,11 +24,7 @@ export default function BaseScLajeadoExternal() {
         email: user.email,
         baseId: user.baseId, 
         basename: user.basename,
-        // Verificando se há propriedades alternativas
-        ...Object.keys(user).reduce((acc, key) => {
-          if (key.includes('base')) acc[key] = user[key];
-          return acc;
-        }, {})
+        base_id: (user as any).base_id
       } : null, 
       isLoading 
     });
@@ -73,7 +69,7 @@ export default function BaseScLajeadoExternal() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Botão para ir ao menu principal se usuário autenticado */}
-          {user && (user.baseId === 102 || user.base_id === 102) && (
+          {user && (user.baseId === 102 || (user as any).base_id === 102) && (
             <Card className="mb-6 border-green-200 bg-gradient-to-r from-green-50 to-green-100">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
@@ -85,12 +81,42 @@ export default function BaseScLajeadoExternal() {
                     </div>
                   </div>
                   <Button 
-                    onClick={() => setLocation('/bases/sc_lajeado_srs10sdd')}
+                    onClick={() => {
+                      console.log('[BaseScLajeadoExternal] Botão clicado - redirecionando para menu principal');
+                      setLocation('/bases/sc_lajeado_srs10sdd');
+                    }}
                     variant="outline"
                     className="border-green-600 text-green-700 hover:bg-green-600 hover:text-white"
                   >
                     <Building2 className="h-4 w-4 mr-2" />
                     Ir para Menu Principal
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Seção especial se não logado - para facilitar acesso */}
+          {!user && (
+            <Card className="mb-6 border-yellow-200 bg-gradient-to-r from-yellow-50 to-orange-50">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-yellow-800 mb-2">
+                    Acesso Direto ao Menu Principal
+                  </h3>
+                  <p className="text-yellow-700 mb-4">
+                    Clique no botão abaixo para ir diretamente ao menu principal da base SC Lajeado
+                  </p>
+                  <Button 
+                    onClick={() => {
+                      console.log('[BaseScLajeadoExternal] Redirecionamento direto para menu principal');
+                      setLocation('/bases/sc_lajeado_srs10sdd');
+                    }}
+                    size="lg"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Building2 className="h-5 w-5 mr-2" />
+                    ACESSAR MENU PRINCIPAL
                   </Button>
                 </div>
               </CardContent>
