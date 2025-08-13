@@ -573,11 +573,11 @@ export function setupAuth(app: Express) {
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
       
-      // Verificar se é um usuário de base (operador ou similar)
-      if (user.role !== 'operador') {
-        console.log(`[login-base] Acesso negado - usuário não é operador: ${email} (Role: ${user.role})`);
+      // Verificar se é um usuário autorizado (operador ou admin)
+      if (user.role !== 'operador' && user.role !== 'admin') {
+        console.log(`[login-base] Acesso negado - usuário não autorizado: ${email} (Role: ${user.role})`);
         return res.status(403).json({ 
-          message: "Acesso negado. Este login é apenas para operadores de base." 
+          message: "Acesso negado. Este login é apenas para operadores de base e administradores." 
         });
       }
       
