@@ -9,7 +9,14 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 The system is built with a React/TypeScript frontend and a Node.js/Express backend, utilizing Supabase as the primary database.
 
-### Recent Fixes (August 12, 2025)
+### Recent Fixes (August 13, 2025)
+- **SC Lajeado Login Fixed**: Resolved authentication issue for fernanda.silva@muricionfleet.com by correcting AuthContext to use `/api/auth/login-base` endpoint instead of `/api/login`
+- **Password Configuration**: Updated password hash for Fernanda Silva with "j!8H#eNvVo" and proper base assignment (SC_LAJEADO_SRS10SDD, base_id: 102)
+- **Login Redirection Updated**: Modified LoginLajeado.tsx to redirect to `/bases/sc_lajeado_srs10sdd/external` after successful authentication
+- **External Page Enhanced**: Added prominent "ACESSAR MENU PRINCIPAL" button to BaseScLajeadoExternal for direct navigation to main dashboard
+- **Authentication Endpoint Corrected**: Fixed AuthContext login function to send `email` parameter to correct endpoint, resolving "Missing credentials" error
+
+### Previous Fixes (August 12, 2025)
 - **GP02 Login Issue Resolved**: Fixed password hash for renato.miyata@muricionfleet.com to enable login with "j!8H#eNvVo"
 - **GP03 Login Issue Resolved**: Fixed password hash for bruno.machado@muricionfleet.com to enable login with "j!8H#eNvVo"
 - **Fuel Card Integration Fixed**: Corrected API filtering in fuelCardSolicitationsApi.ts to properly display fuel card requests from external forms in GP03 base panel

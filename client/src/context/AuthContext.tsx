@@ -289,11 +289,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // PASSO 1: Tentar autenticação tradicional através da API Express
       try {
         console.log("Iniciando autenticação tradicional...");
-        const response = await fetch('/api/login', {
+        const response = await fetch('/api/auth/login-base', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include', // Importante para cookies de sessão
-          body: JSON.stringify({ username: email, password }),
+          body: JSON.stringify({ email, password }),
         });
         
         if (response.ok) {
