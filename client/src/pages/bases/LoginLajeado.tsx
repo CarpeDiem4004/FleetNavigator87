@@ -22,8 +22,8 @@ const LoginLajeado: React.FC = () => {
   // Verificar se usuário já está autenticado e redirecionar
   useEffect(() => {
     if (!authLoading && user && user.basename === 'SC_LAJEADO_SRS10SDD') {
-      console.log('[LoginLajeado] Usuário já autenticado, redirecionando para página externa');
-      navigate('/bases/sc_lajeado_srs10sdd/external');
+      console.log('[LoginLajeado] Usuário já autenticado, redirecionando para dashboard da base');
+      navigate('/bases/sc_lajeado_srs10sdd');
     }
   }, [user, authLoading, navigate]);
 
@@ -38,9 +38,9 @@ const LoginLajeado: React.FC = () => {
       if (result) {
         toast({
           title: "Login realizado com sucesso!",
-          description: "Redirecionando para a Base SC (LAJEADO) SRS10-SDD...",
+          description: "Redirecionando para o Dashboard da Base SC (LAJEADO) SRS10-SDD...",
         });
-        navigate('/bases/sc_lajeado_srs10sdd/external');
+        navigate('/bases/sc_lajeado_srs10sdd');
       } else {
         setError('Credenciais inválidas ou erro no servidor');
       }

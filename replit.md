@@ -12,7 +12,7 @@ The system is built with a React/TypeScript frontend and a Node.js/Express backe
 ### Recent Fixes (August 13, 2025)
 - **SC Lajeado Login Fixed**: Resolved authentication issue for fernanda.silva@muricionfleet.com by correcting AuthContext to use `/api/auth/login-base` endpoint instead of `/api/login`
 - **Password Configuration**: Updated password hash for Fernanda Silva with "j!8H#eNvVo" and proper base assignment (SC_LAJEADO_SRS10SDD, base_id: 102)
-- **Login Redirection Updated**: Modified LoginLajeado.tsx to redirect to `/bases/sc_lajeado_srs10sdd/external` after successful authentication
+- **Direct Menu Access**: Modified LoginLajeado.tsx to redirect directly to `/bases/sc_lajeado_srs10sdd` (dashboard/menu) after successful authentication, bypassing external page
 - **External Page Enhanced**: Added prominent "ACESSAR MENU PRINCIPAL" button to BaseScLajeadoExternal for direct navigation to main dashboard
 - **Authentication Endpoint Corrected**: Fixed AuthContext login function to send `email` parameter to correct endpoint, resolving "Missing credentials" error
 
