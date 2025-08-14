@@ -337,13 +337,17 @@ export const useBasePermission = (): BasePermissionHook => {
       return false;
     }
     
-    // Administradores têm acesso a todas as rotas
-    // Verificamos admin com case-insensitive e também verificamos emails específicos de admin
-    if (
+    // VERIFICAÇÃO RIGOROSA DE ADMIN - Várias formas de detectar admin
+    const isAdmin = (
       user.role?.toLowerCase() === 'admin' || 
+      user.role?.toUpperCase() === 'ADMIN' ||
+      user.role === 'admin' ||
+      user.role === 'ADMIN' ||
       (user.email && ['joao.paulo@muricionfleet.com', 'regio@muricionfleet.com', 'andre.rosa@muricionfleet.com', 'admin@muricionfleet.com'].includes(user.email.toLowerCase()))
-    ) {
-      console.log(`Permission granted for admin user to route: ${route} (admin role: ${user.role}, email: ${user.email})`);
+    );
+    
+    if (isAdmin) {
+      console.log(`Permission granted for admin user to route: ${route} (admin role: '${user.role}', email: '${user.email}')`);
       return true;
     }
     
@@ -611,9 +615,17 @@ export const useBasePermission = (): BasePermissionHook => {
     }
     
     // Se o usuário não tem base específica (caso raro), mas não é admin, permitir apenas rotas básicas
-    if (!user.baseId && !user.basename && user.role?.toLowerCase() !== 'admin') {
+    const isAdminUser = (
+      user.role?.toLowerCase() === 'admin' || 
+      user.role?.toUpperCase() === 'ADMIN' ||
+      user.role === 'admin' ||
+      user.role === 'ADMIN' ||
+      (user.email && ['joao.paulo@muricionfleet.com', 'regio@muricionfleet.com', 'andre.rosa@muricionfleet.com', 'admin@muricionfleet.com'].includes(user.email.toLowerCase()))
+    );
+    
+    if (!user.baseId && !user.basename && !isAdminUser) {
       const hasAccess = basicRoutes.includes(route);
-      console.log(`User without specific base permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      console.log(`User without specific base permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (role: '${user.role}', baseId: ${user.baseId}, basename: '${user.basename}', isAdmin: ${isAdminUser})`);
       return hasAccess;
     }
     
