@@ -105,6 +105,8 @@ router.get('/historico-abastecimentos-supabase/:posto', async (req, res) => {
         lavagem,
         tipo_lavagem,
         projeto,
+        COALESCE(base_name, 'Base não especificada') AS base_name,
+        base_id,
         created_at
       FROM "${nomeTabela}"
       ORDER BY created_at DESC
@@ -563,6 +565,8 @@ router.get('/historico-unificado/:posto', async (req, res) => {
         lavagem,
         tipo_lavagem,
         projeto,
+        COALESCE(base_name, 'Base não especificada') AS base_name,
+        base_id,
         created_at
       FROM "${nomeTabela}"
       ORDER BY created_at DESC

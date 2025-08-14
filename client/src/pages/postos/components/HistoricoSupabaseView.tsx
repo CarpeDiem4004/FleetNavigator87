@@ -70,6 +70,8 @@ interface HistoricoAbastecimento {
   lavagem: boolean;
   tipo_lavagem?: string;
   projeto?: string;  // Campo projeto do abastecimento
+  base_name?: string;  // Campo base_name do abastecimento
+  base_id?: number;  // Campo base_id do abastecimento
   data_hora: string;
   created_at: string;
 }
@@ -104,8 +106,8 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       // Para Campinas, usar tabela específica campinas_v2
       const postoFormatado = posto.toLowerCase().includes('campinas') ? 'campinas_v2' : posto;
       
-      // Usar a rota que já existe e funciona
-      const response = await axios.get(`/api/posto-supabase/historico-abastecimentos-supabase/${encodeURIComponent(postoFormatado)}?t=${timestamp}`, {
+      // Usar a rota unificada otimizada
+      const response = await axios.get(`/api/posto-supabase/historico-unificado/${encodeURIComponent(postoFormatado)}?t=${timestamp}`, {
         headers: {
           'Accept': 'application/json',
           'X-Requested-With': 'XMLHttpRequest' // Indicar que é uma solicitação AJAX
@@ -263,6 +265,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       'Valor Total': item.valor_total,
       'Tipo de Veículo': item.tipo_veiculo || '-',
       'Projeto': item.projeto || '-',
+      'Base': item.base_name || 'Base não especificada',
       'Lavagem': item.lavagem ? 'Sim' : 'Não',
       'Tipo de Lavagem': item.tipo_lavagem || '-',
       'Observações': item.observacoes || '-'
@@ -421,6 +424,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                   <TableHead>Placa</TableHead>
                   <TableHead>Combustível</TableHead>
                   <TableHead>Projeto</TableHead>
+                  <TableHead>Base</TableHead>
                   <TableHead className="text-right">Litros</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
                   <TableHead className="w-[50px] text-center">Ações</TableHead>
@@ -429,7 +433,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
               <TableBody>
                 {historico.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center h-24">
+                    <TableCell colSpan={8} className="text-center h-24">
                       {isLoading ? (
                         <div className="flex justify-center items-center">
                           <Loader2 className="h-6 w-6 animate-spin mr-2" />
@@ -442,7 +446,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                   </TableRow>
                 ) : historicoFiltrado.length === 0 && (dataInicio || dataFim || placaFiltro) ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center h-24">
+                    <TableCell colSpan={8} className="text-center h-24">
                       <div className="flex flex-col items-center justify-center text-slate-500">
                         <Search className="h-8 w-8 mb-2 text-slate-400" />
                         <p>Nenhum registro encontrado com os filtros aplicados</p>
@@ -475,6 +479,13 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                           <Badge variant="outline" className="bg-blue-50">{item.projeto}</Badge>
                         ) : (
                           <span className="text-slate-400 text-xs">Não informado</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {item.base_name ? (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">{item.base_name}</Badge>
+                        ) : (
+                          <span className="text-slate-400 text-xs">Base não especificada</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
