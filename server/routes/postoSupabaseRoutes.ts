@@ -506,33 +506,6 @@ function normalizarCamposAbastecimento(dados: any, posto: string): any {
   return normalizado;
 }
 
-/**
- * Rota alternativa para compatibilidade com frontend (fallback route)
- */
-router.get('/historico/:posto', async (req, res) => {
-  try {
-    const { posto } = req.params;
-    console.log(`[HISTÓRICO-FALLBACK] Chamando rota fallback para posto: ${posto}`);
-    
-    // Redirecionar para a rota principal
-    const endpoint = `/api/posto-supabase/historico-abastecimentos-supabase/${posto}`;
-    
-    // Forward the request to the main endpoint
-    const response = await fetch(`http://localhost:5000${endpoint}`, {
-      method: 'GET',
-      headers: req.headers as any
-    });
-    
-    const data = await response.json();
-    return res.status(response.status).json(data);
-    
-  } catch (error) {
-    console.error('Erro na rota fallback:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Erro ao buscar histórico via fallback'
-    });
-  }
-});
+// Rota fallback removida - usando apenas a rota principal historico-abastecimentos-supabase
 
 export default router;

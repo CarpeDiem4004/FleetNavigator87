@@ -123,22 +123,15 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       }
     } catch (err: any) {
       console.error('Erro ao carregar histórico:', err);
+      setError(`Erro ao carregar histórico: ${err.message || 'Erro desconhecido'}`);
       
-      // Tentar a rota original como fallback
-      try {
-        console.log('Tentando rota alternativa...');
-        const timestamp = new Date().getTime();
-        const fallbackResponse = await axios.get(`/api/posto-supabase/historico/${posto.toLowerCase()}?t=${timestamp}`);
-        
-        if (fallbackResponse.data && fallbackResponse.data.success) {
-          setHistorico(fallbackResponse.data.data || []);
-          setLastRefreshTime(new Date());
-        } else {
-          setError(fallbackResponse.data?.error || 'Erro ao carregar o histórico');
-        }
-      } catch (fallbackErr: any) {
-        setError(`Erro ao carregar histórico: ${err.message}. Fallback também falhou.`);
-      }
+      // Log do erro para diagnóstico sem tentar fallback desnecessário
+      console.log('[HISTÓRICO] Erro detalhado:', {
+        posto,
+        error: err.message,
+        status: err.response?.status,
+        data: err.response?.data
+      });
     } finally {
       setIsLoading(false);
     }
@@ -226,7 +219,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       // Fazer a chamada para excluir o registro usando apiRequest com autenticação
       const response = await apiRequest('DELETE', `/api/abastecimento/${posto.toLowerCase()}/${deleteItemId}`);
       
-      if (response && response.success) {
+      if (response && (response as any).success) {
         // Atualizar a lista após exclusão bem-sucedida
         setHistorico(prev => prev.filter(item => item.id !== deleteItemId));
         setIsDeleteDialogOpen(false);
@@ -235,7 +228,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
         // Exibir mensagem de sucesso
         console.log(`Registro #${deleteItemId} excluído com sucesso`);
       } else {
-        setError(response.data?.error || 'Erro ao excluir o registro');
+        setError((response as any).data?.error || 'Erro ao excluir o registro');
       }
     } catch (err: any) {
       console.error('Erro ao excluir abastecimento:', err);
@@ -478,8 +471,8 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                         )}
                       </TableCell>
                       <TableCell>
-                        {item.projeto || item.project ? (
-                          <Badge variant="outline" className="bg-blue-50">{item.projeto || item.project}</Badge>
+                        {item.projeto ? (
+                          <Badge variant="outline" className="bg-blue-50">{item.projeto}</Badge>
                         ) : (
                           <span className="text-slate-400 text-xs">Não informado</span>
                         )}
