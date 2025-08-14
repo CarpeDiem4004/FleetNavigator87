@@ -14,6 +14,7 @@ The system is built with a React/TypeScript frontend and a Node.js/Express backe
 - **Universal Admin Access**: Modified `/api/auth/login-base` endpoint to accept both 'operador' and 'admin' roles, allowing admins to use any base login
 - **Password Reset**: Updated admin credentials with new bcrypt hash for password "admin123" to enable system access
 - **Base Access Corrected**: Admins now have universal access to all bases through any login endpoint, maintaining the "golden rule" security
+- **Admin Permission Fix**: Added admin@muricionfleet.com to the allowed admin emails list in use-base-permission.tsx to resolve "Acesso Negado" error for admin users
 
 ### Previous Fixes (August 13, 2025)
 - **SC Lajeado Login Fixed**: Resolved authentication issue for fernanda.silva@muricionfleet.com by correcting AuthContext to use `/api/auth/login-base` endpoint instead of `/api/login`

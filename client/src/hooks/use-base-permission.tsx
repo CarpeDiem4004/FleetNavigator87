@@ -341,7 +341,7 @@ export const useBasePermission = (): BasePermissionHook => {
     // Verificamos admin com case-insensitive e também verificamos emails específicos de admin
     if (
       user.role?.toLowerCase() === 'admin' || 
-      (user.email && ['joao.paulo@muricionfleet.com', 'regio@muricionfleet.com', 'andre.rosa@muricionfleet.com'].includes(user.email.toLowerCase()))
+      (user.email && ['joao.paulo@muricionfleet.com', 'regio@muricionfleet.com', 'andre.rosa@muricionfleet.com', 'admin@muricionfleet.com'].includes(user.email.toLowerCase()))
     ) {
       console.log(`Permission granted for admin user to route: ${route} (admin role: ${user.role}, email: ${user.email})`);
       return true;
