@@ -346,6 +346,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
     return <Redirect to="/login" />;
   }
   
+  // AGUARDAR QUE O USUARIO ESTEJA PRONTO ANTES DA VERIFICAÇÃO DE PERMISSÃO
+  if (user && (!user.role || !user.email)) {
+    console.log('[ProtectedRoute] Usuário parcialmente carregado, aguardando dados completos...', { role: user.role, email: user.email });
+    return (
+      <RetryableLoader 
+        message="Carregando dados do usuário..." 
+        subMessage="Aguarde enquanto os dados são sincronizados."
+      />
+    );
+  }
+  
   // Verificação de JWT - mostra loader enquanto verifica
   if (isVerifyingJWT) {
     return <RetryableLoader message="Verificando credenciais..." onRetry={handleRetry} retryCount={retryCount} />;
