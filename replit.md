@@ -9,7 +9,13 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 The system is built with a React/TypeScript frontend and a Node.js/Express backend, utilizing Supabase as the primary database.
 
-### Recent Fixes (August 13, 2025)
+### Recent Fixes (August 14, 2025)
+- **Admin Authentication Fixed**: Resolved admin@muricionfleet.com login issues by updating password hash and correcting endpoint permissions
+- **Universal Admin Access**: Modified `/api/auth/login-base` endpoint to accept both 'operador' and 'admin' roles, allowing admins to use any base login
+- **Password Reset**: Updated admin credentials with new bcrypt hash for password "admin123" to enable system access
+- **Base Access Corrected**: Admins now have universal access to all bases through any login endpoint, maintaining the "golden rule" security
+
+### Previous Fixes (August 13, 2025)
 - **SC Lajeado Login Fixed**: Resolved authentication issue for fernanda.silva@muricionfleet.com by correcting AuthContext to use `/api/auth/login-base` endpoint instead of `/api/login`
 - **Password Configuration**: Updated password hash for Fernanda Silva with "j!8H#eNvVo" and proper base assignment (SC_LAJEADO_SRS10SDD, base_id: 102)
 - **Direct Menu Access**: Modified LoginLajeado.tsx to redirect directly to `/bases/sc_lajeado_srs10sdd` (dashboard/menu) after successful authentication, bypassing external page
