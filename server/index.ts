@@ -2252,6 +2252,7 @@ app.use((req, res, next) => {
       '/bases/alair/login',
       '/test-logout',
       '/test-campinas-login',
+      '/postos/campinas_v2/public', // Link externo do Posto Campinas V2
       '/posto/', // Permitir acesso público a todas as rotas de postos
       '/api/postos', // Permitir acesso público às APIs dos postos
       '/api/historico-direto',
@@ -2271,7 +2272,12 @@ app.use((req, res, next) => {
       if (route.endsWith('/')) {
         return req.path.startsWith(route);
       }
-      return req.path === route || req.path.startsWith(route + '/');
+      // Verificar correspondência exata ou com subpaths
+      const isExactMatch = req.path === route;
+      const isSubPath = req.path.startsWith(route + '/');
+      const isPartialMatch = route === '/postos/campinas_v2/public' && req.path === '/postos/campinas_v2/public';
+      
+      return isExactMatch || isSubPath || isPartialMatch;
     });
     
     // Verificar se a rota atual é protegida
@@ -2281,6 +2287,12 @@ app.use((req, res, next) => {
     
     // Log para debug
     console.log(`[AUTH-MIDDLEWARE] Verificando rota: ${req.path} - Protegida: ${isProtectedRoute} - Pública: ${isPublicRoute}`);
+    
+    // Log adicional para a rota específica do Posto Campinas V2
+    if (req.path === '/postos/campinas_v2/public') {
+      console.log(`[AUTH-MIDDLEWARE] Rota Campinas V2 detectada: ${req.path}`);
+      console.log(`[AUTH-MIDDLEWARE] Rotas públicas configuradas:`, publicRoutes.filter(r => r.includes('campinas')));
+    }
     
     // Se não é uma rota protegida, continuar normalmente
     if (!isProtectedRoute) {

@@ -549,6 +549,27 @@ export const useBasePermission = (): BasePermissionHook => {
       return hasAccess;
     }
     
+    // Perfil Posto Campinas V2 - acesso específico ao link externo
+    if (user.basename === 'Posto Campinas V2' || user.baseId === 20) {
+      // Lista de rotas permitidas para usuários do Posto Campinas V2
+      const campanasV2Routes = [
+        '/',                               // Dashboard
+        '/postos/campinas_v2/public',      // Link externo do Posto Campinas V2
+        '/postos/campinas_v2',             // Posto Campinas V2
+        '/fuel-card',                      // Cartão de Combustível
+        '/fuel-card/station-profile',      // Perfil da Estação
+        '/fuel-card/dashboard',            // Dashboard de Cartões
+        '/fuel-card/requests',             // Solicitações de Cartão
+        '/postos',                         // Postos de Abastecimento
+        '/postos/visao-geral',             // Visão Geral dos Postos
+        '/postos/historico-consolidado',   // Histórico Consolidado de Abastecimentos
+        '/posto-remedios'                  // Posto Remédios
+      ];
+      const hasAccess = campanasV2Routes.includes(route);
+      console.log(`Posto Campinas V2 user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (user: ${user.email}, baseId: ${user.baseId})`);
+      return hasAccess;
+    }
+
     // Perfil Posto - permite acesso às funcionalidades de gerenciamento de postos e solicitações de cartão combustível
     if (user.role === 'posto') {
       // Lista de rotas permitidas para usuários com perfil de Posto
