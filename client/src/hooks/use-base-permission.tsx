@@ -610,11 +610,17 @@ export const useBasePermission = (): BasePermissionHook => {
       return false;
     }
     
-    // Se o usuário não tem base específica (caso raro), permitir apenas rotas básicas
-    if (!user.baseId && !user.basename) {
+    // Se o usuário não tem base específica (caso raro), mas não é admin, permitir apenas rotas básicas
+    if (!user.baseId && !user.basename && user.role?.toLowerCase() !== 'admin') {
       const hasAccess = basicRoutes.includes(route);
       console.log(`User without specific base permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
       return hasAccess;
+    }
+    
+    // Se chegamos até aqui e o usuário é admin (backup final), permitir acesso
+    if (user.role?.toLowerCase() === 'admin') {
+      console.log(`Admin fallback permission granted for route: ${route} (admin user: ${user.email})`);
+      return true;
     }
     
     // Negar acesso por padrão
