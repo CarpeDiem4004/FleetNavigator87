@@ -121,10 +121,8 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
       whereConditions = `WHERE ${baseFilter}`;
     }
     
-    // OTIMIZAÇÃO: Query mais eficiente com índices e paginação
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 100;
-    const offset = (page - 1) * limit;
+    // REMOVIDO: Limitação de paginação para mostrar todos os registros
+    // Usuário relatou que só estava mostrando 48 de 1505+ registros
 
     const query = `
       SELECT * FROM (
@@ -270,7 +268,6 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           ELSE 3
         END,
         data_solicitacao DESC NULLS LAST
-      LIMIT ${limit} OFFSET ${offset}
     `;
     
     const result = await pool.query(query);
@@ -1241,19 +1238,18 @@ export async function getFuelCardSolicitationsCounts(req: Request, res: Response
 
     console.log('[FUEL-CARD-COUNTS] Processando contadores para', plates.length, 'placas');
     
-    // Query otimizada para buscar contadores de múltiplas placas de uma vez
+    // Query corrigida para buscar contadores de múltiplas placas
     const query = `
       SELECT 
-        COALESCE(placa, veiculo_placa, plate) as placa,
+        placa,
         COUNT(*) as total_solicitations
       FROM (
-        SELECT placa FROM solicitacoes_fuel_card WHERE placa = ANY($1)
+        SELECT placa FROM solicitacoes_fuel_card WHERE placa = ANY($1) AND placa IS NOT NULL
         UNION ALL
-        SELECT veiculo_placa as placa FROM linehall_fuel_card_requests WHERE veiculo_placa = ANY($1)
+        SELECT veiculo_placa as placa FROM line_hall_shopee WHERE veiculo_placa = ANY($1) AND veiculo_placa IS NOT NULL
         UNION ALL
-        SELECT plate as placa FROM fuel_card_requests WHERE plate = ANY($1)
+        SELECT plate as placa FROM fuel_card_requests WHERE plate = ANY($1) AND plate IS NOT NULL
       ) all_requests
-      WHERE placa IS NOT NULL
       GROUP BY placa
     `;
 
