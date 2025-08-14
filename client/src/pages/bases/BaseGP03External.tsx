@@ -29,9 +29,9 @@ export default function BaseGP03External() {
     // Verificar permissões específicas por tipo de card e usuário
     const userEmail = user.email?.toLowerCase();
     
-    // Guilherme Protazio tem acesso limitado - apenas cartão combustível
+    // Guilherme Protazio agora tem acesso total a todos os cards da base GP03
     if (userEmail === 'guilherme.protazio@muricionfleet.com') {
-      return cardType === 'cartao-combustivel';
+      return true;
     }
     
     // Operadores geralmente têm acesso a cartão combustível e sinistros
