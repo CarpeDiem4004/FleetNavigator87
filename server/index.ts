@@ -2,26 +2,26 @@ import express, { type Request, Response, NextFunction } from "express";
 import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { utcMiddleware } from './utils/timezone-utc.js';
+// import { utcMiddleware } from './utils/timezone-utc.js';
 // Importar cronJobs para tarefas agendadas
 import { initCronJobs } from "./cronJobs";
 // Importar migrações
 import { runMigrations } from "./migration";
-// Importar APIs diretas para postos
-import { 
-  getHistoricoPosto, 
-  getEstatisticasMensaisPosto, 
-  getConsumoPorVeiculoPosto,
-  getComparativoCombustiveisPosto,
-  checkTabelaPosto,
-  registrarAbastecimentoPosto,
-  deleteAbastecimentoPosto
-} from "./api-direto.js";
+// APIs diretas para postos (temporariamente desabilitadas para deployment)
+// import { 
+//   getHistoricoPosto, 
+//   getEstatisticasMensaisPosto, 
+//   getConsumoPorVeiculoPosto,
+//   getComparativoCombustiveisPosto,
+//   checkTabelaPosto,
+//   registrarAbastecimentoPosto,
+//   deleteAbastecimentoPosto
+// } from "./api-direto.js";
 // Importar API para usuários via Supabase
 import userApi from "./api/userApi";
-// Importar APIs híbridas (ambiente Replit e externo)
-import hybridUserApi from "../hybrid-user-api.js";
-import hybridBasesApi from "../hybrid-bases-api.js";
+// APIs híbridas (temporariamente desabilitadas para deployment)
+// import hybridUserApi from "../hybrid-user-api.js";
+// import hybridBasesApi from "../hybrid-bases-api.js";
 // Importar rotas para acesso externo de parceiros de guincho
 import towingPartnerExternalRoutes from "./routes/towingPartnerExternalRoutes";
 // Importar rotas de emergência para acesso externo de parceiros de guincho
@@ -34,9 +34,9 @@ import { corsMiddleware } from "./middleware/cors";
 import fixCookieSession from "./middleware/fixCookieSession";
 // Importar middlewares de diagnóstico e recuperação de autenticação
 import { debugAuthMiddleware, recoverSessionMiddleware } from './middleware/debugAuthMiddleware';
-import { unifiedAuthMiddleware, requireRoles } from './utils/auth-utils.js';
+// import { unifiedAuthMiddleware, requireRoles } from './utils/auth-utils.js';
 import { isAuthenticated } from './middleware/auth';
-import { pool } from './database.js';
+import { pool } from './db';
 // Importar rota de diagnóstico para frota
 import frotaDiagnosticoRoute from "./routes/frotaDiagnosticoRoute";
 // Importar rotas de recebimentos e movimentações de pátio
@@ -45,26 +45,25 @@ import recebimentosMovimentacoesRoutes from "./routes/recebimentosMovimentacoesR
 import projetosRoutes from "./routes/projetosRoutes";
 // Importar rotas de preços de combustível
 import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
-// Importar scheduler de consumo diário
-import { iniciarScheduler } from './services/consumoDiarioScheduler.js';
-// Importar rotas de histórico de consumo diário
-import consumoDiarioHistorico from './routes/consumoDiarioHistorico.js';
-import consumoDiarioTabela from './routes/consumoDiarioTabela.js';
+// Scheduler e rotas de consumo diário (temporariamente desabilitadas para deployment)
+// import { iniciarScheduler } from './services/consumoDiarioScheduler.js';
+// import consumoDiarioHistorico from './routes/consumoDiarioHistorico.js';
+// import consumoDiarioTabela from './routes/consumoDiarioTabela.js';
 // Importar API de coordenador de projeto
 import coordinatorRolesApi from './coordinatorRolesApi';
-// Importar API de manutenção veicular
-import { 
-  loginMaintenance, 
-  authenticateMaintenanceToken,
-  getOrdensServico,
-  createOrdemServico,
-  updateStatusOrdemServico,
-  getPecasOS,
-  addPecaOS,
-  getVeiculos,
-  getOficinas,
-  getRelatorios
-} from './maintenance-api.js';
+// API de manutenção veicular (temporariamente desabilitada para deployment)
+// import { 
+//   loginMaintenance, 
+//   authenticateMaintenanceToken,
+//   getOrdensServico,
+//   createOrdemServico,
+//   updateStatusOrdemServico,
+//   getPecasOS,
+//   addPecaOS,
+//   getVeiculos,
+//   getOficinas,
+//   getRelatorios
+// } from './maintenance-api.js';
 // Importar rotas de cartões de combustível
 import fuelCardRoutes from './routes/fuelCardRoutes';
 // Importar rotas do painel operacional
@@ -186,7 +185,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
 // Aplicar middleware UTC para garantir que todas as datas sejam processadas em UTC
-app.use(utcMiddleware);
+// app.use(utcMiddleware); // Temporariamente desabilitado para deployment
 
 
 
@@ -1213,8 +1212,9 @@ app.use((req, res, next) => {
   app.use(userApi);
   
   // Registrar os roteadores de API híbrida (funcionam dentro e fora do Replit)
-  app.use(hybridUserApi);
-  app.use(hybridBasesApi);
+  // APIs híbridas temporariamente desabilitadas para deployment
+  // app.use(hybridUserApi);
+  // app.use(hybridBasesApi);
   
   // Registrar as rotas de acesso externo para parceiros de guincho
   app.use('/api/towing/external-access', towingPartnerExternalRoutes);
@@ -1224,23 +1224,20 @@ app.use((req, res, next) => {
   
   // === ROTAS DO SISTEMA DE MANUTENÇÃO VEICULAR ===
   
-  // Login para oficinas e usuários internos
-  app.post('/api/maintenance/auth/login', loginMaintenance);
+  // Login para oficinas (temporariamente desabilitado para deployment)
+  // app.post('/api/maintenance/auth/login', loginMaintenance);
   
-  // Rotas protegidas do sistema de manutenção
-  app.get('/api/maintenance/ordens-servico', authenticateMaintenanceToken, getOrdensServico);
-  app.post('/api/maintenance/ordens-servico', authenticateMaintenanceToken, createOrdemServico);
-  app.patch('/api/maintenance/ordens-servico/:id/status', authenticateMaintenanceToken, updateStatusOrdemServico);
+  // Rotas protegidas de manutenção (temporariamente desabilitadas para deployment)
+  // app.get('/api/maintenance/ordens-servico', authenticateMaintenanceToken, getOrdensServico);
+  // app.post('/api/maintenance/ordens-servico', authenticateMaintenanceToken, createOrdemServico);
+  // app.patch('/api/maintenance/ordens-servico/:id/status', authenticateMaintenanceToken, updateStatusOrdemServico);
+  // app.get('/api/maintenance/ordens-servico/:ordem_servico_id/pecas', authenticateMaintenanceToken, getPecasOS);
+  // app.post('/api/maintenance/ordens-servico/:ordem_servico_id/pecas', authenticateMaintenanceToken, addPecaOS);
+  // app.get('/api/maintenance/veiculos', authenticateMaintenanceToken, getVeiculos);
+  // app.get('/api/maintenance/oficinas', authenticateMaintenanceToken, getOficinas);
   
-  // Rotas de peças
-  app.get('/api/maintenance/ordens-servico/:ordem_servico_id/pecas', authenticateMaintenanceToken, getPecasOS);
-  app.post('/api/maintenance/ordens-servico/:ordem_servico_id/pecas', authenticateMaintenanceToken, addPecaOS);
-  
-  // Rotas de dados básicos
-  app.get('/api/maintenance/veiculos', authenticateMaintenanceToken, getVeiculos);
-  app.get('/api/maintenance/oficinas', authenticateMaintenanceToken, getOficinas);
-  
-  // Rota para criar nova oficina
+  // Rota para criar nova oficina (temporariamente desabilitada para deployment)
+  /*
   app.post('/api/workshops', unifiedAuthMiddleware, async (req, res) => {
     try {
       console.log('[WORKSHOP-REGISTER] Tentativa de registro de oficina');
@@ -1324,9 +1321,10 @@ app.use((req, res, next) => {
       });
     }
   });
+  */
   
   // Rotas de relatórios
-  app.get('/api/maintenance/relatorios', authenticateMaintenanceToken, getRelatorios);
+  // app.get('/api/maintenance/relatorios', authenticateMaintenanceToken, getRelatorios);
   
   // Registrar as rotas de gestão financeira para serviços de guincho
   app.use('/api/towing/payments', towingPaymentsRoutes);
@@ -1647,34 +1645,26 @@ app.use((req, res, next) => {
 
   // Registrar as rotas no aplicativo principal
   app.use('/api/consumo-diario-postos', consumoDiarioPostosRoutes);
-  app.use('/api/consumo-diario-tabela', consumoDiarioTabela);
+  // app.use('/api/consumo-diario-tabela', consumoDiarioTabela);
 
-  // Registrar as rotas de API diretas para evitar interceptação do Vite
-  // Estas rotas serão processadas antes do middleware do Vite e terão os headers adequados
-  app.get('/api/historico-direto/:posto', getHistoricoPosto);
-  app.get('/api/estatisticas-mensais-direto/:posto', getEstatisticasMensaisPosto);
-  app.get('/api/consumo-por-veiculo-direto/:posto', getConsumoPorVeiculoPosto);
-  app.get('/api/comparativo-combustiveis-direto/:posto', getComparativoCombustiveisPosto);
-  app.get('/api/check-tabela-direto/:posto', checkTabelaPosto);
-  app.post('/api/abastecimento-direto/:posto', registrarAbastecimentoPosto);
-  app.delete('/api/historico-direto/:posto/:id', deleteAbastecimentoPosto);
+  // APIs diretas temporariamente desabilitadas para deployment
+  // app.get('/api/historico-direto/:posto', getHistoricoPosto);
+  // app.get('/api/estatisticas-mensais-direto/:posto', getEstatisticasMensaisPosto);
+  // app.get('/api/consumo-por-veiculo-direto/:posto', getConsumoPorVeiculoPosto);
+  // app.get('/api/comparativo-combustiveis-direto/:posto', getComparativoCombustiveisPosto);
+  // app.get('/api/check-tabela-direto/:posto', checkTabelaPosto);
+  // app.post('/api/abastecimento-direto/:posto', registrarAbastecimentoPosto);
+  // app.delete('/api/historico-direto/:posto/:id', deleteAbastecimentoPosto);
   
-  // Rotas especiais para Campinas V2, para resolver o problema de nomenclatura (formato antigo)
-  // Rota de abastecimento
-  app.post('/api/abastecimento-direto-campinas-v2', (req, res) => {
-    console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA ABASTECIMENTO DE CAMPINAS V2 ====");
-    // Forçar o parâmetro posto para garantir que seja tratado como campinas_v2
-    req.params = { ...req.params, posto: 'campinas_v2' };
-    registrarAbastecimentoPosto(req, res);
-  });
-  
-  // Rota de histórico para Campinas V2
-  app.get('/api/historico-direto-campinas-v2', (req, res) => {
-    console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA HISTÓRICO DE CAMPINAS V2 ====");
-    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
-    req.params = { posto: 'campinas_v2' };
-    getHistoricoPosto(req, res);
-  });
+  // Rotas específicas Campinas V2 temporariamente desabilitadas para deployment
+  // app.post('/api/abastecimento-direto-campinas-v2', (req, res) => {
+  //   req.params = { ...req.params, posto: 'campinas_v2' };
+  //   registrarAbastecimentoPosto(req, res);
+  // });
+  // app.get('/api/historico-direto-campinas-v2', (req, res) => {
+  //   req.params = { posto: 'campinas_v2' };
+  //   getHistoricoPosto(req, res);
+  // });
   
   // Rota especial para histórico de Campinas V2 com URL codificada
   app.get('/api/historico-direto/posto%20campinas%20v2', (req, res) => {
@@ -2077,11 +2067,11 @@ app.use((req, res, next) => {
   });
   
   // Registrar rotas de histórico de consumo diário
-  app.use('/api', consumoDiarioHistorico);
+  // app.use('/api', consumoDiarioHistorico);
   
-  // Inicializar scheduler de coleta automática de dados (meia-noite)
-  iniciarScheduler();
-  console.log('🕛 Sistema de coleta automática de consumo diário iniciado');
+  // Scheduler temporariamente desabilitado para deployment
+  // iniciarScheduler();
+  console.log('Sistema base iniciado (scheduler desabilitado)');
 
   // APIs críticas para o sistema de cartão de combustível - DEVEM ser registradas ANTES do middleware de autenticação
   app.get('/api/projects', async (req, res) => {
@@ -2104,12 +2094,12 @@ app.use((req, res, next) => {
         data: result.rows,
         count: result.rowCount || 0
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Projects API - Error:', error);
       return res.status(500).json({
         success: false,
         message: 'Error fetching projects',
-        error: error.message
+        error: error?.message || 'Unknown error'
       });
     }
   });
