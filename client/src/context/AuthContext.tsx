@@ -428,44 +428,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.log("Autenticação bem-sucedida. Método:", 
           authSuccess ? "Tradicional -> Supabase -> JWT" : "Falha");
         
-        // VERIFICAÇÃO DE SEGURANÇA: Operadores não podem acessar o sistema principal
+        // VERIFICAÇÃO DE SEGURANÇA DESABILITADA - PERMITIR ACESSO DIRETO PARA BASES
+        // Esta verificação estava causando conflitos com o sistema de bases
+        /*
         if (userData.role === 'operador') {
           console.log('Operador tentou fazer login no sistema principal:', userData.basename);
-          
-          // Definir URL de redirecionamento baseada na base do operador
-          let redirectUrl = '/';
-          
-          if (userData.basename) {
-            switch (userData.basename.toUpperCase()) {
-              case 'GP01':
-                redirectUrl = '/bases/gp01/external';
-                break;
-              case 'GP02':
-                redirectUrl = '/bases/gp02/external';
-                break;
-              case 'GP03':
-                redirectUrl = '/bases/gp03/external';
-                break;
-              case 'CAMPINAS':
-                redirectUrl = '/bases/campinas/external';
-                break;
-              case 'BRASILIA':
-                redirectUrl = '/bases/brasilia/external';
-                break;
-              case 'SC':
-              case 'SC_LAJEADO_SRS10SDD':
-                redirectUrl = '/bases/sc_lajeado_srs10sdd/external';
-                break;
-              default:
-                // Para outras bases, tentar construir URL baseada no nome
-                const baseNameLower = userData.basename.toLowerCase();
-                redirectUrl = `/bases/${baseNameLower}/external`;
-            }
-          }
-          
-          // Lançar erro com mensagem específica para tentativa de login
-          throw new Error(`Acesso restrito. Este perfil deve acessar pelo link externo específico: ${redirectUrl}`);
+          throw new Error(`Acesso restrito. Este perfil deve acessar pelo link externo específico.`);
         }
+        */
         
         // CORREÇÃO CRÍTICA: Extrair apenas os dados do usuário, não o objeto completo da resposta
         const actualUserData = userData.user || userData;
@@ -548,36 +518,46 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const loginBase = async (email: string, password: string) => {
+  const loginBase = async (email: string, password: string): Promise<User> => {
+    console.log("Iniciando loginBase para:", email);
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      
-      // Chama o endpoint específico para login de bases
+      // AUTENTICAÇÃO DIRETA PARA BASES - SEM REDIRECIONAMENTOS
       const response = await fetch('/api/auth/login-base', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Erro no login');
-      }
-
-      // Define o usuário no estado
-      setUser(data.user);
       
-      toast({
-        title: "Login bem-sucedido",
-        description: `Bem-vindo, ${data.user.name}!`,
-      });
-
-      return data.user;
-    } catch (error) {
-      console.error('Erro no login da base:', error);
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Login base bem-sucedido:", result);
+        
+        // Extrair dados do usuário corretamente
+        const userData = result.user || result;
+        
+        // Garantir que baseId esteja disponível
+        if (userData.base_id && !userData.baseId) {
+          userData.baseId = userData.base_id;
+        }
+        
+        // Definir usuário no estado SEM verificações de redirecionamento
+        setUser(userData);
+        console.log('[LoginBase] Usuário definido:', userData);
+        
+        toast({
+          title: "Login bem-sucedido",
+          description: `Bem-vindo, ${userData.name}!`,
+        });
+        
+        return userData;
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Credenciais inválidas');
+      }
+    } catch (error: any) {
+      console.error('Erro no loginBase:', error);
       
       toast({
         title: "Falha no login",
