@@ -122,9 +122,9 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
         return;
       }
       
-      // Tenta a rota normal como fallback
+      // Usar a nova rota unificada otimizada
       const response = await axios.get(
-        `/api/historico-direto/${encodeURIComponent(postoProcessado)}?t=${timestamp}&nocache=${randomParam}`, 
+        `/api/posto-supabase/historico-unificado/${encodeURIComponent(postoProcessado)}?t=${timestamp}&nocache=${randomParam}`, 
         {
           headers: {
             'Accept': 'application/json',
@@ -178,24 +178,12 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
       console.error('Erro ao carregar histórico:', err);
       setError(`Erro ao carregar histórico: ${err.message}`);
       
-      // Tentar a rota alternativa
-      try {
-        const timestamp = new Date().getTime();
-        // Usar constante para nome do posto
-        const nomePostoNormalizado = posto.toLowerCase().replace(/ /g, '_').replace(/v2/i, 'v2');
-        console.log(`Tentando fallback final com nome normalizado: ${nomePostoNormalizado}`);
-        
-        const fallbackResponse = await axios.get(`/api/posto-supabase/historico/${nomePostoNormalizado}?t=${timestamp}`);
-        
-        if (fallbackResponse.data && fallbackResponse.data.success) {
-          console.log(`Fallback bem-sucedido, ${fallbackResponse.data.data?.length || 0} registros obtidos`);
-          const dados = fallbackResponse.data.data || [];
-          setHistorico(dados);
-        }
-      } catch (fallbackErr) {
-        // Manter o erro original
-        console.error('Todos os fallbacks falharam:', fallbackErr);
-      }
+      // Log do erro para diagnóstico sem fallback desnecessário
+      console.log('[HISTÓRICO COMPACTO] Erro detalhado:', {
+        posto,
+        error: err.message,
+        status: err.response?.status
+      });
     } finally {
       setIsLoading(false);
     }

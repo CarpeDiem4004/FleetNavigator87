@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { pool } from '../db';
 import { formatarNomePosto, formatarNomeTabela } from '../utils/posto-utils';
+import { supabaseAdmin } from '../config/supabase';
 
 const router = Router();
 
@@ -506,6 +507,84 @@ function normalizarCamposAbastecimento(dados: any, posto: string): any {
   return normalizado;
 }
 
-// Rota fallback removida - usando apenas a rota principal historico-abastecimentos-supabase
+/**
+ * Rota otimizada unificada que usa a mesma lógica da rota principal
+ */
+router.get('/historico-unificado/:posto', async (req, res) => {
+  try {
+    const { posto } = req.params;
+    console.log(`[HISTÓRICO-UNIFICADO] Buscando histórico para posto: ${posto}`);
+    
+    // Usar exatamente a mesma lógica da rota principal
+    let nomeTabela: string;
+    if (posto.toLowerCase() === 'campinas_v2') {
+      nomeTabela = 'abastecimentos_posto_campinas_v2';
+    } else {
+      nomeTabela = formatarNomeTabela(posto);
+    }
+    
+    // Verificar se a tabela existe
+    const existsQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = $1
+      )
+    `;
+    const existsResult = await pool.query(existsQuery, [nomeTabela]);
+    
+    if (!existsResult.rows[0].exists) {
+      console.log(`[HISTÓRICO-UNIFICADO] Tabela ${nomeTabela} não encontrada para posto ${posto}`);
+      return res.status(200).json({ 
+        success: true, 
+        message: `Nenhum histórico encontrado para o posto ${posto}`,
+        data: [],
+        count: 0
+      });
+    }
+    
+    console.log(`[HISTÓRICO-UNIFICADO] Tabela encontrada: ${nomeTabela}`);
+    
+    // Usar exatamente a mesma query da rota principal
+    const query = `
+      SELECT 
+        id,
+        placa,
+        km_atual AS km,
+        COALESCE(tipo_combustivel, 'Não especificado') AS tipo_combustivel,
+        litros AS quantidade_litros,
+        motorista AS nome_motorista,
+        operador AS nome_operador,
+        valor_litro,
+        valor_total,
+        motorista_rg AS rg_motorista,
+        tipo_veiculo,
+        observacoes,
+        lavagem,
+        tipo_lavagem,
+        projeto,
+        created_at
+      FROM "${nomeTabela}"
+      ORDER BY created_at DESC
+      LIMIT 100
+    `;
+    
+    console.log(`Executando consulta unificada para histórico do posto ${posto}`);
+    const result = await pool.query(query);
+    
+    return res.status(200).json({
+      success: true,
+      count: result.rows.length,
+      data: result.rows
+    });
+
+  } catch (error) {
+    console.error('Erro na rota unificada:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Erro na rota unificada'
+    });
+  }
+});
 
 export default router;

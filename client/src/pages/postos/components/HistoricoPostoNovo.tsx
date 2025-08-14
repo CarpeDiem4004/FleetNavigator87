@@ -41,7 +41,7 @@ const HistoricoPostoNovo: React.FC<HistoricoPostoNovoProps> = ({
     
     try {
       const timestamp = new Date().getTime();
-      const response = await axios.get(`/api/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`);
+      const response = await axios.get(`/api/posto-supabase/historico-unificado/${encodeURIComponent(posto)}?t=${timestamp}`);
       
       if (response.data && response.data.success) {
         const dados = response.data.data || [];
@@ -52,21 +52,14 @@ const HistoricoPostoNovo: React.FC<HistoricoPostoNovoProps> = ({
       }
     } catch (err: any) {
       console.error('Erro ao carregar histórico:', err);
-      setError(`Erro ao carregar histórico: ${err.message}`);
+      setError(`Erro ao carregar histórico: ${err.message || 'Erro desconhecido'}`);
       
-      // Tentar a rota alternativa
-      try {
-        const timestamp = new Date().getTime();
-        const fallbackResponse = await axios.get(`/api/posto-supabase/historico/${posto.toLowerCase()}?t=${timestamp}`);
-        
-        if (fallbackResponse.data && fallbackResponse.data.success) {
-          const dados = fallbackResponse.data.data || [];
-          setHistorico(dados);
-          setFilteredData(dados);
-        }
-      } catch (fallbackErr) {
-        // Manter o erro original
-      }
+      // Log do erro para diagnóstico
+      console.log('[HISTÓRICO POSTO NOVO] Erro detalhado:', {
+        posto,
+        error: err.message,
+        status: err.response?.status
+      });
     } finally {
       setIsLoading(false);
     }

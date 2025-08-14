@@ -58,7 +58,7 @@ const AdministrativoPostoView: React.FC<AdministrativoPostoViewProps> = ({
       const timestamp = new Date().getTime();
       
       // Usar a nova rota direta para evitar problemas com interceptação do Vite
-      const response = await axios.get(`/api/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`, {
+      const response = await axios.get(`/api/posto-supabase/historico-unificado/${encodeURIComponent(posto)}?t=${timestamp}`, {
         headers: {
           'Accept': 'application/json',
           'X-Requested-With': 'XMLHttpRequest'
@@ -75,21 +75,14 @@ const AdministrativoPostoView: React.FC<AdministrativoPostoViewProps> = ({
       }
     } catch (err: any) {
       console.error('Erro ao carregar histórico:', err);
+      setError(`Erro ao carregar histórico: ${err.message || 'Erro desconhecido'}`);
       
-      // Tentar a rota original como fallback
-      try {
-        console.log('Tentando rota alternativa...');
-        const timestamp = new Date().getTime();
-        const fallbackResponse = await axios.get(`/api/posto-supabase/historico/${posto.toLowerCase()}?t=${timestamp}`);
-        
-        if (fallbackResponse.data && fallbackResponse.data.success) {
-          setHistorico(fallbackResponse.data.data || []);
-        } else {
-          setError(fallbackResponse.data?.error || 'Erro ao carregar o histórico');
-        }
-      } catch (fallbackErr: any) {
-        setError(`Erro ao carregar histórico: ${err.message}. Fallback também falhou.`);
-      }
+      // Log do erro para diagnóstico
+      console.log('[ADMINISTRATIVO POSTO] Erro detalhado:', {
+        posto,
+        error: err.message,
+        status: err.response?.status
+      });
     } finally {
       setIsLoading(false);
     }
