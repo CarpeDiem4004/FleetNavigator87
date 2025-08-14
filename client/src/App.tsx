@@ -874,7 +874,7 @@ function App() {
           <ProtectedRoute path="/bases/gp02/cartoes-ativos" component={CartoesAtivosGP02} />
           
           {/* Rotas completas para Base GP03 (seguindo padrão da Base Campinas) - DEVE VIR ANTES DAS GENÉRICAS */}
-          <ProtectedBaseRoute path="/bases/gp03" component={BaseGP03} baseLoginPath="/bases/gp03/login" baseName="GP03" />
+          <ProtectedRoute path="/bases/gp03" component={BaseGP03} />
           <ProtectedRoute path="/bases/gp03/despesas" component={DespesasGP03} />
           <ProtectedRoute path="/bases/gp03/multas" component={MultasGP03} />
           <ProtectedRoute path="/bases/gp03/sinistros" component={SinistrosGP03} />

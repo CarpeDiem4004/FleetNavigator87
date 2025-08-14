@@ -92,9 +92,18 @@ export const BaseSecurityGuard: React.FC<BaseSecurityGuardProps> = ({
   const getLoginRedirectPath = (): string => {
     if (loginPath) return loginPath;
     
-    // Padrão de login por basename
+    // Mapear basenames específicos para rotas conhecidas
     if (baseInfo?.basename) {
-      return `/bases/${baseInfo.basename.toLowerCase()}/login`;
+      const baseNameRouteMap: { [key: string]: string } = {
+        'GRUPO_PEREIRA': 'gp03',
+        'GP03_HORTOLANDIA': 'gp03',
+        'SC_LAJEADO_SRS10SDD': 'lajeado',
+        'GP02_JACAREI': 'gp02',
+        'GP01_VARGEM_GRANDE': 'gp01'
+      };
+      
+      const routeName = baseNameRouteMap[baseInfo.basename] || baseInfo.basename.toLowerCase().replace(/_/g, '-');
+      return `/bases/${routeName}/login`;
     }
     
     // Padrão de login por ID
@@ -139,13 +148,7 @@ export const BaseSecurityGuard: React.FC<BaseSecurityGuardProps> = ({
               onClick={() => window.location.href = getLoginRedirectPath()}
               className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors"
             >
-              Fazer Login na Base
-            </button>
-            <button
-              onClick={() => window.location.href = '/login'}
-              className="w-full bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700 transition-colors"
-            >
-              Login Principal
+              Ir para Login
             </button>
           </div>
         </div>

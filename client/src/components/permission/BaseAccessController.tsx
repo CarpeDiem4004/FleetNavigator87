@@ -47,9 +47,10 @@ export const BaseAccessController: React.FC<BaseAccessControllerProps> = ({
         if (base.basename) {
           // Mapear basenames específicos para rotas conhecidas
           const baseNameRouteMap: { [key: string]: string } = {
+            'GRUPO_PEREIRA': 'gp03',
+            'GP03_HORTOLANDIA': 'gp03',
             'SC_LAJEADO_SRS10SDD': 'lajeado',
             'GP02_JACAREI': 'gp02',
-            'GP03_HORTOLANDIA': 'gp03',
             'GP01_VARGEM_GRANDE': 'gp01'
           };
           
@@ -210,21 +211,7 @@ export const BaseAccessController: React.FC<BaseAccessControllerProps> = ({
               onClick={() => window.location.href = redirectPath}
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
-              Fazer Login na Base Correta
-            </button>
-            
-            <button
-              onClick={() => window.location.href = '/login'}
-              className="w-full bg-gray-600 text-white py-3 px-4 rounded-lg hover:bg-gray-700 transition-colors font-medium"
-            >
-              Login Principal do Sistema
-            </button>
-            
-            <button
-              onClick={() => window.location.href = '/bases'}
-              className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
-            >
-              Ver Bases Disponíveis
+              Ir para Login
             </button>
           </div>
 
