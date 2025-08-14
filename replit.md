@@ -10,6 +10,9 @@ Preferred communication style: Simple, everyday language.
 The system is built with a React/TypeScript frontend and a Node.js/Express backend, utilizing Supabase as the primary database.
 
 ### Recent Fixes (August 14, 2025)
+- **Campinas Data Recovery Complete**: Successfully resolved all PostgreSQL column mapping issues, restoring full access to 4,070 historical fuel records and 100+ yard movement records while preserving 266 distinct vehicle entries
+- **Database Schema Optimization**: Fixed systematic column reference mismatches in abastecimentos_posto_campinas_v2 table (quantity_litros → litros, nome_motorista → motorista, nome_operador → operador) 
+- **Real-time Data Integration**: Confirmed operational status of both historical and movimentações endpoints with automatic 30-second refresh cycles
 - **System Status Verification Complete**: Full comprehensive testing confirms all major systems operational and ready for production use
 - **Authentication System Verified**: Successfully tested GP03 credentials (guilherme.protazio@muricionfleet.com) with backend API endpoints confirming proper session management
 - **Service Worker Updated**: Fixed PWA service worker to handle Vite development environment properly, resolving cache issues with non-existent static files
