@@ -56,10 +56,26 @@ router.get('/historico-abastecimentos-supabase/:posto', async (req, res) => {
     
     console.log(`[HISTÓRICO] Buscando histórico para posto: ${posto}`);
     
+    // Para Campinas, usar nome específico da tabela
+    let nomeTabela: string;
+    if (posto.toLowerCase() === 'campinas_v2') {
+      nomeTabela = 'abastecimentos_posto_campinas_v2';
+    } else {
+      nomeTabela = formatarNomeTabela(posto);
+    }
+    
     // Verificar se a tabela existe
-    const tabelaExiste = await verificarTabelaExiste(posto);
-    if (!tabelaExiste) {
-      console.log(`[HISTÓRICO] Tabela para o posto ${posto} não encontrada`);
+    const existsQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = $1
+      )
+    `;
+    const existsResult = await pool.query(existsQuery, [nomeTabela]);
+    
+    if (!existsResult.rows[0].exists) {
+      console.log(`[HISTÓRICO] Tabela ${nomeTabela} não encontrada para posto ${posto}`);
       return res.status(200).json({ 
         success: true, 
         message: `Nenhum histórico encontrado para o posto ${posto}`,
@@ -68,26 +84,27 @@ router.get('/historico-abastecimentos-supabase/:posto', async (req, res) => {
       });
     }
     
-    // Construir a consulta SQL
-    const nomeTabela = formatarNomeTabela(posto);
+    console.log(`[HISTÓRICO] Tabela encontrada: ${nomeTabela}`);
+    
+    // Construir a consulta SQL usando a tabela já definida
     let query = `
       SELECT 
         id,
         placa,
-        COALESCE(hodometro_atual, km_atual) AS km,
+        km_atual AS km,
         COALESCE(tipo_combustivel, 'Não especificado') AS tipo_combustivel,
-        COALESCE(litros, quantidade_litros, quantity_litros) AS quantidade_litros,
-        COALESCE(motorista, nome_motorista, motorista_nome) AS nome_motorista,
-        COALESCE(valor_litro, preco_litro) AS valor_litro,
+        litros AS quantidade_litros,
+        motorista AS nome_motorista,
+        operador AS nome_operador,
+        valor_litro,
         valor_total,
-        COALESCE(motorista_rg, rg_motorista) AS rg_motorista,
+        motorista_rg AS rg_motorista,
         tipo_veiculo,
         observacoes,
         lavagem,
         tipo_lavagem,
-        COALESCE(projeto, project, '') AS projeto,
-        created_at,
-        data_registro
+        projeto,
+        created_at
       FROM "${nomeTabela}"
       ORDER BY created_at DESC
     `;
@@ -137,7 +154,7 @@ router.get('/estatisticas-mensais-supabase/:posto', async (req, res) => {
         to_char(date_trunc('month', created_at), 'MM/YYYY') AS mes,
         COALESCE(tipo_combustivel, 'Não especificado') AS tipo_combustivel,
         COUNT(*) AS total_abastecimentos,
-        ROUND(SUM(COALESCE(litros, quantidade_litros, quantity_litros))::numeric, 2) AS total_litros,
+        ROUND(SUM(litros)::numeric, 2) AS total_litros,
         ROUND(SUM(valor_total)::numeric, 2) AS valor_total,
         ROUND(AVG(COALESCE(valor_litro, preco_litro))::numeric, 2) AS preco_medio_litro
       FROM "${nomeTabela}"
@@ -256,7 +273,7 @@ router.get('/resumo-todos-postos-supabase', async (req, res) => {
             '${posto}' AS nome_posto,
             COALESCE(tipo_combustivel, 'Não especificado') AS tipo_combustivel,
             COUNT(*) AS total_abastecimentos,
-            ROUND(SUM(COALESCE(litros, quantidade_litros, quantity_litros))::numeric, 2) AS total_litros,
+            ROUND(SUM(litros)::numeric, 2) AS total_litros,
             ROUND(SUM(valor_total)::numeric, 2) AS valor_total,
             ROUND(AVG(COALESCE(valor_litro, preco_litro))::numeric, 2) AS preco_medio_litro
           FROM "${nomeTabela}"

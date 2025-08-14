@@ -2064,8 +2064,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           motivo,
           observacoes,
           posto,
-          created_at,
-          updated_at
+          created_at
         FROM movimentacoes_patio 
         WHERE posto = $1
         ORDER BY created_at DESC
