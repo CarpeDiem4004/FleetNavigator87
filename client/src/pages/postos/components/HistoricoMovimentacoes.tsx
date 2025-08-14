@@ -13,15 +13,18 @@ interface HistoricoMovimentacoesProps {
 interface Movimentacao {
   id: number;
   placa: string;
-  tipo_movimento: string | null;
-  nome_motorista: string | null;
-  nome_operador: string | null;
+  tipo: string | null;
+  motorista: string | null;
+  operador: string | null;
   posto: string;
   created_at: string;
   motivo?: string | null;
   data_entrada?: string | null;
   data_saida?: string | null;
-  motorista?: string | null;
+  // Legacy fields for compatibility
+  tipo_movimento?: string | null;
+  nome_motorista?: string | null;
+  nome_operador?: string | null;
 }
 
 export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ postId, refreshTrigger = 0 }) => {
@@ -134,9 +137,9 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
       // Preparar os dados para Excel
       const excelData = movimentacoes.map(item => ({
         'Placa': item.placa,
-        'Tipo de Movimento': item.tipo_movimento || '-',
-        'Motorista': item.nome_motorista || '-',
-        'Operador': item.nome_operador || '-',
+        'Tipo de Movimento': item.tipo || item.tipo_movimento || '-',
+        'Motorista': item.motorista || item.nome_motorista || '-',
+        'Operador': item.operador || item.nome_operador || '-',
         'Posto': item.posto,
         'Data/Hora': formatarData(item.created_at),
         'Motivo': item.motivo || '-'
@@ -228,12 +231,12 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
                     <TableCell className="font-medium">{mov.placa}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {getTipoIcon(mov.tipo_movimento)}
-                        <span className="hidden md:inline">{getTipoBadge(mov.tipo_movimento)}</span>
+                        {getTipoIcon(mov.tipo || mov.tipo_movimento)}
+                        <span className="hidden md:inline">{getTipoBadge(mov.tipo || mov.tipo_movimento)}</span>
                       </div>
                     </TableCell>
-                    <TableCell>{mov.nome_motorista}</TableCell>
-                    <TableCell className="hidden md:table-cell">{mov.nome_operador}</TableCell>
+                    <TableCell>{mov.motorista || mov.nome_motorista}</TableCell>
+                    <TableCell className="hidden md:table-cell">{mov.operador || mov.nome_operador}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
                       {formatarData(mov.created_at)}
                     </TableCell>
