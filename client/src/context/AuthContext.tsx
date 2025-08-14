@@ -469,6 +469,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         
         // Define o usuário no estado
         setUser(userData);
+        console.log('[AuthContext] Usuário definido após login:', userData);
+        
+        // FORÇAR ATUALIZAÇÃO IMEDIATA DO ESTADO para evitar problemas de sincronização
+        setTimeout(() => {
+          console.log('[AuthContext] Verificação forçada do estado do usuário...');
+          setUser(prevUser => {
+            if (!prevUser || !prevUser.role || !prevUser.email) {
+              console.log('[AuthContext] Re-sincronizando usuário...', userData);
+              return { ...userData };
+            }
+            return prevUser;
+          });
+        }, 100);
         
         // Verificar se temos usuário em um sistema mas não no outro
         if (authSuccess && !supabaseAuthenticated) {

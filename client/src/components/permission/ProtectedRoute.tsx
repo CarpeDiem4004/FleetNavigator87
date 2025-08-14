@@ -346,13 +346,15 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
     return <Redirect to="/login" />;
   }
   
-  // AGUARDAR QUE O USUARIO ESTEJA PRONTO ANTES DA VERIFICAÇÃO DE PERMISSÃO
-  if (user && (!user.role || !user.email)) {
-    console.log('[ProtectedRoute] Usuário parcialmente carregado, aguardando dados completos...', { role: user.role, email: user.email });
+  // VERIFICAÇÃO MELHORADA: se o usuário existe mas os dados estão incompletos, aguardar um pouco ou prosseguir
+  if (user && (!user.role || !user.email) && retryCount < 1) {
+    console.log('[ProtectedRoute] Usuário parcialmente carregado, tentando recarregar...', { role: user.role, email: user.email, retryCount });
+    // Em vez de travar, aguardar um pouco e tentar novamente
+    setTimeout(() => setRetryCount(prev => prev + 1), 1000);
     return (
       <RetryableLoader 
-        message="Carregando dados do usuário..." 
-        subMessage="Aguarde enquanto os dados são sincronizados."
+        message="Sincronizando dados..." 
+        subMessage="Carregando informações do usuário."
       />
     );
   }
