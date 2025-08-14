@@ -22,9 +22,13 @@ export default function LoginGP03() {
     setIsLoading(true);
 
     try {
-      await loginBase(email, password);
-      setLocation('/bases/gp03/external');
+      const result = await loginBase(email, password);
+      console.log('Login result:', result);
+      
+      // Forçar redirecionamento direto
+      window.location.href = '/bases/gp03/external';
     } catch (err) {
+      console.error('Erro no login:', err);
       setError('Credenciais inválidas. Verifique seu email e senha.');
     } finally {
       setIsLoading(false);
