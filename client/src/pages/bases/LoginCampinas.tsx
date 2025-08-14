@@ -106,10 +106,10 @@ const LoginCampinas: React.FC = () => {
               </div>
             </div>
             <CardTitle className="text-2xl font-bold text-gray-900">
-              Base Campinas
+              Login para Acesso ao Posto Posto Campinas V2
             </CardTitle>
             <CardDescription className="text-gray-600">
-              Acesse o sistema da Base Campinas com suas credenciais
+              Digite suas credenciais para acessar o formulário de abastecimento
             </CardDescription>
           </CardHeader>
           
@@ -124,7 +124,7 @@ const LoginCampinas: React.FC = () => {
                       <FormLabel>E-mail</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="seu.email@exemplo.com"
+                          placeholder="vinicius.campioni@muricionfleet.com"
                           type="email"
                           {...field}
                           disabled={isSubmitting}
@@ -143,7 +143,7 @@ const LoginCampinas: React.FC = () => {
                       <FormLabel>Senha</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Digite sua senha"
+                          placeholder="••••••••"
                           type="password"
                           {...field}
                           disabled={isSubmitting}
