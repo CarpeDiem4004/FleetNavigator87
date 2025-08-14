@@ -467,17 +467,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           throw new Error(`Acesso restrito. Este perfil deve acessar pelo link externo específico: ${redirectUrl}`);
         }
         
+        // CORREÇÃO CRÍTICA: Extrair apenas os dados do usuário, não o objeto completo da resposta
+        const actualUserData = userData.user || userData;
+        
         // Define o usuário no estado
-        setUser(userData);
-        console.log('[AuthContext] Usuário definido após login:', userData);
+        setUser(actualUserData);
+        console.log('[AuthContext] Usuário definido após login:', actualUserData);
         
         // FORÇAR ATUALIZAÇÃO IMEDIATA DO ESTADO para evitar problemas de sincronização
         setTimeout(() => {
           console.log('[AuthContext] Verificação forçada do estado do usuário...');
           setUser(prevUser => {
             if (!prevUser || !prevUser.role || !prevUser.email) {
-              console.log('[AuthContext] Re-sincronizando usuário...', userData);
-              return { ...userData };
+              console.log('[AuthContext] Re-sincronizando usuário...', actualUserData);
+              return { ...actualUserData };
             }
             return prevUser;
           });
