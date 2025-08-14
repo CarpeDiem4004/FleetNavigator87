@@ -258,7 +258,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
     // Formatar os dados para o Excel
     const workbookData = historico.map(item => ({
       'ID': item.id,
-      'Data/Hora': item.data_hora,
+      'Data/Hora': item.created_at ? format(new Date(item.created_at), 'dd/MM/yyyy HH:mm', {locale: ptBR}) : '-',
       'Placa': item.placa,
       'KM': item.km,
       'Tipo de Combustível': item.tipo_combustivel,
@@ -466,7 +466,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                   (dataInicio || dataFim || placaFiltro ? historicoFiltrado : historico).map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-mono text-xs">
-                        {item.data_hora}
+                        {item.created_at ? format(new Date(item.created_at), 'dd/MM/yyyy HH:mm', {locale: ptBR}) : '-'}
                       </TableCell>
                       <TableCell className="font-semibold">{item.placa}</TableCell>
                       <TableCell>
