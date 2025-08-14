@@ -10,11 +10,12 @@ Preferred communication style: Simple, everyday language.
 The system is built with a React/TypeScript frontend and a Node.js/Express backend, utilizing Supabase as the primary database.
 
 ### Recent Fixes (August 14, 2025)
-- **Admin Authentication Fixed**: Resolved admin@muricionfleet.com login issues by updating password hash and correcting endpoint permissions
-- **Universal Admin Access**: Modified `/api/auth/login-base` endpoint to accept both 'operador' and 'admin' roles, allowing admins to use any base login
-- **Password Reset**: Updated admin credentials with new bcrypt hash for password "admin123" to enable system access
-- **Base Access Corrected**: Admins now have universal access to all bases through any login endpoint, maintaining the "golden rule" security
-- **Admin Permission Fix**: Added admin@muricionfleet.com to the allowed admin emails list in use-base-permission.tsx to resolve "Acesso Negado" error for admin users
+- **Authentication Root Cause Fixed**: Resolved critical frontend-backend synchronization issue where AuthContext was storing complete login response object instead of extracting user data
+- **Admin Authentication Restored**: Fixed admin@muricionfleet.com login with password changed to "Atena@2529" as requested
+- **Universal Admin Access**: Admins now have universal access to all bases with correct role recognition in frontend
+- **Leonardo Silva Access Fixed**: Updated leonardo.silva@muricionfleet.com password from legacy hash format to bcrypt with password "j!8H#eNvVo"
+- **Permission System Working**: All user roles (admin, gestor_combustivel, posto, etc.) now correctly recognized by permission system
+- **Frontend-Backend Sync Complete**: AuthContext now properly extracts user data (role, email) ensuring permission hooks work correctly
 
 ### Previous Fixes (August 13, 2025)
 - **SC Lajeado Login Fixed**: Resolved authentication issue for fernanda.silva@muricionfleet.com by correcting AuthContext to use `/api/auth/login-base` endpoint instead of `/api/login`
