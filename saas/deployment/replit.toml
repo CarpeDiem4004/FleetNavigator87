@@ -1,0 +1,76 @@
+# Replit configuration for Murici SaaS External Links
+[language]
+language = "nodejs"
+name = "murici-saas-external-links"
+
+[run]
+run = "cd saas && npm start"
+
+[start]
+start = "cd saas && npm run dev"
+
+[build]
+build = "cd saas && npm run build"
+
+[env]
+NODE_ENV = "production"
+PORT = "3001"
+
+[deployment]
+build = "cd saas && npm install && npm run build"
+run = "cd saas && npm start"
+
+[web]
+type = "http"
+url = "http://0.0.0.0:3001"
+port = 3001
+
+[packager]
+language = "nodejs"
+[packager.features]
+enabledForHosting = false
+packageSearch = true
+guessImports = true
+
+[gitHubImport]
+requiredFiles = [".replit", "replit.nix"]
+
+[nix]
+channel = "stable-22_11"
+
+[deployment.auth]
+# Enable deployment authentication
+enabled = true
+
+[deployment.env]
+# Production environment variables
+NODE_ENV = "production"
+JWT_SECRET = { description = "JWT secret for SaaS authentication", type = "secret" }
+DATABASE_URL = { description = "PostgreSQL connection string", type = "secret" }
+ALLOWED_ORIGINS = { description = "Comma-separated list of allowed CORS origins", type = "secret" }
+
+[monitoring]
+enabled = true
+
+[resources]
+# Resource limits for SaaS deployment
+cpu = 1
+memory = 512
+
+[networking]
+externalPort = 443
+internalPort = 3001
+
+[headers]
+# Security headers for SaaS
+"X-Frame-Options" = "DENY"
+"X-Content-Type-Options" = "nosniff"
+"X-XSS-Protection" = "1; mode=block"
+"Referrer-Policy" = "strict-origin-when-cross-origin"
+"Permissions-Policy" = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+
+[features]
+# Enable advanced Replit features
+staticDeploys = true
+deploymentTarget = "gce"
+regions = ["us-east1", "us-west1", "europe-west1"]

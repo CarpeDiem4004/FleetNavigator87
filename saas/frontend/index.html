@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Murici Fleet Management - External Base Access SaaS">
+    <title>Murici SaaS - External Links</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Murici SaaS">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    
+    <style>
+        /* Custom loading animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* PWA Install prompt styles */
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2563eb;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: none;
+        }
+        
+        .install-prompt.show {
+            display: block;
+        }
+        
+        /* Responsive design enhancements */
+        @media (max-width: 768px) {
+            .container {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+        }
+        
+        /* Offline indicator */
+        .offline-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #f59e0b;
+            color: white;
+            text-align: center;
+            padding: 8px;
+            z-index: 1001;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .offline-indicator.show {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Offline Indicator -->
+    <div id="offlineIndicator" class="offline-indicator">
+        🚫 Você está offline. Algumas funcionalidades podem estar limitadas.
+    </div>
+    
+    <!-- PWA Install Prompt -->
+    <div id="installPrompt" class="install-prompt">
+        <span>📱 Instalar Murici SaaS no seu dispositivo?</span>
+        <button id="installBtn" class="ml-4 bg-white text-blue-600 px-3 py-1 rounded">Instalar</button>
+        <button id="dismissBtn" class="ml-2 text-white">×</button>
+    </div>
+    
+    <!-- Main App Container -->
+    <div id="app">
+        <!-- Loading Screen -->
+        <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+            <div class="text-center">
+                <div class="loading mb-4"></div>
+                <h2 class="text-xl font-semibold text-gray-700 mb-2">Carregando Murici SaaS</h2>
+                <p class="text-gray-500">Inicializando sistema externo...</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- PWA Installation Script -->
+    <script>
+        let deferredPrompt;
+        const installPrompt = document.getElementById('installPrompt');
+        const installBtn = document.getElementById('installBtn');
+        const dismissBtn = document.getElementById('dismissBtn');
+        
+        // PWA Install Prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installPrompt.classList.add('show');
+        });
+        
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`PWA install prompt outcome: ${outcome}`);
+                deferredPrompt = null;
+                installPrompt.classList.remove('show');
+            }
+        });
+        
+        dismissBtn.addEventListener('click', () => {
+            installPrompt.classList.remove('show');
+        });
+        
+        // Online/Offline Status
+        const offlineIndicator = document.getElementById('offlineIndicator');
+        
+        window.addEventListener('online', () => {
+            offlineIndicator.classList.remove('show');
+        });
+        
+        window.addEventListener('offline', () => {
+            offlineIndicator.classList.add('show');
+        });
+        
+        // Check initial online status
+        if (!navigator.onLine) {
+            offlineIndicator.classList.add('show');
+        }
+    </script>
+    
+    <!-- Main Application Script -->
+    <script src="/app.js"></script>
+    
+    <!-- Analytics and Monitoring (placeholder) -->
+    <script>
+        // Simple performance monitoring
+        window.addEventListener('load', () => {
+            const loadTime = performance.now();
+            console.log(`Murici SaaS loaded in ${loadTime.toFixed(2)}ms`);
+            
+            // Send performance data to monitoring service
+            if (navigator.sendBeacon && loadTime > 0) {
+                navigator.sendBeacon('/api/monitoring/performance', JSON.stringify({
+                    loadTime,
+                    timestamp: Date.now(),
+                    userAgent: navigator.userAgent
+                }));
+            }
+        });
+    </script>
+</body>
+</html>
