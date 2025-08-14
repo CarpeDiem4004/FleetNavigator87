@@ -54,12 +54,17 @@ router.get('/historico-abastecimentos-supabase/:posto', async (req, res) => {
     const { posto } = req.params;
     const { limit } = req.query;
     
+    console.log(`[HISTÓRICO] Buscando histórico para posto: ${posto}`);
+    
     // Verificar se a tabela existe
     const tabelaExiste = await verificarTabelaExiste(posto);
     if (!tabelaExiste) {
-      return res.status(404).json({ 
-        success: false, 
-        error: `Tabela para o posto ${posto} não encontrada` 
+      console.log(`[HISTÓRICO] Tabela para o posto ${posto} não encontrada`);
+      return res.status(200).json({ 
+        success: true, 
+        message: `Nenhum histórico encontrado para o posto ${posto}`,
+        data: [],
+        count: 0
       });
     }
     

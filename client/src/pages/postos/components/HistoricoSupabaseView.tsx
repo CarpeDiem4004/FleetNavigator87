@@ -101,8 +101,11 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       // Prevenção de cache adicionando timestamp na URL
       const timestamp = new Date().getTime();
       
-      // Usar a nova rota direta para evitar problemas com interceptação do Vite
-      const response = await axios.get(`/api/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`, {
+      // Para Campinas, usar tabela específica campinas_v2
+      const postoFormatado = posto.toLowerCase().includes('campinas') ? 'campinas_v2' : posto;
+      
+      // Usar a rota que já existe e funciona
+      const response = await axios.get(`/api/posto-supabase/historico-abastecimentos-supabase/${encodeURIComponent(postoFormatado)}?t=${timestamp}`, {
         headers: {
           'Accept': 'application/json',
           'X-Requested-With': 'XMLHttpRequest' // Indicar que é uma solicitação AJAX

@@ -261,8 +261,24 @@ router.get('/movimentacoes-patio/:posto', unifiedAuthMiddleware, async (req, res
       });
     }
     
+    // Verificar estrutura da tabela para determinar coluna de ordenação
+    const columnsQuery = `
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = $1 
+      AND table_schema = 'public'
+      AND column_name IN ('data_hora', 'created_at')
+    `;
+    
+    const columnsResult = await pool.query(columnsQuery, [tableName]);
+    const availableColumns = columnsResult.rows.map(row => row.column_name);
+    
+    // Usar a coluna de ordenação mais apropriada
+    const orderColumn = availableColumns.includes('data_hora') ? 'data_hora' : 
+                       availableColumns.includes('created_at') ? 'created_at' : 'id';
+    
     // Obter dados da tabela
-    const dataQuery = `SELECT * FROM "${tableName}" ORDER BY data_hora DESC`;
+    const dataQuery = `SELECT * FROM "${tableName}" ORDER BY ${orderColumn} DESC LIMIT 100`;
     const result = await pool.query(dataQuery);
     
     console.log(`Movimentações encontradas: ${result.rowCount}`);
