@@ -91,6 +91,7 @@ const FuelCardRequestsPanel: React.FC = () => {
   const [fuelHistory, setFuelHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [solicitudeCounts, setSolicitudeCounts] = useState<Record<string, number>>({});
+  const [activeTab, setActiveTab] = useState<string>('pendentes');
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -131,14 +132,17 @@ const FuelCardRequestsPanel: React.FC = () => {
       // OTIMIZAÇÃO: Batch request em vez de múltiplas requisições
       if (uniquePlates.length > 0) {
         try {
-          const response = await apiRequest(`/api/fuel-card-solicitations-counts`, {
+          const response = await fetch('/api/fuel-card-solicitations-counts', {
             method: 'POST',
             body: JSON.stringify({ plates: uniquePlates }),
             headers: { 'Content-Type': 'application/json' }
           });
-          if (response.success && response.counts) {
-            Object.assign(counts, response.counts);
-            setSolicitudeCounts(counts);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.counts) {
+              Object.assign(counts, data.counts);
+              setSolicitudeCounts(counts);
+            }
           }
         } catch (batchError) {
           console.warn('Batch count request failed, falling back to individual requests');
@@ -201,6 +205,35 @@ const FuelCardRequestsPanel: React.FC = () => {
     const date = new Date(dataString).toDateString();
     const dailyRepeats = getDailyPlateRepeats();
     return dailyRepeats[placa]?.[date] || 1;
+  };
+
+  // Funções para calcular totais por aba
+  const getPendingSolicitations = () => {
+    return filteredSolicitations.filter(s => 
+      s.status === 'Pendente' || s.status === 'Em Análise'
+    );
+  };
+
+  const getCompletedSolicitations = () => {
+    return filteredSolicitations.filter(s => 
+      s.status === 'Recarga Efetuada' || s.status === 'Negado'
+    );
+  };
+
+  const getTotalValue = (solicitations: FuelCardSolicitation[]) => {
+    return solicitations.reduce((total, s) => {
+      const valor = s.valor_solicitado || s.valor_calculado || 0;
+      return total + Number(valor);
+    }, 0);
+  };
+
+  const getApprovedValue = (solicitations: FuelCardSolicitation[]) => {
+    return solicitations
+      .filter(s => s.status === 'Recarga Efetuada')
+      .reduce((total, s) => {
+        const valor = s.valor_solicitado || s.valor_calculado || 0;
+        return total + Number(valor);
+      }, 0);
   };
 
 
@@ -1061,16 +1094,69 @@ const FuelCardRequestsPanel: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* Tabela de Solicitações */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex justify-between">
-              <div>
-                <CardTitle>Solicitações de Recarga</CardTitle>
-                <CardDescription>
-                  Mostrando {filteredSolicitations.length} solicitações
-                </CardDescription>
-              </div>
+        {/* Sistema de Abas com Cards de Resumo */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <div className="flex items-center justify-between">
+            <TabsList className="grid w-auto grid-cols-2">
+              <TabsTrigger value="pendentes" className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Pendentes ({getPendingSolicitations().length})
+              </TabsTrigger>
+              <TabsTrigger value="atendidas" className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                Atendidas ({getCompletedSolicitations().length})
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          {/* Cards de resumo específicos para cada aba */}
+          <TabsContent value="pendentes" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Pendentes</CardTitle>
+                  <FileText className="h-4 w-4 text-orange-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-orange-600">{getPendingSolicitations().length}</div>
+                  <p className="text-xs text-muted-foreground">Aguardando processamento</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Valor Total Pendente</CardTitle>
+                  <DollarSign className="h-4 w-4 text-orange-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {formatCurrency(getTotalValue(getPendingSolicitations()))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Valor pendente de aprovação</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Placas Repetindo</CardTitle>
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-red-600">{statistics.placasRepetidas}</div>
+                  <p className="text-xs text-muted-foreground">Múltiplas solicitações por dia</p>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex justify-between">
+                  <div>
+                    <CardTitle>Solicitações Pendentes</CardTitle>
+                    <CardDescription>
+                      Mostrando {getPendingSolicitations().length} solicitações pendentes
+                    </CardDescription>
+                  </div>
               <div className="flex gap-2">
                 {baseFilter !== 'all' && (user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
                   <Button 
@@ -1129,7 +1215,7 @@ const FuelCardRequestsPanel: React.FC = () => {
             ) : (
               <div className="space-y-3">
                 <div className="max-h-[600px] overflow-y-auto">
-                  {filteredSolicitations.map((solicitacao, index) => (
+                  {getPendingSolicitations().map((solicitacao, index) => (
                     <div 
                       key={`${solicitacao.id}-${solicitacao.origem_tipo}-${index}`} 
                       className={`p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${
@@ -1271,6 +1357,187 @@ const FuelCardRequestsPanel: React.FC = () => {
             )}
           </CardContent>
         </Card>
+      </TabsContent>
+
+      {/* Aba de Solicitações Atendidas */}
+      <TabsContent value="atendidas" className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Atendidas</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{getCompletedSolicitations().length}</div>
+              <p className="text-xs text-muted-foreground">Solicitações processadas</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Valor Total Atendido</CardTitle>
+              <DollarSign className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {formatCurrency(getApprovedValue(getCompletedSolicitations()))}
+              </div>
+              <p className="text-xs text-muted-foreground">Valor total das recargas aprovadas</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Taxa de Aprovação</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                {getCompletedSolicitations().length > 0 
+                  ? Math.round((getCompletedSolicitations().filter(s => s.status === 'Recarga Efetuada').length / getCompletedSolicitations().length) * 100)
+                  : 0}%
+              </div>
+              <p className="text-xs text-muted-foreground">Solicitações aprovadas vs negadas</p>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex justify-between">
+              <div>
+                <CardTitle>Solicitações Atendidas</CardTitle>
+                <CardDescription>
+                  Mostrando {getCompletedSolicitations().length} solicitações atendidas
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                {(user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
+                  <Button onClick={fetchSolicitations} variant="outline" size="sm">
+                    Atualizar
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center space-x-4">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-[250px]" />
+                      <Skeleton className="h-4 w-[200px]" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="text-center py-6 text-red-500">
+                <AlertCircle className="w-10 h-10 mx-auto mb-2" />
+                <p>{error}</p>
+                <Button onClick={fetchSolicitations} className="mt-4">
+                  Tentar novamente
+                </Button>
+              </div>
+            ) : getCompletedSolicitations().length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">
+                Nenhuma solicitação atendida encontrada.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="max-h-[600px] overflow-y-auto">
+                  {getCompletedSolicitations().map((solicitacao, index) => (
+                    <div 
+                      key={`${solicitacao.id}-${solicitacao.origem_tipo}-${index}`} 
+                      className={`p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${
+                        solicitacao.status === 'Recarga Efetuada' 
+                          ? 'bg-green-50 border-green-200 border-l-4 border-l-green-500' 
+                          : 'bg-red-50 border-red-200 border-l-4 border-l-red-500'
+                      }`}
+                    >
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                        {/* Repetição do solicitante */}
+                        {getDailyRequestCount(solicitacao.placa, solicitacao.data_solicitacao) > 1 && (
+                          <div className="lg:col-span-12 mb-2">
+                            <div className="flex items-center gap-2 p-2 bg-red-100 border border-red-300 rounded text-red-800 text-xs">
+                              <AlertTriangle className="h-4 w-4" />
+                              <span className="font-semibold">ATENÇÃO:</span>
+                              <span>Esta placa teve {getDailyRequestCount(solicitacao.placa, solicitacao.data_solicitacao)} solicitações no mesmo dia</span>
+                              <span className="ml-auto font-mono">{solicitudeCounts[solicitacao.placa] || 0} total</span>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Placa e Motorista */}
+                        <div className="lg:col-span-3">
+                          <p className="font-medium text-lg">{solicitacao.placa}</p>
+                          <p className="text-sm text-gray-600">{solicitacao.motorista || (solicitacao as any).nome_motorista || 'Motorista não informado'}</p>
+                          <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_solicitado)} - {solicitacao.km_total || solicitacao.km_veiculo || '-'} km</p>
+                        </div>
+
+                        {/* Operação e Base */}
+                        <div className="lg:col-span-2">
+                          <Badge variant="outline" className={
+                            solicitacao.origem_tipo === 'line_hall' 
+                              ? "bg-blue-100 text-blue-800 mb-1" 
+                              : "bg-green-100 text-green-800 mb-1"
+                          }>
+                            {solicitacao.origem_tipo === 'line_hall' ? 'Line Hall' : 'Tradicional'}
+                          </Badge>
+                          <p className="text-xs text-gray-500 truncate">{solicitacao.base || '-'}</p>
+                        </div>
+
+                        {/* Status e Data */}
+                        <div className="lg:col-span-2">
+                          {getStatusBadge(solicitacao.status)}
+                          <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</p>
+                          {solicitacao.data_atendimento && (
+                            <p className="text-xs text-green-600 font-medium">Atendido: {formatDate(solicitacao.data_atendimento).split(',')[0]}</p>
+                          )}
+                        </div>
+
+                        {/* Ações */}
+                        <div className="lg:col-span-3">
+                          <div className="flex flex-wrap gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleOpenSolicitation(solicitacao)}
+                              className="text-xs"
+                            >
+                              Visualizar
+                            </Button>
+                            
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewFuelHistory(solicitacao.placa)}
+                              className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              title={`Ver histórico de abastecimentos da placa ${solicitacao.placa}`}
+                            >
+                              <History className="h-3 w-3 mr-1" />
+                              Histórico
+                            </Button>
+                            
+                            <WhatsAppResponseButton 
+                              solicitation={solicitacao}
+                              variant="outline"
+                              size="sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
         
         {/* Painel Lateral */}
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
