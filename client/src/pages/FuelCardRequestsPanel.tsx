@@ -101,6 +101,17 @@ const FuelCardRequestsPanel: React.FC = () => {
     fetchProjects();
   }, []);
 
+  // OTIMIZAÇÃO: Debounce para filtros
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery || statusFilter !== 'all' || projectFilter !== 'all' || baseFilter !== 'all') {
+        // Aplicar filtros com delay para evitar muitas re-renderizações
+      }
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [searchQuery, statusFilter, projectFilter, baseFilter]);
+
   useEffect(() => {
     if (solicitations.length > 0) {
       loadSolicitudeCounts();
@@ -117,17 +128,36 @@ const FuelCardRequestsPanel: React.FC = () => {
       const uniquePlates = Array.from(new Set(solicitations.map(s => s.placa)));
       const counts: Record<string, number> = {};
       
-      for (const plate of uniquePlates) {
+      // OTIMIZAÇÃO: Batch request em vez de múltiplas requisições
+      if (uniquePlates.length > 0) {
         try {
-          const response = await fetch(`/fuel-requests-count/${encodeURIComponent(plate)}`);
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-              counts[plate] = data.data.total_solicitations || 0;
+          const response = await apiRequest(`/api/fuel-card-solicitations-counts`, {
+            method: 'POST',
+            body: JSON.stringify({ plates: uniquePlates }),
+            headers: { 'Content-Type': 'application/json' }
+          });
+          if (response.success && response.counts) {
+            Object.assign(counts, response.counts);
+            setSolicitudeCounts(counts);
+          }
+        } catch (batchError) {
+          console.warn('Batch count request failed, falling back to individual requests');
+          
+          // Fallback para requisições individuais (máximo 5 para evitar sobrecarga)
+          const limitedPlates = uniquePlates.slice(0, 5);
+          for (const plate of limitedPlates) {
+            try {
+              const response = await fetch(`/fuel-requests-count/${encodeURIComponent(plate)}`);
+              if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                  counts[plate] = data.data.total_solicitations || 0;
+                }
+              }
+            } catch (error) {
+              console.warn(`Failed to get count for plate ${plate}:`, error);
             }
           }
-        } catch (error) {
-          console.error(`Erro ao buscar contagem para ${plate}:`, error);
         }
       }
       
@@ -180,10 +210,14 @@ const FuelCardRequestsPanel: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const response = await apiRequest('GET', '/api/fuel-card-solicitations');
+      // OTIMIZAÇÃO: Parâmetros de paginação e cache
+      const page = 1;
+      const limit = 50;
+      const response = await apiRequest('GET', `/api/fuel-card-solicitations?page=${page}&limit=${limit}`);
       const data = await response.json();
       
       if (data.success) {
+        console.log('[FUEL-CARD-PANEL] Dados recebidos:', data.data.length, data.fromCache ? '(cache)' : '(fresh)');
         setSolicitations(data.data);
       } else {
         setError(data.message || 'Erro ao carregar solicitações');

@@ -68,7 +68,8 @@ import {
   createLineHallFuelCardRequest,
   exportFuelCardSolicitationsToExcel,
   exportFuelCardSolicitationsByDate,
-  createFuelCardRequest
+  createFuelCardRequest,
+  getFuelCardSolicitationsCounts
 } from "./fuelCardSolicitationsApi";
 import { exportFuelCardSolicitationsToCSV } from "./fuelCardExportAlternative";
 import { 
@@ -10664,6 +10665,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/fuel-card-solicitations', createFuelCardSolicitation);
   app.put('/api/fuel-card-solicitations/:id/status', isAuthenticated, updateFuelCardSolicitationStatus);
   app.delete('/api/fuel-card-solicitations/:id', isAuthenticated, deleteFuelCardSolicitation);
+  
+  // OTIMIZAÇÃO: Novo endpoint batch para contadores de placas
+  app.post('/api/fuel-card-solicitations-counts', isAuthenticated, getFuelCardSolicitationsCounts);
   
   // Nova rota para solicitações de cartão de combustível das bases
   app.post('/api/fuel-card-requests', createFuelCardRequest);

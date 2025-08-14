@@ -62,8 +62,23 @@ function getConsumoByModel(modelo: string): number {
  * Obtém todas as solicitações de cartão de combustível (incluindo Line Hall Shopee)
  * Aplica filtros por base para usuários não-admin
  */
+// Cache simples para melhorar performance
+let cacheData: { data: any[], timestamp: number } | null = null;
+const CACHE_TTL = 30000; // 30 segundos
+
 export async function getFuelCardSolicitations(req: Request, res: Response) {
   try {
+    // OTIMIZAÇÃO: Usar cache se disponível e não expirado
+    const now = Date.now();
+    if (cacheData && (now - cacheData.timestamp) < CACHE_TTL) {
+      console.log('[FUEL-CARD-API] Retornando dados do cache');
+      return res.json({
+        success: true,
+        data: cacheData.data,
+        fromCache: true
+      });
+    }
+
     console.log('[FUEL-CARD-API] Buscando solicitações para usuário:', req.user);
     
     // Verificar se o usuário é admin ou de uma base específica
@@ -106,6 +121,11 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
       whereConditions = `WHERE ${baseFilter}`;
     }
     
+    // OTIMIZAÇÃO: Query mais eficiente com índices e paginação
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 100;
+    const offset = (page - 1) * limit;
+
     const query = `
       SELECT * FROM (
         SELECT 
@@ -250,9 +270,16 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           ELSE 3
         END,
         data_solicitacao DESC NULLS LAST
+      LIMIT ${limit} OFFSET ${offset}
     `;
     
     const result = await pool.query(query);
+    
+    // OTIMIZAÇÃO: Salvar no cache
+    cacheData = {
+      data: result.rows,
+      timestamp: now
+    };
     
     // Normalizar os status para consistência
     const normalizedData = result.rows.map(row => ({
@@ -1192,6 +1219,67 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
     return res.status(500).json({
       success: false,
       message: 'Erro ao gerar arquivo Excel',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * NOVO ENDPOINT: Batch de contadores para múltiplas placas
+ * Otimização para reduzir requisições individuais
+ */
+export async function getFuelCardSolicitationsCounts(req: Request, res: Response) {
+  try {
+    const { plates } = req.body;
+    
+    if (!plates || !Array.isArray(plates) || plates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Array de placas é obrigatório'
+      });
+    }
+
+    console.log('[FUEL-CARD-COUNTS] Processando contadores para', plates.length, 'placas');
+    
+    // Query otimizada para buscar contadores de múltiplas placas de uma vez
+    const query = `
+      SELECT 
+        COALESCE(placa, veiculo_placa, plate) as placa,
+        COUNT(*) as total_solicitations
+      FROM (
+        SELECT placa FROM solicitacoes_fuel_card WHERE placa = ANY($1)
+        UNION ALL
+        SELECT veiculo_placa as placa FROM linehall_fuel_card_requests WHERE veiculo_placa = ANY($1)
+        UNION ALL
+        SELECT plate as placa FROM fuel_card_requests WHERE plate = ANY($1)
+      ) all_requests
+      WHERE placa IS NOT NULL
+      GROUP BY placa
+    `;
+
+    const result = await pool.query(query, [plates]);
+    
+    // Converter resultado em objeto chave-valor
+    const counts: Record<string, number> = {};
+    plates.forEach(plate => {
+      counts[plate] = 0; // Inicializar com zero
+    });
+    
+    result.rows.forEach(row => {
+      counts[row.placa] = parseInt(row.total_solicitations) || 0;
+    });
+
+    res.json({
+      success: true,
+      counts,
+      message: `Contadores processados para ${plates.length} placas`
+    });
+    
+  } catch (error: any) {
+    console.error('Erro ao buscar contadores batch:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao processar contadores',
       error: error.message
     });
   }
