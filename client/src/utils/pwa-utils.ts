@@ -54,7 +54,7 @@ export class PWAManager {
   }
 
   private async registerServiceWorker(): Promise<void> {
-    if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator && !import.meta.env.DEV) {
       try {
         const registration = await navigator.serviceWorker.register('/service-worker.js', {
           scope: '/'
@@ -146,7 +146,7 @@ export class PWAManager {
     if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
       try {
         const registration = await navigator.serviceWorker.ready;
-        await registration.sync.register('checklist-sync');
+        await (registration as any).sync.register('checklist-sync');
         console.log('[PWA] Background sync registered');
       } catch (error) {
         console.error('[PWA] Background sync registration failed:', error);
