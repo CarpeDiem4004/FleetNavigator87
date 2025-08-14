@@ -11,6 +11,7 @@ The system is built with a React/TypeScript frontend and a Node.js/Express backe
 
 ### Recent Fixes (August 14, 2025)
 - **Campinas Data Recovery Complete**: Successfully resolved all PostgreSQL column mapping issues, restoring full access to 4,070 historical fuel records and 100+ yard movement records while preserving 266 distinct vehicle entries
+- **Campinas External Authentication Working**: External access credentials verified - guilherme.protazio@muricionfleet.com / j!8H#eNvVo (operador role, base_id 151 GRUPO_PEREIRA)
 - **Database Schema Optimization**: Fixed systematic column reference mismatches in abastecimentos_posto_campinas_v2 table (quantity_litros → litros, nome_motorista → motorista, nome_operador → operador) 
 - **Real-time Data Integration**: Confirmed operational status of both historical and movimentações endpoints with automatic 30-second refresh cycles
 - **System Status Verification Complete**: Full comprehensive testing confirms all major systems operational and ready for production use
