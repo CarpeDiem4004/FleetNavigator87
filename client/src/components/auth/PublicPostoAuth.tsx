@@ -97,7 +97,7 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
     setError(null);
     
     try {
-      const response = await fetch('/api/auth/login-hybrid', {
+      const response = await fetch('/api/auth/login-base', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
