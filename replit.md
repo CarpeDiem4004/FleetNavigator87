@@ -10,9 +10,14 @@ Preferred communication style: Simple, everyday language.
 The system is built with a React/TypeScript frontend and a Node.js/Express backend, utilizing Supabase as the primary database.
 
 ### Recent Fixes (August 14, 2025)
+- **Personalized Greeting System Implemented**: Created dynamic greeting header showing "Bom dia/Boa tarde/Boa noite" with user's first name, current time, and user role display
+- **Role-Based Access Control for GP03**: Implemented comprehensive card access control system with specific restrictions for Guilherme Protazio (access only to fuel card system)
+- **User Permission Security Enhanced**: Added opacity effects and disabled states for restricted cards, providing clear visual feedback for access limitations
+- **GreetingHeader Component Created**: Reusable component with time-based greetings, user information display, and location badges for all base interfaces
+- **GP03 Card Access Management**: Guilherme Protazio now restricted to fuel card access only, while other operadores maintain broader permissions
 - **Campinas Data Recovery Complete**: Successfully resolved all PostgreSQL column mapping issues, restoring full access to 4,070 historical fuel records and 100+ yard movement records while preserving 266 distinct vehicle entries
 - **Campinas External Authentication Working**: External access credentials verified - Both users now functional:
-  - guilherme.protazio@muricionfleet.com / j!8H#eNvVo (operador role, base_id 151 GRUPO_PEREIRA)
+  - guilherme.protazio@muricionfleet.com / j!8H#eNvVo (operador role, base_id 151 GRUPO_PEREIRA) - Limited to fuel card access only
   - gabriel.silva@muricionfleet.com / j!8H#eNvVo (posto role, base_id 151 GRUPO_PEREIRA) - Password updated to bcrypt format
 - **Database Schema Optimization**: Fixed systematic column reference mismatches in abastecimentos_posto_campinas_v2 table (quantity_litros → litros, nome_motorista → motorista, nome_operador → operador) 
 - **Real-time Data Integration**: Confirmed operational status of both historical and movimentações endpoints with automatic 30-second refresh cycles
