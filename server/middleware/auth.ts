@@ -29,14 +29,14 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
   // Verificar se existe header de autorização com token JWT
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.log('Tentativa de acesso não autenticado a', req.originalUrl, {
+    // Log mais conciso para evitar spam
+  if (req.originalUrl.includes('/api/user') || req.originalUrl.includes('/auth')) {
+    console.log('Acesso não autenticado a', req.originalUrl, {
       hasSession: !!req.session,
       sessionID: req.sessionID,
-      cookies: req.headers.cookie,
-      origin: req.headers.origin,
-      referer: req.headers.referer,
-      userAgent: req.headers['user-agent']
+      hasAuth: !!req.headers.authorization
     });
+  }
     return res.status(401).json({ message: "Não autenticado" });
   }
   

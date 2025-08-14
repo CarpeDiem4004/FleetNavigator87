@@ -32,18 +32,18 @@ export const hybridAuth = async (req: Request, res: Response, next: NextFunction
   const cookieKeys = req.cookies ? Object.keys(req.cookies) : [];
   const hasJwtCookie = cookieKeys.includes('supabase-auth-token');
   
-  console.log('[HybridAuth] Requisição recebida:', {
-    path: req.path,
-    method: req.method,
-    hasSession: !!req.session,
-    sessionID: req.sessionID || 'não disponível',
-    isAuthenticated: req.isAuthenticated(),
-    hasAuthHeader: !!req.headers.authorization,
-    hasCookies: cookieKeys.length > 0,
-    cookieKeys: cookieKeys,
-    hasJwtCookie: hasJwtCookie,
-    referer: req.headers.referer || 'não disponível'
-  });
+  // Log mais limpo - apenas para rotas críticas
+  if (req.path.includes('/api/user') || req.path.includes('/auth')) {
+    console.log('[HybridAuth] Requisição recebida:', {
+      path: req.path,
+      method: req.method,
+      hasSession: !!req.session,
+      sessionID: req.sessionID || 'não disponível',
+      isAuthenticated: typeof req.isAuthenticated === 'function' ? req.isAuthenticated() : false,
+      hasAuthHeader: !!req.headers.authorization,
+      hasCookies: cookieKeys.length > 0
+    });
+  }
   
   // Etapa 1: Verificar autenticação por sessão 
   if (req.isAuthenticated()) {
