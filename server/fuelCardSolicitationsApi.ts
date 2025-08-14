@@ -81,13 +81,15 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
 
     console.log('[FUEL-CARD-API] Buscando solicitações para usuário:', req.user);
     
-    // Verificar se o usuário é admin ou de uma base específica
+    // Verificar se o usuário é admin, gestor do Grupo Pereira ou de uma base específica
     const isAdmin = req.user?.role === 'admin';
+    const isGestorGrupoPereira = req.user?.role === 'gestor' && req.user?.basename === 'GRUPO_PEREIRA';
     const userBaseId = req.user?.base_id;
     const userBaseName = req.user?.basename;
     
     console.log('[FUEL-CARD-API] Permissões do usuário:', { 
       isAdmin, 
+      isGestorGrupoPereira,
       userBaseId, 
       userBaseName,
       role: req.user?.role 
@@ -95,7 +97,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
 
     // Construir condições WHERE baseadas nas permissões do usuário
     let whereConditions = '';
-    if (!isAdmin && userBaseName) {
+    if (!isAdmin && !isGestorGrupoPereira && userBaseName) {
       // Mapear base names para filtros mais específicos
       let baseFilter = '';
       
@@ -119,6 +121,9 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
       }
       
       whereConditions = `WHERE ${baseFilter}`;
+    } else if (isGestorGrupoPereira) {
+      // Gestor do Grupo Pereira tem acesso a GP01, GP02, GP03
+      whereConditions = `WHERE (s.base ILIKE '%GP01%' OR s.base ILIKE '%GP02%' OR s.base ILIKE '%GP03%' OR s.base ILIKE '%VARGEM%' OR s.base ILIKE '%JACAREI%' OR s.base ILIKE '%HORTOLANDIA%' OR s.base ILIKE '%PEREIRA%')`;
     }
     
     // REMOVIDO: Limitação de paginação para mostrar todos os registros
@@ -259,7 +264,8 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
         FROM fuel_card_requests fcr
         LEFT JOIN bases b ON fcr.base_id = b.id
         LEFT JOIN veiculos v ON fcr.plate = v.placa
-        ${!isAdmin && userBaseId ? `WHERE fcr.base_id = ${userBaseId}` : ''}
+        ${!isAdmin && !isGestorGrupoPereira && userBaseId ? `WHERE fcr.base_id = ${userBaseId}` : 
+          isGestorGrupoPereira ? `WHERE fcr.base_id IN (SELECT id FROM bases WHERE name ILIKE '%GP0%' OR name ILIKE '%PEREIRA%')` : ''}
       ) unified_requests
       ORDER BY 
         CASE 
@@ -1238,15 +1244,13 @@ export async function getFuelCardSolicitationsCounts(req: Request, res: Response
 
     console.log('[FUEL-CARD-COUNTS] Processando contadores para', plates.length, 'placas');
     
-    // Query corrigida para buscar contadores de múltiplas placas
+    // Query corrigida usando apenas as tabelas e colunas que existem
     const query = `
       SELECT 
         placa,
         COUNT(*) as total_solicitations
       FROM (
         SELECT placa FROM solicitacoes_fuel_card WHERE placa = ANY($1) AND placa IS NOT NULL
-        UNION ALL
-        SELECT veiculo_placa as placa FROM line_hall_shopee WHERE veiculo_placa = ANY($1) AND veiculo_placa IS NOT NULL
         UNION ALL
         SELECT plate as placa FROM fuel_card_requests WHERE plate = ANY($1) AND plate IS NOT NULL
       ) all_requests
