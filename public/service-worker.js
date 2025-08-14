@@ -1,15 +1,13 @@
-const CACHE_NAME = 'murici-line-haul-v1.0.0';
+const CACHE_NAME = 'murici-fleet-v2.0.0';
 const STATIC_CACHE_URLS = [
   '/',
-  '/motorista-line-hall',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
   '/manifest.json',
   '/icons/icon-192x192.svg',
-  '/icons/icon-512x512.svg'
+  '/icons/icon-512x512.svg',
+  '/icons/favicon.svg'
 ];
 
-const DYNAMIC_CACHE_NAME = 'murici-line-haul-dynamic-v1';
+const DYNAMIC_CACHE_NAME = 'murici-fleet-dynamic-v2';
 
 // Install Service Worker
 self.addEventListener('install', (event) => {
@@ -18,10 +16,19 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('[Service Worker] Caching static assets');
-        return cache.addAll(STATIC_CACHE_URLS);
+        // Cache static assets one by one to handle failures gracefully
+        return Promise.allSettled(
+          STATIC_CACHE_URLS.map(url => 
+            cache.add(url).catch(error => {
+              console.warn(`[Service Worker] Failed to cache ${url}:`, error);
+              return null;
+            })
+          )
+        );
       })
-      .then(() => {
-        console.log('[Service Worker] Installation complete');
+      .then((results) => {
+        const successful = results.filter(r => r.status === 'fulfilled').length;
+        console.log(`[Service Worker] Cached ${successful}/${STATIC_CACHE_URLS.length} assets`);
         return self.skipWaiting();
       })
       .catch((error) => {
