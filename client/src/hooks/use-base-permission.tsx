@@ -634,6 +634,46 @@ export const useBasePermission = (): BasePermissionHook => {
       console.log(`Usuário Micael permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
       return hasAccess;
     }
+
+    // Usuários do GRUPO_PEREIRA (base 151) - acesso total às rotas GP03
+    if (user.basename === 'GRUPO_PEREIRA' || user.baseId === 151) {
+      // Lista completa de rotas GP03 permitidas para usuários do GRUPO_PEREIRA
+      const gp03Routes = [
+        '/',                                     // Dashboard
+        '/bases/gp03',                           // Base GP03 principal
+        '/bases/gp03/external',                  // Base GP03 externa
+        '/bases/gp03/cartao-combustivel',        // Cartão Combustível GP03
+        '/bases/gp03/despesas',                  // Despesas GP03
+        '/bases/gp03/multas',                    // Multas GP03
+        '/bases/gp03/acidentes-trabalho',        // Acidentes de Trabalho GP03
+        '/bases/gp03/sinistros',                 // Sinistros GP03
+        '/bases/gp03/solicitacao-pneus',         // Solicitação de Pneus GP03
+        '/bases/gp03/solicitacao-orcamento',     // Solicitação de Orçamento GP03
+        '/bases/gp03/manutencao-frota',          // Manutenção de Frota GP03
+        '/bases/gp03/veiculos',                  // Veículos GP03
+        '/bases/gp03/cartoes-ativos',            // Cartões Ativos GP03
+        // Rotas globais também permitidas
+        '/fuel-card',                            // Cartão de Combustível global
+        '/fuel-card-requests',                   // Solicitações de Cartão
+        '/vehicles',                             // Veículos
+        '/maintenance',                          // Manutenção
+        '/manutencao',                           // Alias para Manutenção
+        '/accidents',                            // Acidentes
+        '/acidentes',                            // Alias para Acidentes
+        '/work-safety',                          // Segurança do Trabalho
+        '/seguranca-trabalho',                   // Alias para Segurança
+        '/sinister',                             // Sinistros
+        '/sinistro',                             // Alias para Sinistros
+        '/fines',                                // Multas
+        '/multas',                               // Alias para Multas
+        '/tires',                                // Pneus
+        '/pneus'                                 // Alias para Pneus
+      ];
+      
+      const hasAccess = gp03Routes.includes(route);
+      console.log(`GRUPO_PEREIRA (GP03) user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (user: ${user.email}, baseId: ${user.baseId})`);
+      return hasAccess;
+    }
     
     // Modelo padrão de base - TODAS as bases têm acesso a estas funcionalidades
     if (user.baseId || user.basename) {
