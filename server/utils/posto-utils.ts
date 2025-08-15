@@ -116,6 +116,25 @@ export function obterNomeExibicaoPosto(nome: string): string {
  * @returns Nome da tabela formatado
  */
 export function formatarNomeTabela(posto: string): string {
+  // Casos especiais para manter o formato correto das tabelas V2
+  const mapeamentosEspeciais: Record<string, string> = {
+    'sorocaba_v2': 'abastecimentos_posto_sorocaba_v2',
+    'campinas_v2': 'abastecimentos_posto_campinas_v2',
+    'osasco_v2': 'abastecimentos_posto_osasco_v2',
+    'abc_v2': 'abastecimentos_posto_abc_v2',
+    'socorro_v2': 'abastecimentos_posto_socorro_v2',
+    'guarulhos_v2': 'abastecimentos_posto_guarulhos_v2',
+    'alair_v2': 'abastecimentos_posto_alair_v2'
+  };
+
+  const postoLower = posto.toLowerCase().trim();
+  
+  // Verificar se existe mapeamento específico
+  if (mapeamentosEspeciais[postoLower]) {
+    return mapeamentosEspeciais[postoLower];
+  }
+  
+  // Para outros postos, usar a formatação padrão
   return `abastecimentos_posto_${formatarNomePosto(posto).toLowerCase().replace(/[^a-z0-9]/g, '')}`;
 }
 

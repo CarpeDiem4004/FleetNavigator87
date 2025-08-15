@@ -57,10 +57,12 @@ router.get('/historico-abastecimentos-supabase/:posto', async (req, res) => {
     
     console.log(`[HISTÓRICO] Buscando histórico para posto: ${posto}`);
     
-    // Para Campinas, usar nome específico da tabela
+    // Para postos específicos, usar nome específico da tabela
     let nomeTabela: string;
     if (posto.toLowerCase() === 'campinas_v2') {
       nomeTabela = 'abastecimentos_posto_campinas_v2';
+    } else if (posto.toLowerCase() === 'sorocaba_v2' || posto.toLowerCase() === 'posto sorocaba v2') {
+      nomeTabela = 'abastecimentos_posto_sorocaba_v2';
     } else {
       nomeTabela = formatarNomeTabela(posto);
     }
@@ -521,6 +523,8 @@ router.get('/historico-unificado/:posto', async (req, res) => {
     let nomeTabela: string;
     if (posto.toLowerCase() === 'campinas_v2') {
       nomeTabela = 'abastecimentos_posto_campinas_v2';
+    } else if (posto.toLowerCase() === 'sorocaba_v2' || posto.toLowerCase() === 'posto sorocaba v2') {
+      nomeTabela = 'abastecimentos_posto_sorocaba_v2';
     } else {
       nomeTabela = formatarNomeTabela(posto);
     }
