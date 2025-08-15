@@ -81,14 +81,16 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
 
     console.log('[FUEL-CARD-API] Buscando solicitações para usuário:', req.user);
     
-    // Verificar se o usuário é admin, gestor do Grupo Pereira ou de uma base específica
+    // Verificar se o usuário é admin, gestor do Grupo Pereira, gestor de combustível ou de uma base específica
     const isAdmin = req.user?.role === 'admin';
+    const isGestorCombustivel = req.user?.role === 'gestor_combustivel';
     const isGestorGrupoPereira = req.user?.role === 'gestor' && req.user?.basename === 'GRUPO_PEREIRA';
     const userBaseId = req.user?.base_id;
     const userBaseName = req.user?.basename;
     
     console.log('[FUEL-CARD-API] Permissões do usuário:', { 
       isAdmin, 
+      isGestorCombustivel,
       isGestorGrupoPereira,
       userBaseId, 
       userBaseName,
@@ -97,7 +99,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
 
     // Construir condições WHERE baseadas nas permissões do usuário
     let whereConditions = '';
-    if (!isAdmin && !isGestorGrupoPereira && userBaseName) {
+    if (!isAdmin && !isGestorCombustivel && !isGestorGrupoPereira && userBaseName) {
       // Mapear base names para filtros mais específicos
       let baseFilter = '';
       
@@ -300,7 +302,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
     });
     
     // Verificar se há dados para a base específica
-    if (!isAdmin && normalizedData.length === 0) {
+    if (!isAdmin && !isGestorCombustivel && normalizedData.length === 0) {
       console.log(`[FUEL-CARD-API] ATENÇÃO: Nenhuma solicitação encontrada para base ${userBaseName} (ID: ${userBaseId})`);
     }
     
