@@ -482,7 +482,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="py-3 px-4 text-left font-medium text-gray-700">Data</th>
+                    <th className="py-3 px-4 text-left font-medium text-gray-700">Data/Hora</th>
                     <th className="py-3 px-4 text-left font-medium text-gray-700">Veículo</th>
                     <th className="py-3 px-4 text-left font-medium text-gray-700">KM</th>
                     <th className="py-3 px-4 text-left font-medium text-gray-700">Combustível</th>
@@ -500,17 +500,17 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                     <tr key={abast.id} className="hover:bg-gray-50 transition-colors">
                       <td className="py-3 px-4 text-sm">{formatarDataHora(abast.created_at)}</td>
                       <td className="py-3 px-4 font-medium">{abast.placa}</td>
-                      <td className="py-3 px-4 text-sm">{formatarNumero(abast.km_atual)}</td>
+                      <td className="py-3 px-4 text-sm">{formatarNumero(abast.km || abast.km_atual)}</td>
                       <td className="py-3 px-4 text-sm">
                         <span className={`px-2 py-1 rounded-full text-xs ${
-                          abast.tipo_combustivel === 'Diesel' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                          abast.tipo_combustivel === 'diesel' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
                         }`}>
                           {abast.tipo_combustivel}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-sm font-medium">{formatarNumero(abast.litros)}</td>
+                      <td className="py-3 px-4 text-sm font-medium">{formatarNumero(parseFloat(abast.quantidade_litros || abast.litros || 0))}</td>
                       <td className="py-3 px-4 text-sm text-right font-medium">
-                        {abast.valor_total ? formatarPreco(abast.valor_total) : '-'}
+                        {abast.valor_total ? formatarPreco(parseFloat(abast.valor_total)) : '-'}
                       </td>
                       <td className="py-3 px-4 text-sm">{abast.nome_motorista}</td>
                       <td className="py-3 px-4 text-sm text-gray-500">{abast.projeto || abast.project || '-'}</td>
@@ -558,7 +558,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                   <table className="w-full border-collapse">
                     <thead className="sticky top-0 bg-gray-50 z-10">
                       <tr className="border-b border-gray-200">
-                        <th className="py-3 px-4 text-left font-medium text-gray-700">Data</th>
+                        <th className="py-3 px-4 text-left font-medium text-gray-700">Data/Hora</th>
                         <th className="py-3 px-4 text-left font-medium text-gray-700">Veículo</th>
                         <th className="py-3 px-4 text-left font-medium text-gray-700">KM</th>
                         <th className="py-3 px-4 text-left font-medium text-gray-700">Combustível</th>
@@ -575,17 +575,17 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                         <tr key={abast.id} className="hover:bg-gray-50 transition-colors">
                           <td className="py-3 px-4 text-sm">{formatarDataHora(abast.created_at)}</td>
                           <td className="py-3 px-4 font-medium">{abast.placa}</td>
-                          <td className="py-3 px-4 text-sm">{formatarNumero(abast.km_atual)}</td>
+                          <td className="py-3 px-4 text-sm">{formatarNumero(abast.km || abast.km_atual)}</td>
                           <td className="py-3 px-4 text-sm">
                             <span className={`px-2 py-1 rounded-full text-xs ${
-                              abast.tipo_combustivel === 'Diesel' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                              abast.tipo_combustivel === 'diesel' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
                             }`}>
                               {abast.tipo_combustivel}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-sm font-medium">{formatarNumero(abast.litros)}</td>
+                          <td className="py-3 px-4 text-sm font-medium">{formatarNumero(parseFloat(abast.quantidade_litros || abast.litros || 0))}</td>
                           <td className="py-3 px-4 text-sm text-right font-medium">
-                            {abast.valor_total ? formatarPreco(abast.valor_total) : '-'}
+                            {abast.valor_total ? formatarPreco(parseFloat(abast.valor_total)) : '-'}
                           </td>
                           <td className="py-3 px-4 text-sm">{abast.nome_motorista}</td>
                           <td className="py-3 px-4 text-sm text-gray-500">{abast.projeto || abast.project || '-'}</td>
