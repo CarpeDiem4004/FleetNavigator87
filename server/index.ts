@@ -2255,6 +2255,8 @@ app.use((req, res, next) => {
       '/postos/campinas_v2/public', // Link externo do Posto Campinas V2
       '/postos/osasco_v2/public', // Link externo do Posto Osasco V2
       '/postos/osasco_v2/login', // Login do Posto Osasco V2
+      '/postos/socorro_v2/public', // Link externo do Posto Socorro V2
+      '/postos/socorro_v2/login', // Login do Posto Socorro V2
       '/posto/', // Permitir acesso público a todas as rotas de postos
       '/api/postos', // Permitir acesso público às APIs dos postos
       '/api/historico-direto',

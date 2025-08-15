@@ -60,6 +60,7 @@ import IndexPostos from "@/pages/postos/IndexPostos";
 import PostoOsasco from "@/pages/postos/Osasco";
 import PostoOsascoV2 from "@/pages/postos/OsascoV2";
 import LoginOsascoV2 from "@/pages/postos/LoginOsascoV2";
+import LoginSocorroV2 from "@/pages/postos/LoginSocorroV2";
 import PostoGuarulhos from "@/pages/postos/Guarulhos";
 import PostoAlairV2 from "@/pages/postos/AlairV2";
 import PostoGuarulhosV2 from "@/pages/postos/GuarulhosV2";
@@ -1126,6 +1127,11 @@ function App() {
           {/* Login para Posto Osasco V2 */}
           <Route path="/postos/osasco_v2/login">
             <LoginOsascoV2 />
+          </Route>
+          
+          {/* Login para Posto Socorro V2 */}
+          <Route path="/postos/socorro_v2/login">
+            <LoginSocorroV2 />
           </Route>
 
           {/* Sistema de Manutenção Veicular - Acesso público para oficinas */}

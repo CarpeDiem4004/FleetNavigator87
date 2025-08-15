@@ -9,7 +9,11 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 The system is built with a React/TypeScript frontend and a Node.js/Express backend, utilizing Supabase as the primary database.
 
-### Recent Fixes (August 14, 2025)
+### Recent Fixes (August 15, 2025)
+- **POSTO SOCORRO V2 ACCESS CONFIGURED**: Complete login system implemented for funcionario.socorro@muricionfleet.com with universal password j!8H#eNvVo, public routing enabled, and access to 463 historical fuel records with proper table mapping
+- **POSTO OSASCO V2 ACCESS CONFIGURED**: Login system implemented for thyago.porto@muricionfleet.com with universal password j!8H#eNvVo, public routing enabled, and access to 5,707 historical fuel records
+
+### Previous Fixes (August 14, 2025)
 - **GP03 FULL ACCESS GRANTED**: Guilherme Protazio (guilherme.protazio@muricionfleet.com) now has complete access to all Base GP03 modules including fuel cards, accidents, incidents, fines, vehicles, expenses, and maintenance
 - **Authentication System Fully Operational**: Comprehensive fix of middleware conflicts between session, JWT, and hybrid authentication methods - all working harmoniously
 - **Data Integrity Maintained**: All 4,081 Campinas fuel records, 2,414 yard movement records, and 28 users preserved during authentication fixes
