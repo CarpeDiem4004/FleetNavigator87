@@ -64,6 +64,9 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
       // Desabilitar temporariamente tentativa do Supabase para ABC V2 - usar diretamente a API
       console.log(`[HISTÓRICO] Pulando verificação do Supabase para ${postId}, usando API direta`);
       
+      // DEBUG: Log detalhado para identificar problema com datas
+      console.log(`[HISTÓRICO-DEBUG] Iniciando debug para posto ${postId}`);
+      
       // COMENTADO: Problemas com nomeação de tabela no Supabase para ABC V2
       // let dadosSupabase = null;
       // 
@@ -133,6 +136,13 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
           if (responseData.data?.length > 0) {
             console.log(`[HISTÓRICO] Primeiro abastecimento: ID=${responseData.data[0].id}, Placa=${responseData.data[0].placa}, Data=${responseData.data[0].created_at}`);
           }
+          // DEBUG: Adicionar logs antes de definir os dados
+          console.log(`[HISTÓRICO-DEBUG] Dados antes de setData:`, responseData.data?.slice(0, 2));
+          if (responseData.data?.length > 0) {
+            const primeiro = responseData.data[0];
+            console.log(`[HISTÓRICO-DEBUG] Teste formatarDataHora com primeiro registro:`, formatarDataHora(primeiro.created_at));
+          }
+          
           setData(responseData.data || []);
           setFilteredData(responseData.data || []);
         } else {
@@ -498,7 +508,11 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                   {/* Mostrar apenas os 3 registros mais recentes */}
                   {filteredData.slice(0, 3).map((abast) => (
                     <tr key={abast.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="py-3 px-4 text-sm">{formatarDataHora(abast.created_at)}</td>
+                      <td className="py-3 px-4 text-sm">
+                        {/* DEBUG: Mostrar valor bruto e formatado na tabela principal */}
+                        {console.log(`[RENDER-DEBUG-MAIN] Abastecimento ID ${abast.id}, created_at:`, abast.created_at, 'formatado:', formatarDataHora(abast.created_at))}
+                        {formatarDataHora(abast.created_at)}
+                      </td>
                       <td className="py-3 px-4 font-medium">{abast.placa}</td>
                       <td className="py-3 px-4 text-sm">{formatarNumero(abast.km || abast.km_atual)}</td>
                       <td className="py-3 px-4 text-sm">
@@ -573,7 +587,11 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                     <tbody className="divide-y divide-gray-200">
                       {filteredData.map((abast) => (
                         <tr key={abast.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="py-3 px-4 text-sm">{formatarDataHora(abast.created_at)}</td>
+                          <td className="py-3 px-4 text-sm">
+                            {/* DEBUG: Mostrar valor bruto e formatado na tabela completa */}
+                            {console.log(`[RENDER-DEBUG-FULL] Abastecimento ID ${abast.id}, created_at:`, abast.created_at, 'formatado:', formatarDataHora(abast.created_at))}
+                            {formatarDataHora(abast.created_at)}
+                          </td>
                           <td className="py-3 px-4 font-medium">{abast.placa}</td>
                           <td className="py-3 px-4 text-sm">{formatarNumero(abast.km || abast.km_atual)}</td>
                           <td className="py-3 px-4 text-sm">
