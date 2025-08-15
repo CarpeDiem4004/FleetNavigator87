@@ -328,7 +328,7 @@ export function useFetchWithAuth() {
         const response = await originalFetch(input, init);
         
         // Se for uma rota protegida e recebemos 401, redirecionar para o login
-        if (response.status === 401 && isInternalRequest) {
+        if (response && response.status === 401 && isInternalRequest) {
           const inputUrl = typeof input === 'string' ? input : 
                           input instanceof Request ? input.url : input.toString();
           if (inputUrl.includes('/api/frota/')) {
@@ -341,6 +341,17 @@ export function useFetchWithAuth() {
         
         return response;
       } catch (error) {
+        // Verificar se o erro é relacionado ao fetch ou à rede
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          console.warn('[FetchWithAuth] Erro de rede ou fetch:', error.message);
+          // Para erros de rede, retornar um objeto Response de erro simulado
+          return new Response(JSON.stringify({ error: 'Erro de conexão' }), {
+            status: 500,
+            statusText: 'Network Error',
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+        
         console.error('[FetchWithAuth] Erro na requisição fetch:', error);
         throw error;
       }

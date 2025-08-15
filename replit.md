@@ -18,6 +18,7 @@ The system is built with a React/TypeScript frontend and a Node.js/Express backe
 - **POSTO CAMPINAS V2 LOGIN FIXED**: Corrected vinicius.campioni@muricionfleet.com password hash and updated login interface for proper authentication
 - **POSTO CAMPINAS V2 EXTERNAL ACCESS ENABLED**: Added /postos/campinas_v2/public to public routes, configured user permissions, and enabled external link access for Vinícius Campioni
 - **POSTO SOROCABA V2 HISTÓRICO FIXED**: Corrected table name mapping in formatarNomeTabela function to properly access abastecimentos_posto_sorocaba_v2 with 780 historical records
+- **FRONTEND FETCH ERROR RESOLVED**: Fixed runtime error in useFetchWithAuth.ts hook by adding proper error handling for network issues and null response checks
 - **Session Cookie Authentication**: Fixed AuthContext to use proper session cookies with credentials:'include' for reliable authentication state management
 - **Middleware Optimization**: Resolved hybridAuth.ts and auth.ts conflicts, ensuring seamless authentication flow without session conflicts
 - **GP03 Base Operational**: Login, permissions, fuel card access, and all base functionality confirmed working correctly
