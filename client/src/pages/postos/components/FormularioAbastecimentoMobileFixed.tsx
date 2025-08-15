@@ -133,7 +133,7 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
       base_id: "",
       motorista: "",
       motorista_rg: "",
-      operador: user?.name || (user?.email?.includes('alisson') ? 'Alisson Correia' : "Administrador"),
+      operador: "Alisson Correia",
       tipo_veiculo: "frota",
     },
   });
@@ -141,22 +141,22 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
   // Preencher automaticamente o nome do operador quando o usuário for carregado
   useEffect(() => {
     console.log(`[OPERADOR-DEBUG] Verificando usuário:`, user);
-    if (user?.name) {
-      // Para Alisson, usar nome correto
-      let operatorName = user.name;
-      if (user.email?.includes('alisson') && user.name === 'Administrador') {
-        operatorName = 'Alisson Correia';
-      }
-      
-      console.log(`[OPERADOR-DEBUG] Preenchendo campo operador com: ${operatorName}`);
-      form.setValue("operador", operatorName);
-      
-      // Verificar se o valor foi definido corretamente
-      const currentValue = form.getValues("operador");
-      console.log(`[OPERADOR-DEBUG] Valor atual do campo operador: ${currentValue}`);
-    } else {
-      console.log(`[OPERADOR-DEBUG] Usuário não encontrado ou sem nome`);
+    
+    // Para Sorocaba V2, sempre usar "Alisson Correia" se não houver usuário válido
+    let operatorName = "Alisson Correia";
+    
+    if (user?.name && user.name !== "Administrador") {
+      operatorName = user.name;
+    } else if (user?.email?.includes('alisson')) {
+      operatorName = 'Alisson Correia';
     }
+    
+    console.log(`[OPERADOR-DEBUG] Preenchendo campo operador com: ${operatorName}`);
+    form.setValue("operador", operatorName);
+    
+    // Verificar se o valor foi definido corretamente
+    const currentValue = form.getValues("operador");
+    console.log(`[OPERADOR-DEBUG] Valor atual do campo operador: ${currentValue}`);
   }, [user, form]);
 
   // Função de diagnóstico de conexão
@@ -624,7 +624,7 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
                 valor_total: "",
                 motorista: "",
                 motorista_rg: "",
-                operador: user?.name || (user?.email?.includes('alisson') ? 'Alisson Correia' : "Administrador"),
+                operador: "Alisson Correia",
                 tipo_veiculo: "frota",
                 observacoes: "",
                 lavagem: false,
