@@ -531,8 +531,15 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                   {filteredData.slice(0, 3).map((abast) => (
                     <tr key={abast.id} className="hover:bg-gray-50 transition-colors">
                       <td className="py-3 px-4 text-sm">
-                        {/* DEBUG REMOVIDO */}
-                        {formatarDataHora(abast.created_at) || abast.created_at || '-'}
+                        {(() => {
+                          console.log('[RENDER-MAIN] abast:', abast.id, 'created_at:', abast.created_at);
+                          if (!abast.created_at) return 'SEM DATA';
+                          
+                          // Teste simples primeiro
+                          const simpleDate = new Date(abast.created_at).toLocaleString('pt-BR');
+                          console.log('[RENDER-MAIN] simpleDate result:', simpleDate);
+                          return simpleDate;
+                        })()}
                       </td>
                       <td className="py-3 px-4 font-medium">{abast.placa}</td>
                       <td className="py-3 px-4 text-sm">{formatarNumero(abast.km || abast.km_atual)}</td>
@@ -609,8 +616,15 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                       {filteredData.map((abast) => (
                         <tr key={abast.id} className="hover:bg-gray-50 transition-colors">
                           <td className="py-3 px-4 text-sm">
-                            {/* DEBUG REMOVIDO */}
-                            {formatarDataHora(abast.created_at) || abast.created_at || '-'}
+                            {(() => {
+                              console.log('[RENDER-FULL] abast:', abast.id, 'created_at:', abast.created_at);
+                              if (!abast.created_at) return 'SEM DATA';
+                              
+                              // Teste simples primeiro
+                              const simpleDate = new Date(abast.created_at).toLocaleString('pt-BR');
+                              console.log('[RENDER-FULL] simpleDate result:', simpleDate);
+                              return simpleDate;
+                            })()}
                           </td>
                           <td className="py-3 px-4 font-medium">{abast.placa}</td>
                           <td className="py-3 px-4 text-sm">{formatarNumero(abast.km || abast.km_atual)}</td>
