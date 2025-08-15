@@ -331,6 +331,7 @@ import BaseRouteHandler from "@/components/bases/BaseRouteHandler";
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
 import OsascoV2Public from "@/pages/postos/public/OsascoV2Public";
+import SocorroV2Public from "@/pages/postos/public/SocorroV2Public";
 import GuarulhosPublic from "@/pages/postos/public/GuarulhosPublic";
 
 // Importação das páginas de postos externos V2 (renomeadas para evitar conflitos)
@@ -345,7 +346,6 @@ import CampinasV2Public from "@/pages/postos/public/CampinasV2Public";
 import ABCPublic from "@/pages/postos/public/ABCPublic";
 import ABCV2Public from "@/pages/postos/public/ABCV2Public";
 import SocorroPublic from "@/pages/postos/public/SocorroPublic";
-import SocorroV2Public from "@/pages/postos/public/SocorroV2Public";
 import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
 import SorocabaV2Public from "@/pages/postos/public/SorocabaV2Public";
 
