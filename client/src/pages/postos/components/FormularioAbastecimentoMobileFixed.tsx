@@ -142,8 +142,14 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
   useEffect(() => {
     console.log(`[OPERADOR-DEBUG] Verificando usuário:`, user);
     if (user?.name) {
-      console.log(`[OPERADOR-DEBUG] Preenchendo campo operador com: ${user.name}`);
-      form.setValue("operador", user.name);
+      // Para Alisson, usar nome correto
+      let operatorName = user.name;
+      if (user.email?.includes('alisson') && user.name === 'Administrador') {
+        operatorName = 'Alisson Correia';
+      }
+      
+      console.log(`[OPERADOR-DEBUG] Preenchendo campo operador com: ${operatorName}`);
+      form.setValue("operador", operatorName);
       
       // Verificar se o valor foi definido corretamente
       const currentValue = form.getValues("operador");
@@ -618,7 +624,7 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
                 valor_total: "",
                 motorista: "",
                 motorista_rg: "",
-                operador: user?.name || "Administrador",
+                operador: user?.name || (user?.email?.includes('alisson') ? 'Alisson Correia' : "Administrador"),
                 tipo_veiculo: "frota",
                 observacoes: "",
                 lavagem: false,
