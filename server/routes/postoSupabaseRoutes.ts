@@ -525,6 +525,16 @@ router.get('/historico-unificado/:posto', async (req, res) => {
       nomeTabela = 'abastecimentos_posto_campinas_v2';
     } else if (posto.toLowerCase() === 'sorocaba_v2' || posto.toLowerCase() === 'posto sorocaba v2') {
       nomeTabela = 'abastecimentos_posto_sorocaba_v2';
+    } else if (posto.toLowerCase() === 'abc_v2' || posto.toLowerCase() === 'posto abc v2') {
+      nomeTabela = 'abastecimentos_posto_abc_v2';
+    } else if (posto.toLowerCase() === 'alair_v2' || posto.toLowerCase() === 'posto alair v2') {
+      nomeTabela = 'abastecimentos_posto_alair_v2';
+    } else if (posto.toLowerCase() === 'osasco_v2' || posto.toLowerCase() === 'posto osasco v2') {
+      nomeTabela = 'abastecimentos_posto_osasco_v2';
+    } else if (posto.toLowerCase() === 'guarulhos_v2' || posto.toLowerCase() === 'posto guarulhos v2') {
+      nomeTabela = 'abastecimentos_posto_guarulhos_v2';
+    } else if (posto.toLowerCase() === 'socorro_v2' || posto.toLowerCase() === 'posto socorro v2') {
+      nomeTabela = 'abastecimentos_posto_socorro_v2';
     } else {
       nomeTabela = formatarNomeTabela(posto);
     }
