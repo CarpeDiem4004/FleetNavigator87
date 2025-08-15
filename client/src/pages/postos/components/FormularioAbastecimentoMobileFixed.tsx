@@ -133,7 +133,7 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
       base_id: "",
       motorista: "",
       motorista_rg: "",
-      operador: user?.name || "Administrador",
+      operador: user?.name || (user?.email?.includes('alisson') ? 'Alisson Correia' : "Administrador"),
       tipo_veiculo: "frota",
     },
   });
