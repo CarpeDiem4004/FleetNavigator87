@@ -594,13 +594,16 @@ export const useBasePermission = (): BasePermissionHook => {
       // Lista de rotas permitidas para usuários com perfil de Gestor de Combustível
       const gestorCombustivelRoutes = [
         '/',                               // Dashboard
+        '/fleet-management',               // Gestão de Frota - Acesso principal
         '/fuel-card',                      // Cartão de Combustível
         '/fuel-card/dashboard',            // Dashboard de Cartões
         '/fuel-card/requests',             // Solicitações de Cartão
         '/fuel-card-requests',             // Painel de Solicitações de Cartão de Abastecimento
         '/postos',                         // Postos de Abastecimento
         '/postos/visao-geral',             // Visão Geral dos Postos
-        '/postos/historico-consolidado'    // Histórico Consolidado de Abastecimentos
+        '/postos/historico-consolidado',   // Histórico Consolidado de Abastecimentos
+        '/vehicles',                       // Veículos (para consulta)
+        '/executive-dashboard'             // Dashboard Executivo
       ];
       const hasAccess = gestorCombustivelRoutes.includes(route);
       console.log(`Gestor de Combustível permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
