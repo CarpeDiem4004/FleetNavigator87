@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { RefreshCw, Download } from "lucide-react";
 import eventosBus, { EVENTOS } from '@/lib/eventosBus';
@@ -137,8 +137,22 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
       
       if (response.data && response.data.success) {
         console.log(`Histórico carregado: ${response.data.data?.length || 0} registros para ${postoProcessado}`);
+        console.log("Aplicando filtros em", response.data.data?.length || 0, "registros");
+        
+        // Log detalhado do primeiro registro para debug das datas
         const dados = response.data.data || [];
-        setHistorico(dados);
+        if (dados.length > 0) {
+          console.log("TODAS AS CHAVES DO PRIMEIRO REGISTRO:", Object.keys(dados[0]));
+          console.log("OBJETO COMPLETO DO PRIMEIRO REGISTRO:", JSON.stringify(dados[0], null, 2));
+        }
+        
+        // CORREÇÃO: Adicionar campo data_hora baseado em created_at
+        const dadosCorrigidos = dados.map(item => ({
+          ...item,
+          data_hora: item.created_at ? new Date(item.created_at).toLocaleString('pt-BR') : 'Sem data'
+        }));
+        
+        setHistorico(dadosCorrigidos);
       } else {
         setError(response.data?.error || 'Erro ao carregar o histórico');
         
@@ -334,7 +348,8 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
     
     // Debug
     if (resultados.length > 0) {
-      console.log(`Registro mais recente: ${resultados[0].placa} - ${resultados[0].data_hora}`);
+      console.log(`Registro mais recente: ${resultados[0].placa} - ${resultados[0].created_at}`);
+      console.log("PROBLEMA ENCONTRADO: data_hora =", resultados[0].data_hora, "| created_at =", resultados[0].created_at);
     }
     
     setHistoricoFiltrado(resultados);
