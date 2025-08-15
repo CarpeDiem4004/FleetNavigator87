@@ -3,6 +3,11 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 
+// Debug das importações
+console.log('[DEBUG-IMPORTS] date-fns format:', typeof format);
+console.log('[DEBUG-IMPORTS] date-fns parseISO:', typeof parseISO);
+console.log('[DEBUG-IMPORTS] ptBR locale:', typeof ptBR);
+
 interface HistoricoAbastecimentosProps {
   postId: string;
   showLimparButton?: boolean;
@@ -34,12 +39,27 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
   };
 
   const formatarDataHora = (dateString: string) => {
-    if (!dateString) return '-';
+    if (!dateString) {
+      console.log('[FORMAT-DEBUG] dateString está vazio:', dateString);
+      return '-';
+    }
     try {
-      return format(parseISO(dateString), 'dd/MM/yyyy HH:mm', { locale: ptBR });
+      console.log('[FORMAT-DEBUG] Tentando formatar:', dateString);
+      const result = format(parseISO(dateString), 'dd/MM/yyyy HH:mm', { locale: ptBR });
+      console.log('[FORMAT-DEBUG] Resultado formatado:', result);
+      return result;
     } catch (error) {
-      console.error("Erro ao formatar data e hora:", error);
-      return dateString || '-';
+      console.error("Erro ao formatar data e hora:", error, 'dateString:', dateString);
+      // Tentar uma formatação mais simples
+      try {
+        const date = new Date(dateString);
+        const simpleResult = date.toLocaleString('pt-BR');
+        console.log('[FORMAT-DEBUG] Formatação simples funcionou:', simpleResult);
+        return simpleResult;
+      } catch (simpleError) {
+        console.error('Formatação simples também falhou:', simpleError);
+        return dateString || '-';
+      }
     }
   };
 
