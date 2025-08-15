@@ -110,7 +110,8 @@ const LoginSocorroV2 = () => {
           
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
             <p className="text-xs text-gray-600 text-center">
-              Sistema restrito aos funcionários autorizados do Posto Socorro V2
+              Acesso para Adriano Santana - Posto Socorro V2<br/>
+              Use suas credenciais habituais do sistema
             </p>
           </div>
         </CardContent>
