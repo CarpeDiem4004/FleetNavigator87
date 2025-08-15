@@ -59,6 +59,7 @@ import { useFetchWithAuth } from "@/hooks/useFetchWithAuth";
 import IndexPostos from "@/pages/postos/IndexPostos";
 import PostoOsasco from "@/pages/postos/Osasco";
 import PostoOsascoV2 from "@/pages/postos/OsascoV2";
+import LoginOsascoV2 from "@/pages/postos/LoginOsascoV2";
 import PostoGuarulhos from "@/pages/postos/Guarulhos";
 import PostoAlairV2 from "@/pages/postos/AlairV2";
 import PostoGuarulhosV2 from "@/pages/postos/GuarulhosV2";
@@ -1122,6 +1123,11 @@ function App() {
             <PostoRemediosStandalone />
           </Route>
           
+          {/* Login para Posto Osasco V2 */}
+          <Route path="/postos/osasco_v2/login">
+            <LoginOsascoV2 />
+          </Route>
+
           {/* Sistema de Manutenção Veicular - Acesso público para oficinas */}
           <Route path="/maintenance">
             <MaintenanceSystem />
