@@ -119,8 +119,18 @@ router.get('/historico-abastecimentos-supabase/:posto', async (req, res) => {
       query += ` LIMIT ${Number(limit)}`;
     }
     
-    console.log(`Executando consulta para histórico do posto ${posto}`);
+    console.log(`Executando consulta unificada para histórico do posto ${posto}`);
     const result = await pool.query(query);
+    
+    // Log para debug - mostrar primeiros registros com created_at
+    if (result.rows.length > 0) {
+      console.log(`[DEBUG] Primeiro registro:`, {
+        id: result.rows[0].id,
+        placa: result.rows[0].placa,
+        created_at: result.rows[0].created_at,
+        operador: result.rows[0].nome_operador
+      });
+    }
     
     return res.status(200).json({
       success: true,

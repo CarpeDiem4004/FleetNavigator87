@@ -531,7 +531,13 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                   {filteredData.slice(0, 3).map((abast) => (
                     <tr key={abast.id} className="hover:bg-gray-50 transition-colors">
                       <td className="py-3 px-4 text-sm">
-                        {abast.created_at ? new Date(abast.created_at).toLocaleString('pt-BR') : 'Sem data'}
+                        {abast.created_at ? new Date(abast.created_at).toLocaleString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit', 
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : 'Sem data'}
                       </td>
                       <td className="py-3 px-4 font-medium">{abast.placa}</td>
                       <td className="py-3 px-4 text-sm">{formatarNumero(abast.km || abast.km_atual)}</td>
@@ -608,7 +614,13 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                       {filteredData.map((abast) => (
                         <tr key={abast.id} className="hover:bg-gray-50 transition-colors">
                           <td className="py-3 px-4 text-sm">
-                            {abast.created_at ? new Date(abast.created_at).toLocaleString('pt-BR') : 'Sem data'}
+                            {abast.created_at ? new Date(abast.created_at).toLocaleString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit', 
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }) : 'Sem data'}
                           </td>
                           <td className="py-3 px-4 font-medium">{abast.placa}</td>
                           <td className="py-3 px-4 text-sm">{formatarNumero(abast.km || abast.km_atual)}</td>
