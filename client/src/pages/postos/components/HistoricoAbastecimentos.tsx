@@ -141,6 +141,8 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
           if (responseData.data?.length > 0) {
             const primeiro = responseData.data[0];
             console.log(`[HISTÓRICO-DEBUG] Teste formatarDataHora com primeiro registro:`, formatarDataHora(primeiro.created_at));
+          console.log(`[HISTÓRICO-DEBUG] Campo created_at bruto:`, primeiro.created_at);
+          console.log(`[HISTÓRICO-DEBUG] Formatação manual de teste:`, new Date(primeiro.created_at).toLocaleString('pt-BR'));
           }
           
           setData(responseData.data || []);
@@ -509,9 +511,8 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                   {filteredData.slice(0, 3).map((abast) => (
                     <tr key={abast.id} className="hover:bg-gray-50 transition-colors">
                       <td className="py-3 px-4 text-sm">
-                        {/* DEBUG: Mostrar valor bruto e formatado na tabela principal */}
-                        {console.log(`[RENDER-DEBUG-MAIN] Abastecimento ID ${abast.id}, created_at:`, abast.created_at, 'formatado:', formatarDataHora(abast.created_at))}
-                        {formatarDataHora(abast.created_at)}
+                        {/* DEBUG REMOVIDO */}
+                        {formatarDataHora(abast.created_at) || abast.created_at || '-'}
                       </td>
                       <td className="py-3 px-4 font-medium">{abast.placa}</td>
                       <td className="py-3 px-4 text-sm">{formatarNumero(abast.km || abast.km_atual)}</td>
@@ -588,9 +589,8 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                       {filteredData.map((abast) => (
                         <tr key={abast.id} className="hover:bg-gray-50 transition-colors">
                           <td className="py-3 px-4 text-sm">
-                            {/* DEBUG: Mostrar valor bruto e formatado na tabela completa */}
-                            {console.log(`[RENDER-DEBUG-FULL] Abastecimento ID ${abast.id}, created_at:`, abast.created_at, 'formatado:', formatarDataHora(abast.created_at))}
-                            {formatarDataHora(abast.created_at)}
+                            {/* DEBUG REMOVIDO */}
+                            {formatarDataHora(abast.created_at) || abast.created_at || '-'}
                           </td>
                           <td className="py-3 px-4 font-medium">{abast.placa}</td>
                           <td className="py-3 px-4 text-sm">{formatarNumero(abast.km || abast.km_atual)}</td>
