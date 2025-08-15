@@ -10652,7 +10652,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/dashboard", isAuthenticatedHybrid, getExecutiveDashboard);
   
   // Rotas para solicitações de cartão de combustível
-  app.get('/api/fuel-card-solicitations', isAuthenticated, getFuelCardSolicitations);
+  app.get('/api/fuel-card-solicitations', unifiedAuthMiddleware, getFuelCardSolicitations);
   // Rotas específicas devem vir ANTES das rotas com parâmetros
   app.get('/api/fuel-card-solicitations/export', isAuthenticated, exportFuelCardSolicitationsToExcel);
   app.post('/api/fuel-card-solicitations/export', isAuthenticated, exportFuelCardSolicitationsToExcel);
@@ -10666,7 +10666,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/fuel-card-solicitations/:id', isAuthenticated, deleteFuelCardSolicitation);
   
   // OTIMIZAÇÃO: Novo endpoint batch para contadores de placas
-  app.post('/api/fuel-card-solicitations-counts', isAuthenticated, getFuelCardSolicitationsCounts);
+  app.post('/api/fuel-card-solicitations-counts', unifiedAuthMiddleware, getFuelCardSolicitationsCounts);
   
   // Nova rota para solicitações de cartão de combustível das bases
   app.post('/api/fuel-card-requests', createFuelCardRequest);
