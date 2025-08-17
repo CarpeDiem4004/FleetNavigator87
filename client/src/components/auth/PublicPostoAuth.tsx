@@ -97,7 +97,16 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
     setError(null);
     
     try {
-      const response = await fetch('/api/auth/login-base', {
+      // Detectar se estamos em ambiente externo (Replit)
+      const isExternal = window.location.hostname.includes('replit.app') || 
+                        window.location.hostname.includes('picard.replit.dev');
+      
+      // Usar endpoint específico para acesso externo
+      const endpoint = isExternal ? '/api/auth-hybrid/login-posto-externo' : '/api/auth/login-base';
+      
+      console.log('PublicPostoAuth: Usando endpoint:', endpoint, 'isExternal:', isExternal);
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

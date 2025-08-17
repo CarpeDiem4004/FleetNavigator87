@@ -36,6 +36,74 @@ const supabaseUrl = process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.su
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDkwMzQ2MiwiZXhwIjoyMDYwMjc5NDYyfQ.M5Yf9Y-YRsF1hRfpZcnJHWdDR3x8T0yzIKbXZTXZQOY';
 const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
 
+// Rota de login específica para postos externos (ABC V2)
+router.post('/login-posto-externo', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    console.log('[POSTO-EXTERNO] Tentativa de login para:', email);
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email e senha são obrigatórios' });
+    }
+
+    // Tenta encontrar o usuário no banco local
+    const user = await storage.getUserByEmail(email);
+    
+    if (!user) {
+      console.log('[POSTO-EXTERNO] Usuário não encontrado:', email);
+      return res.status(401).json({ message: 'Usuário não encontrado' });
+    }
+
+    console.log('[POSTO-EXTERNO] Usuário encontrado:', { 
+      id: user.id, 
+      name: user.name, 
+      email: user.email, 
+      role: user.role,
+      hasPassword: !!user.password
+    });
+
+    // Verifica se a senha está correta
+    const isPasswordValid = await comparePasswords(password, user.password);
+    
+    if (!isPasswordValid) {
+      console.log('[POSTO-EXTERNO] Senha inválida para usuário:', email);
+      return res.status(401).json({ message: 'Credenciais inválidas' });
+    }
+
+    console.log('[POSTO-EXTERNO] Senha validada com sucesso para:', email);
+
+    // Formata o usuário para a sessão (remove dados sensíveis como a senha)
+    const userSession = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      base_id: user.baseId,
+      basename: user.basename,
+      isActive: user.isActive,
+      _authMethod: 'posto_externo'
+    };
+
+    // Configurar headers para compatibilidade com acesso externo
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+
+    // Salva o usuário na sessão
+    req.login(userSession, (loginErr) => {
+      if (loginErr) {
+        console.error('[POSTO-EXTERNO] Erro ao salvar sessão:', loginErr);
+        return res.status(500).json({ message: 'Erro ao criar sessão' });
+      }
+
+      console.log('[POSTO-EXTERNO] Login bem-sucedido para:', email);
+      return res.status(200).json(userSession);
+    });
+  } catch (error) {
+    console.error('[POSTO-EXTERNO] Erro no processamento de login:', error);
+    return res.status(500).json({ message: 'Erro no servidor ao processar login' });
+  }
+});
+
 // Rota de login híbrido - tenta autenticar no banco Postgres local
 router.post('/login-hybrid', async (req, res) => {
   try {

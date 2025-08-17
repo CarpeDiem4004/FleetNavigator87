@@ -183,6 +183,11 @@ export function setupAuth(app: Express) {
     console.warn('Para produção, defina SESSION_SECRET como variável de ambiente.');
   }
   
+  // Detectar se estamos em ambiente Replit externo
+  const isReplitExternal = process.env.REPLIT_DEV_DOMAIN || 
+                          process.env.HOSTNAME?.includes('replit.app') ||
+                          process.env.HOSTNAME?.includes('picard.replit.dev');
+
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || (process.env.NODE_ENV !== 'production' ? 
       'dev_temp_secret_' + Date.now().toString() : 
@@ -191,19 +196,22 @@ export function setupAuth(app: Express) {
     saveUninitialized: true, // Garante que a sessão seja salva mesmo que não modificada
     store: sessionStore,
     cookie: {
-      secure: false, // Desabilitado para desenvolvimento, em produção deveria ser true
+      secure: isReplitExternal ? true : false, // Secure true para Replit externo
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dias para maior persistência
-      sameSite: 'lax', // Ajuda nas requisições cross-site (importante para APIs)
-      httpOnly: true,
+      sameSite: isReplitExternal ? 'none' : 'lax', // None para Replit externo
+      httpOnly: !isReplitExternal, // false para Replit externo para compatibilidade
       path: '/'
     }
   };
   
   console.log(`Configuração da sessão: 
-  - Secure: ${process.env.NODE_ENV === 'production'}
-  - MaxAge: ${7 * 24 * 60 * 60 * 1000}ms (${7} dias)
+  - Secure: ${sessionSettings.cookie?.secure}
+  - MaxAge: ${sessionSettings.cookie?.maxAge}ms
+  - SameSite: ${sessionSettings.cookie?.sameSite}
+  - HttpOnly: ${sessionSettings.cookie?.httpOnly}
   - Store: ${!useMemoryStore ? 'PostgreSQL' : 'Memory'}
-  - Environment: ${process.env.NODE_ENV || 'development'}`);
+  - Environment: ${process.env.NODE_ENV || 'development'}
+  - Replit External: ${isReplitExternal}`);
   
 
   app.use(session(sessionSettings));
@@ -213,6 +221,10 @@ export function setupAuth(app: Express) {
     // Verificar se estamos no ambiente de produção ou teste
     const isDev = req.hostname.includes('replit.dev') || req.hostname.includes('localhost');
     const isProd = req.hostname.includes('gestaoonfleet.com.br');
+    const isReplit = req.hostname.includes('replit.app') || req.hostname.includes('picard.replit.dev');
+    
+    // Log para debug
+    console.log(`[SessionMiddleware] Hostname: ${req.hostname}, isDev: ${isDev}, isProd: ${isProd}, isReplit: ${isReplit}`);
     
     // Guardar o cookie original
     const originalCookie = res.getHeader('set-cookie');
@@ -226,6 +238,17 @@ export function setupAuth(app: Express) {
           console.log(`[SessionMiddleware] Ajustando domínio do cookie para: ${domainName} (request para ${req.hostname}${req.path})`);
           (req.session as any).cookie.domain = domainName;
         }
+      } else if (isReplit) {
+        // Para ambiente Replit externo
+        console.log(`[Cookie Middleware] REPLIT EXTERNO - Ajustando sessão para: ${req.hostname}`);
+        
+        // Configurações mais permissivas para Replit externo
+        (req.session as any).cookie.sameSite = 'none';
+        (req.session as any).cookie.secure = true; // Necessário para SameSite=None
+        (req.session as any).cookie.httpOnly = false; // Permitir acesso via JavaScript se necessário
+        
+        // Não definir domínio específico para Replit
+        delete (req.session as any).cookie.domain;
       } else if (isDev) {
         // Para ambiente de desenvolvimento/teste
         console.log(`[Cookie Middleware] Ajustando sessão: maxAge=${(req.session as any).cookie.maxAge}, sameSite=${(req.session as any).cookie.sameSite}`);
@@ -243,17 +266,33 @@ export function setupAuth(app: Express) {
     const originalEnd = res.end;
     res.end = function(chunk?: any, encoding?: any, callback?: any) {
       if (!res.headersSent && res.getHeader('set-cookie')) {
-        if (isDev) {
-          let cookies = res.getHeader('set-cookie');
-          if (Array.isArray(cookies)) {
+        let cookies = res.getHeader('set-cookie');
+        if (Array.isArray(cookies)) {
+          if (isReplit) {
+            // Para Replit externo, garantir SameSite=None e Secure
+            cookies = cookies.map((cookie: string) => {
+              // Garantir SameSite=None e Secure para acesso externo
+              let modifiedCookie = cookie;
+              if (!modifiedCookie.includes('SameSite=')) {
+                modifiedCookie += '; SameSite=None';
+              } else {
+                modifiedCookie = modifiedCookie.replace(/SameSite=\w+/gi, 'SameSite=None');
+              }
+              if (!modifiedCookie.includes('Secure')) {
+                modifiedCookie += '; Secure';
+              }
+              return modifiedCookie;
+            });
+          } else if (isDev) {
+            // Para desenvolvimento local
             cookies = cookies.map((cookie: string) => {
               // Garantir SameSite=Lax e remover Secure em desenvolvimento
               return cookie
                 .replace(/SameSite=None/gi, 'SameSite=Lax')
                 .replace(/Secure;/gi, '');
             });
-            res.setHeader('set-cookie', cookies);
           }
+          res.setHeader('set-cookie', cookies);
         }
       }
       
