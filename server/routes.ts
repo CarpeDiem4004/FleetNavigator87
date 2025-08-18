@@ -15720,6 +15720,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas de autenticação híbrida
   app.use('/api/auth-hybrid', authHybridRoutes);
   
+  // Registrar rotas de autenticação principais (compatibilidade com frontend)
+  app.use('/api/auth', authHybridRoutes);
+  
   // Registrar rotas para gerenciar preços de combustível
   registerPrecosCombustivelRoutes(app);
   

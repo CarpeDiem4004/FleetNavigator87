@@ -1,0 +1,84 @@
+401 (Unauthorized)
+[FetchWithAuth] Não foi possível obter token JWT para requisição: /api/user
+Nenhuma sessão de usuário encontrada
+Usuário não autenticado
+👉 Isso significa que o login até é enviado, mas o token JWT não está sendo salvo ou recuperado corretamente.
+Por isso, ele volta para a tela de login.
+
+Possíveis causas
+Backend não retorna o token JWT
+
+Talvez o endpoint /api/auth/login não esteja retornando { token, user } corretamente.
+
+Ou está retornando algo diferente (ex: HTML, erro ou JSON mal formatado).
+
+Frontend não está salvando o token
+
+O AuthContext.tsx ou useFetchWithAuth.ts não está guardando o token no localStorage/sessionStorage/cookie.
+
+Resultado: nas próximas chamadas (/api/user), não tem Authorization: Bearer <token>.
+
+Configuração de Supabase/Auth diferente
+
+Se estiver usando Supabase Auth, precisa usar supabase.auth.signInWithPassword({ email, password }) em vez de endpoint próprio.
+
+Se misturar login customizado com Supabase, dá conflito.
+
+Problema de CORS ou domínio
+
+Se o frontend está em picard.replit.dev mas o backend responde em outro domínio (ex: railway ou vercel), pode estar bloqueando cookies/tokens.
+
+Como corrigir (passo a passo)
+👉 Primeiro, vamos depurar:
+
+No DevTools → Network:
+
+Clique no request feito ao logar (/api/auth/login ou similar).
+
+Veja a resposta: está vindo 200 OK com JSON válido?
+
+Deve vir algo como:
+
+json
+Copiar
+Editar
+{
+  "success": true,
+  "token": "eyJhbGciOiJIUzI1...",
+  "user": { "id": 1, "email": "admin@muricionfleet.com" }
+}
+Se não vier token, o frontend não consegue salvar.
+
+No código AuthContext.tsx:
+
+Deve ter algo como:
+
+ts
+Copiar
+Editar
+localStorage.setItem("authToken", token);
+ou:
+
+ts
+Copiar
+Editar
+supabase.auth.setSession(token);
+Verifique se o token realmente está sendo salvo.
+
+No useFetchWithAuth.ts:
+
+O erro no console está nessa linha:
+
+ts
+Copiar
+Editar
+Não foi possível obter token JWT para requisição: /api/user
+Isso mostra que não encontrou token (provavelmente está null).
+
+Ação imediata
+🔍 Verifique no localStorage (DevTools → Application → Local Storage → seu domínio):
+
+Existe chave authToken ou supabase.auth.token?
+
+Se não existir → login não está salvando token → precisa corrigir backend ou AuthContext.
+
