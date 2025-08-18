@@ -39,6 +39,9 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
 // Rota de login específica para postos externos (ABC V2)
 router.post('/login-posto-externo', async (req, res) => {
   try {
+    // Garantir que a resposta será sempre JSON
+    res.setHeader('Content-Type', 'application/json');
+    
     const { email, password } = req.body;
     console.log('[POSTO-EXTERNO] Tentativa de login para:', email);
     console.log('[POSTO-EXTERNO] Dados recebidos:', { email, hasPassword: !!password });
@@ -121,6 +124,7 @@ router.post('/login-posto-externo', async (req, res) => {
     });
   } catch (error) {
     console.error('[POSTO-EXTERNO] Erro no processamento de login:', error);
+    res.setHeader('Content-Type', 'application/json');
     return res.status(500).json({ message: 'Erro no servidor ao processar login' });
   }
 });
@@ -128,6 +132,9 @@ router.post('/login-posto-externo', async (req, res) => {
 // Rota de login híbrido - tenta autenticar no banco Postgres local
 router.post('/login-hybrid', async (req, res) => {
   try {
+    // Garantir que a resposta será sempre JSON
+    res.setHeader('Content-Type', 'application/json');
+    
     const { email, password } = req.body;
     console.log('Tentativa de login híbrido para:', email);
 
