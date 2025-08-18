@@ -793,6 +793,21 @@ export function setupAuth(app: Express) {
       });
     }
 
+    // MÉTODO 1.5: Verificar autenticação híbrida para postos externos
+    if (req.session && req.session.hybridUser && req.session.isAuthenticated) {
+      console.log(`[API/USER] Usuário autenticado via sessão híbrida: ${req.session.hybridUser.id} (${req.session.hybridUser.email})`);
+      
+      // Garantir sessão persistente
+      req.session.touch();
+      
+      // Retornar dados do usuário híbrido sem senha
+      const userWithoutPassword = { ...req.session.hybridUser, password: undefined };
+      return res.json({
+        ...userWithoutPassword,
+        _authMethod: 'session_hybrid'
+      });
+    }
+
     // MÉTODO 2: Tentar recuperar Token JWT do cabeçalho Authorization
     if (hasAuthHeader && req.headers.authorization?.startsWith('Bearer ')) {
       const jwtToken = req.headers.authorization?.split(' ')[1] || '';
@@ -1080,6 +1095,53 @@ export function setupAuth(app: Express) {
     }
   });
   
+  // Endpoint /api/auth/user que o frontend está chamando - adicionar suporte para sessão híbrida
+  app.get("/api/auth/user", async (req, res) => {
+    // Log diagnóstico inicial
+    console.log(`[API/AUTH/USER] Requisição recebida:`, {
+      isAuthenticated: req.isAuthenticated(),
+      hasSession: !!req.session,
+      sessionID: req.sessionID,
+      hasCookies: !!req.headers.cookie,
+      origem: req.headers.origin,
+      referer: req.headers.referer
+    });
+
+    // MÉTODO 1: Verificar autenticação via Passport (padrão)
+    if (req.isAuthenticated() && req.user) {
+      console.log(`[API/AUTH/USER] Usuário já autenticado via Passport: ${req.user.id} (${req.user.email})`);
+      
+      // Garantir sessão persistente
+      req.session.touch();
+      
+      // Retornar dados do usuário sem senha
+      const userWithoutPassword = { ...req.user, password: undefined };
+      return res.json({
+        ...userWithoutPassword,
+        _authMethod: 'session_standard'
+      });
+    }
+
+    // MÉTODO 2: Verificar autenticação híbrida para postos externos
+    if (req.session && req.session.hybridUser && req.session.isAuthenticated) {
+      console.log(`[API/AUTH/USER] Usuário autenticado via sessão híbrida: ${req.session.hybridUser.id} (${req.session.hybridUser.email})`);
+      
+      // Garantir sessão persistente
+      req.session.touch();
+      
+      // Retornar dados do usuário híbrido sem senha
+      const userWithoutPassword = { ...req.session.hybridUser, password: undefined };
+      return res.json({
+        ...userWithoutPassword,
+        _authMethod: 'session_hybrid'
+      });
+    }
+
+    // Nenhum método funcionou
+    console.log('[API/AUTH/USER] Nenhuma autenticação válida encontrada');
+    return res.status(401).json({ message: "Não autenticado" });
+  });
+
   // Rota adicional para diagnóstico
   app.get("/api/auth-status", (req, res) => {
     // Para compatibilidade com tipos, não podemos acessar diretamente req.session.cookie

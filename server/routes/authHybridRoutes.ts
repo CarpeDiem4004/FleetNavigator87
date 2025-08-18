@@ -88,15 +88,28 @@ router.post('/login-posto-externo', async (req, res) => {
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
 
+    // Para ambiente externo, definir dados da sessão manualmente
+    req.session.user = userSession;
+    req.session.isAuthenticated = true;
+    req.session.hybridUser = userSession;
+
     // Salva o usuário na sessão
     req.login(userSession, (loginErr) => {
       if (loginErr) {
-        console.error('[POSTO-EXTERNO] Erro ao salvar sessão:', loginErr);
-        return res.status(500).json({ message: 'Erro ao criar sessão' });
+        console.error('[POSTO-EXTERNO] Erro ao salvar sessão via Passport:', loginErr);
+        // Continuar mesmo com erro do Passport, pois definimos manualmente acima
       }
 
-      console.log('[POSTO-EXTERNO] Login bem-sucedido para:', email);
-      return res.status(200).json(userSession);
+      // Salvar sessão manualmente para garantir persistência
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error('[POSTO-EXTERNO] Erro ao salvar sessão manualmente:', saveErr);
+          return res.status(500).json({ message: 'Erro ao persistir sessão' });
+        }
+
+        console.log('[POSTO-EXTERNO] Login e sessão salvos com sucesso para:', email);
+        return res.status(200).json(userSession);
+      });
     });
   } catch (error) {
     console.error('[POSTO-EXTERNO] Erro no processamento de login:', error);
