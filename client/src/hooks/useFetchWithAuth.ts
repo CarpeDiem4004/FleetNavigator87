@@ -173,7 +173,7 @@ export function useFetchWithAuth() {
             },
             body: JSON.stringify({
               username: 'admin@muricionfleet.com',
-              password: 'MuricionAdmin2025',
+              password: '123456',
               emergencyAuth: 'true'
             })
           });

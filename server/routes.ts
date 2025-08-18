@@ -17279,6 +17279,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/fuel-card-solicitations/line-hall', createLineHallFuelCardRequest);
   // Demais rotas já registradas anteriormente com autenticação apropriada
   
+  // Rota específica para servir o service-worker.js com MIME type correto
+  app.get('/service-worker.js', (req, res) => {
+    console.log('[SW] Service Worker solicitado');
+    res.setHeader('Content-Type', 'text/javascript; charset=utf-8');
+    res.setHeader('Service-Worker-Allowed', '/');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.sendFile(path.join(process.cwd(), 'public', 'service-worker.js'));
+  });
+
+  // Rota específica para servir o manifest.json
+  app.get('/manifest.json', (req, res) => {
+    console.log('[PWA] Manifest solicitado');
+    res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache por 1 dia
+    res.sendFile(path.join(process.cwd(), 'public', 'manifest.json'));
+  });
+
   // Rota para criar tabela de demonstração para o AutoSave
   app.post('/api/create-demo-table', async (req, res) => {
     try {
@@ -20869,9 +20888,154 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
+  // ==========================================
+  // ROTAS PARA TESTE E DEBUG JWT
+  // ==========================================
+  
+  // Rota para gerar token JWT (DESENVOLVIMENTO APENAS)
+  app.post('/api/get-jwt-token', async (req, res) => {
+    console.log('[JWT-TOKEN] Requisição recebida:', {
+      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+      hasUser: !!req.user,
+      body: req.body,
+      sessionID: req.sessionID
+    });
+    
+    try {
+      // Verificar se o usuário está autenticado ou em modo de emergência
+      let user = null;
+      
+      if (req.user) {
+        user = req.user;
+        console.log('[JWT-TOKEN] Usuário autenticado via sessão:', user.email);
+      } else if (req.body.emergencyAuth === 'true' && req.body.username === 'admin@muricionfleet.com') {
+        // Modo de emergência - autenticação direta
+        console.log('[JWT-TOKEN] Modo de emergência ativado');
+        
+        const userQuery = 'SELECT * FROM users WHERE email = $1 AND is_active = true';
+        const userResult = await pool.query(userQuery, [req.body.username]);
+        
+        if (userResult.rows.length > 0) {
+          user = userResult.rows[0];
+          console.log('[JWT-TOKEN] Usuário encontrado para modo de emergência:', user.email);
+        } else {
+          return res.status(404).json({ message: 'Usuário não encontrado' });
+        }
+      } else if (req.isAuthenticated && req.isAuthenticated()) {
+        user = req.user;
+        console.log('[JWT-TOKEN] Usuário autenticado via passport:', user.email);
+      } else {
+        return res.status(401).json({ message: 'Não autenticado' });
+      }
+      
+      // Gerar token JWT
+      const tokenPayload = {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        baseId: user.base_id,
+        basename: user.basename,
+        isActive: user.is_active,
+        iat: Math.floor(Date.now() / 1000)
+      };
+      
+      const JWT_SECRET = process.env.VITE_SUPABASE_ANON_KEY || 'murici-hybrid-auth-secret-key-2025';
+      const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '7d' });
+      
+      // Definir cookie com o token
+      res.cookie('authToken', token, {
+        httpOnly: false, // Permitir acesso via JavaScript
+        secure: false, // Para desenvolvimento
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 dias
+      });
+      
+      console.log('[JWT-TOKEN] Token gerado com sucesso para:', user.email);
+      
+      res.json({
+        success: true,
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          baseId: user.base_id,
+          basename: user.basename
+        }
+      });
+    } catch (error) {
+      console.error('[JWT-TOKEN] Erro ao gerar token:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error.message
+      });
+    }
+  });
 
+  // Rota de teste para verificar token JWT
+  app.get('/api/test-auth-jwt', async (req, res) => {
+    console.log('[TEST-JWT] Headers:', {
+      authorization: req.headers.authorization,
+      cookie: req.headers.cookie,
+      sessionID: req.sessionID
+    });
 
-
+    try {
+      const JWT_SECRET = process.env.VITE_SUPABASE_ANON_KEY || 'murici-hybrid-auth-secret-key-2025';
+      let user = null;
+      
+      // Tentar buscar token do header Authorization
+      const authHeader = req.headers.authorization;
+      if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        try {
+          const decoded = jwt.verify(token, JWT_SECRET);
+          user = decoded;
+          console.log('[TEST-JWT] Token válido do header:', user.email);
+        } catch (jwtError) {
+          console.log('[TEST-JWT] Token inválido no header:', jwtError.message);
+        }
+      }
+      
+      // Tentar buscar token dos cookies se não encontrado no header
+      if (!user && req.cookies?.authToken) {
+        try {
+          const decoded = jwt.verify(req.cookies.authToken, JWT_SECRET);
+          user = decoded;
+          console.log('[TEST-JWT] Token válido do cookie:', user.email);
+        } catch (jwtError) {
+          console.log('[TEST-JWT] Token inválido no cookie:', jwtError.message);
+        }
+      }
+      
+      if (user) {
+        res.json({
+          success: true,
+          message: 'Token JWT válido',
+          user: {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            baseId: user.baseId,
+            basename: user.basename
+          },
+          tokenSource: authHeader ? 'header' : 'cookie'
+        });
+      } else {
+        res.status(401).json({
+          success: false,
+          message: 'Token JWT não encontrado ou inválido'
+        });
+      }
+    } catch (error) {
+      console.error('[TEST-JWT] Erro no teste:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
