@@ -63,3 +63,25 @@ The system is built with a React/TypeScript frontend and a Node.js/Express backe
 - **TypeScript**: For type safety.
 - **ESLint/Prettier**: For code quality and formatting.
 - **jsPDF**: For PDF generation.
+
+## Deployment Configuration
+
+### External Deployment Support
+The system now includes comprehensive support for deployment outside the Replit environment:
+
+- **JWT Authentication System**: Complete token-based authentication for external deployments
+- **Environment Detection**: Automatic detection of deployment environment (Replit, localhost, external)
+- **External Auth Endpoint**: Specialized `/api/external-auth` endpoint for production deployments
+- **Deployment-Specific Hooks**: Smart authentication hooks that adapt to the deployment environment
+- **Token Management**: Robust token validation, renewal, and storage mechanisms
+
+### Admin Credentials
+- **Email**: admin@muricionfleet.com
+- **Password**: 123456 (standardized across all environments)
+
+### Recent Changes (August 18, 2025)
+- ✅ Implemented comprehensive JWT authentication system for external deployments
+- ✅ Created deployment environment detector utility
+- ✅ Added specialized authentication endpoints for production environments
+- ✅ Enhanced useFetchWithAuth hook with deployment-aware authentication strategies
+- ✅ Standardized admin password across all environments

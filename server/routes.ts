@@ -20973,6 +20973,70 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
+  // Rota de autenticação para produção externa
+  app.post('/api/external-auth', async (req, res) => {
+    console.log('[EXTERNAL-AUTH] Requisição de autenticação externa recebida');
+    
+    // Garantir resposta JSON
+    res.setHeader('Content-Type', 'application/json');
+    
+    try {
+      // Login administrativo automático
+      const userQuery = 'SELECT * FROM users WHERE email = $1 AND is_active = true';
+      const userResult = await pool.query(userQuery, ['admin@muricionfleet.com']);
+      
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Usuário administrativo não encontrado' 
+        });
+      }
+      
+      const user = userResult.rows[0];
+      
+      // Gerar token JWT para produção externa
+      const tokenPayload = {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        baseId: user.base_id,
+        basename: user.basename,
+        isActive: user.is_active,
+        iat: Math.floor(Date.now() / 1000),
+        external: true
+      };
+      
+      const JWT_SECRET = process.env.JWT_SECRET || 
+                         process.env.VITE_SUPABASE_ANON_KEY || 
+                         'murici-external-deployment-secret-2025';
+                         
+      const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '30d' });
+      
+      console.log('[EXTERNAL-AUTH] Token gerado para deployment externo:', user.email);
+      
+      res.json({
+        success: true,
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          baseId: user.base_id,
+          basename: user.basename
+        },
+        deployment: 'external'
+      });
+      
+    } catch (error) {
+      console.error('[EXTERNAL-AUTH] Erro:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error.message
+      });
+    }
+  });
+
   // Rota de teste para verificar token JWT
   app.get('/api/test-auth-jwt', async (req, res) => {
     console.log('[TEST-JWT] Headers:', {
@@ -20982,7 +21046,9 @@ async function createFuelRequestNotification(fuelRequest) {
     });
 
     try {
-      const JWT_SECRET = process.env.VITE_SUPABASE_ANON_KEY || 'murici-hybrid-auth-secret-key-2025';
+      const JWT_SECRET = process.env.JWT_SECRET || 
+                         process.env.VITE_SUPABASE_ANON_KEY || 
+                         'murici-hybrid-auth-secret-key-2025';
       let user = null;
       
       // Tentar buscar token do header Authorization

@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { getDeploymentConfig, getAuthenticationStrategy } from '@/utils/deployment-detector';
 
 /**
  * Hook para substituir a função fetch global por uma versão que automaticamente
@@ -16,6 +17,23 @@ export function useFetchWithAuth() {
     if (currentPath.includes('/login') || currentPath.includes('/register')) {
       console.log('[FetchWithAuth] Página de login detectada, pulando autenticação automática');
       return null;
+    }
+    
+    // Detectar configuração de deployment
+    const deploymentConfig = getDeploymentConfig();
+    const authStrategy = getAuthenticationStrategy();
+    
+    console.log('[FetchWithAuth] Configuração de deployment:', {
+      isReplit: deploymentConfig.isReplit,
+      isDevelopment: deploymentConfig.isDevelopment,
+      isProduction: deploymentConfig.isProduction,
+      authStrategy: authStrategy
+    });
+    
+    // Para deployment externo, usar sempre autenticação JWT
+    if (deploymentConfig.isProduction) {
+      console.log('[FetchWithAuth] Ambiente de produção detectado - usando autenticação JWT');
+      return await getExternalProductionToken();
     }
     
     // Flag de emergência para autenticação alternativa - salva em localStorage para persistência
@@ -215,6 +233,70 @@ export function useFetchWithAuth() {
     console.warn('[FetchWithAuth] Não foi possível obter token JWT para requisição');
     return null;
   };
+
+  // Função especializada para autenticação em deployment externo
+  const getExternalProductionToken = useCallback(async (): Promise<string | null> => {
+    console.log('[FetchWithAuth] Iniciando autenticação para produção externa');
+    
+    // Verificar token no localStorage primeiro
+    const localToken = localStorage.getItem('authToken');
+    if (localToken) {
+      // Validar token
+      try {
+        const response = await fetch('/api/test-auth-jwt', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${localToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          console.log('[FetchWithAuth] Token local válido para produção');
+          return localToken;
+        } else {
+          console.log('[FetchWithAuth] Token local inválido, removendo');
+          localStorage.removeItem('authToken');
+        }
+      } catch (error) {
+        console.error('[FetchWithAuth] Erro ao validar token local:', error);
+        localStorage.removeItem('authToken');
+      }
+    }
+    
+    // Usar endpoint específico para produção externa
+    console.log('[FetchWithAuth] Usando endpoint de autenticação externa');
+    
+    try {
+      const authResponse = await fetch('/api/external-auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          deployment: 'external',
+          timestamp: Date.now()
+        })
+      });
+      
+      if (authResponse.ok) {
+        const authData = await authResponse.json();
+        if (authData.success && authData.token) {
+          localStorage.setItem('authToken', authData.token);
+          localStorage.setItem('externalDeployment', 'true');
+          console.log('[FetchWithAuth] Token externo obtido e armazenado');
+          return authData.token;
+        }
+      }
+      
+      console.error('[FetchWithAuth] Falha na autenticação externa');
+      return null;
+      
+    } catch (error) {
+      console.error('[FetchWithAuth] Erro no processo de autenticação para produção:', error);
+      return null;
+    }
+  }, []);
 
   // Inicializa o token JWT ao montar o componente
   useEffect(() => {
