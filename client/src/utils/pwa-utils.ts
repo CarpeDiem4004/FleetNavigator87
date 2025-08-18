@@ -54,8 +54,14 @@ export class PWAManager {
   }
 
   private async registerServiceWorker(): Promise<void> {
-    if ('serviceWorker' in navigator && !import.meta.env.DEV) {
+    if ('serviceWorker' in navigator) {
       try {
+        // Check if we're in a secure context (required for service workers)
+        if (!window.isSecureContext && location.protocol !== 'http:') {
+          console.warn('[PWA] Service Worker requires secure context (HTTPS)');
+          return;
+        }
+        
         const registration = await navigator.serviceWorker.register('/service-worker.js', {
           scope: '/'
         });
