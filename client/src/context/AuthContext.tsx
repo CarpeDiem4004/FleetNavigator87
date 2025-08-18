@@ -182,37 +182,43 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
       }
       
-      // Se não conseguiu autenticar com JWT, tenta sessão tradicional
+      // Se não conseguiu autenticar com JWT, tenta sessão tradicional (apenas uma vez)
       if (!isAuthenticated) {
         console.log("Tentando verificar sessão tradicional...");
         
-        const response = await fetch('/api/user', {
-          method: 'GET',
-          credentials: 'include', // Importante para enviar cookies de sessão
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (response.ok) {
-          userData = await response.json();
-          // Garantir que baseId esteja sempre disponível
-          if (userData.base_id && !userData.baseId) {
-            userData.baseId = userData.base_id;
-          }
-          isAuthenticated = true;
-          authSource = 'sessão';
-          console.log("Sessão tradicional verificada com sucesso", { 
-            userBaseId: userData.baseId, 
-            userBase_id: userData.base_id,
-            basename: userData.basename 
+        try {
+          const response = await fetch('/api/user', {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            // Evitar cache para forçar verificação real
+            cache: 'no-cache'
           });
-        } else {
-          if (response.status === 401) {
-            console.log('Nenhuma sessão de usuário encontrada');
+          
+          if (response.ok) {
+            userData = await response.json();
+            // Garantir que baseId esteja sempre disponível
+            if (userData.base_id && !userData.baseId) {
+              userData.baseId = userData.base_id;
+            }
+            isAuthenticated = true;
+            authSource = 'sessão';
+            console.log("Sessão tradicional verificada com sucesso", { 
+              userBaseId: userData.baseId, 
+              userBase_id: userData.base_id,
+              basename: userData.basename 
+            });
           } else {
-            console.error('Erro ao verificar autenticação de sessão:', response.statusText);
+            if (response.status === 401) {
+              console.log('Nenhuma sessão de usuário encontrada');
+            } else {
+              console.error('Erro ao verificar autenticação de sessão:', response.status, response.statusText);
+            }
           }
+        } catch (sessionError) {
+          console.error('Erro na requisição de sessão:', sessionError);
         }
       }
       
@@ -579,12 +585,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       let supabaseLogoutSuccess = false;
       try {
         const logoutResult = await supabaseLogout();
-        if (logoutResult && 'error' in logoutResult && !logoutResult.error) {
-          supabaseLogoutSuccess = true;
-          console.log("Logout Supabase realizado com sucesso");
-        } else if (logoutResult && 'error' in logoutResult && logoutResult.error) {
-          console.warn("Erro ao fazer logout do Supabase:", logoutResult.error);
-        }
+        // supabaseLogout retorna void, então verificamos apenas se não houve exceção
+        supabaseLogoutSuccess = true;
+        console.log("Logout Supabase realizado com sucesso");
       } catch (supaError) {
         console.error("Exceção ao fazer logout do Supabase:", supaError);
       }

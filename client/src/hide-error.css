@@ -1,4 +1,29 @@
-/* Esconde o modal de erro do Vite */
-[plugin\:runtime-error-plugin] {
-  display: none !important;
+/* Hide specific Vite errors that are not critical */
+:root {
+  --error-display: none;
+}
+
+/* Hide Vite connection errors */
+[data-vite-error] {
+  display: var(--error-display) !important;
+}
+
+/* Hide specific console error styles */
+.vite-error-overlay {
+  display: var(--error-display) !important;
+}
+
+/* Hide service worker registration errors in development */
+.sw-error {
+  display: var(--error-display) !important;
+}
+
+/* Suppress fetch error overlays */
+.fetch-error-overlay {
+  display: var(--error-display) !important;
+}
+
+/* Hide PWA specific errors */
+.pwa-error {
+  display: var(--error-display) !important;
 }
