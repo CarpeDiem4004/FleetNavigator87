@@ -41,8 +41,10 @@ router.post('/login-posto-externo', async (req, res) => {
   try {
     const { email, password } = req.body;
     console.log('[POSTO-EXTERNO] Tentativa de login para:', email);
+    console.log('[POSTO-EXTERNO] Dados recebidos:', { email, hasPassword: !!password });
 
     if (!email || !password) {
+      console.log('[POSTO-EXTERNO] Dados incompletos:', { email: !!email, password: !!password });
       return res.status(400).json({ message: 'Email e senha são obrigatórios' });
     }
 
@@ -89,9 +91,9 @@ router.post('/login-posto-externo', async (req, res) => {
     res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
 
     // Para ambiente externo, definir dados da sessão manualmente
-    req.session.user = userSession;
-    req.session.isAuthenticated = true;
-    req.session.hybridUser = userSession;
+    (req.session as any).user = userSession;
+    (req.session as any).isAuthenticated = true;
+    (req.session as any).hybridUser = userSession;
 
     // Salva o usuário na sessão
     req.login(userSession, (loginErr) => {
@@ -108,6 +110,12 @@ router.post('/login-posto-externo', async (req, res) => {
         }
 
         console.log('[POSTO-EXTERNO] Login e sessão salvos com sucesso para:', email);
+        console.log('[POSTO-EXTERNO] Dados da sessão criados:', {
+          sessionID: req.sessionID,
+          hasHybridUser: !!(req.session as any).hybridUser,
+          isAuthenticated: (req.session as any).isAuthenticated,
+          userRole: userSession.role
+        });
         return res.status(200).json(userSession);
       });
     });
@@ -269,9 +277,9 @@ router.post('/login-base', async (req, res) => {
     };
 
     // Configura a sessão
-    req.session.user = userSession;
-    req.session.isAuthenticated = true;
-    req.session.hybridUser = userSession;
+    (req.session as any).user = userSession;
+    (req.session as any).isAuthenticated = true;
+    (req.session as any).hybridUser = userSession;
 
     console.log('Login de base bem-sucedido para:', email, 'Role:', user.role, 'Base:', user.basename);
     
