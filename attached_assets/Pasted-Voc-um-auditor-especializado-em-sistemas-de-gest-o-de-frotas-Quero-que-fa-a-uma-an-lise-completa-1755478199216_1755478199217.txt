@@ -1,0 +1,67 @@
+Você é um auditor especializado em sistemas de gestão de frotas. Quero que faça uma análise completa da saúde do sistema Murici On Fleet 2.0, que roda com Supabase (autenticação e banco de dados), Railway (backend Express.js), Vercel (frontend React/Next.js) e Replit (ambiente de desenvolvimento).
+
+Verifique e me dê um diagnóstico nos seguintes pontos:
+
+Infraestrutura & Deploy
+
+Railway (backend): estabilidade, uso de recursos (CPU, memória), logs de erros.
+
+Vercel (frontend): tempo de build e carregamento.
+
+Replit (dev): possíveis inconsistências no ambiente local comparado ao deploy.
+
+Banco de Dados – Supabase
+
+Integridade dos dados entre tabelas (veículos, bases, manutenção, pneus, abastecimentos, line hall).
+
+Índices e performance das queries.
+
+Segurança: roles e permissões por usuário e base.
+
+Crescimento do banco e risco de gargalo.
+
+APIs & Backend (Railway/Express.js)
+
+Endpoints críticos (login, manutenção, abastecimento, line hall) – checar se estão respondendo dentro do esperado.
+
+Erros recorrentes (401, 403, 404, 500) nos logs.
+
+Latência média das rotas REST.
+
+Frontend (Vercel/React)
+
+Tempo de carregamento inicial e navegação entre telas.
+
+Funcionamento dos módulos principais:
+
+Autenticação via Supabase.
+
+Dashboard por base.
+
+Cadastro de veículos.
+
+Formulários de abastecimento, manutenção e line hall.
+
+PWA (funciona corretamente offline e em dispositivos móveis?).
+
+Segurança
+
+Tokens de autenticação do Supabase estão válidos e bem configurados.
+
+Controle de permissões por função, usuário e base funcionando corretamente.
+
+Possíveis falhas de exposição de dados sensíveis (headers, console, API pública).
+
+Monitoramento & Alertas
+
+Logs de erro centralizados (Railway + Supabase + Vercel).
+
+Métricas críticas (tempo médio de resposta, falhas de login, indisponibilidade).
+
+Sugestões de alertas automáticos (ex: falha de login em massa, queda do backend, tabelas sobrecarregadas).
+
+👉 No final, me entregue:
+
+Diagnóstico objetivo: listar pontos fortes e fracos do Murici On Fleet 2.0.
+
+Recomendações práticas: o que corrigir ou otimizar em curto prazo (urgente) e médio prazo (planejamento)
