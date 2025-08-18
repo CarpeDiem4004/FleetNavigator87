@@ -1,0 +1,378 @@
+// ──────────────────────────────────────────────────────────────────────────────
+// MURICI ON FLEET 2.0
+// SCRIPTS PRONTOS — LIMPEZA/BACKUP DE SESSION, ÍNDICES, CRON JOB, ALERTAS
+// Foco: executar SEM PERDER DADOS já existentes
+// ──────────────────────────────────────────────────────────────────────────────
+// Estrutura deste documento:
+// 1) SQL/01_backup_session.sql
+// 2) SQL/02_cleanup_session_safe.sql
+// 3) SQL/03_indexes_recomendados.sql
+// 4) SQL/04_views_metricas.sql (opcional, para relatórios rápidos)
+// 5) backend/.env.exemplo
+// 6) backend/src/jobs/sessionCleanup.ts
+// 7) backend/src/services/alerts.ts
+// 8) backend/src/middleware/loginTracker.ts
+// 9) backend/src/routes/metrics.ts
+// 10) backend/src/server.ts (trechos a adicionar)
+// 11) backend/package.json (deps)
+// 12) README_execucao.txt (passo a passo)
+// ──────────────────────────────────────────────────────────────────────────────
+
+/*
+================================================================================
+1) SQL/01_backup_session.sql
+- Cria um backup completo da tabela session ANTES de qualquer limpeza
+- Seguro para rodar múltiplas vezes (usa tabela com carimbo de data)
+================================================================================
+*/
+-- SQL/01_backup_session.sql
+DO $$
+DECLARE
+  backup_table text := 'session_backup_' || to_char(now(), 'YYYYMMDD_HH24MI');
+BEGIN
+  EXECUTE format('CREATE TABLE %I AS TABLE session WITH DATA', backup_table);
+  RAISE NOTICE 'Backup criado: %', backup_table;
+END $$;
+
+/*
+================================================================================
+2) SQL/02_cleanup_session_safe.sql
+- Remove apenas sessões expiradas há mais de 30 dias
+- Mantém as sessões recentes e válidas
+- Executar após rodar o 01_backup_session.sql
+================================================================================
+*/
+-- SQL/02_cleanup_session_safe.sql
+BEGIN;
+  -- Opcional: garantir que há índice em expire para acelerar o DELETE
+  CREATE INDEX IF NOT EXISTS idx_session_expire ON session(expire);
+
+  -- Remoção segura (apenas sessões antigas, já expiradas)
+  DELETE FROM session
+  WHERE expire < (NOW() - INTERVAL '30 days');
+
+  -- Atualiza estatísticas para o planner do Postgres
+  ANALYZE session;
+COMMIT;
+
+-- OBS: VACUUM é gerenciado pelo autovacuum do Supabase. Se necessário em janela de manutenção:
+-- VACUUM (VERBOSE, ANALYZE) session;
+
+/*
+================================================================================
+3) SQL/03_indexes_recomendados.sql
+- Índices compostos para consultas comuns (ajuste nomes de tabelas/colunas se necessário)
+- Garantem performance em filtros por data/placa/base
+================================================================================
+*/
+-- SQL/03_indexes_recomendados.sql
+-- Ajuste o nome da tabela real de abastecimentos (ex.: abastecimentos, abastecimentos_abc_v2, etc.)
+-- Abaixo usamos "abastecimentos" como canônico.
+
+-- Por base e data (queries: WHERE base_id = ? AND data BETWEEN ? AND ?)
+CREATE INDEX IF NOT EXISTS idx_abastecimentos_base_data ON abastecimentos(base_id, data);
+
+-- Por placa e data (queries: WHERE placa = ? AND data BETWEEN ? AND ?)
+CREATE INDEX IF NOT EXISTS idx_abastecimentos_placa_data ON abastecimentos(placa, data);
+
+-- Por projeto e data (se aplicável)
+CREATE INDEX IF NOT EXISTS idx_abastecimentos_projeto_data ON abastecimentos(projeto, data);
+
+-- Para uploads/assets, caso haja consultas por base e created_at
+CREATE INDEX IF NOT EXISTS idx_assets_base_created ON assets(base_id, created_at);
+
+/*
+================================================================================
+4) SQL/04_views_metricas.sql (opcional)
+- Views para facilitar métricas rápidas de uso/atividade
+================================================================================
+*/
+-- SQL/04_views_metricas.sql
+CREATE OR REPLACE VIEW v_abastecimentos_stats AS
+SELECT
+  current_date AS ref_date,
+  (SELECT COUNT(*) FROM abastecimentos WHERE created_at >= now() - INTERVAL '24 hours') AS abastecimentos_24h,
+  (SELECT COUNT(*) FROM abastecimentos WHERE created_at >= now() - INTERVAL '7 days') AS abastecimentos_7d,
+  (SELECT COUNT(* ) FROM abastecimentos) AS abastecimentos_total;
+
+CREATE OR REPLACE VIEW v_login_falhas_stats AS
+SELECT
+  current_date AS ref_date,
+  (SELECT COUNT(*) FROM login_audit WHERE success = false AND created_at >= now() - INTERVAL '24 hours') AS falhas_24h,
+  (SELECT COUNT(*) FROM login_audit WHERE created_at >= now() - INTERVAL '24 hours') AS tentativas_24h;
+
+/*
+================================================================================
+5) backend/.env.exemplo
+- Copie para .env no Replit/produção
+================================================================================
+*/
+// backend/.env.exemplo
+DATABASE_URL=postgresql://usuario:senha@host:5432/banco
+# Supabase
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_ANON_KEY=xxxxx
+SUPABASE_SERVICE_ROLE=xxxxx
+
+# Alertas
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/XXX/YYY/ZZZ
+LOGIN_FAIL_ALERT_THRESHOLD=15
+LOGIN_FAIL_ALERT_WINDOW_MIN=10
+
+# Cron
+SESSION_RETENTION_DAYS=30
+CRON_SESSION_CLEANUP="0 3 * * *"  # todos os dias às 03:00
+
+/*
+================================================================================
+6) backend/src/jobs/sessionCleanup.ts
+- Cron job diário para limpar sessões antigas, com logs e proteção por variável
+================================================================================
+*/
+// backend/src/jobs/sessionCleanup.ts
+import cron from 'node-cron';
+import { Pool } from 'pg';
+import pino from 'pino';
+
+const logger = pino({ name: 'session-cleaner' });
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+export function startSessionCleanupJob() {
+  const schedule = process.env.CRON_SESSION_CLEANUP || '0 3 * * *';
+  const retentionDays = parseInt(process.env.SESSION_RETENTION_DAYS || '30', 10);
+
+  cron.schedule(schedule, async () => {
+    const client = await pool.connect();
+    try {
+      logger.info({ retentionDays }, 'Iniciando limpeza de sessions…');
+      await client.query('BEGIN');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_session_expire ON session(expire)');
+      const res = await client.query(
+        `DELETE FROM session WHERE expire < (NOW() - INTERVAL '${retentionDays} days')`
+      );
+      await client.query('ANALYZE session');
+      await client.query('COMMIT');
+      logger.info({ deleted: res.rowCount }, 'Limpeza concluída');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      logger.error({ err }, 'Erro na limpeza de sessions');
+    } finally {
+      client.release();
+    }
+  }, {
+    timezone: 'America/Sao_Paulo'
+  });
+
+  logger.info({ schedule }, 'Cron de limpeza de sessions agendado');
+}
+
+/*
+================================================================================
+7) backend/src/services/alerts.ts
+- Serviço simples para enviar alertas (Slack)
+================================================================================
+*/
+// backend/src/services/alerts.ts
+import fetch from 'node-fetch';
+import pino from 'pino';
+const logger = pino({ name: 'alerts' });
+
+export async function sendAlert(message: string) {
+  const url = process.env.SLACK_WEBHOOK_URL;
+  if (!url) {
+    logger.warn('SLACK_WEBHOOK_URL não configurado. Alerta não enviado.');
+    return;
+  }
+  await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: message })
+  });
+}
+
+/*
+================================================================================
+8) backend/src/middleware/loginTracker.ts
+- Middleware para auditar logins e disparar alerta por falhas em massa
+- Pressupõe uma tabela login_audit(email, base_id, success, ip, user_agent, created_at)
+================================================================================
+*/
+// backend/src/middleware/loginTracker.ts
+import { Pool } from 'pg';
+import type { Request, Response, NextFunction } from 'express';
+import { sendAlert } from '../services/alerts';
+import pino from 'pino';
+
+const logger = pino({ name: 'login-tracker' });
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+export async function logLoginAttempt(req: Request, success: boolean, baseId?: string) {
+  const client = await pool.connect();
+  try {
+    const { email } = req.body || {};
+    const ip = (req.headers['x-forwarded-for'] as string) || req.ip || '';
+    const ua = req.headers['user-agent'] || '';
+    await client.query(
+      `INSERT INTO login_audit(email, base_id, success, ip, user_agent, created_at)
+       VALUES ($1, $2, $3, $4, $5, NOW())`,
+      [email || null, baseId || null, success, ip, ua]
+    );
+  } finally {
+    client.release();
+  }
+}
+
+export async function failBurstGuard(req: Request, res: Response, next: NextFunction) {
+  try {
+    const threshold = parseInt(process.env.LOGIN_FAIL_ALERT_THRESHOLD || '15', 10);
+    const windowMin = parseInt(process.env.LOGIN_FAIL_ALERT_WINDOW_MIN || '10', 10);
+
+    const { rows } = await pool.query(
+      `SELECT COUNT(*)::int AS n
+         FROM login_audit
+        WHERE success = false
+          AND created_at >= NOW() - INTERVAL '${windowMin} minutes'`
+    );
+
+    const n = rows[0]?.n || 0;
+    if (n >= threshold) {
+      await sendAlert(`⚠️ Picos de falhas de login: ${n} nas últimas ${windowMin} min.`);
+    }
+  } catch (err) {
+    logger.error({ err }, 'Erro no failBurstGuard');
+  }
+  next();
+}
+
+/*
+================================================================================
+9) backend/src/routes/metrics.ts
+- Endpoint leve para métricas básicas
+================================================================================
+*/
+// backend/src/routes/metrics.ts
+import { Router } from 'express';
+import { Pool } from 'pg';
+
+const router = Router();
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+router.get('/basic', async (_req, res) => {
+  const client = await pool.connect();
+  try {
+    const q1 = client.query(`SELECT * FROM v_abastecimentos_stats`);
+    const q2 = client.query(`SELECT * FROM v_login_falhas_stats`);
+    const [r1, r2] = await Promise.all([q1, q2]);
+    res.json({ abastecimentos: r1.rows[0], logins: r2.rows[0] });
+  } catch (err: any) {
+    res.status(500).json({ error: true, message: err.message });
+  } finally {
+    client.release();
+  }
+});
+
+export default router;
+
+/*
+================================================================================
+10) backend/src/server.ts (trechos a adicionar)
+- Mostra onde plugar o cron, middleware e as rotas de métricas
+================================================================================
+*/
+// backend/src/server.ts (trechos)
+import express from 'express';
+import metrics from './routes/metrics';
+import { startSessionCleanupJob } from './jobs/sessionCleanup';
+import { failBurstGuard } from './middleware/loginTracker';
+
+const app = express();
+app.use(express.json());
+
+// Aplica o guard de picos de falhas (antes das rotas de auth)
+app.use(failBurstGuard);
+
+// …suas rotas existentes…
+app.use('/api/metrics', metrics);
+
+// Inicia cron jobs ao subir o servidor
+startSessionCleanupJob();
+
+// app.listen(5000, () => console.log('API na porta 5000'));
+
+/*
+================================================================================
+11) backend/package.json (deps)
+================================================================================
+*/
+// backend/package.json (trecho)
+{
+  "dependencies": {
+    "express": "^4.19.2",
+    "node-cron": "^3.0.3",
+    "pg": "^8.11.5",
+    "pino": "^9.2.0",
+    "node-fetch": "^3.3.2"
+  }
+}
+
+/*
+================================================================================
+12) README_execucao.txt
+- Passo a passo rápido pra executar SEM perder dados
+================================================================================
+*/
+// README_execucao.txt
+1) SUPABASE — BACKUP & LIMPEZA
+   a. Abra o SQL Editor do Supabase e cole o conteúdo de SQL/01_backup_session.sql
+      - Verifique a mensagem: "Backup criado: session_backup_YYYYMMDD_HHMM"
+   b. Em seguida, rode SQL/02_cleanup_session_safe.sql
+      - Confirme a contagem de linhas deletadas (apenas expiradas > 30 dias)
+   c. (Opcional) Rode SQL/03_indexes_recomendados.sql
+   d. (Opcional) Rode SQL/04_views_metricas.sql
+
+2) BACKEND — VARIÁVEIS DE AMBIENTE
+   a. Copie backend/.env.exemplo para .env e preencha DATABASE_URL, SLACK_WEBHOOK_URL etc.
+
+3) BACKEND — DEPENDÊNCIAS
+   a. npm i express node-cron pg pino node-fetch
+
+4) BACKEND — CÓDIGO
+   a. Crie os arquivos:
+      - src/jobs/sessionCleanup.ts
+      - src/services/alerts.ts
+      - src/middleware/loginTracker.ts
+      - src/routes/metrics.ts
+      - Ajuste src/server.ts conforme trechos
+
+5) TESTES
+   a. Suba o backend e verifique logs: "Cron de limpeza de sessions agendado"
+   b. Acesse GET /api/metrics/basic e confirme JSON com métricas
+   c. Provoque 2-3 falhas de login e verifique o registro na tabela login_audit (se não existir, crie):
+
+-- Tabela de auditoria (se ainda não existir):
+CREATE TABLE IF NOT EXISTS login_audit (
+  id bigserial PRIMARY KEY,
+  email text,
+  base_id uuid,
+  success boolean NOT NULL,
+  ip text,
+  user_agent text,
+  created_at timestamptz NOT NULL DEFAULT NOW()
+);
+
+6) PRODUÇÃO / REPLIT
+   a. Configure as variáveis de ambiente no Replit
+   b. Faça deploy e monitore o Slack: alertas de pico de falhas devem aparecer quando a janela/limite for atingido
+
+7) ROLLBACK (se necessário)
+   a. Para restaurar a tabela session (não recomendado, apenas em emergência):
+      -- Crie tabela limpa e recarregue do último backup
+      -- EXEMPLO: SELECT * FROM information_schema.tables WHERE table_name LIKE 'session_backup_%';
+      -- Depois, escolha a mais recente e faça:
+      -- TRUNCATE TABLE session;
+      -- INSERT INTO session SELECT * FROM session_backup_YYYYMMDD_HH24MI;
+
+// ──────────────────────────────────────────────────────────────────────────────
+// FIM
+// ──────────────────────────────────────────────────────────────────────────────
