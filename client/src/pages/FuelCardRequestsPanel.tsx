@@ -209,15 +209,17 @@ const FuelCardRequestsPanel: React.FC = () => {
 
   // Funções para calcular totais por aba
   const getPendingSolicitations = () => {
-    return filteredSolicitations.filter(s => 
-      s.status === 'Pendente' || s.status === 'Em Análise'
-    );
+    return filteredSolicitations.filter(s => {
+      const status = s.status?.toLowerCase();
+      return status === 'pendente' || status === 'em análise';
+    });
   };
 
   const getCompletedSolicitations = () => {
-    return filteredSolicitations.filter(s => 
-      s.status === 'Recarga Efetuada' || s.status === 'Negado'
-    );
+    return filteredSolicitations.filter(s => {
+      const status = s.status?.toLowerCase();
+      return status === 'recarga efetuada' || status === 'negado';
+    });
   };
 
   const getTotalValue = (solicitations: FuelCardSolicitation[]) => {
@@ -229,7 +231,7 @@ const FuelCardRequestsPanel: React.FC = () => {
 
   const getApprovedValue = (solicitations: FuelCardSolicitation[]) => {
     return solicitations
-      .filter(s => s.status === 'Recarga Efetuada')
+      .filter(s => s.status?.toLowerCase() === 'recarga efetuada')
       .reduce((total, s) => {
         const valor = s.valor_solicitado || s.valor_calculado || 0;
         return total + Number(valor);
@@ -704,8 +706,8 @@ const FuelCardRequestsPanel: React.FC = () => {
   
   const getFilteredSolicitations = () => {
     return solicitations.filter(sol => {
-      // Filtro por status
-      if (statusFilter !== 'all' && sol.status !== statusFilter) {
+      // Filtro por status (case insensitive)
+      if (statusFilter !== 'all' && sol.status?.toLowerCase() !== statusFilter.toLowerCase()) {
         return false;
       }
       
@@ -750,14 +752,15 @@ const FuelCardRequestsPanel: React.FC = () => {
   };
   
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'Recarga Efetuada':
+    const normalizedStatus = status?.toLowerCase();
+    switch (normalizedStatus) {
+      case 'recarga efetuada':
         return <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100"><CheckCircle2 className="w-3 h-3 mr-1" /> Recarga Efetuada</Badge>;
-      case 'Negado':
+      case 'negado':
         return <Badge variant="outline" className="bg-red-100 text-red-800 hover:bg-red-100"><XCircle className="w-3 h-3 mr-1" /> Negado</Badge>;
-      case 'Em Análise':
+      case 'em análise':
         return <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100"><Clock className="w-3 h-3 mr-1" /> Em Análise</Badge>;
-      case 'Pendente':
+      case 'pendente':
       default:
         return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100"><AlertCircle className="w-3 h-3 mr-1" /> Pendente</Badge>;
     }
@@ -849,8 +852,11 @@ const FuelCardRequestsPanel: React.FC = () => {
   };
 
   const getStatistics = () => {
-    const pendentes = solicitations.filter(s => s.status === 'Pendente' || s.status === 'Em Análise').length;
-    const atendidas = solicitations.filter(s => s.status === 'Recarga Efetuada').length;
+    const pendentes = solicitations.filter(s => {
+      const status = s.status?.toLowerCase();
+      return status === 'pendente' || status === 'em análise';
+    }).length;
+    const atendidas = solicitations.filter(s => s.status?.toLowerCase() === 'recarga efetuada').length;
     
     // Debug: verificar estrutura dos dados
     console.log('Debugging valor calculation:', {
@@ -861,7 +867,7 @@ const FuelCardRequestsPanel: React.FC = () => {
     
     // Calcular valor total atendido com validação numérica
     const valorTotalAtendido = solicitations
-      .filter(s => s.status === 'Recarga Efetuada')
+      .filter(s => s.status?.toLowerCase() === 'recarga efetuada')
       .reduce((total, s) => {
         const valor = parseFloat(s.valor_solicitado?.toString() || '0');
         console.log('Processing value:', { 
