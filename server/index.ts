@@ -73,6 +73,7 @@ import lineHallRoutes from './routes/lineHallRoutes';
 // Importar rotas das bases
 import basesRoutes from './routes/basesRoutes';
 
+
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
 process.env.SUPABASE_URL = process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
@@ -1220,6 +1221,8 @@ app.use((req, res, next) => {
   
   // Registrar as rotas de emergência para acesso externo de parceiros de guincho
   app.use('/api/towing/simple-external', towingServiceEmergency);
+  
+
   
   // === ROTAS DO SISTEMA DE MANUTENÇÃO VEICULAR ===
   

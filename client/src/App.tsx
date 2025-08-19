@@ -13,6 +13,7 @@ setTimeout(() => {
 }, 100);
 import NotFound from "@/pages/not-found";
 import WorkshopExternal from "@/pages/workshop-external";
+
 import DashboardNew from "@/pages/DashboardNew";
 import Dashboard from "@/pages/index";
 import ExecutiveDashboard from "@/pages/ExecutiveDashboard";
@@ -413,6 +414,8 @@ function App() {
             <Route path="/login-supabase">
               <LoginWithSupabase />
             </Route>
+            
+
             
             {/* Rotas específicas de login para cada base */}
             <Route path="/bases/campinas/login">
