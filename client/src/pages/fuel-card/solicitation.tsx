@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { initializeFuelCardAuth } from "@/utils/fuelCardAuthUtils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -95,6 +96,12 @@ export default function FuelCardSolicitation() {
   const tipoCartao = form.watch("tipo_cartao");
   const selectedProjectId = form.watch("projeto_id");
   const selectedProject = projects.find(p => p.id.toString() === selectedProjectId);
+
+  // Inicializar autenticação simplificada para fuel card
+  useEffect(() => {
+    const cleanup = initializeFuelCardAuth();
+    return cleanup;
+  }, []);
 
   // Carregar projetos
   useEffect(() => {

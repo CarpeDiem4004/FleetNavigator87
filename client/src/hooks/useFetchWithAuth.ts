@@ -12,10 +12,11 @@ export function useFetchWithAuth() {
   
   // Função para obter o token JWT da sessão Supabase, localStorage ou novo endpoint de JWT
   const getAuthToken = useCallback(async (): Promise<string | null> => {
-    // Verificar se estamos em uma página de login - se sim, não fazer autenticação automática
+    // Verificar se estamos em uma página de login ou solicitação - se sim, não fazer autenticação automática
     const currentPath = window.location.pathname;
-    if (currentPath.includes('/login') || currentPath.includes('/register')) {
-      console.log('[FetchWithAuth] Página de login detectada, pulando autenticação automática');
+    if (currentPath.includes('/login') || currentPath.includes('/register') || 
+        currentPath.includes('/fuel-card/solicitation')) {
+      console.log('[FetchWithAuth] Página pública detectada, pulando autenticação automática');
       return null;
     }
     
@@ -53,24 +54,30 @@ export function useFetchWithAuth() {
     if (localToken && !useEmergencyAuth) {
       console.log('[FetchWithAuth] Token encontrado no localStorage');
       
-      // Verificar se o token é válido
-      try {
-        // Fazer uma requisição simples para testar o token
-        const verifyResponse = await fetch('/api/hybrid/auth/verify', {
-          headers: {
-            'Authorization': `Bearer ${localToken}`
+      // Verificar se o token é válido - apenas se não estivermos em uma página pública
+      if (!currentPath.includes('/fuel-card/solicitation')) {
+        try {
+          // Fazer uma requisição simples para testar o token
+          const verifyResponse = await fetch('/api/hybrid/auth/verify', {
+            headers: {
+              'Authorization': `Bearer ${localToken}`
+            }
+          });
+          
+          if (verifyResponse.ok) {
+            console.log('[FetchWithAuth] Token verificado com sucesso');
+            return localToken;
+          } else {
+            console.warn('[FetchWithAuth] Token inválido, removendo do localStorage');
+            localStorage.removeItem('authToken');
           }
-        });
-        
-        if (verifyResponse.ok) {
-          console.log('[FetchWithAuth] Token verificado com sucesso');
-          return localToken;
-        } else {
-          console.warn('[FetchWithAuth] Token inválido, removendo do localStorage');
-          localStorage.removeItem('authToken');
+        } catch (error) {
+          console.error('[FetchWithAuth] Erro ao verificar token:', error);
         }
-      } catch (error) {
-        console.error('[FetchWithAuth] Erro ao verificar token:', error);
+      } else {
+        // Para páginas públicas, apenas retornar o token sem verificação
+        console.log('[FetchWithAuth] Página pública - usando token sem verificação');
+        return localToken;
       }
     }
 
@@ -133,8 +140,9 @@ export function useFetchWithAuth() {
       }
     }
     
-    // Se todas as tentativas anteriores falharam, ativar modo de emergência (apenas se não estamos numa página de login)
-    if (!useEmergencyAuth && !currentPath.includes('/login') && !currentPath.includes('/register')) {
+    // Se todas as tentativas anteriores falharam, ativar modo de emergência (apenas se não estamos numa página pública)
+    if (!useEmergencyAuth && !currentPath.includes('/login') && 
+        !currentPath.includes('/register') && !currentPath.includes('/fuel-card/solicitation')) {
       console.log('[FetchWithAuth] Ativando modo de autenticação de emergência');
       localStorage.setItem('useEmergencyAuth', 'true');
     }
