@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 
 /**
  * Hook seguro para fazer fetch com autenticação (Bearer) seguindo as Regras de Hooks do React.
@@ -67,6 +67,7 @@ function safeWriteToken(value: string | null) {
  * - Evita re-renderizações desnecessárias com useMemo/useCallback.
  */
 export function useFetchWithAuth(): UseFetchWithAuthReturn {
+  // Inicializar estados com valores seguros
   const [isReady, setIsReady] = useState(false);
   const [lastError, setLastError] = useState<Error | null>(null);
 
