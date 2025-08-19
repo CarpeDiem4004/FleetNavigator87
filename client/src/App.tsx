@@ -393,9 +393,13 @@ import TestOperatorSecurity from "@/pages/TestOperatorSecurity";
 import TestMaintenanceData from "@/pages/TestMaintenanceData";
 
 function App() {
-  // Inicializar correção automática de timezone em URLs
+  // Inicializar timezone brasileiro na inicialização do app
   useEffect(() => {
     initializeTimezoneUrlFix();
+    // Executar após o carregamento do componente para evitar conflitos
+    setTimeout(() => {
+      initializeBrazilTimezone();
+    }, 100);
   }, []);
   
   return (
