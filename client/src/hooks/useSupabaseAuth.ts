@@ -29,29 +29,48 @@ export interface UseSupabaseAuthReturn {
 export function useSupabaseAuth(): UseSupabaseAuthReturn {
   const [session, setSession] = useState<Session | null>(null);
   const [supabaseUser, setSupabaseUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false); // Começar false para evitar loop infinito
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Função para obter e definir a sessão atual
-    const setSupabaseSession = async () => {
+    let isMounted = true;
+    
+    // Função simplificada para verificar sessão
+    const checkSession = async () => {
+      if (!isMounted) return;
+      
       try {
-        setLoading(true);
-        console.log("[useSupabaseAuth] Verificando sessão Supabase...");
+        console.log("[useSupabaseAuth] Verificando sessão...");
         
-        // Usar o cliente Supabase global que já foi importado
+        // Obter sessão atual do Supabase
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        // Tentar restaurar a sessão do localStorage primeiro
-        const savedSession = localStorage.getItem("supabase.auth.token");
-        if (savedSession) {
-          try {
-            console.log("[useSupabaseAuth] Encontrada sessão salva no localStorage, tentando restaurar...");
-            const session = JSON.parse(savedSession);
-            
-            // Tentar definir a sessão a partir dos dados salvos
-            if (session) {
-              const { data, error } = await supabase.auth.setSession(session);
+        if (!isMounted) return;
+        
+        if (error) {
+          console.warn("[useSupabaseAuth] Erro ao obter sessão:", error);
+          setError(error);
+        } else if (session) {
+          console.log("[useSupabaseAuth] Sessão encontrada:", session.user?.email);
+          setSession(session);
+          setSupabaseUser(session.user);
+        } else {
+          console.log("[useSupabaseAuth] Nenhuma sessão encontrada");
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error("[useSupabaseAuth] Erro ao verificar sessão:", error);
+          setError(error as Error);
+        }
+      }
+    };
+    
+    checkSession();
+    
+    return () => {
+      isMounted = false;
+    };
               
               if (error) {
                 console.warn("[useSupabaseAuth] Erro ao restaurar sessão do localStorage:", error.message);
@@ -138,6 +157,41 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
       subscription?.unsubscribe();
     };
   }, []);
+
+  // Funções básicas para compatibilidade
+  const signIn = async (email: string, password: string) => {
+    return { error: new Error("Not implemented") };
+  };
+
+  const signUp = async (email: string, password: string, name: string) => {
+    return { error: new Error("Not implemented") };
+  };
+
+  const signOut = async () => {
+    setSession(null);
+    setSupabaseUser(null);
+  };
+
+  const syncLoginWithAPI = async (email: string, password: string) => {
+    return false;
+  };
+
+  const resyncSession = async () => {
+    return false;
+  };
+
+  return {
+    session,
+    supabaseUser,
+    loading,
+    isAuthenticated: !!session,
+    error,
+    signIn,
+    signUp,
+    signOut,
+    syncLoginWithAPI,
+    resyncSession,
+  };
 
   // Função para fazer login com Supabase
   const signIn = async (email: string, password: string) => {

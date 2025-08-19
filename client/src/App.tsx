@@ -46,7 +46,6 @@ import ProtectedBaseRoute from "@/components/ProtectedBaseRoute";
 // LineHallRedirect removido conforme solicitação
 import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
 import { AuthProvider } from "@/context/AuthContext";
-import { SupabaseAuthProvider } from "@/context/SupabaseAuthContext";
 
 // Hook useFetchWithAuth removido pois não está sendo usado
 
@@ -404,8 +403,7 @@ function App() {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <SupabaseAuthProvider>
-        <AuthProvider>
+      <AuthProvider>
           <Switch>
             <Route path="/login">
               <SignIn />
@@ -1226,7 +1224,6 @@ function App() {
         </Switch>
         <Toaster />
         </AuthProvider>
-      </SupabaseAuthProvider>
     </QueryClientProvider>
   );
 }

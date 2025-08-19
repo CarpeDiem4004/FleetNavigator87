@@ -46,19 +46,13 @@ interface SupabaseAuthProviderProps {
 }
 
 export const SupabaseAuthProvider = ({ children }: SupabaseAuthProviderProps) => {
-  const {
-    supabaseUser,
-    loading: supabaseLoading,
-    signIn,
-    signUp,
-    signOut,
-    syncLoginWithAPI,
-    resyncSession,
-  } = useSupabaseAuth();
-  
+  // Estados básicos
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const { toast } = useToast();
+  
+  // Hook simplificado - sem duplicação
+  const { supabaseUser, loading: supabaseLoading } = useSupabaseAuth();
   
   // Expor o contexto de autenticação globalmente para o mecanismo de ressincronização automática
   useEffect(() => {
