@@ -286,10 +286,14 @@ export default function MaintenancePage() {
   const { data: workshops = [] } = useQuery<Workshop[]>({
     queryKey: ['/api/workshops', { active: true }],
     queryFn: async () => {
-      const res = await fetch('/api/workshops?active=true');
+      const res = await apiRequest('GET', '/api/workshops?active=true');
+      if (!res.ok) {
+        throw new Error(`Erro ao buscar oficinas: ${res.status}`);
+      }
       return res.json();
     },
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    retry: 3 // Tenta novamente em caso de falha
   });
 
   // Carregar veículos usando o hook customizado para garantir consistência em todo o aplicativo

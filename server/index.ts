@@ -1238,6 +1238,33 @@ app.use((req, res, next) => {
   // app.get('/api/maintenance/veiculos', authenticateMaintenanceToken, getVeiculos);
   // app.get('/api/maintenance/oficinas', authenticateMaintenanceToken, getOficinas);
   
+  // Rota para buscar oficinas ativas
+  app.get('/api/workshops', hasMaintenanceAccessV2, async (req, res) => {
+    try {
+      console.log('[WORKSHOPS] Buscando oficinas ativas');
+      
+      const { active } = req.query;
+      
+      let query = 'SELECT * FROM workshops';
+      const params = [];
+      
+      if (active === 'true') {
+        query += ' WHERE status = $1';
+        params.push('ativo');
+      }
+      
+      query += ' ORDER BY nome';
+      
+      const result = await pool.query(query, params);
+      
+      console.log(`[WORKSHOPS] Encontradas ${result.rows.length} oficinas`);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('[WORKSHOPS] Erro ao buscar oficinas:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
   // Rota para criar nova oficina (temporariamente desabilitada para deployment)
   /*
   app.post('/api/workshops', unifiedAuthMiddleware, async (req, res) => {
