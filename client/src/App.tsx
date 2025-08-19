@@ -1,9 +1,4 @@
-// Disable Fast Refresh temporarily to fix $RefreshSig$ error
-if (typeof window !== 'undefined' && window.$RefreshSig$) {
-  // @ts-ignore
-  window.$RefreshSig$ = () => () => {};
-}
-
+// Minimal working App component
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Switch, Route, Redirect } from "wouter";
 
@@ -48,4 +43,3 @@ export default function App() {
     </QueryClientProvider>
   );
 }
-

@@ -17,7 +17,8 @@ export default function TireDetailPage() {
   const params = useParams<{ id: string }>();
   const tireId = parseInt(params.id);
   const { toast } = useToast();
-  const { supabaseUser } = useSupabaseAuth();
+  const supabaseAuth = useSupabaseAuth();
+  const supabaseUser = supabaseAuth?.user || null;
   
   const [tire, setTire] = useState<Tire | null>(null);
   const [loading, setLoading] = useState(true);
