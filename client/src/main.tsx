@@ -1,5 +1,5 @@
-import React from "react";
 import { createRoot } from "react-dom/client";
+import { StrictMode } from "react";
 import App from "./App";
 import "./index.css";
 import "./hide-error.css"; // CSS para esconder mensagens de erro do Vite
@@ -19,7 +19,7 @@ const initPWA = async () => {
 initPWA();
 
 createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
+  <StrictMode>
     <App />
-  </React.StrictMode>
+  </StrictMode>
 );
