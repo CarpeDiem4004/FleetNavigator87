@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFetchWithAuth } from '../hooks/useFetchWithAuth';
 
 export default function TestMaintenanceData() {
