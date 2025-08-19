@@ -1,0 +1,87 @@
+[plugin:runtime-error-plugin] Cannot read properties of null (reading 'useState')
+/home/runner/workspace/client/src/hooks/useFetchWithAuth.ts:11:33
+9  |  
+10 |  export function useFetchWithAuth(): UseFetchWithAuthReturn {
+11 |    const [isReady, setIsReady] = useState(false);
+   |                                  ^
+12 |    const [lastError, setLastError] = useState<Error | null>(null);
+13 |
+
+    at useFetchWithAuth /home/runner/workspace/client/src/hooks/useFetchWithAuth.ts:11:33
+    at App /home/runner/workspace/client/src/App.tsx:368:3
+Click outside, press Esc key, or fix the code to dismiss.
+You can also disable this overlay by setting server.hmr.overlay to false in vite.config.js.
+O ChatGPT disse:
+
+Beleza, então agora temos certeza:
+
+👉 O useState está sendo chamado dentro do hook, mas mesmo assim o React não está reconhecendo — isso só acontece em dois cenários possíveis:
+
+🚨 1. Você está chamando o hook fora do React
+
+No seu App.tsx, tem que ser assim:
+
+function App() {
+  const { isReady, lastError } = useFetchWithAuth(); // ✅ dentro do componente
+
+  return <div>Sistema carregado</div>;
+}
+
+
+Se for algo assim:
+
+// ❌ fora de um componente
+const { isReady } = useFetchWithAuth();
+
+function App() {
+  return <div>{isReady ? "ok" : "erro"}</div>;
+}
+
+
+vai dar exatamente esse erro.
+
+🚨 2. Você tem duas versões do React instaladas
+
+Se react e react-dom não forem da mesma versão, o hook falha porque useState vem de uma instância diferente da que o Vite usa pra renderizar.
+
+👉 Testa rodar no terminal do Replit:
+
+npm ls react
+npm ls react-dom
+
+
+Você deve ver algo assim (✅ correto):
+
+react@18.2.0
+react-dom@18.2.0
+
+
+Se aparecer duas versões (tipo 18.2.0 e 17.x ao mesmo tempo), esse é o bug.
+A correção é forçar no package.json:
+
+"react": "18.2.0",
+"react-dom": "18.2.0"
+
+
+e reinstalar:
+
+rm -rf node_modules package-lock.json
+npm install
+
+✅ Passo a passo pra resolver
+
+Confere se o useFetchWithAuth está assim:
+
+import { useState } from "react";
+
+export function useFetchWithAuth() {
+  const [isReady, setIsReady] = useState(false);
+  const [lastError, setLastError] = useState<Error | null>(null);
+
+  return { isReady, lastError };
+}
+
+
+Garante que no App.tsx o hook é chamado dentro da função App.
+
+Roda npm ls react react-dom e me mostra a saída.
