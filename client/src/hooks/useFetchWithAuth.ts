@@ -8,7 +8,7 @@ import { getDeploymentConfig, getAuthenticationStrategy } from '@/utils/deployme
  * Não precisa ser usado diretamente - apenas importado uma vez no componente raiz.
  */
 export function useFetchWithAuth() {
-  const [initialized, setInitialized] = useState(false);
+  const [initialized, setInitialized] = useState<boolean>(false);
   
   // Função para obter o token JWT da sessão Supabase, localStorage ou novo endpoint de JWT
   const getAuthToken = useCallback(async (): Promise<string | null> => {
