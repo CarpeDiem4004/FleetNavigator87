@@ -293,7 +293,13 @@ export default function MaintenancePage() {
         throw new Error(`Erro ao buscar oficinas: ${res.status}`);
       }
       const data = await res.json();
-      console.log('[WORKSHOPS] Oficinas carregadas:', data.length, data);
+      console.log('[WORKSHOPS] Oficinas carregadas:', data?.length || 'undefined', data);
+      
+      // Adicionar alert temporário para debug visual
+      if (data && data.length > 0) {
+        console.log(`✅ ${data.length} oficinas carregadas com sucesso!`);
+      }
+      
       return data;
     },
     refetchOnWindowFocus: false,
@@ -1018,7 +1024,8 @@ export default function MaintenancePage() {
                   {/* Oficina */}
                   <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="workshopId">
-                      Oficina <span className="text-red-500">*</span>
+                      Oficina <span className="text-red-500">*</span> 
+                      <small className="text-xs text-muted-foreground ml-2">({Array.isArray(workshops) ? workshops.length : 0} oficinas carregadas)</small>
                     </Label>
                     <Select 
                       value={formData.workshopId ? formData.workshopId.toString() : "0"} 
