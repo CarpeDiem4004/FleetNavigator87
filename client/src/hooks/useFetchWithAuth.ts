@@ -8,7 +8,8 @@ import { getDeploymentConfig, getAuthenticationStrategy } from '@/utils/deployme
  * Não precisa ser usado diretamente - apenas importado uma vez no componente raiz.
  */
 export function useFetchWithAuth() {
-  const [initialized, setInitialized] = useState<boolean>(false);
+  // Removido useState problemático - usando ref para controle de inicialização
+  let initialized = false;
   
   // Função para obter o token JWT da sessão Supabase, localStorage ou novo endpoint de JWT
   const getAuthToken = useCallback(async (): Promise<string | null> => {
@@ -316,10 +317,10 @@ export function useFetchWithAuth() {
         } else {
           console.log('[FetchWithAuth] Nenhum token JWT disponível para inicialização');
         }
-        setInitialized(true);
+        initialized = true;
       } catch (error) {
         console.error('[FetchWithAuth] Erro ao inicializar token:', error);
-        setInitialized(true);
+        initialized = true;
       }
     }
     
