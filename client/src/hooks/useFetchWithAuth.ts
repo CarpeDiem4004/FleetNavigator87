@@ -1,5 +1,4 @@
-import React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 
 /**
  * Hook seguro para fazer fetch com autenticação (Bearer) seguindo as Regras de Hooks do React.
