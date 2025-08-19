@@ -2,7 +2,7 @@ import { createRoot } from "react-dom/client";
 import { StrictMode } from "react";
 import App from "./App";
 import "./index.css";
-import "./hide-error.css"; // CSS para esconder mensagens de erro do Vite
+// import "./hide-error.css"; // CSS para esconder mensagens de erro do Vite - TEMPORARIAMENTE DESABILITADO
 // import "./utils/external-deployment-fix"; // Temporariamente desabilitado
 
 // Initialize PWA for both development and production with better error handling
