@@ -17,8 +17,12 @@ export default function App() {
         <div className="min-h-screen bg-background">
           <Switch>
             {/* Páginas Públicas */}
-            <Route path="/login" component={LoginWithSupabase} />
-            <Route path="/register" component={RegisterWithSupabase} />
+            <Route path="/login">
+              <LoginWithSupabase />
+            </Route>
+            <Route path="/register">
+              <RegisterWithSupabase />
+            </Route>
             <Route path="/not-found" component={NotFound} />
             
             {/* Dashboard Principal */}
