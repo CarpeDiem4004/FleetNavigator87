@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   
   // Usar o hook do Supabase para autenticação
   const {
-    supabaseUser,
+    user: supabaseUser,
     loading: supabaseLoading,
     signIn: supabaseLogin,
     signOut: supabaseLogout,
