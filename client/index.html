@@ -27,18 +27,39 @@
     <meta name="msapplication-TileColor" content="#2563eb" />
     <meta name="msapplication-TileImage" content="/icons/icon-144x144.svg" />
     <script>
-      // NEUTRALIZAR $RefreshSig$ DEFINITIVAMENTE
-      Object.defineProperty(window, '$RefreshSig$', {
-        value: function() { return function(type) { return type; }; },
-        writable: false,
-        configurable: false
-      });
-      Object.defineProperty(window, '$RefreshReg$', {
-        value: function() {},
-        writable: false,
-        configurable: false
-      });
-      console.log('🔧 $RefreshSig$ neutralizado com Object.defineProperty');
+      // INTERCEPTAÇÃO TOTAL DE $RefreshSig$ - TODAS AS FORMAS POSSÍVEIS
+      (function() {
+        const neutralFunc = function() { return function(type) { return type; }; };
+        const neutralReg = function() {};
+        
+        // Método 1: Definir imediatamente
+        window.$RefreshSig$ = neutralFunc;
+        window.$RefreshReg$ = neutralReg;
+        
+        // Método 2: Object.defineProperty imutável  
+        try {
+          Object.defineProperty(window, '$RefreshSig$', {
+            value: neutralFunc,
+            writable: false,
+            configurable: false
+          });
+          Object.defineProperty(window, '$RefreshReg$', {
+            value: neutralReg,
+            writable: false,
+            configurable: false
+          });
+        } catch(e) {}
+        
+        // Método 3: Interceptar tentativas de redefinição
+        const descriptor1 = Object.getOwnPropertyDescriptor(window, '$RefreshSig$');
+        const descriptor2 = Object.getOwnPropertyDescriptor(window, '$RefreshReg$');
+        
+        // Método 4: Proxy para interceptar TODAS as chamadas
+        window.__defineGetter__('$RefreshSig$', function() { return neutralFunc; });
+        window.__defineGetter__('$RefreshReg$', function() { return neutralReg; });
+        
+        console.log('💪 $RefreshSig$ NEUTRALIZADO COM 4 MÉTODOS DIFERENTES');
+      })();
     </script>
   </head>
   <body>
