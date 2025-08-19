@@ -1,3 +1,9 @@
+// Global $RefreshSig$ fix
+if (typeof window !== 'undefined') {
+  // @ts-ignore
+  window.$RefreshSig$ = window.$RefreshSig$ || (() => () => {});
+}
+
 import { createRoot } from "react-dom/client";
 import { StrictMode } from "react";
 import App from "./App";
