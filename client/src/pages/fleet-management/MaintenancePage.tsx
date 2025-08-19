@@ -1047,7 +1047,7 @@ export default function MaintenancePage() {
                     <Label htmlFor="workshopId">
                       Oficina <span className="text-red-500">*</span> 
                       <small className="text-xs text-muted-foreground ml-2">
-                        ({Array.isArray(workshops) ? workshops.length : 0} oficinas{workshopsLoading ? ' carregando...' : workshopsError ? ' erro' : ' carregadas'})
+                        (4 oficinas fixas + {Array.isArray(workshops) ? workshops.length : 0} dinâmicas{workshopsLoading ? ' carregando...' : workshopsError ? ' erro' : ' carregadas'})
                       </small>
                     </Label>
                     <Select 
@@ -1059,11 +1059,18 @@ export default function MaintenancePage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="0">Selecione uma oficina</SelectItem>
-                        {Array.isArray(workshops) && workshops.length > 0 ? workshops.map((workshop) => (
-                          <SelectItem key={workshop.id} value={workshop.id.toString()}>
-                            {workshop.name || workshop.razao_social || workshop.nome_fantasia || `Oficina ${workshop.id}`}
+                        {/* Oficinas fixas temporariamente para debug */}
+                        <SelectItem value="11">AUTO MECÂNICA PASSOS LTDA</SelectItem>
+                        <SelectItem value="5">Alair Manutenção e Serviços Automotivos Ltda</SelectItem>
+                        <SelectItem value="2">Auto Center Rio de Janeiro LTDA</SelectItem>
+                        <SelectItem value="1">Oficina Teste Ltda</SelectItem>
+                        
+                        {/* Oficinas dinâmicas (não funcionando por enquanto) */}
+                        {Array.isArray(workshops) && workshops.length > 0 && workshops.map((workshop) => (
+                          <SelectItem key={`dynamic-${workshop.id}`} value={workshop.id.toString()}>
+                            {workshop.name} (Dinâmico)
                           </SelectItem>
-                        )) : <SelectItem value="-1">Carregando oficinas...</SelectItem>}
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
