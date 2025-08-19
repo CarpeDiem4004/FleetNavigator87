@@ -1,31 +1,25 @@
-import { useEffect, useState } from 'react';
 import { useFetchWithAuth } from '../hooks/useFetchWithAuth';
 
+// Definir tipo dos dados da manutenção
+interface MaintenanceData {
+  vehiclesInMaintenance: number;
+  totalMaintenanceCost: number;
+  averageMaintenanceDays: number;
+  vehiclesOver5Days: Array<any>;
+}
+
 export default function TestMaintenanceData() {
-  const { apiFetch, isReady } = useFetchWithAuth();
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!isReady) return;
-    
-    const fetchData = async () => {
-      try {
-        const response = await apiFetch('/api/operational-dashboard/maintenance');
-        const jsonData = await response.json();
-        setData(jsonData);
-      } catch (error) {
-        console.error('Erro ao buscar dados:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [isReady, apiFetch]);
+  // Usar um token fictício para teste ou pegar do localStorage
+  const token = localStorage.getItem('auth_token') || 'test-token';
+  
+  const { data, error, loading } = useFetchWithAuth<MaintenanceData>(
+    '/api/operational-dashboard/maintenance',
+    token
+  );
 
   if (loading) return <div>Carregando...</div>;
-  if (!data) return <div>Erro ao carregar dados</div>;
+  if (error) return <div>Erro ao carregar dados: {error.message}</div>;
+  if (!data) return <div>Nenhum dado encontrado</div>;
 
   return (
     <div className="p-8">

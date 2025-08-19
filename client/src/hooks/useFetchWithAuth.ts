@@ -1,49 +1,71 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from 'react'
 
-// Define o tipo de retorno do hook
-export interface UseFetchWithAuthReturn {
-  isReady: boolean;
-  lastError: Error | null;
-  apiFetch: (url: string, options?: RequestInit) => Promise<Response>;
+type Options = RequestInit & {
+  skip?: boolean
 }
 
-export function useFetchWithAuth(): UseFetchWithAuthReturn {
-  const [isReady, setIsReady] = useState(false);
-  const [lastError, setLastError] = useState<Error | null>(null);
+type State<T> = {
+  data: T | null
+  error: Error | null
+  loading: boolean
+}
 
-  // Marca o hook como "pronto" após a inicialização
+export function useFetchWithAuth<T = unknown>(
+  url: string,
+  token: string,
+  options: Options = {}
+): State<T> {
+  const [state, setState] = useState<State<T>>({
+    data: null,
+    error: null,
+    loading: !options.skip,
+  })
+
   useEffect(() => {
-    setIsReady(true);
-  }, []);
+    if (options.skip) return
 
-  // Função para fazer fetch com token de autenticação do localStorage
-  async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
-    try {
-      const headers = new Headers(options.headers);
+    let cancel = false
 
-      // Tentar pegar o token do localStorage
-      const token = localStorage.getItem("auth_token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
+    async function fetchData() {
+      setState({ data: null, error: null, loading: true })
+
+      try {
+        const response = await fetch(url, {
+          ...options,
+          headers: {
+            ...(options.headers || {}),
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`Request failed: ${response.status}`)
+        }
+
+        const data = (await response.json()) as T
+        if (!cancel) {
+          setState({ data, error: null, loading: false })
+        }
+      } catch (err) {
+        if (!cancel) {
+          setState({
+            data: null,
+            error: err instanceof Error ? err : new Error('Unknown error'),
+            loading: false,
+          })
+        }
       }
-
-      const response = await fetch(url, {
-        ...options,
-        headers,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Erro HTTP: ${response.status}`);
-      }
-
-      return response;
-    } catch (error) {
-      setLastError(error as Error);
-      throw error;
     }
-  }
 
-  return { isReady, lastError, apiFetch };
+    fetchData()
+
+    return () => {
+      cancel = true
+    }
+  }, [url, token, JSON.stringify(options)]) // dependências seguras
+
+  return state
 }
 
 export default useFetchWithAuth;
