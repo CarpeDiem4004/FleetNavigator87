@@ -383,6 +383,15 @@ export const hasBaseAccess = (req: Request, res: Response, next: NextFunction) =
  */
 export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    console.log('[hasMaintenanceAccessV2] DEBUG - Verificando autenticação:', {
+      hasIsAuthenticated: typeof req.isAuthenticated === 'function',
+      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+      hasUser: !!req.user,
+      userEmail: req.user?.email,
+      sessionID: req.sessionID,
+      sessionIsAuth: req.session ? (req.session as any).passport?.user : 'no session'
+    });
+    
     // Verificar autenticação por sessão
     if (req.isAuthenticated && req.isAuthenticated() && req.user) {
       console.log(`[hasMaintenanceAccessV2] Usuário autenticado por sessão: ${req.user.email}`);

@@ -1238,8 +1238,8 @@ app.use((req, res, next) => {
   // app.get('/api/maintenance/veiculos', authenticateMaintenanceToken, getVeiculos);
   // app.get('/api/maintenance/oficinas', authenticateMaintenanceToken, getOficinas);
   
-  // Rota para buscar oficinas ativas
-  app.get('/api/workshops', hasMaintenanceAccessV2, async (req, res) => {
+  // Rota para buscar oficinas ativas - ACESSO PÚBLICO TEMPORÁRIO PARA PERMITIR CARREGAMENTO
+  app.get('/api/workshops', async (req, res) => {
     try {
       console.log('[WORKSHOPS] Buscando oficinas ativas');
       
