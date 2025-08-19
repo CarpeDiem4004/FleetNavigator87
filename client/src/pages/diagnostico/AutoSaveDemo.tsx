@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AutoSaveForm } from '@/components/forms/AutoSaveForm';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase-compat';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';

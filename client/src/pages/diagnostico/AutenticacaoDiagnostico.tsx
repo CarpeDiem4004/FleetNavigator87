@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, AlertTriangle, Settings, RefreshCcw, Database, Key, Lock, Upload, ShieldCheck } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase-compat';
 import { useToast } from '@/hooks/use-toast';
 
 const StatusBadge = ({ success, label }: { success: boolean, label: string }) => (

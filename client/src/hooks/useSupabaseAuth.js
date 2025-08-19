@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, withRetry } from '@/lib/supabaseClient';
+import { supabase, withRetry } from '@/lib/supabase-compat';
 
 export function useSupabaseAuth() {
   const [user, setUser] = useState(null);

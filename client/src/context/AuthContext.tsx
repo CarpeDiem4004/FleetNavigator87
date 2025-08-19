@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase-compat';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useLocation } from 'wouter';
 
