@@ -144,7 +144,7 @@ app.use((req, res, next) => {
             RETURNING *
           `;
           
-          const result = await pool.query(query, [parseInt(id), ...values]);
+          const result = await pool.query(query, [parseInt(id || '0'), ...values]);
           
           if (result.rows.length === 0) {
             return res.status(404).end(JSON.stringify({
@@ -167,7 +167,7 @@ app.use((req, res, next) => {
           return res.status(500).end(JSON.stringify({
             success: false,
             message: 'Erro interno do servidor',
-            error: error?.message || 'Erro desconhecido'
+            error: (error as any)?.message || 'Erro desconhecido'
           }));
         }
       });
@@ -384,7 +384,7 @@ app.post('/fuel-receipts', async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Erro ao registrar recebimento',
-      error: error.message
+      error: (error as any)?.message || "Unknown error"
     });
   }
 });
@@ -489,7 +489,7 @@ app.get('/consumo-data/postos', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erro ao obter dados de consumo diário',
-      error: error.message
+      error: (error as any)?.message || "Unknown error"
     });
   }
 });
@@ -581,7 +581,7 @@ app.use((req, res, next) => {
       return res.status(500).json({
         success: false,
         message: 'Error fetching drivers',
-        error: error.message
+        error: (error as any)?.message || "Unknown error"
       });
     }
   });
@@ -607,7 +607,7 @@ app.use((req, res, next) => {
       return res.status(500).json({
         success: false,
         message: 'Error fetching bases',
-        error: error.message
+        error: (error as any)?.message || "Unknown error"
       });
     }
   });
@@ -643,13 +643,12 @@ app.use((req, res, next) => {
       return res.status(500).json({
         success: false,
         message: 'Error fetching project-base relationships',
-        error: error.message
+        error: (error as any)?.message || "Unknown error"
       });
     }
   });
 
-  // Add projects-with-bases API (endpoint específico para dropdowns) - COMENTADO PARA USAR A FUNÇÃO CORRETA
-  /*
+  // Add projects-with-bases API (endpoint específico para dropdowns) - REATIVADO
   app.get('/api/projects-with-bases', async (req, res) => {
     try {
       res.setHeader('Content-Type', 'application/json');
@@ -721,11 +720,10 @@ app.use((req, res, next) => {
       return res.status(500).json({
         success: false,
         message: 'Erro ao buscar projetos com bases',
-        error: error.message
+        error: (error as any)?.message || 'Unknown error'
       });
     }
   });
-  */
 
   // Add DELETE endpoint for drivers
   app.delete('/api/drivers/:id', async (req, res) => {
@@ -748,7 +746,7 @@ app.use((req, res, next) => {
       return res.status(500).json({
         success: false,
         message: 'Error deleting driver',
-        error: error.message
+        error: (error as any)?.message || "Unknown error"
       });
     }
   });
@@ -831,7 +829,7 @@ app.use((req, res, next) => {
       res.status(500).json({
         success: false,
         message: 'Erro ao obter dados de consumo diário',
-        error: error.message
+        error: (error as any)?.message || "Unknown error"
       });
     }
   });
@@ -928,7 +926,7 @@ app.use((req, res, next) => {
       res.status(500).json({
         success: false,
         message: 'Erro ao obter dados de consumo diário',
-        error: error.message
+        error: (error as any)?.message || "Unknown error"
       });
     }
   });
@@ -980,7 +978,7 @@ app.use((req, res, next) => {
         console.error('[FUEL-DATA] Erro:', error);
         res.end(JSON.stringify({
           success: false,
-          error: error.message
+          error: (error as any)?.message || "Unknown error"
         }));
       });
   });
@@ -1017,7 +1015,7 @@ app.use((req, res, next) => {
         console.error('[FUEL-REQUESTS] Erro:', error);
         res.end(JSON.stringify({
           success: false,
-          error: error.message
+          error: (error as any)?.message || "Unknown error"
         }));
       });
   });
@@ -1057,7 +1055,7 @@ app.use((req, res, next) => {
       res.status(500).json({ 
         success: false, 
         message: 'Erro interno do servidor', 
-        error: error.message 
+        error: (error as any)?.message || "Unknown error" 
       });
     }
   });
@@ -1503,7 +1501,7 @@ app.use((req, res, next) => {
       res.status(500).json({
         success: false,
         message: 'Erro ao obter dados de consumo diário',
-        error: error.message
+        error: (error as any)?.message || "Unknown error"
       });
     }
   });
@@ -2144,7 +2142,7 @@ app.use((req, res, next) => {
       return res.status(500).json({
         success: false,
         message: 'Error fetching bases',
-        error: error.message
+        error: (error as any)?.message || "Unknown error"
       });
     }
   });
@@ -2178,7 +2176,7 @@ app.use((req, res, next) => {
       return res.status(500).json({
         success: false,
         message: 'Error fetching project-bases relationships',
-        error: error.message
+        error: (error as any)?.message || "Unknown error"
       });
     }
   });
