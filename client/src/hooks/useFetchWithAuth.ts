@@ -1,142 +1,49 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect } from "react";
 
-/**
- * Hook seguro para fazer fetch com autenticação (Bearer) seguindo as Regras de Hooks do React.
- * 
- * Como usar no componente:
- * 
- * const { apiFetch, isReady, lastError } = useFetchWithAuth();
- * useEffect(() => {
- *   if (!isReady) return;
- *   (async () => {
- *     const resp = await apiFetch("/api/users", { method: "GET" });
- *     const data = await resp.json();
- *     console.log(data);
- *   })();
- * }, [isReady, apiFetch]);
- */
-
-type FetchOptions = RequestInit & {
-  /** Defina false para NÃO enviar Authorization automaticamente */
-  auth?: boolean;
-  /** Substitui o token padrão (localStorage) */
-  tokenOverride?: string | null;
-};
-
-type UseFetchWithAuthReturn = {
-  /** Wrapper de fetch com injeção de Authorization */
-  apiFetch: (input: RequestInfo | URL, init?: FetchOptions) => Promise<Response>;
-  /** Quando o hook terminou de inicializar (true após 1º render) */
+// Define o tipo de retorno do hook
+export interface UseFetchWithAuthReturn {
   isReady: boolean;
-  /** Último erro capturado dentro do hook (não inclui erros de rede do fetch em si) */
   lastError: Error | null;
-  /** Define/limpa manualmente o token padrão usado (persistido em localStorage) */
-  setDefaultToken: (token: string | null) => void;
-  /** Lê o token atual padrão do storage (sem re-render) */
-  getDefaultToken: () => string | null;
-};
-
-/** Chave padrão no localStorage */
-const LS_TOKEN_KEY = "auth_token";
-
-/** Leitor "seguro" do localStorage (SSR/iframe/sem janela) */
-function safeReadToken(): string | null {
-  try {
-    if (typeof window === "undefined") return null;
-    return window.localStorage.getItem(LS_TOKEN_KEY);
-  } catch {
-    return null;
-  }
+  apiFetch: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
-/** Escritor "seguro" do localStorage */
-function safeWriteToken(value: string | null) {
-  try {
-    if (typeof window === "undefined") return;
-    if (value == null) window.localStorage.removeItem(LS_TOKEN_KEY);
-    else window.localStorage.setItem(LS_TOKEN_KEY, value);
-  } catch {
-    // silencia erros de storage (quota, privacy, etc.)
-  }
-}
-
-/**
- * Hook principal.
- * - Não chama nenhum hook de forma condicional.
- * - Não usa hooks fora de componente.
- * - Evita re-renderizações desnecessárias com useMemo/useCallback.
- */
 export function useFetchWithAuth(): UseFetchWithAuthReturn {
-  // Inicializar estados com valores seguros
   const [isReady, setIsReady] = useState(false);
   const [lastError, setLastError] = useState<Error | null>(null);
 
-  // Mantém o token "padrão" em um ref para acesso rápido sem disparar re-render.
-  const defaultTokenRef = useRef<string | null>(safeReadToken());
-
-  // Inicializa apenas uma vez (segue as regras dos Hooks)
+  // Marca o hook como "pronto" após a inicialização
   useEffect(() => {
-    // Se você precisar carregar algo assíncrono aqui (ex: refresh de token),
-    // faça dentro deste efeito e no final chame setIsReady(true).
     setIsReady(true);
   }, []);
 
-  const getDefaultToken = useCallback(() => defaultTokenRef.current, []);
+  // Função para fazer fetch com token de autenticação do localStorage
+  async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
+    try {
+      const headers = new Headers(options.headers);
 
-  const setDefaultToken = useCallback((token: string | null) => {
-    defaultTokenRef.current = token;
-    safeWriteToken(token);
-  }, []);
-
-  /**
-   * Função de fetch memoizada que injeta o header Authorization quando:
-   * - init.auth !== false (padrão é true)
-   * - existe token (override ou padrão)
-   */
-  const apiFetch = useCallback(
-    async (input: RequestInfo | URL, init: FetchOptions = {}) => {
-      const { auth = true, tokenOverride, headers, ...rest } = init;
-
-      // Monta headers sem mutar o objeto original
-      const hdrs = new Headers(headers || {});
-      const token = tokenOverride ?? defaultTokenRef.current;
-
-      if (auth && token) {
-        if (!hdrs.has("Authorization")) {
-          hdrs.set("Authorization", `Bearer ${token}`);
-        }
+      // Tentar pegar o token do localStorage
+      const token = localStorage.getItem("auth_token");
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
       }
 
-      try {
-        const response = await fetch(input, {
-          ...rest,
-          headers: hdrs,
-        });
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
 
-        // Exemplo: se a API responder 401, você pode tratar refresh aqui
-        // if (response.status === 401) { ... opcional ... }
-
-        return response;
-      } catch (err) {
-        const e = err instanceof Error ? err : new Error(String(err));
-        setLastError(e);
-        throw e; // repassa para o chamador decidir o que fazer
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`);
       }
-    },
-    []
-  );
 
-  // Retorno estável
-  return useMemo(
-    () => ({
-      apiFetch,
-      isReady,
-      lastError,
-      setDefaultToken,
-      getDefaultToken,
-    }),
-    [apiFetch, isReady, lastError, setDefaultToken, getDefaultToken]
-  );
+      return response;
+    } catch (error) {
+      setLastError(error as Error);
+      throw error;
+    }
+  }
+
+  return { isReady, lastError, apiFetch };
 }
 
 export default useFetchWithAuth;
