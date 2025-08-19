@@ -10,7 +10,7 @@ import LoginWithSupabase from "@/pages/LoginWithSupabase";
 import RegisterWithSupabase from "@/pages/RegisterWithSupabase";
 import Dashboard from "@/pages/index";
 
-function App() {
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -24,9 +24,9 @@ function App() {
             {/* Dashboard Principal */}
             <Route path="/dashboard" component={Dashboard} />
             
-            {/* Redirecionar a rota raiz para dashboard */}
+            {/* Redirecionar a rota raiz para login se não autenticado */}
             <Route path="/">
-              <Redirect to="/dashboard" />
+              <Redirect to="/login" />
             </Route>
             
             {/* Catch-all para 404 */}
@@ -39,4 +39,3 @@ function App() {
   );
 }
 
-export default App;

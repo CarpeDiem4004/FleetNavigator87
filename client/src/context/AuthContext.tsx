@@ -73,6 +73,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     const verifyAuth = async () => {
       console.log("Verificando estado de autenticação inicial...");
+      setIsLoading(false); // Definir loading como false para permitir renderização
       
       // Se o hook do Supabase já determinou o estado de autenticação
       if (!supabaseLoading) {

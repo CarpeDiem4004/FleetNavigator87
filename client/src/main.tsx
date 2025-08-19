@@ -3,7 +3,7 @@ import { StrictMode } from "react";
 import App from "./App";
 import "./index.css";
 import "./hide-error.css"; // CSS para esconder mensagens de erro do Vite
-import "./utils/external-deployment-fix";
+// import "./utils/external-deployment-fix"; // Temporariamente desabilitado
 
 // Initialize PWA for both development and production with better error handling
 const initPWA = async () => {

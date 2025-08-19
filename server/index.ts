@@ -2312,6 +2312,18 @@ app.use((req, res, next) => {
       req.path.startsWith(route) && !req.path.includes('/external/') && !req.path.includes('/externo')
     ) && !isPublicRoute;
     
+    // Skip Vite dependencies, development files, and ALL /src/ files
+    const isViteDependency = req.path.startsWith('/@fs/') || 
+                            req.path.startsWith('/@vite/') ||
+                            req.path.startsWith('/node_modules/') ||
+                            req.path.includes('.vite/deps/') ||
+                            req.path.startsWith('/src/'); // Permitir TODOS os arquivos /src/
+    
+    if (isViteDependency) {
+      console.log(`[AUTH-MIDDLEWARE] Permitindo dependência Vite: ${req.path}`);
+      return next();
+    }
+    
     // Log para debug
     console.log(`[AUTH-MIDDLEWARE] Verificando rota: ${req.path} - Protegida: ${isProtectedRoute} - Pública: ${isPublicRoute}`);
     
