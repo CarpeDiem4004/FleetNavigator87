@@ -1,0 +1,131 @@
+Abaixo vai um arquivo único com correção “cirúrgica” + plano de validação. Cole como FIX_REFRESHSIG.md e siga na ordem.
+
+⸻
+
+
+# Fix: $RefreshSig$ is not a function (Vite + React)
+
+## 0) Objetivo
+Fazer o app subir *agora* (hotfix) e, em seguida, reativar o Fast Refresh com configuração estável.
+
+---
+
+## 1) Garanta versões compatíveis
+No diretório client/:
+
+```bash
+npm i -D vite@latest @vitejs/plugin-react@latest
+# Remova plugins conflitantes, se existirem:
+npm remove @vitejs/plugin-react-swc vite-plugin-react-refresh
+
+Use apenas @vitejs/plugin-react. Não misture react-swc nem vite-plugin-react-refresh.
+
+⸻
+
+2) Vite config estável (com opção de hotfix)
+
+Substitua completo o client/vite.config.ts por:
+
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
+
+export default defineConfig(({ mode }) => ({
+  plugins: [
+    // HOTFIX: se ainda quebrar, mude fastRefresh para false e reinicie o dev
+    react({
+      jsxRuntime: 'automatic',
+      fastRefresh: true,
+    }),
+  ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      react: path.resolve(__dirname, 'node_modules/react'),
+      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+    },
+    dedupe: ['react', 'react-dom'],
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom'],
+  },
+  server: {
+    hmr: { overlay: true },
+  },
+}))
+
+Se o erro persistir, troque fastRefresh: true para false (sobe sem HMR, mas funciona).
+
+⸻
+
+3) Limpeza total de cache/build
+
+Ainda em client/:
+
+rm -rf node_modules package-lock.json
+# cache do Vite fica dentro de node_modules/.vite, será removido junto
+npm i
+npm ls vite @vitejs/plugin-react react react-dom
+
+Você deve ver uma versão do React (18.3.1 no seu caso) e o plugin do Vite atualizado.
+
+⸻
+
+4) Conferir que não há Babel/plugin extra
+
+Garanta que você não tem .babelrc, babel.config.js ou vite com plugin manual react-refresh/babel.
+
+Cheque rápido:
+
+grep -R "react-refresh" -n .
+
+Se aparecer algo fora do @vitejs/plugin-react, remova.
+
+⸻
+
+5) Sanity check do runtime no dev
+
+No topo de client/src/main.tsx (temporário, depois pode remover):
+
+import React from 'react'
+if (import.meta.env.DEV) {
+  // @ts-ignore
+  console.log('React version:', React.version)
+}
+
+Deve imprimir 18.x.x. Se imprimir undefined, ainda há problema de resolução/duplicata.
+
+⸻
+
+6) Reinicie o dev server
+
+npm run dev
+
+	•	Se abrir normal: ótimo, mantenha fastRefresh: true.
+	•	Se repetir o erro: edite vite.config.ts e mude para fastRefresh: false, reinicie:
+
+react({
+  jsxRuntime: 'automatic',
+  fastRefresh: false, // desliga HMR; app volta a funcionar
+})
+
+
+
+⸻
+
+7) Causas comuns e prevenção
+	•	Duas cópias do React? Você já saneou isso; continue validando com:
+
+npm ls react react-dom
+
+
+	•	Dois plugins de React no Vite (ex.: @vitejs/plugin-react + react-swc) → não pode.
+	•	Babel externo com react-refresh/babel → remova em projetos Vite+TS.
+	•	Build em “production” com código de dev? Não force process.env.NODE_ENV no Vite. Use import.meta.env.MODE.
+
+⸻
+
+8) Critérios de aceite
+	•	App inicia sem $RefreshSig$ no console.
+	•	npm ls mostra uma versão de React/React-DOM.
+	•	(Opcional) HMR funcionando novamente com fastRefresh: true. Se não for prioridade, pode deixar false.
