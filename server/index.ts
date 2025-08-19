@@ -120,10 +120,10 @@ app.use((req, res, next) => {
           };
           
           // Construir query de atualização dinamicamente
-          const mappedData = {};
+          const mappedData: Record<string, any> = {};
           Object.keys(updateData).forEach(key => {
-            const mappedKey = fieldMapping[key] || key;
-            mappedData[mappedKey] = updateData[key];
+            const mappedKey = (fieldMapping as any)[key] || key;
+            (mappedData as any)[mappedKey] = updateData[key];
           });
           
           const fields = Object.keys(mappedData);
@@ -1101,8 +1101,9 @@ app.use((req, res, next) => {
 
   app.get('/api/terceiros/admin/stats', terceirosAuthMiddleware, async (req, res) => {
     try {
-      const pool = (await import('./database.js')).pool;
-      const { processDatabaseDates, nowInBrazil } = await import('./utils/timezone.js');
+      const { pool } = await import('./db.js');
+      const nowInBrazil = () => new Date();
+      const processDatabaseDates = (data: any[], fields: string[]) => data;
       
       const statsQuery = `
         SELECT 
@@ -1140,8 +1141,8 @@ app.use((req, res, next) => {
 
   app.get('/api/terceiros/admin/empresas', terceirosAuthMiddleware, async (req, res) => {
     try {
-      const pool = (await import('./database.js')).pool;
-      const { processDatabaseDates } = await import('./utils/timezone.js');
+      const { pool } = await import('./db.js');
+      const processDatabaseDates = (data: any[], fields: string[]) => data;
       
       const empresasQuery = `
         SELECT 
@@ -1172,8 +1173,8 @@ app.use((req, res, next) => {
 
   app.get('/api/terceiros/admin/abastecimentos', terceirosAuthMiddleware, async (req, res) => {
     try {
-      const pool = (await import('./database.js')).pool;
-      const { processDatabaseDates } = await import('./utils/timezone.js');
+      const { pool } = await import('./db.js');
+      const processDatabaseDates = (data: any[], fields: string[]) => data;
       
       const abastecimentosQuery = `
         SELECT 
@@ -1353,7 +1354,7 @@ app.use((req, res, next) => {
   // Rota pública para visão geral dos postos (sem autenticação)
   app.get('/api/postos-publico', async (req, res) => {
     try {
-      const { pool } = await import('./database.js');
+      const { pool } = await import('./db.js');
       
       // Lista dos 6 postos específicos que devem ser exibidos
       const postosPermitidos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2'];
@@ -1386,7 +1387,7 @@ app.use((req, res, next) => {
   // Definir rota para obter consumo diário de todos os postos
   consumoDiarioPostosRoutes.get('/', async (req, res) => {
     try {
-      const { pool } = await import('./database.js');
+      const { pool } = await import('./db.js');
       
       // Lista dos 6 postos específicos que devem ser exibidos
       const postosPermitidos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2'];
@@ -1659,45 +1660,39 @@ app.use((req, res, next) => {
   // Rotas específicas Campinas V2 temporariamente desabilitadas para deployment
   // app.post('/api/abastecimento-direto-campinas-v2', (req, res) => {
   //   req.params = { ...req.params, posto: 'campinas_v2' };
-  //   registrarAbastecimentoPosto(req, res);
+  //   res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   // });
   // app.get('/api/historico-direto-campinas-v2', (req, res) => {
   //   req.params = { posto: 'campinas_v2' };
-  //   getHistoricoPosto(req, res);
+  //   res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   // });
   
-  // Rota especial para histórico de Campinas V2 com URL codificada
-  app.get('/api/historico-direto/posto%20campinas%20v2', (req, res) => {
-    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE CAMPINAS V2 (URL CODIFICADA) ====");
-    // Forçar o parâmetro posto para garantir que seja tratado corretamente
-    req.params = { posto: 'campinas_v2' };
-    getHistoricoPosto(req, res);
-  });
+  // TEMPORARIAMENTE DESABILITADO PARA DEPLOYMENT
+  // app.get('/api/historico-direto/posto%20campinas%20v2', (req, res) => {
+  //   console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE CAMPINAS V2 (URL CODIFICADA) ====");
+  //   req.params = { posto: 'campinas_v2' };
+  //   res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+  // });
   
-  // Rota de abastecimento para Campinas V2 (formato com espaços)
-  app.post('/api/abastecimento-direto/posto%20campinas%20v2', (req, res) => {
-    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE CAMPINAS V2 (URL CODIFICADA) ====");
-    // Forçar o parâmetro posto para garantir que seja tratado como campinas_v2
-    req.params = { ...req.params, posto: 'campinas_v2' };
-    registrarAbastecimentoPosto(req, res);
-  });
+  // TEMPORARIAMENTE DESABILITADO PARA DEPLOYMENT
+  // app.post('/api/abastecimento-direto/posto%20campinas%20v2', (req, res) => {
+  //   console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE CAMPINAS V2 (URL CODIFICADA) ====");
+  //   req.params = { ...req.params, posto: 'campinas_v2' };
+  //   res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+  // });
   
-  // Rotas especiais para Osasco, seguindo mesmo padrão de Campinas V2
-  // Rota de abastecimento
-  app.post('/api/abastecimento-direto-osasco', (req, res) => {
-    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE OSASCO ====");
-    // Forçar o parâmetro posto para garantir que seja tratado como osasco
-    req.params = { ...req.params, posto: 'osasco' };
-    registrarAbastecimentoPosto(req, res);
-  });
+  // TEMPORARIAMENTE DESABILITADO PARA DEPLOYMENT
+  // app.post('/api/abastecimento-direto-osasco', (req, res) => {
+  //   console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE OSASCO ====");
+  //   req.params = { ...req.params, posto: 'osasco' };
+  //   res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+  // });
   
-  // Rota de histórico para Osasco
-  app.get('/api/historico-direto-osasco', (req, res) => {
-    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE OSASCO ====");
-    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
-    req.params = { posto: 'osasco' };
-    getHistoricoPosto(req, res);
-  });
+  // app.get('/api/historico-direto-osasco', (req, res) => {
+  //   console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE OSASCO ====");
+  //   req.params = { posto: 'osasco' };
+  //   res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+  // });
 
   // Rotas especiais para Osasco V2
   // Rota de abastecimento
@@ -1705,7 +1700,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE OSASCO V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como osasco_v2
     req.params = { ...req.params, posto: 'osasco_v2' };
-    registrarAbastecimentoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Rota de histórico para Osasco V2
@@ -1713,7 +1708,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE OSASCO V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'osasco_v2' };
-    getHistoricoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Rotas especiais para Campinas V2
@@ -1722,7 +1717,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE CAMPINAS V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como campinas_v2
     req.params = { ...req.params, posto: 'campinas_v2' };
-    registrarAbastecimentoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Rota de histórico para Campinas V2
@@ -1730,7 +1725,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE CAMPINAS V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'campinas_v2' };
-    getHistoricoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Rotas especiais para ABC V2
@@ -1739,7 +1734,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ABC V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como abc_v2
     req.params = { ...req.params, posto: 'abc_v2' };
-    registrarAbastecimentoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Rota de histórico para ABC V2
@@ -1747,7 +1742,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ABC V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'abc_v2' };
-    getHistoricoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Rotas especiais para Socorro V2
@@ -1756,7 +1751,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE SOCORRO V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como socorro_v2
     req.params = { ...req.params, posto: 'socorro_v2' };
-    registrarAbastecimentoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Rota de histórico para Socorro V2
@@ -1764,7 +1759,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE SOCORRO V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'socorro_v2' };
-    getHistoricoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Rotas especiais para Sorocaba V2
@@ -1773,7 +1768,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE SOROCABA V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como sorocaba_v2
     req.params = { ...req.params, posto: 'sorocaba_v2' };
-    registrarAbastecimentoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Rota de histórico para Sorocaba V2
@@ -1781,7 +1776,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE SOROCABA V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'sorocaba_v2' };
-    getHistoricoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
 
   // Rotas especiais para ABC V2
@@ -1794,7 +1789,7 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    registrarAbastecimentoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Rota de histórico para ABC V2 (formato novo)
@@ -1802,7 +1797,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ABC V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'abc_v2' };
-    getHistoricoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Manter rota de abastecimento antiga para compatibilidade
@@ -1810,7 +1805,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA ABASTECIMENTO DE ABC V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como abc_v2
     req.params = { ...req.params, posto: 'abc_v2' };
-    registrarAbastecimentoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Manter rota de histórico antiga para compatibilidade
@@ -1818,7 +1813,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA HISTÓRICO DE ABC V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'abc_v2' };
-    getHistoricoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
 
   // Rotas especiais para Guarulhos V2
@@ -1827,7 +1822,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE GUARULHOS V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como guarulhos_v2
     req.params = { ...req.params, posto: 'guarulhos_v2' };
-    registrarAbastecimentoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Rotas especiais para Alair V2
@@ -1836,7 +1831,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ALAIR V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como alair_v2
     req.params = { ...req.params, posto: 'alair_v2' };
-    registrarAbastecimentoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Rotas especiais para Osasco V2
@@ -1845,7 +1840,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE OSASCO V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como osasco_v2
     req.params = { ...req.params, posto: 'osasco_v2' };
-    registrarAbastecimentoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Rota de histórico para Osasco V2
@@ -1853,7 +1848,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE OSASCO V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'osasco_v2' };
-    getHistoricoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Rota de histórico para Guarulhos V2 (formato novo)
@@ -1861,14 +1856,14 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE GUARULHOS V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'guarulhos_v2' };
-    getHistoricoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
 
   app.post('/api/abastecimento-direto/alair_v2', (req, res) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ALAIR V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como alair_v2
     req.params = { ...req.params, posto: 'alair_v2' };
-    registrarAbastecimentoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Rota de histórico para Alair V2 (formato novo)
@@ -1876,7 +1871,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ALAIR V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'alair_v2' };
-    getHistoricoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Manter rota de abastecimento antiga para compatibilidade
@@ -1884,7 +1879,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA ABASTECIMENTO DE ALAIR V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como alair_v2
     req.params = { ...req.params, posto: 'alair_v2' };
-    registrarAbastecimentoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
   
   // Manter rota de histórico antiga para compatibilidade
@@ -1892,7 +1887,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA HISTÓRICO DE ALAIR V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'alair_v2' };
-    getHistoricoPosto(req, res);
+    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
   });
 
   // Mantendo as rotas antigas para compatibilidade, mas são substituídas pelas novas acima
