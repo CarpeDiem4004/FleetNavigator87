@@ -1,10 +1,11 @@
+// src/hooks/useFetchWithAuth.ts
+// Hook seguro para fazer fetch com autenticação (Bearer) seguindo as Regras de Hooks do React.
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /**
- * Hook seguro para fazer fetch com autenticação (Bearer) seguindo as Regras de Hooks do React.
- * 
  * Como usar no componente:
- * 
+ *
  * const { apiFetch, isReady, lastError } = useFetchWithAuth();
  * useEffect(() => {
  *   if (!isReady) return;
@@ -39,7 +40,7 @@ type UseFetchWithAuthReturn = {
 /** Chave padrão no localStorage */
 const LS_TOKEN_KEY = "auth_token";
 
-/** Leitor "seguro" do localStorage (SSR/iframe/sem janela) */
+/** Leitor “seguro” do localStorage (SSR/iframe/sem janela) */
 function safeReadToken(): string | null {
   try {
     if (typeof window === "undefined") return null;
@@ -49,7 +50,7 @@ function safeReadToken(): string | null {
   }
 }
 
-/** Escritor "seguro" do localStorage */
+/** Escritor “seguro” do localStorage */
 function safeWriteToken(value: string | null) {
   try {
     if (typeof window === "undefined") return;
@@ -70,7 +71,7 @@ export function useFetchWithAuth(): UseFetchWithAuthReturn {
   const [isReady, setIsReady] = useState(false);
   const [lastError, setLastError] = useState<Error | null>(null);
 
-  // Mantém o token "padrão" em um ref para acesso rápido sem disparar re-render.
+  // Mantém o token “padrão” em um ref para acesso rápido sem disparar re-render.
   const defaultTokenRef = useRef<string | null>(safeReadToken());
 
   // Inicializa apenas uma vez (segue as regras dos Hooks)
@@ -102,7 +103,7 @@ export function useFetchWithAuth(): UseFetchWithAuthReturn {
 
       if (auth && token) {
         if (!hdrs.has("Authorization")) {
-          hdrs.set("Authorization", `Bearer ${token}`);
+          hdrs.set("Authorization", Bearer ${token});
         }
       }
 

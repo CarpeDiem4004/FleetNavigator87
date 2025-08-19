@@ -399,7 +399,7 @@ import TestMaintenanceData from "@/pages/TestMaintenanceData";
 
 function App() {
   // Ativar o hook de injeção automática de token JWT em todas as requisições fetch
-  useFetchWithAuth();
+  const { isReady } = useFetchWithAuth();
   
   // Inicializar correção automática de timezone em URLs
   useEffect(() => {

@@ -2,14 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { useFetchWithAuth } from '../hooks/useFetchWithAuth';
 
 export default function TestMaintenanceData() {
-  const fetchWithAuth = useFetchWithAuth();
+  const { apiFetch, isReady } = useFetchWithAuth();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isReady) return;
+    
     const fetchData = async () => {
       try {
-        const response = await fetchWithAuth('/api/operational-dashboard/maintenance');
+        const response = await apiFetch('/api/operational-dashboard/maintenance');
         const jsonData = await response.json();
         setData(jsonData);
       } catch (error) {
@@ -20,7 +22,7 @@ export default function TestMaintenanceData() {
     };
 
     fetchData();
-  }, []);
+  }, [isReady, apiFetch]);
 
   if (loading) return <div>Carregando...</div>;
   if (!data) return <div>Erro ao carregar dados</div>;
