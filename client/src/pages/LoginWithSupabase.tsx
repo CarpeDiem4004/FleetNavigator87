@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import { useSupabaseAuthContext } from '@/context/SupabaseAuthContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface LoginWithSupabaseProps {
   oficina?: boolean;
@@ -15,16 +15,16 @@ interface LoginWithSupabaseProps {
 export default function LoginWithSupabase({ oficina = false }: LoginWithSupabaseProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, isLoading, user, supabaseUser } = useSupabaseAuthContext();
+  const { login, isLoading, user } = useAuth();
   const { toast } = useToast();
   const [_, navigate] = useLocation();
 
   // Redirecionar se o usuário já estiver autenticado
   useEffect(() => {
-    if (user || supabaseUser) {
+    if (user) {
       navigate('/');
     }
-  }, [user, supabaseUser, navigate]);
+  }, [user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

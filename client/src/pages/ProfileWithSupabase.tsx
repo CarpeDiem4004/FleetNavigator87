@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSupabaseAuthContext } from '@/context/SupabaseAuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { Loader2, LogOut, User, Mail, UserCog } from 'lucide-react';
 import { useLocation } from 'wouter';
 
 export default function ProfileWithSupabase() {
-  const { user, supabaseUser, isLoading, logout } = useSupabaseAuthContext();
+  const { user, isLoading, logout } = useAuth();
   const { toast } = useToast();
   const [_, navigate] = useLocation();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -43,14 +43,14 @@ export default function ProfileWithSupabase() {
     );
   }
 
-  if (!user && !supabaseUser) {
+  if (!user) {
     navigate('/login-supabase');
     return null;
   }
 
   const userInitials = user?.name 
     ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() 
-    : supabaseUser?.email?.substring(0, 2).toUpperCase() || 'U';
+    : user?.email?.substring(0, 2).toUpperCase() || 'U';
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50 p-4">
@@ -58,7 +58,7 @@ export default function ProfileWithSupabase() {
         <CardHeader>
           <div className="flex justify-center mb-4">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={supabaseUser?.user_metadata?.avatar_url} />
+              <AvatarImage />
               <AvatarFallback className="text-2xl">{userInitials}</AvatarFallback>
             </Avatar>
           </div>
@@ -72,7 +72,7 @@ export default function ProfileWithSupabase() {
             <User className="h-5 w-5 text-gray-500" />
             <div>
               <p className="text-sm font-medium">Nome</p>
-              <p>{user?.name || supabaseUser?.user_metadata?.name || 'Não informado'}</p>
+              <p>{user?.name || 'Não informado'}</p>
             </div>
           </div>
 
@@ -80,7 +80,7 @@ export default function ProfileWithSupabase() {
             <Mail className="h-5 w-5 text-gray-500" />
             <div>
               <p className="text-sm font-medium">E-mail</p>
-              <p>{user?.email || supabaseUser?.email}</p>
+              <p>{user?.email}</p>
             </div>
           </div>
 
@@ -88,7 +88,7 @@ export default function ProfileWithSupabase() {
             <UserCog className="h-5 w-5 text-gray-500" />
             <div>
               <p className="text-sm font-medium">Função</p>
-              <p className="capitalize">{user?.role || supabaseUser?.user_metadata?.role || 'Usuário'}</p>
+              <p className="capitalize">{user?.role || 'Usuário'}</p>
             </div>
           </div>
 

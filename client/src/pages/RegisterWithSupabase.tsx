@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import { useSupabaseAuthContext } from '@/context/SupabaseAuthContext';
+import { useAuth } from '@/context/AuthContext';
 
 export default function RegisterWithSupabase() {
   const [name, setName] = useState('');
@@ -14,16 +14,16 @@ export default function RegisterWithSupabase() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordsMatch, setPasswordsMatch] = useState(true);
-  const { register, isLoading, user, supabaseUser } = useSupabaseAuthContext();
+  const { register, isLoading, user } = useAuth();
   const { toast } = useToast();
   const [_, navigate] = useLocation();
 
   // Redirecionar se o usuário já estiver autenticado
   useEffect(() => {
-    if (user || supabaseUser) {
+    if (user) {
       navigate('/');
     }
-  }, [user, supabaseUser, navigate]);
+  }, [user, navigate]);
 
   // Verificar se as senhas coincidem
   useEffect(() => {

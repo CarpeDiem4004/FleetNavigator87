@@ -10,7 +10,7 @@ import {
   deleteTireMovement,
   TireMovement
 } from '@/services/tireMoveService';
-import { useSupabaseAuthContext } from '@/context/SupabaseAuthContext';
+import { useAuth } from '@/context/AuthContext';
 import {
   Card,
   CardContent,
@@ -97,7 +97,7 @@ interface TireMountingHistoryProps {
 
 export default function TireMountingHistory({ tireId }: TireMountingHistoryProps) {
   const { toast } = useToast();
-  const { user, supabaseUser } = useSupabaseAuthContext();
+  const { user } = useAuth();
   const [availableTires, setAvailableTires] = useState<Tire[]>([]);
   const [mountHistory, setMountHistory] = useState<TireMounting[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -232,7 +232,7 @@ export default function TireMountingHistory({ tireId }: TireMountingHistoryProps
 
     try {
       // Determinar o nome do usuário responsável
-      const responsibleUser = supabaseUser?.user_metadata?.name || user?.name || supabaseUser?.email || 'Usuário';
+      const responsibleUser = user?.name || user?.email || 'Usuário';
       
       // Criar o objeto de movimentação para enviar à API
       const tireMovement: TireMovement = {
@@ -334,7 +334,7 @@ export default function TireMountingHistory({ tireId }: TireMountingHistoryProps
       }
       
       // Determinar o nome do usuário responsável
-      const responsibleUser = supabaseUser?.user_metadata?.name || user?.name || supabaseUser?.email || 'Usuário';
+      const responsibleUser = user?.name || user?.email || 'Usuário';
       
       // Criar o objeto de movimentação para remoção
       const tireMovement: TireMovement = {

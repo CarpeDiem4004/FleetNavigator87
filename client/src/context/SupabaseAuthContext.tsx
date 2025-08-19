@@ -1,7 +1,5 @@
-import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { createContext, ReactNode, useContext } from 'react';
 import { User as SupabaseAuthUser } from '@supabase/supabase-js';
-import { useToast } from '@/hooks/use-toast';
 
 interface User {
   id: number;
@@ -40,11 +38,10 @@ interface SupabaseAuthProviderProps {
 }
 
 export const SupabaseAuthProvider = ({ children }: SupabaseAuthProviderProps) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { toast } = useToast();
-  
-  const { supabaseUser } = useSupabaseAuth();
+  // Contexto simplificado que redireciona para AuthContext principal
+  const user = null;
+  const isLoading = false;
+  const supabaseUser = null;
 
   // Funções básicas que redirecionam para AuthContext
   const login = async (email: string, password: string): Promise<User> => {
@@ -56,7 +53,8 @@ export const SupabaseAuthProvider = ({ children }: SupabaseAuthProviderProps) =>
   };
 
   const logout = async (): Promise<void> => {
-    setUser(null);
+    // Redireciona para AuthContext principal
+    throw new Error("Use AuthContext logout method instead");
   };
 
   const resyncSession = async (): Promise<boolean> => {
