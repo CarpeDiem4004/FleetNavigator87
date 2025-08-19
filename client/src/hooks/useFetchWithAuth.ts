@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 // Define o tipo de retorno do hook
 export interface UseFetchWithAuthReturn {

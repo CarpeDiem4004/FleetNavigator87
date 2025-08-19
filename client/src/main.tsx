@@ -10,7 +10,7 @@ const initPWA = async () => {
     const { pwaManager } = await import('./utils/pwa-utils');
     console.log('[PWA] Manager initialized successfully');
   } catch (error) {
-    console.warn('[PWA] Service Worker registration skipped:', error.message);
+    console.warn('[PWA] Service Worker registration skipped:', (error as Error).message);
   }
 };
 
