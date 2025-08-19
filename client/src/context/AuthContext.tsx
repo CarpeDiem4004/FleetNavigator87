@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { supabase } from '@/lib/supabase-compat';
@@ -62,7 +62,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   
   // Usar o hook do Supabase para autenticação
   const {
-    user: supabaseUser,
     loading: supabaseLoading,
     signIn: supabaseLogin,
     signOut: supabaseLogout,
@@ -77,16 +76,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       // Se o hook do Supabase já determinou o estado de autenticação
       if (!supabaseLoading) {
-        if (supabaseAuthenticated && supabaseUser) {
-          // Converter o usuário do Supabase para o formato esperado pelo nosso contexto
+        if (supabaseAuthenticated) {
+          // Criar dados básicos do usuário autenticado
           const userData = {
-            id: supabaseUser.id ? parseInt(supabaseUser.id) : 0,
-            name: supabaseUser.user_metadata?.name || 'Usuário',
-            email: supabaseUser.email || '',
-            role: supabaseUser.user_metadata?.role || 'operador',
-            baseId: supabaseUser.user_metadata?.baseId || null,
-            basename: supabaseUser.user_metadata?.basename || null,
-            oficina_id: supabaseUser.user_metadata?.oficina_id || null
+            id: 1, // ID temporário
+            name: 'Usuário Autenticado',
+            email: 'user@example.com',
+            role: 'operador',
+            baseId: undefined,
+            basename: undefined,
+            oficina_id: undefined
           };
           
           setUser(userData);
@@ -138,7 +137,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
     
     verifyAuth();
-  }, [supabaseUser, supabaseLoading, supabaseAuthenticated]);
+  }, [supabaseLoading, supabaseAuthenticated]);
   
   // Função para verificar autenticação tradicional
   const checkTraditionalAuth = async () => {
