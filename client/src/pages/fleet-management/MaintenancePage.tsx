@@ -210,45 +210,35 @@ export default function MaintenancePage() {
     requestBaseId: user?.baseId || 0,
     responsiblePerson: 'Técnico responsável',
     vehicleKm: undefined,
-    projectId: undefined,
-    baseIdOptional: undefined
+    projectId: undefined
   });
 
   // Carregar bases
   const { data: basesResponse } = useQuery<Base[]>({
     queryKey: ['/api/bases'],
-    refetchOnWindowFocus: false,
-    onSuccess: (data) => {
-      console.log('Bases response:', data);
-    }
+    refetchOnWindowFocus: false
   });
 
   // Extrair dados da resposta
-  const bases = basesResponse?.data || basesResponse || [];
+  const bases = (basesResponse as any)?.data || basesResponse || [];
 
   // Carregar projetos
   const { data: projectsResponse } = useQuery({
     queryKey: ['/api/projects'],
-    refetchOnWindowFocus: false,
-    onSuccess: (data) => {
-      console.log('Projects response:', data);
-    }
+    refetchOnWindowFocus: false
   });
 
   // Extrair dados da resposta
-  const projects = projectsResponse?.data || projectsResponse || [];
+  const projects = (projectsResponse as any)?.data || projectsResponse || [];
 
   // Carregar project-bases para filtrar bases por projeto
   const { data: projectBasesResponse } = useQuery({
     queryKey: ['/api/project-bases'],
-    refetchOnWindowFocus: false,
-    onSuccess: (data) => {
-      console.log('Project-bases response:', data);
-    }
+    refetchOnWindowFocus: false
   });
 
   // Extrair dados da resposta (pode vir como {success: true, data: []} ou diretamente como [])
-  const projectBases = projectBasesResponse?.data || projectBasesResponse || [];
+  const projectBases = (projectBasesResponse as any)?.data || projectBasesResponse || [];
 
   // Estado para bases filtradas baseado no projeto selecionado
   const [filteredBases, setFilteredBases] = useState<Base[]>([]);
@@ -288,7 +278,7 @@ export default function MaintenancePage() {
   // Reset base selection when project changes
   useEffect(() => {
     if (selectedProjectId) {
-      setFormData(prev => ({ ...prev, baseIdOptional: undefined }));
+      setFormData(prev => ({ ...prev }));
     }
   }, [selectedProjectId]);
 
@@ -467,7 +457,7 @@ export default function MaintenancePage() {
 
   const handleSelectChange = (name: string, value: string) => {
     // Converter valores para números quando necessário
-    const numericFields = ['workshopId', 'requestBaseId', 'projectId', 'baseIdOptional'];
+    const numericFields = ['workshopId', 'requestBaseId', 'projectId'];
     const processedValue = numericFields.includes(name) ? (value === "0" ? undefined : parseInt(value)) : value;
     
     setFormData(prev => ({ ...prev, [name]: processedValue }));
@@ -558,8 +548,7 @@ export default function MaintenancePage() {
       requestBaseId: user?.baseId || 0,
       responsiblePerson: 'Técnico responsável',
       vehicleKm: undefined,
-      projectId: undefined,
-      baseIdOptional: undefined
+      projectId: undefined
     });
     setIsOpen(true);
   };
@@ -1104,12 +1093,12 @@ export default function MaintenancePage() {
                 {/* Base (Opcional) - Aparece apenas quando um projeto for selecionado */}
                 {selectedProjectId && (
                   <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="baseIdOptional">
+                    <Label htmlFor="requestBaseId">
                       Base (Opcional)
                     </Label>
                     <Select 
-                      value={formData.baseIdOptional ? formData.baseIdOptional.toString() : "0"} 
-                      onValueChange={(value) => handleSelectChange('baseIdOptional', value)}
+                      value={formData.requestBaseId ? formData.requestBaseId.toString() : "0"} 
+                      onValueChange={(value) => handleSelectChange('requestBaseId', value)}
                     >
                       <SelectTrigger className="h-10">
                         <SelectValue placeholder="Selecione uma base" />

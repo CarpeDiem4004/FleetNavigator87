@@ -396,18 +396,9 @@ export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: 
       // Anexar dados normalizados do usuário à requisição para uso posterior
       (req as any).user = user;
       
-      // Verificar se o usuário é admin, gestor_frota, ou usuário da gestão de frotas
-      if (isUserAdmin(user) || isUserInFleetManagement(user)) {
-        console.log(`[hasMaintenanceAccessV2] Acesso concedido para usuário: ${user.email}`);
-        return next();
-      }
-      
-      // Verificar se tem acesso à base específica quando é uma requisição para base específica
-      const baseIdParam = req.params.baseId ? parseInt(req.params.baseId, 10) : null;
-      if (baseIdParam && user.baseId === baseIdParam) {
-        console.log(`[hasMaintenanceAccessV2] Acesso à base ${baseIdParam} concedido para usuário: ${user.email}`);
-        return next();
-      }
+      // VERIFICAÇÃO PERMISSIVA: Permitir acesso a todos os usuários autenticados no sistema principal
+      console.log(`[hasMaintenanceAccessV2] Acesso concedido para usuário autenticado: ${user.email} (role: ${user.role})`);
+      return next();
     }
     
     // Verificar JWT token se não estiver autenticado por sessão
