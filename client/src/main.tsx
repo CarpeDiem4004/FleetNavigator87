@@ -1,3 +1,4 @@
+import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
@@ -18,5 +19,7 @@ const initPWA = async () => {
 initPWA();
 
 createRoot(document.getElementById("root")!).render(
-  <App />
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
 );
