@@ -5,7 +5,7 @@
  * de autenticação no sistema híbrido (Supabase + Express Session)
  */
 
-import { supabase } from './supabaseClient';
+import { supabase } from './supabase-compat';
 
 export class AuthManager {
   // Nomes das chaves de armazenamento
