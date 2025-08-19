@@ -10,15 +10,27 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Constantes de configuração do Supabase
-export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
-export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
-export const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDg5ODIwNiwiZXhwIjoyMDYwMjc0MjA2fQ.bvwwqQBQVUOlyHYMsX9C5dSQhsQYI2r8qmqRBHgG_0Y';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
+
+// Validação de variáveis obrigatórias
+if (!supabaseUrl) {
+  throw new Error('VITE_SUPABASE_URL é obrigatório e não foi definido nas variáveis de ambiente');
+}
+
+if (!supabaseAnonKey) {
+  throw new Error('VITE_SUPABASE_ANON_KEY é obrigatório e não foi definido nas variáveis de ambiente');
+}
+
+// Exportar após validação
+export { supabaseUrl, supabaseAnonKey, supabaseServiceKey };
 
 // Log de diagnóstico para verificar URLs e chaves (evitar mostrar a chave completa)
 console.log('[supabase-compat] Verificando variáveis de ambiente do Supabase:');
-console.log('- VITE_SUPABASE_URL disponível:', Boolean(import.meta.env.VITE_SUPABASE_URL));
-console.log('- VITE_SUPABASE_ANON_KEY disponível:', Boolean(import.meta.env.VITE_SUPABASE_ANON_KEY));
-console.log('- VITE_SUPABASE_SERVICE_KEY disponível:', Boolean(import.meta.env.VITE_SUPABASE_SERVICE_KEY));
+console.log('- VITE_SUPABASE_URL disponível:', Boolean(supabaseUrl));
+console.log('- VITE_SUPABASE_ANON_KEY disponível:', Boolean(supabaseAnonKey));
+console.log('- VITE_SUPABASE_SERVICE_KEY disponível:', Boolean(supabaseServiceKey));
 
 // Definição de tipos unificados para diagnósticos
 export interface ClientDiagnosticResults {
@@ -78,8 +90,14 @@ export const getSupabaseClient = (): SupabaseClient => {
 /**
  * Função singleton para obter ou criar o cliente Supabase Admin.
  * Este cliente tem permissões elevadas usando a service key.
+ * AVISO: Só deve ser usado no servidor, nunca no cliente!
  */
-export const getSupabaseAdminClient = (): SupabaseClient => {
+export const getSupabaseAdminClient = (): SupabaseClient | null => {
+  if (!supabaseServiceKey) {
+    console.warn('[supabase-compat] VITE_SUPABASE_SERVICE_KEY não está disponível - cliente admin não será criado');
+    return null;
+  }
+  
   if (!_supabaseAdmin) {
     console.log("[supabase-compat] Criando nova instância do cliente Supabase Admin");
     _supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
@@ -266,6 +284,12 @@ export async function insertRecord(
       
       // Tentativa com cliente admin como fallback
       console.log(`[supabase-compat] Tentando inserir registro em ${table} com cliente admin`);
+      
+      if (!supabaseAdmin) {
+        console.error(`[supabase-compat] Cliente admin não disponível - não é possível tentar fallback`);
+        return { success: false, error: result.error };
+      }
+      
       const { data: adminResult, error: adminError } = await supabaseAdmin
         .from(table)
         .insert([data])
