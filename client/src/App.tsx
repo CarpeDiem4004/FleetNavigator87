@@ -53,7 +53,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { SupabaseAuthProvider } from "@/context/SupabaseAuthContext";
 
 // Importação do hook para injetar token JWT em todas as requisições
-import { useFetchWithAuth } from "@/hooks/useFetchWithAuth";
+import useFetchWithAuth from "@/hooks/useFetchWithAuth";
 
 // Importação das páginas de postos
 import IndexPostos from "@/pages/postos/IndexPostos";
