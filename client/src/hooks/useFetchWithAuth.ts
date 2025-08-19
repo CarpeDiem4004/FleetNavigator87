@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { getDeploymentConfig, getAuthenticationStrategy } from '@/utils/deployment-detector';
 
@@ -12,7 +12,7 @@ export function useFetchWithAuth() {
   let initialized = false;
   
   // Função para obter o token JWT da sessão Supabase, localStorage ou novo endpoint de JWT
-  const getAuthToken = useCallback(async (): Promise<string | null> => {
+  const getAuthToken = async (): Promise<string | null> => {
     // Verificar se estamos em uma página de login ou solicitação - se sim, não fazer autenticação automática
     const currentPath = window.location.pathname;
     if (currentPath.includes('/login') || currentPath.includes('/register') || 
@@ -150,7 +150,7 @@ export function useFetchWithAuth() {
     
     // Obtém token de emergência como última opção
     return await getEmergencyToken();
-  }, []);
+  };
   
   // Função separada para obter token de emergência
   const getEmergencyToken = async (): Promise<string | null> => {
@@ -243,8 +243,8 @@ export function useFetchWithAuth() {
     return null;
   };
 
-  // Função especializada para autenticação em deployment externo
-  const getExternalProductionToken = useCallback(async (): Promise<string | null> => {
+  // Função especializada para autenticação em deployment externo  
+  const getExternalProductionToken = async (): Promise<string | null> => {
     console.log('[FetchWithAuth] Iniciando autenticação para produção externa');
     
     // Verificar token no localStorage primeiro
@@ -305,7 +305,7 @@ export function useFetchWithAuth() {
       console.error('[FetchWithAuth] Erro no processo de autenticação para produção:', error);
       return null;
     }
-  }, []);
+  };
 
   // Inicializa o token JWT ao montar o componente
   useEffect(() => {
@@ -325,7 +325,7 @@ export function useFetchWithAuth() {
     }
     
     initToken();
-  }, [getAuthToken]);
+  }, []);
 
   // Sobrescreve o fetch global para adicionar o token automaticamente
   useEffect(() => {
@@ -453,7 +453,7 @@ export function useFetchWithAuth() {
       console.log('[FetchWithAuth] Restaurando fetch original');
       window.fetch = originalFetch;
     };
-  }, [getAuthToken, initialized]);
+  }, [initialized]);
   
   // Configura um listener para mudanças no localStorage
   useEffect(() => {
