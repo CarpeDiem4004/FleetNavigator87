@@ -14,10 +14,11 @@ import DashboardNew from "@/pages/DashboardNew";
 import Dashboard from "@/pages/index";
 import ExecutiveDashboard from "@/pages/ExecutiveDashboard";
 import PainelOperacional from "@/pages/PainelOperacional";
-import VehiclesNew from "@/pages/VehiclesNew";
-import MaintenanceNew from "@/pages/MaintenanceNew";
-import TiresPage from "@/pages/TiresPage";
-import TireDetailPage from "@/pages/TireDetailPage";
+// TEMPORARIO: Comentando imports problemáticos para debug
+// import VehiclesNew from "@/pages/VehiclesNew";
+// import MaintenanceNew from "@/pages/MaintenanceNew";
+// import TiresPage from "@/pages/TiresPage";
+// import TireDetailPage from "@/pages/TireDetailPage";
 import SolicitacoesPneus from "@/pages/pneus/SolicitacoesPneus";
 import RefuelingNew from "@/pages/RefuelingNew";
 import FinesNew from "@/pages/FinesNew";
@@ -670,14 +671,14 @@ function App() {
           <ProtectedRoute path="/painel-operacional" component={PainelOperacional} />
           
           {/* Rotas protegidas com verificação de permissão de base */}
-          <ProtectedRoute path="/vehicles" component={VehiclesNew} />
+          {/* <ProtectedRoute path="/vehicles" component={VehiclesNew} /> */}
           <ProtectedRoute path="/linehall-register" component={LineHallVehicleRegistration} />
           <ProtectedRoute path="/stopped-vehicles" component={StoppedVehicles} />
           {/* <ProtectedRoute path="/maintenance" component={MaintenanceNew} /> */}
-          <ProtectedRoute path="/tires" component={TiresPage} />
+          {/* <ProtectedRoute path="/tires" component={TiresPage} /> */}
           <ProtectedRoute path="/tires/entrada" component={TiresEntrada} />
           <ProtectedRoute path="/tires/solicitacoes" component={SolicitacoesPneus} />
-          <ProtectedRoute path="/tires/:id" component={TireDetailPage} />
+          {/* <ProtectedRoute path="/tires/:id" component={TireDetailPage} /> */}
           <ProtectedRoute path="/refueling" component={RefuelingNew} />
           <ProtectedRoute path="/fines" component={FinesNew} />
           {/* Line Hall removido conforme solicitação */}
@@ -970,7 +971,7 @@ function App() {
           <ProtectedRoute path="/tratativa-manutencao" component={TratativaManutencaoPage} />
           <ProtectedRoute path="/maintenance/oficinas-credentials" component={OficinasCredentialsPage} />
           <ProtectedRoute path="/maintenance/workshop-external-access" component={WorkshopExternalAccess} />
-          <ProtectedRoute path="/tires" component={TiresPage} />
+          {/* <ProtectedRoute path="/tires" component={TiresPage} /> */}
           
           {/* Rota pública para checklist do motorista */}
           <Route path="/checklist/:id">
