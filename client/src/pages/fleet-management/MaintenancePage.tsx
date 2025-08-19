@@ -286,11 +286,15 @@ export default function MaintenancePage() {
   const { data: workshops = [] } = useQuery<Workshop[]>({
     queryKey: ['/api/workshops', { active: true }],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/workshops?active=true');
+      console.log('[WORKSHOPS] Buscando oficinas...');
+      const res = await fetch('/api/workshops?active=true');
       if (!res.ok) {
+        console.error(`[WORKSHOPS] Erro ao buscar oficinas: ${res.status}`);
         throw new Error(`Erro ao buscar oficinas: ${res.status}`);
       }
-      return res.json();
+      const data = await res.json();
+      console.log('[WORKSHOPS] Oficinas carregadas:', data.length, data);
+      return data;
     },
     refetchOnWindowFocus: false,
     retry: 3 // Tenta novamente em caso de falha
@@ -1025,11 +1029,11 @@ export default function MaintenancePage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="0">Selecione uma oficina</SelectItem>
-                        {Array.isArray(workshops) ? workshops.map((workshop) => (
+                        {Array.isArray(workshops) && workshops.length > 0 ? workshops.map((workshop) => (
                           <SelectItem key={workshop.id} value={workshop.id.toString()}>
-                            {workshop.name}
+                            {workshop.name || workshop.razao_social || workshop.nome_fantasia || `Oficina ${workshop.id}`}
                           </SelectItem>
-                        )) : <SelectItem value="-1">Erro ao carregar oficinas</SelectItem>}
+                        )) : <SelectItem value="-1">Carregando oficinas...</SelectItem>}
                       </SelectContent>
                     </Select>
                   </div>
