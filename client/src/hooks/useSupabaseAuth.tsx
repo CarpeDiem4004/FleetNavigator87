@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, withRetry } from '@/lib/supabase-compat';
 
+// Temporarily disable fast refresh for this hook
+if (typeof window !== 'undefined') {
+  // @ts-ignore
+  window.$RefreshSig$ = window.$RefreshSig$ || (() => () => {});
+}
+
 export function useSupabaseAuth() {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);

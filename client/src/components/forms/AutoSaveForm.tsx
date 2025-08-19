@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { useAutoSave } from '@/hooks/useAutoSave';
+// import { useAutoSave } from '@/hooks/useAutoSave'; // Temporarily disabled
 import { AlertCircle, CheckCircle2, CloudOff } from 'lucide-react';
 
 interface AutoSaveFormProps {
