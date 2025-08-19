@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Check } from "lucide-react";
+import { fixOperatorName } from "@/utils/operatorUtils";
 import { useSafeState } from "@/hooks/useSafeState";
 
 // Schema de validação
@@ -86,56 +87,21 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Carregar operador automaticamente
+  // Fixar nome do operador baseado no usuário logado
   useEffect(() => {
-    const carregarOperador = async () => {
-      // Primeiro, tentar localStorage
-      const userNameLS = localStorage.getItem('userName') || 
-                        localStorage.getItem('currentUserName') ||
-                        localStorage.getItem('user_name');
+    const setOperatorName = async () => {
+      const operatorName = await fixOperatorName(
+        postId, 
+        undefined, // sem user context neste componente 
+        (field, value) => form.setValue(field, value)
+      );
       
-      if (userNameLS) {
-        form.setValue("operador", userNameLS);
-        return;
-      }
-
-      // Tentar API
-      try {
-        const response = await fetch('/api/user', {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include'
-        });
-        
-        if (response.ok) {
-          const userData = await response.json();
-          if (userData.name) {
-            form.setValue("operador", userData.name);
-            localStorage.setItem('userName', userData.name);
-          }
-        } else {
-          // Fallback para operador padrão do posto
-          const defaultOperators: Record<string, string> = {
-            'osasco_v2': 'Alair',
-            'guarulhos_v2': 'Guarulhos',
-            'abc_v2': 'ABC',
-            'socorro_v2': 'Socorro',
-            'sorocaba_v2': 'Sorocaba',
-            'campinas_v2': 'Campinas',
-            'goiania_v2': 'Goiânia'
-          };
-          
-          const defaultOperator = defaultOperators[postId];
-          if (defaultOperator) {
-            form.setValue("operador", defaultOperator);
-          }
-        }
-      } catch (error) {
-        console.warn('Erro ao carregar operador:', error);
+      if (operatorName) {
+        console.log(`[OPERADOR-FIXACAO] Campo operador fixado: ${operatorName}`);
       }
     };
 
-    carregarOperador();
+    setOperatorName();
   }, [postId, form]);
 
   // Carregar projetos - VERSÃO SIMPLIFICADA E CORRIGIDA
@@ -536,16 +502,25 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               )}
             />
 
-            {/* Operador */}
+            {/* Operador - FIXADO */}
             <FormField
               control={form.control}
               name="operador"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Operador do Posto</FormLabel>
+                  <FormLabel>Operador do Posto *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Nome do operador" {...field} />
+                    <Input 
+                      {...field}
+                      placeholder="Nome do operador"
+                      className="bg-gray-50 cursor-not-allowed"
+                      readOnly
+                      disabled
+                    />
                   </FormControl>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Preenchido automaticamente com o operador logado
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

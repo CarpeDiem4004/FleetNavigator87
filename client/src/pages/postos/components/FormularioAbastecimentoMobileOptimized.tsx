@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Check, RefreshCw, AlertTriangle } from "lucide-react";
 import { useSafeState } from "@/hooks/useSafeState";
+import { fixOperatorName } from "@/utils/operatorUtils";
 
 // Schema de validação
 const abastecimentoSchema = z.object({
@@ -256,6 +257,23 @@ export const FormularioAbastecimentoMobileOptimized: React.FC<FormularioAbasteci
     
     return () => clearTimeout(autoResetTimer);
   }, []);
+
+  // Fixar nome do operador
+  useEffect(() => {
+    const setOperatorName = async () => {
+      const operatorName = await fixOperatorName(
+        postId, 
+        undefined, // sem user context neste componente
+        (field, value) => form.setValue(field, value)
+      );
+      
+      if (operatorName) {
+        console.log(`[OPERADOR-FIXACAO-OPTIMIZED] Nome fixado: ${operatorName}`);
+      }
+    };
+
+    setOperatorName();
+  }, [postId, form]);
 
   // Função para retry manual
   const handleManualRetry = () => {
@@ -595,8 +613,14 @@ export const FormularioAbastecimentoMobileOptimized: React.FC<FormularioAbasteci
                     <Input
                       {...field}
                       placeholder="Nome do operador"
+                      className="bg-gray-50 cursor-not-allowed"
+                      readOnly
+                      disabled
                     />
                   </FormControl>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Preenchido automaticamente com o operador logado
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

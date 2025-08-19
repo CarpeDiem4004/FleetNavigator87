@@ -15,6 +15,7 @@ import { Loader2, Check, RefreshCw, AlertTriangle, Smartphone, Plus } from "luci
 import { useMobileDetection } from "@/hooks/useMobileDetection";
 import { MobileSelect } from "@/components/ui/mobile-select";
 import { useAuth } from "@/context/AuthContext";
+import { fixOperatorName } from "@/utils/operatorUtils";
 // Função para formatar data com timezone do Brasil
 const formatToBrazilTimezone = (date: Date): string => {
   return new Intl.DateTimeFormat('sv-SE', {
@@ -133,31 +134,27 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
       base_id: "",
       motorista: "",
       motorista_rg: "",
-      operador: "Alisson Correia",
+      operador: "",
       tipo_veiculo: "frota",
     },
   });
 
-  // Preencher automaticamente o nome do operador quando o usuário for carregado
+  // Fixar automaticamente o nome do operador quando o usuário for carregado
   useEffect(() => {
-    console.log(`[OPERADOR-DEBUG] Verificando usuário:`, user);
+    const setOperatorName = async () => {
+      const operatorName = await fixOperatorName(
+        postId, 
+        user, 
+        (field, value) => form.setValue(field, value)
+      );
+      
+      if (operatorName) {
+        console.log(`[OPERADOR-FIXACAO] Campo operador fixado e será somente leitura: ${operatorName}`);
+      }
+    };
     
-    // Para Sorocaba V2, sempre usar "Alisson Correia" se não houver usuário válido
-    let operatorName = "Alisson Correia";
-    
-    if (user?.name && user.name !== "Administrador") {
-      operatorName = user.name;
-    } else if (user?.email?.includes('alisson')) {
-      operatorName = 'Alisson Correia';
-    }
-    
-    console.log(`[OPERADOR-DEBUG] Preenchendo campo operador com: ${operatorName}`);
-    form.setValue("operador", operatorName);
-    
-    // Verificar se o valor foi definido corretamente
-    const currentValue = form.getValues("operador");
-    console.log(`[OPERADOR-DEBUG] Valor atual do campo operador: ${currentValue}`);
-  }, [user, form]);
+    setOperatorName();
+  }, [user, postId, form]);
 
   // Função de diagnóstico de conexão
   const testConnectionSpeed = useCallback(async () => {
@@ -624,7 +621,7 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
                 valor_total: "",
                 motorista: "",
                 motorista_rg: "",
-                operador: "Alisson Correia",
+                operador: localStorage.getItem('fixed_operator_name') || "Operador",
                 tipo_veiculo: "frota",
                 observacoes: "",
                 lavagem: false,
