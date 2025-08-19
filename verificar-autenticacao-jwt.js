@@ -19,7 +19,7 @@ const INVALID_CREDENTIALS = {
   email: 'joao.paulo@muricionfleet.com',
   password: 'senha_incorreta'
 };
-const INVALID_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQzLCJuYW1lIjoiSm_Do28gUGF1bG8iLCJlbWFpbCI6ImpvYW8ucGF1bG9AbXVyaWNpb25mbGVldC5jb20iLCJyb2xlIjoiYWRtaW4iLCJiYXNlSWQiOm51bGwsIm9maWNpbmFJZCI6bnVsbCwiaWF0IjoxNjk5Njg4MzgyLCJleHAiOjE2OTk3NzQ3ODJ9.zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
+const INVALID_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjk5OSwibmFtZSI6IlRlc3QgVXNlciIsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSIsInJvbGUiOiJ0ZXN0IiwiYmFzZUlkIjpudWxsLCJvZmljaW5hSWQiOm51bGwsImlhdCI6MTY5OTY4ODM4MiwiZXhwIjoxNjk5Nzc0NzgyfQ.invalid_signature_for_testing_purposes_only';
 
 // Função utilitária para fazer requisições HTTP
 async function fetchApi(endpoint, options = {}) {
