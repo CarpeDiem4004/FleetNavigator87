@@ -1,7 +1,7 @@
 // Configurações de acesso à API do Supabase
-export const SUPABASE_URL = "https://hvsmxxqkuyjhpsiojupb.supabase.co/rest/v1";
-// API Key para usuário com permissão de serviço para contornar RLS
-export const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDg5ODIwNiwiZXhwIjoyMDYwMjc0MjA2fQ.bvwwqQBQVUOlyHYMsX9C5dSQhsQYI2r8qmqRBHgG_0Y";
+export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://hvsmxxqkuyjhpsiojupb.supabase.co/rest/v1";
+// API Key carregada de variáveis de ambiente para segurança
+export const API_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 // Chave anterior (anônima) que estava sofrendo com restrições de RLS:
 // "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA"
 
