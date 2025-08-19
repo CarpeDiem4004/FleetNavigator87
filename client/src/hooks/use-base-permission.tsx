@@ -379,11 +379,12 @@ export const useBasePermission = (): BasePermissionHook => {
       return false;
     }
     
-    // VERIFICAÇÃO RIGOROSA DE ADMIN - Várias formas de detectar admin
+    // VERIFICAÇÃO RIGOROSA DE ADMIN - Várias formas de detectar admin (RESTAURADO 08/08/25)
     const isAdmin = (
       user.role?.toLowerCase() === 'admin' || 
       user.role?.toUpperCase() === 'ADMIN' ||
       user.role === 'admin' ||
+      user.role === 'ADMIN' ||
       user.role === 'ADMIN' ||
       (user.email && ['joao.paulo@muricionfleet.com', 'regio@muricionfleet.com', 'andre.rosa@muricionfleet.com', 'admin@muricionfleet.com'].includes(user.email.toLowerCase()))
     );

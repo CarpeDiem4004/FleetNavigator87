@@ -120,12 +120,14 @@ export const hasMaintenanceAccess = async (req: Request, res: Response, next: Ne
         // Se ainda não temos usuário autenticado, tentar com o serviço híbrido
         if (!(req as any).supabaseUser) {
           try {
-            // Importar o serviço híbrido para verificar o token JWT
-            const hybridModule = await import('../../hybrid-user-service');
-            const hybridService = hybridModule.getHybridUserService();
+            // Importar o serviço híbrido para verificar o token JWT (TEMPORARIAMENTE DESABILITADO PARA ESTABILIDADE)
+            // const hybridModule = await import('../../hybrid-user-service');
+            // const hybridService = hybridModule.getHybridUserService();
+            console.log('[hasMaintenanceAccess] Serviço híbrido temporariamente desabilitado para restaurar estabilidade');
             
-            // Verificar token com o serviço híbrido
-            const tokenVerification = await hybridService.verifyToken(token, true);
+            // Verificar token com o serviço híbrido (DESABILITADO)
+            // const tokenVerification = await hybridService.verifyToken(token, true);
+            const tokenVerification = null;
             
             console.log('[hasMaintenanceAccess] Resultado da verificação do token JWT híbrido:', JSON.stringify(tokenVerification));
             
@@ -417,10 +419,12 @@ export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: 
         // Extrair token
         const token = extractJwtToken(authHeader);
         
-        // Tentar verificar token JWT híbrido
-        const hybridModule = await import('../../hybrid-user-service');
-        const hybridService = hybridModule.getHybridUserService();
-        const verifyResult = await hybridService.verifyToken(token, true);
+        // Tentar verificar token JWT híbrido (TEMPORARIAMENTE DESABILITADO PARA ESTABILIDADE) 
+        // const hybridModule = await import('../../hybrid-user-service');
+        // const hybridService = hybridModule.getHybridUserService();
+        // const verifyResult = await hybridService.verifyToken(token, true);
+        console.log('[hasMaintenanceAccessV2] Serviço híbrido temporariamente desabilitado para restaurar estabilidade');
+        const verifyResult = null;
         
         if (verifyResult) {
           console.log(`[hasMaintenanceAccessV2] Token JWT híbrido validado para ${verifyResult.user?.email || verifyResult.email}`);

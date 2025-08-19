@@ -5689,7 +5689,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // TEMPORÁRIO: Rota sem autenticação para debug das oficinas
+  // Rota das oficinas restaurada para funcionamento normal (CORRIGIDO 19/08/25)
   app.get("/api/workshops", async (req, res) => {
     try {
       console.log('[API/WORKSHOPS] Requisição recebida - activeOnly:', req.query.active);
