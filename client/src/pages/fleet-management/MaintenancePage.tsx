@@ -282,28 +282,49 @@ export default function MaintenancePage() {
     }
   }, [selectedProjectId]);
 
-  // Carregar oficinas ativas
-  const { data: workshops = [] } = useQuery<Workshop[]>({
+  // Carregar oficinas ativas (sem autenticação para debug)
+  const { data: workshops = [], isLoading: workshopsLoading, error: workshopsError } = useQuery<Workshop[]>({
     queryKey: ['/api/workshops', { active: true }],
     queryFn: async () => {
-      console.log('[WORKSHOPS] Buscando oficinas...');
-      const res = await fetch('/api/workshops?active=true');
+      console.log('[WORKSHOPS] Buscando oficinas sem auth...');
+      
+      // Fazer requisição direta sem autenticação para debug
+      const res = await fetch('/api/workshops?active=true', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'same-origin'
+      });
+      
+      console.log('[WORKSHOPS] Status da resposta:', res.status, res.statusText);
+      
       if (!res.ok) {
-        console.error(`[WORKSHOPS] Erro ao buscar oficinas: ${res.status}`);
-        throw new Error(`Erro ao buscar oficinas: ${res.status}`);
+        const errorText = await res.text();
+        console.error(`[WORKSHOPS] Erro ${res.status}:`, errorText);
+        
+        // Se for erro de autenticação, retornar lista vazia ao invés de falhar
+        if (res.status === 401) {
+          console.warn('[WORKSHOPS] Erro 401 - retornando lista vazia');
+          return [];
+        }
+        throw new Error(`Erro ao buscar oficinas: ${res.status} - ${errorText}`);
       }
+      
       const data = await res.json();
       console.log('[WORKSHOPS] Oficinas carregadas:', data?.length || 'undefined', data);
       
-      // Adicionar alert temporário para debug visual
       if (data && data.length > 0) {
         console.log(`✅ ${data.length} oficinas carregadas com sucesso!`);
+        console.log('📋 Lista de oficinas:', data.map(w => w.name).join(', '));
       }
       
-      return data;
+      return data || [];
     },
     refetchOnWindowFocus: false,
-    retry: 3 // Tenta novamente em caso de falha
+    retry: false, // Não tentar novamente para evitar spam de requests
+    staleTime: 5 * 60 * 1000 // 5 minutos
   });
 
   // Carregar veículos usando o hook customizado para garantir consistência em todo o aplicativo
@@ -1025,7 +1046,9 @@ export default function MaintenancePage() {
                   <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="workshopId">
                       Oficina <span className="text-red-500">*</span> 
-                      <small className="text-xs text-muted-foreground ml-2">({Array.isArray(workshops) ? workshops.length : 0} oficinas carregadas)</small>
+                      <small className="text-xs text-muted-foreground ml-2">
+                        ({Array.isArray(workshops) ? workshops.length : 0} oficinas{workshopsLoading ? ' carregando...' : workshopsError ? ' erro' : ' carregadas'})
+                      </small>
                     </Label>
                     <Select 
                       value={formData.workshopId ? formData.workshopId.toString() : "0"} 

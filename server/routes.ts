@@ -5689,12 +5689,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // TEMPORÁRIO: Rota sem autenticação para debug das oficinas
   app.get("/api/workshops", async (req, res) => {
     try {
+      console.log('[API/WORKSHOPS] Requisição recebida - activeOnly:', req.query.active);
       const activeOnly = req.query.active === 'true';
       const workshops = activeOnly 
         ? await storage.getActiveWorkshops()
         : await storage.getAllWorkshops();
+      
+      console.log('[API/WORKSHOPS] Oficinas encontradas:', workshops?.length || 0);
+      
+      // Headers CORS explícitos
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Content-Type', 'application/json');
       
       return res.status(200).json(workshops);
     } catch (error) {
