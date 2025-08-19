@@ -2,8 +2,6 @@
 export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://hvsmxxqkuyjhpsiojupb.supabase.co/rest/v1";
 // API Key carregada de variáveis de ambiente para segurança
 export const API_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-// Chave anterior (anônima) que estava sofrendo com restrições de RLS:
-// "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA"
 
 // Função para enviar dados para endpoints do Supabase
 export async function enviarParaSupabase(endpoint: string, dados: any, method: string = "POST") {
