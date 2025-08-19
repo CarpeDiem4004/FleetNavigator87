@@ -1,4 +1,4 @@
-import * as React from "react"
+import React, { useState, useEffect } from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
 
@@ -14,9 +14,9 @@ const DialogPortal = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Portal>
 >(({ children, ...props }, ref) => {
   // Usar state para apenas montar após renderização inicial
-  const [isMounted, setIsMounted] = React.useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   
-  React.useEffect(() => {
+  useEffect(() => {
     setIsMounted(true);
     return () => setIsMounted(false);
   }, []);
@@ -53,10 +53,10 @@ const DialogContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
   // Usar useLayoutEffect para executar após renderização mas antes de pintar
-  const [isMounted, setIsMounted] = React.useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   
   // Prevenção contra o erro de "removeChild on Node"
-  React.useEffect(() => {
+  useEffect(() => {
     setIsMounted(true);
     return () => setIsMounted(false);
   }, []);
