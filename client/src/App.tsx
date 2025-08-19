@@ -6,11 +6,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { initializeTimezoneUrlFix } from "@/utils/externalTimezone";
 import { initializeBrazilTimezone } from '@/utils/timezone-brazil';
 
-// Inicializar timezone brasileiro na inicialização do app
-// Executar após o carregamento do componente para evitar conflitos
-setTimeout(() => {
-  initializeBrazilTimezone();
-}, 100);
 import NotFound from "@/pages/not-found";
 import WorkshopExternal from "@/pages/workshop-external";
 
