@@ -117,7 +117,8 @@ domain: 38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev
 3. Auto Center Rio de Janeiro LTDA (ID: 2)
 4. Oficina Teste Ltda (ID: 1)
 
-**Status:** ✅ RESTAURAÇÃO CONCLUÍDA COM SUCESSO!
-**Login Admin:** ✅ FUNCIONANDO - admin@muricionfleet.com / 123456
+**Status:** 🔄 RESTAURAÇÃO EM ANDAMENTO - CORRIGINDO FRONTEND
+**Login Admin Backend:** ✅ FUNCIONANDO - admin@muricionfleet.com / 123456
+**Problema Atual:** Frontend não mantém sessão após login
 **API Response:** `{"success":true,"user":{"role":"admin"},"message":"Bem-vindo, Administrador!"}`
-**Próximo passo:** Sistema pronto para uso - Testar módulo de manutenção
+**Ação:** Simplificando página de login para usar apenas API base que funciona
