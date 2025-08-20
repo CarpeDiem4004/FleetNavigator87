@@ -105,20 +105,17 @@ export default function PainelAdministrativoAbastecimento() {
   });
 
   const { data: basesData } = useQuery({
-    queryKey: ['/api/admin/bases']
+    queryKey: ['/api/bases']
   });
 
   const { data: projectsData } = useQuery({
-    queryKey: ['/api/admin/projects']
+    queryKey: ['/api/projects']
   });
 
   // Mutations
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: number; status: string }) =>
-      apiRequest(`/api/admin/abastecimento-pos-pago/${id}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status })
-      }),
+      apiRequest(`/api/admin/abastecimento-pos-pago/${id}/status`, 'PATCH', { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/abastecimento-pos-pago'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/abastecimento-pos-pago/dashboard'] });
@@ -229,7 +226,7 @@ export default function PainelAdministrativoAbastecimento() {
 
         {/* Dashboard Tab */}
         <TabsContent value="dashboard" className="space-y-6">
-          {dashboardData?.data && (
+          {(dashboardData as any)?.data && (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card>
@@ -238,7 +235,7 @@ export default function PainelAdministrativoAbastecimento() {
                       <div>
                         <p className="text-sm font-medium text-gray-600">Total Registros</p>
                         <p className="text-2xl font-bold text-gray-900">
-                          {dashboardData.data.estatisticas.total_registros}
+                          {(dashboardData as any).data.estatisticas.total_registros}
                         </p>
                       </div>
                       <Fuel className="h-8 w-8 text-blue-600" />
@@ -252,7 +249,7 @@ export default function PainelAdministrativoAbastecimento() {
                       <div>
                         <p className="text-sm font-medium text-gray-600">Valor Total</p>
                         <p className="text-2xl font-bold text-gray-900">
-                          {formatCurrency(dashboardData.data.estatisticas.valor_total)}
+                          {formatCurrency((dashboardData as any).data.estatisticas.valor_total)}
                         </p>
                       </div>
                       <DollarSign className="h-8 w-8 text-green-600" />
@@ -266,7 +263,7 @@ export default function PainelAdministrativoAbastecimento() {
                       <div>
                         <p className="text-sm font-medium text-gray-600">Litros Total</p>
                         <p className="text-2xl font-bold text-gray-900">
-                          {parseFloat(dashboardData.data.estatisticas.litros_total).toFixed(2)}L
+                          {parseFloat((dashboardData as any).data.estatisticas.litros_total).toFixed(2)}L
                         </p>
                       </div>
                       <Fuel className="h-8 w-8 text-orange-600" />
@@ -388,7 +385,7 @@ export default function PainelAdministrativoAbastecimento() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Todas as bases</SelectItem>
-                    {basesData?.data?.map((base: any) => (
+                    {((basesData as any)?.data || []).map((base: any) => (
                       <SelectItem key={base.id} value={base.id.toString()}>
                         {base.name}
                       </SelectItem>
@@ -402,7 +399,7 @@ export default function PainelAdministrativoAbastecimento() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Todos os projetos</SelectItem>
-                    {projectsData?.data?.map((projeto: any) => (
+                    {((projectsData as any)?.data || []).map((projeto: any) => (
                       <SelectItem key={projeto.id} value={projeto.id.toString()}>
                         {projeto.name}
                       </SelectItem>
@@ -515,7 +512,7 @@ export default function PainelAdministrativoAbastecimento() {
                     <SelectValue placeholder="Selecione a base" />
                   </SelectTrigger>
                   <SelectContent>
-                    {basesData?.data?.map((base: any) => (
+                    {((basesData as any)?.data || []).map((base: any) => (
                       <SelectItem key={base.id} value={base.id.toString()}>
                         {base.name}
                       </SelectItem>
@@ -528,7 +525,7 @@ export default function PainelAdministrativoAbastecimento() {
                     <SelectValue placeholder="Selecione o projeto" />
                   </SelectTrigger>
                   <SelectContent>
-                    {projectsData?.data?.map((projeto: any) => (
+                    {((projectsData as any)?.data || []).map((projeto: any) => (
                       <SelectItem key={projeto.id} value={projeto.id.toString()}>
                         {projeto.name}
                       </SelectItem>
