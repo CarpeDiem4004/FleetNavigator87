@@ -26,42 +26,6 @@
     <!-- Windows Tile -->
     <meta name="msapplication-TileColor" content="#2563eb" />
     <meta name="msapplication-TileImage" content="/icons/icon-144x144.svg" />
-    <script>
-      // FORÇA SOBRESCRITA DAS PROPRIEDADES READONLY DO VITE
-      (function() {
-        const neutralFunc = function() { return function(type) { return type; }; };
-        const neutralReg = function() {};
-        
-        // DEFINIR ANTES DO VITE CARREGAR
-        Object.defineProperty(window, '$RefreshSig$', {
-          value: neutralFunc,
-          writable: true,
-          configurable: true
-        });
-        Object.defineProperty(window, '$RefreshReg$', {
-          value: neutralReg,
-          writable: true,
-          configurable: true  
-        });
-        Object.defineProperty(window, '$RefreshRegs$', {
-          value: neutralReg,
-          writable: true,
-          configurable: true
-        });
-        
-        // INTERCEPTAR TENTATIVAS DE REDEFINIÇÃO
-        const originalDefine = Object.defineProperty;
-        Object.defineProperty = function(obj, prop, descriptor) {
-          if (prop === '$RefreshSig$' || prop === '$RefreshReg$' || prop === '$RefreshRegs$') {
-            console.log('🚫 BLOCKED Vite attempt to redefine', prop);
-            return obj; // BLOQUEAR redefinição do Vite
-          }
-          return originalDefine.call(this, obj, prop, descriptor);
-        };
-        
-        console.log('🛡️ VITE FAST REFRESH COMPLETAMENTE BLOQUEADO');
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>
