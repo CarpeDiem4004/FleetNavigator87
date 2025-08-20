@@ -92,9 +92,11 @@ export default function FormularioPublicoAbastecimento() {
         // Carregar TODAS as bases disponíveis no sistema, não apenas as ativas
         setBases(data);
         console.log('Total de bases carregadas:', data.length);
+        console.log('Primeira base:', data[0]);
       } else if (data.success && Array.isArray(data.data)) {
         setBases(data.data);
         console.log('Total de bases carregadas (data.data):', data.data.length);
+        console.log('Primeira base (data.data):', data.data[0]);
       } else {
         console.error('Formato de dados inválido:', data);
       }
@@ -360,7 +362,7 @@ export default function FormularioPublicoAbastecimento() {
                     ) : (
                       bases.map((base) => (
                         <SelectItem key={base.id} value={base.id.toString()}>
-                          {base.sigla} - {base.nome}
+                          {base.name}
                         </SelectItem>
                       ))
                     )}
