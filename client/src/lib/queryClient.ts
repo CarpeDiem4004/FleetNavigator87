@@ -105,7 +105,7 @@ export async function apiRequest(
         break;
       case 'delete':
         if (data && typeof data === 'object' && 'id' in (data as DataWithId)) {
-          result = await supabase.from(table).delete().eq('id', (data as DataWithId).id);
+          result = await supabase.from(table).delete().eq('id', (data as DataWithId).id) as PostgrestResponse<any>;
         }
         break;
       default:
@@ -298,7 +298,7 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: 0, // Sempre considerar dados stale
-      cacheTime: 0, // Não manter cache
+      gcTime: 0, // Não manter cache (React Query v5)
       retry: false,
     },
     mutations: {
