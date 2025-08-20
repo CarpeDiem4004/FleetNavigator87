@@ -246,8 +246,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
       { name: 'Consumo Diário', href: '/postos/consumo-diario', icon: BarChart4 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
-      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck },
-      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard }
+      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck }
     ]},
     // Alterado para usar o ícone de posto de gasolina (Droplets) em vez de Warehouse para Postos Externos
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
@@ -257,7 +256,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Item de menu separado para Cartão de Abastecimento
     { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
       { name: 'Operações', href: '/fuel-card', icon: CreditCard },
-      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
+      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList },
+      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard }
     ]},
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
     { name: 'Equipamentos', href: '/equipment', icon: Package },
@@ -302,8 +302,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
       { name: 'Consumo Diário', href: '/postos/consumo-diario', icon: BarChart4 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
-      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck },
-      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard }
+      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck }
     ]},
     // Corrigido para usar o mesmo ícone e estrutura em ambas as listas de navegação
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
@@ -313,7 +312,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Item de menu separado para Cartão de Abastecimento
     { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
       { name: 'Operações', href: '/fuel-card', icon: CreditCard },
-      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
+      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList },
+      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard }
     ]},
     { name: 'Line Hall', href: '/line-hall-shopee', icon: Map },
     { name: 'Parceiros de Guincho', href: '#', icon: Truck, subItems: [
@@ -349,8 +349,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
       { name: 'Consumo Diário', href: '/postos/consumo-diario', icon: BarChart4 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
-      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck },
-      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard }
+      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck }
     ]},
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
