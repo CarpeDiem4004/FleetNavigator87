@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Fuel, TruckIcon, Truck, History } from 'lucide-react';
@@ -19,7 +19,7 @@ interface PostoLayoutProps {
   nomePosto: string;
 }
 
-export const PostoLayout = ({ id, nomePosto }: PostoLayoutProps) => {
+export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
   // Estado para controlar atualizações do histórico
   const [refreshHistorico, setRefreshHistorico] = useState(0);
   

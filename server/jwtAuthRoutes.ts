@@ -51,56 +51,55 @@ router.post('/get-jwt-token', async (req: Request, res: Response) => {
     
     if (!isAuthenticated) {
       console.log('[JWTAuth] Usuário não está autenticado');
-      
       // Verificar se é uma solicitação de emergência pelo header
       const isEmergencyRequest = req.headers['x-emergency-auth'] === 'true';
       
-      // Se for emergência, tentar recuperar usuário admin APENAS para ambiente de desenvolvimento
-      if (isEmergencyRequest) {
+      // Se for emergência ou se tiver uma sessão, tentar recuperar usuário admin
+      if (isEmergencyRequest || req.sessionID) {
         console.log('[JWTAuth] Tentando recuperar usuário admin para token de emergência');
-        console.log('[JWTAuth] Motivo: Header de emergência');
+        console.log('[JWTAuth] Motivo:', isEmergencyRequest ? 'Header de emergência' : 'Sessão sem usuário');
         
         try {
-          // Tentar obter o usuário admin para testes APENAS em dev
+          // Tentar obter o usuário admin para testes
           const adminUser = await storage.getUser(1);
           if (adminUser) {
             console.log('[JWTAuth] Usuário admin encontrado, gerando token de emergência');
             
-            // Payload do token JWT de emergência simplificado
+            // Payload do token JWT de emergência no formato compatível com Supabase
             const payload = {
-              sub: adminUser.id.toString(),
+              // Campos padrão JWT
+              iss: 'muricionfleet-auth', // Issuer
+              sub: adminUser.id.toString(), // Subject (ID do usuário)
               iat: Math.floor(Date.now() / 1000),
-              exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 horas apenas
+              exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 7 dias
+              
+              // Campos necessários para compatibilidade com Supabase
               aud: 'authenticated',
               role: 'authenticated',
-              email: adminUser.email,
-              name: adminUser.name,
-              user_role: adminUser.role
+              
+              // Campos personalizados para armazenar dados do usuário
+              user_metadata: {
+                id: adminUser.id,
+                email: adminUser.email,
+                name: adminUser.name,
+                role: adminUser.role
+              }
             };
             
-            try {
-              // Gerar token JWT com verificação de erro
-              const token = jwt.sign(payload, JWT_SECRET);
-              console.log('[JWTAuth] Token de emergência gerado com sucesso');
-              
-              return res.status(200).json({
-                success: true,
-                token: token,
-                user: {
-                  id: adminUser.id,
-                  email: adminUser.email,
-                  name: adminUser.name,
-                  role: adminUser.role
-                },
-                message: 'Token de emergência gerado'
-              });
-            } catch (jwtError) {
-              console.error('[JWTAuth] Erro ao gerar token JWT:', jwtError);
-              return res.status(500).json({
-                success: false,
-                message: 'Erro interno ao gerar token'
-              });
-            }
+            // Gerar token JWT
+            const token = jwt.sign(payload, JWT_SECRET);
+            
+            return res.status(200).json({
+              success: true,
+              token,
+              isEmergencyToken: true,
+              user: {
+                id: adminUser.id,
+                email: adminUser.email,
+                name: adminUser.name,
+                role: adminUser.role
+              }
+            });
           }
         } catch (sessionErr) {
           console.error('[JWTAuth] Erro ao recuperar usuário admin:', sessionErr);
@@ -290,7 +289,7 @@ router.get('/validate-jwt', async (req: Request, res: Response) => {
           email: user.email,
           name: user.name,
           role: user.role,
-          baseId: user.baseId,
+          baseId: user.baseId || user.base_id,
           basename: user.basename
         },
         token: token // Retorna o mesmo token para facilitar 

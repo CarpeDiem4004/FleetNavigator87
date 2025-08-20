@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { supabase, withRetry, checkSupabaseConnection } from '@/lib/supabase-compat';
+import { supabase, withRetry, checkSupabaseConnection } from '@/lib/supabaseClient';
 
 /**
  * Hook personalizado para salvar dados automaticamente e lidar com falhas de conexão

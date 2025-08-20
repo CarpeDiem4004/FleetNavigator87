@@ -1,6 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { PostgrestResponse } from '@supabase/supabase-js';
-import { supabase } from "./supabase-compat";
+import { supabase } from "./supabaseClient";
 
 // Estado para controlar tentativas de ressincronização
 let isAttemptingResync = false;
@@ -105,7 +105,7 @@ export async function apiRequest(
         break;
       case 'delete':
         if (data && typeof data === 'object' && 'id' in (data as DataWithId)) {
-          result = await supabase.from(table).delete().eq('id', (data as DataWithId).id) as PostgrestResponse<any>;
+          result = await supabase.from(table).delete().eq('id', (data as DataWithId).id);
         }
         break;
       default:
@@ -298,7 +298,7 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: 0, // Sempre considerar dados stale
-      gcTime: 0, // Não manter cache (React Query v5)
+      cacheTime: 0, // Não manter cache
       retry: false,
     },
     mutations: {

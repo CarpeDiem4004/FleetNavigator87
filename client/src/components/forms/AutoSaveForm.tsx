@@ -1,111 +1,266 @@
-// Simplified AutoSaveForm - Core functionality only
-import { ReactNode } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Save, Wifi, WifiOff } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { AlertCircle, CheckCircle2, CloudOff } from 'lucide-react';
 
 interface AutoSaveFormProps {
-  table: string;
-  uniqueKey: string | number;
-  initialData?: any;
-  children: ReactNode;
-  title?: string;
+  id?: string;
+  title: string;
   description?: string;
-  className?: string;
-  onSave?: (data: any) => void | Promise<void>;
-  onError?: (error: any) => void;
+  table: string;
+  initialData?: Record<string, any>;
+  onSave?: (data: any) => void;
 }
 
-export function AutoSaveForm({
-  table,
-  uniqueKey,
-  initialData = {},
-  children,
+export function AutoSaveForm({ 
+  id = 'new', 
   title,
   description,
-  className = '',
-  onSave,
-  onError,
+  table,
+  initialData = {},
+  onSave
 }: AutoSaveFormProps) {
-  // Simplified state management
-  const data = initialData;
-  const saving = false;
-  const lastSaved = null;
-  const error = null;
-  const isOnline = true;
-  const offlineChanges = 0;
+  const { toast } = useToast();
+  const uniqueKey = `${table}_${id}`;
+  
+  // Usar o hook de auto salvamento
+  const {
+    data,
+    updateData,
+    save,
+    saving,
+    lastSaved,
+    error,
+    clearCache,
+    isOnline,
+    offlineChanges,
+    syncOfflineData
+  } = useAutoSave(table, uniqueKey, initialData, {
+    debounceTime: 2000,
+    onSaveSuccess: (savedData) => {
+      console.log('Dados salvos com sucesso:', savedData);
+    },
+    onSaveError: (error) => {
+      console.error('Erro ao salvar dados:', error);
+      toast({
+        title: 'Erro ao salvar',
+        description: 'Seus dados estão sendo armazenados localmente e serão sincronizados quando a conexão for restaurada.',
+        variant: 'destructive'
+      });
+    }
+  });
+  
+  // Tentar sincronizar quando voltar online
+  useEffect(() => {
+    if (isOnline && offlineChanges > 0) {
+      syncOfflineData();
+    }
+  }, [isOnline, offlineChanges, syncOfflineData]);
 
-  return (
-    <Card className={`w-full ${className}`}>
-      {(title || description) && (
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              {title && <CardTitle>{title}</CardTitle>}
-              {description && <CardDescription>{description}</CardDescription>}
-            </div>
-            <div className="flex items-center space-x-2">
-              {/* Status de conexão */}
-              <div className="flex items-center space-x-1 text-sm">
-                {isOnline ? (
-                  <>
-                    <Wifi className="w-4 h-4 text-green-500" />
-                    <span className="text-green-500">Online</span>
-                  </>
-                ) : (
-                  <>
-                    <WifiOff className="w-4 h-4 text-orange-500" />
-                    <span className="text-orange-500">Offline</span>
-                  </>
-                )}
-              </div>
-
-              {/* Status de salvamento */}
-              {saving && (
-                <Badge variant="secondary" className="flex items-center space-x-1">
-                  <Save className="w-3 h-3 animate-spin" />
-                  <span>Salvando...</span>
-                </Badge>
-              )}
-              
-              {lastSaved && !saving && (
-                <Badge variant="outline" className="text-xs">
-                  Salvo às {new Date(lastSaved).toLocaleTimeString('pt-BR', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </Badge>
-              )}
-
-              {/* Alterações offline */}
-              {offlineChanges > 0 && (
-                <Badge variant="destructive" className="flex items-center space-x-1">
-                  <AlertCircle className="w-3 h-3" />
-                  <span>{offlineChanges} alterações offline</span>
-                </Badge>
-              )}
-            </div>
-          </div>
-          
-          {/* Exibir erro se houver */}
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-              <div className="flex items-center space-x-2 text-red-700">
-                <AlertCircle className="w-4 h-4" />
-                <span className="text-sm">
-                  {error.message || 'Erro ao salvar dados. Tentando novamente...'}
-                </span>
-              </div>
-            </div>
-          )}
-        </CardHeader>
-      )}
+  // Função para formatar o timestamp de último salvamento
+  const formatLastSaved = () => {
+    if (!lastSaved) return 'Nunca salvo';
+    
+    const now = new Date();
+    const diff = Math.round((now.getTime() - lastSaved.getTime()) / 1000);
+    
+    if (diff < 60) return `Salvo há ${diff} segundo${diff === 1 ? '' : 's'} atrás`;
+    if (diff < 3600) {
+      const minutes = Math.floor(diff / 60);
+      return `Salvo há ${minutes} minuto${minutes === 1 ? '' : 's'} atrás`;
+    }
+    
+    return `Salvo em ${lastSaved.toLocaleTimeString()}`;
+  };
+  
+  // Função para salvar manualmente
+  const handleSave = async () => {
+    try {
+      console.log('Tentando salvar dados via API de diagnóstico...');
       
-      <CardContent>
-        {children}
+      // Primeiro tentar salvar através da nossa API Express
+      if (table === 'demo_forms') {
+        try {
+          const response = await fetch('/api/diagnostico/demo-forms', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              form_title: data.title || 'Sem título',
+              form_data: {
+                description: data.description,
+                priority: data.priority,
+                assignedTo: data.assignedTo,
+                ...data
+              },
+              status: 'enviado',
+              created_by: data.assignedTo || 'usuário_formulário'
+            })
+          });
+          
+          if (!response.ok) {
+            console.warn('Resposta da API de diagnóstico não foi OK:', await response.text());
+            throw new Error('Erro ao salvar pela API, tentando método alternativo');
+          }
+          
+          const result = await response.json();
+          console.log('Dados salvos com sucesso via API de diagnóstico:', result);
+          
+          toast({
+            title: 'Salvo com sucesso (API)',
+            description: 'Todos os dados foram salvos no servidor via API Express.',
+          });
+          
+          if (onSave) {
+            onSave(data);
+          }
+          
+          return;
+        } catch (apiError) {
+          console.warn('Falha ao salvar via API, usando fallback:', apiError);
+          // Continua para a próxima opção (fallback)
+        }
+      }
+      
+      // Fallback: Método padrão do hook useAutoSave
+      const result = await save();
+      if (result.success) {
+        toast({
+          title: 'Salvo com sucesso',
+          description: 'Todos os dados foram salvos no servidor.',
+        });
+        
+        if (onSave) {
+          onSave(data);
+        }
+      } else if (result.offline) {
+        toast({
+          title: 'Salvo offline',
+          description: 'Seus dados foram armazenados localmente e serão sincronizados quando a conexão for restaurada.',
+        });
+      }
+    } catch (err) {
+      console.error('Erro ao salvar:', err);
+      toast({
+        title: 'Erro ao salvar',
+        description: 'Ocorreu um erro ao salvar os dados. Tente novamente mais tarde.',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  return (
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>{title}</CardTitle>
+            {description && <CardDescription>{description}</CardDescription>}
+          </div>
+          <div className="flex items-center gap-2">
+            {isOnline ? (
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <CheckCircle2 className="w-3 h-3 mr-1" /> Online
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                <CloudOff className="w-3 h-3 mr-1" /> Offline
+              </Badge>
+            )}
+            
+            {offlineChanges > 0 && (
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                {offlineChanges} {offlineChanges === 1 ? 'alteração pendente' : 'alterações pendentes'}
+              </Badge>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="space-y-4">
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Erro ao salvar: {error.message || 'Erro desconhecido'}. 
+              Seus dados estão sendo armazenados localmente.
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        <div className="space-y-2">
+          <Label htmlFor="title">Título</Label>
+          <Input
+            id="title"
+            placeholder="Insira um título"
+            value={data.title || ''}
+            onChange={(e) => updateData({ title: e.target.value })}
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="description">Descrição</Label>
+          <Textarea
+            id="description"
+            placeholder="Insira uma descrição"
+            rows={4}
+            value={data.description || ''}
+            onChange={(e) => updateData({ description: e.target.value })}
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="priority">Prioridade</Label>
+          <Input
+            id="priority"
+            placeholder="Prioridade (Alta, Média, Baixa)"
+            value={data.priority || ''}
+            onChange={(e) => updateData({ priority: e.target.value })}
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="assignedTo">Responsável</Label>
+          <Input
+            id="assignedTo"
+            placeholder="Nome do responsável"
+            value={data.assignedTo || ''}
+            onChange={(e) => updateData({ assignedTo: e.target.value })}
+          />
+        </div>
       </CardContent>
+      
+      <CardFooter className="flex justify-between items-center border-t p-4">
+        <div className="text-sm text-muted-foreground">
+          {saving ? 'Salvando...' : formatLastSaved()}
+          {offlineChanges > 0 && isOnline && (
+            <Button 
+              variant="link" 
+              className="ml-2 p-0 h-auto text-sm text-blue-600" 
+              onClick={syncOfflineData}
+            >
+              Sincronizar agora
+            </Button>
+          )}
+        </div>
+        
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={clearCache}>
+            Limpar Cache
+          </Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? 'Salvando...' : 'Salvar Agora'}
+          </Button>
+        </div>
+      </CardFooter>
     </Card>
   );
 }
-
-export default AutoSaveForm;

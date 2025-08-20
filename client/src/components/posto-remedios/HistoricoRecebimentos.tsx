@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, AlertCircle, Droplet } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useOsascoRecebimentos } from '@/hooks/useOsascoRecebimentos';
-// import useOsascoV2Recebimentos from '@/hooks/useOsascoV2Recebimentos'; // Temporarily disabled
+import useOsascoV2Recebimentos from '@/hooks/useOsascoV2Recebimentos';
 
 interface RecebimentoItem {
   id: number;

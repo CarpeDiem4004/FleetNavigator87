@@ -1,13 +1,8 @@
 import { createRoot } from "react-dom/client";
-import { StrictMode } from "react";
 import App from "./App";
 import "./index.css";
+import "./hide-error.css"; // CSS para esconder mensagens de erro do Vite
 
-const container = document.getElementById("root");
-const root = createRoot(container!);
-
-root.render(
-  <StrictMode>
-    <App />
-  </StrictMode>
+createRoot(document.getElementById("root")!).render(
+  <App />
 );

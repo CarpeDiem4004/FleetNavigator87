@@ -73,7 +73,6 @@ import lineHallRoutes from './routes/lineHallRoutes';
 // Importar rotas das bases
 import basesRoutes from './routes/basesRoutes';
 
-
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
 process.env.SUPABASE_URL = process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
@@ -121,10 +120,10 @@ app.use((req, res, next) => {
           };
           
           // Construir query de atualização dinamicamente
-          const mappedData: Record<string, any> = {};
+          const mappedData = {};
           Object.keys(updateData).forEach(key => {
-            const mappedKey = (fieldMapping as any)[key] || key;
-            (mappedData as any)[mappedKey] = updateData[key];
+            const mappedKey = fieldMapping[key] || key;
+            mappedData[mappedKey] = updateData[key];
           });
           
           const fields = Object.keys(mappedData);
@@ -145,7 +144,7 @@ app.use((req, res, next) => {
             RETURNING *
           `;
           
-          const result = await pool.query(query, [parseInt(id || '0'), ...values]);
+          const result = await pool.query(query, [parseInt(id), ...values]);
           
           if (result.rows.length === 0) {
             return res.status(404).end(JSON.stringify({
@@ -168,7 +167,7 @@ app.use((req, res, next) => {
           return res.status(500).end(JSON.stringify({
             success: false,
             message: 'Erro interno do servidor',
-            error: (error as any)?.message || 'Erro desconhecido'
+            error: error?.message || 'Erro desconhecido'
           }));
         }
       });
@@ -385,7 +384,7 @@ app.post('/fuel-receipts', async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Erro ao registrar recebimento',
-      error: (error as any)?.message || "Unknown error"
+      error: error.message
     });
   }
 });
@@ -490,7 +489,7 @@ app.get('/consumo-data/postos', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erro ao obter dados de consumo diário',
-      error: (error as any)?.message || "Unknown error"
+      error: error.message
     });
   }
 });
@@ -582,7 +581,7 @@ app.use((req, res, next) => {
       return res.status(500).json({
         success: false,
         message: 'Error fetching drivers',
-        error: (error as any)?.message || "Unknown error"
+        error: error.message
       });
     }
   });
@@ -608,7 +607,7 @@ app.use((req, res, next) => {
       return res.status(500).json({
         success: false,
         message: 'Error fetching bases',
-        error: (error as any)?.message || "Unknown error"
+        error: error.message
       });
     }
   });
@@ -644,12 +643,13 @@ app.use((req, res, next) => {
       return res.status(500).json({
         success: false,
         message: 'Error fetching project-base relationships',
-        error: (error as any)?.message || "Unknown error"
+        error: error.message
       });
     }
   });
 
-  // Add projects-with-bases API (endpoint específico para dropdowns) - REATIVADO
+  // Add projects-with-bases API (endpoint específico para dropdowns) - COMENTADO PARA USAR A FUNÇÃO CORRETA
+  /*
   app.get('/api/projects-with-bases', async (req, res) => {
     try {
       res.setHeader('Content-Type', 'application/json');
@@ -721,10 +721,11 @@ app.use((req, res, next) => {
       return res.status(500).json({
         success: false,
         message: 'Erro ao buscar projetos com bases',
-        error: (error as any)?.message || 'Unknown error'
+        error: error.message
       });
     }
   });
+  */
 
   // Add DELETE endpoint for drivers
   app.delete('/api/drivers/:id', async (req, res) => {
@@ -747,7 +748,7 @@ app.use((req, res, next) => {
       return res.status(500).json({
         success: false,
         message: 'Error deleting driver',
-        error: (error as any)?.message || "Unknown error"
+        error: error.message
       });
     }
   });
@@ -830,7 +831,7 @@ app.use((req, res, next) => {
       res.status(500).json({
         success: false,
         message: 'Erro ao obter dados de consumo diário',
-        error: (error as any)?.message || "Unknown error"
+        error: error.message
       });
     }
   });
@@ -927,7 +928,7 @@ app.use((req, res, next) => {
       res.status(500).json({
         success: false,
         message: 'Erro ao obter dados de consumo diário',
-        error: (error as any)?.message || "Unknown error"
+        error: error.message
       });
     }
   });
@@ -979,7 +980,7 @@ app.use((req, res, next) => {
         console.error('[FUEL-DATA] Erro:', error);
         res.end(JSON.stringify({
           success: false,
-          error: (error as any)?.message || "Unknown error"
+          error: error.message
         }));
       });
   });
@@ -1016,7 +1017,7 @@ app.use((req, res, next) => {
         console.error('[FUEL-REQUESTS] Erro:', error);
         res.end(JSON.stringify({
           success: false,
-          error: (error as any)?.message || "Unknown error"
+          error: error.message
         }));
       });
   });
@@ -1056,7 +1057,7 @@ app.use((req, res, next) => {
       res.status(500).json({ 
         success: false, 
         message: 'Erro interno do servidor', 
-        error: (error as any)?.message || "Unknown error" 
+        error: error.message 
       });
     }
   });
@@ -1100,9 +1101,8 @@ app.use((req, res, next) => {
 
   app.get('/api/terceiros/admin/stats', terceirosAuthMiddleware, async (req, res) => {
     try {
-      const { pool } = await import('./db.js');
-      const nowInBrazil = () => new Date();
-      const processDatabaseDates = (data: any[], fields: string[]) => data;
+      const pool = (await import('./database.js')).pool;
+      const { processDatabaseDates, nowInBrazil } = await import('./utils/timezone.js');
       
       const statsQuery = `
         SELECT 
@@ -1140,8 +1140,8 @@ app.use((req, res, next) => {
 
   app.get('/api/terceiros/admin/empresas', terceirosAuthMiddleware, async (req, res) => {
     try {
-      const { pool } = await import('./db.js');
-      const processDatabaseDates = (data: any[], fields: string[]) => data;
+      const pool = (await import('./database.js')).pool;
+      const { processDatabaseDates } = await import('./utils/timezone.js');
       
       const empresasQuery = `
         SELECT 
@@ -1172,8 +1172,8 @@ app.use((req, res, next) => {
 
   app.get('/api/terceiros/admin/abastecimentos', terceirosAuthMiddleware, async (req, res) => {
     try {
-      const { pool } = await import('./db.js');
-      const processDatabaseDates = (data: any[], fields: string[]) => data;
+      const pool = (await import('./database.js')).pool;
+      const { processDatabaseDates } = await import('./utils/timezone.js');
       
       const abastecimentosQuery = `
         SELECT 
@@ -1222,8 +1222,6 @@ app.use((req, res, next) => {
   // Registrar as rotas de emergência para acesso externo de parceiros de guincho
   app.use('/api/towing/simple-external', towingServiceEmergency);
   
-
-  
   // === ROTAS DO SISTEMA DE MANUTENÇÃO VEICULAR ===
   
   // Login para oficinas (temporariamente desabilitado para deployment)
@@ -1238,33 +1236,6 @@ app.use((req, res, next) => {
   // app.get('/api/maintenance/veiculos', authenticateMaintenanceToken, getVeiculos);
   // app.get('/api/maintenance/oficinas', authenticateMaintenanceToken, getOficinas);
   
-  // Rota para buscar oficinas ativas - ACESSO PÚBLICO TEMPORÁRIO PARA PERMITIR CARREGAMENTO
-  app.get('/api/workshops', async (req, res) => {
-    try {
-      console.log('[WORKSHOPS] Buscando oficinas ativas');
-      
-      const { active } = req.query;
-      
-      let query = 'SELECT * FROM workshops';
-      const params = [];
-      
-      if (active === 'true') {
-        query += ' WHERE status = $1';
-        params.push('ativo');
-      }
-      
-      query += ' ORDER BY nome';
-      
-      const result = await pool.query(query, params);
-      
-      console.log(`[WORKSHOPS] Encontradas ${result.rows.length} oficinas`);
-      res.json(result.rows);
-    } catch (error) {
-      console.error('[WORKSHOPS] Erro ao buscar oficinas:', error);
-      res.status(500).json({ message: 'Erro interno do servidor' });
-    }
-  });
-
   // Rota para criar nova oficina (temporariamente desabilitada para deployment)
   /*
   app.post('/api/workshops', unifiedAuthMiddleware, async (req, res) => {
@@ -1382,7 +1353,7 @@ app.use((req, res, next) => {
   // Rota pública para visão geral dos postos (sem autenticação)
   app.get('/api/postos-publico', async (req, res) => {
     try {
-      const { pool } = await import('./db.js');
+      const { pool } = await import('./database.js');
       
       // Lista dos 6 postos específicos que devem ser exibidos
       const postosPermitidos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2'];
@@ -1415,7 +1386,7 @@ app.use((req, res, next) => {
   // Definir rota para obter consumo diário de todos os postos
   consumoDiarioPostosRoutes.get('/', async (req, res) => {
     try {
-      const { pool } = await import('./db.js');
+      const { pool } = await import('./database.js');
       
       // Lista dos 6 postos específicos que devem ser exibidos
       const postosPermitidos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2'];
@@ -1531,7 +1502,7 @@ app.use((req, res, next) => {
       res.status(500).json({
         success: false,
         message: 'Erro ao obter dados de consumo diário',
-        error: (error as any)?.message || "Unknown error"
+        error: error.message
       });
     }
   });
@@ -1688,39 +1659,45 @@ app.use((req, res, next) => {
   // Rotas específicas Campinas V2 temporariamente desabilitadas para deployment
   // app.post('/api/abastecimento-direto-campinas-v2', (req, res) => {
   //   req.params = { ...req.params, posto: 'campinas_v2' };
-  //   res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+  //   registrarAbastecimentoPosto(req, res);
   // });
   // app.get('/api/historico-direto-campinas-v2', (req, res) => {
   //   req.params = { posto: 'campinas_v2' };
-  //   res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+  //   getHistoricoPosto(req, res);
   // });
   
-  // TEMPORARIAMENTE DESABILITADO PARA DEPLOYMENT
-  // app.get('/api/historico-direto/posto%20campinas%20v2', (req, res) => {
-  //   console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE CAMPINAS V2 (URL CODIFICADA) ====");
-  //   req.params = { posto: 'campinas_v2' };
-  //   res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
-  // });
+  // Rota especial para histórico de Campinas V2 com URL codificada
+  app.get('/api/historico-direto/posto%20campinas%20v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE CAMPINAS V2 (URL CODIFICADA) ====");
+    // Forçar o parâmetro posto para garantir que seja tratado corretamente
+    req.params = { posto: 'campinas_v2' };
+    getHistoricoPosto(req, res);
+  });
   
-  // TEMPORARIAMENTE DESABILITADO PARA DEPLOYMENT
-  // app.post('/api/abastecimento-direto/posto%20campinas%20v2', (req, res) => {
-  //   console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE CAMPINAS V2 (URL CODIFICADA) ====");
-  //   req.params = { ...req.params, posto: 'campinas_v2' };
-  //   res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
-  // });
+  // Rota de abastecimento para Campinas V2 (formato com espaços)
+  app.post('/api/abastecimento-direto/posto%20campinas%20v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE CAMPINAS V2 (URL CODIFICADA) ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como campinas_v2
+    req.params = { ...req.params, posto: 'campinas_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
   
-  // TEMPORARIAMENTE DESABILITADO PARA DEPLOYMENT
-  // app.post('/api/abastecimento-direto-osasco', (req, res) => {
-  //   console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE OSASCO ====");
-  //   req.params = { ...req.params, posto: 'osasco' };
-  //   res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
-  // });
+  // Rotas especiais para Osasco, seguindo mesmo padrão de Campinas V2
+  // Rota de abastecimento
+  app.post('/api/abastecimento-direto-osasco', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE OSASCO ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como osasco
+    req.params = { ...req.params, posto: 'osasco' };
+    registrarAbastecimentoPosto(req, res);
+  });
   
-  // app.get('/api/historico-direto-osasco', (req, res) => {
-  //   console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE OSASCO ====");
-  //   req.params = { posto: 'osasco' };
-  //   res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
-  // });
+  // Rota de histórico para Osasco
+  app.get('/api/historico-direto-osasco', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE OSASCO ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'osasco' };
+    getHistoricoPosto(req, res);
+  });
 
   // Rotas especiais para Osasco V2
   // Rota de abastecimento
@@ -1728,7 +1705,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE OSASCO V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como osasco_v2
     req.params = { ...req.params, posto: 'osasco_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    registrarAbastecimentoPosto(req, res);
   });
   
   // Rota de histórico para Osasco V2
@@ -1736,7 +1713,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE OSASCO V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'osasco_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    getHistoricoPosto(req, res);
   });
   
   // Rotas especiais para Campinas V2
@@ -1745,7 +1722,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE CAMPINAS V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como campinas_v2
     req.params = { ...req.params, posto: 'campinas_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    registrarAbastecimentoPosto(req, res);
   });
   
   // Rota de histórico para Campinas V2
@@ -1753,7 +1730,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE CAMPINAS V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'campinas_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    getHistoricoPosto(req, res);
   });
   
   // Rotas especiais para ABC V2
@@ -1762,7 +1739,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ABC V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como abc_v2
     req.params = { ...req.params, posto: 'abc_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    registrarAbastecimentoPosto(req, res);
   });
   
   // Rota de histórico para ABC V2
@@ -1770,7 +1747,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ABC V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'abc_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    getHistoricoPosto(req, res);
   });
   
   // Rotas especiais para Socorro V2
@@ -1779,7 +1756,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE SOCORRO V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como socorro_v2
     req.params = { ...req.params, posto: 'socorro_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    registrarAbastecimentoPosto(req, res);
   });
   
   // Rota de histórico para Socorro V2
@@ -1787,7 +1764,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE SOCORRO V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'socorro_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    getHistoricoPosto(req, res);
   });
   
   // Rotas especiais para Sorocaba V2
@@ -1796,7 +1773,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE SOROCABA V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como sorocaba_v2
     req.params = { ...req.params, posto: 'sorocaba_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    registrarAbastecimentoPosto(req, res);
   });
   
   // Rota de histórico para Sorocaba V2
@@ -1804,7 +1781,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE SOROCABA V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'sorocaba_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    getHistoricoPosto(req, res);
   });
 
   // Rotas especiais para ABC V2
@@ -1817,7 +1794,7 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    registrarAbastecimentoPosto(req, res);
   });
   
   // Rota de histórico para ABC V2 (formato novo)
@@ -1825,7 +1802,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ABC V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'abc_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    getHistoricoPosto(req, res);
   });
   
   // Manter rota de abastecimento antiga para compatibilidade
@@ -1833,7 +1810,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA ABASTECIMENTO DE ABC V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como abc_v2
     req.params = { ...req.params, posto: 'abc_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    registrarAbastecimentoPosto(req, res);
   });
   
   // Manter rota de histórico antiga para compatibilidade
@@ -1841,7 +1818,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA HISTÓRICO DE ABC V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'abc_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    getHistoricoPosto(req, res);
   });
 
   // Rotas especiais para Guarulhos V2
@@ -1850,7 +1827,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE GUARULHOS V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como guarulhos_v2
     req.params = { ...req.params, posto: 'guarulhos_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    registrarAbastecimentoPosto(req, res);
   });
   
   // Rotas especiais para Alair V2
@@ -1859,7 +1836,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ALAIR V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como alair_v2
     req.params = { ...req.params, posto: 'alair_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    registrarAbastecimentoPosto(req, res);
   });
   
   // Rotas especiais para Osasco V2
@@ -1868,7 +1845,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE OSASCO V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como osasco_v2
     req.params = { ...req.params, posto: 'osasco_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    registrarAbastecimentoPosto(req, res);
   });
   
   // Rota de histórico para Osasco V2
@@ -1876,7 +1853,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE OSASCO V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'osasco_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    getHistoricoPosto(req, res);
   });
   
   // Rota de histórico para Guarulhos V2 (formato novo)
@@ -1884,14 +1861,14 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE GUARULHOS V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'guarulhos_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    getHistoricoPosto(req, res);
   });
 
   app.post('/api/abastecimento-direto/alair_v2', (req, res) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ALAIR V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como alair_v2
     req.params = { ...req.params, posto: 'alair_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    registrarAbastecimentoPosto(req, res);
   });
   
   // Rota de histórico para Alair V2 (formato novo)
@@ -1899,7 +1876,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ALAIR V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'alair_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    getHistoricoPosto(req, res);
   });
   
   // Manter rota de abastecimento antiga para compatibilidade
@@ -1907,7 +1884,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA ABASTECIMENTO DE ALAIR V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como alair_v2
     req.params = { ...req.params, posto: 'alair_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    registrarAbastecimentoPosto(req, res);
   });
   
   // Manter rota de histórico antiga para compatibilidade
@@ -1915,7 +1892,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA HISTÓRICO DE ALAIR V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'alair_v2' };
-    res.status(503).json({ error: "Função temporariamente desabilitada para deployment" });
+    getHistoricoPosto(req, res);
   });
 
   // Mantendo as rotas antigas para compatibilidade, mas são substituídas pelas novas acima
@@ -2172,7 +2149,7 @@ app.use((req, res, next) => {
       return res.status(500).json({
         success: false,
         message: 'Error fetching bases',
-        error: (error as any)?.message || "Unknown error"
+        error: error.message
       });
     }
   });
@@ -2206,7 +2183,7 @@ app.use((req, res, next) => {
       return res.status(500).json({
         success: false,
         message: 'Error fetching project-bases relationships',
-        error: (error as any)?.message || "Unknown error"
+        error: error.message
       });
     }
   });
@@ -2311,18 +2288,6 @@ app.use((req, res, next) => {
     const isProtectedRoute = protectedRoutes.some(route => 
       req.path.startsWith(route) && !req.path.includes('/external/') && !req.path.includes('/externo')
     ) && !isPublicRoute;
-    
-    // Skip Vite dependencies, development files, and ALL /src/ files
-    const isViteDependency = req.path.startsWith('/@fs/') || 
-                            req.path.startsWith('/@vite/') ||
-                            req.path.startsWith('/node_modules/') ||
-                            req.path.includes('.vite/deps/') ||
-                            req.path.startsWith('/src/'); // Permitir TODOS os arquivos /src/
-    
-    if (isViteDependency) {
-      console.log(`[AUTH-MIDDLEWARE] Permitindo dependência Vite: ${req.path}`);
-      return next();
-    }
     
     // Log para debug
     console.log(`[AUTH-MIDDLEWARE] Verificando rota: ${req.path} - Protegida: ${isProtectedRoute} - Pública: ${isPublicRoute}`);

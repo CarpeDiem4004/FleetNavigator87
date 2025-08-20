@@ -120,14 +120,12 @@ export const hasMaintenanceAccess = async (req: Request, res: Response, next: Ne
         // Se ainda não temos usuário autenticado, tentar com o serviço híbrido
         if (!(req as any).supabaseUser) {
           try {
-            // Importar o serviço híbrido para verificar o token JWT (TEMPORARIAMENTE DESABILITADO PARA ESTABILIDADE)
-            // const hybridModule = await import('../../hybrid-user-service');
-            // const hybridService = hybridModule.getHybridUserService();
-            console.log('[hasMaintenanceAccess] Serviço híbrido temporariamente desabilitado para restaurar estabilidade');
+            // Importar o serviço híbrido para verificar o token JWT
+            const hybridModule = await import('../../hybrid-user-service');
+            const hybridService = hybridModule.getHybridUserService();
             
-            // Verificar token com o serviço híbrido (DESABILITADO)
-            // const tokenVerification = await hybridService.verifyToken(token, true);
-            const tokenVerification = null;
+            // Verificar token com o serviço híbrido
+            const tokenVerification = await hybridService.verifyToken(token, true);
             
             console.log('[hasMaintenanceAccess] Resultado da verificação do token JWT híbrido:', JSON.stringify(tokenVerification));
             
@@ -385,15 +383,6 @@ export const hasBaseAccess = (req: Request, res: Response, next: NextFunction) =
  */
 export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    console.log('[hasMaintenanceAccessV2] DEBUG - Verificando autenticação:', {
-      hasIsAuthenticated: typeof req.isAuthenticated === 'function',
-      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
-      hasUser: !!req.user,
-      userEmail: req.user?.email,
-      sessionID: req.sessionID,
-      sessionIsAuth: req.session ? (req.session as any).passport?.user : 'no session'
-    });
-    
     // Verificar autenticação por sessão
     if (req.isAuthenticated && req.isAuthenticated() && req.user) {
       console.log(`[hasMaintenanceAccessV2] Usuário autenticado por sessão: ${req.user.email}`);
@@ -407,9 +396,18 @@ export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: 
       // Anexar dados normalizados do usuário à requisição para uso posterior
       (req as any).user = user;
       
-      // VERIFICAÇÃO PERMISSIVA: Permitir acesso a todos os usuários autenticados no sistema principal
-      console.log(`[hasMaintenanceAccessV2] Acesso concedido para usuário autenticado: ${user.email} (role: ${user.role})`);
-      return next();
+      // Verificar se o usuário é admin, gestor_frota, ou usuário da gestão de frotas
+      if (isUserAdmin(user) || isUserInFleetManagement(user)) {
+        console.log(`[hasMaintenanceAccessV2] Acesso concedido para usuário: ${user.email}`);
+        return next();
+      }
+      
+      // Verificar se tem acesso à base específica quando é uma requisição para base específica
+      const baseIdParam = req.params.baseId ? parseInt(req.params.baseId, 10) : null;
+      if (baseIdParam && user.baseId === baseIdParam) {
+        console.log(`[hasMaintenanceAccessV2] Acesso à base ${baseIdParam} concedido para usuário: ${user.email}`);
+        return next();
+      }
     }
     
     // Verificar JWT token se não estiver autenticado por sessão
@@ -419,12 +417,10 @@ export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: 
         // Extrair token
         const token = extractJwtToken(authHeader);
         
-        // Tentar verificar token JWT híbrido (TEMPORARIAMENTE DESABILITADO PARA ESTABILIDADE) 
-        // const hybridModule = await import('../../hybrid-user-service');
-        // const hybridService = hybridModule.getHybridUserService();
-        // const verifyResult = await hybridService.verifyToken(token, true);
-        console.log('[hasMaintenanceAccessV2] Serviço híbrido temporariamente desabilitado para restaurar estabilidade');
-        const verifyResult = null;
+        // Tentar verificar token JWT híbrido
+        const hybridModule = await import('../../hybrid-user-service');
+        const hybridService = hybridModule.getHybridUserService();
+        const verifyResult = await hybridService.verifyToken(token, true);
         
         if (verifyResult) {
           console.log(`[hasMaintenanceAccessV2] Token JWT híbrido validado para ${verifyResult.user?.email || verifyResult.email}`);

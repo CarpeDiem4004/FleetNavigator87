@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { PlayIcon, XCircleIcon, CheckCircleIcon, RotateCw } from 'lucide-react';
-import { supabase } from '@/lib/supabase-compat';
+import { supabase } from '@/lib/supabaseClient';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { useAuth } from '@/context/AuthContext';
 

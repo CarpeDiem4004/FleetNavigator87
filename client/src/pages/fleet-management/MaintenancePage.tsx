@@ -210,35 +210,45 @@ export default function MaintenancePage() {
     requestBaseId: user?.baseId || 0,
     responsiblePerson: 'Técnico responsável',
     vehicleKm: undefined,
-    projectId: undefined
+    projectId: undefined,
+    baseIdOptional: undefined
   });
 
   // Carregar bases
   const { data: basesResponse } = useQuery<Base[]>({
     queryKey: ['/api/bases'],
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    onSuccess: (data) => {
+      console.log('Bases response:', data);
+    }
   });
 
   // Extrair dados da resposta
-  const bases = (basesResponse as any)?.data || basesResponse || [];
+  const bases = basesResponse?.data || basesResponse || [];
 
   // Carregar projetos
   const { data: projectsResponse } = useQuery({
     queryKey: ['/api/projects'],
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    onSuccess: (data) => {
+      console.log('Projects response:', data);
+    }
   });
 
   // Extrair dados da resposta
-  const projects = (projectsResponse as any)?.data || projectsResponse || [];
+  const projects = projectsResponse?.data || projectsResponse || [];
 
   // Carregar project-bases para filtrar bases por projeto
   const { data: projectBasesResponse } = useQuery({
     queryKey: ['/api/project-bases'],
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    onSuccess: (data) => {
+      console.log('Project-bases response:', data);
+    }
   });
 
   // Extrair dados da resposta (pode vir como {success: true, data: []} ou diretamente como [])
-  const projectBases = (projectBasesResponse as any)?.data || projectBasesResponse || [];
+  const projectBases = projectBasesResponse?.data || projectBasesResponse || [];
 
   // Estado para bases filtradas baseado no projeto selecionado
   const [filteredBases, setFilteredBases] = useState<Base[]>([]);
@@ -278,53 +288,18 @@ export default function MaintenancePage() {
   // Reset base selection when project changes
   useEffect(() => {
     if (selectedProjectId) {
-      setFormData(prev => ({ ...prev }));
+      setFormData(prev => ({ ...prev, baseIdOptional: undefined }));
     }
   }, [selectedProjectId]);
 
-  // Carregar oficinas ativas (sem autenticação para debug)
-  const { data: workshops = [], isLoading: workshopsLoading, error: workshopsError } = useQuery<Workshop[]>({
+  // Carregar oficinas ativas
+  const { data: workshops = [] } = useQuery<Workshop[]>({
     queryKey: ['/api/workshops', { active: true }],
     queryFn: async () => {
-      console.log('[WORKSHOPS] Buscando oficinas sem auth...');
-      
-      // Fazer requisição direta sem autenticação para debug
-      const res = await fetch('/api/workshops?active=true', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        credentials: 'same-origin'
-      });
-      
-      console.log('[WORKSHOPS] Status da resposta:', res.status, res.statusText);
-      
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error(`[WORKSHOPS] Erro ${res.status}:`, errorText);
-        
-        // Se for erro de autenticação, retornar lista vazia ao invés de falhar
-        if (res.status === 401) {
-          console.warn('[WORKSHOPS] Erro 401 - retornando lista vazia');
-          return [];
-        }
-        throw new Error(`Erro ao buscar oficinas: ${res.status} - ${errorText}`);
-      }
-      
-      const data = await res.json();
-      console.log('[WORKSHOPS] Oficinas carregadas:', data?.length || 'undefined', data);
-      
-      if (data && data.length > 0) {
-        console.log(`✅ ${data.length} oficinas carregadas com sucesso!`);
-        console.log('📋 Lista de oficinas:', data.map(w => w.name).join(', '));
-      }
-      
-      return data || [];
+      const res = await fetch('/api/workshops?active=true');
+      return res.json();
     },
-    refetchOnWindowFocus: false,
-    retry: false, // Não tentar novamente para evitar spam de requests
-    staleTime: 5 * 60 * 1000 // 5 minutos
+    refetchOnWindowFocus: false
   });
 
   // Carregar veículos usando o hook customizado para garantir consistência em todo o aplicativo
@@ -492,7 +467,7 @@ export default function MaintenancePage() {
 
   const handleSelectChange = (name: string, value: string) => {
     // Converter valores para números quando necessário
-    const numericFields = ['workshopId', 'requestBaseId', 'projectId'];
+    const numericFields = ['workshopId', 'requestBaseId', 'projectId', 'baseIdOptional'];
     const processedValue = numericFields.includes(name) ? (value === "0" ? undefined : parseInt(value)) : value;
     
     setFormData(prev => ({ ...prev, [name]: processedValue }));
@@ -583,7 +558,8 @@ export default function MaintenancePage() {
       requestBaseId: user?.baseId || 0,
       responsiblePerson: 'Técnico responsável',
       vehicleKm: undefined,
-      projectId: undefined
+      projectId: undefined,
+      baseIdOptional: undefined
     });
     setIsOpen(true);
   };
@@ -1045,10 +1021,7 @@ export default function MaintenancePage() {
                   {/* Oficina */}
                   <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="workshopId">
-                      Oficina <span className="text-red-500">*</span> 
-                      <small className="text-xs text-muted-foreground ml-2">
-                        (4 oficinas fixas + {Array.isArray(workshops) ? workshops.length : 0} dinâmicas{workshopsLoading ? ' carregando...' : workshopsError ? ' erro' : ' carregadas'})
-                      </small>
+                      Oficina <span className="text-red-500">*</span>
                     </Label>
                     <Select 
                       value={formData.workshopId ? formData.workshopId.toString() : "0"} 
@@ -1059,18 +1032,11 @@ export default function MaintenancePage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="0">Selecione uma oficina</SelectItem>
-                        {/* Oficinas fixas temporariamente para debug */}
-                        <SelectItem value="11">AUTO MECÂNICA PASSOS LTDA</SelectItem>
-                        <SelectItem value="5">Alair Manutenção e Serviços Automotivos Ltda</SelectItem>
-                        <SelectItem value="2">Auto Center Rio de Janeiro LTDA</SelectItem>
-                        <SelectItem value="1">Oficina Teste Ltda</SelectItem>
-                        
-                        {/* Oficinas dinâmicas (não funcionando por enquanto) */}
-                        {Array.isArray(workshops) && workshops.length > 0 && workshops.map((workshop) => (
-                          <SelectItem key={`dynamic-${workshop.id}`} value={workshop.id.toString()}>
-                            {workshop.name} (Dinâmico)
+                        {Array.isArray(workshops) ? workshops.map((workshop) => (
+                          <SelectItem key={workshop.id} value={workshop.id.toString()}>
+                            {workshop.name}
                           </SelectItem>
-                        ))}
+                        )) : <SelectItem value="-1">Erro ao carregar oficinas</SelectItem>}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1138,12 +1104,12 @@ export default function MaintenancePage() {
                 {/* Base (Opcional) - Aparece apenas quando um projeto for selecionado */}
                 {selectedProjectId && (
                   <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="requestBaseId">
+                    <Label htmlFor="baseIdOptional">
                       Base (Opcional)
                     </Label>
                     <Select 
-                      value={formData.requestBaseId ? formData.requestBaseId.toString() : "0"} 
-                      onValueChange={(value) => handleSelectChange('requestBaseId', value)}
+                      value={formData.baseIdOptional ? formData.baseIdOptional.toString() : "0"} 
+                      onValueChange={(value) => handleSelectChange('baseIdOptional', value)}
                     >
                       <SelectTrigger className="h-10">
                         <SelectValue placeholder="Selecione uma base" />

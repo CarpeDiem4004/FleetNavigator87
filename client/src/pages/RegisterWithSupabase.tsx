@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+import { useSupabaseAuthContext } from '@/context/SupabaseAuthContext';
 
 export default function RegisterWithSupabase() {
   const [name, setName] = useState('');
@@ -14,16 +14,16 @@ export default function RegisterWithSupabase() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordsMatch, setPasswordsMatch] = useState(true);
-  const { register, isLoading, user } = useAuth();
+  const { register, isLoading, user, supabaseUser } = useSupabaseAuthContext();
   const { toast } = useToast();
   const [_, navigate] = useLocation();
 
   // Redirecionar se o usuário já estiver autenticado
   useEffect(() => {
-    if (user) {
+    if (user || supabaseUser) {
       navigate('/');
     }
-  }, [user, navigate]);
+  }, [user, supabaseUser, navigate]);
 
   // Verificar se as senhas coincidem
   useEffect(() => {

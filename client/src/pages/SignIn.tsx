@@ -53,13 +53,14 @@ export default function SignIn({ oficina = false }: SignInProps) {
       // 3. Força salvamento de cookies
       // 4. Usa rota de emergência para garantir sessão persistente
       
-      // ETAPA 1: Login direto com API de base (que funciona!)
+      // ETAPA 1: Login tradicional diretamente com a API
       let userData = null;
       try {
-        const loginResponse = await fetch('/api/auth/login-base', {
+        const loginResponse = await fetch('/api/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-Bypass-Auth-System': 'true', // Indica uso direto da API, não via Passport
           },
           body: JSON.stringify({ email, password }),
           credentials: 'include',  // Crucial para cookies
@@ -67,38 +68,25 @@ export default function SignIn({ oficina = false }: SignInProps) {
         
         if (loginResponse.ok) {
           userData = await loginResponse.json();
-          console.log("Login API de base bem-sucedido:", userData);
+          console.log("Login API tradicional bem-sucedido:", userData);
           
-          // Login bem-sucedido - redirecionar
-          if (userData.success) {
-            toast({
-              title: "Login realizado com sucesso!",
-              description: userData.message || "Bem-vindo ao sistema!",
-            });
-
-            // Aguardar um pouco para garantir que cookies sejam definidos
-            setTimeout(() => {
-              // Se for usuário de oficina, redirecionar para dashboard da oficina
-              if (userData.user && userData.user.role === 'oficina') {
-                navigate('/oficina/dashboard');
-              } else {
-                navigate('/');
-              }
-            }, 100);
-            return; // Não continuar com outros métodos de login
+          // Armazenar token na localStorage para compatibilidade
+          if (userData.token) {
+            localStorage.setItem('authToken', userData.token);
+            // Set cookie via JavaScript
+            document.cookie = `authToken=${userData.token}; path=/; max-age=86400; SameSite=Lax`;
           }
         } else {
-          console.warn("Login API de base falhou, tentando via hook...");
+          console.warn("Login API tradicional falhou, tentando via hook...");
         }
       } catch (apiError) {
         console.error("Erro ao fazer login via API tradicional:", apiError);
       }
       
-      // ETAPA 2: Se o login direto não funcionou, usar o hook
-      if (!userData || !userData.success) {
-        const loggedUser = await login(email, password);
-        console.log("Login hook completo, resultado:", loggedUser);
-      }
+      // ETAPA 2: Login com hook (tenta Supabase e API tradicional de forma robusta)
+      // Fazer sempre este login mesmo se o direto funcionou, pois garante o token JWT do Supabase
+      const loggedUser = await login(email, password);
+      console.log("Login hook completo, resultado:", loggedUser);
       
       // ETAPA 2.1: Garantir que temos o token JWT armazenado corretamente
       try {

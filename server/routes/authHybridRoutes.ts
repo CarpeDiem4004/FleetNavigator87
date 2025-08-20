@@ -178,23 +178,15 @@ router.post('/login-hybrid', async (req, res) => {
       isActive: user.isActive
     };
 
-    // Salva o usuário na sessão usando req.login (Passport)
+    // Salva o usuário na sessão
     req.login(userSession, (loginErr) => {
       if (loginErr) {
-        console.error('Erro ao salvar sessão via Passport:', loginErr);
+        console.error('Erro ao salvar sessão:', loginErr);
         return res.status(500).json({ message: 'Erro ao criar sessão' });
       }
 
-      // Salvar sessão manualmente para garantir persistência
-      req.session.save((saveErr) => {
-        if (saveErr) {
-          console.error('Erro ao salvar sessão manualmente:', saveErr);
-          return res.status(500).json({ message: 'Erro ao persistir sessão' });
-        }
-
-        console.log('Login híbrido bem-sucedido e sessão persistida para:', email);
-        return res.status(200).json(userSession);
-      });
+      console.log('Login híbrido bem-sucedido para:', email);
+      return res.status(200).json(userSession);
     });
   } catch (error) {
     console.error('Erro no processamento de login híbrido:', error);
@@ -291,32 +283,17 @@ router.post('/login-base', async (req, res) => {
       isActive: user.isActive
     };
 
-    // Configura dados da sessão antes de usar req.login
+    // Configura a sessão
     (req.session as any).user = userSession;
     (req.session as any).isAuthenticated = true;
     (req.session as any).hybridUser = userSession;
 
-    // Salva o usuário na sessão usando req.login (Passport)
-    req.login(userSession, (loginErr) => {
-      if (loginErr) {
-        console.error('Erro ao salvar sessão de base via Passport:', loginErr);
-        // Continuar mesmo com erro do Passport, pois definimos manualmente acima
-      }
-
-      // Salvar sessão manualmente para garantir persistência
-      req.session.save((saveErr) => {
-        if (saveErr) {
-          console.error('Erro ao salvar sessão de base manualmente:', saveErr);
-          return res.status(500).json({ message: 'Erro ao persistir sessão' });
-        }
-
-        console.log('Login de base bem-sucedido e sessão persistida para:', email, 'Role:', user.role, 'Base:', user.basename);
-        return res.status(200).json({ 
-          message: 'Login realizado com sucesso',
-          user: userSession,
-          success: true
-        });
-      });
+    console.log('Login de base bem-sucedido para:', email, 'Role:', user.role, 'Base:', user.basename);
+    
+    res.json({ 
+      message: 'Login realizado com sucesso',
+      user: userSession,
+      success: true
     });
 
   } catch (error) {

@@ -3,7 +3,7 @@ import { Route, Redirect } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
 import { useBasePermission } from '@/hooks/use-base-permission';
 import { Loader2, AlertTriangle, RefreshCcw, AlertCircle } from 'lucide-react';
-import { supabase } from '@/lib/supabase-compat';
+import { supabase } from '@/lib/supabaseClient';
 import AuthManager from '@/lib/authManager';
 
 interface ProtectedRouteProps {
