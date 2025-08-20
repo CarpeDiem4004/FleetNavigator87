@@ -455,20 +455,21 @@ export default function OficinaExternalDashboard() {
           title: "Sucesso",
           description: "Veículo recebido com sucesso!",
         });
-        setIsReceiveCarOpen(false);
+        // Modal será fechado automaticamente
         setCarFormData({
           vehiclePlate: '',
           vehicleModel: '',
           vehicleType: '',
           currentKm: '',
           serviceDescription: '',
-          priority: 'media',
           projectId: '',
           baseId: ''
         });
         setSelectedProjectBases([]);
         // Recarregar dados
-        await loadWorkshopData(workshopData.id, token);
+        if (workshopData?.id && token) {
+          await loadWorkshopData(workshopData.id, token);
+        }
       } else {
         const error = await response.json();
         toast({
@@ -1909,7 +1910,7 @@ export default function OficinaExternalDashboard() {
                         <div key={index} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
                           <span className="font-medium">{part.name}</span>
                           <div className="flex items-center gap-3">
-                            <span className="text-lg font-semibold text-green-600">{formatDisplayCurrency(parseFloat(part.price))}</span>
+                            <span className="text-lg font-semibold text-green-600">{formatDisplayCurrency(parseFloat(part.price || '0'))}</span>
                             <Button
                               type="button"
                               variant="ghost"
