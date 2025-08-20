@@ -73,7 +73,8 @@ export default function FormularioPublicoAbastecimento() {
       const response = await fetch('/api/bases');
       const data = await response.json();
       if (Array.isArray(data)) {
-        setBases(data.filter(base => base.active));
+        // Carregar TODAS as bases disponíveis no sistema, não apenas as ativas
+        setBases(data);
       }
     } catch (error) {
       console.error('Erro ao carregar bases:', error);
