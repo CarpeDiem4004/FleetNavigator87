@@ -224,6 +224,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
+    { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
     // Menu de Abastecimentos com submenu
     { name: 'Abastecimentos', href: '#', icon: Fuel, subItems: [
       { name: 'Posto Osasco V2', href: '/posto/osasco_v2', icon: Fuel },
@@ -274,6 +275,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Credenciais das Oficinas', href: '/maintenance/oficinas-credentials', icon: KeyRound },
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
     { name: 'Equipamentos', href: '/equipment', icon: Package },
+    { name: 'Pneus', href: '/tires', icon: CircleDot },
+    { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
     { name: 'Parceiros de Guincho', href: '#', icon: Truck, subItems: [
       { name: 'Parceiros', href: '/fleet-management/towing-partners', icon: Truck },
       { name: 'Solicitações', href: '/fleet-management/towing-partners/requests', icon: FileText },
@@ -346,6 +349,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
       { name: 'Links Públicos', href: '/admin/abastecimento-pos-pago/links', icon: ExternalLink }
     ]},
+    { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
   ];
   
   // Itens específicos para usuários Line Hall - acesso completo a todas as funcionalidades
@@ -385,6 +389,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
       { name: 'Links Públicos', href: '/admin/abastecimento-pos-pago/links', icon: ExternalLink }
     ]},
+    { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
     { name: 'Gestão de Frotas', href: '/fleet-management', icon: Truck },
     { name: 'Parceiros de Guincho', href: '#', icon: Truck, subItems: [
