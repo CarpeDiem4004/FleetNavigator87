@@ -467,7 +467,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Filtrando itens de navegação com base nas permissões do usuário
   const navItems = navItemsBase.filter(item => {
     // Sempre incluir menus específicos para todos os usuários independente de permissões
-    if (item.name === 'Cartão' || item.name === 'Histórico Consolidado' || item.name === 'Parceiros de Guincho' || item.name === 'Postos Externos') {
+    if (item.name === 'Cartão' || item.name === 'Histórico Consolidado' || item.name === 'Parceiros de Guincho' || item.name === 'Postos Externos' || item.name === 'Abastecimentos') {
       console.log(`Menu "${item.name}" incluído independente de permissões`);
       return true;
     }
@@ -481,18 +481,16 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     
     // Sempre incluir menus com submenus (href='#')
     if (item.href === '#') {
-      // Para menus Abastecimentos, sempre incluir independente de permissões específicas
-      if (item.name === 'Abastecimentos') {
-        console.log(`Menu Abastecimentos incluído automaticamente com ${item.subItems?.length} subitens`);
-        console.log(`Subitens de Abastecimentos:`, item.subItems?.map(si => `${si.name} (${si.href})`));
-        return true;
-      }
-      
       // Verificar se pelo menos um submenu é permitido
       const hasSubItemPermission = item.subItems?.some(subItem => {
         // Para o item Gerenciamento Terceiros, sempre permitir para admins
         if (subItem.name === 'Gerenciamento Terceiros' && user.role === 'admin') {
           console.log(`FORÇANDO permissão para Gerenciamento Terceiros (admin)`);
+          return true;
+        }
+        // Para o item Sistema Pós-Pago, sempre permitir para admins
+        if (subItem.name === 'Sistema Pós-Pago' && user.role === 'admin') {
+          console.log(`FORÇANDO permissão para Sistema Pós-Pago (admin)`);
           return true;
         }
         console.log(`Verificando permissão para submenu ${subItem.name} (${subItem.href}): ${hasPermission(subItem.href) ? 'PERMITIDO' : 'NEGADO'}`);
