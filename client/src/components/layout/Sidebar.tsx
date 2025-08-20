@@ -31,6 +31,9 @@ import {
 
 } from 'lucide-react';
 
+// Shadcn/ui Accordion
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
 // Constantes para itens de menu
 import { baseItems } from './constants/baseItems';
 
@@ -556,13 +559,24 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
                 return (
                   <div key={item.name} className="mb-1">
                     {item.subItems ? (
-                      <NavItemWithSubmenu 
-                        item={item} 
-                        isActive={isActive} 
-                        isSubItemActive={isSubItemActive || false}
-                        onClose={closeSidebar}
-                        currentLocation={location}
-                      />
+                      // Usar Accordion para menus com submenu, especialmente Abastecimentos
+                      item.name === 'Abastecimentos' ? (
+                        <NavItemWithSubmenu 
+                          item={item} 
+                          isActive={isActive} 
+                          isSubItemActive={isSubItemActive || false}
+                          onClose={closeSidebar}
+                          currentLocation={location}
+                        />
+                      ) : (
+                        <NavItemWithSubmenu 
+                          item={item} 
+                          isActive={isActive} 
+                          isSubItemActive={isSubItemActive || false}
+                          onClose={closeSidebar}
+                          currentLocation={location}
+                        />
+                      )
                     ) : (
                       <NavItem 
                         item={item} 

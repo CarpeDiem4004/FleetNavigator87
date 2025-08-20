@@ -1,0 +1,58 @@
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Fuel, History, BarChart, LayoutDashboard } from "lucide-react"
+
+export function Sidebar() {
+  return (
+    <div className="w-64 bg-gray-900 text-white h-screen p-4">
+      <Accordion type="single" collapsible className="w-full">
+        
+        {/* MENU PRINCIPAL */}
+        <AccordionItem value="abastecimento">
+          <AccordionTrigger className="flex items-center gap-2">
+            <Fuel className="w-4 h-4" />
+            Abastecimento
+          </AccordionTrigger>
+          <AccordionContent>
+            <ul className="space-y-1 pl-4">
+              <li className="hover:text-blue-400 cursor-pointer">Posto Osasco V2</li>
+              <li className="hover:text-blue-400 cursor-pointer">Posto Alair V2</li>
+              <li className="hover:text-blue-400 cursor-pointer">Posto Campinas V2</li>
+              <li className="hover:text-blue-400 cursor-pointer">Posto ABC V2</li>
+              <li className="hover:text-blue-400 cursor-pointer">Posto Socorro V2</li>
+              <li className="hover:text-blue-400 cursor-pointer">Posto Sorocaba V2</li>
+            </ul>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* SUBMENU HISTÓRICO */}
+        <AccordionItem value="historico">
+          <AccordionTrigger className="flex items-center gap-2">
+            <History className="w-4 h-4" />
+            Histórico
+          </AccordionTrigger>
+          <AccordionContent>
+            <ul className="space-y-1 pl-4">
+              <li className="hover:text-blue-400 cursor-pointer">Histórico Geral</li>
+              <li className="hover:text-blue-400 cursor-pointer">Histórico Pátio</li>
+            </ul>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* OUTROS */}
+        <AccordionItem value="graficos">
+          <AccordionTrigger className="flex items-center gap-2">
+            <BarChart className="w-4 h-4" />
+            Gráfico de Consumo
+          </AccordionTrigger>
+        </AccordionItem>
+
+        <AccordionItem value="visao">
+          <AccordionTrigger className="flex items-center gap-2">
+            <LayoutDashboard className="w-4 h-4" />
+            Visão Geral dos Postos
+          </AccordionTrigger>
+        </AccordionItem>
+      </Accordion>
+    </div>
+  )
+}
