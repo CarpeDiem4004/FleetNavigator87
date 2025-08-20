@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { pool } from '../db';
 import { formatarNomePosto, formatarNomeTabela } from '../utils/posto-utils';
-// import { supabaseAdmin } from '../config/supabase';
+import { supabaseAdmin } from '../config/supabase';
 
 const router = Router();
 

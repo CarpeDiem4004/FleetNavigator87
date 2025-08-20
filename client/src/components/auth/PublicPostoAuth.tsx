@@ -97,16 +97,7 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
     setError(null);
     
     try {
-      // Detectar se estamos em ambiente externo (Replit)
-      const isExternal = window.location.hostname.includes('replit.app') || 
-                        window.location.hostname.includes('picard.replit.dev');
-      
-      // Usar endpoint específico para acesso externo
-      const endpoint = isExternal ? '/api/auth-hybrid/login-posto-externo' : '/api/auth/login-base';
-      
-      console.log('PublicPostoAuth: Usando endpoint:', endpoint, 'isExternal:', isExternal);
-      
-      const response = await fetch(endpoint, {
+      const response = await fetch('/api/auth/login-base', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -118,46 +109,35 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
       
       if (!isMountedRef.current) return;
       
-      // Verifica se a resposta é JSON
-      const contentType = response.headers.get("content-type");
-      console.log('PublicPostoAuth: Status da resposta:', response.status, 'Content-Type:', contentType);
-      
-      if (contentType && contentType.includes("application/json")) {
-        if (response.ok) {
-          const userData = await response.json();
-          console.log('PublicPostoAuth: Login realizado com sucesso', userData);
-          
-          // Handle both response formats (direct user data or nested under user property)
-          const userInfo = userData.user || userData;
-          
-          setUser({
-            id: userInfo.id.toString(),
-            email: userInfo.email,
-            name: userInfo.name || userInfo.email,
-            role: userInfo.role || 'operador'
-          });
-          
-          setShowDialog(false);
-          
-          // Store authentication data
-          if (userData.token) {
-            localStorage.setItem('access_token', userData.token);
-          }
-          
-          // Store user data for external fuel station access
-          localStorage.setItem('user_id', userInfo.id.toString());
-          localStorage.setItem('user_email', userInfo.email);
-          localStorage.setItem('user_name', userInfo.name || '');
-          localStorage.setItem('user_role', userInfo.role || 'operador');
-        } else {
-          const errorData = await response.json();
-          setError(errorData.message || 'Credenciais inválidas');
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('PublicPostoAuth: Login realizado com sucesso', userData);
+        
+        // Handle both response formats (direct user data or nested under user property)
+        const userInfo = userData.user || userData;
+        
+        setUser({
+          id: userInfo.id.toString(),
+          email: userInfo.email,
+          name: userInfo.name || userInfo.email,
+          role: userInfo.role || 'operador'
+        });
+        
+        setShowDialog(false);
+        
+        // Store authentication data
+        if (userData.token) {
+          localStorage.setItem('access_token', userData.token);
         }
+        
+        // Store user data for external fuel station access
+        localStorage.setItem('user_id', userInfo.id.toString());
+        localStorage.setItem('user_email', userInfo.email);
+        localStorage.setItem('user_name', userInfo.name || '');
+        localStorage.setItem('user_role', userInfo.role || 'operador');
       } else {
-        // Caso o servidor tenha devolvido HTML
-        const text = await response.text();
-        console.error('PublicPostoAuth: Erro inesperado - resposta HTML:', text.substring(0, 200));
-        setError('Erro de conectividade. Tente novamente.');
+        const errorData = await response.json();
+        setError(errorData.message || 'Credenciais inválidas');
       }
     } catch (error) {
       console.error('PublicPostoAuth: Erro no login:', error);

@@ -1,5 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { PostgrestResponse, PostgrestSingleResponse } from '@supabase/supabase-js';
+import { PostgrestResponse } from '@supabase/supabase-js';
 import { supabase } from "./supabaseClient";
 
 // Estado para controlar tentativas de ressincronização
@@ -83,7 +83,7 @@ export async function apiRequest(
     const endpoint = url.replace('/api/supabase/', '');
     const [table, action] = endpoint.split('/');
     
-    let result: PostgrestResponse<any> | PostgrestSingleResponse<any> | undefined;
+    let result: PostgrestResponse<any> | undefined;
     
     switch (action) {
       case 'list':
@@ -298,7 +298,7 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: 0, // Sempre considerar dados stale
-      gcTime: 0, // Não manter cache
+      cacheTime: 0, // Não manter cache
       retry: false,
     },
     mutations: {
