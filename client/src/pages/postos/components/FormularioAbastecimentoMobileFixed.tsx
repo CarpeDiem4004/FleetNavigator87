@@ -913,20 +913,7 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
                   <FormControl>
                     <Input
                       {...field}
-                      value={(() => {
-                        console.log(`[OPERADOR-FIELD] Renderizando campo operador`);
-                        console.log(`[OPERADOR-FIELD] User:`, user);
-                        console.log(`[OPERADOR-FIELD] User name:`, user?.name);
-                        console.log(`[OPERADOR-FIELD] Field value:`, field.value);
-                        
-                        if (user?.name && user.name !== "Administrador") {
-                          console.log(`[OPERADOR-FIELD] Retornando nome do usuário: ${user.name}`);
-                          return user.name;
-                        } else {
-                          console.log(`[OPERADOR-FIELD] Retornando fallback: Operador`);
-                          return "Operador";
-                        }
-                      })()}
+                      value={field.value || (user?.name && user.name !== "Administrador" ? user.name : "Operador")}
                       placeholder="Operador do posto"
                       className="min-h-[44px] bg-gray-50"
                       readOnly
