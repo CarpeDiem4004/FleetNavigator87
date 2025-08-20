@@ -133,28 +133,48 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
       base_id: "",
       motorista: "",
       motorista_rg: "",
-      operador: "",
+      operador: user?.name && user.name !== "Administrador" ? user.name : "Operador",
       tipo_veiculo: "frota",
     },
   });
 
   // Preencher automaticamente o nome do operador quando o usuário for carregado
   useEffect(() => {
+    console.log(`[OPERADOR-DEBUG] useEffect executado`);
     console.log(`[OPERADOR-DEBUG] Verificando usuário:`, user);
+    console.log(`[OPERADOR-DEBUG] Nome do usuário:`, user?.name);
+    console.log(`[OPERADOR-DEBUG] Email do usuário:`, user?.email);
     
-    // Usar o nome do usuário logado ou um valor padrão genérico
-    let operatorName = "Operador";
-    
-    if (user?.name && user.name !== "Administrador") {
-      operatorName = user.name;
+    // Forçar o preenchimento sempre que o usuário estiver disponível
+    if (user?.name) {
+      let operatorName = user.name;
+      
+      // Não usar "Administrador" como nome do operador
+      if (user.name === "Administrador") {
+        operatorName = "Operador";
+      }
+      
+      console.log(`[OPERADOR-DEBUG] Preenchendo campo operador com: ${operatorName}`);
+      
+      // Múltiplas tentativas para garantir que o campo seja preenchido
+      form.setValue("operador", operatorName);
+      form.trigger("operador"); // Força validação
+      
+      // Reset completo dos valores padrão incluindo o operador
+      const currentValues = form.getValues();
+      form.reset({
+        ...currentValues,
+        operador: operatorName
+      });
+      
+      // Verificar se o valor foi definido corretamente
+      setTimeout(() => {
+        const currentValue = form.getValues("operador");
+        console.log(`[OPERADOR-DEBUG] Valor atual do campo operador após setValue: ${currentValue}`);
+      }, 100);
+    } else {
+      console.log(`[OPERADOR-DEBUG] Usuário não disponível ainda`);
     }
-    
-    console.log(`[OPERADOR-DEBUG] Preenchendo campo operador com: ${operatorName}`);
-    form.setValue("operador", operatorName);
-    
-    // Verificar se o valor foi definido corretamente
-    const currentValue = form.getValues("operador");
-    console.log(`[OPERADOR-DEBUG] Valor atual do campo operador: ${currentValue}`);
   }, [user, form]);
 
   // Função de diagnóstico de conexão
@@ -884,10 +904,10 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
                   <FormControl>
                     <Input
                       {...field}
+                      value={user?.name && user.name !== "Administrador" ? user.name : "Operador"}
                       placeholder="Operador do posto"
-                      className="min-h-[44px] bg-gray-50 cursor-not-allowed"
+                      className="min-h-[44px] bg-gray-50"
                       readOnly
-                      disabled
                     />
                   </FormControl>
                   <div className="text-xs text-gray-500 mt-1">
