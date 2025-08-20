@@ -20901,7 +20901,7 @@ async function createFuelRequestNotification(fuelRequest) {
         return res.status(401).json({ error: 'Token expirado ou inativo' });
       }
 
-      const { nome, cpf, placa, km, tipo_motorista, tipo_combustivel, valor_unit, valor_total, posto_id, observacoes } = req.body;
+      const { nome, cpf, placa, km, tipo_motorista, tipo_combustivel, valor_unit, valor_total, posto_id, base_id, observacoes } = req.body;
       
       // Validações básicas
       const required = ['nome', 'cpf', 'placa', 'km', 'tipo_motorista', 'tipo_combustivel', 'valor_unit', 'valor_total'];
@@ -20931,7 +20931,7 @@ async function createFuelRequestNotification(fuelRequest) {
         parseInt(km),
         tipo_motorista,
         tokenData.projeto_id,
-        tokenData.base_id,
+        base_id ? parseInt(base_id) : null, // base_id do formulário ou null
         tipo_combustivel,
         parseFloat(valor_unit),
         parseFloat(valor_total),

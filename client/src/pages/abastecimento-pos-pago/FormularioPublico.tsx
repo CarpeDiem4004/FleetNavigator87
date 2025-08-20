@@ -16,6 +16,7 @@ interface FormData {
   valor_unit: string;
   valor_total: string;
   posto_id: string;
+  base_id: string;
   observacoes: string;
 }
 
@@ -30,6 +31,7 @@ export default function FormularioPublicoAbastecimento() {
     valor_unit: '',
     valor_total: '',
     posto_id: '',
+    base_id: '',
     observacoes: ''
   });
 
@@ -37,6 +39,7 @@ export default function FormularioPublicoAbastecimento() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [token, setToken] = useState<string>('');
   const [postos, setPostos] = useState<any[]>([]);
+  const [bases, setBases] = useState<any[]>([]);
 
   useEffect(() => {
     // Extrair token da URL
@@ -48,8 +51,9 @@ export default function FormularioPublicoAbastecimento() {
       setMessage({ type: 'error', text: 'Link inválido - token não encontrado' });
     }
 
-    // Carregar postos disponíveis
+    // Carregar postos e bases disponíveis
     loadPostos();
+    loadBases();
   }, []);
 
   const loadPostos = async () => {
@@ -61,6 +65,18 @@ export default function FormularioPublicoAbastecimento() {
       }
     } catch (error) {
       console.error('Erro ao carregar postos:', error);
+    }
+  };
+
+  const loadBases = async () => {
+    try {
+      const response = await fetch('/api/bases');
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setBases(data.filter(base => base.active));
+      }
+    } catch (error) {
+      console.error('Erro ao carregar bases:', error);
     }
   };
 
@@ -122,7 +138,8 @@ export default function FormularioPublicoAbastecimento() {
           km: parseInt(formData.km),
           valor_unit: parseFloat(formData.valor_unit.replace(',', '.')),
           valor_total: parseFloat(formData.valor_total.replace(',', '.')),
-          posto_id: formData.posto_id ? parseInt(formData.posto_id) : null
+          posto_id: formData.posto_id ? parseInt(formData.posto_id) : null,
+          base_id: formData.base_id ? parseInt(formData.base_id) : null
         })
       });
 
@@ -141,6 +158,7 @@ export default function FormularioPublicoAbastecimento() {
           valor_unit: '',
           valor_total: '',
           posto_id: '',
+          base_id: '',
           observacoes: ''
         });
       } else {
@@ -293,6 +311,25 @@ export default function FormularioPublicoAbastecimento() {
                     <SelectItem value="etanol">Etanol</SelectItem>
                     <SelectItem value="gnv">GNV</SelectItem>
                     <SelectItem value="adblue">Arla/AdBlue</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Base (opcional) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Base (opcional)
+                </label>
+                <Select value={formData.base_id} onValueChange={(value) => handleChange('base_id', value)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione uma base (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bases.map((base) => (
+                      <SelectItem key={base.id} value={base.id.toString()}>
+                        {base.sigla} - {base.nome}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
