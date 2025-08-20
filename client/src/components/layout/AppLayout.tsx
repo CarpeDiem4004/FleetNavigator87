@@ -82,8 +82,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       expanded: cartaoExpanded,
       toggle: () => setCartaoExpanded(!cartaoExpanded),
       submenu: [
-        { href: '/fuel-card', label: 'Solicitações de Cartão' },
-        { href: '/posto-remedios', label: 'Posto Remédios' },
+        { href: '/fuel-card', label: 'Operações' },
+        { href: '/fuel-card-requests', label: 'Painel de Solicitações' },
+        { href: '/admin/abastecimento-pos-pago', label: 'Sistema Pós-Pago' },
       ]
     },
     { 
