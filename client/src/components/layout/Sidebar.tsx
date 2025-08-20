@@ -466,7 +466,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Filtrando itens de navegação com base nas permissões do usuário
   const navItems = navItemsBase.filter(item => {
     // Sempre incluir menus específicos para todos os usuários independente de permissões
-    if (item.name === 'Cartão' || item.name === 'Histórico Consolidado' || item.name === 'Parceiros de Guincho') {
+    if (item.name === 'Cartão' || item.name === 'Histórico Consolidado' || item.name === 'Parceiros de Guincho' || item.name === 'Postos Externos') {
       console.log(`Menu "${item.name}" incluído independente de permissões`);
       return true;
     }
