@@ -26,7 +26,8 @@ import {
   Download,
   Package2,
   Trash2,
-  Calculator
+  Calculator,
+  DollarSign
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -961,7 +962,7 @@ export default function OficinaExternalDashboard() {
         <div>
 
       {/* KPIs */}
-      <div className="grid gap-6 md:grid-cols-4 mb-6">
+      <div className="grid gap-6 md:grid-cols-5 mb-6">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -1013,6 +1014,30 @@ export default function OficinaExternalDashboard() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Concluídas</p>
                 <p className="text-2xl font-bold">{completedRequests.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-full">
+                <DollarSign className="h-4 w-4 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Valor Total</p>
+                <p className="text-2xl font-bold">
+                  {new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                  }).format(
+                    carReceptions.reduce((total, reception) => {
+                      const totalCost = parseFloat(reception.totalCost || '0');
+                      return total + totalCost;
+                    }, 0)
+                  )}
+                </p>
               </div>
             </div>
           </CardContent>
