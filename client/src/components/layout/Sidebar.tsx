@@ -451,28 +451,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   let navItemsBase;
   if (isFleetUser) {
     navItemsBase = fleetManagementItems;
-    console.log(`[DEBUG MENU] Usando fleetManagementItems para usuário admin`);
   } else if (isFuelManager) {
     navItemsBase = fuelManagerItems;
-    console.log(`[DEBUG MENU] Usando fuelManagerItems para usuário admin`);
   } else if (isLineHallUser) {
     navItemsBase = lineHallItems;
-    console.log(`[DEBUG MENU] Usando lineHallItems para usuário admin`);
   } else {
     navItemsBase = allNavItems;
-    console.log(`[DEBUG MENU] Usando allNavItems para usuário admin`);
-  }
-  
-  // Debug: verificar se Sistema Pós-Pago está na lista selecionada
-  const hasAbastecimentosMenu = navItemsBase.find(item => item.name === 'Abastecimentos');
-  if (hasAbastecimentosMenu) {
-    const hasSistemaPosPago = hasAbastecimentosMenu.subItems?.find(sub => sub.name === 'Sistema Pós-Pago');
-    console.log(`[DEBUG MENU] Menu Abastecimentos encontrado, Sistema Pós-Pago presente: ${!!hasSistemaPosPago}`);
-    if (hasSistemaPosPago) {
-      console.log(`[DEBUG MENU] Sistema Pós-Pago encontrado:`, hasSistemaPosPago);
-    }
-  } else {
-    console.log(`[DEBUG MENU] Menu Abastecimentos NÃO encontrado na lista selecionada`);
   }
   
   // Adicionamos explicitamente o item de Histórico Consolidado em ambos os menus para garantir que seja visível
@@ -514,12 +498,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
           return true;
         }
         // Para o item Sistema Pós-Pago, sempre permitir para admins
-        if (subItem.name === 'Sistema Pós-Pago') {
-          console.log(`[DEBUG SISTEMA PÓS-PAGO] Verificando permissão para Sistema Pós-Pago: user.role=${user.role}, isAdmin=${user.role === 'admin'}`);
-          if (user.role === 'admin') {
-            console.log(`FORÇANDO permissão para Sistema Pós-Pago (admin)`);
-            return true;
-          }
+        if (subItem.name === 'Sistema Pós-Pago' && user.role === 'admin') {
+          return true;
         }
         console.log(`Verificando permissão para submenu ${subItem.name} (${subItem.href}): ${hasPermission(subItem.href) ? 'PERMITIDO' : 'NEGADO'}`);
         return hasPermission(subItem.href);
