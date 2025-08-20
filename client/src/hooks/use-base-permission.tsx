@@ -430,6 +430,12 @@ export const useBasePermission = (): BasePermissionHook => {
       return true;
     }
     
+    // Sempre permitir acesso ao Posto Remédios (rota externa)
+    if (route === '/posto-remedios') {
+      console.log(`Posto Remédios access granted for user: ${user.email}`);
+      return true;
+    }
+    
     // Line Hall Role - acesso completo a todas as funcionalidades do sistema
     if (user.role === 'line_hall') {
       // Para o role line_hall (Aline Ribeiro), dar acesso completo ao sistema exceto rotas administrativas específicas

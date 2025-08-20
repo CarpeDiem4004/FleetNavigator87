@@ -531,6 +531,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
             return true;
           }
         }
+        // Para Posto Remédios, sempre permitir
+        if (subItem.name === 'Posto Remédios') {
+          console.log(`[POSTO REMÉDIOS DEBUG] Permitindo Posto Remédios para usuário: ${user.email}`);
+          return true;
+        }
         console.log(`Verificando permissão para submenu ${subItem.name} (${subItem.href}): ${hasPermission(subItem.href) ? 'PERMITIDO' : 'NEGADO'}`);
         return hasPermission(subItem.href);
       });
