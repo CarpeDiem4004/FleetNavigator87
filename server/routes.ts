@@ -20904,7 +20904,7 @@ async function createFuelRequestNotification(fuelRequest) {
       const { nome, cpf, placa, km, tipo_motorista, tipo_combustivel, valor_unit, valor_total, posto_id, base_id, observacoes } = req.body;
       
       // Validações básicas
-      const required = ['nome', 'cpf', 'placa', 'km', 'tipo_motorista', 'tipo_combustivel', 'valor_unit', 'valor_total'];
+      const required = ['nome', 'cpf', 'placa', 'km', 'tipo_motorista', 'tipo_combustivel', 'valor_unit', 'valor_total', 'base_id'];
       for (const field of required) {
         if (req.body[field] === undefined || req.body[field] === null || req.body[field] === '') {
           return res.status(400).json({ error: `Campo obrigatório: ${field}` });
@@ -20931,7 +20931,7 @@ async function createFuelRequestNotification(fuelRequest) {
         parseInt(km),
         tipo_motorista,
         tokenData.projeto_id,
-        base_id ? parseInt(base_id) : null, // base_id do formulário ou null
+        parseInt(base_id), // base_id obrigatório
         tipo_combustivel,
         parseFloat(valor_unit),
         parseFloat(valor_total),

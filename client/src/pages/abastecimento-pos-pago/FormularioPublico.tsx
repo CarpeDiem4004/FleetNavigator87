@@ -123,6 +123,12 @@ export default function FormularioPublicoAbastecimento() {
       return;
     }
 
+    // Validação adicional: verificar se base foi selecionada
+    if (!formData.base_id) {
+      setMessage({ type: 'error', text: 'Por favor, selecione uma base' });
+      return;
+    }
+
     setLoading(true);
     setMessage(null);
 
@@ -140,7 +146,7 @@ export default function FormularioPublicoAbastecimento() {
           valor_unit: parseFloat(formData.valor_unit.replace(',', '.')),
           valor_total: parseFloat(formData.valor_total.replace(',', '.')),
           posto_id: formData.posto_id ? parseInt(formData.posto_id) : null,
-          base_id: formData.base_id ? parseInt(formData.base_id) : null
+          base_id: parseInt(formData.base_id)
         })
       });
 
@@ -316,14 +322,14 @@ export default function FormularioPublicoAbastecimento() {
                 </Select>
               </div>
 
-              {/* Base (opcional) */}
+              {/* Base */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Base (opcional)
+                  Base *
                 </label>
                 <Select value={formData.base_id} onValueChange={(value) => handleChange('base_id', value)}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione uma base (opcional)" />
+                    <SelectValue placeholder="Selecione a base" />
                   </SelectTrigger>
                   <SelectContent>
                     {bases.map((base) => (
