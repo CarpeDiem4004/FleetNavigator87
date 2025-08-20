@@ -100,7 +100,8 @@ export default function PainelAdministrativoAbastecimento() {
   // Obter bases filtradas pelo projeto selecionado
   const getFilteredBases = (selectedProjectId: string) => {
     if (!projectsWithBasesData || !selectedProjectId) return [];
-    const project = projectsWithBasesData.find((p: any) => p.id.toString() === selectedProjectId);
+    const projects = (projectsWithBasesData as any)?.data || [];
+    const project = projects.find((p: any) => p.id.toString() === selectedProjectId);
     return project?.bases || [];
   };
   const [newPosto, setNewPosto] = useState({ nome: '', cnpj: '' });
@@ -423,7 +424,7 @@ export default function PainelAdministrativoAbastecimento() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Todos os projetos</SelectItem>
-                    {((projectsWithBasesData as any) || []).map((projeto: any) => (
+                    {(((projectsWithBasesData as any)?.data) || []).map((projeto: any) => (
                       <SelectItem key={projeto.id} value={projeto.id.toString()}>
                         {projeto.name}
                       </SelectItem>
@@ -536,7 +537,7 @@ export default function PainelAdministrativoAbastecimento() {
                     <SelectValue placeholder="Selecione o projeto primeiro" />
                   </SelectTrigger>
                   <SelectContent>
-                    {((projectsWithBasesData as any) || []).map((projeto: any) => (
+                    {(((projectsWithBasesData as any)?.data) || []).map((projeto: any) => (
                       <SelectItem key={projeto.id} value={projeto.id.toString()}>
                         {projeto.name}
                       </SelectItem>
