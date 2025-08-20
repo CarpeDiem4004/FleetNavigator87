@@ -70,14 +70,37 @@ export default function FormularioPublicoAbastecimento() {
 
   const loadBases = async () => {
     try {
-      const response = await fetch('/api/bases');
+      console.log('Tentando carregar bases...');
+      const response = await fetch('/api/bases', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
+      console.log('Bases carregadas:', data);
+      
       if (Array.isArray(data)) {
         // Carregar TODAS as bases disponíveis no sistema, não apenas as ativas
         setBases(data);
+        console.log('Total de bases carregadas:', data.length);
+      } else if (data.success && Array.isArray(data.data)) {
+        setBases(data.data);
+        console.log('Total de bases carregadas (data.data):', data.data.length);
+      } else {
+        console.error('Formato de dados inválido:', data);
       }
     } catch (error) {
       console.error('Erro ao carregar bases:', error);
+      setMessage({ type: 'error', text: 'Erro ao carregar bases. Tente recarregar a página.' });
     }
   };
 
@@ -325,20 +348,27 @@ export default function FormularioPublicoAbastecimento() {
               {/* Base */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Base *
+                  Base * {bases.length === 0 && "(carregando...)"}
                 </label>
                 <Select value={formData.base_id} onValueChange={(value) => handleChange('base_id', value)}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione a base" />
+                    <SelectValue placeholder={bases.length === 0 ? "Carregando bases..." : "Selecione a base"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {bases.map((base) => (
-                      <SelectItem key={base.id} value={base.id.toString()}>
-                        {base.sigla} - {base.nome}
-                      </SelectItem>
-                    ))}
+                    {bases.length === 0 ? (
+                      <SelectItem value="loading" disabled>Carregando bases...</SelectItem>
+                    ) : (
+                      bases.map((base) => (
+                        <SelectItem key={base.id} value={base.id.toString()}>
+                          {base.sigla} - {base.nome}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
+                {bases.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">{bases.length} bases disponíveis</p>
+                )}
               </div>
 
               {/* Valores */}
