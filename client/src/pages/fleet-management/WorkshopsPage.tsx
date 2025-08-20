@@ -41,10 +41,13 @@ interface Workshop {
   address: string;
   phone: string;
   contactPerson: string;
-  isSpecialized: boolean;
+  isSpecialized?: boolean;  // Opcional para compatibilidade com API
   isActive: boolean;
   specialties?: string;
   observations?: string;
+  workshopType?: string;  // Campo adicional da API
+  cnpj?: string;  // Campo adicional da API
+  email?: string;  // Campo adicional da API
 }
 
 export default function WorkshopsPage() {
@@ -182,7 +185,7 @@ export default function WorkshopsPage() {
       address: workshop.address,
       phone: workshop.phone,
       contactPerson: workshop.contactPerson,
-      isSpecialized: workshop.isSpecialized,
+      isSpecialized: workshop.isSpecialized || false,
       isActive: workshop.isActive,
       specialties: workshop.specialties || '',
       observations: workshop.observations || ''
@@ -284,7 +287,7 @@ export default function WorkshopsPage() {
                               </span>
                             ) : (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                Não
+                                {workshop.workshopType || 'Padrão'}
                               </span>
                             )}
                             {workshop.specialties && (
