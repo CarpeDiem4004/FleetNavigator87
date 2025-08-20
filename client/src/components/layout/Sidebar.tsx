@@ -451,12 +451,23 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   let navItemsBase;
   if (isFleetUser) {
     navItemsBase = fleetManagementItems;
+    console.log('[MENU DEBUG] Usando fleetManagementItems');
   } else if (isFuelManager) {
     navItemsBase = fuelManagerItems;
+    console.log('[MENU DEBUG] Usando fuelManagerItems');
   } else if (isLineHallUser) {
     navItemsBase = lineHallItems;
+    console.log('[MENU DEBUG] Usando lineHallItems');
   } else {
     navItemsBase = allNavItems;
+    console.log('[MENU DEBUG] Usando allNavItems');
+  }
+  
+  // Debug: verificar se Sistema Pós-Pago está na lista base
+  const abastecimentosMenu = navItemsBase.find(item => item.name === 'Abastecimentos');
+  if (abastecimentosMenu) {
+    const sistemaPosPago = abastecimentosMenu.subItems?.find(sub => sub.name === 'Sistema Pós-Pago');
+    console.log('[MENU DEBUG] Abastecimentos encontrado, Sistema Pós-Pago presente:', !!sistemaPosPago);
   }
   
   // Adicionamos explicitamente o item de Histórico Consolidado em ambos os menus para garantir que seja visível
@@ -476,8 +487,19 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Filtrando itens de navegação com base nas permissões do usuário
   const navItems = navItemsBase.filter(item => {
     // Sempre incluir menus específicos para todos os usuários independente de permissões
-    if (item.name === 'Cartão' || item.name === 'Histórico Consolidado' || item.name === 'Parceiros de Guincho' || item.name === 'Postos Externos' || item.name === 'Abastecimentos') {
+    if (item.name === 'Cartão' || item.name === 'Histórico Consolidado' || item.name === 'Parceiros de Guincho' || item.name === 'Postos Externos') {
       console.log(`Menu "${item.name}" incluído independente de permissões`);
+      return true;
+    }
+    
+    // Para Abastecimentos, sempre incluir mas verificar se tem Sistema Pós-Pago
+    if (item.name === 'Abastecimentos') {
+      console.log('[MENU DEBUG] Verificando menu Abastecimentos');
+      const hasSistemaPosPago = item.subItems?.find(sub => sub.name === 'Sistema Pós-Pago');
+      console.log('[MENU DEBUG] Sistema Pós-Pago encontrado no menu Abastecimentos:', !!hasSistemaPosPago);
+      if (hasSistemaPosPago) {
+        console.log('[MENU DEBUG] Detalhes do Sistema Pós-Pago:', hasSistemaPosPago);
+      }
       return true;
     }
     
