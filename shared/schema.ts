@@ -24,6 +24,12 @@ export const paymentStatusEnum = pgEnum('payment_status', ['pendente', 'pago', '
 export const carReceptionStatusEnum = pgEnum('car_reception_status', ['recebido', 'em_analise', 'aguardando_pecas', 'em_reparo', 'pronto', 'entregue']);
 export const negotiationStatusEnum = pgEnum('negotiation_status', ['aberta', 'em_negociacao', 'prazo_atualizado', 'concluida']);
 
+// Enums para sistema de abastecimento pós-pago
+export const tipoMotoristaEnum = pgEnum('tipo_motorista', ['frota', 'agregado']);
+export const tipoCombustivelEnum = pgEnum('tipo_combustivel', ['gasolina', 'etanol', 'diesel', 'gnv', 'adblue']);
+export const modalidadePagamentoEnum = pgEnum('modalidade_pagamento', ['pos_pago', 'avista']);
+export const statusFaturamentoEnum = pgEnum('status_faturamento', ['pendente', 'faturado', 'pago']);
+
 // Enums para sistema de estoque
 export const inventoryMovementTypeEnum = pgEnum('inventory_movement_type', [
   'entrada',         // Entrada no estoque
@@ -1064,6 +1070,49 @@ export const equipmentMovementsRelations = relations(equipmentMovements, ({ one 
   }),
 }));
 
+// Tabelas para sistema de abastecimento pós-pago
+export const postosExternal = pgTable("postos_external", {
+  id: serial("id").primaryKey(),
+  nome: text("nome").notNull(),
+  cnpj: text("cnpj"),
+  ativo: boolean("ativo").notNull().default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export const formTokens = pgTable("form_tokens", {
+  id: serial("id").primaryKey(),
+  token: text("token").notNull().unique(),
+  base_id: integer("base_id").notNull().references(() => bases.id),
+  projeto_id: integer("projeto_id").notNull().references(() => projects.id),
+  ativo: boolean("ativo").notNull().default(true),
+  expires_at: timestamp("expires_at"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export const abastecimentosPosPago = pgTable("abastecimentos_pos_pago", {
+  id: serial("id").primaryKey(),
+  nome: text("nome").notNull(),
+  cpf: text("cpf").notNull(),
+  placa: text("placa").notNull(),
+  km: integer("km").notNull(),
+  tipo_motorista: tipoMotoristaEnum("tipo_motorista").notNull(),
+  projeto_id: integer("projeto_id").notNull().references(() => projects.id),
+  base_id: integer("base_id").notNull().references(() => bases.id),
+  tipo_combustivel: tipoCombustivelEnum("tipo_combustivel").notNull(),
+  valor_unit: decimal("valor_unit", { precision: 12, scale: 4 }).notNull(),
+  valor_total: decimal("valor_total", { precision: 14, scale: 2 }).notNull(),
+  litros: decimal("litros", { precision: 12, scale: 3 }),
+  posto_id: integer("posto_id").references(() => postosExternal.id),
+  modalidade: modalidadePagamentoEnum("modalidade").notNull().default('pos_pago'),
+  status: statusFaturamentoEnum("status").notNull().default('pendente'),
+  form_token: text("form_token"),
+  observacoes: text("observacoes"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
 // Relações para cartões de combustível
 export const fuelCardsRelations = relations(fuelCards, ({ one }) => ({
   project: one(projects, {
@@ -1106,3 +1155,17 @@ export type EquipmentMaintenance = typeof equipmentMaintenance.$inferSelect;
 export type InsertEquipmentMaintenance = z.infer<typeof insertEquipmentMaintenanceSchema>;
 export type EquipmentMovement = typeof equipmentMovements.$inferSelect;
 export type InsertEquipmentMovement = z.infer<typeof insertEquipmentMovementSchema>;
+
+// Schemas e tipos para abastecimento pós-pago
+export const insertPostoExternalSchema = createInsertSchema(postosExternal);
+export const insertFormTokenSchema = createInsertSchema(formTokens);
+export const insertAbastecimentoPosPagoSchema = createInsertSchema(abastecimentosPosPago).extend({
+  litros: z.string().transform(val => val === '' ? null : val).optional(),
+});
+
+export type PostoExternal = typeof postosExternal.$inferSelect;
+export type InsertPostoExternal = z.infer<typeof insertPostoExternalSchema>;
+export type FormToken = typeof formTokens.$inferSelect;
+export type InsertFormToken = z.infer<typeof insertFormTokenSchema>;
+export type AbastecimentoPosPago = typeof abastecimentosPosPago.$inferSelect;
+export type InsertAbastecimentoPosPago = z.infer<typeof insertAbastecimentoPosPagoSchema>;

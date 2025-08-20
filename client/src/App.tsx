@@ -348,6 +348,10 @@ import ABCV2Public from "@/pages/postos/public/ABCV2Public";
 import SocorroPublic from "@/pages/postos/public/SocorroPublic";
 import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
 import SorocabaV2Public from "@/pages/postos/public/SorocabaV2Public";
+import FormularioPublicoAbastecimento from "@/pages/abastecimento-pos-pago/FormularioPublico";
+import PainelAdministrativoAbastecimento from "@/pages/abastecimento-pos-pago/PainelAdministrativo";
+import LinksPublicosAbastecimento from "@/pages/abastecimento-pos-pago/LinksPublicos";
+import Sidebar from "@/components/layout/Sidebar";
 
 // Importação das páginas públicas do GRUPO PEREIRA
 import PublicPostoGP01 from "@/pages/postos/PublicPostoGP01";
@@ -1200,6 +1204,25 @@ function App() {
           <Route path="/fuel-card/confirmation">
             <div className="mt-16 pl-4 pr-4 md:pl-16">
               <FuelCardConfirmation />
+            </div>
+          </Route>
+          
+          {/* Formulário público de abastecimento pós-pago */}
+          <Route path="/abastecimento-pos-pago">
+            <FormularioPublicoAbastecimento />
+          </Route>
+          
+          {/* Painel administrativo de abastecimento pós-pago - requer autenticação */}
+          <Route path="/admin/abastecimento-pos-pago">
+            <div className="min-h-screen bg-gray-50 p-6">
+              <PainelAdministrativoAbastecimento />
+            </div>
+          </Route>
+          
+          {/* Página de demonstração dos links públicos */}
+          <Route path="/admin/abastecimento-pos-pago/links">
+            <div className="min-h-screen bg-gray-50 p-6">
+              <LinksPublicosAbastecimento />
             </div>
           </Route>
           

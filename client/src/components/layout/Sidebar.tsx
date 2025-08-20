@@ -27,6 +27,7 @@ import {
   ChevronDown,
   ChevronRight,
   Droplets,
+  ExternalLink
 
 } from 'lucide-react';
 
@@ -240,7 +241,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     ]},
     // Alterado para usar o ícone de posto de gasolina (Droplets) em vez de Warehouse para Postos Externos
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
-      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
+      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
+      { name: 'Links Públicos', href: '/admin/abastecimento-pos-pago/links', icon: ExternalLink }
     ]},
     // Item de menu separado para Cartão de Abastecimento
     { name: 'Cartão', href: '#', icon: CreditCard, subItems: [

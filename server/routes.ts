@@ -20869,9 +20869,235 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
+  // ===========================
+  // ROTAS ABASTECIMENTO PÓS-PAGO
+  // ===========================
 
+  // API pública para receber abastecimentos (sem autenticação)
+  app.post('/api/abastecimento-pos-pago/submit', async (req, res) => {
+    try {
+      const token = req.headers['x-form-token'] || req.query.t;
+      
+      if (!token) {
+        return res.status(401).json({ error: 'Token obrigatório' });
+      }
 
+      // Validar token
+      const tokenQuery = `
+        SELECT id, base_id, projeto_id, ativo, expires_at 
+        FROM form_tokens 
+        WHERE token = $1
+      `;
+      const tokenResult = await pool.query(tokenQuery, [token]);
+      
+      if (tokenResult.rows.length === 0) {
+        return res.status(401).json({ error: 'Token inválido' });
+      }
 
+      const tokenData = tokenResult.rows[0];
+      const now = new Date();
+      
+      if (!tokenData.ativo || (tokenData.expires_at && new Date(tokenData.expires_at) < now)) {
+        return res.status(401).json({ error: 'Token expirado ou inativo' });
+      }
+
+      const { nome, cpf, placa, km, tipo_motorista, tipo_combustivel, valor_unit, valor_total, posto_id, observacoes } = req.body;
+      
+      // Validações básicas
+      const required = ['nome', 'cpf', 'placa', 'km', 'tipo_motorista', 'tipo_combustivel', 'valor_unit', 'valor_total'];
+      for (const field of required) {
+        if (req.body[field] === undefined || req.body[field] === null || req.body[field] === '') {
+          return res.status(400).json({ error: `Campo obrigatório: ${field}` });
+        }
+      }
+
+      // Calcular litros (valor_total / valor_unit)
+      const litros = parseFloat(valor_total) / parseFloat(valor_unit);
+
+      const insertQuery = `
+        INSERT INTO abastecimentos_pos_pago (
+          nome, cpf, placa, km, tipo_motorista, projeto_id, base_id,
+          tipo_combustivel, valor_unit, valor_total, litros, posto_id, 
+          form_token, observacoes, created_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW()
+        ) RETURNING id, created_at
+      `;
+
+      const result = await pool.query(insertQuery, [
+        String(nome).trim(),
+        String(cpf).replace(/\D/g, ''),
+        String(placa).toUpperCase().trim(),
+        parseInt(km),
+        tipo_motorista,
+        tokenData.projeto_id,
+        tokenData.base_id,
+        tipo_combustivel,
+        parseFloat(valor_unit),
+        parseFloat(valor_total),
+        litros,
+        posto_id || null,
+        token,
+        observacoes || null
+      ]);
+
+      console.log(`[ABASTECIMENTO-POS-PAGO] Novo registro: ${placa} - ${litros}L - R$ ${valor_total}`);
+
+      res.status(201).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Abastecimento registrado com sucesso'
+      });
+
+    } catch (error: any) {
+      console.error('[ABASTECIMENTO-POS-PAGO] Erro:', error);
+      res.status(500).json({
+        error: 'Erro interno do servidor',
+        details: error.message
+      });
+    }
+  });
+
+  // APIs administrativas para o painel (requer autenticação)
+  
+  // Listar abastecimentos pós-pago
+  app.get('/api/admin/abastecimento-pos-pago', isAuthenticated, async (req, res) => {
+    try {
+      const { status, base_id, projeto_id, limit = 50, offset = 0 } = req.query;
+      
+      let whereConditions = [];
+      let params = [];
+      
+      if (status) {
+        whereConditions.push(`a.status = $${params.length + 1}`);
+        params.push(status);
+      }
+      
+      if (base_id) {
+        whereConditions.push(`a.base_id = $${params.length + 1}`);
+        params.push(parseInt(base_id as string));
+      }
+      
+      if (projeto_id) {
+        whereConditions.push(`a.projeto_id = $${params.length + 1}`);
+        params.push(parseInt(projeto_id as string));
+      }
+
+      const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
+      
+      const query = `
+        SELECT 
+          a.*,
+          b.name as base_name,
+          p.name as projeto_name,
+          pe.nome as posto_name
+        FROM abastecimentos_pos_pago a
+        LEFT JOIN bases b ON b.id = a.base_id
+        LEFT JOIN projects p ON p.id = a.projeto_id
+        LEFT JOIN postos_external pe ON pe.id = a.posto_id
+        ${whereClause}
+        ORDER BY a.created_at DESC
+        LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+      `;
+      
+      params.push(parseInt(limit as string), parseInt(offset as string));
+      
+      const result = await pool.query(query, params);
+      
+      res.json({
+        success: true,
+        data: result.rows,
+        pagination: {
+          limit: parseInt(limit as string),
+          offset: parseInt(offset as string),
+          total: result.rows.length
+        }
+      });
+      
+    } catch (error: any) {
+      console.error('[ADMIN-ABASTECIMENTO] Erro:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Relatórios dashboard
+  app.get('/api/admin/abastecimento-pos-pago/dashboard', isAuthenticated, async (req, res) => {
+    try {
+      // Estatísticas gerais
+      const statsQuery = `
+        SELECT 
+          COUNT(*) as total_registros,
+          SUM(valor_total) as valor_total,
+          SUM(litros) as litros_total,
+          COUNT(CASE WHEN status = 'pendente' THEN 1 END) as pendentes,
+          COUNT(CASE WHEN status = 'faturado' THEN 1 END) as faturados,
+          COUNT(CASE WHEN status = 'pago' THEN 1 END) as pagos
+        FROM abastecimentos_pos_pago
+        WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
+      `;
+      
+      // Consumo por base (últimos 30 dias)
+      const baseQuery = `
+        SELECT * FROM vw_consumo_por_base_mes 
+        WHERE mes >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+        ORDER BY total_reais DESC
+        LIMIT 10
+      `;
+      
+      // Pendências
+      const pendenciasQuery = `
+        SELECT * FROM vw_pendencias_faturamento
+        ORDER BY valor_total_pendente DESC
+        LIMIT 10
+      `;
+      
+      const [stats, baseData, pendencias] = await Promise.all([
+        pool.query(statsQuery),
+        pool.query(baseQuery),
+        pool.query(pendenciasQuery)
+      ]);
+      
+      res.json({
+        success: true,
+        data: {
+          estatisticas: stats.rows[0],
+          consumo_por_base: baseData.rows,
+          pendencias: pendencias.rows
+        }
+      });
+      
+    } catch (error: any) {
+      console.error('[DASHBOARD] Erro:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Gerenciar tokens
+  app.get('/api/admin/form-tokens', isAuthenticated, async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          ft.*,
+          b.name as base_name,
+          p.name as projeto_name
+        FROM form_tokens ft
+        LEFT JOIN bases b ON b.id = ft.base_id
+        LEFT JOIN projects p ON p.id = ft.projeto_id
+        ORDER BY ft.created_at DESC
+      `;
+      
+      const result = await pool.query(query);
+      
+      res.json({
+        success: true,
+        data: result.rows
+      });
+      
+    } catch (error: any) {
+      console.error('[TOKENS] Erro:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
