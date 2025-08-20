@@ -53,7 +53,7 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
       valor_total: "",
       nome_fornecedor: "",
       numero_nota_fiscal: "",
-      nome_operador: user?.name || "",
+      nome_operador: "",
       observacoes: "",
     },
   });
@@ -66,22 +66,29 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
       userRole: user?.role
     });
     
+    const setOperatorName = (name: string) => {
+      console.log('[RECEBIMENTO] Definindo nome do operador:', name);
+      form.setValue('nome_operador', name, { shouldValidate: true });
+    };
+    
     if (user?.name && user.name !== "Administrador") {
-      console.log('[RECEBIMENTO] Preenchendo nome do operador automaticamente:', user.name);
-      form.setValue('nome_operador', user.name);
+      setOperatorName(user.name);
     } else if (user?.name === "Administrador") {
-      console.log('[RECEBIMENTO] Admin detectado, usando fallback genérico');
-      form.setValue('nome_operador', 'Operador');
+      setOperatorName('Operador');
     } else {
-      console.log('[RECEBIMENTO] Nome não disponível, tentando detectar automaticamente...');
-      // Aguardar um pouco para o contexto carregar
-      setTimeout(() => {
+      console.log('[RECEBIMENTO] Aguardando carregamento do usuário...');
+      // Tentar novamente após um delay
+      const timer = setTimeout(() => {
         if (user?.name && user.name !== "Administrador") {
-          form.setValue('nome_operador', user.name);
+          setOperatorName(user.name);
+        } else {
+          setOperatorName('Operador');
         }
-      }, 1000);
+      }, 1500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [user, form]);
+  }, [user?.name, user?.role, form]);
 
   // Mapa das tabelas por posto
   const tableMap: { [key: string]: string } = {
@@ -398,7 +405,6 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
                   <FormControl>
                     <Input
                       {...field}
-                      value={field.value || (user?.name && user.name !== "Administrador" ? user.name : "Operador")}
                       placeholder="Nome do operador responsável"
                       readOnly
                       className="min-h-[44px] bg-blue-50"
