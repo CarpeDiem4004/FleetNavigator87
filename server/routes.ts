@@ -8754,8 +8754,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Verificar se o token é válido
-      const tokenQuery = `
+      // Verificar se o token é válido - verificar em ambas as tabelas
+      let result;
+      let workshop;
+
+      // Primeiro, verificar na tabela oficinas com external_token
+      const oficinasTokenQuery = `
         SELECT 
           o.id,
           COALESCE(o.nome_fantasia, o.razao_social) as name,
@@ -8768,16 +8772,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         WHERE o.external_token = $1 AND o.status = 'ativo'
       `;
 
-      const result = await pool.query(tokenQuery, [token]);
+      result = await pool.query(oficinasTokenQuery, [token]);
 
-      if (result.rows.length === 0) {
-        return res.status(401).json({
-          success: false,
-          message: "Token inválido ou expirado"
-        });
+      if (result.rows.length > 0) {
+        workshop = result.rows[0];
+      } else {
+        // Se não encontrou na tabela oficinas, verificar na tabela workshop_access_tokens
+        const accessTokenQuery = `
+          SELECT 
+            o.id,
+            COALESCE(o.nome_fantasia, o.razao_social) as name,
+            o.cnpj,
+            o.email,
+            o.telefone as phone,
+            wat.access_token as token,
+            wat.created_at as token_created
+          FROM workshop_access_tokens wat
+          JOIN oficinas o ON wat.workshop_id = o.id
+          WHERE wat.access_token = $1 AND wat.is_active = true AND wat.expires_at > NOW() AND o.status = 'ativo'
+        `;
+
+        result = await pool.query(accessTokenQuery, [token]);
+
+        if (result.rows.length === 0) {
+          return res.status(401).json({
+            success: false,
+            message: "Token inválido ou expirado"
+          });
+        }
+
+        workshop = result.rows[0];
       }
-
-      const workshop = result.rows[0];
       
       // Validar dados obrigatórios
       if (!data.vehiclePlate || !data.vehicleModel || !data.vehicleType || !data.baseId || !data.serviceDescription) {
@@ -8847,8 +8872,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Verificar se o token é válido
-      const tokenQuery = `
+      // Verificar se o token é válido - verificar em ambas as tabelas
+      let result;
+      let workshop;
+
+      // Primeiro, verificar na tabela oficinas com external_token
+      const oficinasTokenQuery = `
         SELECT 
           o.id,
           COALESCE(o.nome_fantasia, o.razao_social) as name,
@@ -8861,16 +8890,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         WHERE o.external_token = $1 AND o.status = 'ativo'
       `;
 
-      const result = await pool.query(tokenQuery, [token]);
+      result = await pool.query(oficinasTokenQuery, [token]);
 
-      if (result.rows.length === 0) {
-        return res.status(401).json({
-          success: false,
-          message: "Token inválido ou expirado"
-        });
+      if (result.rows.length > 0) {
+        workshop = result.rows[0];
+      } else {
+        // Se não encontrou na tabela oficinas, verificar na tabela workshop_access_tokens
+        const accessTokenQuery = `
+          SELECT 
+            o.id,
+            COALESCE(o.nome_fantasia, o.razao_social) as name,
+            o.cnpj,
+            o.email,
+            o.telefone as phone,
+            wat.access_token as token,
+            wat.created_at as token_created
+          FROM workshop_access_tokens wat
+          JOIN oficinas o ON wat.workshop_id = o.id
+          WHERE wat.access_token = $1 AND wat.is_active = true AND wat.expires_at > NOW() AND o.status = 'ativo'
+        `;
+
+        result = await pool.query(accessTokenQuery, [token]);
+
+        if (result.rows.length === 0) {
+          return res.status(401).json({
+            success: false,
+            message: "Token inválido ou expirado"
+          });
+        }
+
+        workshop = result.rows[0];
       }
-
-      const workshop = result.rows[0];
       
       const receptions = await storage.getCarReceptionsByWorkshop(workshop.id);
       res.json(receptions);
@@ -8905,8 +8955,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('[OFICINA-UPDATE] Validando token:', token);
 
-      // Verificar se o token é válido (removido filtro status)
-      const tokenQuery = `
+      // Verificar se o token é válido - verificar em ambas as tabelas
+      let result;
+      let workshop;
+
+      // Primeiro, verificar na tabela oficinas com external_token
+      const oficinasTokenQuery = `
         SELECT 
           o.id,
           COALESCE(o.nome_fantasia, o.razao_social) as name,
@@ -8919,16 +8973,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         WHERE o.external_token = $1
       `;
 
-      const result = await pool.query(tokenQuery, [token]);
+      result = await pool.query(oficinasTokenQuery, [token]);
 
-      if (result.rows.length === 0) {
-        return res.status(401).json({
-          success: false,
-          message: "Token inválido ou expirado"
-        });
+      if (result.rows.length > 0) {
+        workshop = result.rows[0];
+      } else {
+        // Se não encontrou na tabela oficinas, verificar na tabela workshop_access_tokens
+        const accessTokenQuery = `
+          SELECT 
+            o.id,
+            COALESCE(o.nome_fantasia, o.razao_social) as name,
+            o.cnpj,
+            o.email,
+            o.telefone as phone,
+            wat.access_token as token,
+            o.status
+          FROM workshop_access_tokens wat
+          JOIN oficinas o ON wat.workshop_id = o.id
+          WHERE wat.access_token = $1 AND wat.is_active = true AND wat.expires_at > NOW()
+        `;
+
+        result = await pool.query(accessTokenQuery, [token]);
+
+        if (result.rows.length === 0) {
+          return res.status(401).json({
+            success: false,
+            message: "Token inválido ou expirado"
+          });
+        }
+
+        workshop = result.rows[0];
       }
-
-      const workshop = result.rows[0];
       
       // Verificar se a recepção pertence a esta oficina
       const ownershipCheck = await pool.query(
