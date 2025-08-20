@@ -91,6 +91,7 @@ function CarReception() {
     defaultValues: {
       vehiclePlate: "",
       vehicleModel: "",
+      vehicleType: "van",  // Valor default obrigatório
       currentKm: 0,
       serviceDescription: "",
       replacedParts: "",
