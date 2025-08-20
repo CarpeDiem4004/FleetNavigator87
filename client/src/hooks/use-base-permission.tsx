@@ -403,6 +403,12 @@ export const useBasePermission = (): BasePermissionHook => {
       return true;
     }
     
+    // Verificação adicional para a rota exata do Sistema Pós-Pago
+    if (route === '/admin/abastecimento-pos-pago' && isAdmin) {
+      console.log(`Sistema Pós-Pago route access granted for admin user: ${route}`);
+      return true;
+    }
+    
     // Oficinas têm acesso apenas à rota de dashboard da oficina
     if (user.role === 'oficina') {
       const oficinaRoutes = ['/oficina/dashboard', '/oficinas/dashboard'];

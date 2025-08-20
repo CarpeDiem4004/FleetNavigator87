@@ -488,6 +488,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Sempre incluir menus específicos para todos os usuários independente de permissões
     if (item.name === 'Cartão' || item.name === 'Histórico Consolidado' || item.name === 'Parceiros de Guincho' || item.name === 'Postos Externos') {
       console.log(`Menu "${item.name}" incluído independente de permissões`);
+      if (item.name === 'Cartão') {
+        console.log(`[CARTÃO DEBUG] Subitens do menu Cartão:`, item.subItems?.map(sub => ({ name: sub.name, href: sub.href })));
+      }
       return true;
     }
     
@@ -519,9 +522,14 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
           return true;
         }
         // Para o item Sistema Pós-Pago, sempre permitir para admins
-        if (subItem.name === 'Sistema Pós-Pago' && user.role === 'admin') {
-          console.log(`[MENU DEBUG] Permitindo Sistema Pós-Pago para admin: ${user.email}`);
-          return true;
+        if (subItem.name === 'Sistema Pós-Pago') {
+          console.log(`[SISTEMA PÓS-PAGO DEBUG] Verificando permissão - user.role: ${user.role}, user.email: ${user.email}`);
+          const isAdmin = user.role === 'admin';
+          console.log(`[SISTEMA PÓS-PAGO DEBUG] É admin? ${isAdmin}`);
+          if (isAdmin) {
+            console.log(`[SISTEMA PÓS-PAGO DEBUG] Permitindo Sistema Pós-Pago para admin: ${user.email}`);
+            return true;
+          }
         }
         console.log(`Verificando permissão para submenu ${subItem.name} (${subItem.href}): ${hasPermission(subItem.href) ? 'PERMITIDO' : 'NEGADO'}`);
         return hasPermission(subItem.href);
