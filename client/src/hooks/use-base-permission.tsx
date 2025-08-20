@@ -77,7 +77,9 @@ const allRoutes = [
   '/postos',                           // Postos de Abastecimento
   '/terceiros/gerenciamento',          // Gerenciamento de Terceiros
   '/terceiros/dashboard',              // Dashboard de Terceiros
-  '/terceiros/login'                   // Login de Terceiros
+  '/terceiros/login',                  // Login de Terceiros
+  '/admin/abastecimento-pos-pago',     // Sistema Pós-Pago
+  '/admin/abastecimento-pos-pago/links' // Links Públicos do Sistema Pós-Pago
 ];
 
 // Regras de correspondência entre bases e rotas específicas
@@ -327,7 +329,9 @@ const basicRoutes = [
   '/bases/goiania/solicitacao-pneus',    // Solicitação de Pneus Goiânia
   '/bases/goiania/solicitacao-orcamento', // Solicitação de Orçamento Goiânia
   '/bases/goiania/manutencao-frota',     // Manutenção de Frota Goiânia
-  '/users'                               // Página de Usuários (acesso para todos, verificação adicional feita no hasPermission)
+  '/users',                              // Página de Usuários (acesso para todos, verificação adicional feita no hasPermission)
+  '/admin/abastecimento-pos-pago',       // Sistema Pós-Pago 
+  '/admin/abastecimento-pos-pago/links'  // Links Públicos do Sistema Pós-Pago
 ];
 
 export const useBasePermission = (): BasePermissionHook => {
@@ -390,6 +394,12 @@ export const useBasePermission = (): BasePermissionHook => {
     
     if (isAdmin) {
       console.log(`Permission granted for admin user to route: ${route} (admin role: '${user.role}', email: '${user.email}')`);
+      return true;
+    }
+    
+    // Verificação especial para Sistema Pós-Pago - sempre permitir para admin
+    if (route.startsWith('/admin/abastecimento-pos-pago') && isAdmin) {
+      console.log(`Sistema Pós-Pago access granted for admin user: ${route}`);
       return true;
     }
     
