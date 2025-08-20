@@ -33,6 +33,7 @@ const carReceptionSchema = z.object({
   laborCost: z.number().min(0, "Custo da mão de obra deve ser positivo").optional(),
   partsCost: z.number().min(0, "Custo das peças deve ser positivo").optional(),
   deliveryDeadline: z.string().optional(),
+  completionDate: z.string().optional(),
   notes: z.string().optional(),
 });
 

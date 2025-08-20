@@ -1074,6 +1074,24 @@ async function criarTabelaDemoForms() {
 import sqlSeguroRouter from './routes/sql-seguro';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoints para deployments
+  app.get('/health', (req, res) => {
+    res.status(200).json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development'
+    });
+  });
+
+  app.get('/api/health', (req, res) => {
+    res.status(200).json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development'
+    });
+  });
 
   // API específica para verificação de acesso à base específica
   app.post('/api/verify-base-access', (req, res, next) => {
