@@ -144,9 +144,10 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
     console.log(`[OPERADOR-DEBUG] Verificando usuário:`, user);
     console.log(`[OPERADOR-DEBUG] Nome do usuário:`, user?.name);
     console.log(`[OPERADOR-DEBUG] Email do usuário:`, user?.email);
+    console.log(`[OPERADOR-DEBUG] ID do usuário:`, user?.id);
     
     // Forçar o preenchimento sempre que o usuário estiver disponível
-    if (user?.name) {
+    if (user?.name && user?.id) {
       let operatorName = user.name;
       
       // Não usar "Administrador" como nome do operador
@@ -154,28 +155,36 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
         operatorName = "Operador";
       }
       
-      console.log(`[OPERADOR-DEBUG] Preenchendo campo operador com: ${operatorName}`);
+      console.log(`[OPERADOR-DEBUG] FORÇANDO preenchimento do campo operador com: ${operatorName}`);
+      console.log(`[OPERADOR-DEBUG] Usuario completo:`, JSON.stringify(user));
       
-      // Múltiplas tentativas para garantir que o campo seja preenchido
-      form.setValue("operador", operatorName);
-      form.trigger("operador"); // Força validação
+      // Limpar qualquer valor anterior e forçar o novo
+      form.setValue("operador", "");
       
-      // Reset completo dos valores padrão incluindo o operador
-      const currentValues = form.getValues();
-      form.reset({
-        ...currentValues,
-        operador: operatorName
-      });
-      
-      // Verificar se o valor foi definido corretamente
+      // Múltiplas tentativas com intervalos para garantir que o campo seja preenchido
       setTimeout(() => {
-        const currentValue = form.getValues("operador");
-        console.log(`[OPERADOR-DEBUG] Valor atual do campo operador após setValue: ${currentValue}`);
+        form.setValue("operador", operatorName);
+        form.trigger("operador");
+        console.log(`[OPERADOR-DEBUG] 1ª tentativa - setValue para: ${operatorName}`);
+      }, 0);
+      
+      setTimeout(() => {
+        form.setValue("operador", operatorName);
+        console.log(`[OPERADOR-DEBUG] 2ª tentativa - setValue para: ${operatorName}`);
       }, 100);
+      
+      setTimeout(() => {
+        form.setValue("operador", operatorName);
+        console.log(`[OPERADOR-DEBUG] 3ª tentativa - setValue para: ${operatorName}`);
+        
+        // Verificação final
+        const finalValue = form.getValues("operador");
+        console.log(`[OPERADOR-DEBUG] Valor FINAL do campo operador: ${finalValue}`);
+      }, 200);
     } else {
-      console.log(`[OPERADOR-DEBUG] Usuário não disponível ainda`);
+      console.log(`[OPERADOR-DEBUG] Usuário não disponível ainda - user:`, user);
     }
-  }, [user, form]);
+  }, [user?.id, user?.name, user?.email, form]);
 
   // Função de diagnóstico de conexão
   const testConnectionSpeed = useCallback(async () => {
