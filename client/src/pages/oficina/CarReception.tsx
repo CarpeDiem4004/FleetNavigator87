@@ -400,12 +400,12 @@ function CarReception() {
         // Limpar peças adicionadas
         setParts([]);
         
-        // Mostrar opção de novo registro ou voltar ao dashboard
+        // Mostrar opção de novo registro
         setTimeout(() => {
           const choice = confirm("Veículo registrado com sucesso!\n\nDeseja registrar outro veículo?");
           if (!choice) {
-            // Voltar para dashboard da oficina
-            window.location.href = `/oficina/external?token=${externalToken}`;
+            // Não redirecionar, manter na mesma página
+            console.log("Permanecendo na página atual de recepção");
           }
           // Se escolher sim, o formulário já foi limpo e está pronto para novo registro
         }, 1000);
@@ -448,11 +448,8 @@ function CarReception() {
           <Button 
             variant="outline" 
             onClick={() => {
-              if (isExternalAccess && externalToken) {
-                setLocation(`/oficina/external?token=${externalToken}`);
-              } else {
-                setLocation('/maintenance/dashboard-oficina');
-              }
+              // Não redirecionar, manter na mesma página
+              console.log("Cancelamento confirmado, permanecendo na página atual");
             }}
             className="flex items-center gap-2"
           >

@@ -1030,6 +1030,17 @@ export default function OficinaExternalDashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 md:grid-cols-3">
+              {/* Botão Receber Veículo */}
+              <Button 
+                onClick={() => setIsCarFormOpen(true)}
+                className="flex items-center gap-2 h-auto p-4 justify-start bg-green-600 hover:bg-green-700"
+              >
+                <Car className="h-5 w-5" />
+                <div className="text-left">
+                  <p className="font-medium text-white">Receber Veículo</p>
+                  <p className="text-sm opacity-80 text-white">Registrar entrada de veículo</p>
+                </div>
+              </Button>
 
               {/* Botão Nova OS - REMOVIDO: Apenas sistema principal pode criar OS */}
               
