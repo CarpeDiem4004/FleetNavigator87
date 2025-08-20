@@ -133,7 +133,7 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
       base_id: "",
       motorista: "",
       motorista_rg: "",
-      operador: "Alisson Correia",
+      operador: "",
       tipo_veiculo: "frota",
     },
   });
@@ -142,13 +142,11 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
   useEffect(() => {
     console.log(`[OPERADOR-DEBUG] Verificando usuário:`, user);
     
-    // Para Sorocaba V2, sempre usar "Alisson Correia" se não houver usuário válido
-    let operatorName = "Alisson Correia";
+    // Usar o nome do usuário logado ou um valor padrão genérico
+    let operatorName = "Operador";
     
     if (user?.name && user.name !== "Administrador") {
       operatorName = user.name;
-    } else if (user?.email?.includes('alisson')) {
-      operatorName = 'Alisson Correia';
     }
     
     console.log(`[OPERADOR-DEBUG] Preenchendo campo operador com: ${operatorName}`);
@@ -624,7 +622,7 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
                 valor_total: "",
                 motorista: "",
                 motorista_rg: "",
-                operador: "Alisson Correia",
+                operador: user?.name && user.name !== "Administrador" ? user.name : "Operador",
                 tipo_veiculo: "frota",
                 observacoes: "",
                 lavagem: false,
