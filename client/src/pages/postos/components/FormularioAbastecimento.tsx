@@ -6,6 +6,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSafeState } from "@/hooks/useSafeState"; // 👈 Importando o novo hook
 import eventosBus, { EVENTOS } from "@/lib/eventosBus";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/context/AuthContext";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -90,8 +91,9 @@ const FormularioForm = ({
   dieselValorLitro?: string;
   arlaValorLitro?: string;
 }) => {
-  // Obter nome do operador logado do localStorage (adicionado pelo sistema de autenticação)
-  const operadorNome = localStorage.getItem("user_name") || "";
+  const { user } = useAuth();
+  // Obter nome do operador logado através do sistema de autenticação
+  const operadorNome = user?.name || "";
   const [quantidade, setQuantidade] = useState("");
   const [tipoCombustivel, setTipoCombustivel] = useState("");
   const [valorLitro, setValorLitro] = useState("");

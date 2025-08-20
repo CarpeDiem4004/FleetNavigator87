@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Fuel, CheckCircle, AlertCircle, Building2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 
 interface RecebimentoData {
   tipo_produto: string;
@@ -19,17 +20,30 @@ interface RecebimentoData {
 }
 
 export default function PostoABCV2() {
+  const { user } = useAuth();
+  const operatorName = user?.name || 'Operador ABC V2';
+  
   const [formData, setFormData] = useState<RecebimentoData>({
     tipo_produto: 'diesel',
     litros_recebidos: 0,
     valor_total: 0,
     nome_fornecedor: '',
-    nome_operador: '',
+    nome_operador: operatorName, // Preenchimento automático baseado no usuário logado
     observacoes: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { toast } = useToast();
+
+  // Atualizar nome do operador quando o usuário mudar
+  React.useEffect(() => {
+    if (user?.name) {
+      setFormData(prev => ({
+        ...prev,
+        nome_operador: user.name
+      }));
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +74,7 @@ export default function PostoABCV2() {
         litros_recebidos: 0,
         valor_total: 0,
         nome_fornecedor: '',
-        nome_operador: '',
+        nome_operador: operatorName, // Mantém preenchimento automático baseado no usuário logado
         observacoes: ''
       });
     } catch (error) {

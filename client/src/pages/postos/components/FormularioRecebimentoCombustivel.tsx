@@ -53,21 +53,18 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
       valor_total: "",
       nome_fornecedor: "",
       numero_nota_fiscal: "",
-      nome_operador: postId === 'campinas_v2' ? "Operador Campinas V2" : "",
+      nome_operador: user?.name || "",
       observacoes: "",
     },
   });
 
-  // Preencher automaticamente o nome do operador específico para cada posto
+  // Preencher automaticamente o nome do operador baseado no usuário logado
   useEffect(() => {
-    if (postId === 'campinas_v2') {
-      console.log('[RECEBIMENTO] Preenchendo nome do operador automaticamente para Campinas V2');
-      form.setValue('nome_operador', 'Operador Campinas V2');
-    } else if (user?.name) {
+    if (user?.name) {
       console.log('[RECEBIMENTO] Preenchendo nome do operador automaticamente:', user.name);
       form.setValue('nome_operador', user.name);
     }
-  }, [user, form, postId]);
+  }, [user, form]);
 
   // Mapa das tabelas por posto
   const tableMap: { [key: string]: string } = {
@@ -89,10 +86,8 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
       console.log('[RECEBIMENTO] Validação de campos:', {
         tipo_produto: data.tipo_produto ? '✓' : '✗ FALTANDO',
         litros_recebidos: data.litros_recebidos ? '✓' : '✗ FALTANDO',
-        valor_litro: data.valor_litro ? '✓' : '✗ FALTANDO',
         nome_fornecedor: data.nome_fornecedor ? '✓' : '✗ FALTANDO',
         numero_nota_fiscal: data.numero_nota_fiscal ? '✓' : '✗ FALTANDO',
-        data_recebimento: data.data_recebimento ? '✓' : '✗ FALTANDO',
         nome_operador: data.nome_operador ? '✓' : '✗ FALTANDO',
         valor_total: data.valor_total ? '✓' : '✗ FALTANDO'
       });
@@ -243,8 +238,8 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
 
   const calcularValorTotal = () => {
     const litros = parseFloat(form.watch("litros_recebidos") || "0");
-    const valorLitro = parseFloat(form.watch("valor_litro") || "0");
-    return !isNaN(valorLitro) && litros > 0 ? (valorLitro * litros).toFixed(2) : "";
+    const valorTotal = parseFloat(form.watch("valor_total") || "0");
+    return !isNaN(valorTotal) && litros > 0 ? (valorTotal / litros).toFixed(4) : "";
   };
 
   return (

@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, TruckIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 
 interface RecebimentoData {
   tipo_produto: string;
@@ -20,13 +21,16 @@ interface RecebimentoData {
 }
 
 export default function PostoCampinasV2() {
+  const { user } = useAuth();
+  const operatorName = user?.name || 'Operador Campinas V2';
+  
   const [formData, setFormData] = useState<RecebimentoData>({
     tipo_produto: '',
     litros_recebidos: '',
     valor_total: '',
     numero_nota_fiscal: '',
     nome_fornecedor: '',
-    nome_operador: 'Operador Campinas V2', // Preenchimento automático
+    nome_operador: operatorName, // Preenchimento automático baseado no usuário logado
     observacoes: ''
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -45,6 +49,16 @@ export default function PostoCampinasV2() {
       setValorPorLitro('');
     }
   }, [formData.litros_recebidos, formData.valor_total]);
+
+  // Atualizar nome do operador quando o usuário mudar
+  React.useEffect(() => {
+    if (user?.name) {
+      setFormData(prev => ({
+        ...prev,
+        nome_operador: user.name
+      }));
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,7 +102,7 @@ export default function PostoCampinasV2() {
         valor_total: '',
         numero_nota_fiscal: '',
         nome_fornecedor: '',
-        nome_operador: 'Operador Campinas V2', // Mantém preenchimento automático
+        nome_operador: operatorName, // Mantém preenchimento automático baseado no usuário logado
         observacoes: ''
       });
     } catch (error) {
