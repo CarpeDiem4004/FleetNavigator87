@@ -482,7 +482,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       } else {
         throw new Error("Não foi possível autenticar com nenhum dos métodos disponíveis");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro no login:', error);
       
       // Verificar se é um erro de operador tentando acessar sistema principal
@@ -556,7 +556,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Credenciais inválidas');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro no loginBase:', error);
       
       toast({
@@ -583,7 +583,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           supabaseLogoutSuccess = true;
           console.log("Logout Supabase realizado com sucesso");
         } else if (logoutResult && 'error' in logoutResult && logoutResult.error) {
-          console.warn("Erro ao fazer logout do Supabase:", logoutResult.error);
+          console.warn("Erro ao fazer logout do Supabase:", String(logoutResult.error));
         }
       } catch (supaError) {
         console.error("Exceção ao fazer logout do Supabase:", supaError);
@@ -624,7 +624,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         title: "Logout realizado",
         description: "Você foi desconectado com sucesso",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao fazer logout:', error);
       
       toast({
@@ -706,7 +706,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
       
       return registeredUser as User;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro no registro:', error);
       
       toast({
