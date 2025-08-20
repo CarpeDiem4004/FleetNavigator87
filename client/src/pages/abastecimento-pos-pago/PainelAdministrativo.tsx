@@ -79,6 +79,30 @@ export default function PainelAdministrativoAbastecimento() {
     projeto_id: ''
   });
   const [newToken, setNewToken] = useState({ base_id: '', projeto_id: '', expires_days: 90 });
+
+  // Função para lidar com mudança de projeto (limpar base quando trocar projeto)
+  const handleProjectChange = (projetoId: string, isFilter: boolean = false) => {
+    if (isFilter) {
+      setFilters({
+        ...filters,
+        projeto_id: projetoId,
+        base_id: '' // Limpar seleção de base
+      });
+    } else {
+      setNewToken({
+        ...newToken,
+        projeto_id: projetoId,
+        base_id: '' // Limpar seleção de base
+      });
+    }
+  };
+
+  // Obter bases filtradas pelo projeto selecionado
+  const getFilteredBases = (selectedProjectId: string) => {
+    if (!projectsWithBasesData || !selectedProjectId) return [];
+    const project = projectsWithBasesData.find((p: any) => p.id.toString() === selectedProjectId);
+    return project?.bases || [];
+  };
   const [newPosto, setNewPosto] = useState({ nome: '', cnpj: '' });
 
   const queryClient = useQueryClient();
@@ -104,12 +128,8 @@ export default function PainelAdministrativoAbastecimento() {
     enabled: activeTab === 'postos'
   });
 
-  const { data: basesData } = useQuery({
-    queryKey: ['/api/bases']
-  });
-
-  const { data: projectsData } = useQuery({
-    queryKey: ['/api/projects']
+  const { data: projectsWithBasesData } = useQuery({
+    queryKey: ['/api/projects-with-bases']
   });
 
   // Mutations
@@ -379,27 +399,31 @@ export default function PainelAdministrativoAbastecimento() {
                   </SelectContent>
                 </Select>
 
-                <Select value={filters.base_id} onValueChange={(value) => setFilters(prev => ({ ...prev, base_id: value }))}>
+                <Select 
+                  value={filters.base_id} 
+                  onValueChange={(value) => setFilters(prev => ({ ...prev, base_id: value }))}
+                  disabled={!filters.projeto_id}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Base" />
+                    <SelectValue placeholder={filters.projeto_id ? "Selecione uma base" : "Selecione um projeto primeiro"} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Todas as bases</SelectItem>
-                    {((basesData as any)?.data || []).map((base: any) => (
+                    {getFilteredBases(filters.projeto_id).map((base: any) => (
                       <SelectItem key={base.id} value={base.id.toString()}>
-                        {base.name}
+                        {base.base_name || base.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                <Select value={filters.projeto_id} onValueChange={(value) => setFilters(prev => ({ ...prev, projeto_id: value }))}>
+                <Select value={filters.projeto_id} onValueChange={(value) => handleProjectChange(value, true)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Projeto" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Todos os projetos</SelectItem>
-                    {((projectsData as any)?.data || []).map((projeto: any) => (
+                    {((projectsWithBasesData as any) || []).map((projeto: any) => (
                       <SelectItem key={projeto.id} value={projeto.id.toString()}>
                         {projeto.name}
                       </SelectItem>
@@ -507,27 +531,31 @@ export default function PainelAdministrativoAbastecimento() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Select value={newToken.base_id} onValueChange={(value) => setNewToken(prev => ({ ...prev, base_id: value }))}>
+                <Select value={newToken.projeto_id} onValueChange={(value) => handleProjectChange(value, false)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione a base" />
+                    <SelectValue placeholder="Selecione o projeto primeiro" />
                   </SelectTrigger>
                   <SelectContent>
-                    {((basesData as any)?.data || []).map((base: any) => (
-                      <SelectItem key={base.id} value={base.id.toString()}>
-                        {base.name}
+                    {((projectsWithBasesData as any) || []).map((projeto: any) => (
+                      <SelectItem key={projeto.id} value={projeto.id.toString()}>
+                        {projeto.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                <Select value={newToken.projeto_id} onValueChange={(value) => setNewToken(prev => ({ ...prev, projeto_id: value }))}>
+                <Select 
+                  value={newToken.base_id} 
+                  onValueChange={(value) => setNewToken(prev => ({ ...prev, base_id: value }))}
+                  disabled={!newToken.projeto_id}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione o projeto" />
+                    <SelectValue placeholder={newToken.projeto_id ? "Selecione uma base" : "Selecione um projeto primeiro"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {((projectsData as any)?.data || []).map((projeto: any) => (
-                      <SelectItem key={projeto.id} value={projeto.id.toString()}>
-                        {projeto.name}
+                    {getFilteredBases(newToken.projeto_id).map((base: any) => (
+                      <SelectItem key={base.id} value={base.id.toString()}>
+                        {base.base_name || base.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
