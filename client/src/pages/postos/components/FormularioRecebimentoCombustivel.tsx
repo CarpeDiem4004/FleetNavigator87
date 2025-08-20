@@ -60,9 +60,26 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
 
   // Preencher automaticamente o nome do operador baseado no usuário logado
   useEffect(() => {
-    if (user?.name) {
+    console.log('[RECEBIMENTO] Verificando usuário para operador:', {
+      user: user,
+      userName: user?.name,
+      userRole: user?.role
+    });
+    
+    if (user?.name && user.name !== "Administrador") {
       console.log('[RECEBIMENTO] Preenchendo nome do operador automaticamente:', user.name);
       form.setValue('nome_operador', user.name);
+    } else if (user?.name === "Administrador") {
+      console.log('[RECEBIMENTO] Admin detectado, usando fallback genérico');
+      form.setValue('nome_operador', 'Operador');
+    } else {
+      console.log('[RECEBIMENTO] Nome não disponível, tentando detectar automaticamente...');
+      // Aguardar um pouco para o contexto carregar
+      setTimeout(() => {
+        if (user?.name && user.name !== "Administrador") {
+          form.setValue('nome_operador', user.name);
+        }
+      }, 1000);
     }
   }, [user, form]);
 
@@ -380,10 +397,11 @@ export const FormularioRecebimentoCombustivel: React.FC<FormularioRecebimentoPro
                   <FormLabel>Nome do Operador</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Preenchimento automático - Nome do operador responsável"
                       {...field}
+                      value={field.value || (user?.name && user.name !== "Administrador" ? user.name : "Operador")}
+                      placeholder="Nome do operador responsável"
                       readOnly
-                      className="bg-blue-50"
+                      className="min-h-[44px] bg-blue-50"
                     />
                   </FormControl>
                   <FormMessage />
