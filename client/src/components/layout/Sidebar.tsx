@@ -224,7 +224,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
-    { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
     // Menu de Abastecimentos com submenu
     { name: 'Abastecimentos', href: '#', icon: Fuel, subItems: [
       { name: 'Posto Osasco V2', href: '/posto/osasco_v2', icon: Fuel },
@@ -238,12 +237,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
       { name: 'Consumo Diário', href: '/postos/consumo-diario', icon: BarChart4 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
-      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck }
+      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck },
+      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard }
     ]},
     // Alterado para usar o ícone de posto de gasolina (Droplets) em vez de Warehouse para Postos Externos
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
-      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
       { name: 'Links Públicos', href: '/admin/abastecimento-pos-pago/links', icon: ExternalLink }
     ]},
     // Item de menu separado para Cartão de Abastecimento
@@ -276,7 +275,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
     { name: 'Equipamentos', href: '/equipment', icon: Package },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
-    { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
     { name: 'Parceiros de Guincho', href: '#', icon: Truck, subItems: [
       { name: 'Parceiros', href: '/fleet-management/towing-partners', icon: Truck },
       { name: 'Solicitações', href: '/fleet-management/towing-partners/requests', icon: FileText },
@@ -295,12 +293,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
       { name: 'Consumo Diário', href: '/postos/consumo-diario', icon: BarChart4 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
-      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck }
+      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck },
+      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard }
     ]},
     // Corrigido para usar o mesmo ícone e estrutura em ambas as listas de navegação
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
-      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
       { name: 'Links Públicos', href: '/admin/abastecimento-pos-pago/links', icon: ExternalLink }
     ]},
     // Item de menu separado para Cartão de Abastecimento
@@ -342,14 +340,13 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
       { name: 'Consumo Diário', href: '/postos/consumo-diario', icon: BarChart4 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
-      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck }
+      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck },
+      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard }
     ]},
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
-      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
       { name: 'Links Públicos', href: '/admin/abastecimento-pos-pago/links', icon: ExternalLink }
     ]},
-    { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
   ];
   
   // Itens específicos para usuários Line Hall - acesso completo a todas as funcionalidades
@@ -381,15 +378,14 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
       { name: 'Consumo Diário', href: '/postos/consumo-diario', icon: BarChart4 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
-      { name: 'Cartão de Abastecimento', href: '/cartao-abastecimento', icon: CreditCard }
+      { name: 'Cartão de Abastecimento', href: '/cartao-abastecimento', icon: CreditCard },
+      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard }
     ]},
     { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck },
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
-      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
       { name: 'Links Públicos', href: '/admin/abastecimento-pos-pago/links', icon: ExternalLink }
     ]},
-    { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
     { name: 'Gestão de Frotas', href: '/fleet-management', icon: Truck },
     { name: 'Parceiros de Guincho', href: '#', icon: Truck, subItems: [
