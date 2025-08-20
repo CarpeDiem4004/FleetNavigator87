@@ -1656,10 +1656,13 @@ export default function OficinaExternalDashboard() {
                         <SelectValue placeholder="Selecione o tipo" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="carro">Carro</SelectItem>
+                        <SelectItem value="fiorino">Fiorino</SelectItem>
                         <SelectItem value="van">Van</SelectItem>
-                        <SelectItem value="caminhao">Caminhão</SelectItem>
-                        <SelectItem value="moto">Moto</SelectItem>
+                        <SelectItem value="vuc">VUC</SelectItem>
+                        <SelectItem value="toco">Toco</SelectItem>
+                        <SelectItem value="truck">Truck</SelectItem>
+                        <SelectItem value="cavalo_mecanico">Cavalo Mecânico</SelectItem>
+                        <SelectItem value="carreta">Carreta</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

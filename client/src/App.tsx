@@ -1019,8 +1019,6 @@ function App() {
             <WorkshopExternal />
           </Route>
           
-          {/* Dashboard externo da oficina com token */}
-          <Route path="/oficina/external" component={OficinaExternalDashboard} />
           
           {/* Rota para acesso de motoristas do Line Haul */}
           <Route path="/line-hall-driver">
