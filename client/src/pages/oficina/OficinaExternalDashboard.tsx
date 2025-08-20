@@ -946,14 +946,6 @@ export default function OficinaExternalDashboard() {
             Dashboard
           </Button>
           <Button 
-            variant={activeTab === "reception" ? "default" : "outline"}
-            onClick={() => setActiveTab("reception")}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Receber Veículo
-          </Button>
-          <Button 
             variant={activeTab === "budgets" ? "default" : "outline"}
             onClick={() => setActiveTab("budgets")}
             className="flex items-center gap-2"
@@ -1038,17 +1030,6 @@ export default function OficinaExternalDashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 md:grid-cols-3">
-              {/* Botão Receber Veículo */}
-              <Button 
-                onClick={() => window.location.href = `/maintenance/car-reception?external=true&token=${new URLSearchParams(window.location.search).get('token')}`}
-                className="flex items-center gap-2 h-auto p-4 justify-start bg-green-600 hover:bg-green-700"
-              >
-                <Car className="h-5 w-5" />
-                <div className="text-left">
-                  <p className="font-medium text-white">Receber Veículo</p>
-                  <p className="text-sm opacity-80 text-white">Registrar entrada de veículo</p>
-                </div>
-              </Button>
 
               {/* Botão Nova OS - REMOVIDO: Apenas sistema principal pode criar OS */}
               
@@ -1075,14 +1056,6 @@ export default function OficinaExternalDashboard() {
                 <Car className="h-5 w-5" />
                 Recepção de Veículos
               </CardTitle>
-              <Button 
-                size="sm" 
-                onClick={() => window.location.href = `/maintenance/car-reception?external=true&token=${new URLSearchParams(window.location.search).get('token')}`}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Receber Veículo
-              </Button>
             </div>
             <CardDescription>
               Veículos recebidos para manutenção
@@ -1094,9 +1067,6 @@ export default function OficinaExternalDashboard() {
                 <div className="text-center py-6">
                   <Car className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
                   <p className="text-muted-foreground">Nenhum veículo recebido hoje</p>
-                  <Button size="sm" className="mt-2">
-                    Receber Primeiro Veículo
-                  </Button>
                 </div>
               ) : (
                 <>
@@ -2179,11 +2149,6 @@ export default function OficinaExternalDashboard() {
         </div>
       )}
 
-      {activeTab === "reception" && (
-        <div>
-          <CarReception />
-        </div>
-      )}
 
       {activeTab === "budgets" && (
         <div>
