@@ -17365,11 +17365,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Inicializar tabela para o sistema de cartão combustível
   await setupFuelCardTable();
   
-  // Rotas para o sistema de solicitação de cartão combustível
-  app.get('/api/fuel-card-solicitations', getFuelCardSolicitations);
+  // Rotas para o sistema de solicitação de cartão combustível (duplicadas acima com autenticação)
+  // app.get('/api/fuel-card-solicitations', getFuelCardSolicitations); // REMOVIDO: duplicado
   app.post('/api/fuel-card-solicitations', createFuelCardSolicitation);
   app.post('/api/fuel-card-solicitations/line-hall', createLineHallFuelCardRequest);
-  app.get('/api/fuel-card-solicitations/:id', getFuelCardSolicitationById);
+  // app.get('/api/fuel-card-solicitations/:id', getFuelCardSolicitationById); // REMOVIDO: duplicado
   // Rota de status já registrada anteriormente na linha 6448
   
   // Rota para criar tabela de demonstração para o AutoSave
