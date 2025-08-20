@@ -296,7 +296,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     ]},
     // Corrigido para usar o mesmo ícone e estrutura em ambas as listas de navegação
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
-      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
+      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
+      { name: 'Links Públicos', href: '/admin/abastecimento-pos-pago/links', icon: ExternalLink }
     ]},
     // Item de menu separado para Cartão de Abastecimento
     { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
@@ -340,7 +342,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck }
     ]},
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
-      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
+      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
+      { name: 'Links Públicos', href: '/admin/abastecimento-pos-pago/links', icon: ExternalLink }
     ]},
   ];
   
@@ -377,7 +381,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     ]},
     { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck },
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
-      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
+      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard },
+      { name: 'Links Públicos', href: '/admin/abastecimento-pos-pago/links', icon: ExternalLink }
     ]},
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
     { name: 'Gestão de Frotas', href: '/fleet-management', icon: Truck },
