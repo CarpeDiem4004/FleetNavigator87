@@ -229,7 +229,8 @@ const SidebarSimplified: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Item de menu separado para Cartão de Abastecimento
     { name: 'Cartão', href: '#', icon: CreditCard, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_combustivel'], subItems: [
       { name: 'Operações', href: '/fuel-card', icon: CreditCard },
-      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
+      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList },
+      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard }
     ]},
     
     { name: 'Multas', href: '/fines', icon: AlertTriangle, roles: ['admin', 'gestor_frota', 'line_hall'] },
