@@ -436,7 +436,7 @@ export default function PartnerDashboard() {
                       <SelectItem value="vuc">VUC</SelectItem>
                       <SelectItem value="toco">Toco</SelectItem>
                       <SelectItem value="truck">Truck</SelectItem>
-                      <SelectItem value="cavalo">Cavalo</SelectItem>
+                      <SelectItem value="cavalo_mecanico">Cavalo Mecânico</SelectItem>
                       <SelectItem value="carreta">Carreta</SelectItem>
                     </SelectContent>
                   </Select>

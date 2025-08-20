@@ -17,7 +17,7 @@ import { useLocation } from "wouter";
 const carReceptionSchema = z.object({
   vehiclePlate: z.string().min(1, "Placa é obrigatória"),
   vehicleModel: z.string().min(1, "Modelo é obrigatório"),
-  vehicleType: z.enum(["fiorino", "van", "vuc", "toco", "truck", "cavalo", "carreta"], {
+  vehicleType: z.enum(["fiorino", "van", "vuc", "toco", "truck", "cavalo_mecanico", "carreta"], {
     required_error: "Tipo de veículo é obrigatório",
   }),
   currentKm: z.number().min(0, "Quilometragem deve ser positiva"),
@@ -430,7 +430,7 @@ function CarReception() {
     { value: "vuc", label: "VUC" },
     { value: "toco", label: "Toco" },
     { value: "truck", label: "Truck" },
-    { value: "cavalo", label: "Cavalo Mecânico" },
+    { value: "cavalo_mecanico", label: "Cavalo Mecânico" },
     { value: "carreta", label: "Carreta" },
   ];
 
