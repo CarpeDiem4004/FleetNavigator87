@@ -520,6 +520,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         }
         // Para o item Sistema Pós-Pago, sempre permitir para admins
         if (subItem.name === 'Sistema Pós-Pago' && user.role === 'admin') {
+          console.log(`[MENU DEBUG] Permitindo Sistema Pós-Pago para admin: ${user.email}`);
           return true;
         }
         console.log(`Verificando permissão para submenu ${subItem.name} (${subItem.href}): ${hasPermission(subItem.href) ? 'PERMITIDO' : 'NEGADO'}`);
