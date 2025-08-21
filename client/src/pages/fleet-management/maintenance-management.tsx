@@ -386,13 +386,16 @@ export default function MaintenanceManagement() {
       setIsCreating(true);
       
       const requestData = {
-        ...values,
+        placa: values.placa,
         oficina_id: parseInt(values.oficina_id),
+        descricao: values.descricao,
+        data_prevista: values.data_prevista,
+        observacoes: values.observacoes || '',
         projeto_id: values.projeto_id ? parseInt(values.projeto_id) : null,
         base_id: values.base_id ? parseInt(values.base_id) : null
       };
       
-      const response = await apiRequest("POST", "/api/maintenance", requestData);
+      const response = await apiRequest("POST", "/api/maintenance/orders", requestData);
 
       if (response.ok) {
         toast({
@@ -939,9 +942,9 @@ export default function MaintenanceManagement() {
     // Custos - detalhamento completo
     yPos += 15;
     doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text('DETALHAMENTO DE CUSTOS', 20, yPos);
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     
     yPos += 15;
     doc.setFontSize(11);
@@ -983,18 +986,18 @@ export default function MaintenanceManagement() {
     yPos += 8;
     // Total
     doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text('TOTAL GERAL:', 25, yPos);
     doc.text(`R$ ${totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 120, yPos);
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     
     // Peças Substituídas (se houver)
     if (reception.replacedParts && reception.replacedParts.trim()) {
       yPos += 20;
       doc.setFontSize(14);
-      doc.setFont(undefined, 'bold');
+      doc.setFont('helvetica', 'bold');
       doc.text('PEÇAS SUBSTITUÍDAS', 20, yPos);
-      doc.setFont(undefined, 'normal');
+      doc.setFont('helvetica', 'normal');
       
       yPos += 10;
       doc.setFontSize(11);
@@ -1030,9 +1033,9 @@ export default function MaintenanceManagement() {
       }
       
       doc.setFontSize(14);
-      doc.setFont(undefined, 'bold');
+      doc.setFont('helvetica', 'bold');
       doc.text('DADOS DA ENTREGA', 20, yPos);
-      doc.setFont(undefined, 'normal');
+      doc.setFont('helvetica', 'normal');
       
       yPos += 15;
       doc.setFontSize(11);
