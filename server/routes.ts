@@ -6542,7 +6542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Maintenance routes
-  app.get("/api/maintenance", hasMaintenanceAccess, async (req, res) => {
+  app.get("/api/maintenance", hasMaintenanceAccessV2, async (req, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -6745,7 +6745,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Endpoint para relatórios - consulta unificada de todas as tabelas de manutenção
-  app.get("/api/maintenance/unified-report", hasMaintenanceAccess, async (req, res) => {
+  app.get("/api/maintenance/unified-report", hasMaintenanceAccessV2, async (req, res) => {
     try {
       console.log("Buscando relatório unificado de manutenções (todas as tabelas)");
       
@@ -7315,7 +7315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Buscar todas as tratativas em aberto
-  app.get("/api/maintenance/negotiations", hasMaintenanceAccess, async (req, res) => {
+  app.get("/api/maintenance/negotiations", hasMaintenanceAccessV2, async (req, res) => {
     try {
       const query = `
         SELECT 
@@ -7977,7 +7977,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Rota específica para buscar todas as ordens de manutenção
-  app.get("/api/maintenance/orders", maintenanceAccessMiddleware, async (req, res) => {
+  app.get("/api/maintenance/orders", hasMaintenanceAccessV2, async (req, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });

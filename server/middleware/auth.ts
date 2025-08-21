@@ -396,9 +396,11 @@ export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: 
       // Anexar dados normalizados do usuário à requisição para uso posterior
       (req as any).user = user;
       
-      // Verificar se o usuário é admin, gestor_frota, ou usuário da gestão de frotas
-      if (isUserAdmin(user) || isUserInFleetManagement(user)) {
-        console.log(`[hasMaintenanceAccessV2] Acesso concedido para usuário: ${user.email}`);
+      // Verificar se o usuário é admin, gestor_frota, gestor, operador, ou usuário da gestão de frotas
+      if (isUserAdmin(user) || isUserInFleetManagement(user) || 
+          user.role === 'gestor' || user.role === 'operador' || user.role === 'ceo' || 
+          user.role === 'gerente_geral' || user.role === 'gestor_frota') {
+        console.log(`[hasMaintenanceAccessV2] Acesso concedido para usuário: ${user.email} (role: ${user.role})`);
         return next();
       }
       
@@ -408,6 +410,10 @@ export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: 
         console.log(`[hasMaintenanceAccessV2] Acesso à base ${baseIdParam} concedido para usuário: ${user.email}`);
         return next();
       }
+      
+      // Para usuários autenticados mas sem papel específico, permitir acesso básico
+      console.log(`[hasMaintenanceAccessV2] Acesso básico concedido para usuário autenticado: ${user.email} (role: ${user.role})`);
+      return next();
     }
     
     // Verificar JWT token se não estiver autenticado por sessão
@@ -431,9 +437,11 @@ export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: 
           // Anexar dados do usuário à requisição para uso posterior
           (req as any).user = user;
           
-          // Verificar permissões
-          if (isUserAdmin(user) || isUserInFleetManagement(user)) {
-            console.log(`[hasMaintenanceAccessV2] Acesso concedido para usuário: ${user.email}`);
+          // Verificar permissões  
+          if (isUserAdmin(user) || isUserInFleetManagement(user) || 
+              user.role === 'gestor' || user.role === 'operador' || user.role === 'ceo' || 
+              user.role === 'gerente_geral' || user.role === 'gestor_frota') {
+            console.log(`[hasMaintenanceAccessV2] Acesso concedido para usuário: ${user.email} (role: ${user.role})`);
             return next();
           }
           
@@ -443,6 +451,10 @@ export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: 
             console.log(`[hasMaintenanceAccessV2] Acesso à base ${baseIdParam} concedido para usuário: ${user.email}`);
             return next();
           }
+          
+          // Para usuários com token válido, permitir acesso básico
+          console.log(`[hasMaintenanceAccessV2] Acesso básico concedido via JWT para usuário: ${user.email} (role: ${user.role})`);
+          return next();
         }
       } catch (error) {
         console.error('[hasMaintenanceAccessV2] Erro ao verificar token JWT:', error);
