@@ -1284,7 +1284,7 @@ export default function OficinaExternalDashboard() {
                                     projectId: (reception as any).projectId?.toString() || '',
                                     serviceDescription: reception.serviceDescription,
                                     replacedParts: (reception as any).replacedParts || '',
-                                    laborCost: (reception as any).laborCost ? formatCurrency(((reception as any).laborCost * 100).toString()) : '',
+                                    laborCost: (reception as any).laborCost ? formatCurrency((reception as any).laborCost.toString()) : '',
                                     partsCost: (reception as any).partsCost?.toString() || '',
                                     deliveryDeadline: (reception as any).deliveryDeadline ? new Date((reception as any).deliveryDeadline).toISOString().split('T')[0] : '',
                                     status: reception.status || 'recebido',
