@@ -33,7 +33,6 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import CarReception from './CarReception';
 import BudgetManager from './components/BudgetManager';
-import { useWorkshopReport } from "@/hooks/useWorkshopReport";
 
 interface WorkshopData {
   id: number;
@@ -74,7 +73,6 @@ interface Part {
 export default function OficinaExternalDashboard() {
   const [workshopData, setWorkshopData] = useState<WorkshopData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { downloadReport } = useWorkshopReport();
   const [error, setError] = useState<string | null>(null);
   const [maintenanceRequests, setMaintenanceRequests] = useState<MaintenanceRequest[]>([]);
   const [carReceptions, setCarReceptions] = useState<CarReception[]>([]);
@@ -306,6 +304,106 @@ export default function OficinaExternalDashboard() {
     const laborCost = parseCurrency(carFormData.laborCost) || 0;
     const totalParts = calculateTotalParts();
     return laborCost + totalParts;
+  };
+
+  // Função para baixar relatório específica para oficina externa
+  const handleDownloadReport = async () => {
+    if (!workshopData) {
+      toast({
+        title: "Erro",
+        description: "Dados da oficina não disponíveis",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      
+      if (!token) {
+        toast({
+          title: "Erro",
+          description: "Token de acesso não encontrado",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Criar CSV com os dados das recepções
+      const csvHeaders = [
+        'Data Recebimento',
+        'Placa do Veículo',
+        'Modelo',
+        'Descrição do Serviço',
+        'Status',
+        'Valor Mão de Obra (R$)',
+        'Valor Peças (R$)',
+        'Valor Total (R$)',
+        'Observações'
+      ];
+
+      const csvRows = carReceptions.map(reception => [
+        new Date(reception.created_at).toLocaleDateString('pt-BR'),
+        reception.vehiclePlate || '',
+        reception.vehicleModel || '',
+        (reception.serviceDescription || '').replace(/\n/g, ' '), // Remove quebras de linha
+        reception.status || '',
+        parseFloat((reception as any).laborCost || '0').toFixed(2),
+        parseFloat((reception as any).partsCost || '0').toFixed(2),
+        parseFloat((reception as any).totalCost || '0').toFixed(2),
+        ((reception as any).notes || '').replace(/\n/g, ' ') // Remove quebras de linha
+      ]);
+
+      // Calcular totais
+      const totalLaborCost = carReceptions.reduce((sum, r) => sum + parseFloat((r as any).laborCost || '0'), 0);
+      const totalPartsCost = carReceptions.reduce((sum, r) => sum + parseFloat((r as any).partsCost || '0'), 0);
+      const totalCost = carReceptions.reduce((sum, r) => sum + parseFloat((r as any).totalCost || '0'), 0);
+
+      // Adicionar linha de resumo
+      const summaryRow = [
+        '',
+        `RESUMO TOTAL - ${carReceptions.length} registros`,
+        '',
+        '',
+        '',
+        totalLaborCost.toFixed(2),
+        totalPartsCost.toFixed(2),
+        totalCost.toFixed(2),
+        ''
+      ];
+
+      const csvContent = [csvHeaders, ...csvRows, [], summaryRow]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n');
+
+      // Download do arquivo CSV
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      
+      const fileName = `relatório-${workshopData.name.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.csv`;
+      link.setAttribute('download', fileName);
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Relatório baixado com sucesso!",
+        description: `${carReceptions.length} registros exportados. Total: R$ ${totalCost.toFixed(2)}`,
+      });
+
+    } catch (error) {
+      console.error('Erro ao baixar relatório:', error);
+      toast({
+        title: "Erro ao baixar relatório",
+        description: "Não foi possível gerar o relatório. Verifique sua conexão e tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Função para formatar valores para exibição em moeda brasileira
@@ -1110,7 +1208,7 @@ export default function OficinaExternalDashboard() {
               <Button 
                 variant="outline" 
                 className="flex items-center gap-2 h-auto p-4 justify-start border-orange-500 hover:bg-orange-50 text-orange-700"
-                onClick={() => workshopData && downloadReport(workshopData.id)}
+                onClick={handleDownloadReport}
               >
                 <Download className="h-5 w-5" />
                 <div className="text-left">
