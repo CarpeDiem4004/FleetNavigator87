@@ -127,6 +127,7 @@ export default function OficinaExternalDashboard() {
   const [parts, setParts] = useState<Part[]>([]);
   const [newPartName, setNewPartName] = useState('');
   const [newPartPrice, setNewPartPrice] = useState('');
+  const [showAllReceptions, setShowAllReceptions] = useState(false);
 
   // Função para formatar valores em moeda brasileira
   const formatCurrency = (value: string) => {
@@ -1107,7 +1108,7 @@ export default function OficinaExternalDashboard() {
                 </div>
               ) : (
                 <>
-                  {carReceptions.slice(0, 3).map((reception) => (
+                  {(showAllReceptions ? carReceptions : carReceptions.slice(0, 3)).map((reception) => (
                     <div key={reception.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">
@@ -1205,8 +1206,13 @@ export default function OficinaExternalDashboard() {
                     </div>
                   ))}
                   {carReceptions.length > 3 && (
-                    <Button variant="outline" size="sm" className="w-full">
-                      Ver todos ({carReceptions.length})
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => setShowAllReceptions(!showAllReceptions)}
+                    >
+                      {showAllReceptions ? 'Ver menos' : `Ver todos (${carReceptions.length})`}
                     </Button>
                   )}
                 </>
