@@ -8056,12 +8056,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Rota para criar nova ordem de serviço de manutenção
-  app.post("/api/maintenance/orders", hasMaintenanceAccessV2, async (req, res) => {
+  // Rota para criar nova ordem de serviço de manutenção  
+  app.post("/api/maintenance/orders", async (req, res) => {
     try {
-      console.log("🔥 POST /api/maintenance/orders - Iniciando criação");
-      console.log("📝 Usuário da requisição:", req.user);
-      console.log("📊 Dados recebidos:", req.body);
+      console.log("🚨 INTERCEPTADO: POST /api/maintenance/orders recebida!");
+      console.log("🔑 Sessão ID:", req.sessionID);
+      console.log("👤 isAuthenticated:", req.isAuthenticated ? req.isAuthenticated() : false);
+      console.log("👤 req.user:", req.user || "null");
+      console.log("📊 Body recebido:", req.body);
+      
+      // APLICAR O MIDDLEWARE MANUALMENTE PARA DEBUG
+      if (!req.isAuthenticated || !req.isAuthenticated() || !req.user) {
+        console.log("❌ FALHOU NA AUTENTICAÇÃO BÁSICA");
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+      
+      console.log("✅ USUÁRIO AUTENTICADO:", req.user.email);
       
       if (!req.user) {
         console.log("❌ Usuário não autenticado na requisição POST");
