@@ -131,17 +131,32 @@ export default function OficinaExternalDashboard() {
 
   // Função para formatar valores em moeda brasileira
   const formatCurrency = (value: string) => {
-    // Remove tudo que não é dígito
-    const numbers = value.replace(/\D/g, '');
+    // Remove tudo que não é dígito, vírgula e ponto
+    let cleanValue = value.replace(/[^\d,\.]/g, '');
     
     // Se vazio, retorna vazio
-    if (!numbers) return '';
+    if (!cleanValue) return '';
     
-    // Converte para número e divide por 100 para ter centavos
-    const amount = parseInt(numbers) / 100;
+    // Se tem vírgula, assume que é formato brasileiro (ex: 13.900,00)
+    if (cleanValue.includes(',')) {
+      // Substitui pontos por nada (milhares) e vírgula por ponto (decimais)
+      cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
+    }
+    
+    // Converte para número
+    const numericValue = parseFloat(cleanValue) || 0;
+    
+    // Se é muito grande (mais de 6 dígitos), provavelmente está em centavos
+    if (numericValue > 999999) {
+      const correctValue = numericValue / 100;
+      return correctValue.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
     
     // Formata como moeda brasileira
-    return amount.toLocaleString('pt-BR', {
+    return numericValue.toLocaleString('pt-BR', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
@@ -150,8 +165,16 @@ export default function OficinaExternalDashboard() {
   // Função para converter valor formatado de volta para número
   const parseCurrency = (value: string) => {
     if (!value) return 0;
-    // Remove R$, espaços e pontos, substitui vírgula por ponto
-    const cleanValue = value.replace(/[R$\s.]/g, '').replace(',', '.');
+    
+    // Remove símbolos de moeda e espaços
+    let cleanValue = value.replace(/[R$\s]/g, '');
+    
+    // Se tem vírgula, trata formato brasileiro (ex: 13.900,00)
+    if (cleanValue.includes(',')) {
+      // Remove pontos (separadores de milhares) e substitui vírgula por ponto
+      cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
+    }
+    
     return parseFloat(cleanValue) || 0;
   };
   const [projects, setProjects] = useState<any[]>([]);
@@ -256,7 +279,8 @@ export default function OficinaExternalDashboard() {
 
   const addPart = () => {
     if (newPartName.trim() && newPartPrice.trim()) {
-      const numericPrice = parseFloat(newPartPrice) || 0;
+      // Usar a função parseCurrency para converter corretamente o valor
+      const numericPrice = parseCurrency(newPartPrice);
       const newPart: Part = {
         id: Date.now().toString(),
         name: newPartName.trim(),
@@ -277,7 +301,7 @@ export default function OficinaExternalDashboard() {
   };
 
   const calculateTotalEstimated = () => {
-    const laborCost = parseFloat(carFormData.laborCost) || 0;
+    const laborCost = parseCurrency(carFormData.laborCost) || 0;
     const totalParts = calculateTotalParts();
     return laborCost + totalParts;
   };
@@ -1461,9 +1485,9 @@ export default function OficinaExternalDashboard() {
                 {parts.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-xs font-medium text-muted-foreground">Peças utilizadas:</h4>
-                    {parts.map((part) => (
+                    {parts.map((part, index) => (
                       <div
-                        key={part.id}
+                        key={part.id || index}
                         className="flex items-center justify-between p-2 bg-muted rounded border"
                       >
                         <div className="flex-1">
@@ -1471,11 +1495,11 @@ export default function OficinaExternalDashboard() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-green-600">
-                            R$ {part.price.toFixed(2).replace('.', ',')}
+                            {formatDisplayCurrency(parseFloat(part.price || '0'))}
                           </span>
                           <Button
                             type="button"
-                            onClick={() => removePart(part.id)}
+                            onClick={() => removePart(part.id || index.toString())}
                             variant="ghost"
                             size="sm"
                             className="h-6 w-6 p-0 hover:bg-red-100"
@@ -1917,7 +1941,7 @@ export default function OficinaExternalDashboard() {
                     <h4 className="font-medium text-gray-700">Peças Adicionadas:</h4>
                     <div className="grid gap-2">
                       {parts.map((part, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
+                        <div key={part.id || index} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
                           <span className="font-medium">{part.name}</span>
                           <div className="flex items-center gap-3">
                             <span className="text-lg font-semibold text-green-600">{formatDisplayCurrency(parseFloat(part.price || '0'))}</span>
@@ -1925,7 +1949,7 @@ export default function OficinaExternalDashboard() {
                               type="button"
                               variant="ghost"
                               size="sm"
-                              onClick={() => removePart(index)}
+                              onClick={() => removePart(part.id || index.toString())}
                               className="text-red-500 hover:text-red-700"
                             >
                               <X className="h-4 w-4" />
