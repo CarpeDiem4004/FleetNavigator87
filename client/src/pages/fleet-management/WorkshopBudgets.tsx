@@ -25,7 +25,8 @@ import {
   Car,
   CheckCircle,
   XCircle,
-  Printer
+  Printer,
+  CreditCard
 } from "lucide-react";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -77,6 +78,20 @@ interface WorkshopBudget {
   base_name: string;
   project_name: string;
   parts_details: PartDetail[];
+  is_billed?: boolean;
+  installments?: number;
+  due_date_1?: string;
+  due_date_2?: string;
+  due_date_3?: string;
+  due_date_4?: string;
+  due_date_5?: string;
+  due_date_6?: string;
+  due_date_7?: string;
+  due_date_8?: string;
+  due_date_9?: string;
+  due_date_10?: string;
+  due_date_11?: string;
+  due_date_12?: string;
 }
 
 export default function WorkshopBudgets() {
@@ -799,6 +814,62 @@ export default function WorkshopBudgets() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Informações de Faturamento */}
+              {selectedBudget.is_billed && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CreditCard className="h-5 w-5" />
+                      Informações de Faturamento
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium">Status</Label>
+                        <Badge variant="success" className="flex w-fit items-center gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          Faturado
+                        </Badge>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Parcelas</Label>
+                        <p className="text-lg font-bold">
+                          {selectedBudget.installments || 1}x de {formatCurrency((parseFloat(selectedBudget.total_cost) / (selectedBudget.installments || 1)).toString())}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Datas de Vencimento */}
+                    {selectedBudget.installments && selectedBudget.installments > 0 && (
+                      <div>
+                        <Label className="text-sm font-medium mb-3 block">Datas de Vencimento</Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                          {Array.from({ length: selectedBudget.installments }).map((_, index) => {
+                            const dueDate = (selectedBudget as any)[`due_date_${index + 1}`];
+                            if (!dueDate) return null;
+                            
+                            return (
+                              <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                                <Calendar className="h-4 w-4 text-blue-600" />
+                                <div>
+                                  <p className="text-xs text-muted-foreground">
+                                    {index + 1}ª parcela
+                                  </p>
+                                  <p className="text-sm font-medium">
+                                    {new Date(dueDate + 'T00:00:00').toLocaleDateString('pt-BR')}
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Serviços e Custos */}
               <Card>
