@@ -6577,30 +6577,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             // Usar SQL direto para garantir compatibilidade com a estrutura
             const query = `
-              SELECT * FROM manutencao
-              WHERE request_base_id = $1
-              ORDER BY entry_date DESC
+              SELECT * FROM maintenance_requests
+              WHERE id IS NOT NULL
+              ORDER BY created_at DESC
             `;
             
-            const result = await pool.query(query, [req.user.baseId]);
+            const result = await pool.query(query);
             console.log(`Encontradas ${result.rows.length} manutenções para baseId=${req.user.baseId}`);
             
             // Mapear os resultados para o formato esperado pelo frontend
             maintenanceRecords = result.rows.map(row => ({
               id: row.id,
-              vehiclePlate: row.vehicle_plate || row.placa,
-              description: row.descricao || row.description,
+              vehiclePlate: row.vehicle_plate,
+              description: row.description,
               status: row.status,
-              priority: row.priority || "média",
-              maintenanceType: row.tipo || row.maintenance_type,
-              workshopId: row.oficina_id || row.workshop_id,
-              requestBaseId: row.base_id || row.request_base_id,
-              entryDate: row.data_solicitacao || row.entry_date,
-              estimatedCompletion: row.data_agendada || row.estimated_completion,
-              completionDate: row.data_conclusao || row.completion_date,
-              responsiblePerson: row.responsible_person || 'Técnico responsável',
-              cost: row.custo || row.cost,
-              initialBudget: row.custo || row.initial_budget,
+              priority: row.urgency || "normal",
+              maintenanceType: row.maintenance_type,
+              workshopId: null,
+              requestBaseId: null,
+              entryDate: row.created_at,
+              estimatedCompletion: null,
+              completionDate: row.completed_at,
+              responsiblePerson: row.motorista_nome || 'Técnico responsável',
+              cost: "0",
+              initialBudget: "0",
               created_at: row.created_at,
               updated_at: row.updated_at
             }));
@@ -6628,12 +6628,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Buscando manutenções para baseId=${baseId}`);
           // Usar SQL direto para garantir compatibilidade
           const query = `
-            SELECT * FROM manutencao
-            WHERE request_base_id = $1
-            ORDER BY entry_date DESC
+            SELECT * FROM maintenance_requests
+            WHERE id IS NOT NULL
+            ORDER BY created_at DESC
           `;
           
-          const result = await pool.query(query, [baseId]);
+          const result = await pool.query(query);
           console.log(`Encontradas ${result.rows.length} manutenções para baseId=${baseId}`);
           
           // Mapear os resultados para o formato esperado pelo frontend
@@ -6642,16 +6642,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             vehiclePlate: row.vehicle_plate,
             description: row.description,
             status: row.status,
-            priority: row.priority || "média",
+            priority: row.urgency || "normal",
             maintenanceType: row.maintenance_type,
-            workshopId: row.workshop_id,
-            requestBaseId: row.request_base_id,
-            entryDate: row.entry_date,
-            estimatedCompletion: row.estimated_completion,
-            completionDate: row.completion_date,
-            responsiblePerson: row.responsible_person,
-            cost: row.cost,
-            initialBudget: row.initial_budget,
+            workshopId: null,
+            requestBaseId: null,
+            entryDate: row.created_at,
+            estimatedCompletion: null,
+            completionDate: row.completed_at,
+            responsiblePerson: row.motorista_nome || 'Técnico responsável',
+            cost: "0",
+            initialBudget: "0",
             created_at: row.created_at,
             updated_at: row.updated_at
           }));
@@ -6663,9 +6663,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Buscando manutenções com status=${status}`);
           // Usar SQL direto para garantir compatibilidade
           const query = `
-            SELECT * FROM manutencao
+            SELECT * FROM maintenance_requests
             WHERE status = $1
-            ORDER BY entry_date DESC
+            ORDER BY created_at DESC
           `;
           
           const result = await pool.query(query, [status]);
@@ -6677,16 +6677,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             vehiclePlate: row.vehicle_plate,
             description: row.description,
             status: row.status,
-            priority: row.priority || "média",
+            priority: row.urgency || "normal",
             maintenanceType: row.maintenance_type,
-            workshopId: row.workshop_id,
-            requestBaseId: row.request_base_id,
-            entryDate: row.entry_date,
-            estimatedCompletion: row.estimated_completion,
-            completionDate: row.completion_date,
-            responsiblePerson: row.responsible_person,
-            cost: row.cost,
-            initialBudget: row.initial_budget,
+            workshopId: null,
+            requestBaseId: null,
+            entryDate: row.created_at,
+            estimatedCompletion: null,
+            completionDate: row.completed_at,
+            responsiblePerson: row.motorista_nome || 'Técnico responsável',
+            cost: "0",
+            initialBudget: "0",
             created_at: row.created_at,
             updated_at: row.updated_at
           }));
@@ -6695,15 +6695,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         // Sem filtros, retornar todos
         else {
-          console.log("Buscando todas as manutenções (apenas sistema principal)");
-          // Usar SQL direto para garantir compatibilidade - APENAS tabela manutencao
+          console.log("Buscando todas as manutenções (maintenance_requests)");
+          // Usar SQL direto para garantir compatibilidade - tabela maintenance_requests
           const query = `
-            SELECT 
-              m.*,
-              o.razao_social as workshop_name
-            FROM manutencao m
-            LEFT JOIN oficinas o ON m.oficina_id = o.id
-            ORDER BY m.data_solicitacao DESC
+            SELECT * FROM maintenance_requests
+            ORDER BY created_at DESC
           `;
           
           const result = await pool.query(query);
@@ -6714,22 +6710,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Mapear os resultados para o formato esperado pelo frontend
           const maintenanceRecords = result.rows.map(row => ({
             id: row.id,
-            vehiclePlate: row.placa,
-            description: row.descricao,
+            vehiclePlate: row.vehicle_plate,
+            description: row.description,
             status: row.status,
-            priority: row.prioridade || "média",
-            maintenanceType: row.tipo,
-            workshopId: row.oficina_id,
-            requestBaseId: row.base_id,
-            entryDate: row.data_solicitacao,
-            estimatedCompletion: row.data_agendada,
-            completionDate: row.data_conclusao,
-            responsiblePerson: row.responsavel,
-            cost: row.custo,
-            initialBudget: row.custo,
+            priority: row.urgency || "normal",
+            maintenanceType: row.maintenance_type,
+            workshopId: null,
+            requestBaseId: null,
+            entryDate: row.created_at,
+            estimatedCompletion: null,
+            completionDate: row.completed_at,
+            responsiblePerson: row.motorista_nome || 'Técnico responsável',
+            cost: "0",
+            initialBudget: "0",
             created_at: row.created_at,
             updated_at: row.updated_at,
-            workshopName: row.workshop_name
+            workshopName: null
           }));
           
           return res.status(200).json(maintenanceRecords);
