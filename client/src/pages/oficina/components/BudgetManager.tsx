@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Calculator, FileText, Download, Eye, Plus, Edit } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import jsPDF from 'jspdf';
 import PartsManager, { PartItem } from "./PartsManager";
 import { formatCurrency } from "@/lib/currency";
@@ -26,6 +27,20 @@ const budgetSchema = z.object({
   estimatedDays: z.number().min(1).optional(),
   notes: z.string().optional(),
   internalNotes: z.string().optional(),
+  isBilled: z.boolean().default(false),
+  installments: z.number().min(1).max(12).optional(),
+  dueDate1: z.string().optional(),
+  dueDate2: z.string().optional(),
+  dueDate3: z.string().optional(),
+  dueDate4: z.string().optional(),
+  dueDate5: z.string().optional(),
+  dueDate6: z.string().optional(),
+  dueDate7: z.string().optional(),
+  dueDate8: z.string().optional(),
+  dueDate9: z.string().optional(),
+  dueDate10: z.string().optional(),
+  dueDate11: z.string().optional(),
+  dueDate12: z.string().optional(),
 });
 
 type BudgetForm = z.infer<typeof budgetSchema>;
@@ -51,6 +66,20 @@ interface Budget {
   vehicle_type: string;
   service_description: string;
   approved_by_name?: string;
+  is_billed?: boolean;
+  installments?: number;
+  due_date_1?: string;
+  due_date_2?: string;
+  due_date_3?: string;
+  due_date_4?: string;
+  due_date_5?: string;
+  due_date_6?: string;
+  due_date_7?: string;
+  due_date_8?: string;
+  due_date_9?: string;
+  due_date_10?: string;
+  due_date_11?: string;
+  due_date_12?: string;
 }
 
 interface CarReception {
@@ -114,6 +143,8 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
       estimatedDays: 1,
       notes: "",
       internalNotes: "",
+      isBilled: false,
+      installments: 1,
     },
   });
 
@@ -335,6 +366,20 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
       estimatedDays: budget.estimated_days || 1,
       notes: budget.notes || "",
       internalNotes: budget.internal_notes || "",
+      isBilled: budget.is_billed || false,
+      installments: budget.installments || 1,
+      dueDate1: budget.due_date_1 || "",
+      dueDate2: budget.due_date_2 || "",
+      dueDate3: budget.due_date_3 || "",
+      dueDate4: budget.due_date_4 || "",
+      dueDate5: budget.due_date_5 || "",
+      dueDate6: budget.due_date_6 || "",
+      dueDate7: budget.due_date_7 || "",
+      dueDate8: budget.due_date_8 || "",
+      dueDate9: budget.due_date_9 || "",
+      dueDate10: budget.due_date_10 || "",
+      dueDate11: budget.due_date_11 || "",
+      dueDate12: budget.due_date_12 || "",
     });
     setIsDialogOpen(true);
   };
@@ -563,6 +608,104 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
                     </FormItem>
                   )}
                 />
+
+                {/* Seção de Faturamento */}
+                <Card className="bg-blue-50/50 border-blue-200">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Informações de Faturamento
+                    </CardTitle>
+                    <CardDescription>
+                      Configure as opções de faturamento e parcelamento do orçamento
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="isBilled"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Faturado</FormLabel>
+                            <p className="text-sm text-muted-foreground">
+                              Marque se este orçamento foi faturado
+                            </p>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch('isBilled') && (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="installments"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Número de Parcelas</FormLabel>
+                              <FormControl>
+                                <select 
+                                  {...field}
+                                  onChange={(e) => {
+                                    const installmentCount = parseInt(e.target.value);
+                                    field.onChange(installmentCount);
+                                    
+                                    // Limpar campos de data que não serão usados
+                                    for (let i = installmentCount + 1; i <= 12; i++) {
+                                      form.setValue(`dueDate${i}` as keyof BudgetForm, "");
+                                    }
+                                  }}
+                                  className="w-full p-2 border rounded-md"
+                                >
+                                  {Array.from({ length: 12 }, (_, i) => i + 1).map(num => (
+                                    <option key={num} value={num}>{num}x</option>
+                                  ))}
+                                </select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Campos dinâmicos para as datas de vencimento */}
+                        <div className="space-y-3">
+                          <h4 className="font-medium text-sm text-muted-foreground">Datas de Vencimento dos Boletos</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {Array.from({ length: form.watch('installments') || 1 }, (_, index) => {
+                              const fieldName = `dueDate${index + 1}` as keyof BudgetForm;
+                              return (
+                                <FormField
+                                  key={fieldName}
+                                  control={form.control}
+                                  name={fieldName}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>{index + 1}ª Parcela</FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          type="date"
+                                          {...field}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
 
                 <div className="flex justify-end gap-2">
                   <Button

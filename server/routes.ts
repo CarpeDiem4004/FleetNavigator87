@@ -9665,8 +9665,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         INSERT INTO workshop_budgets (
           car_reception_id, service_number, budget_number, workshop_id, workshop_cnpj,
           labor_description, labor_cost, labor_hours, parts_description, parts_cost,
-          parts_json, total_cost, estimated_days, notes, internal_notes
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+          parts_json, total_cost, estimated_days, notes, internal_notes,
+          is_billed, installments, due_date_1, due_date_2, due_date_3, due_date_4,
+          due_date_5, due_date_6, due_date_7, due_date_8, due_date_9, due_date_10,
+          due_date_11, due_date_12
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 
+          $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
         RETURNING *
       `;
 
@@ -9685,7 +9689,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalCost,
         data.estimatedDays || null,
         data.notes || null,
-        data.internalNotes || null
+        data.internalNotes || null,
+        data.isBilled || false,
+        data.installments || 1,
+        data.dueDate1 || null,
+        data.dueDate2 || null,
+        data.dueDate3 || null,
+        data.dueDate4 || null,
+        data.dueDate5 || null,
+        data.dueDate6 || null,
+        data.dueDate7 || null,
+        data.dueDate8 || null,
+        data.dueDate9 || null,
+        data.dueDate10 || null,
+        data.dueDate11 || null,
+        data.dueDate12 || null
       ]);
 
       res.status(201).json({ 
@@ -9695,6 +9713,157 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("[BUDGET-CREATE] Erro ao criar orçamento:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  });
+
+  // Atualizar orçamento existente
+  app.put("/api/oficina/budgets/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { token } = req.query;
+      const data = req.body;
+      
+      console.log('[BUDGET-UPDATE] Atualizando orçamento:', { id, token, data });
+      
+      // Validar token de acesso externo
+      if (!token) {
+        return res.status(401).json({ 
+          success: false,
+          message: 'Token de acesso obrigatório' 
+        });
+      }
+
+      // Verificar se o token é válido
+      const tokenQuery = `
+        SELECT 
+          o.id,
+          COALESCE(o.nome_fantasia, o.razao_social) as name,
+          o.cnpj
+        FROM oficinas o
+        WHERE o.external_token = $1 AND o.status = 'ativo'
+      `;
+      
+      const tokenResult = await pool.query(tokenQuery, [token]);
+      
+      if (tokenResult.rows.length === 0) {
+        return res.status(401).json({ 
+          success: false,
+          message: 'Token de acesso inválido' 
+        });
+      }
+
+      const workshop = tokenResult.rows[0];
+
+      // Validar dados obrigatórios
+      if (!data.laborDescription || data.laborCost === undefined) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'Dados obrigatórios não informados' 
+        });
+      }
+
+      // Calcular custo total
+      const totalCost = parseFloat(data.laborCost) + parseFloat(data.partsCost || 0);
+
+      // Processar dados das peças (se fornecidos)
+      let partsJson = null;
+      let partsDescription = data.partsDescription || '';
+      
+      if (data.partsJson) {
+        try {
+          partsJson = data.partsJson;
+          // Se há peças detalhadas, gerar descrição resumida
+          const parts = JSON.parse(data.partsJson);
+          if (parts.length > 0) {
+            partsDescription = parts.map((part: any) => 
+              `${part.description} (${part.quantity}x)`
+            ).join(', ');
+          }
+        } catch (error) {
+          console.error('[BUDGET-UPDATE] Erro ao processar JSON das peças:', error);
+        }
+      }
+
+      // Atualizar orçamento
+      const budgetQuery = `
+        UPDATE workshop_budgets SET
+          labor_description = $1,
+          labor_cost = $2,
+          labor_hours = $3,
+          parts_description = $4,
+          parts_cost = $5,
+          parts_json = $6,
+          total_cost = $7,
+          estimated_days = $8,
+          notes = $9,
+          internal_notes = $10,
+          is_billed = $11,
+          installments = $12,
+          due_date_1 = $13,
+          due_date_2 = $14,
+          due_date_3 = $15,
+          due_date_4 = $16,
+          due_date_5 = $17,
+          due_date_6 = $18,
+          due_date_7 = $19,
+          due_date_8 = $20,
+          due_date_9 = $21,
+          due_date_10 = $22,
+          due_date_11 = $23,
+          due_date_12 = $24,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $25 AND workshop_cnpj = $26
+        RETURNING *
+      `;
+
+      const budgetResult = await pool.query(budgetQuery, [
+        data.laborDescription,
+        data.laborCost,
+        data.laborHours || null,
+        partsDescription || null,
+        data.partsCost || 0,
+        partsJson,
+        totalCost,
+        data.estimatedDays || null,
+        data.notes || null,
+        data.internalNotes || null,
+        data.isBilled || false,
+        data.installments || 1,
+        data.dueDate1 || null,
+        data.dueDate2 || null,
+        data.dueDate3 || null,
+        data.dueDate4 || null,
+        data.dueDate5 || null,
+        data.dueDate6 || null,
+        data.dueDate7 || null,
+        data.dueDate8 || null,
+        data.dueDate9 || null,
+        data.dueDate10 || null,
+        data.dueDate11 || null,
+        data.dueDate12 || null,
+        id,
+        workshop.cnpj
+      ]);
+
+      if (budgetResult.rows.length === 0) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'Orçamento não encontrado ou não autorizado' 
+        });
+      }
+
+      res.json({ 
+        success: true,
+        message: 'Orçamento atualizado com sucesso',
+        budget: budgetResult.rows[0]
+      });
+    } catch (error) {
+      console.error("[BUDGET-UPDATE] Erro ao atualizar orçamento:", error);
       res.status(500).json({ 
         success: false, 
         message: 'Erro interno do servidor',
