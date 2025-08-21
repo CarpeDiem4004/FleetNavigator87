@@ -126,13 +126,31 @@ export default function FormularioPublicoAbastecimento() {
   };
 
   const formatMoney = (value: string) => {
+    // Remove tudo que não for número
+    let numbers = value.replace(/\D/g, '');
+    
+    // Se não há números, retorna vazio
+    if (!numbers) return '';
+    
+    // Converte para centavos (sempre 2 casas decimais)
+    const numberValue = parseInt(numbers) / 100;
+    
+    // Formata para moeda brasileira
+    return numberValue.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
+  const parseMoneyToNumber = (value: string) => {
+    // Remove formatação e converte para número
     const numbers = value.replace(/[^\d,]/g, '').replace(',', '.');
-    return numbers;
+    return parseFloat(numbers) || 0;
   };
 
   const calcularLitros = () => {
-    const valorUnit = parseFloat(formData.valor_unit.replace(',', '.')) || 0;
-    const valorTotal = parseFloat(formData.valor_total.replace(',', '.')) || 0;
+    const valorUnit = parseMoneyToNumber(formData.valor_unit);
+    const valorTotal = parseMoneyToNumber(formData.valor_total);
     
     if (valorUnit > 0 && valorTotal > 0) {
       return (valorTotal / valorUnit).toFixed(2);
@@ -168,8 +186,8 @@ export default function FormularioPublicoAbastecimento() {
           cpf: formData.cpf.replace(/\D/g, ''),
           placa: formData.placa.toUpperCase().trim(),
           km: parseInt(formData.km),
-          valor_unit: parseFloat(formData.valor_unit.replace(',', '.')),
-          valor_total: parseFloat(formData.valor_total.replace(',', '.')),
+          valor_unit: parseMoneyToNumber(formData.valor_unit),
+          valor_total: parseMoneyToNumber(formData.valor_total),
           posto_id: formData.posto_id ? parseInt(formData.posto_id) : null,
           base_id: parseInt(formData.base_id)
         })
@@ -383,7 +401,7 @@ export default function FormularioPublicoAbastecimento() {
                     type="text"
                     value={formData.valor_unit}
                     onChange={(e) => handleChange('valor_unit', formatMoney(e.target.value))}
-                    placeholder="Ex: 5.89"
+                    placeholder="Ex: 5,89"
                     required
                     className="w-full"
                   />
@@ -397,7 +415,7 @@ export default function FormularioPublicoAbastecimento() {
                     type="text"
                     value={formData.valor_total}
                     onChange={(e) => handleChange('valor_total', formatMoney(e.target.value))}
-                    placeholder="Ex: 350.50"
+                    placeholder="Ex: 350,50"
                     required
                     className="w-full"
                   />
