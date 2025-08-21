@@ -1074,8 +1074,15 @@ async function criarTabelaDemoForms() {
 import sqlSeguroRouter from './routes/sql-seguro';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // ===========================
+  // INICIALIZAÇÃO DE AUTENTICAÇÃO - ALTA PRIORIDADE
+  // ===========================
+  
+  // Configuração do passport para autenticação ANTES de qualquer rota protegida
+  setupAuth(app);
+  
   // Health check endpoints para deployments
-  // ROTAS DE ALTA PRIORIDADE - ANTES DOS MIDDLEWARES
+  // ROTAS DE ALTA PRIORIDADE - DEPOIS DA AUTENTICAÇÃO
   
   // Rota para servir manifest.json
   app.get('/manifest.json', (req, res) => {
@@ -2756,8 +2763,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
-  // Configuração do passport para autenticação
-  setupAuth(app);
+  
+  // ❌ AUTENTICAÇÃO REMOVIDA DAQUI - JÁ INICIALIZADA NO INÍCIO DA FUNÇÃO
+  // setupAuth(app); // Movido para linha ~1080 para corrigir ordem de inicialização
   
   // Rotas para Line Hall Shopee
   app.get('/api/line-hall-shopee', isAuthenticated, async (req, res) => {
