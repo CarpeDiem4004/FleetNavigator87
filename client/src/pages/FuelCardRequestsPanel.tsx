@@ -33,7 +33,7 @@ interface FuelCardSolicitation {
   km_veiculo?: number;
   tipo_cartao?: string;
   observacoes?: string;
-  status: 'Pendente' | 'Em Análise' | 'Recarga Efetuada' | 'Negado';
+  status: 'Pendente' | 'pendente' | 'Em Análise' | 'em_analise' | 'Recarga Efetuada' | 'atendido' | 'Negado';
   data_solicitacao: string;
   atendido_por?: string;
   data_atendimento?: string;
@@ -210,7 +210,8 @@ const FuelCardRequestsPanel: React.FC = () => {
   // Funções para calcular totais por aba
   const getPendingSolicitations = () => {
     return filteredSolicitations.filter(s => 
-      s.status === 'Pendente' || s.status === 'Em Análise'
+      s.status === 'Pendente' || s.status === 'pendente' || 
+      s.status === 'Em Análise' || s.status === 'em_analise'
     );
   };
 
@@ -625,7 +626,8 @@ const FuelCardRequestsPanel: React.FC = () => {
       // Buscar solicitações pendentes da base selecionada
       const pendingSolicitations = solicitations.filter(sol => 
         sol.base === baseFilter && 
-        (sol.status === 'Pendente' || sol.status === 'Em Análise')
+        (sol.status === 'Pendente' || sol.status === 'pendente' || 
+         sol.status === 'Em Análise' || sol.status === 'em_analise')
       );
       
       if (pendingSolicitations.length === 0) {
@@ -667,7 +669,8 @@ const FuelCardRequestsPanel: React.FC = () => {
       if (successes > 0) {
         // Atualizar a lista local
         setSolicitations(solicitations.map(sol => {
-          if (sol.base === baseFilter && (sol.status === 'Pendente' || sol.status === 'Em Análise')) {
+          if (sol.base === baseFilter && (sol.status === 'Pendente' || sol.status === 'pendente' || 
+                                         sol.status === 'Em Análise' || sol.status === 'em_analise')) {
             return {
               ...sol,
               status: 'Recarga Efetuada' as FuelCardSolicitation['status'],
@@ -849,8 +852,11 @@ const FuelCardRequestsPanel: React.FC = () => {
   };
 
   const getStatistics = () => {
-    const pendentes = solicitations.filter(s => s.status === 'Pendente' || s.status === 'Em Análise').length;
-    const atendidas = solicitations.filter(s => s.status === 'Recarga Efetuada').length;
+    const pendentes = solicitations.filter(s => 
+      s.status === 'Pendente' || s.status === 'pendente' || 
+      s.status === 'Em Análise' || s.status === 'em_analise'
+    ).length;
+    const atendidas = solicitations.filter(s => s.status === 'Recarga Efetuada' || s.status === 'atendido').length;
     
     // Debug: verificar estrutura dos dados
     console.log('Debugging valor calculation:', {
@@ -1222,10 +1228,10 @@ const FuelCardRequestsPanel: React.FC = () => {
                         hasMultipleRequestsToday(solicitacao.placa, solicitacao.data_solicitacao)
                           ? 'bg-red-50 border-red-300 border-l-4 border-l-red-500 shadow-md' // Destaque especial para repetições
                           : index < 5 
-                            ? solicitacao.status === 'Pendente' 
+                            ? (solicitacao.status === 'Pendente' || solicitacao.status === 'pendente') 
                               ? 'bg-yellow-50 border-yellow-200 border-l-4 border-l-yellow-400' 
                               : 'bg-blue-50 border-blue-200 border-l-4 border-l-blue-400'
-                            : solicitacao.status === 'Pendente' 
+                            : (solicitacao.status === 'Pendente' || solicitacao.status === 'pendente') 
                               ? 'bg-yellow-25 border-yellow-100' 
                               : 'bg-white border-gray-200'
                       }`}
@@ -1878,7 +1884,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                                 variant="outline" 
                                 className={
                                   item.status === 'Recarga Efetuada' ? 'bg-green-100 text-green-800' :
-                                  item.status === 'Pendente' ? 'bg-yellow-100 text-yellow-800' :
+                                  (item.status === 'Pendente' || item.status === 'pendente') ? 'bg-yellow-100 text-yellow-800' :
                                   item.status === 'Negado' ? 'bg-red-100 text-red-800' :
                                   'bg-gray-100 text-gray-800'
                                 }
