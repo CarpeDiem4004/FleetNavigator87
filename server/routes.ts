@@ -5202,23 +5202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/teste/usuarios", consultarUsuarios);
   
   // Base routes
-  // Temporariamente sem autenticação para testes
-  app.get("/api/bases", async (req, res) => {
-    try {
-      console.log("[BASES-API] Chamando storage.getAllBases()...");
-      const bases = await storage.getAllBases();
-      console.log("Direct Bases API - Found", bases.length, "bases from storage");
-      
-      return res.status(200).json({
-        success: true,
-        data: bases,
-        count: bases.length
-      });
-    } catch (error) {
-      console.error("Error fetching bases:", error);
-      return res.status(500).json({ message: "Server error" });
-    }
-  });
+  // Duplicata removida - rota já existe em linha anterior
 
   // Rota de teste para forçar verificação direta
   app.get("/api/bases-debug", async (req, res) => {
@@ -17698,20 +17682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Rota para listar bases
-  app.get('/api/bases', async (req, res) => {
-    try {
-      const query = 'SELECT id, name FROM bases WHERE active = true ORDER BY name';
-      const result = await pool.query(query);
-      res.json(result.rows);
-    } catch (error) {
-      console.error('Erro ao buscar bases:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
-    }
-  });
+  // Duplicata removida - rota /api/bases já existe
 
   // Rota para listar motoristas
   app.get('/api/drivers', async (req, res) => {
