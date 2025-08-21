@@ -252,9 +252,35 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
     }
   };
 
+  // Função robusta para formatação de moeda no PDF
+  const formatCurrencyForPDF = (value: number | string | null | undefined): string => {
+    try {
+      if (!value || value === null || value === undefined) return 'R$ 0,00';
+      
+      const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+      
+      if (isNaN(numericValue)) return 'R$ 0,00';
+      
+      return numericValue.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    } catch (error) {
+      console.error('Erro ao formatar moeda:', error, 'Valor:', value);
+      return 'R$ 0,00';
+    }
+  };
+
   const generatePDF = async (budget: Budget) => {
     try {
       const response = await fetch(`/api/oficina/budgets/${budget.id}/pdf?token=${token}`);
+      
+      if (!response.ok) {
+        throw new Error(`Erro na requisição: ${response.status} ${response.statusText}`);
+      }
+      
       const data = await response.json();
       
       if (data.success) {
@@ -263,81 +289,86 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
         // Criar PDF usando jsPDF
         const doc = new jsPDF();
         
-        // Cabeçalho da oficina
-        doc.setFontSize(18);
-        doc.text(workshop.name, 20, 20);
-        doc.setFontSize(12);
-        doc.text(`CNPJ: ${workshop.cnpj}`, 20, 30);
-        if (workshop.endereco) doc.text(`Endereço: ${workshop.endereco}`, 20, 40);
-        if (workshop.telefone) doc.text(`Telefone: ${workshop.telefone}`, 20, 50);
-        if (workshop.email) doc.text(`Email: ${workshop.email}`, 20, 60);
-        
-        // Título do orçamento
-        doc.setFontSize(16);
-        doc.text(`ORÇAMENTO Nº ${budgetData.budget_number}`, 20, 80);
-        
-        // Dados do serviço
-        doc.setFontSize(12);
-        doc.text(`Número do Serviço: ${budgetData.service_number}`, 20, 95);
-        doc.text(`Veículo: ${budgetData.vehicle_plate} - ${budgetData.vehicle_model}`, 20, 105);
-        doc.text(`Tipo: ${budgetData.vehicle_type}`, 20, 115);
-        doc.text(`KM Atual: ${budgetData.current_km || 'N/A'}`, 20, 125);
-        
-        // Serviços e custos
-        doc.text('SERVIÇOS:', 20, 145);
-        doc.text(`Mão de obra: ${budgetData.labor_description}`, 20, 155);
-        doc.text(`Custo da mão de obra: ${formatCurrency(budgetData.labor_cost)}`, 20, 165);
-        
-        if (budgetData.labor_hours) {
-          doc.text(`Horas de trabalho: ${budgetData.labor_hours}h`, 20, 175);
-        }
-        
-        if (budgetData.parts_description) {
-          doc.text(`Peças: ${budgetData.parts_description}`, 20, 185);
-          doc.text(`Custo das peças: ${formatCurrency(budgetData.parts_cost || '0')}`, 20, 195);
-        }
-        
-        // Total
-        doc.setFontSize(14);
-        doc.text(`TOTAL: ${formatCurrency(budgetData.total_cost)}`, 20, 215);
-        
-        // Prazo estimado
-        if (budgetData.estimated_days) {
+        try {
+          // Cabeçalho da oficina
+          doc.setFontSize(18);
+          doc.text(workshop.name || 'Oficina', 20, 20);
           doc.setFontSize(12);
-          doc.text(`Prazo estimado: ${budgetData.estimated_days} dias`, 20, 230);
+          doc.text(`CNPJ: ${workshop.cnpj || 'N/A'}`, 20, 30);
+          if (workshop.endereco) doc.text(`Endereço: ${workshop.endereco}`, 20, 40);
+          if (workshop.telefone) doc.text(`Telefone: ${workshop.telefone}`, 20, 50);
+          if (workshop.email) doc.text(`Email: ${workshop.email}`, 20, 60);
+          
+          // Título do orçamento
+          doc.setFontSize(16);
+          doc.text(`ORÇAMENTO Nº ${budgetData.budget_number || 'N/A'}`, 20, 80);
+          
+          // Dados do serviço
+          doc.setFontSize(12);
+          doc.text(`Número do Serviço: ${budgetData.service_number || 'N/A'}`, 20, 95);
+          doc.text(`Veículo: ${budgetData.vehicle_plate || 'N/A'} - ${budgetData.vehicle_model || 'N/A'}`, 20, 105);
+          doc.text(`Tipo: ${budgetData.vehicle_type || 'N/A'}`, 20, 115);
+          doc.text(`KM Atual: ${budgetData.current_km || 'N/A'}`, 20, 125);
+          
+          // Serviços e custos
+          doc.text('SERVIÇOS:', 20, 145);
+          doc.text(`Mão de obra: ${budgetData.labor_description || 'N/A'}`, 20, 155);
+          doc.text(`Custo da mão de obra: ${formatCurrencyForPDF(budgetData.labor_cost)}`, 20, 165);
+          
+          if (budgetData.labor_hours) {
+            doc.text(`Horas de trabalho: ${budgetData.labor_hours}h`, 20, 175);
+          }
+          
+          if (budgetData.parts_description) {
+            doc.text(`Peças: ${budgetData.parts_description}`, 20, 185);
+            doc.text(`Custo das peças: ${formatCurrencyForPDF(budgetData.parts_cost)}`, 20, 195);
+          }
+          
+          // Total
+          doc.setFontSize(14);
+          doc.text(`TOTAL: ${formatCurrencyForPDF(budgetData.total_cost)}`, 20, 215);
+          
+          // Prazo estimado
+          if (budgetData.estimated_days) {
+            doc.setFontSize(12);
+            doc.text(`Prazo estimado: ${budgetData.estimated_days} dias`, 20, 230);
+          }
+          
+          // Observações
+          if (budgetData.notes) {
+            doc.text('Observações:', 20, 245);
+            const splitNotes = doc.splitTextToSize(budgetData.notes, 170);
+            doc.text(splitNotes, 20, 255);
+          }
+          
+          // Rodapé
+          doc.setFontSize(10);
+          doc.text(`Orçamento gerado em: ${new Date().toLocaleString('pt-BR')}`, 20, 280);
+          doc.text('Este orçamento tem validade de 30 dias.', 20, 290);
+          
+          // Baixar PDF
+          doc.save(`orcamento-${budgetData.budget_number || 'orcamento'}.pdf`);
+          
+          toast({
+            title: "Sucesso",
+            description: "PDF gerado com sucesso!",
+          });
+        } catch (pdfError) {
+          console.error("Erro na criação do PDF:", pdfError);
+          throw pdfError;
         }
-        
-        // Observações
-        if (budgetData.notes) {
-          doc.text('Observações:', 20, 245);
-          const splitNotes = doc.splitTextToSize(budgetData.notes, 170);
-          doc.text(splitNotes, 20, 255);
-        }
-        
-        // Rodapé
-        doc.setFontSize(10);
-        doc.text(`Orçamento gerado em: ${new Date().toLocaleString('pt-BR')}`, 20, 280);
-        doc.text('Este orçamento tem validade de 30 dias.', 20, 290);
-        
-        // Baixar PDF
-        doc.save(`orcamento-${budgetData.budget_number}.pdf`);
-        
-        toast({
-          title: "Sucesso",
-          description: "PDF gerado com sucesso!",
-        });
       } else {
         toast({
           title: "Erro",
-          description: data.message || "Erro ao gerar PDF",
+          description: data.message || "Erro ao buscar dados do orçamento",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error("Erro ao gerar PDF:", error);
+      console.error("Erro completo ao gerar PDF:", error);
       toast({
         title: "Erro",
-        description: "Erro ao gerar PDF",
+        description: `Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive",
       });
     }
