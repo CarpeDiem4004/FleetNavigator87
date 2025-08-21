@@ -33,6 +33,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import CarReception from './CarReception';
 import BudgetManager from './components/BudgetManager';
+import { useWorkshopReport } from "@/hooks/useWorkshopReport";
 
 interface WorkshopData {
   id: number;
@@ -73,6 +74,7 @@ interface Part {
 export default function OficinaExternalDashboard() {
   const [workshopData, setWorkshopData] = useState<WorkshopData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { downloadReport } = useWorkshopReport();
   const [error, setError] = useState<string | null>(null);
   const [maintenanceRequests, setMaintenanceRequests] = useState<MaintenanceRequest[]>([]);
   const [carReceptions, setCarReceptions] = useState<CarReception[]>([]);
@@ -1101,6 +1103,19 @@ export default function OficinaExternalDashboard() {
                 <div className="text-left">
                   <p className="font-medium">Finalizar Serviço</p>
                   <p className="text-sm opacity-80">Concluir manutenção</p>
+                </div>
+              </Button>
+              
+              {/* Botão Relatório Geral */}
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2 h-auto p-4 justify-start border-orange-500 hover:bg-orange-50 text-orange-700"
+                onClick={() => workshopData && downloadReport(workshopData.id)}
+              >
+                <Download className="h-5 w-5" />
+                <div className="text-left">
+                  <p className="font-medium">Relatório Geral</p>
+                  <p className="text-sm opacity-80">Baixar dados CSV</p>
                 </div>
               </Button>
             </div>
