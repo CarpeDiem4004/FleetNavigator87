@@ -832,15 +832,16 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
                               
                               if (dueDate) {
                                 try {
-                                  // Usar formatação simples e direta
-                                  const parts = dueDate.split('-');
+                                  // Limpar qualquer informação de horário e usar apenas a data
+                                  const dateOnly = dueDate.split('T')[0]; // Remove horário se existir
+                                  const parts = dateOnly.split('-');
                                   if (parts.length === 3) {
                                     const [year, month, day] = parts;
-                                    const formattedDate = `${day}/${month}`;
+                                    const formattedDate = `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
                                     return (
                                       <div key={index} className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium text-center">
                                         <div className="text-green-600">{index + 1}ª parcela</div>
-                                        <div>{formattedDate}/{year}</div>
+                                        <div>{formattedDate}</div>
                                       </div>
                                     );
                                   }
