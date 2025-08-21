@@ -21271,6 +21271,27 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
+  // Rota para listar postos externos (para formulário pós-pago)
+  app.get('/api/admin/postos-external', async (req, res) => {
+    try {
+      const query = 'SELECT id, nome FROM postos_external WHERE ativo = true ORDER BY nome';
+      const result = await pool.query(query);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar postos externos:', error);
+      return res.status(200).json({
+        success: true,
+        data: [],
+        count: 0
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

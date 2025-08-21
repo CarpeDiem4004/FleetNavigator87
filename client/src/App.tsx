@@ -415,6 +415,25 @@ function App() {
       <SupabaseAuthProvider>
         <AuthProvider>
           <Switch>
+            {/* Formulário público de abastecimento pós-pago - ALTA PRIORIDADE */}
+            <Route path="/abastecimento-pos-pago">
+              <FormularioPublicoAbastecimento />
+            </Route>
+            
+            {/* Painel administrativo de abastecimento pós-pago - requer autenticação */}
+            <Route path="/admin/abastecimento-pos-pago">
+              <div className="min-h-screen bg-gray-50 p-6">
+                <PainelAdministrativoAbastecimento />
+              </div>
+            </Route>
+            
+            {/* Página de demonstração dos links públicos */}
+            <Route path="/admin/abastecimento-pos-pago/links">
+              <div className="min-h-screen bg-gray-50 p-6">
+                <LinksPublicosAbastecimento />
+              </div>
+            </Route>
+            
             <Route path="/login">
               <SignIn />
             </Route>
@@ -1205,24 +1224,6 @@ function App() {
             </div>
           </Route>
           
-          {/* Formulário público de abastecimento pós-pago */}
-          <Route path="/abastecimento-pos-pago">
-            <FormularioPublicoAbastecimento />
-          </Route>
-          
-          {/* Painel administrativo de abastecimento pós-pago - requer autenticação */}
-          <Route path="/admin/abastecimento-pos-pago">
-            <div className="min-h-screen bg-gray-50 p-6">
-              <PainelAdministrativoAbastecimento />
-            </div>
-          </Route>
-          
-          {/* Página de demonstração dos links públicos */}
-          <Route path="/admin/abastecimento-pos-pago/links">
-            <div className="min-h-screen bg-gray-50 p-6">
-              <LinksPublicosAbastecimento />
-            </div>
-          </Route>
           
           <ProtectedRoute path="/fuel-card/station-profile" component={() => (
             <div className="mt-16 pl-4 pr-4 md:pl-64">
