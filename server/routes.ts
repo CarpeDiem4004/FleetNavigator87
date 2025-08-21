@@ -21336,6 +21336,57 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
+  // Criar novo token
+  app.post('/api/admin/form-tokens', isAuthenticated, async (req, res) => {
+    try {
+      const { base_id, projeto_id, expires_days = 90 } = req.body;
+      
+      if (!base_id || !projeto_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Base ID e Projeto ID são obrigatórios'
+        });
+      }
+
+      // Gerar token único
+      const { v4: uuidv4 } = require('uuid');
+      const token = uuidv4();
+      
+      // Calcular data de expiração
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + expires_days);
+      
+      const insertQuery = `
+        INSERT INTO form_tokens (token, base_id, projeto_id, ativo, expires_at, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+      `;
+      
+      const result = await pool.query(insertQuery, [
+        token,
+        parseInt(base_id),
+        parseInt(projeto_id),
+        true,
+        expiresAt,
+        new Date()
+      ]);
+      
+      console.log('[TOKEN-CREATE] Sucesso! Token criado:', result.rows[0].token);
+      
+      res.json({
+        success: true,
+        data: result.rows[0],
+        message: 'Token criado com sucesso'
+      });
+    } catch (error: any) {
+      console.error('[TOKEN-CREATE] Erro:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro interno do servidor' 
+      });
+    }
+  });
+
   // Rotas de autenticação JWT que estão faltando
   // Verificar se um token JWT é válido
   app.get('/api/hybrid/auth/verify', (req, res) => {

@@ -175,10 +175,7 @@ export default function PainelAdministrativoAbastecimento() {
 
   const createTokenMutation = useMutation({
     mutationFn: (data: any) =>
-      apiRequest('/api/admin/form-tokens', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      }),
+      apiRequest('/api/admin/form-tokens', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/form-tokens'] });
       setNewToken({ base_id: '', projeto_id: '', expires_days: 90 });
@@ -187,10 +184,7 @@ export default function PainelAdministrativoAbastecimento() {
 
   const createPostoMutation = useMutation({
     mutationFn: (data: any) =>
-      apiRequest('/api/admin/postos-external', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      }),
+      apiRequest('/api/admin/postos-external', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/postos-external'] });
       setNewPosto({ nome: '', cnpj: '' });
