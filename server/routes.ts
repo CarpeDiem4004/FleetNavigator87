@@ -1075,6 +1075,12 @@ import sqlSeguroRouter from './routes/sql-seguro';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoints para deployments
+  // Rota para servir manifest.json - PRIORIDADE ALTA
+  app.get('/manifest.json', (req, res) => {
+    res.set('Content-Type', 'application/json');
+    res.sendFile(path.join(__dirname, '../public/manifest.json'));
+  });
+
   // Rota para listar postos externos (para formulário pós-pago) - PRIORIDADE ALTA
   app.get('/api/admin/postos-external', async (req, res) => {
     try {
