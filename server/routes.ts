@@ -1075,13 +1075,15 @@ import sqlSeguroRouter from './routes/sql-seguro';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoints para deployments
-  // Rota para servir manifest.json - PRIORIDADE ALTA
+  // ROTAS DE ALTA PRIORIDADE - ANTES DOS MIDDLEWARES
+  
+  // Rota para servir manifest.json
   app.get('/manifest.json', (req, res) => {
     res.set('Content-Type', 'application/json');
     res.sendFile(path.join(__dirname, '../public/manifest.json'));
   });
 
-  // Rota para listar postos externos (para formulário pós-pago) - PRIORIDADE ALTA
+  // Rota para listar postos externos (para formulário pós-pago)
   app.get('/api/admin/postos-external', async (req, res) => {
     try {
       const query = 'SELECT id, nome FROM postos_external WHERE ativo = true ORDER BY nome';
@@ -1098,6 +1100,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         data: [],
         count: 0
+      });
+    }
+  });
+
+  // Rota para submissão do formulário pós-pago - CRÍTICA
+  app.post('/api/abastecimento-pos-pago/submit', async (req, res) => {
+    try {
+      const token = req.headers['x-form-token'] || req.query.t;
+      
+      if (!token) {
+        return res.status(401).json({ error: 'Token obrigatório' });
+      }
+
+      // Validar token
+      const tokenQuery = `
+        SELECT id, base_id, projeto_id, ativo, expires_at 
+        FROM form_tokens 
+        WHERE token = $1
+      `;
+      const tokenResult = await pool.query(tokenQuery, [token]);
+      
+      if (tokenResult.rows.length === 0) {
+        return res.status(401).json({ error: 'Token inválido' });
+      }
+
+      const tokenData = tokenResult.rows[0];
+      const now = new Date();
+      
+      if (!tokenData.ativo || (tokenData.expires_at && new Date(tokenData.expires_at) < now)) {
+        return res.status(401).json({ error: 'Token expirado ou inativo' });
+      }
+
+      const { nome, cpf, placa, km, tipo_motorista, tipo_combustivel, valor_unit, valor_total, posto_id, base_id, observacoes } = req.body;
+      
+      // Validações básicas
+      const required = ['nome', 'cpf', 'placa', 'km', 'tipo_motorista', 'tipo_combustivel', 'valor_unit', 'valor_total', 'base_id'];
+      for (const field of required) {
+        if (req.body[field] === undefined || req.body[field] === null || req.body[field] === '') {
+          return res.status(400).json({ error: `Campo obrigatório: ${field}` });
+        }
+      }
+
+      // Calcular litros (valor_total / valor_unit)
+      const litros = parseFloat(valor_total) / parseFloat(valor_unit);
+
+      const insertQuery = `
+        INSERT INTO abastecimentos_pos_pago (
+          nome, cpf, placa, km, tipo_motorista, projeto_id, base_id,
+          tipo_combustivel, valor_unit, valor_total, litros, posto_id, 
+          form_token, observacoes, created_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW()
+        ) RETURNING id, created_at
+      `;
+
+      const result = await pool.query(insertQuery, [
+        String(nome).trim(),
+        String(cpf).replace(/\D/g, ''),
+        String(placa).toUpperCase().trim(),
+        parseInt(km),
+        tipo_motorista,
+        tokenData.projeto_id,
+        parseInt(base_id), // base_id obrigatório
+        tipo_combustivel,
+        parseFloat(valor_unit),
+        parseFloat(valor_total),
+        litros,
+        posto_id || null,
+        token,
+        observacoes || null
+      ]);
+
+      console.log(`[ABASTECIMENTO-POS-PAGO] Novo registro: ${placa} - ${litros}L - R$ ${valor_total}`);
+
+      res.status(201).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Abastecimento registrado com sucesso'
+      });
+
+    } catch (error: any) {
+      console.error('[ABASTECIMENTO-POS-PAGO] Erro:', error);
+      res.status(500).json({
+        error: 'Erro interno do servidor',
+        details: error.message
       });
     }
   });
@@ -20963,91 +21050,6 @@ async function createFuelRequestNotification(fuelRequest) {
   // ===========================
   // ROTAS ABASTECIMENTO PÓS-PAGO
   // ===========================
-
-  // API pública para receber abastecimentos (sem autenticação)
-  app.post('/api/abastecimento-pos-pago/submit', async (req, res) => {
-    try {
-      const token = req.headers['x-form-token'] || req.query.t;
-      
-      if (!token) {
-        return res.status(401).json({ error: 'Token obrigatório' });
-      }
-
-      // Validar token
-      const tokenQuery = `
-        SELECT id, base_id, projeto_id, ativo, expires_at 
-        FROM form_tokens 
-        WHERE token = $1
-      `;
-      const tokenResult = await pool.query(tokenQuery, [token]);
-      
-      if (tokenResult.rows.length === 0) {
-        return res.status(401).json({ error: 'Token inválido' });
-      }
-
-      const tokenData = tokenResult.rows[0];
-      const now = new Date();
-      
-      if (!tokenData.ativo || (tokenData.expires_at && new Date(tokenData.expires_at) < now)) {
-        return res.status(401).json({ error: 'Token expirado ou inativo' });
-      }
-
-      const { nome, cpf, placa, km, tipo_motorista, tipo_combustivel, valor_unit, valor_total, posto_id, base_id, observacoes } = req.body;
-      
-      // Validações básicas
-      const required = ['nome', 'cpf', 'placa', 'km', 'tipo_motorista', 'tipo_combustivel', 'valor_unit', 'valor_total', 'base_id'];
-      for (const field of required) {
-        if (req.body[field] === undefined || req.body[field] === null || req.body[field] === '') {
-          return res.status(400).json({ error: `Campo obrigatório: ${field}` });
-        }
-      }
-
-      // Calcular litros (valor_total / valor_unit)
-      const litros = parseFloat(valor_total) / parseFloat(valor_unit);
-
-      const insertQuery = `
-        INSERT INTO abastecimentos_pos_pago (
-          nome, cpf, placa, km, tipo_motorista, projeto_id, base_id,
-          tipo_combustivel, valor_unit, valor_total, litros, posto_id, 
-          form_token, observacoes, created_at
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW()
-        ) RETURNING id, created_at
-      `;
-
-      const result = await pool.query(insertQuery, [
-        String(nome).trim(),
-        String(cpf).replace(/\D/g, ''),
-        String(placa).toUpperCase().trim(),
-        parseInt(km),
-        tipo_motorista,
-        tokenData.projeto_id,
-        parseInt(base_id), // base_id obrigatório
-        tipo_combustivel,
-        parseFloat(valor_unit),
-        parseFloat(valor_total),
-        litros,
-        posto_id || null,
-        token,
-        observacoes || null
-      ]);
-
-      console.log(`[ABASTECIMENTO-POS-PAGO] Novo registro: ${placa} - ${litros}L - R$ ${valor_total}`);
-
-      res.status(201).json({
-        success: true,
-        data: result.rows[0],
-        message: 'Abastecimento registrado com sucesso'
-      });
-
-    } catch (error: any) {
-      console.error('[ABASTECIMENTO-POS-PAGO] Erro:', error);
-      res.status(500).json({
-        error: 'Erro interno do servidor',
-        details: error.message
-      });
-    }
-  });
 
   // APIs administrativas para o painel (requer autenticação)
   
