@@ -8059,11 +8059,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rota para criar nova ordem de serviço de manutenção
   app.post("/api/maintenance/orders", hasMaintenanceAccessV2, async (req, res) => {
     try {
+      console.log("🔥 POST /api/maintenance/orders - Iniciando criação");
+      console.log("📝 Usuário da requisição:", req.user);
+      console.log("📊 Dados recebidos:", req.body);
+      
       if (!req.user) {
+        console.log("❌ Usuário não autenticado na requisição POST");
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
-      console.log("POST /api/maintenance/orders - Dados recebidos:", req.body);
       
       // Mapear os dados do formulário para o formato esperado
       const maintenanceData = {
@@ -8074,18 +8077,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data_agendada: new Date(req.body.data_prevista),
         observacoes: req.body.observacoes || "",
         tipo: "corretiva",
-        prioridade: "media",
+        prioridade: "media", 
         status: "pendente",
-        base_id: req.user.baseId || 1
+        base_id: req.body.base_id ? parseInt(req.body.base_id) : null,
+        projeto_id: req.body.projeto_id ? parseInt(req.body.projeto_id) : null
       };
       
-      console.log("Dados formatados para criação:", maintenanceData);
+      console.log("✅ Dados formatados para criação:", maintenanceData);
       
       // Criar a manutenção usando a função existente
       const newMaintenance = await storage.createMaintenance(maintenanceData);
-      console.log("Manutenção criada com sucesso:", newMaintenance);
+      console.log("✅ Manutenção criada com sucesso - ID:", newMaintenance?.id);
       
       return res.status(201).json({
+        success: true,
         message: "Ordem de serviço criada com sucesso",
         order: newMaintenance
       });
