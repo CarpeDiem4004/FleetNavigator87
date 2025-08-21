@@ -383,9 +383,13 @@ export const hasBaseAccess = (req: Request, res: Response, next: NextFunction) =
  */
 export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    console.log(`[hasMaintenanceAccessV2] 🔍 Verificando autenticação para ${req.method} ${req.path}`);
+    console.log(`[hasMaintenanceAccessV2] 📋 isAuthenticated: ${req.isAuthenticated ? req.isAuthenticated() : 'false'}`);
+    console.log(`[hasMaintenanceAccessV2] 👤 req.user:`, req.user ? { email: req.user.email, role: req.user.role } : 'null');
+    
     // Verificar autenticação por sessão
     if (req.isAuthenticated && req.isAuthenticated() && req.user) {
-      console.log(`[hasMaintenanceAccessV2] Usuário autenticado por sessão: ${req.user.email}`);
+      console.log(`[hasMaintenanceAccessV2] ✅ Usuário autenticado por sessão: ${req.user.email}`);
       const user = {
         id: req.user.id,
         email: req.user.email,
