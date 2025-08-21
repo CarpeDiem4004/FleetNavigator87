@@ -48,10 +48,14 @@ interface WorkshopData {
 interface MaintenanceRequest {
   id: number;
   vehiclePlate: string;
+  placa?: string;
+  modelo?: string;
+  descricao_servico?: string;
   description: string;
   status: string;
   priority: string;
   entryDate: string;
+  estimatedCompletion?: string;
   customerName?: string;
 }
 
@@ -59,7 +63,21 @@ interface CarReception {
   id: number;
   vehiclePlate: string;
   vehicleModel: string;
+  vehicleType?: string;
+  currentKm?: number;
   serviceDescription: string;
+  projectName?: string;
+  priority?: string;
+  deliveryDeadline?: string;
+  deliveredDate?: string;
+  replacedParts?: string;
+  partsCost?: string;
+  laborCost?: string;
+  totalCost?: string;
+  notes?: string;
+  deliveryPersonName?: string;
+  deliveryPersonCpf?: string;
+  deliveryPersonPhone?: string;
   status: string;
   created_at: string;
   workshopId: number;

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Auth</title>
+</head>
+<body>
+    <h1>Test Authentication</h1>
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="testAPI()">Test API</button>
+    <div id="result"></div>
+
+    <script>
+    async function testLogin() {
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({
+                    username: 'admin@muricionfleet.com',
+                    password: 'password'
+                })
+            });
+            const data = await response.json();
+            document.getElementById('result').innerHTML = 
+                '<h3>Login Result:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            console.log('Login response:', data);
+        } catch (error) {
+            console.error('Login error:', error);
+            document.getElementById('result').innerHTML = 'Login Error: ' + error.message;
+        }
+    }
+
+    async function testAPI() {
+        try {
+            const response = await fetch('/api/maintenance/orders', {
+                method: 'GET',
+                credentials: 'include'
+            });
+            const data = await response.json();
+            document.getElementById('result').innerHTML = 
+                '<h3>API Result:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            console.log('API response:', data);
+        } catch (error) {
+            console.error('API error:', error);
+            document.getElementById('result').innerHTML = 'API Error: ' + error.message;
+        }
+    }
+    </script>
+</body>
+</html>
