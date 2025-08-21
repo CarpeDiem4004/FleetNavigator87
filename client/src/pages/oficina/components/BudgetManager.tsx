@@ -440,9 +440,9 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
                         <FormLabel>Recebimento de Veículo</FormLabel>
                         <FormControl>
                           <select 
-                            {...field}
+                            value={field.value || ""}
                             onChange={(e) => {
-                              const receptionId = parseInt(e.target.value);
+                              const receptionId = parseInt(e.target.value) || 0;
                               const reception = carReceptions.find(r => r.id === receptionId);
                               field.onChange(receptionId);
                               if (reception) {
@@ -691,7 +691,11 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
                                       <FormControl>
                                         <Input
                                           type="date"
-                                          {...field}
+                                          value={field.value || ""}
+                                          onChange={field.onChange}
+                                          onBlur={field.onBlur}
+                                          name={field.name}
+                                          disabled={field.disabled}
                                         />
                                       </FormControl>
                                       <FormMessage />
