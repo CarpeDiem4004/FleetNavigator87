@@ -95,6 +95,7 @@ interface Part {
   descricao: string | null;
   categoria: string | null;
   fabricante: string | null;
+  fornecedor?: string | null;
   aplicacao: string | null;
   quantidade: number;
   valor_unitario: number;
@@ -138,6 +139,7 @@ const novaPecaSchema = z.object({
   descricao: z.string().optional(),
   categoria: z.string().optional(),
   fabricante: z.string().optional(),
+  fornecedor: z.string().optional(),
   aplicacao: z.string().optional(),
   quantidade: z.coerce.number().default(0),
   valor_unitario: z.coerce.number().min(0, {
@@ -181,6 +183,7 @@ export default function PartsInventory() {
         descricao: z.string().optional().nullable(),
         categoria: z.string().optional().nullable(),
         fabricante: z.string().optional().nullable(),
+        fornecedor: z.string().optional().nullable(),
         aplicacao: z.string().optional().nullable(),
         quantidade: z.coerce.number().min(0, "Quantidade deve ser maior ou igual a zero"),
         valor_unitario: z.coerce.number().min(0, "Valor unitário deve ser maior ou igual a zero"),
@@ -196,6 +199,7 @@ export default function PartsInventory() {
       descricao: '',
       categoria: '',
       fabricante: '',
+      fornecedor: '',
       aplicacao: '',
       quantidade: 0,
       valor_unitario: 0,
@@ -245,6 +249,7 @@ export default function PartsInventory() {
       descricao: '',
       categoria: '',
       fabricante: '',
+      fornecedor: '',
       aplicacao: '',
       quantidade: 0,
       valor_unitario: 0,
@@ -409,6 +414,7 @@ export default function PartsInventory() {
       descricao: part.descricao || '',
       categoria: part.categoria || '',
       fabricante: part.fabricante || '',
+      fornecedor: part.fornecedor || '',
       aplicacao: part.aplicacao || '',
       quantidade: part.quantidade,
       valor_unitario: part.valor_unitario,
@@ -1191,6 +1197,20 @@ export default function PartsInventory() {
                 
                 <FormField
                   control={newPartForm.control}
+                  name="fornecedor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fornecedor de Peças</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Ex: Auto Peças São Paulo" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={newPartForm.control}
                   name="unidade_medida"
                   render={({ field }) => (
                     <FormItem>
@@ -1386,6 +1406,25 @@ export default function PartsInventory() {
                           {...field} 
                           value={field.value || ''} 
                           onChange={(e) => field.onChange(e.target.value)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editPartForm.control}
+                  name="fornecedor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fornecedor de Peças</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          value={field.value || ''} 
+                          onChange={(e) => field.onChange(e.target.value)}
+                          placeholder="Ex: Auto Peças São Paulo"
                         />
                       </FormControl>
                       <FormMessage />
