@@ -230,9 +230,9 @@ export function setupAuth(app: Express) {
         // Para ambiente de desenvolvimento/teste
         console.log(`[Cookie Middleware] Ajustando sessão: maxAge=${(req.session as any).cookie.maxAge}, sameSite=${(req.session as any).cookie.sameSite}`);
         
-        // Forçar SameSite para Lax e httpOnly para false em dev
-        (req.session as any).cookie.sameSite = 'lax';
-        (req.session as any).cookie.httpOnly = true;
+        // CORRIGIR para permitir cross-origin cookies
+        (req.session as any).cookie.sameSite = 'none';
+        (req.session as any).cookie.httpOnly = false;
       }
       
       // Tocar na sessão para garantir que ela será salva
