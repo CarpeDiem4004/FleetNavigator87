@@ -710,7 +710,7 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
                                       <FormControl>
                                         <Input
                                           type="date"
-                                          value={field.value || ""}
+                                          value={field.value as string || ""}
                                           onChange={field.onChange}
                                           onBlur={field.onBlur}
                                           name={field.name}
@@ -808,6 +808,45 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
                   {budget.estimated_days && (
                     <div className="text-sm">
                       <span className="font-medium">Prazo estimado:</span> {budget.estimated_days} dias
+                    </div>
+                  )}
+
+                  {/* Informações de Faturamento */}
+                  {budget.is_billed && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="font-medium text-green-800">Faturado</span>
+                        <span className="text-sm text-green-600">
+                          {budget.installments || 1} {budget.installments === 1 ? 'parcela' : 'parcelas'}
+                        </span>
+                      </div>
+                      
+                      {budget.installments && budget.installments > 1 && (
+                        <div className="text-xs text-green-700">
+                          <span className="font-medium">Vencimentos:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {Array.from({ length: budget.installments }).map((_, index) => {
+                              const dueDateKey = `due_date_${index + 1}` as keyof Budget;
+                              const dueDate = budget[dueDateKey] as string;
+                              
+                              if (dueDate) {
+                                try {
+                                  const formattedDate = new Date(dueDate + 'T12:00:00.000Z').toLocaleDateString('pt-BR');
+                                  return (
+                                    <span key={index} className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded text-xs">
+                                      {index + 1}ª: {formattedDate}
+                                    </span>
+                                  );
+                                } catch {
+                                  return null;
+                                }
+                              }
+                              return null;
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
