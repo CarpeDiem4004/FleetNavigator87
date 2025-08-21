@@ -1210,7 +1210,11 @@ export default function OficinaExternalDashboard() {
                       variant="outline" 
                       size="sm" 
                       className="w-full"
-                      onClick={() => setShowAllReceptions(!showAllReceptions)}
+                      onClick={() => {
+                        console.log('Botão clicado! Estado atual:', showAllReceptions);
+                        setShowAllReceptions(!showAllReceptions);
+                        console.log('Novo estado será:', !showAllReceptions);
+                      }}
                     >
                       {showAllReceptions ? 'Ver menos' : `Ver todos (${carReceptions.length})`}
                     </Button>
