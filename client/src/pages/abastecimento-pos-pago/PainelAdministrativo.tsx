@@ -485,7 +485,7 @@ export default function PainelAdministrativoAbastecimento() {
                         </div>
                         <div className="text-right">
                           <div className="font-medium">{formatCurrency(item.valor_total)}</div>
-                          <div className="text-sm text-gray-500">{item.litros.toFixed(2)}L</div>
+                          <div className="text-sm text-gray-500">{parseFloat(item.litros || '0').toFixed(2)}L</div>
                         </div>
                       </div>
 
