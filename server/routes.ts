@@ -1104,6 +1104,140 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===========================
+  // ROTAS ABASTECIMENTO PÓS-PAGO (ALTA PRIORIDADE)
+  // ===========================
+
+  // Listar abastecimentos pós-pago
+  app.get('/api/admin/abastecimento-pos-pago', isAuthenticated, async (req, res) => {
+    try {
+      const { status, base_id, projeto_id, limit = 50, offset = 0 } = req.query;
+      
+      let whereConditions = [];
+      let params = [];
+      
+      if (status) {
+        whereConditions.push(`a.status = $${params.length + 1}`);
+        params.push(status);
+      }
+      
+      if (base_id) {
+        whereConditions.push(`a.base_id = $${params.length + 1}`);
+        params.push(parseInt(base_id as string));
+      }
+      
+      if (projeto_id) {
+        whereConditions.push(`a.projeto_id = $${params.length + 1}`);
+        params.push(parseInt(projeto_id as string));
+      }
+
+      const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
+      
+      const query = `
+        SELECT 
+          a.*,
+          b.name as base_name,
+          p.name as projeto_name,
+          pe.nome as posto_name
+        FROM abastecimentos_pos_pago a
+        LEFT JOIN bases b ON b.id = a.base_id
+        LEFT JOIN projects p ON p.id = a.projeto_id
+        LEFT JOIN postos_external pe ON pe.id = a.posto_id
+        ${whereClause}
+        ORDER BY a.created_at DESC
+        LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+      `;
+      
+      params.push(parseInt(limit as string), parseInt(offset as string));
+      
+      const result = await pool.query(query, params);
+      
+      console.log('[ADMIN-ABASTECIMENTO] Sucesso! Retornando', result.rows.length, 'registros');
+      
+      res.json({
+        success: true,
+        data: result.rows,
+        pagination: {
+          limit: parseInt(limit as string),
+          offset: parseInt(offset as string),
+          total: result.rows.length
+        }
+      });
+      
+    } catch (error: any) {
+      console.error('[ADMIN-ABASTECIMENTO] Erro:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Relatórios dashboard pós-pago
+  app.get('/api/admin/abastecimento-pos-pago/dashboard', isAuthenticated, async (req, res) => {
+    try {
+      // Estatísticas gerais
+      const statsQuery = `
+        SELECT 
+          COUNT(*) as total_registros,
+          SUM(valor_total) as valor_total,
+          SUM(litros) as litros_total,
+          COUNT(CASE WHEN status = 'pendente' THEN 1 END) as pendentes,
+          COUNT(CASE WHEN status = 'faturado' THEN 1 END) as faturados,
+          COUNT(CASE WHEN status = 'pago' THEN 1 END) as pagos
+        FROM abastecimentos_pos_pago
+        WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
+      `;
+      
+      // Consumo por base (últimos 30 dias)
+      const baseQuery = `
+        SELECT 
+          a.base_id,
+          b.name as base_name,
+          COUNT(*) as total_abastecimentos,
+          SUM(a.valor_total) as total_valor,
+          SUM(a.litros) as total_litros
+        FROM abastecimentos_pos_pago a
+        LEFT JOIN bases b ON b.id = a.base_id
+        WHERE a.created_at >= CURRENT_DATE - INTERVAL '30 days'
+        GROUP BY a.base_id, b.name
+        ORDER BY total_valor DESC
+        LIMIT 10
+      `;
+      
+      // Pendências
+      const pendenciasQuery = `
+        SELECT 
+          a.base_id,
+          b.name as base_name,
+          COUNT(*) as pendentes,
+          SUM(a.valor_total) as valor_total_pendente
+        FROM abastecimentos_pos_pago a
+        LEFT JOIN bases b ON b.id = a.base_id
+        WHERE a.status = 'pendente'
+        GROUP BY a.base_id, b.name
+        ORDER BY valor_total_pendente DESC
+        LIMIT 10
+      `;
+      
+      const [stats, baseData, pendencias] = await Promise.all([
+        pool.query(statsQuery),
+        pool.query(baseQuery),
+        pool.query(pendenciasQuery)
+      ]);
+      
+      res.json({
+        success: true,
+        data: {
+          estatisticas: stats.rows[0],
+          consumo_por_base: baseData.rows,
+          pendencias: pendencias.rows
+        }
+      });
+      
+    } catch (error: any) {
+      console.error('[ADMIN-DASHBOARD] Erro:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Rota para submissão do formulário pós-pago - CRÍTICA
   app.post('/api/abastecimento-pos-pago/submit', async (req, res) => {
     try {
