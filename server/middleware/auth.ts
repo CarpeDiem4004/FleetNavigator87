@@ -400,10 +400,10 @@ export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: 
       // Anexar dados normalizados do usuário à requisição para uso posterior
       (req as any).user = user;
       
-      // Verificar se o usuário é admin, gestor_frota, gestor, operador, ou usuário da gestão de frotas
+      // LIBERADO PARA: admin, gestor_frota, gerente_geral, CEO, gestor, operador, manutencao
       if (isUserAdmin(user) || isUserInFleetManagement(user) || 
           user.role === 'gestor' || user.role === 'operador' || user.role === 'ceo' || 
-          user.role === 'gerente_geral' || user.role === 'gestor_frota') {
+          user.role === 'gerente_geral' || user.role === 'gestor_frota' || user.role === 'manutencao') {
         console.log(`[hasMaintenanceAccessV2] Acesso concedido para usuário: ${user.email} (role: ${user.role})`);
         return next();
       }
@@ -441,10 +441,10 @@ export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: 
           // Anexar dados do usuário à requisição para uso posterior
           (req as any).user = user;
           
-          // Verificar permissões  
+          // LIBERADO PARA: admin, gestor_frota, gerente_geral, CEO, gestor, operador, manutencao
           if (isUserAdmin(user) || isUserInFleetManagement(user) || 
               user.role === 'gestor' || user.role === 'operador' || user.role === 'ceo' || 
-              user.role === 'gerente_geral' || user.role === 'gestor_frota') {
+              user.role === 'gerente_geral' || user.role === 'gestor_frota' || user.role === 'manutencao') {
             console.log(`[hasMaintenanceAccessV2] Acesso concedido para usuário: ${user.email} (role: ${user.role})`);
             return next();
           }
