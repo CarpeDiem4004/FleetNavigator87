@@ -310,7 +310,7 @@ export default function MaintenanceManagement() {
       setIsLoading(true);
       
       // Carregar ordens de serviço
-      const ordersResponse = await apiRequest("GET", "/api/maintenance");
+      const ordersResponse = await apiRequest("GET", "/api/maintenance/orders");
       const ordersData = await ordersResponse.json();
       console.log("API Response for orders:", ordersData);
       console.log("Orders array:", ordersData.orders);
