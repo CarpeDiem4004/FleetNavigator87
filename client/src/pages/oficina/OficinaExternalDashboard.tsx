@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
 import CarReception from './CarReception';
 import BudgetManager from './components/BudgetManager';
 
@@ -330,30 +331,18 @@ export default function OficinaExternalDashboard() {
         return;
       }
 
-      // Criar CSV com os dados das recepções
-      const csvHeaders = [
-        'Data Recebimento',
-        'Placa do Veículo',
-        'Modelo',
-        'Descrição do Serviço',
-        'Status',
-        'Valor Mão de Obra (R$)',
-        'Valor Peças (R$)',
-        'Valor Total (R$)',
-        'Observações'
-      ];
-
-      const csvRows = carReceptions.map(reception => [
-        new Date(reception.created_at).toLocaleDateString('pt-BR'),
-        reception.vehiclePlate || '',
-        reception.vehicleModel || '',
-        (reception.serviceDescription || '').replace(/\n/g, ' '), // Remove quebras de linha
-        reception.status || '',
-        parseFloat((reception as any).laborCost || '0').toFixed(2),
-        parseFloat((reception as any).partsCost || '0').toFixed(2),
-        parseFloat((reception as any).totalCost || '0').toFixed(2),
-        ((reception as any).notes || '').replace(/\n/g, ' ') // Remove quebras de linha
-      ]);
+      // Preparar dados para Excel
+      const excelData = carReceptions.map(reception => ({
+        'Data Recebimento': new Date(reception.created_at).toLocaleDateString('pt-BR'),
+        'Placa do Veículo': reception.vehiclePlate || '',
+        'Modelo': reception.vehicleModel || '',
+        'Descrição do Serviço': (reception.serviceDescription || '').replace(/\n/g, ' '), // Remove quebras de linha
+        'Status': reception.status || '',
+        'Valor Mão de Obra (R$)': parseFloat((reception as any).laborCost || '0').toFixed(2),
+        'Valor Peças (R$)': parseFloat((reception as any).partsCost || '0').toFixed(2),
+        'Valor Total (R$)': parseFloat((reception as any).totalCost || '0').toFixed(2),
+        'Observações': ((reception as any).notes || '').replace(/\n/g, ' ') // Remove quebras de linha
+      }));
 
       // Calcular totais
       const totalLaborCost = carReceptions.reduce((sum, r) => sum + parseFloat((r as any).laborCost || '0'), 0);
@@ -361,38 +350,46 @@ export default function OficinaExternalDashboard() {
       const totalCost = carReceptions.reduce((sum, r) => sum + parseFloat((r as any).totalCost || '0'), 0);
 
       // Adicionar linha de resumo
-      const summaryRow = [
-        '',
-        `RESUMO TOTAL - ${carReceptions.length} registros`,
-        '',
-        '',
-        '',
-        totalLaborCost.toFixed(2),
-        totalPartsCost.toFixed(2),
-        totalCost.toFixed(2),
-        ''
+      const summaryRow = {
+        'Data Recebimento': '',
+        'Placa do Veículo': `RESUMO TOTAL - ${carReceptions.length} registros`,
+        'Modelo': '',
+        'Descrição do Serviço': '',
+        'Status': '',
+        'Valor Mão de Obra (R$)': totalLaborCost.toFixed(2),
+        'Valor Peças (R$)': totalPartsCost.toFixed(2),
+        'Valor Total (R$)': totalCost.toFixed(2),
+        'Observações': ''
+      };
+
+      // Adicionar linha vazia e resumo
+      const finalData = [...excelData, {}, summaryRow];
+
+      // Criar planilha Excel
+      const worksheet = XLSX.utils.json_to_sheet(finalData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Relatório');
+
+      // Ajustar largura das colunas
+      const colWidths = [
+        { width: 15 }, // Data
+        { width: 12 }, // Placa
+        { width: 20 }, // Modelo
+        { width: 40 }, // Descrição
+        { width: 12 }, // Status
+        { width: 18 }, // Mão de obra
+        { width: 15 }, // Peças
+        { width: 15 }, // Total
+        { width: 30 }  // Observações
       ];
+      worksheet['!cols'] = colWidths;
 
-      const csvContent = [csvHeaders, ...csvRows, [], summaryRow]
-        .map(row => row.map(field => `"${field}"`).join(','))
-        .join('\n');
-
-      // Download do arquivo CSV
-      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      
-      const fileName = `relatório-${workshopData.name.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.csv`;
-      link.setAttribute('download', fileName);
-      
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      // Gerar arquivo Excel
+      const fileName = `relatório-${workshopData.name.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
 
       toast({
-        title: "Relatório baixado com sucesso!",
+        title: "Relatório Excel baixado com sucesso!",
         description: `${carReceptions.length} registros exportados. Total: R$ ${totalCost.toFixed(2)}`,
       });
 
