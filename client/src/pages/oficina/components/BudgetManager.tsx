@@ -352,6 +352,16 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
   };
 
   const openEditDialog = (budget: Budget) => {
+    console.log('🔍 OFICINA - Abrindo edição do orçamento:', {
+      id: budget.id,
+      is_billed: budget.is_billed,
+      installments: budget.installments,
+      due_date_1: budget.due_date_1,
+      due_date_2: budget.due_date_2,
+      due_date_3: budget.due_date_3,
+      fullBudget: budget
+    });
+    
     setEditingBudget(budget);
     // Carregar peças do orçamento
     loadBudgetParts(budget);
@@ -381,6 +391,15 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
       dueDate11: budget.due_date_11 || "",
       dueDate12: budget.due_date_12 || "",
     });
+    
+    console.log('🔧 OFICINA - Valores setados no form:', {
+      isBilled: budget.is_billed || false,
+      installments: budget.installments || 1,
+      dueDate1: budget.due_date_1 || "",
+      dueDate2: budget.due_date_2 || "",
+      dueDate3: budget.due_date_3 || ""
+    });
+    
     setIsDialogOpen(true);
   };
 
