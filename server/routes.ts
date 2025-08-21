@@ -8215,6 +8215,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para gerar relatório geral de uma oficina
+  app.get("/api/maintenance/workshop/:id/report", async (req, res) => {
+    try {
+      const workshopId = parseInt(req.params.id);
+      const authHeader = req.headers.authorization;
+      
+      if (!authHeader) {
+        return res.status(401).json({ message: 'Token de autorização necessário' });
+      }
+
+      const token = authHeader.replace('Bearer ', '');
+      
+      // Verificar se o token é válido para esta oficina
+      const tokenQuery = `
+        SELECT id, razao_social, cnpj FROM oficinas 
+        WHERE external_token = $1 AND id = $2 AND status = 'ativo'
+      `;
+      
+      const tokenResult = await pool.query(tokenQuery, [token, workshopId]);
+      
+      if (tokenResult.rows.length === 0) {
+        return res.status(401).json({ message: 'Token inválido para esta oficina' });
+      }
+
+      const workshop = tokenResult.rows[0];
+
+      // Buscar relatório completo - manutenções da tabela manutencao
+      const maintenanceQuery = `
+        SELECT 
+          m.id,
+          m.placa as vehicle_plate,
+          m.descricao as service_description,
+          m.status,
+          m.prioridade as priority,
+          m.data_solicitacao as entry_date,
+          m.data_agendada as estimated_completion,
+          m.data_conclusao as completion_date,
+          COALESCE(m.custo, 0) as labor_cost,
+          COALESCE(m.valor_pecas, 0) as parts_cost,
+          (COALESCE(m.custo, 0) + COALESCE(m.valor_pecas, 0)) as total_cost
+        FROM manutencao m
+        WHERE m.oficina_id = $1
+        ORDER BY m.data_solicitacao DESC
+      `;
+      
+      // Buscar também recepções de carros
+      const receptionsQuery = `
+        SELECT 
+          cr.id,
+          cr.vehicle_plate,
+          cr.service_description,
+          cr.status,
+          cr.priority,
+          cr.received_date as entry_date,
+          cr.estimated_completion,
+          cr.completion_date,
+          COALESCE(wb.labor_cost, 0) as labor_cost,
+          COALESCE(wb.parts_cost, 0) as parts_cost,
+          COALESCE(wb.total_cost, 0) as total_cost
+        FROM car_receptions cr
+        LEFT JOIN workshop_budgets wb ON wb.car_reception_id = cr.id
+        WHERE cr.workshop_id = $1
+        ORDER BY cr.received_date DESC
+      `;
+
+      const [maintenanceResult, receptionsResult] = await Promise.all([
+        pool.query(maintenanceQuery, [workshopId]),
+        pool.query(receptionsQuery, [workshopId])
+      ]);
+
+      // Combinar os resultados
+      const reportData = [
+        ...maintenanceResult.rows.map(row => ({
+          id: row.id,
+          source: 'maintenance',
+          vehiclePlate: row.vehicle_plate,
+          serviceDescription: row.service_description || 'Serviço de manutenção',
+          status: row.status || 'pendente',
+          priority: row.priority || 'normal',
+          entryDate: row.entry_date,
+          estimatedCompletion: row.estimated_completion,
+          completionDate: row.completion_date,
+          laborCost: parseFloat(row.labor_cost) || 0,
+          partsCost: parseFloat(row.parts_cost) || 0,
+          totalCost: parseFloat(row.total_cost) || 0
+        })),
+        ...receptionsResult.rows.map(row => ({
+          id: row.id,
+          source: 'reception',
+          vehiclePlate: row.vehicle_plate,
+          serviceDescription: row.service_description || 'Serviço de manutenção',
+          status: row.status || 'pendente',
+          priority: row.priority || 'normal',
+          entryDate: row.entry_date,
+          estimatedCompletion: row.estimated_completion,
+          completionDate: row.completion_date,
+          laborCost: parseFloat(row.labor_cost) || 0,
+          partsCost: parseFloat(row.parts_cost) || 0,
+          totalCost: parseFloat(row.total_cost) || 0
+        }))
+      ];
+
+      // Ordenar por data de entrada (mais recente primeiro)
+      reportData.sort((a, b) => new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime());
+
+      console.log(`[Workshop ${workshopId}] Relatório gerado com ${reportData.length} registros`);
+
+      res.json({
+        success: true,
+        workshop: {
+          id: workshop.id,
+          name: workshop.razao_social,
+          cnpj: workshop.cnpj
+        },
+        data: reportData,
+        summary: {
+          totalRecords: reportData.length,
+          totalLaborCost: reportData.reduce((sum, item) => sum + item.laborCost, 0),
+          totalPartsCost: reportData.reduce((sum, item) => sum + item.partsCost, 0),
+          totalCost: reportData.reduce((sum, item) => sum + item.totalCost, 0)
+        }
+      });
+
+    } catch (error: any) {
+      console.error("Erro ao gerar relatório:", error);
+      res.status(500).json({
+        success: false,
+        message: "Erro ao gerar relatório",
+        error: error.message
+      });
+    }
+  });
+
   // API para gerar/regenerar token de acesso externo para uma oficina
   app.post("/api/workshops/:id/generate-token", hasMaintenanceAccess, async (req, res) => {
     try {

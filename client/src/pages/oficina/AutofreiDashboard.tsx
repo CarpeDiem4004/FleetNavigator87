@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { WorkshopReportButton } from "@/components/WorkshopReportButton";
 import { 
   Wrench, 
   Clock,
@@ -19,7 +20,8 @@ import {
   Package,
   Settings,
   Eye,
-  Phone as PhoneIcon
+  Phone as PhoneIcon,
+  Download
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -91,6 +93,10 @@ export default function AutofreiDashboard() {
     setLocation('/oficina/autofrei/login');
   };
 
+  // Dados específicos da AUTOFREI
+  const AUTOFREI_TOKEN = "auto_token_autofrei_225e2596c711cdcafa624fce2bfc6052";
+  const AUTOFREI_ID = 12;
+
   const getStatusBadge = (status: string) => {
     const statusMap = {
       'em_andamento': { label: 'Em Andamento', variant: 'default' as const },
@@ -134,6 +140,11 @@ export default function AutofreiDashboard() {
                 <p className="text-sm font-medium text-gray-900">CNPJ: 33.704.013/0001-09</p>
                 <p className="text-sm text-gray-500">autofreipecas@gmail.com</p>
               </div>
+              <WorkshopReportButton 
+                workshopId={AUTOFREI_ID}
+                token={AUTOFREI_TOKEN}
+                workshopName="AUTOFREI"
+              />
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Sair
