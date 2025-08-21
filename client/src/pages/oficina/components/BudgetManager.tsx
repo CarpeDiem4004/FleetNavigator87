@@ -823,9 +823,9 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
                       </div>
                       
                       {budget.installments && budget.installments > 1 && (
-                        <div className="text-xs text-green-700">
-                          <span className="font-medium">Vencimentos:</span>
-                          <div className="flex flex-wrap gap-1 mt-1">
+                        <div className="text-xs text-green-700 mt-2">
+                          <div className="font-medium mb-1">Vencimentos:</div>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
                             {Array.from({ length: budget.installments }).map((_, index) => {
                               const dueDateKey = `due_date_${index + 1}` as keyof Budget;
                               const dueDate = budget[dueDateKey] as string;
@@ -836,11 +836,12 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
                                   const parts = dueDate.split('-');
                                   if (parts.length === 3) {
                                     const [year, month, day] = parts;
-                                    const formattedDate = `${day}/${month}/${year}`;
+                                    const formattedDate = `${day}/${month}`;
                                     return (
-                                      <span key={index} className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded text-xs">
-                                        {index + 1}ª: {formattedDate}
-                                      </span>
+                                      <div key={index} className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium text-center">
+                                        <div className="text-green-600">{index + 1}ª parcela</div>
+                                        <div>{formattedDate}/{year}</div>
+                                      </div>
                                     );
                                   }
                                   return null;
