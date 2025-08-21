@@ -832,12 +832,18 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
                               
                               if (dueDate) {
                                 try {
-                                  const formattedDate = new Date(dueDate + 'T12:00:00.000Z').toLocaleDateString('pt-BR');
-                                  return (
-                                    <span key={index} className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded text-xs">
-                                      {index + 1}ª: {formattedDate}
-                                    </span>
-                                  );
+                                  // Usar formatação simples e direta
+                                  const parts = dueDate.split('-');
+                                  if (parts.length === 3) {
+                                    const [year, month, day] = parts;
+                                    const formattedDate = `${day}/${month}/${year}`;
+                                    return (
+                                      <span key={index} className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded text-xs">
+                                        {index + 1}ª: {formattedDate}
+                                      </span>
+                                    );
+                                  }
+                                  return null;
                                 } catch {
                                   return null;
                                 }
