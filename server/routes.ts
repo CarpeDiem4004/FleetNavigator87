@@ -16481,7 +16481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           wb.created_at,
           wb.updated_at,
           -- Dados da oficina
-          COALESCE(w.nome_fantasia, w.razao_social, w.nome) as workshop_name,
+          COALESCE(w.nome_fantasia, w.razao_social, w.name) as workshop_name,
           w.cnpj as workshop_cnpj_full,
           w.telefone as workshop_phone,
           w.email as workshop_email,
@@ -16500,7 +16500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           u.name as approved_by_name,
           u.email as approved_by_email
         FROM workshop_budgets wb
-        LEFT JOIN workshops w ON wb.workshop_id = w.id
+        LEFT JOIN oficinas w ON wb.workshop_id = w.id
         LEFT JOIN car_receptions cr ON wb.car_reception_id = cr.id
         LEFT JOIN bases b ON cr.base_id = b.id
         LEFT JOIN projects p ON cr.project_id = p.id
