@@ -230,8 +230,15 @@ export function setupAuth(app: Express) {
         // Para ambiente de desenvolvimento/teste
         console.log(`[Cookie Middleware] Ajustando sessão: maxAge=${(req.session as any).cookie.maxAge}, sameSite=${(req.session as any).cookie.sameSite}`);
         
-        // CORRIGIR para permitir cross-origin cookies
-        (req.session as any).cookie.sameSite = 'none';
+        // CORREÇÃO DEFINITIVA: Configuração baseada no ambiente
+        const isReplit = req.hostname.includes('replit.dev');
+        if (isReplit) {
+          (req.session as any).cookie.secure = true; // REQUERIDO para sameSite=none
+          (req.session as any).cookie.sameSite = 'none'; // PERMITIR cross-origin
+        } else {
+          (req.session as any).cookie.secure = false; // Para desenvolvimento local
+          (req.session as any).cookie.sameSite = 'lax'; // Para desenvolvimento local
+        }
         (req.session as any).cookie.httpOnly = false;
       }
       

@@ -20,9 +20,17 @@ export default function fixCookieSession(req: Request, res: Response, next: Next
   // Ajustar configurações do cookie de sessão para máxima compatibilidade
   if (req.session.cookie) {
     req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias
-    req.session.cookie.secure = false; // Desabilitar secure para garantir funcionamento em http e https
-    req.session.cookie.sameSite = 'none'; // PERMITIR cross-origin cookies 
-    req.session.cookie.httpOnly = false; // TEMPORÁRIO: permitir JS access para debug de cookies
+    
+    // CORREÇÃO DEFINITIVA: Para Replit, sempre usar secure=true + sameSite=none
+    const isReplit = req.hostname.includes('replit.dev');
+    if (isReplit) {
+      req.session.cookie.secure = true; // REQUERIDO para sameSite=none no navegador
+      req.session.cookie.sameSite = 'none'; // PERMITIR cross-origin cookies
+    } else {
+      req.session.cookie.secure = false; // Para desenvolvimento local
+      req.session.cookie.sameSite = 'lax'; // Para desenvolvimento local
+    }
+    req.session.cookie.httpOnly = false; // TEMPORÁRIO: permitir JS access para debug
 
     // Se houver headers de autorização, armazenar na sessão para recuperação de emergência
     if (req.headers.authorization) {
