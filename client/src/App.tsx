@@ -134,6 +134,8 @@ import OficinasExternaPage from "@/pages/OficinasExternaPage";
 import ConferenciaRotas from "@/pages/ConferenciaRotas";
 import OficinaDashboard from "@/pages/oficina/OficinaDashboard";
 import OficinaLogin from "@/pages/oficina/OficinaLogin";
+import LoginAutofrei from "@/pages/oficina/LoginAutofrei";
+import AutofreiDashboard from "@/pages/oficina/AutofreiDashboard";
 import CarReception from "@/pages/oficina/CarReception";
 import OficinaExternalDashboard from "@/pages/oficina/OficinaExternalDashboard";
 import OficinasCredentialsPage from "@/pages/maintenance/oficinas-credentials";
@@ -1176,6 +1178,16 @@ function App() {
           {/* Login da Oficina - Rota direta */}
           <Route path="/oficina/login">
             <OficinaLogin />
+          </Route>
+          
+          {/* Login AUTOFREI */}
+          <Route path="/oficina/autofrei/login">
+            <LoginAutofrei />
+          </Route>
+          
+          {/* Dashboard AUTOFREI */}
+          <Route path="/oficina/autofrei/dashboard">
+            <AutofreiDashboard />
           </Route>
           
           {/* Dashboard da Oficina */}

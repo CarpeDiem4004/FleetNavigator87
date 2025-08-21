@@ -8522,6 +8522,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
+  // Login da oficina AUTOFREI
+  app.post("/api/oficina/autofrei/login", async (req, res) => {
+    try {
+      const { email, password, oficina_id, oficina_name } = req.body;
+
+      // Verificar se é específico para AUTOFREI
+      if (oficina_id !== 12 || oficina_name !== 'AUTOFREI') {
+        return res.status(400).json({
+          success: false,
+          message: 'Este endpoint é específico para a oficina AUTOFREI.'
+        });
+      }
+
+      // Verificar se a oficina existe no banco
+      const oficinaQuery = `
+        SELECT id, cnpj, razao_social, nome_fantasia, email, telefone, status, external_token
+        FROM oficinas 
+        WHERE id = $1 AND status = 'ativo'
+      `;
+      
+      const oficinaResult = await pool.query(oficinaQuery, [oficina_id]);
+      
+      if (oficinaResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Oficina não encontrada ou inativa.'
+        });
+      }
+
+      const oficina = oficinaResult.rows[0];
+
+      // Para demonstração, aceitar qualquer email/senha
+      // Em produção, implementar verificação adequada
+      if (!email || !password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email e senha são obrigatórios.'
+        });
+      }
+
+      // Simular login bem-sucedido
+      return res.json({
+        success: true,
+        message: 'Login realizado com sucesso!',
+        user: {
+          id: oficina.id,
+          name: oficina.razao_social,
+          email: oficina.email,
+          cnpj: oficina.cnpj,
+          telefone: oficina.telefone
+        },
+        token: oficina.external_token
+      });
+
+    } catch (error) {
+      console.error('Erro no login da oficina AUTOFREI:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor.'
+      });
+    }
+  });
+
   // Login da oficina
   app.post("/api/oficina/login", async (req, res) => {
     try {
