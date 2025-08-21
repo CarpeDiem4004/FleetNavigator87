@@ -386,6 +386,8 @@ export default function MaintenanceManagement() {
     try {
       setIsCreating(true);
       
+      console.log("🚀 Creating service order with values:", values);
+      
       const requestData = {
         placa: values.placa,
         oficina_id: parseInt(values.oficina_id),
@@ -396,9 +398,16 @@ export default function MaintenanceManagement() {
         base_id: values.base_id ? parseInt(values.base_id) : null
       };
       
+      console.log("📤 Request data to be sent:", requestData);
+      
       const response = await apiRequest("POST", "/api/maintenance/orders", requestData);
+      
+      console.log("📥 Response status:", response.status);
+      const responseData = await response.json();
+      console.log("📥 Response data:", responseData);
 
       if (response.ok) {
+        console.log("✅ Order created successfully!");
         toast({
           title: "Sucesso",
           description: "Ordem de serviço criada com sucesso!"
@@ -408,12 +417,14 @@ export default function MaintenanceManagement() {
         form.reset();
         loadData(); // Recarregar dados
       } else {
-        throw new Error("Erro ao criar ordem de serviço");
+        console.log("❌ Failed to create order:", responseData);
+        throw new Error(responseData.message || "Erro ao criar ordem de serviço");
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error("❌ Error creating service order:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível criar a ordem de serviço",
+        description: error.message || "Não foi possível criar a ordem de serviço",
         variant: "destructive"
       });
     } finally {
