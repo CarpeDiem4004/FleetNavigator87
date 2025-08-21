@@ -853,9 +853,19 @@ export default function WorkshopBudgets() {
                             // Função para formatar data corretamente
                             const formatDate = (dateString: string) => {
                               try {
+                                console.log('Formatando data:', dateString, 'Tipo:', typeof dateString);
+                                
+                                if (!dateString) {
+                                  console.log('Data vazia ou nula');
+                                  return 'Data não definida';
+                                }
+                                
                                 // Se a data já está no formato YYYY-MM-DD, usar diretamente
                                 const date = new Date(dateString + 'T12:00:00.000Z'); // Usar meio-dia UTC para evitar problemas de timezone
-                                return date.toLocaleDateString('pt-BR');
+                                const formatted = date.toLocaleDateString('pt-BR');
+                                
+                                console.log('Data formatada:', formatted);
+                                return formatted;
                               } catch (error) {
                                 console.error('Erro ao formatar data:', dateString, error);
                                 return 'Data inválida';
