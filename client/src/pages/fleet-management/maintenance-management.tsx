@@ -213,6 +213,7 @@ export default function MaintenanceManagement() {
   const [carReceptions, setCarReceptions] = useState<CarReception[]>([]);
   const [projects, setProjects] = useState<{id: number, name: string}[]>([]);
   const [bases, setBases] = useState<{id: number, name: string}[]>([]);
+  const [filteredBases, setFilteredBases] = useState<{id: number, name: string}[]>([]);
   const [stats, setStats] = useState<MaintenanceStats>({
     total_orders: 0,
     orders_in_progress: 0,
@@ -417,6 +418,39 @@ export default function MaintenanceManagement() {
       });
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  // Função para filtrar bases por projeto
+  const handleProjectChange = async (projectId: string) => {
+    if (!projectId || projectId === "") {
+      setFilteredBases([]);
+      form.setValue("base_id", "");
+      return;
+    }
+
+    try {
+      const response = await apiRequest("GET", `/api/projects/${projectId}/bases`);
+      const basesData = await response.json();
+      
+      if (response.ok && basesData.success) {
+        // Mapear as bases para o formato esperado
+        const projectBases = basesData.data.map((base: any) => ({
+          id: base.id,
+          name: base.base_name || base.name
+        }));
+        setFilteredBases(projectBases);
+      } else {
+        // Se não encontrou bases para o projeto, limpar a lista
+        setFilteredBases([]);
+      }
+      
+      // Limpar seleção de base quando projeto muda
+      form.setValue("base_id", "");
+    } catch (error) {
+      console.error("Erro ao carregar bases do projeto:", error);
+      setFilteredBases([]);
+      form.setValue("base_id", "");
     }
   };
 
@@ -1209,7 +1243,7 @@ export default function MaintenanceManagement() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Projeto (Opcional)</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={(value) => { field.onChange(value); handleProjectChange(value); }} defaultValue={field.value}>
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Selecione um projeto" />
@@ -1243,7 +1277,7 @@ export default function MaintenanceManagement() {
                               </FormControl>
                               <SelectContent>
                                 <SelectItem value="">Nenhuma base</SelectItem>
-                                {bases && Array.isArray(bases) && bases.map((base) => (
+                                {filteredBases && Array.isArray(filteredBases) && filteredBases.map((base) => (
                                   <SelectItem key={base.id} value={base.id.toString()}>
                                     {base.name}
                                   </SelectItem>
