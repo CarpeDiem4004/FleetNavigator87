@@ -421,18 +421,26 @@ function App() {
             </Route>
             
             {/* Painel administrativo de abastecimento pós-pago - requer autenticação */}
-            <Route path="/admin/abastecimento-pos-pago">
-              <div className="min-h-screen bg-gray-50 p-6">
-                <PainelAdministrativoAbastecimento />
-              </div>
-            </Route>
+            <ProtectedRoute 
+              path="/admin/abastecimento-pos-pago" 
+              component={() => (
+                <div className="min-h-screen bg-gray-50 p-6">
+                  <PainelAdministrativoAbastecimento />
+                </div>
+              )}
+              allowedRoles={['admin', 'operator']}
+            />
             
             {/* Página de demonstração dos links públicos */}
-            <Route path="/admin/abastecimento-pos-pago/links">
-              <div className="min-h-screen bg-gray-50 p-6">
-                <LinksPublicosAbastecimento />
-              </div>
-            </Route>
+            <ProtectedRoute 
+              path="/admin/abastecimento-pos-pago/links" 
+              component={() => (
+                <div className="min-h-screen bg-gray-50 p-6">
+                  <LinksPublicosAbastecimento />
+                </div>
+              )}
+              allowedRoles={['admin', 'operator']}
+            />
             
             <Route path="/login">
               <SignIn />

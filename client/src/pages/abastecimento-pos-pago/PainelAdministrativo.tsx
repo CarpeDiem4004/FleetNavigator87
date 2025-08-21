@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/context/AuthContext';
 
 interface Abastecimento {
   id: number;
@@ -72,6 +73,7 @@ interface DashboardStats {
 }
 
 export default function PainelAdministrativoAbastecimento() {
+  const { user, isLoading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [filters, setFilters] = useState({
     status: '',
@@ -79,6 +81,33 @@ export default function PainelAdministrativoAbastecimento() {
     projeto_id: ''
   });
   const [newToken, setNewToken] = useState({ base_id: '', projeto_id: '', expires_days: 90 });
+
+  // Só renderizar e fazer chamadas se o usuário estiver autenticado
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Verificando autenticação...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Acesso Negado</h2>
+          <p className="text-gray-600 mb-4">Você precisa estar logado para acessar esta página.</p>
+          <Button onClick={() => window.location.href = '/login'}>
+            Fazer Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Função para lidar com mudança de projeto (limpar base quando trocar projeto)
   const handleProjectChange = (projetoId: string, isFilter: boolean = false) => {
@@ -108,29 +137,30 @@ export default function PainelAdministrativoAbastecimento() {
 
   const queryClient = useQueryClient();
 
-  // Queries
+  // Queries - só executar se usuário estiver autenticado
   const { data: dashboardData } = useQuery({
     queryKey: ['/api/admin/abastecimento-pos-pago/dashboard'],
-    enabled: activeTab === 'dashboard'
+    enabled: activeTab === 'dashboard' && !!user && !authLoading
   });
 
   const { data: abastecimentosData } = useQuery({
     queryKey: ['/api/admin/abastecimento-pos-pago', filters],
-    enabled: activeTab === 'abastecimentos'
+    enabled: activeTab === 'abastecimentos' && !!user && !authLoading
   });
 
   const { data: tokensData } = useQuery({
     queryKey: ['/api/admin/form-tokens'],
-    enabled: activeTab === 'tokens'
+    enabled: activeTab === 'tokens' && !!user && !authLoading
   });
 
   const { data: postosData } = useQuery({
     queryKey: ['/api/admin/postos-external'],
-    enabled: activeTab === 'postos'
+    enabled: activeTab === 'postos' && !!user && !authLoading
   });
 
   const { data: projectsWithBasesData } = useQuery({
-    queryKey: ['/api/projects-with-bases']
+    queryKey: ['/api/projects-with-bases'],
+    enabled: !!user && !authLoading
   });
 
   // Mutations
