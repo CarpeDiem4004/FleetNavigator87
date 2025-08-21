@@ -897,14 +897,19 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
                   )}
 
                   <div className="flex justify-end gap-2 pt-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openEditDialog(budget)}
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar
-                    </Button>
+                    {/* Botão Editar - apenas para orçamentos não aprovados */}
+                    {budget.status !== 'aprovado' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openEditDialog(budget)}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar
+                      </Button>
+                    )}
+                    
+                    {/* Botão PDF - sempre disponível */}
                     <Button
                       variant="outline"
                       size="sm"
