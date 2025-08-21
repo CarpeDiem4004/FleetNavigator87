@@ -129,18 +129,13 @@ export async function apiRequest(
   }
   
   // Otherwise use regular fetch for backend API
-  // Verificar se temos um token JWT armazenado para autenticação
-  const authToken = localStorage.getItem('authToken');
-  
-  // Também verificar a sessão Supabase como fallback
-  let supabaseToken = null;
-  try {
-    const session = await supabase.auth.getSession();
-    if (session?.data?.session?.access_token) {
-      supabaseToken = session.data.session.access_token;
-    }
-  } catch (error) {
-    console.error('[apiRequest] Erro ao obter sessão Supabase:', error);
+  // ⚠️ DESABILITANDO JWT AUTOMÁTICO PARA EVITAR CONFLITOS COM AUTENTICAÇÃO POR SESSÃO
+  // O sistema está usando autenticação por sessão (cookies) que já funciona corretamente
+  // Remover qualquer JWT inválido que possa estar causando conflitos
+  const problematicToken = localStorage.getItem('authToken');
+  if (problematicToken) {
+    console.log('[apiRequest] Removendo JWT problemático do localStorage para evitar conflitos');
+    localStorage.removeItem('authToken');
   }
   
   // Configurar os cabeçalhos - sempre incluir Content-Type para consistência
@@ -151,14 +146,8 @@ export async function apiRequest(
     headers["Content-Type"] = "application/json";
   }
   
-  // Adicionar o token JWT - primeiro verificar o token armazenado e depois o Supabase
-  const tokenToUse = authToken || supabaseToken;
-  if (tokenToUse) {
-    headers["Authorization"] = `Bearer ${tokenToUse}`;
-    console.log('[apiRequest] Adicionando token JWT ao cabeçalho da requisição:', url);
-  } else {
-    console.log('[apiRequest] Sem token JWT disponível para a requisição:', url);
-  }
+  // 🛡️ NÃO ADICIONAR JWT - Usar apenas autenticação por sessão (cookies)
+  console.log('[apiRequest] Usando apenas autenticação por sessão (cookies) para:', url);
   
   // Configuração da requisição
   const requestConfig: RequestInit = {
@@ -221,33 +210,22 @@ export const getQueryFn: <T>(options: {
     }
     
     // Otherwise use regular fetch for backend API
-    // Verificar se temos um token JWT armazenado para autenticação
-    const authToken = localStorage.getItem('authToken');
-    
-    // Também verificar a sessão Supabase como fallback
-    let supabaseToken = null;
-    try {
-      const session = await supabase.auth.getSession();
-      if (session?.data?.session?.access_token) {
-        supabaseToken = session.data.session.access_token;
-      }
-    } catch (error) {
-      console.error('[QueryClient] Erro ao obter sessão Supabase:', error);
+    // ⚠️ DESABILITANDO JWT AUTOMÁTICO PARA EVITAR CONFLITOS COM AUTENTICAÇÃO POR SESSÃO
+    // O sistema está usando autenticação por sessão (cookies) que já funciona corretamente
+    // Remover qualquer JWT inválido que possa estar causando conflitos
+    const problematicToken = localStorage.getItem('authToken');
+    if (problematicToken) {
+      console.log('[QueryClient] Removendo JWT problemático do localStorage para evitar conflitos');
+      localStorage.removeItem('authToken');
     }
     
-    // Configurar os cabeçalhos com token JWT quando disponível
+    // Configurar os cabeçalhos sem JWT
     const headers: HeadersInit = {
       "Content-Type": "application/json" // Adicionar Content-Type para consistência
     };
     
-    // Usar o token local ou o do Supabase como fallback
-    const tokenToUse = authToken || supabaseToken;
-    if (tokenToUse) {
-      headers["Authorization"] = `Bearer ${tokenToUse}`;
-      console.log('[QueryClient] Adicionando token JWT à requisição GET:', urlOrTable);
-    } else {
-      console.log('[QueryClient] Sem token JWT disponível para GET:', urlOrTable);
-    }
+    // 🛡️ NÃO ADICIONAR JWT - Usar apenas autenticação por sessão (cookies)
+    console.log('[QueryClient] Usando apenas autenticação por sessão (cookies) para GET:', urlOrTable);
     
     // Adicionar timestamp para evitar cache
     const urlWithTimestamp = urlOrTable.includes('?') 

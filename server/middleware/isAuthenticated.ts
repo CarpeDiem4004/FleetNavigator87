@@ -11,23 +11,23 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
   }
 
   // Para outras rotas, verificar autenticação
-  // Verificar se o usuário está autenticado via sessão
+  // PRIORIDADE 1: Verificar se o usuário está autenticado via sessão
   if (req.isAuthenticated && req.isAuthenticated()) {
-    console.log(`[isAuthenticated] Sessão válida para usuário: ${req.user?.email}`);
+    console.log(`[isAuthenticated] Sessão válida para usuário: ${req.user?.email} - IGNORANDO JWT`);
     return next();
   }
   
-  // Verificar token JWT se não estiver autenticado por sessão
+  // PRIORIDADE 2: Verificar token JWT APENAS se não estiver autenticado por sessão
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.log('Tentativa de acesso não autenticado a', req.originalUrl);
+    console.log(`[isAuthenticated] Acesso negado - sem sessão e sem JWT para: ${req.originalUrl}`);
     return res.status(401).json({ message: "Não autenticado" });
   }
   
   try {
     // Extrair token JWT
     const token = extractJwtToken(authHeader);
-    console.log('[isAuthenticated] Token JWT encontrado, verificando...');
+    console.log('[isAuthenticated] Sessão inválida, tentando JWT...');
     
     // Verificar com Supabase
     const supabaseUser = await validateSupabaseToken(token);
@@ -37,7 +37,7 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
       return next();
     }
   } catch (error) {
-    console.error('[isAuthenticated] Erro ao processar autenticação:', error);
+    console.error('[isAuthenticated] Erro ao validar JWT:', error);
     return res.status(401).json({ message: "Token de autenticação inválido" });
   }
 };
