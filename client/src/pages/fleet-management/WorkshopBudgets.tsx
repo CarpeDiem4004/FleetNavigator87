@@ -849,43 +849,27 @@ export default function WorkshopBudgets() {
                           {Array.from({ length: selectedBudget.installments }).map((_, index) => {
                             const dueDate = (selectedBudget as any)[`due_date_${index + 1}`];
                             
-                            console.log(`🔍 PARCELA ${index + 1}:`, {
-                              dueDate,
-                              exists: !!dueDate,
-                              type: typeof dueDate,
-                              installments: selectedBudget.installments,
-                              allDueDateKeys: Object.keys(selectedBudget).filter(key => key.includes('due_date')),
-                              allDueDates: {
-                                due_date_1: selectedBudget.due_date_1,
-                                due_date_2: selectedBudget.due_date_2, 
-                                due_date_3: selectedBudget.due_date_3,
-                                due_date_4: selectedBudget.due_date_4
-                              }
-                            });
-                            
                             if (!dueDate) {
-                              console.log(`❌ Parcela ${index + 1} - data vazia, não renderizando`);
                               return null;
                             }
                             
                             // Função para formatar data corretamente
                             const formatDate = (dateString: string) => {
                               try {
-                                console.log(`📅 Formatando data parcela ${index + 1}:`, dateString, 'Tipo:', typeof dateString);
-                                
                                 if (!dateString) {
-                                  console.log(`❌ Data vazia ou nula para parcela ${index + 1}`);
                                   return 'Data não definida';
                                 }
                                 
-                                // Se a data já está no formato YYYY-MM-DD, usar diretamente
-                                const date = new Date(dateString + 'T12:00:00.000Z'); // Usar meio-dia UTC para evitar problemas de timezone
-                                const formatted = date.toLocaleDateString('pt-BR');
-                                
-                                console.log('Data formatada:', formatted);
-                                return formatted;
+                                // Limpar qualquer informação de horário e usar apenas a data
+                                const dateOnly = dateString.split('T')[0]; // Remove horário se existir
+                                const parts = dateOnly.split('-');
+                                if (parts.length === 3) {
+                                  const [year, month, day] = parts;
+                                  const formattedDate = `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+                                  return formattedDate;
+                                }
+                                return 'Data inválida';
                               } catch (error) {
-                                console.error('Erro ao formatar data:', dateString, error);
                                 return 'Data inválida';
                               }
                             };
