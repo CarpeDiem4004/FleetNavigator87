@@ -3,6 +3,9 @@ import { validateSupabaseToken, extractJwtToken, AuthError } from '../utils/auth
 
 // Middleware personalizado que permite acesso público às rotas de projetos
 export const isAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
+  console.log(`[isAuthenticated] 🔍 MIDDLEWARE EXECUTADO para: ${req.originalUrl}`);
+  console.log(`[isAuthenticated] 🔍 Headers: ${JSON.stringify({hasAuth: !!req.headers.authorization, hasCookie: !!req.headers.cookie})}`);
+  
   // Permitir acesso público às rotas de projetos e bases para formulários de postos
   if (req.path.startsWith('/api/projects') || req.path.startsWith('/api/bases') || req.path.includes('projects-with-bases')) {
     console.log('[isAuthenticated] Permitindo acesso público às rotas de projetos e bases para formulários');
@@ -12,15 +15,23 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
 
   // Para outras rotas, verificar autenticação
   // PRIORIDADE 1: Verificar se o usuário está autenticado via sessão
-  if (req.isAuthenticated && req.isAuthenticated()) {
-    console.log(`[isAuthenticated] Sessão válida para usuário: ${req.user?.email} - IGNORANDO JWT`);
+  const hasValidSession = req.isAuthenticated && req.isAuthenticated();
+  const hasUser = req.user && req.user.id;
+  
+  console.log(`[isAuthenticated] Debug sessão - hasValidSession: ${hasValidSession}, hasUser: ${!!hasUser}, userEmail: ${req.user?.email}`);
+  
+  if (hasValidSession && hasUser) {
+    console.log(`[isAuthenticated] ✅ Sessão válida para usuário: ${req.user?.email} - ACESSO LIBERADO`);
     return next();
   }
   
   // PRIORIDADE 2: Verificar token JWT APENAS se não estiver autenticado por sessão
   const authHeader = req.headers.authorization;
+  
+  console.log(`[isAuthenticated] Sessão inválida - Verificando JWT. Header: ${authHeader ? 'presente' : 'ausente'}`);
+  
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.log(`[isAuthenticated] Acesso negado - sem sessão e sem JWT para: ${req.originalUrl}`);
+    console.log(`[isAuthenticated] ❌ Acesso negado - sem sessão válida e sem JWT para: ${req.originalUrl}`);
     return res.status(401).json({ message: "Não autenticado" });
   }
   

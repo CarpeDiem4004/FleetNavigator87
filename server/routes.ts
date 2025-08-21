@@ -21182,12 +21182,14 @@ async function createFuelRequestNotification(fuelRequest) {
   });
 
   // ===========================
-  // ROTAS ABASTECIMENTO PÓS-PAGO
+  // ROTAS ABASTECIMENTO PÓS-PAGO - DUPLICATAS REMOVIDAS
   // ===========================
 
-  // APIs administrativas para o painel (requer autenticação)
+  // ❌ SEÇÃO DUPLICADA COMENTADA - CONFLITAVA COM ROTAS DE ALTA PRIORIDADE (linha ~1112)
   
-  // Listar abastecimentos pós-pago
+  // ❌ ROTA DUPLICADA REMOVIDA - Ver linha ~1112 para a implementação ativa
+  
+  /* COMENTADO - ROTA DUPLICADA QUE CAUSAVA CONFLITOS
   app.get('/api/admin/abastecimento-pos-pago', isAuthenticated, async (req, res) => {
     try {
       const { status, base_id, projeto_id, limit = 50, offset = 0 } = req.query;
@@ -21434,6 +21436,8 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
+
+  */ // Fechando o comentário da seção duplicada removida
 
   const httpServer = createServer(app);
   return httpServer;
