@@ -848,15 +848,21 @@ export default function WorkshopBudgets() {
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                           {Array.from({ length: selectedBudget.installments }).map((_, index) => {
                             const dueDate = (selectedBudget as any)[`due_date_${index + 1}`];
+                            console.log(`🔍 Debug parcela ${index + 1}:`, {
+                              dueDate,
+                              type: typeof dueDate,
+                              selectedBudgetKeys: Object.keys(selectedBudget).filter(key => key.includes('due_date')),
+                              selectedBudget: selectedBudget
+                            });
                             if (!dueDate) return null;
                             
                             // Função para formatar data corretamente
                             const formatDate = (dateString: string) => {
                               try {
-                                console.log('Formatando data:', dateString, 'Tipo:', typeof dateString);
+                                console.log(`📅 Formatando data parcela ${index + 1}:`, dateString, 'Tipo:', typeof dateString);
                                 
                                 if (!dateString) {
-                                  console.log('Data vazia ou nula');
+                                  console.log(`❌ Data vazia ou nula para parcela ${index + 1}`);
                                   return 'Data não definida';
                                 }
                                 
