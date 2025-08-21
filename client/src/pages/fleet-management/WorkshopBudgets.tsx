@@ -850,6 +850,18 @@ export default function WorkshopBudgets() {
                             const dueDate = (selectedBudget as any)[`due_date_${index + 1}`];
                             if (!dueDate) return null;
                             
+                            // Função para formatar data corretamente
+                            const formatDate = (dateString: string) => {
+                              try {
+                                // Se a data já está no formato YYYY-MM-DD, usar diretamente
+                                const date = new Date(dateString + 'T12:00:00.000Z'); // Usar meio-dia UTC para evitar problemas de timezone
+                                return date.toLocaleDateString('pt-BR');
+                              } catch (error) {
+                                console.error('Erro ao formatar data:', dateString, error);
+                                return 'Data inválida';
+                              }
+                            };
+                            
                             return (
                               <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
                                 <Calendar className="h-4 w-4 text-blue-600" />
@@ -858,7 +870,7 @@ export default function WorkshopBudgets() {
                                     {index + 1}ª parcela
                                   </p>
                                   <p className="text-sm font-medium">
-                                    {new Date(dueDate + 'T00:00:00').toLocaleDateString('pt-BR')}
+                                    {formatDate(dueDate)}
                                   </p>
                                 </div>
                               </div>
