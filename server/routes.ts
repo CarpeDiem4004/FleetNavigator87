@@ -7011,6 +7011,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Calcular o total cost
+      const totalCost = (parseFloat(laborCost) || 0) + (parseFloat(partsCost) || 0);
+
       // Atualizar recepção de veículo com todos os campos incluindo dados da pessoa que retira
       const updateQuery = `
         UPDATE car_receptions 
@@ -7025,15 +7028,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           replaced_parts = COALESCE($8, replaced_parts),
           labor_cost = COALESCE($9, labor_cost),
           parts_cost = COALESCE($10, parts_cost),
-          delivery_deadline = COALESCE($11, delivery_deadline),
-          status = COALESCE($12, status),
-          notes = COALESCE($13, notes),
-          delivery_person_name = COALESCE($14, delivery_person_name),
-          delivery_person_cpf = COALESCE($15, delivery_person_cpf),
-          delivery_person_phone = COALESCE($16, delivery_person_phone),
-          delivered_date = COALESCE($17, delivered_date),
+          total_cost = COALESCE($11, total_cost),
+          delivery_deadline = COALESCE($12, delivery_deadline),
+          status = COALESCE($13, status),
+          notes = COALESCE($14, notes),
+          delivery_person_name = COALESCE($15, delivery_person_name),
+          delivery_person_cpf = COALESCE($16, delivery_person_cpf),
+          delivery_person_phone = COALESCE($17, delivery_person_phone),
+          delivered_date = COALESCE($18, delivered_date),
           updated_at = NOW()
-        WHERE id = $18 AND workshop_id = $19
+        WHERE id = $19 AND workshop_id = $20
         RETURNING *
       `;
 
@@ -7048,6 +7052,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         replacedParts,
         laborCost,
         partsCost,
+        totalCost,
         deliveryDeadline,
         status,
         notes,
