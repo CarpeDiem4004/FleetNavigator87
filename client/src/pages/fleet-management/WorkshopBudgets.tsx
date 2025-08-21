@@ -848,13 +848,25 @@ export default function WorkshopBudgets() {
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                           {Array.from({ length: selectedBudget.installments }).map((_, index) => {
                             const dueDate = (selectedBudget as any)[`due_date_${index + 1}`];
-                            console.log(`🔍 Debug parcela ${index + 1}:`, {
+                            
+                            console.log(`🔍 PARCELA ${index + 1}:`, {
                               dueDate,
+                              exists: !!dueDate,
                               type: typeof dueDate,
-                              selectedBudgetKeys: Object.keys(selectedBudget).filter(key => key.includes('due_date')),
-                              selectedBudget: selectedBudget
+                              installments: selectedBudget.installments,
+                              allDueDateKeys: Object.keys(selectedBudget).filter(key => key.includes('due_date')),
+                              allDueDates: {
+                                due_date_1: selectedBudget.due_date_1,
+                                due_date_2: selectedBudget.due_date_2, 
+                                due_date_3: selectedBudget.due_date_3,
+                                due_date_4: selectedBudget.due_date_4
+                              }
                             });
-                            if (!dueDate) return null;
+                            
+                            if (!dueDate) {
+                              console.log(`❌ Parcela ${index + 1} - data vazia, não renderizando`);
+                              return null;
+                            }
                             
                             // Função para formatar data corretamente
                             const formatDate = (dateString: string) => {
