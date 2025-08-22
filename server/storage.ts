@@ -1075,9 +1075,9 @@ export class DatabaseStorage implements IStorage {
 
   async createMaintenance(maintenanceData: InsertMaintenance): Promise<Maintenance> {
     try {
-      console.log("Criando manutenção com dados:", JSON.stringify(maintenanceData, null, 2));
+      console.log("🔧 [SYNC] Criando manutenção com dados:", JSON.stringify(maintenanceData, null, 2));
       
-      // Usar a tabela maintenance_orders que é onde os dados estão sendo criados
+      // 1️⃣ CRIAR REGISTRO NA TABELA PRINCIPAL (maintenance_orders)
       const query = `
         INSERT INTO maintenance_orders (
           vehicle_plate, description, status, service_type, 
@@ -1104,20 +1104,54 @@ export class DatabaseStorage implements IStorage {
       const result = await pool.query(query, values);
       const newMaintenance = result.rows[0];
       
-      console.log("Manutenção criada com sucesso:", newMaintenance);
+      console.log("✅ [SYNC] Manutenção criada na tabela principal:", newMaintenance);
+
+      // 2️⃣ SINCRONIZAR COM TABELA DE OFICINAS (manutencao)
+      try {
+        const syncQuery = `
+          INSERT INTO manutencao (
+            placa, descricao, data_solicitacao, data_agendada, 
+            status, oficina_id, prioridade, tipo, custo, responsavel, 
+            observacoes, base_id, request_base_id
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+          ) RETURNING *
+        `;
+        
+        const syncValues = [
+          maintenanceData.vehiclePlate || maintenanceData.placa,
+          maintenanceData.description || maintenanceData.descricao,
+          maintenanceData.entryDate || maintenanceData.data_solicitacao || new Date(),
+          maintenanceData.estimatedCompletion || maintenanceData.data_agendada,
+          maintenanceData.status || 'pendente',
+          maintenanceData.workshopId || maintenanceData.oficina_id,
+          maintenanceData.priority || maintenanceData.prioridade || 'media',
+          maintenanceData.maintenanceType || maintenanceData.tipo || 'corretiva',
+          maintenanceData.cost || maintenanceData.custo || 0,
+          maintenanceData.responsiblePerson || maintenanceData.responsavel || 'Sistema',
+          maintenanceData.notes || maintenanceData.observacoes || '',
+          maintenanceData.requestBaseId || maintenanceData.base_id || null,
+          maintenanceData.requestBaseId || null
+        ];
+        
+        const syncResult = await pool.query(syncQuery, syncValues);
+        console.log("✅ [SYNC] Registro sincronizado na tabela de oficinas:", syncResult.rows[0]);
+      } catch (syncError) {
+        console.error("⚠️ [SYNC] Erro ao sincronizar com tabela de oficinas (não crítico):", syncError);
+        // Não falhar a operação principal se houver erro na sincronização
+      }
       
-      // Atualizar o status do veículo para em_manutencao
+      // 3️⃣ ATUALIZAR STATUS DO VEÍCULO
       try {
         const updateVehicleQuery = `
           UPDATE veiculos 
           SET status = 'em_manutencao' 
           WHERE placa = $1
         `;
-        await pool.query(updateVehicleQuery, [maintenanceData.vehiclePlate]);
-        console.log(`Status do veículo ${maintenanceData.vehiclePlate} atualizado para em_manutencao`);
+        await pool.query(updateVehicleQuery, [maintenanceData.vehiclePlate || maintenanceData.placa]);
+        console.log(`✅ [SYNC] Status do veículo ${maintenanceData.vehiclePlate || maintenanceData.placa} atualizado para em_manutencao`);
       } catch (vehicleError) {
-        // Não falhar a operação principal se não conseguir atualizar o veículo
-        console.error("Erro ao atualizar status do veículo:", vehicleError);
+        console.error("⚠️ [SYNC] Erro ao atualizar status do veículo (não crítico):", vehicleError);
       }
       
       // Converter o objeto retornado pelo banco para o formato esperado
@@ -1140,7 +1174,7 @@ export class DatabaseStorage implements IStorage {
         updated_at: newMaintenance.updated_at
       };
     } catch (error) {
-      console.error("Erro ao criar manutenção:", error);
+      console.error("❌ [SYNC] Erro ao criar manutenção:", error);
       throw error;
     }
   }
