@@ -15397,23 +15397,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         vehicle_model,
         projeto,
         base_id,
+        workshop_id,
         description
       } = req.body;
       
       // Validar campos obrigatórios
-      if (!vehicle_plate || !description) {
+      if (!vehicle_plate || !description || !workshop_id) {
         return res.status(400).json({ 
           success: false,
-          message: 'Placa e descrição são obrigatórios' 
+          message: 'Placa, descrição e oficina são obrigatórios' 
         });
       }
       
+      // Buscar informações da oficina
+      const workshopQuery = `SELECT name FROM workshops WHERE id = $1`;
+      const workshopResult = await pool.query(workshopQuery, [workshop_id]);
+      const workshopName = workshopResult.rows[0]?.name || '';
+
       const query = `
         INSERT INTO campinas_budget_requests 
-          (vehicle_plate, km, vehicle_model, projeto, base_id, description, 
+          (vehicle_plate, km, vehicle_model, projeto, base_id, workshop_id, workshop_name, description, 
            requested_by, requester_name, status, created_at, updated_at)
         VALUES 
-          ($1, $2, $3, $4, $5, $6, $7, $8, 'pendente', NOW(), NOW())
+          ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pendente', NOW(), NOW())
         RETURNING *;
       `;
       
@@ -15423,6 +15429,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         vehicle_model || null,
         projeto || null,
         base_id || null,
+        workshop_id,
+        workshopName,
         description,
         req.user?.id || 0,
         req.user?.name || 'Usuário'

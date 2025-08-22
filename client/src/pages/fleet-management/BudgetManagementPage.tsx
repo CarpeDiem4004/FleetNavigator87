@@ -189,6 +189,7 @@ export default function BudgetManagementPage() {
     vehicle_model: "",
     projeto: "",
     base_id: "",
+    workshop_id: "",
     description: ""
   });
   const [bases, setBases] = useState<{id: number, name: string, project_id?: number}[]>([]);
@@ -363,10 +364,10 @@ export default function BudgetManagementPage() {
   // Função para submeter solicitação de orçamento
   const submitBudgetRequest = async () => {
     try {
-      if (!requestForm.vehicle_plate || !requestForm.description) {
+      if (!requestForm.vehicle_plate || !requestForm.description || !requestForm.workshop_id) {
         toast({
           title: "Erro",
-          description: "Placa e descrição são obrigatórios",
+          description: "Placa, descrição e oficina são obrigatórios",
           variant: "destructive"
         });
         return;
@@ -391,6 +392,7 @@ export default function BudgetManagementPage() {
           vehicle_model: "",
           projeto: "",
           base_id: "",
+          workshop_id: "",
           description: ""
         });
         
@@ -1633,6 +1635,21 @@ export default function BudgetManagementPage() {
                   {filteredBases.map((base) => (
                     <SelectItem key={base.id} value={base.id.toString()}>
                       {base.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="oficina">Oficina*</Label>
+              <Select value={requestForm.workshop_id} onValueChange={(value) => setRequestForm(prev => ({...prev, workshop_id: value}))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a oficina" />
+                </SelectTrigger>
+                <SelectContent>
+                  {workshops.map((workshop) => (
+                    <SelectItem key={workshop.id} value={workshop.id.toString()}>
+                      {workshop.name} - {workshop.cnpj}
                     </SelectItem>
                   ))}
                 </SelectContent>
