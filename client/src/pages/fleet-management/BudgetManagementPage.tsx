@@ -299,28 +299,28 @@ export default function BudgetManagementPage() {
 
   // Função para buscar orçamentos de uma oficina em período específico
   const fetchWorkshopBudgets = async () => {
-    if (!selectedWorkshopId || !dateFrom || !dateTo) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Selecione uma oficina e o período de data",
-        variant: "destructive"
-      });
-      return;
-    }
-
+    // Para a nova funcionalidade, não precisamos mais de workshop ID específico
+    // Vamos buscar todos os orçamentos das oficinas
     try {
       setLoadingWorkshopBudgets(true);
       const response = await apiRequest(
         "GET", 
-        `/api/fleet/workshop-budgets?workshopId=${selectedWorkshopId}&dateFrom=${dateFrom}&dateTo=${dateTo}`
+        `/api/campinas/budget-requests`
       );
       const data = await response.json();
-      setWorkshopBudgets(data);
+      
+      if (data.success) {
+        setWorkshopBudgets(data.data || []);
+        setBudgetSummary(data.summary);
+      } else {
+        console.error("Erro na resposta da API:", data);
+        setWorkshopBudgets([]);
+      }
     } catch (error) {
-      console.error("Erro ao buscar orçamentos da oficina:", error);
+      console.error("Erro ao buscar orçamentos das oficinas:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar os orçamentos da oficina",
+        description: "Não foi possível carregar os orçamentos das oficinas",
         variant: "destructive"
       });
     } finally {
@@ -444,7 +444,7 @@ export default function BudgetManagementPage() {
 
       setBillingDialogOpen(false);
       fetchBillingTrackingData();
-      fetchWorkshopBudgets();
+      fetchBudgetRequests();
     } catch (error) {
       console.error("Erro ao salvar configuração:", error);
       toast({
@@ -806,28 +806,21 @@ export default function BudgetManagementPage() {
           </Card>
         )}
 
-      {/* Solicitações de Orçamento das Bases */}
+      {/* SEÇÃO REMOVIDA: Esta funcionalidade foi movida para a aba "Orçamentos das Oficinas" */}
       <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Solicitações Bases - Murici</CardTitle>
-          <CardDescription>
-            Solicitações de orçamento recebidas das bases operacionais
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loadingBudgetRequests ? (
-            <div className="flex justify-center items-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : budgetRequests.length === 0 ? (
-            <Alert variant="default" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Nenhuma solicitação encontrada</AlertTitle>
-              <AlertDescription>
-                Não há solicitações de orçamento das bases.
-              </AlertDescription>
-            </Alert>
-          ) : (
+        <CardContent className="p-6">
+          <Alert variant="default">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Nova Funcionalidade Disponível</AlertTitle>
+            <AlertDescription>
+              Os orçamentos das oficinas agora estão organizados na aba "Orçamentos das Oficinas" acima. 
+              Clique na aba para visualizar todos os orçamentos recebidos das oficinas parceiras.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+
+      {false && (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -978,9 +971,7 @@ export default function BudgetManagementPage() {
                 ))}
               </TableBody>
             </Table>
-          )}
-        </CardContent>
-      </Card>
+          )})}
 
       {renderStats()}
 
