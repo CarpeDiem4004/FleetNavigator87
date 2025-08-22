@@ -42,10 +42,12 @@ export default function AutofreiDashboard() {
   const [, setLocation] = useLocation();
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingRequests, setPendingRequests] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
     loadServiceOrders();
+    loadPendingRequests();
   }, []);
 
   const loadServiceOrders = async () => {
@@ -82,6 +84,27 @@ export default function AutofreiDashboard() {
     } catch (error) {
       console.error('Erro ao carregar ordens de serviço:', error);
       setIsLoading(false);
+    }
+  };
+
+  const loadPendingRequests = async () => {
+    try {
+      const response = await fetch('/api/campinas/budget-requests', {
+        method: 'GET',
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Contar apenas solicitações pendentes para a AUTOFREI (workshop_id = 12)
+        const pendingCount = data.filter((request: any) => 
+          request.workshop_id === AUTOFREI_ID && 
+          request.status === 'pendente'
+        ).length;
+        setPendingRequests(pendingCount);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar solicitações pendentes:', error);
     }
   };
 
@@ -247,16 +270,26 @@ export default function AutofreiDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white relative">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center">
                 <Download className="h-5 w-5 mr-2" />
                 Solicitações
               </CardTitle>
+              {pendingRequests > 0 && (
+                <div className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg animate-pulse">
+                  {pendingRequests > 99 ? '99+' : pendingRequests}
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               <p className="text-sm text-purple-100 mb-4">
                 Visualize solicitações de orçamentos da gestão de frotas
+                {pendingRequests > 0 && (
+                  <span className="block mt-1 font-semibold text-purple-50">
+                    📌 {pendingRequests} nova{pendingRequests > 1 ? 's' : ''} solicitaç{pendingRequests > 1 ? 'ões' : 'ão'}!
+                  </span>
+                )}
               </p>
               <Button 
                 className="w-full bg-white text-purple-600 hover:bg-gray-100"
@@ -264,6 +297,7 @@ export default function AutofreiDashboard() {
               >
                 <FileText className="h-4 w-4 mr-2" />
                 Ver Solicitações
+                {pendingRequests > 0 && ` (${pendingRequests})`}
               </Button>
             </CardContent>
           </Card>
