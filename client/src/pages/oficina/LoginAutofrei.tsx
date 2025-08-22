@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function LoginAutofrei() {
   const [, setLocation] = useLocation();
-  const [email, setEmail] = useState('');
+  const [cnpj, setCnpj] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -29,10 +29,8 @@ export default function LoginAutofrei() {
         },
         credentials: 'include',
         body: JSON.stringify({
-          email,
-          password,
-          oficina_id: 12, // ID da AUTOFREI
-          oficina_name: 'AUTOFREI'
+          cnpj,
+          password
         }),
       });
 
@@ -85,13 +83,13 @@ export default function LoginAutofrei() {
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="cnpj">CNPJ</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="Digite seu email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="cnpj"
+                type="text"
+                placeholder="Digite o CNPJ"
+                value={cnpj}
+                onChange={(e) => setCnpj(e.target.value)}
                 required
                 disabled={isLoading}
               />
