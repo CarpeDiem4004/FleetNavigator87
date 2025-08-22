@@ -2155,20 +2155,7 @@ app.use((req, res, next) => {
 
   // REMOVIDA - Segunda definição de /api/bases (conflito resolvido) - Limpeza concluída
       
-      return res.status(200).json({
-        success: true,
-        data: externalBases,
-        count: externalBases.length
-      });
-    } catch (error) {
-      console.error('Direct Bases API - Error:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Error fetching bases',
-        error: error.message
-      });
-    }
-  });
+  // REMOVIDA - Segunda definição de /api/bases (conflito resolvido) - Limpeza concluída
 
   // Add project-bases relationship API
   app.get('/api/project-bases', async (req, res) => {
