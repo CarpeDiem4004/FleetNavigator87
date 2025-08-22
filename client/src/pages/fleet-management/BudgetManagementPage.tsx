@@ -129,8 +129,8 @@ export default function BudgetManagementPage() {
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [selectedWorkshopId, setSelectedWorkshopId] = useState<number | null>(null);
   const [searchWorkshop, setSearchWorkshop] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateFrom, setDateFrom] = useState("2025-01-01");
+  const [dateTo, setDateTo] = useState("2025-12-31");
   const [workshopBudgets, setWorkshopBudgets] = useState<WorkshopBudget[]>([]);
   const [loadingWorkshopBudgets, setLoadingWorkshopBudgets] = useState(false);
   
@@ -147,6 +147,12 @@ export default function BudgetManagementPage() {
   // Estados para acompanhamento de faturamento
   const [billingTrackingData, setBillingTrackingData] = useState<any[]>([]);
   const [loadingBillingTracking, setLoadingBillingTracking] = useState(false);
+
+  // Função para filtrar oficinas com base na pesquisa
+  const filteredWorkshops = workshops.filter(workshop => 
+    workshop.nome.toLowerCase().includes(searchWorkshop.toLowerCase()) ||
+    workshop.cnpj.includes(searchWorkshop)
+  );
 
   // Função para obter as solicitações de orçamento da Base Campinas
   const fetchBudgetRequests = async () => {
@@ -219,7 +225,7 @@ export default function BudgetManagementPage() {
     fetchMaintenancesWithChats();
     fetchBudgetRequests();
     fetchWorkshops();
-    fetchBillingTrackingData();
+    // fetchBillingTrackingData(); // Desabilitado para evitar requisições desnecessárias
   }, []);
 
   // Função para buscar oficinas
@@ -391,11 +397,6 @@ export default function BudgetManagementPage() {
     }
   };
 
-  // Filtrar oficinas pela busca
-  const filteredWorkshops = workshops.filter(workshop =>
-    workshop.nome.toLowerCase().includes(searchWorkshop.toLowerCase()) ||
-    workshop.cnpj.includes(searchWorkshop)
-  );
 
   // Renderizar estatísticas
   const renderStats = () => {
