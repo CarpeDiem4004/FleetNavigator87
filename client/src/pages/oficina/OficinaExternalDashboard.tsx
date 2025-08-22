@@ -147,6 +147,7 @@ export default function OficinaExternalDashboard() {
   const [newPartName, setNewPartName] = useState('');
   const [newPartPrice, setNewPartPrice] = useState('');
   const [showAllReceptions, setShowAllReceptions] = useState(false);
+  const [showAllMaintenance, setShowAllMaintenance] = useState(false);
 
   // Função para formatar valores em moeda brasileira
   const formatCurrency = (value: string) => {
@@ -1403,7 +1404,7 @@ export default function OficinaExternalDashboard() {
                 </div>
               ) : (
                 <>
-                  {maintenanceRequests.slice(0, 3).map((request) => (
+                  {(showAllMaintenance ? maintenanceRequests : maintenanceRequests.slice(0, 3)).map((request) => (
                     <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">
@@ -1440,8 +1441,17 @@ export default function OficinaExternalDashboard() {
                     </div>
                   ))}
                   {maintenanceRequests.length > 3 && (
-                    <Button variant="outline" size="sm" className="w-full">
-                      Ver todas ({maintenanceRequests.length})
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => {
+                        console.log('Botão OS clicado! Estado atual:', showAllMaintenance);
+                        setShowAllMaintenance(!showAllMaintenance);
+                        console.log('Novo estado será:', !showAllMaintenance);
+                      }}
+                    >
+                      {showAllMaintenance ? 'Ver menos' : `Ver todas (${maintenanceRequests.length})`}
                     </Button>
                   )}
                 </>
