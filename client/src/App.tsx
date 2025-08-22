@@ -724,7 +724,10 @@ function App() {
           <ProtectedRoute path="/fleet-management/maintenance" component={MaintenanceManagement} />
           <ProtectedRoute path="/fleet-management/maintenance-management" component={MaintenanceManagement} />
           <ProtectedRoute path="/fleet-management/budgets" component={BudgetManagementPage} />
-          <ProtectedRoute path="/fleet-management/workshop-budgets" component={WorkshopBudgets} />
+          {/* Redirecionamento da rota antiga para a nova */}
+          <Route path="/fleet-management/workshop-budgets">
+            <Redirect to="/fleet-management/budgets" />
+          </Route>
           <ProtectedRoute path="/equipment" component={Equipment} />
           <ProtectedRoute path="/fleet-management/towing-partners" component={TowingPartnersPage} />
           <ProtectedRoute path="/fleet-management/towing-partners/new" component={NewTowingPartnerPage} />
