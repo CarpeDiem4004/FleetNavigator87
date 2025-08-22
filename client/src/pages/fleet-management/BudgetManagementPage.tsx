@@ -343,6 +343,11 @@ export default function BudgetManagementPage() {
 
   // Função para filtrar bases por projeto
   const handleProjectChange = (projectId: string) => {
+    console.log("=== DEBUG FILTRO DE BASES ===");
+    console.log("Projeto selecionado ID:", projectId);
+    console.log("Total de bases carregadas:", bases.length);
+    console.log("Primeiras 3 bases:", bases.slice(0, 3));
+    
     setRequestForm(prev => ({
       ...prev, 
       projeto: projectId,
@@ -352,9 +357,14 @@ export default function BudgetManagementPage() {
     if (projectId) {
       // Filtrar bases pelo projeto selecionado usando project_id
       const projectIdNumber = parseInt(projectId);
-      const basesDoProject = bases.filter(base => 
-        base.project_id === projectIdNumber
-      );
+      console.log("Projeto ID como número:", projectIdNumber);
+      
+      const basesDoProject = bases.filter(base => {
+        console.log(`Base ${base.name} - project_id: ${base.project_id} (tipo: ${typeof base.project_id})`);
+        return base.project_id === projectIdNumber;
+      });
+      
+      console.log("Bases filtradas:", basesDoProject);
       setFilteredBases(basesDoProject);
     } else {
       setFilteredBases([]);

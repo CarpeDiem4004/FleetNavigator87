@@ -4770,7 +4770,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET - Obter bases para o fuel card system
   app.get('/api/bases', async (req, res) => {
     try {
-      const query = 'SELECT id, name, description FROM bases ORDER BY name';
+      const query = 'SELECT id, name, description, project_id FROM bases ORDER BY name';
       const result = await pool.query(query);
       
       return res.status(200).json({
