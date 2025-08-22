@@ -8604,9 +8604,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Token inválido' });
       }
       
-      // Buscar oficina pelo ID do token (workshops é a tabela correta)
+      // Buscar oficina pelo ID do token (oficinas é a tabela correta)
       const result = await pool.query(
-        'SELECT * FROM workshops WHERE id = $1 AND status = $2',
+        'SELECT * FROM oficinas WHERE id = $1 AND status = $2',
         [decoded.id, 'ativo']
       );
       
@@ -8771,7 +8771,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Atualizar último login
       await pool.query(
-        'UPDATE workshops SET last_login = NOW() WHERE id = $1',
+        'UPDATE oficinas SET last_login = NOW() WHERE id = $1',
         [oficina.id]
       );
 
@@ -9300,69 +9300,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Listar recebimentos da oficina
-  app.get("/api/oficina/car-receptions", async (req, res) => {
+  app.get("/api/oficina/car-receptions", verificarTokenOficina, async (req, res) => {
     try {
-      const { token } = req.query;
+      console.log(`[OFICINA-LIST] Oficina autenticada: ${req.oficina.id} - ${req.oficina.razao_social}`);
       
-      // Validar token de acesso externo
-      if (!token) {
-        return res.status(401).json({ 
-          success: false,
-          message: 'Token de acesso obrigatório' 
-        });
-      }
-
-      // Verificar se o token é válido - verificar em ambas as tabelas
-      let result;
-      let workshop;
-
-      // Primeiro, verificar na tabela oficinas com external_token
-      const oficinasTokenQuery = `
-        SELECT 
-          o.id,
-          COALESCE(o.nome_fantasia, o.razao_social) as name,
-          o.cnpj,
-          o.email,
-          o.telefone as phone,
-          o.external_token as token,
-          o.created_at as token_created
-        FROM oficinas o
-        WHERE o.external_token = $1 AND o.status = 'ativo'
-      `;
-
-      result = await pool.query(oficinasTokenQuery, [token]);
-
-      if (result.rows.length > 0) {
-        workshop = result.rows[0];
-      } else {
-        // Se não encontrou na tabela oficinas, verificar na tabela workshop_access_tokens
-        const accessTokenQuery = `
-          SELECT 
-            o.id,
-            COALESCE(o.nome_fantasia, o.razao_social) as name,
-            o.cnpj,
-            o.email,
-            o.telefone as phone,
-            wat.access_token as token,
-            wat.created_at as token_created
-          FROM workshop_access_tokens wat
-          JOIN oficinas o ON wat.workshop_id = o.id
-          WHERE wat.access_token = $1 AND wat.is_active = true AND wat.expires_at > NOW() AND o.status = 'ativo'
-        `;
-
-        result = await pool.query(accessTokenQuery, [token]);
-
-        if (result.rows.length === 0) {
-          return res.status(401).json({
-            success: false,
-            message: "Token inválido ou expirado"
-          });
-        }
-
-        workshop = result.rows[0];
-      }
-      
-      const receptions = await storage.getCarReceptionsByWorkshop(workshop.id);
+      const receptions = await storage.getCarReceptionsByWorkshop(req.oficina.id);
       res.json(receptions);
     } catch (error) {
       console.error("Erro ao listar recebimentos:", error);
@@ -9371,29 +9313,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Atualizar recebimento
-  app.put("/api/oficina/car-receptions/:id", async (req, res) => {
+  app.put("/api/oficina/car-receptions/:id", verificarTokenOficina, async (req, res) => {
     console.log('[OFICINA-UPDATE] Requisição PUT recebida:', {
       params: req.params,
-      query: req.query,
       body: req.body,
-      token: req.query.token
+      oficinaId: req.oficina.id
     });
     
     try {
       const { id } = req.params;
-      const { token } = req.query;
       const data = req.body;
-      
-      // Validar token de acesso externo
-      if (!token) {
-        console.log('[OFICINA-UPDATE] Token não fornecido');
-        return res.status(401).json({ 
-          success: false,
-          message: 'Token de acesso obrigatório' 
-        });
-      }
-
-      console.log('[OFICINA-UPDATE] Validando token:', token);
 
       // Verificar se o token é válido - verificar em ambas as tabelas
       let result;
