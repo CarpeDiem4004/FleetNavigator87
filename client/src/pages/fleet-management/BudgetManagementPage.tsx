@@ -71,10 +71,14 @@ interface ChatMessage {
 
 interface Workshop {
   id: number;
-  nome: string;
+  name: string;
   cnpj: string;
-  nome_fantasia: string;
+  address?: string;
+  phone?: string;
   email: string;
+  contactPerson?: string;
+  workshopType?: string;
+  isActive?: boolean;
 }
 
 interface WorkshopBudget {
@@ -179,7 +183,7 @@ export default function BudgetManagementPage() {
 
   // Função para filtrar oficinas com base na pesquisa
   const filteredWorkshops = workshops.filter(workshop => 
-    (workshop.nome || '').toLowerCase().includes(searchWorkshop.toLowerCase()) ||
+    (workshop.name || '').toLowerCase().includes(searchWorkshop.toLowerCase()) ||
     (workshop.cnpj || '').includes(searchWorkshop)
   );
 
@@ -399,7 +403,7 @@ export default function BudgetManagementPage() {
 
       setBillingData({
         workshopId: selectedWorkshop.id,
-        workshopName: selectedWorkshop.nome,
+        workshopName: selectedWorkshop.name,
         totalValue,
         installments: 1,
         dueDates: []
@@ -643,7 +647,7 @@ export default function BudgetManagementPage() {
                   <SelectContent>
                     {filteredWorkshops.map((workshop) => (
                       <SelectItem key={workshop.id} value={workshop.id.toString()}>
-                        {workshop.nome} - {workshop.cnpj}
+                        {workshop.name} - {workshop.cnpj}
                       </SelectItem>
                     ))}
                   </SelectContent>
