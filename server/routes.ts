@@ -6191,47 +6191,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Se tem a coluna 'oficina_id', está na tabela manutencao
       if (checkResult.rows[0].oficina_id) {
+        // Construir query dinamicamente apenas com campos fornecidos
+        const updates = [];
+        const params = [];
+        let paramCount = 1;
+
+        if (status) {
+          updates.push(`status = $${paramCount}`);
+          params.push(status);
+          paramCount++;
+        }
+
+        if (notes) {
+          updates.push(`observacoes = $${paramCount}`);
+          params.push(notes);
+          paramCount++;
+        }
+
+        if (estimatedCompletion) {
+          updates.push(`data_agendada = $${paramCount}::timestamp`);
+          params.push(estimatedCompletion);
+          paramCount++;
+        }
+
+        if (actualCost && actualCost !== '') {
+          updates.push(`custo = $${paramCount}::numeric`);
+          params.push(parseFloat(actualCost));
+          paramCount++;
+        }
+
+        if (currentKm && currentKm !== '') {
+          updates.push(`km_atual = $${paramCount}::integer`);
+          params.push(parseInt(currentKm));
+          paramCount++;
+        }
+
+        // Sempre atualizar updated_at
+        updates.push('updated_at = NOW()');
+
+        if (updates.length === 1) { // Apenas updated_at
+          updates.push(`status = $${paramCount}`);
+          params.push(status || 'pendente');
+          paramCount++;
+        }
+
         updateQuery = `
           UPDATE manutencao 
-          SET 
-            status = COALESCE($1, status),
-            observacoes = COALESCE($2, observacoes),
-            custo = CASE WHEN $3::text != '' AND $3 IS NOT NULL THEN $3::numeric ELSE custo END,
-            data_conclusao = CASE 
-              WHEN $1 = 'entregue' OR $1 = 'finalizado' OR $1 = 'concluido' OR $1 = 'completed' THEN COALESCE($6::timestamp, NOW()) 
-              WHEN $6::timestamp IS NOT NULL THEN $6::timestamp 
-              ELSE data_conclusao 
-            END,
-            data_agendada = CASE WHEN $7::text != '' AND $7 IS NOT NULL THEN $7::timestamp ELSE data_agendada END,
-            km_atual = CASE WHEN $8::text != '' AND $8 IS NOT NULL THEN $8::integer ELSE km_atual END,
-            delivery_person_name = CASE WHEN $10::text != '' AND $10 IS NOT NULL THEN $10 ELSE delivery_person_name END,
-            delivery_person_cpf = CASE WHEN $11::text != '' AND $11 IS NOT NULL THEN $11 ELSE delivery_person_cpf END,
-            delivery_person_phone = CASE WHEN $12::text != '' AND $12 IS NOT NULL THEN $12 ELSE delivery_person_phone END,
-            delivered_date = CASE 
-              WHEN $1 = 'entregue' THEN COALESCE($6::timestamp, NOW()) 
-              ELSE delivered_date 
-            END,
-            updated_at = NOW()
-          WHERE id = $13 AND oficina_id = $14
+          SET ${updates.join(', ')}
+          WHERE id = $${paramCount} AND oficina_id = $${paramCount + 1}
           RETURNING *
         `;
         
-        updateResult = await pool.query(updateQuery, [
-          status || null, 
-          notes || null, 
-          actualCost || null, 
-          laborCost || null, 
-          partsCost || null, 
-          completionDate || null, 
-          estimatedCompletion || null,
-          currentKm || null,
-          replacedParts || null,
-          deliveryPersonName || null,
-          deliveryPersonCpf || null,
-          deliveryPersonPhone || null,
-          orderId, 
-          workshopId
-        ]);
+        params.push(orderId, workshopId);
+        updateResult = await pool.query(updateQuery, params);
       } else {
         // Se não tem 'oficina_id', está na tabela maintenance_orders
         updateQuery = `
@@ -6254,18 +6266,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `;
         
         updateResult = await pool.query(updateQuery, [
-          status || null, 
-          notes || null, 
-          actualCost || null, 
-          laborCost || null, 
-          partsCost || null, 
-          completionDate || null, 
-          estimatedCompletion || null,
-          currentKm || null,
-          replacedParts || null,
-          deliveryPersonName || null,
-          deliveryPersonCpf || null,
-          deliveryPersonPhone || null,
+          status ?? null, 
+          notes ?? null, 
+          actualCost ? parseFloat(actualCost) : null, 
+          laborCost ? parseFloat(laborCost) : null, 
+          partsCost ? parseFloat(partsCost) : null, 
+          completionDate ?? null, 
+          estimatedCompletion ?? null,
+          currentKm ? parseInt(currentKm) : null,
+          replacedParts ?? null,
+          deliveryPersonName ?? null,
+          deliveryPersonCpf ?? null,
+          deliveryPersonPhone ?? null,
           orderId, 
           workshopId
         ]);
