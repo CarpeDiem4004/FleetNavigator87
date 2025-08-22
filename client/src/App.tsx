@@ -138,6 +138,7 @@ import LoginAutofrei from "@/pages/oficina/LoginAutofrei";
 import AutofreiDashboard from "@/pages/oficina/AutofreiDashboard";
 import AutofreiFaturamentos from "@/pages/oficina/AutofreiFaturamentos";
 import AutofreiSolicitacoes from "@/pages/oficina/AutofreiSolicitacoes";
+import AutofreiCarReception from "@/pages/oficina/AutofreiCarReception";
 import CarReception from "@/pages/oficina/CarReception";
 import OficinaExternalDashboard from "@/pages/oficina/OficinaExternalDashboard";
 import OficinasCredentialsPage from "@/pages/maintenance/oficinas-credentials";
@@ -1203,6 +1204,11 @@ function App() {
           {/* Solicitações AUTOFREI */}
           <Route path="/oficina/autofrei/solicitacoes">
             <AutofreiSolicitacoes />
+          </Route>
+          
+          {/* Recebimento de Veículos AUTOFREI */}
+          <Route path="/oficina/autofrei/recebimentos">
+            <AutofreiCarReception />
           </Route>
           
           {/* Dashboard da Oficina */}

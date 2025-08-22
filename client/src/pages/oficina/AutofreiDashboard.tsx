@@ -239,7 +239,7 @@ export default function AutofreiDashboard() {
               </p>
               <Button 
                 className="w-full bg-white text-blue-600 hover:bg-gray-100"
-                onClick={() => setLocation('/maintenance/car-reception')}
+                onClick={() => setLocation('/oficina/autofrei/recebimentos')}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Registrar Recebimento
