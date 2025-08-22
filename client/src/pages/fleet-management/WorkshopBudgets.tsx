@@ -422,6 +422,31 @@ export default function WorkshopBudgets() {
         </div>
       </div>
 
+      {/* Aviso sobre controle obrigatório de aprovação */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardContent className="pt-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+            <div>
+              <h3 className="font-semibold text-blue-800 mb-2">
+                📋 CONTROLE DE APROVAÇÃO DE ORÇAMENTOS
+              </h3>
+              <div className="text-sm text-blue-700 space-y-2">
+                <p>
+                  <strong>Todos os orçamentos precisam da sua aprovação antes que as oficinas possam iniciar os serviços.</strong>
+                </p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>Orçamentos pendentes impedem que oficinas marquem serviços como "Em Reparo", "Pronto" ou "Entregue"</li>
+                  <li>Analise cuidadosamente custos, peças e prazo estimado antes de aprovar</li>
+                  <li>Orçamentos rejeitados retornam para a oficina com suas observações</li>
+                  <li>Use "Solicitar Revisão" para pedir ajustes sem rejeitar completamente</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Filtros de Data */}
       <Card>
         <CardHeader>

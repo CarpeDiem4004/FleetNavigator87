@@ -184,11 +184,12 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
       const data = await response.json();
       
       if (Array.isArray(data)) {
-        // Filtrar apenas recebimentos que ainda não têm orçamento ou que precisam de novo orçamento
-        const receptionsWithoutBudget = data.filter(reception => 
-          reception.status === 'recebido' || reception.status === 'em_analise'
+        // Filtrar recebimentos que podem receber orçamentos
+        // Priorizar: recebidos, em análise, mas também mostrar aguardando peças (podem precisar de novo orçamento)
+        const receptionsForBudget = data.filter(reception => 
+          ['recebido', 'em_analise', 'aguardando_pecas'].includes(reception.status)
         );
-        setCarReceptions(receptionsWithoutBudget);
+        setCarReceptions(receptionsForBudget);
       }
     } catch (error) {
       console.error("Erro ao carregar recebimentos:", error);
@@ -448,6 +449,31 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
 
   return (
     <div className="space-y-6">
+      {/* Aviso importante sobre aprovação de orçamentos */}
+      <Card className="border-yellow-200 bg-yellow-50">
+        <CardContent className="pt-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
+            <div>
+              <h3 className="font-semibold text-yellow-800 mb-2">
+                ⚠️ IMPORTANTE: Aprovação Obrigatória de Orçamentos
+              </h3>
+              <div className="text-sm text-yellow-700 space-y-2">
+                <p>
+                  <strong>Todos os orçamentos devem ser aprovados pela Gestão de Frotas antes de iniciar qualquer serviço.</strong>
+                </p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>Crie o orçamento detalhado com todas as peças e serviços necessários</li>
+                  <li>Aguarde a aprovação da Gestão de Frotas (status: "Aprovado")</li>
+                  <li>Apenas após aprovação você pode marcar o status como "Em Reparo", "Pronto" ou "Entregue"</li>
+                  <li>Orçamentos rejeitados precisam ser corrigidos e reenviados</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -455,7 +481,7 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
             Sistema de Orçamentos
           </h2>
           <p className="text-muted-foreground">
-            Gerencie orçamentos para os veículos recebidos
+            Gerencie orçamentos para os veículos recebidos - Aprovação obrigatória pela Gestão de Frotas
           </p>
         </div>
         

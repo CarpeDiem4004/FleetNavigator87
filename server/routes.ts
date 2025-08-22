@@ -9543,6 +9543,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Status inválido' });
       }
 
+      // VALIDAÇÃO OBRIGATÓRIA: Verificar orçamento aprovado para status que indicam início/conclusão de trabalho
+      const statusRequeremOrcamentoAprovado = ['em_reparo', 'pronto', 'entregue'];
+      if (statusRequeremOrcamentoAprovado.includes(status)) {
+        console.log(`[BUDGET-VALIDATION] Verificando orçamento aprovado para recebimento ${id}`);
+        
+        // Verificar se existe orçamento aprovado para este recebimento
+        const budgetCheckQuery = `
+          SELECT 
+            wb.id,
+            wb.budget_number,
+            wb.status,
+            wb.approved_by,
+            wb.approved_date,
+            u.name as approved_by_name
+          FROM workshop_budgets wb
+          LEFT JOIN users u ON wb.approved_by = u.id
+          WHERE wb.car_reception_id = $1
+          ORDER BY wb.created_at DESC
+          LIMIT 1
+        `;
+
+        const budgetResult = await pool.query(budgetCheckQuery, [id]);
+        
+        if (budgetResult.rows.length === 0) {
+          return res.status(400).json({ 
+            success: false,
+            message: 'ORÇAMENTO OBRIGATÓRIO: Não é possível prosseguir com este serviço pois não existe orçamento criado. Crie um orçamento primeiro e aguarde a aprovação da Gestão de Frotas.',
+            requiresBudget: true,
+            currentStatus: 'sem_orcamento'
+          });
+        }
+
+        const budget = budgetResult.rows[0];
+        
+        if (budget.status !== 'aprovado') {
+          let message = '';
+          switch (budget.status) {
+            case 'pendente':
+              message = `AGUARDANDO APROVAÇÃO: O orçamento ${budget.budget_number} está pendente de aprovação da Gestão de Frotas. Não é possível iniciar/concluir o serviço até que seja aprovado.`;
+              break;
+            case 'rejeitado':
+              message = `ORÇAMENTO REJEITADO: O orçamento ${budget.budget_number} foi rejeitado pela Gestão de Frotas. Crie um novo orçamento com as correções necessárias.`;
+              break;
+            case 'revisao':
+              message = `ORÇAMENTO EM REVISÃO: O orçamento ${budget.budget_number} está em revisão pela Gestão de Frotas. Aguarde a conclusão da análise.`;
+              break;
+            default:
+              message = `ORÇAMENTO NÃO APROVADO: O orçamento ${budget.budget_number} precisa ser aprovado pela Gestão de Frotas antes de prosseguir com o serviço.`;
+          }
+          
+          return res.status(400).json({ 
+            success: false,
+            message,
+            requiresBudget: true,
+            currentStatus: budget.status,
+            budgetNumber: budget.budget_number
+          });
+        }
+
+        // Se chegou aqui, o orçamento está aprovado - log de sucesso
+        console.log(`[BUDGET-VALIDATION] ✅ Orçamento aprovado encontrado: ${budget.budget_number} por ${budget.approved_by_name}`);
+      }
+
       // Se o status for "entregue", validar dados da pessoa que está retirando
       if (status === 'entregue') {
         if (!deliveryPersonName || !deliveryPersonCpf || !deliveryPersonPhone) {
