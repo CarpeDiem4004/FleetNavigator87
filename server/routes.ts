@@ -6217,18 +6217,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `;
         
         updateResult = await pool.query(updateQuery, [
-          status, 
-          notes, 
-          actualCost, 
-          laborCost, 
-          partsCost, 
-          completionDate, 
-          estimatedCompletion,
-          currentKm,
-          replacedParts,
-          deliveryPersonName,
-          deliveryPersonCpf,
-          deliveryPersonPhone,
+          status || null, 
+          notes || null, 
+          actualCost || null, 
+          laborCost || null, 
+          partsCost || null, 
+          completionDate || null, 
+          estimatedCompletion || null,
+          currentKm || null,
+          replacedParts || null,
+          deliveryPersonName || null,
+          deliveryPersonCpf || null,
+          deliveryPersonPhone || null,
           orderId, 
           workshopId
         ]);
@@ -6254,18 +6254,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `;
         
         updateResult = await pool.query(updateQuery, [
-          status, 
-          notes, 
-          actualCost, 
-          laborCost, 
-          partsCost, 
-          completionDate, 
-          estimatedCompletion,
-          currentKm,
-          replacedParts,
-          deliveryPersonName,
-          deliveryPersonCpf,
-          deliveryPersonPhone,
+          status || null, 
+          notes || null, 
+          actualCost || null, 
+          laborCost || null, 
+          partsCost || null, 
+          completionDate || null, 
+          estimatedCompletion || null,
+          currentKm || null,
+          replacedParts || null,
+          deliveryPersonName || null,
+          deliveryPersonCpf || null,
+          deliveryPersonPhone || null,
           orderId, 
           workshopId
         ]);

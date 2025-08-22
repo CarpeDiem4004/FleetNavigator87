@@ -33,11 +33,13 @@ import {
   Settings,
   Edit,
   Eye,
-  Download
+  Download,
+  Calculator
 } from "lucide-react";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useLocation } from "wouter";
+import BudgetManager from './components/BudgetManager';
 
 interface ServiceOrder {
   id: number;
@@ -166,6 +168,9 @@ export default function OficinaDashboard() {
     deliveryPersonCpf: "",
     deliveryPersonPhone: ""
   });
+
+  // Estado para controle de abas
+  const [activeTab, setActiveTab] = useState("receptions");
   
   const { toast } = useToast();
 
@@ -935,11 +940,58 @@ export default function OficinaDashboard() {
           })}
         </div>
 
+        {/* Navegação por Abas */}
+        <div className="mb-6">
+          <div className="bg-white rounded-lg shadow-sm border">
+            <div className="border-b">
+              <div className="flex space-x-8 px-4">
+                <Button
+                  variant="ghost"
+                  onClick={() => setActiveTab("orders")}
+                  className={`flex items-center gap-2 border-b-2 rounded-none px-0 py-3 ${
+                    activeTab === "orders" 
+                      ? "border-blue-500 text-blue-600" 
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <Wrench className="h-4 w-4" />
+                  Ordens de Serviço
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => setActiveTab("receptions")}
+                  className={`flex items-center gap-2 border-b-2 rounded-none px-0 py-3 ${
+                    activeTab === "receptions" 
+                      ? "border-blue-500 text-blue-600" 
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <Car className="h-4 w-4" />
+                  Recebimento de Veículos
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => setActiveTab("budgets")}
+                  className={`flex items-center gap-2 border-b-2 rounded-none px-0 py-3 ${
+                    activeTab === "budgets" 
+                      ? "border-blue-500 text-blue-600" 
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <Calculator className="h-4 w-4" />
+                  Orçamentos
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Orders Table */}
+        {activeTab === "orders" && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Car className="h-5 w-5" />
+              <Wrench className="h-5 w-5" />
               Ordens de Serviço
             </CardTitle>
             <CardDescription>
@@ -1155,8 +1207,10 @@ export default function OficinaDashboard() {
             )}
           </CardContent>
         </Card>
+        )}
 
-        {/* Veículos Recebidos */}
+        {/* Recebimentos de Veículos */}
+        {activeTab === "receptions" && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -1406,6 +1460,25 @@ export default function OficinaDashboard() {
             )}
           </CardContent>
         </Card>
+        )}
+
+        {/* Sistema de Orçamentos */}
+        {activeTab === "budgets" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calculator className="h-5 w-5" />
+                Sistema de Orçamentos
+              </CardTitle>
+              <CardDescription>
+                Crie e gerencie orçamentos das ordens de serviço
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BudgetManager token={localStorage.getItem("oficina_token") || ""} />
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Work Details Modal */}
