@@ -9279,6 +9279,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const reception = await storage.createCarReception(carReceptionData);
+
+      // CRIAR AUTOMATICAMENTE A OS (MAINTENANCE) QUANDO CAR_RECEPTION É CRIADA
+      console.log('[OFICINA-CREATE] Criando OS automática para car_reception:', reception.id);
+      
+      try {
+        const maintenanceData = {
+          vehicle_plate: reception.vehiclePlate,
+          description: reception.serviceDescription || 'Manutenção solicitada',
+          status: 'pendente', // OS recém-criada sempre inicia como pendente
+          priority: 'normal',
+          workshop_id: reception.workshopId,
+          source: 'auto_created_from_car_reception'
+        };
+
+        const maintenanceResult = await pool.query(`
+          INSERT INTO maintenance (vehicle_plate, description, status, priority, workshop_id, source, created_at, updated_at)
+          VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+          RETURNING id
+        `, [
+          maintenanceData.vehicle_plate,
+          maintenanceData.description,
+          maintenanceData.status,
+          maintenanceData.priority,
+          maintenanceData.workshop_id,
+          maintenanceData.source
+        ]);
+
+        const maintenanceId = maintenanceResult.rows[0].id;
+        console.log('[OFICINA-CREATE] OS criada automaticamente com ID:', maintenanceId);
+        
+      } catch (maintenanceError) {
+        console.error('[OFICINA-CREATE] Erro ao criar OS automática:', maintenanceError);
+        // Não bloquear o car_reception se a OS falhar
+      }
+
       res.status(201).json({ 
         success: true,
         message: 'Recebimento registrado com sucesso',
