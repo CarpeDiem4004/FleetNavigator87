@@ -473,9 +473,24 @@ export class DatabaseStorage implements IStorage {
   async getAllBases(): Promise<Base[]> {
     console.log(`[STORAGE] getAllBases() CHAMADO - Iniciando filtro...`);
     
-    // Filtrar bases para acesso externo (sem manutenção)
-    const allBases = await db.select().from(bases);
+    // Filtrar bases para acesso externo (sem manutenção) - selecionando todas as colunas explicitamente
+    const allBases = await db.select({
+      id: bases.id,
+      name: bases.name,
+      location: bases.location,
+      basename: bases.basename,
+      type: bases.type,
+      active: bases.active,
+      operation: bases.operation,
+      hasMaintenance: bases.hasMaintenance,
+      hasTires: bases.hasTires,
+      requestsEnabled: bases.requestsEnabled,
+      projectId: bases.projectId,  // Campo projectId do schema
+      project_id: bases.projectId, // Mapeamento adicional como project_id
+      created_at: bases.created_at
+    }).from(bases);
     console.log(`[STORAGE] Total bases no banco: ${allBases.length}`);
+    console.log(`[STORAGE] Primeira base com projectId:`, allBases[0]);
     
     const externalBases = allBases.filter(base => {
       const shouldInclude = base.active && base.name && !base.name.toLowerCase().includes('manutenção');

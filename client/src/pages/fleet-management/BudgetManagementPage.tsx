@@ -355,13 +355,13 @@ export default function BudgetManagementPage() {
     }));
     
     if (projectId) {
-      // Filtrar bases pelo projeto selecionado usando project_id
+      // Filtrar bases pelo projeto selecionado usando projectId (camelCase do Drizzle)
       const projectIdNumber = parseInt(projectId);
       console.log("Projeto ID como número:", projectIdNumber);
       
       const basesDoProject = bases.filter(base => {
-        console.log(`Base ${base.name} - project_id: ${base.project_id} (tipo: ${typeof base.project_id})`);
-        return base.project_id === projectIdNumber;
+        console.log(`Base ${base.name} - projectId: ${(base as any).projectId} (tipo: ${typeof (base as any).projectId})`);
+        return (base as any).projectId === projectIdNumber;
       });
       
       console.log("Bases filtradas:", basesDoProject);

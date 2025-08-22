@@ -4770,13 +4770,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET - Obter bases para o fuel card system
   app.get('/api/bases', async (req, res) => {
     try {
-      const query = 'SELECT id, name, description, project_id FROM bases ORDER BY name';
+      console.log('Direct Bases API - Usando query SQL direta...');
+      const query = `
+        SELECT id, name, location, basename, type, active, operation, 
+               has_maintenance, has_tires, requests_enabled, project_id, created_at
+        FROM bases 
+        WHERE active = true AND name IS NOT NULL 
+        AND LOWER(name) NOT LIKE '%manutenção%' 
+        ORDER BY name
+      `;
       const result = await pool.query(query);
+      
+      console.log('Direct Bases API - Found', result.rows.length, 'bases');
+      console.log('Direct Bases API - Primeira base:', JSON.stringify(result.rows[0], null, 2));
       
       return res.status(200).json({
         success: true,
         data: result.rows,
-        count: result.rowCount || 0
+        count: result.rows.length
       });
     } catch (error: any) {
       console.error('Erro ao buscar bases:', error);
