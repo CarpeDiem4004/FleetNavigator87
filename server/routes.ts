@@ -16392,8 +16392,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registra as rotas para o sistema de estoque de peças
   app.use('/api/frota', frotaEstoqueRoutes);
 
+  // API para buscar orçamentos de uma oficina específica por período
+  app.get("/api/fleet/workshop-budgets", isAuthenticated, async (req, res) => {
+    try {
+      const { workshopId, dateFrom, dateTo } = req.query;
+      
+      if (!workshopId) {
+        return res.status(400).json({ message: "ID da oficina é obrigatório" });
+      }
+      
+      if (!dateFrom || !dateTo) {
+        return res.status(400).json({ message: "Período de data é obrigatório" });
+      }
+      
+      const query = `
+        SELECT 
+          wb.id,
+          wb.workshop_id,
+          w.nome as workshop_name,
+          wb.workshop_cnpj,
+          wb.total_cost,
+          wb.status,
+          wb.is_billed,
+          wb.installments,
+          wb.created_at,
+          wb.approved_date,
+          wb.service_number,
+          wb.budget_number,
+          wb.labor_description,
+          wb.labor_cost,
+          wb.parts_description,
+          wb.parts_cost
+        FROM workshop_budgets wb
+        JOIN workshops w ON wb.workshop_id = w.id
+        WHERE wb.workshop_id = $1
+          AND wb.created_at >= $2
+          AND wb.created_at <= $3
+        ORDER BY wb.created_at DESC
+      `;
+      
+      const result = await pool.query(query, [
+        parseInt(workshopId as string),
+        dateFrom,
+        dateTo + ' 23:59:59'
+      ]);
+      
+      return res.status(200).json(result.rows);
+    } catch (error) {
+      console.error("Erro ao buscar orçamentos da oficina:", error);
+      return res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // API para buscar todos os orçamentos das oficinas para gestão da frota
-  app.get("/api/fleet/workshop-budgets", hasMaintenanceAccessV2, async (req, res) => {
+  app.get("/api/fleet/all-workshop-budgets", hasMaintenanceAccessV2, async (req, res) => {
     try {
       const user = req.user as any;
       const { startDate, endDate } = req.query;
@@ -16519,6 +16571,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Erro ao buscar orçamentos das oficinas",
         error: error instanceof Error ? error.message : "Erro desconhecido"
       });
+    }
+  });
+
+  // API para configurar faturamento de orçamentos
+  app.post("/api/fleet/configure-billing", isAuthenticated, async (req, res) => {
+    try {
+      const { workshopId, workshopName, totalValue, installments, dueDates, budgetIds } = req.body;
+      
+      if (!workshopId || !workshopName || !totalValue || !installments || !dueDates || !budgetIds) {
+        return res.status(400).json({ message: "Dados incompletos para configuração de faturamento" });
+      }
+      
+      // Inserir configuração de faturamento
+      const insertQuery = `
+        INSERT INTO workshop_billing_config (
+          workshop_id, 
+          workshop_name, 
+          total_value, 
+          installments, 
+          due_dates, 
+          budget_ids,
+          created_at
+        ) 
+        VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        RETURNING *
+      `;
+      
+      const result = await pool.query(insertQuery, [
+        workshopId,
+        workshopName,
+        totalValue,
+        installments,
+        JSON.stringify(dueDates),
+        JSON.stringify(budgetIds)
+      ]);
+      
+      // Marcar orçamentos como faturados
+      const updateBudgetsQuery = `
+        UPDATE workshop_budgets 
+        SET is_billed = true, updated_at = NOW() 
+        WHERE id = ANY($1::int[])
+      `;
+      
+      await pool.query(updateBudgetsQuery, [budgetIds]);
+      
+      return res.status(200).json({
+        success: true,
+        billingConfig: result.rows[0],
+        message: "Faturamento configurado com sucesso"
+      });
+    } catch (error) {
+      console.error("Erro ao configurar faturamento:", error);
+      return res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // API para buscar dados de acompanhamento de faturamento
+  app.get("/api/fleet/billing-tracking", isAuthenticated, async (req, res) => {
+    try {
+      const { workshopId } = req.query;
+      
+      let whereClause = '';
+      let queryParams = [];
+      
+      if (workshopId) {
+        whereClause = 'WHERE workshop_id = $1';
+        queryParams.push(parseInt(workshopId as string));
+      }
+      
+      const query = `
+        SELECT 
+          id,
+          workshop_id,
+          workshop_name,
+          total_value,
+          installments,
+          due_dates,
+          budget_ids,
+          created_at
+        FROM workshop_billing_config
+        ${whereClause}
+        ORDER BY created_at DESC
+        LIMIT 50
+      `;
+      
+      const result = await pool.query(query, queryParams);
+      
+      // Processar as datas de vencimento
+      const billingData = result.rows.map(row => ({
+        ...row,
+        due_dates: JSON.parse(row.due_dates || '[]'),
+        budget_ids: JSON.parse(row.budget_ids || '[]')
+      }));
+      
+      return res.status(200).json(billingData);
+    } catch (error) {
+      console.error("Erro ao buscar acompanhamento de faturamento:", error);
+      return res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
 

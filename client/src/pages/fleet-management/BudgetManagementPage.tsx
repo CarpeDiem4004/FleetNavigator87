@@ -25,12 +25,15 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
 import MaintenanceChatHistory from "@/components/chat/MaintenanceChatHistory";
 import { formatCurrency } from "@/lib/utils";
-import { CircleAlert, BarChart3, CheckCircle, Clock, AlertCircle, FileText } from "lucide-react";
+import { CircleAlert, BarChart3, CheckCircle, Clock, AlertCircle, FileText, Search, DollarSign, Calendar, CreditCard } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Maintenance {
@@ -66,6 +69,35 @@ interface ChatMessage {
   proposedBudget: number | null;
 }
 
+interface Workshop {
+  id: number;
+  nome: string;
+  cnpj: string;
+  nome_fantasia: string;
+  email: string;
+}
+
+interface WorkshopBudget {
+  id: number;
+  workshop_id: number;
+  workshop_name: string;
+  total_cost: number;
+  status: string;
+  is_billed: boolean;
+  installments: number;
+  due_dates: string[];
+  created_at: string;
+  approved_date: string;
+}
+
+interface BillingData {
+  workshopId: number;
+  workshopName: string;
+  totalValue: number;
+  installments: number;
+  dueDates: string[];
+}
+
 const statusMap: Record<string, { label: string; color: "default" | "primary" | "secondary" | "destructive" | "warning" | "success" }> = {
   em_negociacao: { label: "Em Negociação", color: "warning" },
   orcamento_aprovado: { label: "Orçamento Aprovado", color: "success" },
@@ -92,6 +124,29 @@ export default function BudgetManagementPage() {
   const [fetchingMessages, setFetchingMessages] = useState(false);
   const [budgetRequests, setBudgetRequests] = useState<any[]>([]);
   const [loadingBudgetRequests, setLoadingBudgetRequests] = useState(true);
+  
+  // Estados para busca por oficina e período
+  const [workshops, setWorkshops] = useState<Workshop[]>([]);
+  const [selectedWorkshopId, setSelectedWorkshopId] = useState<number | null>(null);
+  const [searchWorkshop, setSearchWorkshop] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [workshopBudgets, setWorkshopBudgets] = useState<WorkshopBudget[]>([]);
+  const [loadingWorkshopBudgets, setLoadingWorkshopBudgets] = useState(false);
+  
+  // Estados para configuração de faturamento
+  const [billingDialogOpen, setBillingDialogOpen] = useState(false);
+  const [billingData, setBillingData] = useState<BillingData>({
+    workshopId: 0,
+    workshopName: "",
+    totalValue: 0,
+    installments: 1,
+    dueDates: []
+  });
+  
+  // Estados para acompanhamento de faturamento
+  const [billingTrackingData, setBillingTrackingData] = useState<any[]>([]);
+  const [loadingBillingTracking, setLoadingBillingTracking] = useState(false);
 
   // Função para obter as solicitações de orçamento da Base Campinas
   const fetchBudgetRequests = async () => {
@@ -159,11 +214,69 @@ export default function BudgetManagementPage() {
     }
   };
 
-  // Carregar manutenções com chats e solicitações de orçamento quando a página carrega
+  // Carregar dados iniciais
   useEffect(() => {
     fetchMaintenancesWithChats();
     fetchBudgetRequests();
+    fetchWorkshops();
+    fetchBillingTrackingData();
   }, []);
+
+  // Função para buscar oficinas
+  const fetchWorkshops = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/workshops");
+      const data = await response.json();
+      setWorkshops(data);
+    } catch (error) {
+      console.error("Erro ao buscar oficinas:", error);
+    }
+  };
+
+  // Função para buscar orçamentos de uma oficina em período específico
+  const fetchWorkshopBudgets = async () => {
+    if (!selectedWorkshopId || !dateFrom || !dateTo) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Selecione uma oficina e o período de data",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setLoadingWorkshopBudgets(true);
+      const response = await apiRequest(
+        "GET", 
+        `/api/fleet/workshop-budgets?workshopId=${selectedWorkshopId}&dateFrom=${dateFrom}&dateTo=${dateTo}`
+      );
+      const data = await response.json();
+      setWorkshopBudgets(data);
+    } catch (error) {
+      console.error("Erro ao buscar orçamentos da oficina:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os orçamentos da oficina",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingWorkshopBudgets(false);
+    }
+  };
+
+  // Função para buscar dados de acompanhamento de faturamento
+  const fetchBillingTrackingData = async () => {
+    try {
+      setLoadingBillingTracking(true);
+      const response = await apiRequest("GET", "/api/fleet/billing-tracking");
+      const data = await response.json();
+      setBillingTrackingData(data);
+    } catch (error) {
+      console.error("Erro ao buscar dados de faturamento:", error);
+    } finally {
+      setLoadingBillingTracking(false);
+    }
+  };
 
   // Abrir o chat de uma manutenção
   const openChat = (maintenance: Maintenance) => {
@@ -210,14 +323,89 @@ export default function BudgetManagementPage() {
     }
   };
 
+  // Função para configurar faturamento de oficina
+  const configureBilling = async () => {
+    try {
+      const selectedWorkshop = workshops.find(w => w.id === selectedWorkshopId);
+      if (!selectedWorkshop) return;
+
+      const totalValue = workshopBudgets
+        .filter(b => b.status === "aprovado")
+        .reduce((sum, b) => sum + b.total_cost, 0);
+
+      setBillingData({
+        workshopId: selectedWorkshop.id,
+        workshopName: selectedWorkshop.nome,
+        totalValue,
+        installments: 1,
+        dueDates: []
+      });
+      setBillingDialogOpen(true);
+    } catch (error) {
+      console.error("Erro ao configurar faturamento:", error);
+    }
+  };
+
+  // Função para calcular datas de vencimento
+  const calculateDueDates = (installments: number, firstDueDate: string): string[] => {
+    const dates = [];
+    const startDate = new Date(firstDueDate);
+    
+    for (let i = 0; i < installments; i++) {
+      const dueDate = new Date(startDate);
+      dueDate.setMonth(startDate.getMonth() + i);
+      dates.push(dueDate.toISOString().split('T')[0]);
+    }
+    
+    return dates;
+  };
+
+  // Função para salvar configuração de faturamento
+  const saveBillingConfiguration = async () => {
+    try {
+      const response = await apiRequest("POST", "/api/fleet/configure-billing", {
+        workshopId: billingData.workshopId,
+        totalValue: billingData.totalValue,
+        installments: billingData.installments,
+        dueDates: billingData.dueDates,
+        budgetIds: workshopBudgets.filter(b => b.status === "aprovado").map(b => b.id)
+      });
+
+      toast({
+        title: "Sucesso",
+        description: "Configuração de faturamento salva com sucesso",
+        // @ts-ignore
+        variant: "success"
+      });
+
+      setBillingDialogOpen(false);
+      fetchBillingTrackingData();
+      fetchWorkshopBudgets();
+    } catch (error) {
+      console.error("Erro ao salvar configuração:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar a configuração de faturamento",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Filtrar oficinas pela busca
+  const filteredWorkshops = workshops.filter(workshop =>
+    workshop.nome.toLowerCase().includes(searchWorkshop.toLowerCase()) ||
+    workshop.cnpj.includes(searchWorkshop)
+  );
+
   // Renderizar estatísticas
   const renderStats = () => {
     const totalNegociacao = maintenances.filter(m => m.status === "em_negociacao").length;
     const totalAprovado = maintenances.filter(m => m.status === "orcamento_aprovado").length;
     const totalPendente = maintenances.filter(m => !m.finalBudget && !m.isFinalized).length;
+    const totalFaturado = billingTrackingData.reduce((sum, item) => sum + item.total_value, 0);
     
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Em Negociação</CardTitle>
@@ -253,6 +441,19 @@ export default function BudgetManagementPage() {
             <div className="text-2xl font-bold">{totalPendente}</div>
             <p className="text-xs text-muted-foreground">
               Orçamentos ainda não finalizados
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Valor Faturado</CardTitle>
+            <DollarSign className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalFaturado)}</div>
+            <p className="text-xs text-muted-foreground">
+              Total de valores faturados
             </p>
           </CardContent>
         </Card>
@@ -338,6 +539,200 @@ export default function BudgetManagementPage() {
             </Button>
           </div>
         </div>
+
+        {/* Seção de Busca por Oficina e Período */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              Busca de Orçamentos por Oficina
+            </CardTitle>
+            <CardDescription>
+              Selecione uma oficina e período para visualizar orçamentos e configurar faturamento
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <div className="space-y-2">
+                <Label htmlFor="search-workshop">Buscar Oficina</Label>
+                <Input
+                  id="search-workshop"
+                  placeholder="Nome ou CNPJ da oficina..."
+                  value={searchWorkshop}
+                  onChange={(e) => setSearchWorkshop(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="workshop-select">Selecionar Oficina</Label>
+                <Select value={selectedWorkshopId?.toString() || ""} onValueChange={(value) => setSelectedWorkshopId(parseInt(value))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma oficina" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredWorkshops.map((workshop) => (
+                      <SelectItem key={workshop.id} value={workshop.id.toString()}>
+                        {workshop.nome} - {workshop.cnpj}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="date-from">Data Inicial</Label>
+                <Input
+                  id="date-from"
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="date-to">Data Final</Label>
+                <Input
+                  id="date-to"
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={fetchWorkshopBudgets} disabled={loadingWorkshopBudgets}>
+                {loadingWorkshopBudgets ? "Carregando..." : "Buscar Orçamentos"}
+              </Button>
+              {workshopBudgets.length > 0 && (
+                <Button onClick={configureBilling} variant="outline">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Configurar Faturamento
+                </Button>
+              )}
+            </div>
+
+            {/* Resultados da busca */}
+            {workshopBudgets.length > 0 && (
+              <div className="mt-6">
+                <h4 className="text-lg font-semibold mb-4">Orçamentos Encontrados</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Total de Orçamentos</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{workshopBudgets.length}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Orçamentos Aprovados</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {workshopBudgets.filter(b => b.status === "aprovado").length}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Valor Total Aprovado</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {formatCurrency(
+                          workshopBudgets
+                            .filter(b => b.status === "aprovado")
+                            .reduce((sum, b) => sum + b.total_cost, 0)
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Número do Orçamento</TableHead>
+                      <TableHead>Valor</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Data de Aprovação</TableHead>
+                      <TableHead>Faturado</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {workshopBudgets.map((budget) => (
+                      <TableRow key={budget.id}>
+                        <TableCell className="font-medium">
+                          #{budget.id}
+                        </TableCell>
+                        <TableCell>{formatCurrency(budget.total_cost)}</TableCell>
+                        <TableCell>
+                          <Badge variant={budget.status === "aprovado" ? "default" : "secondary"}>
+                            {budget.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {budget.approved_date ? new Date(budget.approved_date).toLocaleDateString() : "-"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={budget.is_billed ? "default" : "outline"}>
+                            {budget.is_billed ? "Sim" : "Não"}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Cards de Acompanhamento de Faturamento */}
+        {billingTrackingData.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Acompanhamento de Faturamento
+              </CardTitle>
+              <CardDescription>
+                Valores faturados e datas de vencimento das oficinas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {billingTrackingData.map((billing, index) => (
+                  <Card key={index}>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm">{billing.workshop_name}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Valor Total:</span>
+                        <span className="font-semibold">{formatCurrency(billing.total_value)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Parcelas:</span>
+                        <span className="font-semibold">{billing.installments}x</span>
+                      </div>
+                      {billing.due_dates && billing.due_dates.length > 0 && (
+                        <div className="space-y-1">
+                          <span className="text-sm text-muted-foreground">Próximos Vencimentos:</span>
+                          {billing.due_dates.slice(0, 3).map((date, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <Calendar className="h-3 w-3" />
+                              <span className="text-xs">
+                                {new Date(date).toLocaleDateString()} - {formatCurrency(billing.total_value / billing.installments)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
       {/* Solicitações de Orçamento das Bases */}
       <Card className="mb-6">
@@ -890,6 +1285,93 @@ export default function BudgetManagementPage() {
               </DialogFooter>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Configuração de Faturamento */}
+      <Dialog open={billingDialogOpen} onOpenChange={setBillingDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Configurar Faturamento</DialogTitle>
+            <DialogDescription>
+              Configure o faturamento e as datas de vencimento para {billingData.workshopName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Valor Total</Label>
+              <Input
+                value={formatCurrency(billingData.totalValue)}
+                disabled
+                className="bg-muted"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="installments">Número de Parcelas</Label>
+              <Select
+                value={billingData.installments.toString()}
+                onValueChange={(value) => {
+                  const installments = parseInt(value);
+                  setBillingData(prev => ({
+                    ...prev,
+                    installments,
+                    dueDates: []
+                  }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
+                    <SelectItem key={num} value={num.toString()}>
+                      {num}x de {formatCurrency(billingData.totalValue / num)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="first-due-date">Primeira Data de Vencimento</Label>
+              <Input
+                id="first-due-date"
+                type="date"
+                value={billingData.dueDates[0] || ""}
+                onChange={(e) => {
+                  const firstDate = e.target.value;
+                  const dueDates = calculateDueDates(billingData.installments, firstDate);
+                  setBillingData(prev => ({ ...prev, dueDates }));
+                }}
+              />
+            </div>
+            {billingData.dueDates.length > 1 && (
+              <div className="space-y-2">
+                <Label>Datas de Vencimento</Label>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {billingData.dueDates.map((date, index) => (
+                    <div key={index} className="flex items-center gap-2 text-sm">
+                      <Calendar className="h-3 w-3" />
+                      <span>{index + 1}ª parcela: {new Date(date).toLocaleDateString()}</span>
+                      <span className="text-muted-foreground">
+                        - {formatCurrency(billingData.totalValue / billingData.installments)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBillingDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={saveBillingConfiguration}
+              disabled={billingData.dueDates.length === 0}
+            >
+              Salvar Configuração
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       </div>
