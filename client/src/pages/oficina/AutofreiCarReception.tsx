@@ -19,12 +19,13 @@ const carReceptionSchema = z.object({
     required_error: "Tipo de veículo é obrigatório",
   }),
   currentKm: z.number().min(0, "Quilometragem deve ser positiva"),
+  project: z.string().optional(),
+  base: z.string().optional(),
   serviceDescription: z.string().min(1, "Descrição do serviço é obrigatória"),
+  status: z.string().default("recebido"),
   laborCost: z.number().min(0, "Custo da mão de obra deve ser positivo").optional(),
   partsCost: z.number().min(0, "Custo das peças deve ser positivo").optional(),
   deliveryDeadline: z.string().optional(),
-  customerName: z.string().min(1, "Nome do cliente é obrigatório"),
-  customerPhone: z.string().min(1, "Telefone do cliente é obrigatório"),
   notes: z.string().optional(),
 });
 
@@ -51,11 +52,12 @@ export default function AutofreiCarReception() {
       vehicleModel: "",
       vehicleType: "van",
       currentKm: 0,
+      project: "",
+      base: "",
       serviceDescription: "",
+      status: "recebido",
       laborCost: 0,
       partsCost: 0,
-      customerName: "",
-      customerPhone: "",
       notes: "",
     },
   });
@@ -155,7 +157,7 @@ export default function AutofreiCarReception() {
       
       toast({
         title: "Recebimento registrado com sucesso",
-        description: `Veículo ${data.vehiclePlate} de ${data.customerName} registrado para manutenção.`,
+        description: `Veículo ${data.vehiclePlate} registrado para manutenção.`,
       });
 
       // Limpar formulário
@@ -164,11 +166,12 @@ export default function AutofreiCarReception() {
         vehicleModel: "",
         vehicleType: "van",
         currentKm: 0,
+        project: "",
+        base: "",
         serviceDescription: "",
+        status: "recebido",
         laborCost: 0,
         partsCost: 0,
-        customerName: "",
-        customerPhone: "",
         notes: "",
       });
       
@@ -232,43 +235,12 @@ export default function AutofreiCarReception() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 
-                {/* Informações do Cliente */}
+                {/* Dados do Veículo */}
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-medium text-blue-900 mb-4">Dados do Cliente</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="customerName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome do Cliente</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Ex: João Silva" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="customerPhone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Telefone</FormLabel>
-                          <FormControl>
-                            <Input placeholder="(11) 99999-9999" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* Informações do Veículo */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Dados do Veículo</h3>
+                  <h3 className="text-lg font-medium text-blue-900 mb-4 flex items-center">
+                    <Car className="h-5 w-5 mr-2" />
+                    Dados do Veículo
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField
                       control={form.control}
@@ -277,7 +249,7 @@ export default function AutofreiCarReception() {
                         <FormItem>
                           <FormLabel>Placa do Veículo</FormLabel>
                           <FormControl>
-                            <Input placeholder="ABC-1234" {...field} />
+                            <Input placeholder="ABC1234" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -324,7 +296,7 @@ export default function AutofreiCarReception() {
                     />
                   </div>
 
-                  <div className="mt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     <FormField
                       control={form.control}
                       name="currentKm"
@@ -334,7 +306,7 @@ export default function AutofreiCarReception() {
                           <FormControl>
                             <Input 
                               type="number" 
-                              placeholder="Ex: 150000" 
+                              placeholder="0" 
                               {...field}
                               onChange={(e) => field.onChange(Number(e.target.value))}
                             />
@@ -343,12 +315,63 @@ export default function AutofreiCarReception() {
                         </FormItem>
                       )}
                     />
+
+                    <FormField
+                      control={form.control}
+                      name="project"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Projeto</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione o projeto" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">Selecione o projeto</SelectItem>
+                              <SelectItem value="projeto1">Projeto 1</SelectItem>
+                              <SelectItem value="projeto2">Projeto 2</SelectItem>
+                              <SelectItem value="projeto3">Projeto 3</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="base"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Base</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Primeiro selecione um projeto" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">Primeiro selecione um projeto</SelectItem>
+                              <SelectItem value="base1">Base 1</SelectItem>
+                              <SelectItem value="base2">Base 2</SelectItem>
+                              <SelectItem value="base3">Base 3</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </div>
 
-                {/* Serviço Solicitado */}
-                <div className="bg-yellow-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-medium text-yellow-900 mb-4">Serviço Solicitado</h3>
+                {/* Detalhes do Serviço */}
+                <div className="bg-orange-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-medium text-orange-900 mb-4 flex items-center">
+                    <Calculator className="h-5 w-5 mr-2" />
+                    Detalhes do Serviço
+                  </h3>
                   <FormField
                     control={form.control}
                     name="serviceDescription"
@@ -357,7 +380,7 @@ export default function AutofreiCarReception() {
                         <FormLabel>Descrição do Serviço</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Descreva o problema ou serviço solicitado..."
+                            placeholder="Descreva o que será feito no veículo..."
                             className="min-h-[100px]"
                             {...field}
                           />
@@ -366,39 +389,93 @@ export default function AutofreiCarReception() {
                       </FormItem>
                     )}
                   />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Status</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione o status" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="recebido">Recebido</SelectItem>
+                              <SelectItem value="em_analise">Em Análise</SelectItem>
+                              <SelectItem value="aguardando_pecas">Aguardando Peças</SelectItem>
+                              <SelectItem value="em_execucao">Em Execução</SelectItem>
+                              <SelectItem value="finalizado">Finalizado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="deliveryDeadline"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Prazo de Entrega</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
-                {/* Gestão de Peças */}
+                {/* Peças e Valores */}
                 <div className="bg-green-50 p-4 rounded-lg">
                   <h3 className="text-lg font-medium text-green-900 mb-4 flex items-center">
                     <Package2 className="h-5 w-5 mr-2" />
-                    Peças Necessárias
+                    Peças e Valores
                   </h3>
                   
                   {/* Adicionar nova peça */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <Input
-                      placeholder="Nome da peça"
-                      value={newPartName}
-                      onChange={(e) => setNewPartName(e.target.value)}
-                    />
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="Valor (R$)"
-                      value={newPartPrice}
-                      onChange={(e) => setNewPartPrice(e.target.value)}
-                    />
-                    <Button type="button" onClick={addPart} variant="outline">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Adicionar Peça
-                    </Button>
+                  <div className="bg-white p-4 rounded border mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-1 block">Nome da Peça</label>
+                        <Input
+                          placeholder="Nome da peça"
+                          value={newPartName}
+                          onChange={(e) => setNewPartName(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-1 block">Valor (R$)</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="R$ 0,00"
+                          value={newPartPrice}
+                          onChange={(e) => setNewPartPrice(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <Button 
+                          type="button" 
+                          onClick={addPart} 
+                          className="w-full bg-blue-600 hover:bg-blue-700"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Adicionar
+                        </Button>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Lista de peças */}
                   {parts.length > 0 && (
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-green-800">Peças Adicionadas:</h4>
+                    <div className="space-y-2 mb-4">
                       {parts.map((part) => (
                         <div key={part.id} className="flex items-center justify-between bg-white p-3 rounded border">
                           <div>
@@ -418,85 +495,71 @@ export default function AutofreiCarReception() {
                       ))}
                     </div>
                   )}
+
+                  {/* Custos */}
+                  <div className="bg-white p-4 rounded border">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <FormField
+                        control={form.control}
+                        name="laborCost"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Custo Mão de Obra (R$)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="R$ 0,00"
+                                {...field}
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-900 mb-2 block">Custo das Peças</label>
+                        <div className="p-2 bg-gray-50 border rounded text-sm font-medium">
+                          {formatCurrency(parts.reduce((sum, part) => sum + part.price, 0))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-semibold">Total Estimado</span>
+                        <span className="text-2xl font-bold text-green-600">
+                          {formatCurrency(calculateTotalCost())}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Custos e Orçamento */}
+                {/* Observações Adicionais */}
                 <div className="bg-purple-50 p-4 rounded-lg">
                   <h3 className="text-lg font-medium text-purple-900 mb-4 flex items-center">
-                    <Calculator className="h-5 w-5 mr-2" />
-                    Orçamento
+                    📝 Observações Adicionais
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="laborCost"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Mão de Obra (R$)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0,00"
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Peças (R$)</label>
-                      <div className="mt-1 p-2 bg-gray-100 rounded border text-sm">
-                        {formatCurrency(parts.reduce((sum, part) => sum + part.price, 0))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Total (R$)</label>
-                      <div className="mt-1 p-2 bg-purple-100 border border-purple-300 rounded text-lg font-semibold text-purple-800">
-                        {formatCurrency(calculateTotalCost())}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <FormField
-                      control={form.control}
-                      name="deliveryDeadline"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Prazo de Entrega</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Observações sobre o estado do veículo ou outros detalhes..."
+                            className="min-h-[80px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-
-                {/* Observações */}
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Observações Adicionais</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Observações sobre o veículo, condições especiais, etc..."
-                          className="min-h-[80px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 {/* Botões */}
                 <div className="flex gap-4 pt-6">
