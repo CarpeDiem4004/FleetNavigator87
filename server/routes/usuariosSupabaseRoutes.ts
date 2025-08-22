@@ -509,6 +509,14 @@ export function registerUsuariosSupabaseRoutes(app: Express) {
       
       const user = userCheck.rows[0];
       
+      // Proteção: Impedir alteração de senha do administrador principal
+      if (user.email === 'admin@muricionfleet.com') {
+        return res.status(403).json({
+          success: false,
+          message: "A senha do administrador principal não pode ser alterada"
+        });
+      }
+      
       // Gerar nova senha aleatória
       const newPassword = generateRandomPassword(12);
       const passwordHash = await hashPassword(newPassword);

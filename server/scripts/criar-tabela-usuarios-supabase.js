@@ -196,7 +196,7 @@ async function main() {
       // Adiciona usuário admin inicial se ainda não existir
       const adminUsername = 'admin';
       const adminEmail = 'admin@muricionfleet.com';
-      const adminPassword = 'MunicionAdmin@2025'; // Senhas são definidas pelo admin no futuro
+      const adminPassword = 'Amanda@25'; // Senhas são definidas pelo admin no futuro
       
       // Verifica se o admin já existe
       const checkAdminQuery = {

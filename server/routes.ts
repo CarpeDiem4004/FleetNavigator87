@@ -10446,6 +10446,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.id);
       const { password } = req.body;
       
+      // Proteção: Impedir alteração de senha do administrador principal
+      if (userId === 1) {
+        return res.status(403).json({ 
+          message: "A senha do administrador principal não pode ser alterada" 
+        });
+      }
+      
       if (!password) {
         return res.status(400).json({ message: "Senha é obrigatória" });
       }

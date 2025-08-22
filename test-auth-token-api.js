@@ -14,7 +14,7 @@ async function main() {
     // Tentar login com usuário admin
     const loginData = {
       email: 'admin@muricionfleet.com',
-      password: 'MuricionAdmin2025'
+      password: 'Amanda@25'
     };
     
     const response = await fetch(`${API_BASE_URL}/api/hybrid/auth/login`, {

@@ -304,6 +304,14 @@ router.post('/api/hybrid/users/:id/reset-password', unifiedAuthMiddleware, async
     const { id } = req.params;
     console.log(`[HybridAPI] Redefinindo senha para usuário com ID: ${id}`);
     
+    // Proteção: Impedir alteração de senha do administrador principal
+    if (parseInt(id) === 1) {
+      return res.status(403).json({
+        success: false,
+        message: 'A senha do administrador principal não pode ser alterada'
+      });
+    }
+    
     // Verificar se o usuário existe
     const existingUser = await userService.getUserById(id);
     if (!existingUser) {
