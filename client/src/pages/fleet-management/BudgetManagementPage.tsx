@@ -1378,10 +1378,12 @@ export default function BudgetManagementPage() {
                 value={billingData.installments.toString()}
                 onValueChange={(value) => {
                   const installments = parseInt(value);
+                  // Criar array vazio para as datas de vencimento
+                  const dueDates = Array(installments).fill('');
                   setBillingData(prev => ({
                     ...prev,
                     installments,
-                    dueDates: []
+                    dueDates
                   }));
                 }}
               >
@@ -1397,29 +1399,32 @@ export default function BudgetManagementPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="first-due-date">Primeira Data de Vencimento</Label>
-              <Input
-                id="first-due-date"
-                type="date"
-                value={billingData.dueDates[0] || ""}
-                onChange={(e) => {
-                  const firstDate = e.target.value;
-                  const dueDates = calculateDueDates(billingData.installments, firstDate);
-                  setBillingData(prev => ({ ...prev, dueDates }));
-                }}
-              />
-            </div>
-            {billingData.dueDates.length > 1 && (
-              <div className="space-y-2">
-                <Label>Datas de Vencimento</Label>
-                <div className="max-h-32 overflow-y-auto space-y-1">
-                  {billingData.dueDates.map((date, index) => (
-                    <div key={index} className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-3 w-3" />
-                      <span>{index + 1}ª parcela: {new Date(date).toLocaleDateString()}</span>
-                      <span className="text-muted-foreground">
-                        - {formatCurrency(billingData.totalValue / billingData.installments)}
+            {/* Campos de data para cada parcela */}
+            {billingData.installments > 0 && (
+              <div className="space-y-3">
+                <Label>Datas de Vencimento das Parcelas</Label>
+                <div className="max-h-60 overflow-y-auto space-y-2">
+                  {Array(billingData.installments).fill(null).map((_, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium whitespace-nowrap">
+                          {index + 1}ª parcela:
+                        </span>
+                        <Input
+                          type="date"
+                          value={billingData.dueDates[index] || ""}
+                          onChange={(e) => {
+                            const newDueDates = [...billingData.dueDates];
+                            newDueDates[index] = e.target.value;
+                            setBillingData(prev => ({ ...prev, dueDates: newDueDates }));
+                          }}
+                          className="flex-1 min-w-0"
+                          placeholder="dd/mm/aaaa"
+                        />
+                      </div>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {formatCurrency(billingData.totalValue / billingData.installments)}
                       </span>
                     </div>
                   ))}
