@@ -8814,7 +8814,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.json({
+        success: true,
         token,
+        user: {
+          id: oficina.id,
+          name: oficina.razao_social,
+          cnpj: oficina.cnpj,
+          email: oficina.email,
+          telefone: oficina.telefone
+        },
         oficina: {
           id: oficina.id,
           razao_social: oficina.razao_social,
