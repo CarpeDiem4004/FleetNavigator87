@@ -16495,11 +16495,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const query = `
         SELECT 
           id,
-          vehicle_id,
           vehicle_plate,
           vehicle_model,
           description,
-          requested_by,
           requester_name,
           base_id,
           workshop_id,
@@ -16512,7 +16510,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           approved_at,
           attachment_url,
           created_at,
-          updated_at
+          updated_at,
+          km,
+          projeto,
+          chassis
         FROM campinas_budget_requests 
         ORDER BY 
           CASE status 
