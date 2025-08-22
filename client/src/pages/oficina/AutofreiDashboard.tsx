@@ -248,16 +248,19 @@ export default function AutofreiDashboard() {
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center">
                 <Download className="h-5 w-5 mr-2" />
-                Relatórios
+                Solicitações
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-purple-100 mb-4">
-                Baixe relatórios de serviços e financeiro
+                Visualize solicitações de orçamentos da gestão de frotas
               </p>
-              <Button className="w-full bg-white text-purple-600 hover:bg-gray-100">
+              <Button 
+                className="w-full bg-white text-purple-600 hover:bg-gray-100"
+                onClick={() => setLocation('/oficina/autofrei/solicitacoes')}
+              >
                 <FileText className="h-4 w-4 mr-2" />
-                Gerar Relatório
+                Ver Solicitações
               </Button>
             </CardContent>
           </Card>
