@@ -1,10 +1,18 @@
 import { pool } from './db';
 
 export async function runMigrations() {
-  try {
-    console.log("Iniciando migrações...");
+  const maxRetries = 3;
+  const retryDelay = 2000; // 2 segundos
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Iniciando migrações... (tentativa ${attempt}/${maxRetries})`);
+      
+      // Testar conexão com o banco de dados primeiro
+      await pool.query('SELECT 1');
+      console.log("Conexão com o banco de dados estabelecida com sucesso.");
 
-    // Verificar se a tabela 'workshops' existe no esquema público
+      // Verificar se a tabela 'workshops' existe no esquema público
     const checkWorkshopsTableQuery = `
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
@@ -161,10 +169,21 @@ export async function runMigrations() {
       console.log("Coluna 'vehicle_plate' já existe na tabela 'maintenance_chat'");
     }
 
-    console.log("Migrações concluídas com sucesso!");
-    return true;
-  } catch (error) {
-    console.error("Erro ao executar migrações:", error);
-    return false;
+      console.log("Migrações concluídas com sucesso!");
+      return true;
+      
+    } catch (error) {
+      console.error(`Erro ao executar migrações (tentativa ${attempt}/${maxRetries}):`, error);
+      
+      if (attempt === maxRetries) {
+        console.error("Todas as tentativas de migração falharam. Continuando sem migrações para evitar falha no deployment.");
+        return false;
+      }
+      
+      console.log(`Aguardando ${retryDelay}ms antes da próxima tentativa...`);
+      await new Promise(resolve => setTimeout(resolve, retryDelay));
+    }
   }
+  
+  return false;
 }

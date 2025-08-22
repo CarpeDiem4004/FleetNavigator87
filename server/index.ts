@@ -189,6 +189,27 @@ app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
 
 
+// HEALTH CHECK ENDPOINT - Essencial para deployment
+app.get('/health', (req, res) => {
+  try {
+    res.status(200).json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development'
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      status: 'unhealthy',
+      error: error?.message || 'Erro desconhecido'
+    });
+  }
+});
+
+// Alternative health check paths
+app.get('/healthz', (req, res) => res.redirect('/health'));
+app.get('/api/health', (req, res) => res.redirect('/health'));
+
 // ENDPOINT DE DIAGNÓSTICO DE TIMEZONE - Registrar ANTES de todos os middlewares
 app.get('/api/timezone-status', (req, res) => {
   try {
@@ -544,12 +565,22 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Adicionar delay inicial para garantir que serviços estejam prontos
+  const startupDelay = process.env.NODE_ENV === 'production' ? 3000 : 1000;
+  console.log(`Aguardando ${startupDelay}ms para inicialização completa dos serviços...`);
+  await new Promise(resolve => setTimeout(resolve, startupDelay));
+  
   // Executar migrações antes de iniciar o servidor
   try {
-    await runMigrations();
-    console.log("Migrações executadas com sucesso!");
+    const migrationSuccess = await runMigrations();
+    if (migrationSuccess) {
+      console.log("Migrações executadas com sucesso!");
+    } else {
+      console.warn("Algumas migrações falharam, mas o servidor continuará funcionando.");
+    }
   } catch (error) {
     console.error("Erro ao executar migrações:", error);
+    console.warn("Continuando inicialização do servidor apesar dos erros de migração.");
   }
   
   // Add simple drivers API before any middleware conflicts

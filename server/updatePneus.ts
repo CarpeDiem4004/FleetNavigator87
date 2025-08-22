@@ -29,17 +29,68 @@ export async function atualizarTabelaPneus() {
 
     console.log("Verificando se a tabela pneus precisa ser atualizada...");
     
-    // Ler o arquivo SQL
+    // Tentar ler o arquivo SQL, com fallback para SQL inline
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
     const sqlFilePath = path.join(__dirname, 'scripts', 'updatePneusTable.sql');
     
-    if (!fs.existsSync(sqlFilePath)) {
-      console.error(`Arquivo SQL não encontrado: ${sqlFilePath}`);
-      return;
-    }
+    let sqlContent = '';
     
-    const sqlContent = fs.readFileSync(sqlFilePath, 'utf8');
+    if (fs.existsSync(sqlFilePath)) {
+      sqlContent = fs.readFileSync(sqlFilePath, 'utf8');
+      console.log("SQL file encontrado e carregado:", sqlFilePath);
+    } else {
+      console.warn(`Arquivo SQL não encontrado: ${sqlFilePath}. Usando SQL inline como fallback.`);
+      
+      // SQL inline como fallback para deployment
+      sqlContent = `
+        -- Atualização da tabela pneus para incluir campos adicionais
+        DO $$
+        BEGIN
+            -- Verifica e adiciona coluna código/serial
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'pneus' AND column_name = 'codigo') THEN
+                ALTER TABLE pneus ADD COLUMN codigo VARCHAR(50);
+            END IF;
+
+            -- Verifica e adiciona coluna marca
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'pneus' AND column_name = 'marca') THEN
+                ALTER TABLE pneus ADD COLUMN marca VARCHAR(50);
+            END IF;
+
+            -- Verifica e adiciona coluna modelo
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'pneus' AND column_name = 'modelo') THEN
+                ALTER TABLE pneus ADD COLUMN modelo VARCHAR(50);
+            END IF;
+
+            -- Verifica e adiciona coluna medida
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'pneus' AND column_name = 'medida') THEN
+                ALTER TABLE pneus ADD COLUMN medida VARCHAR(50);
+            END IF;
+
+            -- Verifica e adiciona coluna localizacao
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'pneus' AND column_name = 'localizacao') THEN
+                ALTER TABLE pneus ADD COLUMN localizacao VARCHAR(50) DEFAULT 'almoxarifado';
+            END IF;
+
+            -- Verifica e adiciona coluna created_at
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'pneus' AND column_name = 'created_at') THEN
+                ALTER TABLE pneus ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+            END IF;
+
+            -- Verifica e adiciona coluna updated_at
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'pneus' AND column_name = 'updated_at') THEN
+                ALTER TABLE pneus ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+            END IF;
+        END$$;
+      `;
+    }
     
     // Executar o script SQL
     await pool.query(sqlContent);
