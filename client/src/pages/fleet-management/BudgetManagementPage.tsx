@@ -971,7 +971,7 @@ export default function BudgetManagementPage() {
                 ))}
               </TableBody>
             </Table>
-          )})}
+          )}
 
       {renderStats()}
 
