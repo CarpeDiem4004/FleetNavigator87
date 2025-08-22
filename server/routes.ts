@@ -8595,25 +8595,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const token = authHeader.substring(7);
       
-      // Verificar se o token JWT é válido
-      let decoded: any;
-      try {
-        decoded = jwt.verify(token, process.env.JWT_SECRET || 'oficina_secret_key_2025');
-      } catch (error) {
-        console.error('Erro ao verificar token JWT da oficina:', error);
-        return res.status(401).json({ message: 'Token inválido' });
-      }
+      console.log('[OFICINA-AUTH] Verificando token:', token.substring(0, 20) + '...');
       
-      // Buscar oficina pelo ID do token (oficinas é a tabela correta)
+      // Buscar oficina pelo external_token (não JWT)
       const result = await pool.query(
-        'SELECT * FROM oficinas WHERE id = $1 AND status = $2',
-        [decoded.id, 'ativo']
+        'SELECT * FROM oficinas WHERE external_token = $1 AND status = $2',
+        [token, 'ativo']
       );
       
       if (result.rows.length === 0) {
-        return res.status(401).json({ message: 'Oficina não encontrada ou inativa' });
+        console.error('[OFICINA-AUTH] Token não encontrado ou oficina inativa');
+        return res.status(401).json({ message: 'Token inválido' });
       }
 
+      console.log('[OFICINA-AUTH] Oficina autenticada:', result.rows[0].razao_social);
       req.oficina = result.rows[0];
       next();
     } catch (error) {
@@ -9573,43 +9568,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // === WORKSHOP BUDGET ROUTES ===
   
   // Criar orçamento para recebimento
-  app.post("/api/oficina/budgets", async (req, res) => {
+  app.post("/api/oficina/budgets", verificarTokenOficina, async (req, res) => {
     try {
-      const { token } = req.query;
       const data = req.body;
       
-      console.log('[BUDGET-CREATE] Criando orçamento:', { token, data });
+      console.log('[BUDGET-CREATE] Criando orçamento:', { oficinaId: req.oficina.id, data });
       
-      // Validar token de acesso externo
-      if (!token) {
-        return res.status(401).json({ 
-          success: false,
-          message: 'Token de acesso obrigatório' 
-        });
-      }
-
-      // Verificar se o token é válido
-      const tokenQuery = `
-        SELECT 
-          o.id,
-          COALESCE(o.nome_fantasia, o.razao_social) as name,
-          o.cnpj,
-          o.email,
-          o.telefone as phone
-        FROM oficinas o
-        WHERE o.external_token = $1 AND o.status = 'ativo'
-      `;
-
-      const result = await pool.query(tokenQuery, [token]);
-
-      if (result.rows.length === 0) {
-        return res.status(401).json({
-          success: false,
-          message: "Token inválido ou expirado"
-        });
-      }
-
-      const workshop = result.rows[0];
+      // Oficina já está autenticada pelo middleware
+      const workshop = req.oficina;
       
       // Validar dados obrigatórios
       if (!data.carReceptionId || !data.serviceNumber || !data.laborDescription || !data.laborCost) {
@@ -9713,42 +9679,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Atualizar orçamento existente
-  app.put("/api/oficina/budgets/:id", async (req, res) => {
+  app.put("/api/oficina/budgets/:id", verificarTokenOficina, async (req, res) => {
     try {
       const { id } = req.params;
-      const { token } = req.query;
       const data = req.body;
       
-      console.log('[BUDGET-UPDATE] Atualizando orçamento:', { id, token, data });
+      console.log('[BUDGET-UPDATE] Atualizando orçamento:', { id, oficinaId: req.oficina.id, data });
       
-      // Validar token de acesso externo
-      if (!token) {
-        return res.status(401).json({ 
-          success: false,
-          message: 'Token de acesso obrigatório' 
-        });
-      }
-
-      // Verificar se o token é válido
-      const tokenQuery = `
-        SELECT 
-          o.id,
-          COALESCE(o.nome_fantasia, o.razao_social) as name,
-          o.cnpj
-        FROM oficinas o
-        WHERE o.external_token = $1 AND o.status = 'ativo'
-      `;
-      
-      const tokenResult = await pool.query(tokenQuery, [token]);
-      
-      if (tokenResult.rows.length === 0) {
-        return res.status(401).json({ 
-          success: false,
-          message: 'Token de acesso inválido' 
-        });
-      }
-
-      const workshop = tokenResult.rows[0];
+      // Oficina já autenticada pelo middleware
+      const workshop = req.oficina;
 
       // Validar dados obrigatórios
       if (!data.laborDescription || data.laborCost === undefined) {
@@ -9864,38 +9803,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Listar orçamentos da oficina
-  app.get("/api/oficina/budgets", async (req, res) => {
+  app.get("/api/oficina/budgets", verificarTokenOficina, async (req, res) => {
     try {
-      const { token } = req.query;
-      
-      // Validar token de acesso externo
-      if (!token) {
-        return res.status(401).json({ 
-          success: false,
-          message: 'Token de acesso obrigatório' 
-        });
-      }
+      console.log('[BUDGET-LIST] Listando orçamentos para oficina:', req.oficina.id);
 
-      // Verificar se o token é válido
-      const tokenQuery = `
-        SELECT 
-          o.id,
-          COALESCE(o.nome_fantasia, o.razao_social) as name,
-          o.cnpj
-        FROM oficinas o
-        WHERE o.external_token = $1 AND o.status = 'ativo'
-      `;
-
-      const result = await pool.query(tokenQuery, [token]);
-
-      if (result.rows.length === 0) {
-        return res.status(401).json({
-          success: false,
-          message: "Token inválido ou expirado"
-        });
-      }
-
-      const workshop = result.rows[0];
+      const workshop = req.oficina;
       
       // Buscar orçamentos da oficina com informações do recebimento
       const budgetsQuery = `

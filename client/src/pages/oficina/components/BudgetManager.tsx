@@ -156,7 +156,11 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
 
   const loadBudgets = async () => {
     try {
-      const response = await fetch(`/api/oficina/budgets?token=${token}`);
+      const response = await fetch('/api/oficina/budgets', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const data = await response.json();
       
       if (data.success) {
@@ -180,7 +184,11 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
 
   const loadCarReceptions = async () => {
     try {
-      const response = await fetch(`/api/oficina/car-receptions?token=${token}`);
+      const response = await fetch('/api/oficina/car-receptions', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const data = await response.json();
       
       if (Array.isArray(data)) {
@@ -200,8 +208,8 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
     setIsLoading(true);
     try {
       const url = editingBudget 
-        ? `/api/oficina/budgets/${editingBudget.id}?token=${token}`
-        : `/api/oficina/budgets?token=${token}`;
+        ? `/api/oficina/budgets/${editingBudget.id}`
+        : '/api/oficina/budgets';
       
       const method = editingBudget ? 'PUT' : 'POST';
       
@@ -216,6 +224,7 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
         method,
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(budgetData),
       });
