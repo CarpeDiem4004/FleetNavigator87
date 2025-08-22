@@ -1240,12 +1240,12 @@ export default function BudgetManagementPage() {
             <CardContent>
               {/* Campo de pesquisa */}
               <div className="mb-6">
-                <Label htmlFor="search">Pesquisar por oficina, veículo ou título</Label>
+                <Label htmlFor="search">Pesquisar por oficina, veículo ou descrição</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="search"
-                    placeholder="Digite o nome da oficina, placa do veículo ou título..."
+                    placeholder="Digite o nome da oficina, placa do veículo ou descrição..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-9"
@@ -1274,7 +1274,7 @@ export default function BudgetManagementPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Título</TableHead>
+                        <TableHead>Descrição</TableHead>
                         <TableHead>Oficina</TableHead>
                         <TableHead>Veículo</TableHead>
                         <TableHead>Status</TableHead>
@@ -1296,9 +1296,11 @@ export default function BudgetManagementPage() {
                           <TableRow key={budget.id}>
                             <TableCell>
                               <div>
-                                <p className="font-medium">{budget.title}</p>
-                                <p className="text-sm text-gray-500 truncate max-w-xs">
+                                <p className="font-medium truncate max-w-sm">
                                   {budget.description}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  Solicitante: {budget.requester_name}
                                 </p>
                               </div>
                             </TableCell>
