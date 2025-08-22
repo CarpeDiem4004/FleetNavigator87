@@ -192,10 +192,10 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
       const data = await response.json();
       
       if (Array.isArray(data)) {
-        // Filtrar recebimentos que podem receber orçamentos
-        // Priorizar: recebidos, em análise, mas também mostrar aguardando peças (podem precisar de novo orçamento)
+        // REGRA AUTOMÁTICA: Toda OS com status "recebido" deve aparecer nos orçamentos
+        // Incluir todos os status que permitem criação de orçamentos
         const receptionsForBudget = data.filter(reception => 
-          ['recebido', 'em_analise', 'aguardando_pecas'].includes(reception.status)
+          ['recebido', 'em_analise', 'aguardando_pecas', 'em_orcamento'].includes(reception.status)
         );
         setCarReceptions(receptionsForBudget);
       }
