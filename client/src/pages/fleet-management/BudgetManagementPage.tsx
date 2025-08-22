@@ -90,6 +90,32 @@ interface WorkshopBudget {
   approved_date: string;
 }
 
+interface BudgetRequest {
+  id: number;
+  title: string;
+  description: string;
+  workshop_id: number;
+  workshop_name: string;
+  vehicle_plate: string;
+  vehicle_model: string;
+  status: 'pendente' | 'aprovado' | 'rejeitado' | 'em_analise';
+  estimated_value: number;
+  approved_value?: number;
+  created_at: string;
+  approved_at?: string;
+  department?: string;
+  priority?: string;
+}
+
+interface BudgetSummary {
+  total: number;
+  pendente: number;
+  aprovado: number;
+  em_analise: number;
+  valor_total_solicitado: number;
+  valor_total_aprovado: number;
+}
+
 interface BillingData {
   workshopId: number;
   workshopName: string;
@@ -122,8 +148,11 @@ export default function BudgetManagementPage() {
   const [chatDialogOpen, setChatDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [fetchingMessages, setFetchingMessages] = useState(false);
-  const [budgetRequests, setBudgetRequests] = useState<any[]>([]);
+  const [budgetRequests, setBudgetRequests] = useState<BudgetRequest[]>([]);
+  const [budgetSummary, setBudgetSummary] = useState<BudgetSummary | null>(null);
   const [loadingBudgetRequests, setLoadingBudgetRequests] = useState(true);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [filteredBudgets, setFilteredBudgets] = useState<BudgetRequest[]>([]);
   
   // Estados para busca por oficina e período
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
@@ -154,22 +183,36 @@ export default function BudgetManagementPage() {
     workshop.cnpj.includes(searchWorkshop)
   );
 
-  // Função para obter as solicitações de orçamento da Base Campinas
+  // Função para obter os orçamentos recebidos das oficinas
   const fetchBudgetRequests = async () => {
     try {
       setLoadingBudgetRequests(true);
-      const response = await apiRequest("GET", "/api/fleet/budget-requests");
-      const data = await response.json();
-      console.log("Solicitações de orçamento:", data);
-      setBudgetRequests(Array.isArray(data) ? data : []);
+      const response = await apiRequest("GET", "/api/campinas/budget-requests");
+      const result = await response.json();
+      
+      if (result.success) {
+        setBudgetRequests(result.data || []);
+        setBudgetSummary(result.summary);
+        setFilteredBudgets(result.data || []);
+        console.log(`Orçamentos carregados: ${result.data.length}`);
+      } else {
+        toast({
+          title: "Erro",
+          description: result.message || "Erro ao buscar orçamentos",
+          variant: "destructive"
+        });
+        setBudgetRequests([]);
+        setFilteredBudgets([]);
+      }
     } catch (error) {
-      console.error("Erro ao buscar solicitações de orçamento:", error);
+      console.error("Erro ao buscar orçamentos das oficinas:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar as solicitações de orçamento",
+        description: "Não foi possível carregar os orçamentos das oficinas",
         variant: "destructive"
       });
       setBudgetRequests([]);
+      setFilteredBudgets([]);
     } finally {
       setLoadingBudgetRequests(false);
     }
@@ -221,6 +264,21 @@ export default function BudgetManagementPage() {
   };
 
   // Carregar dados iniciais
+  // Filtrar orçamentos por termo de busca
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredBudgets(budgetRequests);
+    } else {
+      const filtered = budgetRequests.filter(budget => 
+        budget.workshop_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        budget.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        budget.vehicle_plate?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        budget.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredBudgets(filtered);
+    }
+  }, [budgetRequests, searchTerm]);
+
   useEffect(() => {
     fetchMaintenancesWithChats();
     fetchBudgetRequests();
@@ -398,24 +456,50 @@ export default function BudgetManagementPage() {
   };
 
 
-  // Renderizar estatísticas
+  // Renderizar estatísticas dos orçamentos
   const renderStats = () => {
-    const totalNegociacao = maintenances.filter(m => m.status === "em_negociacao").length;
-    const totalAprovado = maintenances.filter(m => m.status === "orcamento_aprovado").length;
-    const totalPendente = maintenances.filter(m => !m.finalBudget && !m.isFinalized).length;
-    const totalFaturado = billingTrackingData.reduce((sum, item) => sum + item.total_value, 0);
-    
+    if (!budgetSummary) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="flex items-center p-6">
+                <div className="w-8 h-8 bg-gray-300 rounded-lg animate-pulse mr-4"></div>
+                <div>
+                  <div className="h-4 bg-gray-200 rounded w-16 mb-2 animate-pulse"></div>
+                  <div className="h-6 bg-gray-200 rounded w-12 animate-pulse"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      );
+    }
+
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Em Negociação</CardTitle>
+            <CardTitle className="text-sm font-medium">Total de Orçamentos</CardTitle>
+            <FileText className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{budgetSummary.total}</div>
+            <p className="text-xs text-muted-foreground">
+              Orçamentos recebidos das oficinas
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
             <Clock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalNegociacao}</div>
+            <div className="text-2xl font-bold">{budgetSummary.pendente}</div>
             <p className="text-xs text-muted-foreground">
-              Orçamentos aguardando aprovação
+              Aguardando aprovação
             </p>
           </CardContent>
         </Card>
@@ -426,35 +510,22 @@ export default function BudgetManagementPage() {
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalAprovado}</div>
+            <div className="text-2xl font-bold">{budgetSummary.aprovado}</div>
             <p className="text-xs text-muted-foreground">
-              Orçamentos finalizados e aprovados
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalPendente}</div>
-            <p className="text-xs text-muted-foreground">
-              Orçamentos ainda não finalizados
+              Orçamentos aprovados
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Valor Faturado</CardTitle>
-            <DollarSign className="h-4 w-4 text-blue-500" />
+            <CardTitle className="text-sm font-medium">Valor Total Solicitado</CardTitle>
+            <DollarSign className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalFaturado)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(budgetSummary.valor_total_solicitado)}</div>
             <p className="text-xs text-muted-foreground">
-              Total de valores faturados
+              Valor total dos orçamentos
             </p>
           </CardContent>
         </Card>
@@ -918,6 +989,7 @@ export default function BudgetManagementPage() {
           <TabsTrigger value="all">Todos</TabsTrigger>
           <TabsTrigger value="negotiation">Em Negociação</TabsTrigger>
           <TabsTrigger value="approved">Aprovados</TabsTrigger>
+          <TabsTrigger value="workshop-budgets">Orçamentos das Oficinas</TabsTrigger>
         </TabsList>
         
         <TabsContent value="all" className="mt-0">
@@ -1160,6 +1232,154 @@ export default function BudgetManagementPage() {
                     ))}
                   </TableBody>
                 </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Nova Aba: Orçamentos Recebidos das Oficinas */}
+        <TabsContent value="workshop-budgets" className="mt-0">
+          <Card>
+            <CardHeader>
+              <CardTitle>Orçamentos Recebidos das Oficinas</CardTitle>
+              <CardDescription>
+                Lista de orçamentos submetidos por oficinas parceiras para aprovação
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Campo de pesquisa */}
+              <div className="mb-6">
+                <Label htmlFor="search">Pesquisar por oficina, veículo ou título</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="search"
+                    placeholder="Digite o nome da oficina, placa do veículo ou título..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              {/* Botão de atualizar */}
+              <div className="mb-4">
+                <Button 
+                  onClick={fetchBudgetRequests} 
+                  disabled={loadingBudgetRequests}
+                  variant="outline"
+                >
+                  {loadingBudgetRequests ? "Carregando..." : "Atualizar Orçamentos"}
+                </Button>
+              </div>
+
+              {/* Lista de orçamentos */}
+              {loadingBudgetRequests ? (
+                <div className="flex justify-center items-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : filteredBudgets.length > 0 ? (
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Título</TableHead>
+                        <TableHead>Oficina</TableHead>
+                        <TableHead>Veículo</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Valor Solicitado</TableHead>
+                        <TableHead>Valor Aprovado</TableHead>
+                        <TableHead>Data do Orçamento</TableHead>
+                        <TableHead>Vencimento</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredBudgets.map((budget) => {
+                        // Calcular data de vencimento (30 dias após criação)
+                        const createdDate = new Date(budget.created_at);
+                        const dueDate = new Date(createdDate);
+                        dueDate.setDate(dueDate.getDate() + 30);
+                        const isOverdue = dueDate < new Date() && budget.status === 'pendente';
+                        
+                        return (
+                          <TableRow key={budget.id}>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{budget.title}</p>
+                                <p className="text-sm text-gray-500 truncate max-w-xs">
+                                  {budget.description}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>{budget.workshop_name}</TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{budget.vehicle_plate}</p>
+                                <p className="text-sm text-gray-500">{budget.vehicle_model}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge 
+                                variant={
+                                  budget.status === 'aprovado' ? 'default' : 
+                                  budget.status === 'pendente' ? 'secondary' : 
+                                  budget.status === 'em_analise' ? 'outline' :
+                                  'destructive'
+                                }
+                              >
+                                {budget.status === 'pendente' ? 'Aguardando' :
+                                 budget.status === 'aprovado' ? 'Aprovado' :
+                                 budget.status === 'em_analise' ? 'Em Análise' : budget.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-medium">
+                                {formatCurrency(budget.estimated_value || 0)}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              {budget.approved_value ? (
+                                <span className="font-medium text-green-600">
+                                  {formatCurrency(budget.approved_value)}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {new Date(budget.created_at).toLocaleDateString('pt-BR')}
+                            </TableCell>
+                            <TableCell>
+                              <div className={`text-sm ${
+                                isOverdue ? 'text-red-600 font-medium' : 'text-gray-600'
+                              }`}>
+                                {dueDate.toLocaleDateString('pt-BR')}
+                                {isOverdue && (
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <AlertCircle className="h-3 w-3" />
+                                    <span className="text-xs">Vencido</span>
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {searchTerm ? 'Nenhum orçamento encontrado' : 'Nenhum orçamento encontrado'}
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {searchTerm 
+                      ? 'Tente ajustar sua pesquisa ou limpe o filtro.' 
+                      : 'Quando as oficinas enviarem orçamentos, eles aparecerão aqui para aprovação.'}
+                  </p>
+                </div>
               )}
             </CardContent>
           </Card>

@@ -16392,6 +16392,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registra as rotas para o sistema de estoque de peças
   app.use('/api/frota', frotaEstoqueRoutes);
 
+  // API para buscar orçamentos recebidos das oficinas (campinas_budget_requests)
+  app.get("/api/campinas/budget-requests", isAuthenticated, async (req, res) => {
+    try {
+      console.log('[CampinaBudgets] Buscando orçamentos recebidos das oficinas...');
+      
+      const query = `
+        SELECT 
+          id,
+          title,
+          description,
+          priority,
+          requester_id,
+          requested_by,
+          requester_name,
+          vehicle_plate,
+          vehicle_model,
+          workshop_id,
+          workshop_name,
+          base_id,
+          status,
+          estimated_value,
+          approved_value,
+          department,
+          created_at,
+          updated_at,
+          approved_at,
+          approved_by,
+          approver_name
+        FROM campinas_budget_requests 
+        ORDER BY 
+          CASE status 
+            WHEN 'pendente' THEN 1 
+            WHEN 'em_analise' THEN 2 
+            WHEN 'aprovado' THEN 3 
+            ELSE 4 
+          END,
+          created_at DESC
+      `;
+      
+      const result = await pool.query(query);
+      
+      console.log(`[CampinaBudgets] Encontrados ${result.rowCount} orçamentos`);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        summary: {
+          total: result.rowCount,
+          pendente: result.rows.filter(r => r.status === 'pendente').length,
+          aprovado: result.rows.filter(r => r.status === 'aprovado').length,
+          em_analise: result.rows.filter(r => r.status === 'em_analise').length,
+          valor_total_solicitado: result.rows.reduce((sum, r) => sum + (r.estimated_value || 0), 0),
+          valor_total_aprovado: result.rows.reduce((sum, r) => sum + (r.approved_value || 0), 0)
+        }
+      });
+    } catch (error) {
+      console.error("[CampinaBudgets] Erro ao buscar orçamentos:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Erro interno do servidor",
+        error: String(error)
+      });
+    }
+  });
+
   // API para buscar orçamentos de uma oficina específica por período
   app.get("/api/fleet/workshop-budgets", isAuthenticated, async (req, res) => {
     try {
