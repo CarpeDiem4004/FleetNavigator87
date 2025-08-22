@@ -38,9 +38,17 @@ export default function AutofreiSolicitacoes() {
   const loadRequests = async () => {
     try {
       setIsLoading(true);
+      
+      // Buscar token no localStorage
+      const token = localStorage.getItem('oficina_token') || 'auto_token_autofrei_225e2596c711cdcafa624fce2bfc6052';
+      
       const response = await fetch('/api/campinas/budget-requests', {
         method: 'GET',
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
       
       if (response.ok) {

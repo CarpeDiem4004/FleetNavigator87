@@ -16487,8 +16487,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registra as rotas para o sistema de estoque de peças
   app.use('/api/frota', frotaEstoqueRoutes);
 
+  // Middleware para autenticação híbrida (usuário ou oficina)
+  const hybridAuth = async (req: any, res: any, next: any) => {
+    // Primeiro tenta autenticação normal
+    const authHeader = req.headers.authorization;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      
+      // Verificar se é token de oficina
+      if (token.startsWith('auto_token_')) {
+        try {
+          console.log('[HYBRID-AUTH] Verificando token de oficina:', token.substring(0, 20) + '...');
+          
+          const result = await pool.query(
+            'SELECT * FROM workshops WHERE token = $1',
+            [token]
+          );
+
+          if (result.rowCount > 0) {
+            console.log('[HYBRID-AUTH] Oficina autenticada:', result.rows[0].name);
+            req.oficina = result.rows[0];
+            req.isWorkshop = true;
+            return next();
+          }
+        } catch (error) {
+          console.error('[HYBRID-AUTH] Erro ao verificar token de oficina:', error);
+        }
+      }
+    }
+    
+    // Se não for oficina, tentar autenticação normal
+    return isAuthenticated(req, res, next);
+  };
+
   // API para buscar orçamentos recebidos das oficinas (campinas_budget_requests)
-  app.get("/api/campinas/budget-requests", isAuthenticated, async (req, res) => {
+  app.get("/api/campinas/budget-requests", hybridAuth, async (req, res) => {
     try {
       console.log('[CampinaBudgets] Buscando orçamentos recebidos das oficinas...');
       

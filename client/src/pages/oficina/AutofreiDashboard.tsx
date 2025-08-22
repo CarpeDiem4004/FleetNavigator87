@@ -89,19 +89,28 @@ export default function AutofreiDashboard() {
 
   const loadPendingRequests = async () => {
     try {
+      // Buscar token no localStorage
+      const token = localStorage.getItem('oficina_token') || 'auto_token_autofrei_225e2596c711cdcafa624fce2bfc6052';
+      
       const response = await fetch('/api/campinas/budget-requests', {
         method: 'GET',
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
       
       if (response.ok) {
-        const data = await response.json();
-        // Contar apenas solicitações pendentes para a AUTOFREI (workshop_id = 12)
-        const pendingCount = data.filter((request: any) => 
-          request.workshop_id === AUTOFREI_ID && 
-          request.status === 'pendente'
-        ).length;
-        setPendingRequests(pendingCount);
+        const result = await response.json();
+        if (result.success) {
+          // Contar apenas solicitações pendentes para a AUTOFREI (workshop_id = 12)
+          const pendingCount = result.data.filter((request: any) => 
+            request.workshop_id === AUTOFREI_ID && 
+            request.status === 'pendente'
+          ).length;
+          setPendingRequests(pendingCount);
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar solicitações pendentes:', error);
