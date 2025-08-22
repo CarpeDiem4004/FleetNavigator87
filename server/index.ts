@@ -623,15 +623,33 @@ app.use((req, res, next) => {
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Access-Control-Allow-Origin', '*');
       
-      const query = 'SELECT id, name, location as description FROM bases WHERE active = true ORDER BY name';
+      console.log('=== BASES API FIXO (INDEX.TS) ===');
+      
+      // Query SQL incluindo project_id
+      const query = 'SELECT id, name, location as description, project_id FROM bases WHERE active = true ORDER BY name';
       const result = await pool.query(query);
       
-      console.log('Direct Bases API - Found', result.rows.length, 'bases');
+      console.log('Total bases encontradas:', result.rows.length);
+      
+      // Mapear para garantir project_id/projectId
+      const mappedBases = result.rows.map(base => ({
+        id: base.id,
+        name: base.name,
+        description: base.description || base.name,
+        project_id: base.project_id,
+        projectId: base.project_id  // Para frontend (camelCase)
+      }));
+      
+      console.log('Primeira base mapeada:', JSON.stringify(mappedBases[0], null, 2));
+      const gp01 = mappedBases.find(b => b.name?.includes('GP01'));
+      if (gp01) {
+        console.log('🎯 GP01 encontrada:', JSON.stringify(gp01, null, 2));
+      }
       
       return res.status(200).json({
         success: true,
-        data: result.rows,
-        count: result.rowCount || 0
+        data: mappedBases,
+        count: mappedBases.length
       });
     } catch (error) {
       console.error('Direct Bases API - Error:', error);
@@ -2135,40 +2153,7 @@ app.use((req, res, next) => {
     }
   });
 
-  app.get('/api/bases', async (req, res) => {
-    try {
-      res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      
-      const query = `
-        SELECT id, name, basename, location, type, active, operation, 
-               has_maintenance, has_tires, requests_enabled, 
-               created_at, project_id
-        FROM bases 
-        WHERE active = true 
-        ORDER BY name ASC
-      `;
-      const result = await pool.query(query);
-      
-      console.log('Direct Bases API - Found', result.rows.length, 'bases');
-      console.log('========== DEBUG: ANTES DO FILTRO ==========');
-      
-      // Debug: mostrar algumas bases antes do filtro
-      const firstThree = result.rows.slice(0, 3).map((b: any) => ({ id: b.id, name: b.name }));
-      console.log('Primeiras 3 bases:', firstThree);
-      console.log('Bases com manutenção antes do filtro:', result.rows.filter((b: any) => b.name?.toLowerCase().includes('manutenção')).length);
-      console.log('========== INICIANDO FILTRO ==========');
-      
-      // Filtrar bases para acesso externo (sem manutenção)
-      const externalBases = result.rows.filter((base: any) => {
-        const shouldInclude = base.active && base.name && !base.name.toLowerCase().includes('manutenção');
-        if (!shouldInclude && base.name?.toLowerCase().includes('manutenção')) {
-          console.log(`Removendo base de manutenção: ${base.name}`);
-        }
-        return shouldInclude;
-      });
-      
-      console.log(`Bases filtradas para acesso externo: ${externalBases.length}`);
+  // REMOVIDA - Segunda definição de /api/bases (conflito resolvido) - Limpeza concluída
       
       return res.status(200).json({
         success: true,

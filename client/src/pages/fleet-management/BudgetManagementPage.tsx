@@ -360,8 +360,8 @@ export default function BudgetManagementPage() {
       console.log("Projeto ID como número:", projectIdNumber);
       
       const basesDoProject = bases.filter(base => {
-        console.log(`Base ${base.name} - projectId: ${(base as any).projectId} (tipo: ${typeof (base as any).projectId})`);
-        return (base as any).projectId === projectIdNumber;
+        console.log(`Base ${base.name} - projectId: ${base.projectId} (tipo: ${typeof base.projectId})`);
+        return base.projectId === projectIdNumber;
       });
       
       console.log("Bases filtradas:", basesDoProject);
