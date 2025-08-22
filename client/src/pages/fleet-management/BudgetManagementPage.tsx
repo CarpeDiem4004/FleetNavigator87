@@ -179,8 +179,8 @@ export default function BudgetManagementPage() {
 
   // Função para filtrar oficinas com base na pesquisa
   const filteredWorkshops = workshops.filter(workshop => 
-    workshop.nome.toLowerCase().includes(searchWorkshop.toLowerCase()) ||
-    workshop.cnpj.includes(searchWorkshop)
+    (workshop.nome || '').toLowerCase().includes(searchWorkshop.toLowerCase()) ||
+    (workshop.cnpj || '').includes(searchWorkshop)
   );
 
   // Função para obter os orçamentos recebidos das oficinas
