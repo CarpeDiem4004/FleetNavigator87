@@ -15423,6 +15423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         vehicle_plate,
         km,
         vehicle_model,
+        chassis,
         projeto,
         base_id,
         workshop_id,
@@ -15444,10 +15445,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const query = `
         INSERT INTO campinas_budget_requests 
-          (vehicle_plate, km, vehicle_model, projeto, base_id, workshop_id, workshop_name, description, 
+          (vehicle_plate, km, vehicle_model, chassis, projeto, base_id, workshop_id, workshop_name, description, 
            requested_by, requester_name, status, created_at, updated_at)
         VALUES 
-          ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pendente', NOW(), NOW())
+          ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pendente', NOW(), NOW())
         RETURNING *;
       `;
       
@@ -15455,6 +15456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         vehicle_plate,
         km || null,
         vehicle_model || null,
+        chassis || null,
         projeto || null,
         base_id || null,
         workshop_id,

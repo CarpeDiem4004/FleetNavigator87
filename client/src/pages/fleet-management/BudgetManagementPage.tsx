@@ -187,6 +187,7 @@ export default function BudgetManagementPage() {
     vehicle_plate: "",
     km: "",
     vehicle_model: "",
+    chassis: "",
     projeto: "",
     base_id: "",
     workshop_id: "",
@@ -1597,6 +1598,15 @@ export default function BudgetManagementPage() {
                 value={requestForm.km}
                 onChange={(e) => setRequestForm(prev => ({...prev, km: e.target.value}))}
                 placeholder="Ex: 120000"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="chassis">Chassis</Label>
+              <Input
+                id="chassis"
+                value={requestForm.chassis}
+                onChange={(e) => setRequestForm(prev => ({...prev, chassis: e.target.value}))}
+                placeholder="Ex: 9BM958040R1234567"
               />
             </div>
             <div className="space-y-2">
