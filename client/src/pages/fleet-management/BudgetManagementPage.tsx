@@ -96,19 +96,20 @@ interface WorkshopBudget {
 
 interface BudgetRequest {
   id: number;
-  title: string;
+  vehicle_plate: string;
+  vehicle_model: string;
   description: string;
   workshop_id: number;
   workshop_name: string;
-  vehicle_plate: string;
-  vehicle_model: string;
   status: 'pendente' | 'aprovado' | 'rejeitado' | 'em_analise';
-  estimated_value: number;
+  estimated_value?: number;
   approved_value?: number;
+  requester_name?: string;
   created_at: string;
   approved_at?: string;
-  department?: string;
-  priority?: string;
+  chassis?: string;
+  km?: number;
+  projeto?: string;
 }
 
 interface BudgetSummary {
@@ -291,7 +292,6 @@ export default function BudgetManagementPage() {
     } else {
       const filtered = budgetRequests.filter(budget => 
         budget.workshop_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        budget.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         budget.vehicle_plate?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         budget.description?.toLowerCase().includes(searchTerm.toLowerCase())
       );
