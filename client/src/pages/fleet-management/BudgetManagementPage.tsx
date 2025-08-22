@@ -319,7 +319,8 @@ export default function BudgetManagementPage() {
     try {
       const response = await apiRequest("GET", "/api/bases");
       const data = await response.json();
-      setBases(data);
+      // A API retorna { success: true, data: [...] }
+      setBases(data.data || []);
     } catch (error) {
       console.error("Erro ao buscar bases:", error);
     }
