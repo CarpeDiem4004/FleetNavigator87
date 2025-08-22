@@ -8185,13 +8185,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Token inválido para esta oficina' });
       }
 
-      // Buscar solicitações de manutenção da tabela manutencao
+      // Buscar solicitações de manutenção da tabela maintenance (nova estrutura)
       const requestsQuery = `
-        SELECT id, placa as vehicle_plate, descricao as description, status, prioridade as priority, 
-               data_solicitacao as entry_date, data_agendada as estimated_completion, custo as cost
-        FROM manutencao
-        WHERE oficina_id = $1
-        ORDER BY data_solicitacao DESC
+        SELECT id, vehicle_plate, description, status, priority, 
+               created_at as entry_date, updated_at as estimated_completion, cost
+        FROM maintenance
+        WHERE workshop_id = $1
+        ORDER BY created_at DESC
         LIMIT 20
       `;
       
