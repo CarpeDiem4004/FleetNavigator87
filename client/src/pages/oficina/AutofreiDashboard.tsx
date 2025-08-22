@@ -203,6 +203,66 @@ export default function AutofreiDashboard() {
           </Card>
         </div>
 
+        {/* Actions Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center">
+                <DollarSign className="h-5 w-5 mr-2" />
+                Faturamentos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-green-100 mb-4">
+                Visualize e gerencie suas faturas e recebimentos
+              </p>
+              <Button 
+                className="w-full bg-white text-green-600 hover:bg-gray-100"
+                onClick={() => setLocation('/oficina/autofrei/faturamentos')}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Ver Faturamentos
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center">
+                <Plus className="h-5 w-5 mr-2" />
+                Nova OS
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-blue-100 mb-4">
+                Criar nova ordem de serviço rapidamente
+              </p>
+              <Button className="w-full bg-white text-blue-600 hover:bg-gray-100">
+                <Car className="h-4 w-4 mr-2" />
+                Registrar Veículo
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center">
+                <Download className="h-5 w-5 mr-2" />
+                Relatórios
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-purple-100 mb-4">
+                Baixe relatórios de serviços e financeiro
+              </p>
+              <Button className="w-full bg-white text-purple-600 hover:bg-gray-100">
+                <FileText className="h-4 w-4 mr-2" />
+                Gerar Relatório
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Service Orders */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="lg:col-span-2">
