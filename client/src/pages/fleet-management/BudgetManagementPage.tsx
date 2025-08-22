@@ -191,7 +191,9 @@ export default function BudgetManagementPage() {
     base_id: "",
     description: ""
   });
-  const [bases, setBases] = useState<{id: number, name: string}[]>([]);
+  const [bases, setBases] = useState<{id: number, name: string, project_id?: number}[]>([]);
+  const [projects, setProjects] = useState<{id: number, name: string}[]>([]);
+  const [filteredBases, setFilteredBases] = useState<{id: number, name: string, project_id?: number}[]>([]);
 
   // Função para filtrar oficinas com base na pesquisa
   const filteredWorkshops = workshops.filter(workshop => 
@@ -300,6 +302,7 @@ export default function BudgetManagementPage() {
     fetchBudgetRequests();
     fetchWorkshops();
     fetchBases();
+    fetchProjects();
     // fetchBillingTrackingData(); // Desabilitado para evitar requisições desnecessárias
   }, []);
 
@@ -323,6 +326,37 @@ export default function BudgetManagementPage() {
       setBases(data.data || []);
     } catch (error) {
       console.error("Erro ao buscar bases:", error);
+    }
+  };
+
+  // Função para buscar projetos
+  const fetchProjects = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/projects");
+      const data = await response.json();
+      setProjects(data.data || []);
+    } catch (error) {
+      console.error("Erro ao buscar projetos:", error);
+    }
+  };
+
+  // Função para filtrar bases por projeto
+  const handleProjectChange = (projectId: string) => {
+    setRequestForm(prev => ({
+      ...prev, 
+      projeto: projectId,
+      base_id: "" // Limpa a base selecionada quando muda o projeto
+    }));
+    
+    if (projectId) {
+      // Filtrar bases pelo projeto selecionado usando project_id
+      const projectIdNumber = parseInt(projectId);
+      const basesDoProject = bases.filter(base => 
+        base.project_id === projectIdNumber
+      );
+      setFilteredBases(basesDoProject);
+    } else {
+      setFilteredBases([]);
     }
   };
 
@@ -1572,21 +1606,31 @@ export default function BudgetManagementPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="projeto">Projeto</Label>
-              <Input
-                id="projeto"
-                value={requestForm.projeto}
-                onChange={(e) => setRequestForm(prev => ({...prev, projeto: e.target.value}))}
-                placeholder="Ex: Projeto ABC"
-              />
+              <Select value={requestForm.projeto} onValueChange={handleProjectChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o projeto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id.toString()}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="base">Base</Label>
-              <Select value={requestForm.base_id} onValueChange={(value) => setRequestForm(prev => ({...prev, base_id: value}))}>
+              <Select 
+                value={requestForm.base_id} 
+                onValueChange={(value) => setRequestForm(prev => ({...prev, base_id: value}))}
+                disabled={!requestForm.projeto}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione a base" />
+                  <SelectValue placeholder={requestForm.projeto ? "Selecione a base" : "Primeiro selecione um projeto"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {bases.map((base) => (
+                  {filteredBases.map((base) => (
                     <SelectItem key={base.id} value={base.id.toString()}>
                       {base.name}
                     </SelectItem>
