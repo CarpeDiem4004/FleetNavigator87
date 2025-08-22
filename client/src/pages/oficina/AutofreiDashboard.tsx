@@ -229,17 +229,20 @@ export default function AutofreiDashboard() {
           <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center">
-                <Plus className="h-5 w-5 mr-2" />
-                Nova OS
+                <Car className="h-5 w-5 mr-2" />
+                Recebimentos de Veículos
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-blue-100 mb-4">
-                Criar nova ordem de serviço rapidamente
+                Registrar entrada de veículos para manutenção
               </p>
-              <Button className="w-full bg-white text-blue-600 hover:bg-gray-100">
-                <Car className="h-4 w-4 mr-2" />
-                Registrar Veículo
+              <Button 
+                className="w-full bg-white text-blue-600 hover:bg-gray-100"
+                onClick={() => setLocation('/maintenance/car-reception')}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Registrar Recebimento
               </Button>
             </CardContent>
           </Card>
