@@ -33,7 +33,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
 import MaintenanceChatHistory from "@/components/chat/MaintenanceChatHistory";
 import { formatCurrency } from "@/lib/utils";
-import { CircleAlert, BarChart3, CheckCircle, Clock, AlertCircle, FileText, Search, DollarSign, Calendar, CreditCard } from "lucide-react";
+import { CircleAlert, BarChart3, CheckCircle, Clock, AlertCircle, FileText, Search, DollarSign, Calendar, CreditCard, Plus } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Maintenance {
@@ -181,6 +181,18 @@ export default function BudgetManagementPage() {
   const [billingTrackingData, setBillingTrackingData] = useState<any[]>([]);
   const [loadingBillingTracking, setLoadingBillingTracking] = useState(false);
 
+  // Estados para solicitar novo orçamento
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false);
+  const [requestForm, setRequestForm] = useState({
+    vehicle_plate: "",
+    km: "",
+    vehicle_model: "",
+    projeto: "",
+    base_id: "",
+    description: ""
+  });
+  const [bases, setBases] = useState<{id: number, name: string}[]>([]);
+
   // Função para filtrar oficinas com base na pesquisa
   const filteredWorkshops = workshops.filter(workshop => 
     (workshop.name || '').toLowerCase().includes(searchWorkshop.toLowerCase()) ||
@@ -287,6 +299,7 @@ export default function BudgetManagementPage() {
     fetchMaintenancesWithChats();
     fetchBudgetRequests();
     fetchWorkshops();
+    fetchBases();
     // fetchBillingTrackingData(); // Desabilitado para evitar requisições desnecessárias
   }, []);
 
@@ -298,6 +311,66 @@ export default function BudgetManagementPage() {
       setWorkshops(data);
     } catch (error) {
       console.error("Erro ao buscar oficinas:", error);
+    }
+  };
+
+  // Função para buscar bases
+  const fetchBases = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/bases");
+      const data = await response.json();
+      setBases(data);
+    } catch (error) {
+      console.error("Erro ao buscar bases:", error);
+    }
+  };
+
+  // Função para submeter solicitação de orçamento
+  const submitBudgetRequest = async () => {
+    try {
+      if (!requestForm.vehicle_plate || !requestForm.description) {
+        toast({
+          title: "Erro",
+          description: "Placa e descrição são obrigatórios",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const response = await apiRequest("POST", "/api/campinas/budget-requests", {
+        ...requestForm,
+        km: parseInt(requestForm.km) || 0
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Sucesso",
+          description: "Solicitação de orçamento enviada com sucesso",
+          variant: "success"
+        });
+        
+        setRequestDialogOpen(false);
+        setRequestForm({
+          vehicle_plate: "",
+          km: "",
+          vehicle_model: "",
+          projeto: "",
+          base_id: "",
+          description: ""
+        });
+        
+        // Recarregar dados
+        fetchBudgetRequests();
+      } else {
+        throw new Error("Erro ao enviar solicitação");
+      }
+    } catch (error) {
+      console.error("Erro ao enviar solicitação:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível enviar a solicitação de orçamento",
+        variant: "destructive"
+      });
     }
   };
 
@@ -607,6 +680,10 @@ export default function BudgetManagementPage() {
             </p>
           </div>
           <div className="space-x-2">
+            <Button onClick={() => setRequestDialogOpen(true)} className="bg-green-600 hover:bg-green-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Solicitar Orçamento
+            </Button>
             <Button onClick={() => fetchBudgetRequests()} variant="outline">
               Atualizar Solicitações
             </Button>
@@ -1441,6 +1518,98 @@ export default function BudgetManagementPage() {
               disabled={billingData.dueDates.length === 0}
             >
               Salvar Configuração
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para Solicitar Orçamento */}
+      <Dialog open={requestDialogOpen} onOpenChange={setRequestDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Solicitar Orçamento</DialogTitle>
+            <DialogDescription>
+              Preencha as informações do veículo para solicitar um orçamento
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="placa">Placa*</Label>
+              <Input
+                id="placa"
+                value={requestForm.vehicle_plate}
+                onChange={(e) => setRequestForm(prev => ({...prev, vehicle_plate: e.target.value}))}
+                placeholder="Ex: ABC-1234"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="km">KM</Label>
+              <Input
+                id="km"
+                type="number"
+                value={requestForm.km}
+                onChange={(e) => setRequestForm(prev => ({...prev, km: e.target.value}))}
+                placeholder="Ex: 120000"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="modelo">Modelo</Label>
+              <Select value={requestForm.vehicle_model} onValueChange={(value) => setRequestForm(prev => ({...prev, vehicle_model: value}))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o modelo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fiorino">Fiorino</SelectItem>
+                  <SelectItem value="van">Van</SelectItem>
+                  <SelectItem value="vuc">VUC</SelectItem>
+                  <SelectItem value="toco">Toco</SelectItem>
+                  <SelectItem value="truck">Truck</SelectItem>
+                  <SelectItem value="cavalo_mecanico">Cavalo Mecânico</SelectItem>
+                  <SelectItem value="carreta">Carreta</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="projeto">Projeto</Label>
+              <Input
+                id="projeto"
+                value={requestForm.projeto}
+                onChange={(e) => setRequestForm(prev => ({...prev, projeto: e.target.value}))}
+                placeholder="Ex: Projeto ABC"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="base">Base</Label>
+              <Select value={requestForm.base_id} onValueChange={(value) => setRequestForm(prev => ({...prev, base_id: value}))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a base" />
+                </SelectTrigger>
+                <SelectContent>
+                  {bases.map((base) => (
+                    <SelectItem key={base.id} value={base.id.toString()}>
+                      {base.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="descricao">Descrição*</Label>
+            <textarea
+              id="descricao"
+              className="w-full min-h-[100px] px-3 py-2 border border-input bg-background rounded-md text-sm"
+              value={requestForm.description}
+              onChange={(e) => setRequestForm(prev => ({...prev, description: e.target.value}))}
+              placeholder="Descreva detalhadamente o problema ou serviço necessário..."
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRequestDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={submitBudgetRequest} className="bg-green-600 hover:bg-green-700">
+              Enviar Solicitação
             </Button>
           </DialogFooter>
         </DialogContent>

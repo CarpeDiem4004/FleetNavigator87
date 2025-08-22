@@ -15387,6 +15387,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Erro ao buscar solicitações de orçamento' });
     }
   });
+
+  // Rota para criar nova solicitação de orçamento direta
+  app.post("/api/campinas/budget-requests", async (req, res) => {
+    try {
+      const {
+        vehicle_plate,
+        km,
+        vehicle_model,
+        projeto,
+        base_id,
+        description
+      } = req.body;
+      
+      // Validar campos obrigatórios
+      if (!vehicle_plate || !description) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'Placa e descrição são obrigatórios' 
+        });
+      }
+      
+      const query = `
+        INSERT INTO campinas_budget_requests 
+          (vehicle_plate, km, vehicle_model, projeto, base_id, description, 
+           requested_by, requester_name, status, created_at, updated_at)
+        VALUES 
+          ($1, $2, $3, $4, $5, $6, $7, $8, 'pendente', NOW(), NOW())
+        RETURNING *;
+      `;
+      
+      const values = [
+        vehicle_plate,
+        km || null,
+        vehicle_model || null,
+        projeto || null,
+        base_id || null,
+        description,
+        req.user?.id || 0,
+        req.user?.name || 'Usuário'
+      ];
+      
+      const result = await pool.query(query, values);
+      
+      console.log("Nova solicitação de orçamento criada:", result.rows[0]);
+      
+      res.status(201).json({
+        success: true,
+        data: result.rows[0]
+      });
+    } catch (error) {
+      console.error('Erro ao criar solicitação de orçamento:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Erro ao criar solicitação de orçamento' 
+      });
+    }
+  });
   
   // Rota para obter uma solicitação específica da Base Campinas
   app.get("/api/bases/campinas/solicitacao-orcamento/:id", async (req, res) => {
