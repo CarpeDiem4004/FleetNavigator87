@@ -716,14 +716,9 @@ export default function OficinaExternalDashboard() {
       console.log('Resposta da atualização:', response.status);
 
       if (response.ok) {
+        setEditingOrder(null);
         setParts([]); // Limpar peças após salvar
         await loadWorkshopData(workshopData.id, token);
-        
-        // Pequeno delay para garantir que a UI atualize antes de fechar o modal
-        setTimeout(() => {
-          setEditingOrder(null);
-        }, 100);
-        
         toast({
           title: "Sucesso",
           description: "Ordem de serviço atualizada com sucesso!",

@@ -51,19 +51,19 @@ import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoute
 // import consumoDiarioTabela from './routes/consumoDiarioTabela.js';
 // Importar API de coordenador de projeto
 import coordinatorRolesApi from './coordinatorRolesApi';
-// API de manutenção veicular
-import { 
-  loginMaintenance, 
-  authenticateMaintenanceToken,
-  getOrdensServico,
-  createOrdemServico,
-  updateStatusOrdemServico,
-  getPecasOS,
-  addPecaOS,
-  getVeiculos,
-  getOficinas,
-  getRelatorios
-} from './maintenance-api.js';
+// API de manutenção veicular (temporariamente desabilitada para deployment)
+// import { 
+//   loginMaintenance, 
+//   authenticateMaintenanceToken,
+//   getOrdensServico,
+//   createOrdemServico,
+//   updateStatusOrdemServico,
+//   getPecasOS,
+//   addPecaOS,
+//   getVeiculos,
+//   getOficinas,
+//   getRelatorios
+// } from './maintenance-api.js';
 // Importar rotas de cartões de combustível
 import fuelCardRoutes from './routes/fuelCardRoutes';
 // Importar rotas do painel operacional
@@ -1224,17 +1224,17 @@ app.use((req, res, next) => {
   
   // === ROTAS DO SISTEMA DE MANUTENÇÃO VEICULAR ===
   
-  // Login para oficinas
-  app.post('/api/maintenance/auth/login', loginMaintenance);
+  // Login para oficinas (temporariamente desabilitado para deployment)
+  // app.post('/api/maintenance/auth/login', loginMaintenance);
   
-  // Rotas protegidas de manutenção
-  app.get('/api/maintenance/ordens-servico', authenticateMaintenanceToken, getOrdensServico);
-  app.post('/api/maintenance/ordens-servico', authenticateMaintenanceToken, createOrdemServico);
-  app.patch('/api/maintenance/ordens-servico/:id/status', authenticateMaintenanceToken, updateStatusOrdemServico);
-  app.get('/api/maintenance/ordens-servico/:ordem_servico_id/pecas', authenticateMaintenanceToken, getPecasOS);
-  app.post('/api/maintenance/ordens-servico/:ordem_servico_id/pecas', authenticateMaintenanceToken, addPecaOS);
-  app.get('/api/maintenance/veiculos', authenticateMaintenanceToken, getVeiculos);
-  app.get('/api/maintenance/oficinas', authenticateMaintenanceToken, getOficinas);
+  // Rotas protegidas de manutenção (temporariamente desabilitadas para deployment)
+  // app.get('/api/maintenance/ordens-servico', authenticateMaintenanceToken, getOrdensServico);
+  // app.post('/api/maintenance/ordens-servico', authenticateMaintenanceToken, createOrdemServico);
+  // app.patch('/api/maintenance/ordens-servico/:id/status', authenticateMaintenanceToken, updateStatusOrdemServico);
+  // app.get('/api/maintenance/ordens-servico/:ordem_servico_id/pecas', authenticateMaintenanceToken, getPecasOS);
+  // app.post('/api/maintenance/ordens-servico/:ordem_servico_id/pecas', authenticateMaintenanceToken, addPecaOS);
+  // app.get('/api/maintenance/veiculos', authenticateMaintenanceToken, getVeiculos);
+  // app.get('/api/maintenance/oficinas', authenticateMaintenanceToken, getOficinas);
   
   // Rota para criar nova oficina (temporariamente desabilitada para deployment)
   /*
@@ -1324,7 +1324,7 @@ app.use((req, res, next) => {
   */
   
   // Rotas de relatórios
-  app.get('/api/maintenance/relatorios', authenticateMaintenanceToken, getRelatorios);
+  // app.get('/api/maintenance/relatorios', authenticateMaintenanceToken, getRelatorios);
   
   // Registrar as rotas de gestão financeira para serviços de guincho
   app.use('/api/towing/payments', towingPaymentsRoutes);
