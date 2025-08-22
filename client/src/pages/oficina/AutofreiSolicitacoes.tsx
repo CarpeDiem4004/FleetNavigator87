@@ -2,6 +2,11 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { 
   ArrowLeft,
@@ -16,7 +21,8 @@ import {
   CheckCircle,
   AlertCircle,
   Calendar,
-  Wrench
+  Wrench,
+  Send
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -41,6 +47,16 @@ export default function AutofreiSolicitacoes() {
   const [, setLocation] = useLocation();
   const [budgetRequests, setBudgetRequests] = useState<BudgetRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedRequest, setSelectedRequest] = useState<BudgetRequest | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isBudgetOpen, setIsBudgetOpen] = useState(false);
+  const [budgetForm, setBudgetForm] = useState({
+    laborCost: '',
+    partsCost: '',
+    totalCost: '',
+    estimatedDays: '',
+    observations: ''
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -134,20 +150,140 @@ export default function AutofreiSolicitacoes() {
     return <Badge className={priorityInfo.color}>{priorityInfo.label}</Badge>;
   };
 
-  const handleCreateBudget = (requestId: number) => {
-    toast({
-      title: "Orçamento em preparação",
-      description: `Iniciando criação de orçamento para solicitação #${requestId}`,
+  const handleCreateBudget = (request: BudgetRequest) => {
+    setSelectedRequest(request);
+    setBudgetForm({
+      laborCost: '',
+      partsCost: '',
+      totalCost: '',
+      estimatedDays: '',
+      observations: ''
     });
-    // Aqui implementar a lógica para criar orçamento
+    setIsBudgetOpen(true);
   };
 
-  const handleViewDetails = (requestId: number) => {
+  const handleViewDetails = (request: BudgetRequest) => {
+    setSelectedRequest(request);
+    setIsDetailsOpen(true);
+  };
+
+  const handleContact = (request: BudgetRequest) => {
+    const message = `Olá! Sou da AUTOFREI e estou entrando em contato sobre a solicitação de orçamento para o veículo ${request.vehiclePlate} - ${request.vehicleModel}. ${request.description}`;
+    const phoneNumber = request.contactPhone.replace(/\D/g, '');
+    const whatsappUrl = `https://wa.me/55${phoneNumber}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+    
     toast({
-      title: "Visualizando detalhes",
-      description: `Abrindo detalhes da solicitação #${requestId}`,
+      title: "Redirecionando para WhatsApp",
+      description: `Abrindo conversa com ${request.requestedBy}`,
     });
-    // Aqui implementar navegação para detalhes
+  };
+
+  const handleGeneratePDF = (request: BudgetRequest) => {
+    // Simular geração de PDF
+    const pdfContent = `
+=== SOLICITAÇÃO DE ORÇAMENTO ===
+Oficina: AUTOFREI
+CNPJ: 33.704.013/0001-09
+
+Veículo: ${request.vehiclePlate} - ${request.vehicleModel}
+Serviço: ${request.description}
+Tipo: ${request.serviceType}
+Status: ${request.status}
+Prioridade: ${request.priority}
+
+Solicitante: ${request.requestedBy}
+Telefone: ${request.contactPhone}
+Localização: ${request.location}
+
+Data da Solicitação: ${new Date(request.requestDate).toLocaleDateString('pt-BR')}
+Prazo: ${new Date(request.deadlineDate).toLocaleDateString('pt-BR')}
+Valor Estimado: R$ ${request.estimatedValue.toFixed(2)}
+
+Observações: ${request.observations || 'Nenhuma observação adicional'}
+
+=== DADOS PARA CONTATO ===
+E-mail: autofrepecas@gmail.com
+Telefone: (11) 99999-9999
+    `;
+
+    const blob = new Blob([pdfContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `solicitacao_${request.vehiclePlate}_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "PDF gerado com sucesso",
+      description: `Arquivo da solicitação ${request.vehiclePlate} baixado`,
+    });
+  };
+
+  const handleExportList = () => {
+    const csvHeaders = ['Placa', 'Modelo', 'Descrição', 'Status', 'Prioridade', 'Solicitante', 'Telefone', 'Localização', 'Data Solicitação', 'Prazo', 'Valor Estimado'];
+    
+    const csvData = budgetRequests.map(request => [
+      request.vehiclePlate,
+      request.vehicleModel,
+      request.description,
+      request.status,
+      request.priority,
+      request.requestedBy,
+      request.contactPhone,
+      request.location,
+      new Date(request.requestDate).toLocaleDateString('pt-BR'),
+      new Date(request.deadlineDate).toLocaleDateString('pt-BR'),
+      `R$ ${request.estimatedValue.toFixed(2)}`
+    ]);
+
+    const csvContent = [csvHeaders, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `solicitacoes_autofrei_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Lista exportada com sucesso",
+      description: `${budgetRequests.length} solicitações exportadas para CSV`,
+    });
+  };
+
+  const handleSubmitBudget = () => {
+    if (!selectedRequest || !budgetForm.totalCost || !budgetForm.estimatedDays) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha o valor total e os dias estimados",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Simular envio do orçamento
+    toast({
+      title: "Orçamento enviado com sucesso!",
+      description: `Orçamento para ${selectedRequest.vehiclePlate} enviado para análise`,
+    });
+
+    setIsBudgetOpen(false);
+    setBudgetForm({
+      laborCost: '',
+      partsCost: '',
+      totalCost: '',
+      estimatedDays: '',
+      observations: ''
+    });
   };
 
   return (
@@ -240,7 +376,7 @@ export default function AutofreiSolicitacoes() {
                 <CardTitle>Solicitações de Orçamentos</CardTitle>
                 <CardDescription>Lista de solicitações recebidas da gestão de frotas</CardDescription>
               </div>
-              <Button variant="outline">
+              <Button variant="outline" onClick={handleExportList}>
                 <FileText className="h-4 w-4 mr-2" />
                 Exportar Lista
               </Button>
@@ -354,7 +490,7 @@ export default function AutofreiSolicitacoes() {
                     {/* Ações */}
                     <div className="flex flex-wrap gap-3">
                       <Button 
-                        onClick={() => handleCreateBudget(request.id)}
+                        onClick={() => handleCreateBudget(request)}
                         className="bg-green-600 hover:bg-green-700"
                       >
                         <Wrench className="h-4 w-4 mr-2" />
@@ -362,16 +498,22 @@ export default function AutofreiSolicitacoes() {
                       </Button>
                       <Button 
                         variant="outline"
-                        onClick={() => handleViewDetails(request.id)}
+                        onClick={() => handleViewDetails(request)}
                       >
                         <Eye className="h-4 w-4 mr-2" />
                         Ver Detalhes
                       </Button>
-                      <Button variant="outline">
+                      <Button 
+                        variant="outline"
+                        onClick={() => handleContact(request)}
+                      >
                         <Phone className="h-4 w-4 mr-2" />
                         Entrar em Contato
                       </Button>
-                      <Button variant="outline">
+                      <Button 
+                        variant="outline"
+                        onClick={() => handleGeneratePDF(request)}
+                      >
                         <FileText className="h-4 w-4 mr-2" />
                         Gerar PDF
                       </Button>
@@ -383,6 +525,234 @@ export default function AutofreiSolicitacoes() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Modal Ver Detalhes */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Solicitação</DialogTitle>
+            <DialogDescription>
+              Informações completas da solicitação de orçamento
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedRequest && (
+            <div className="space-y-6">
+              {/* Informações do Veículo */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">Placa</Label>
+                  <p className="text-lg font-semibold">{selectedRequest.vehiclePlate}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">Modelo</Label>
+                  <p className="text-lg">{selectedRequest.vehicleModel}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Serviço */}
+              <div>
+                <Label className="text-sm font-medium text-gray-500">Descrição do Serviço</Label>
+                <p className="text-base mt-1">{selectedRequest.description}</p>
+                
+                <div className="flex gap-2 mt-3">
+                  {getStatusBadge(selectedRequest.status)}
+                  {getPriorityBadge(selectedRequest.priority)}
+                </div>
+              </div>
+
+              {selectedRequest.observations && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">Observações</Label>
+                  <p className="text-base mt-1 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                    {selectedRequest.observations}
+                  </p>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* Informações do Solicitante */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">Solicitante</Label>
+                  <p className="text-base">{selectedRequest.requestedBy}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">Telefone</Label>
+                  <p className="text-base">{selectedRequest.contactPhone}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">Localização</Label>
+                  <p className="text-base">{selectedRequest.location}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">Valor Estimado</Label>
+                  <p className="text-lg font-semibold text-green-600">
+                    R$ {selectedRequest.estimatedValue?.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Datas */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">Data da Solicitação</Label>
+                  <p className="text-base">{new Date(selectedRequest.requestDate).toLocaleDateString('pt-BR')}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">Prazo para Resposta</Label>
+                  <p className="text-base">{selectedRequest.deadlineDate ? new Date(selectedRequest.deadlineDate).toLocaleDateString('pt-BR') : 'Não definido'}</p>
+                </div>
+              </div>
+
+              {/* Botões de Ação */}
+              <div className="flex gap-3 pt-4">
+                <Button 
+                  onClick={() => {
+                    setIsDetailsOpen(false);
+                    handleCreateBudget(selectedRequest);
+                  }}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Wrench className="h-4 w-4 mr-2" />
+                  Criar Orçamento
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => handleContact(selectedRequest)}
+                >
+                  <Phone className="h-4 w-4 mr-2" />
+                  Entrar em Contato
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => handleGeneratePDF(selectedRequest)}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Gerar PDF
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Criar Orçamento */}
+      <Dialog open={isBudgetOpen} onOpenChange={setIsBudgetOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Criar Orçamento</DialogTitle>
+            <DialogDescription>
+              {selectedRequest && `Orçamento para ${selectedRequest.vehiclePlate} - ${selectedRequest.vehicleModel}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedRequest && (
+            <div className="space-y-6">
+              {/* Resumo da Solicitação */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium mb-2">Serviço Solicitado:</h4>
+                <p className="text-sm text-gray-600">{selectedRequest.description}</p>
+                {selectedRequest.observations && (
+                  <div className="mt-2">
+                    <h4 className="font-medium text-sm">Observações:</h4>
+                    <p className="text-sm text-orange-600">{selectedRequest.observations}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Formulário de Orçamento */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="laborCost">Custo da Mão de Obra (R$)</Label>
+                  <Input
+                    id="laborCost"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={budgetForm.laborCost}
+                    onChange={(e) => setBudgetForm(prev => ({
+                      ...prev,
+                      laborCost: e.target.value,
+                      totalCost: (parseFloat(e.target.value || '0') + parseFloat(prev.partsCost || '0')).toFixed(2)
+                    }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="partsCost">Custo das Peças (R$)</Label>
+                  <Input
+                    id="partsCost"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={budgetForm.partsCost}
+                    onChange={(e) => setBudgetForm(prev => ({
+                      ...prev,
+                      partsCost: e.target.value,
+                      totalCost: (parseFloat(prev.laborCost || '0') + parseFloat(e.target.value || '0')).toFixed(2)
+                    }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="totalCost">Valor Total (R$) *</Label>
+                  <Input
+                    id="totalCost"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={budgetForm.totalCost}
+                    onChange={(e) => setBudgetForm(prev => ({...prev, totalCost: e.target.value}))}
+                    className="font-semibold"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="estimatedDays">Prazo Estimado (dias) *</Label>
+                  <Input
+                    id="estimatedDays"
+                    type="number"
+                    placeholder="3"
+                    value={budgetForm.estimatedDays}
+                    onChange={(e) => setBudgetForm(prev => ({...prev, estimatedDays: e.target.value}))}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="observations">Observações do Orçamento</Label>
+                <Textarea
+                  id="observations"
+                  placeholder="Detalhes adicionais, garantias, condições..."
+                  value={budgetForm.observations}
+                  onChange={(e) => setBudgetForm(prev => ({...prev, observations: e.target.value}))}
+                  className="min-h-[80px]"
+                />
+              </div>
+
+              {/* Botões */}
+              <div className="flex gap-3 pt-4">
+                <Button onClick={handleSubmitBudget} className="bg-green-600 hover:bg-green-700">
+                  <Send className="h-4 w-4 mr-2" />
+                  Enviar Orçamento
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsBudgetOpen(false)}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
