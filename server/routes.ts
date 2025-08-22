@@ -6244,6 +6244,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         params.push(orderId, workshopId);
         updateResult = await pool.query(updateQuery, params);
+
+        // SINCRONIZAR COM A TABELA MAINTENANCE (que as oficinas consultam)
+        try {
+          const syncParams = [];
+          let syncParamCount = 1;
+          const syncUpdates = [];
+
+          if (status) {
+            syncUpdates.push(`status = $${syncParamCount}`);
+            syncParams.push(status);
+            syncParamCount++;
+          }
+
+          if (notes) {
+            syncUpdates.push(`notes = $${syncParamCount}`);
+            syncParams.push(notes);
+            syncParamCount++;
+          }
+
+          if (estimatedCompletion) {
+            syncUpdates.push(`estimated_completion = $${syncParamCount}::date`);
+            syncParams.push(estimatedCompletion);
+            syncParamCount++;
+          }
+
+          if (actualCost && actualCost !== '') {
+            syncUpdates.push(`actual_cost = $${syncParamCount}::numeric`);
+            syncParams.push(parseFloat(actualCost));
+            syncParamCount++;
+          }
+
+          if (currentKm && currentKm !== '') {
+            syncUpdates.push(`current_km = $${syncParamCount}::integer`);
+            syncParams.push(parseInt(currentKm));
+            syncParamCount++;
+          }
+
+          syncUpdates.push('updated_at = NOW()');
+
+          if (syncUpdates.length > 1) { // Mais que apenas updated_at
+            const syncQuery = `
+              UPDATE maintenance 
+              SET ${syncUpdates.join(', ')}
+              WHERE id = $${syncParamCount} AND workshop_id = $${syncParamCount + 1}
+            `;
+            syncParams.push(orderId, workshopId);
+            await pool.query(syncQuery, syncParams);
+            console.log('[Workshop Update] Tabela maintenance sincronizada com sucesso');
+          }
+        } catch (syncError) {
+          console.error('[Workshop Update] Erro ao sincronizar tabela maintenance:', syncError);
+        }
+
       } else {
         // Se não tem 'oficina_id', está na tabela maintenance_orders
         updateQuery = `
