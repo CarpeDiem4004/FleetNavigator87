@@ -16067,15 +16067,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Rota para listar todas as solicitações de orçamento para o painel principal
-  app.get("/api/fleet/budget-requests", hasMaintenanceAccess, async (req, res) => {
+  app.get("/api/fleet/budget-requests", isAuthenticated, async (req, res) => {
     try {
-      // O middleware hasMaintenanceAccess já verificou a autenticação
-      const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
+      // O middleware isAuthenticated já verificou a autenticação
+      const user = req.user;
       console.log('[BudgetRequests] Usuário autenticado:', {
         id: user?.id,
         email: user?.email,
-        role: user?.role,
-        baseId: user?.baseId
+        role: user?.role
       });
       
       console.log('[BudgetRequests] Buscando solicitações de orçamento da Base Campinas para o painel...');
