@@ -16521,6 +16521,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return isAuthenticated(req, res, next);
   };
 
+  // API para responder solicitações de orçamento (oficinas)
+  app.post("/api/budget-requests/respond", hybridAuth, async (req, res) => {
+    try {
+      console.log('[BudgetResponse] Recebendo resposta de orçamento...');
+      
+      const { 
+        request_id, 
+        labor_cost, 
+        parts_cost, 
+        total_cost, 
+        estimated_days, 
+        priority, 
+        observations,
+        workshop_id 
+      } = req.body;
+
+      // Validações
+      if (!request_id || !total_cost || !estimated_days) {
+        return res.status(400).json({
+          success: false,
+          message: "Campos obrigatórios: request_id, total_cost, estimated_days"
+        });
+      }
+
+      // Verificar se a solicitação existe e pertence à oficina
+      const requestCheck = await pool.query(
+        'SELECT * FROM campinas_budget_requests WHERE id = $1 AND workshop_id = $2',
+        [request_id, workshop_id]
+      );
+
+      if (requestCheck.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Solicitação não encontrada ou não pertence a esta oficina"
+        });
+      }
+
+      // Atualizar a solicitação com a resposta da oficina
+      const updateQuery = `
+        UPDATE campinas_budget_requests 
+        SET 
+          estimated_value = $2,
+          labor_cost = $3,
+          parts_cost = $4,
+          estimated_days = $5,
+          priority = $6,
+          workshop_observations = $7,
+          status = 'em_analise',
+          responded_at = NOW(),
+          updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+      `;
+
+      const result = await pool.query(updateQuery, [
+        request_id,
+        total_cost,
+        labor_cost || 0,
+        parts_cost || 0,
+        estimated_days,
+        priority || 'normal',
+        observations || ''
+      ]);
+
+      console.log(`[BudgetResponse] Resposta enviada para solicitação #${request_id}`);
+      
+      return res.status(200).json({
+        success: true,
+        message: "Resposta enviada com sucesso",
+        data: result.rows[0]
+      });
+
+    } catch (error) {
+      console.error('[BudgetResponse] Erro ao processar resposta:', error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro interno do servidor"
+      });
+    }
+  });
+
   // API para buscar orçamentos recebidos das oficinas (campinas_budget_requests)
   app.get("/api/campinas/budget-requests", hybridAuth, async (req, res) => {
     try {

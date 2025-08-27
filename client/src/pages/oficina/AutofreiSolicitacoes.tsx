@@ -2,7 +2,12 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, FileText, Clock, Calendar, User, Car, MapPin, Settings } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, FileText, Clock, Calendar, User, Car, MapPin, Settings, Send, Calculator } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
@@ -25,10 +30,30 @@ interface BudgetRequest {
 
 const AUTOFREI_ID = 12;
 
+interface BudgetResponse {
+  labor_cost: string;
+  parts_cost: string;
+  total_cost: string;
+  estimated_days: string;
+  priority: string;
+  observations: string;
+}
+
 export default function AutofreiSolicitacoes() {
   const [, setLocation] = useLocation();
   const [requests, setRequests] = useState<BudgetRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedRequest, setSelectedRequest] = useState<BudgetRequest | null>(null);
+  const [isResponseOpen, setIsResponseOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [response, setResponse] = useState<BudgetResponse>({
+    labor_cost: '',
+    parts_cost: '',
+    total_cost: '',
+    estimated_days: '',
+    priority: 'normal',
+    observations: ''
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -102,6 +127,106 @@ export default function AutofreiSolicitacoes() {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const handleOpenResponse = (request: BudgetRequest) => {
+    setSelectedRequest(request);
+    setResponse({
+      labor_cost: '',
+      parts_cost: '',
+      total_cost: '',
+      estimated_days: '',
+      priority: 'normal',
+      observations: ''
+    });
+    setIsResponseOpen(true);
+  };
+
+  const calculateTotal = () => {
+    const labor = parseFloat(response.labor_cost) || 0;
+    const parts = parseFloat(response.parts_cost) || 0;
+    const total = (labor + parts).toFixed(2);
+    setResponse(prev => ({ ...prev, total_cost: total }));
+  };
+
+  const handleSubmitResponse = async () => {
+    if (!selectedRequest) return;
+
+    // Validações básicas
+    if (!response.total_cost || parseFloat(response.total_cost) <= 0) {
+      toast({
+        title: "Erro",
+        description: "Por favor, informe um valor total válido",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!response.estimated_days || parseInt(response.estimated_days) <= 0) {
+      toast({
+        title: "Erro", 
+        description: "Por favor, informe o prazo estimado",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      
+      const token = localStorage.getItem('oficina_token') || 'auto_token_autofrei_225e2596c711cdcafa624fce2bfc6052';
+      
+      const response_data = await fetch('/api/budget-requests/respond', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          request_id: selectedRequest.id,
+          labor_cost: parseFloat(response.labor_cost) || 0,
+          parts_cost: parseFloat(response.parts_cost) || 0,
+          total_cost: parseFloat(response.total_cost),
+          estimated_days: parseInt(response.estimated_days),
+          priority: response.priority,
+          observations: response.observations,
+          workshop_id: AUTOFREI_ID
+        })
+      });
+
+      if (response_data.ok) {
+        const result = await response_data.json();
+        
+        if (result.success) {
+          toast({
+            title: "Resposta Enviada!",
+            description: "Sua cotação foi enviada com sucesso para a gestão de frotas",
+            variant: "default"
+          });
+          
+          setIsResponseOpen(false);
+          setSelectedRequest(null);
+          
+          // Recarregar lista de solicitações
+          loadRequests();
+        } else {
+          throw new Error(result.message || 'Erro ao enviar resposta');
+        }
+      } else {
+        throw new Error('Erro na comunicação com o servidor');
+      }
+      
+    } catch (error) {
+      console.error('Erro ao enviar resposta:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível enviar a resposta. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -269,12 +394,11 @@ export default function AutofreiSolicitacoes() {
                     <Button 
                       size="sm" 
                       className="w-full"
-                      onClick={() => toast({
-                        title: "Funcionalidade em desenvolvimento",
-                        description: "Em breve você poderá responder às solicitações diretamente aqui"
-                      })}
+                      onClick={() => handleOpenResponse(request)}
+                      disabled={request.status === 'aprovado' || request.status === 'rejeitado'}
                     >
-                      Responder Solicitação
+                      <Send className="h-4 w-4 mr-2" />
+                      {request.status === 'pendente' ? 'Responder Solicitação' : 'Ver Resposta'}
                     </Button>
                   </div>
                 </CardContent>
@@ -295,6 +419,145 @@ export default function AutofreiSolicitacoes() {
           </Card>
         )}
       </div>
+
+      {/* Modal de Resposta */}
+      <Dialog open={isResponseOpen} onOpenChange={setIsResponseOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-blue-500" />
+              Responder Solicitação #{selectedRequest?.id}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedRequest?.vehicle_plate} - {selectedRequest?.vehicle_model}
+              <br />
+              <strong>Serviço:</strong> {selectedRequest?.description}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            {/* Custos */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="labor_cost">Mão de Obra (R$)</Label>
+                <Input
+                  id="labor_cost"
+                  type="number"
+                  step="0.01"
+                  placeholder="0,00"
+                  value={response.labor_cost}
+                  onChange={(e) => setResponse(prev => ({ ...prev, labor_cost: e.target.value }))}
+                  onBlur={calculateTotal}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="parts_cost">Peças/Materiais (R$)</Label>
+                <Input
+                  id="parts_cost"
+                  type="number"
+                  step="0.01"
+                  placeholder="0,00"
+                  value={response.parts_cost}
+                  onChange={(e) => setResponse(prev => ({ ...prev, parts_cost: e.target.value }))}
+                  onBlur={calculateTotal}
+                />
+              </div>
+            </div>
+
+            {/* Total Calculado */}
+            <div className="space-y-2">
+              <Label htmlFor="total_cost" className="flex items-center gap-2">
+                <Calculator className="h-4 w-4" />
+                Valor Total (R$) *
+              </Label>
+              <Input
+                id="total_cost"
+                type="number"
+                step="0.01"
+                placeholder="0,00"
+                value={response.total_cost}
+                onChange={(e) => setResponse(prev => ({ ...prev, total_cost: e.target.value }))}
+                className="font-semibold text-lg"
+              />
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={calculateTotal}
+                className="w-full"
+              >
+                <Calculator className="h-4 w-4 mr-2" />
+                Calcular Total Automaticamente
+              </Button>
+            </div>
+
+            {/* Prazo e Prioridade */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="estimated_days">Prazo Estimado (dias) *</Label>
+                <Input
+                  id="estimated_days"
+                  type="number"
+                  min="1"
+                  placeholder="Ex: 3"
+                  value={response.estimated_days}
+                  onChange={(e) => setResponse(prev => ({ ...prev, estimated_days: e.target.value }))}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="priority">Prioridade</Label>
+                <Select value={response.priority} onValueChange={(value) => setResponse(prev => ({ ...prev, priority: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a prioridade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="baixa">Baixa</SelectItem>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="alta">Alta</SelectItem>
+                    <SelectItem value="urgente">Urgente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Observações */}
+            <div className="space-y-2">
+              <Label htmlFor="observations">Observações</Label>
+              <Textarea
+                id="observations"
+                placeholder="Informações adicionais sobre o serviço, condições, garantia, etc..."
+                value={response.observations}
+                onChange={(e) => setResponse(prev => ({ ...prev, observations: e.target.value }))}
+                rows={4}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsResponseOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleSubmitResponse}
+              disabled={isSubmitting || !response.total_cost || !response.estimated_days}
+              className="flex items-center gap-2"
+            >
+              {isSubmitting ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {isSubmitting ? 'Enviando...' : 'Enviar Cotação'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
