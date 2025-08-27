@@ -276,7 +276,7 @@ export default function BudgetManagementPage() {
   const handleApproveBudget = async (budget: BudgetRequest) => {
     try {
       const response = await apiRequest("PUT", `/api/fleet/budget-requests/${budget.id}/approve`, {
-        approved_value: budget.estimated_value
+        approvedValue: budget.estimated_value
       });
       
       const result = await response.json();
@@ -319,7 +319,7 @@ export default function BudgetManagementPage() {
 
     try {
       const response = await apiRequest("PUT", `/api/fleet/budget-requests/${rejectingBudget.id}/reject`, {
-        reason: rejectReason
+        comments: rejectReason
       });
       
       const result = await response.json();
