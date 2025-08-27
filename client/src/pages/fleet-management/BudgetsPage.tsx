@@ -282,7 +282,8 @@ export default function BudgetsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">
-                  {budgetChats.filter(chat => !chat.isFinalized && (chat.maintenanceStatus === 'em_negociacao' || chat.maintenanceStatus === 'em_andamento')).length}
+                  {budgetChats.filter(chat => !chat.isFinalized && (chat.maintenanceStatus === 'em_negociacao' || chat.maintenanceStatus === 'em_andamento')).length + 
+                   campinasRequests.filter(request => request.status === 'em_negociacao').length}
                 </div>
               </CardContent>
             </Card>
@@ -558,13 +559,29 @@ export default function BudgetsPage() {
                 </div>
                 
                 <TabsContent value="negociacao" className="space-y-4">
-                  <BudgetTable 
-                    budgetChats={filteredBudgetChats.filter(chat => 
-                      !chat.isFinalized && (chat.maintenanceStatus === 'em_negociacao' || chat.maintenanceStatus === 'em_andamento')
-                    )} 
-                    isLoading={isLoading}
-                    onOpenChat={handleOpenChatDialog}
-                  />
+                  {/* Orçamentos de Manutenção em Negociação */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">Orçamentos de Manutenção</h3>
+                    <BudgetTable 
+                      budgetChats={filteredBudgetChats.filter(chat => 
+                        !chat.isFinalized && (chat.maintenanceStatus === 'em_negociacao' || chat.maintenanceStatus === 'em_andamento')
+                      )} 
+                      isLoading={isLoading}
+                      onOpenChat={handleOpenChatDialog}
+                    />
+                  </div>
+
+                  {/* Orçamentos da Base Campinas em Negociação */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">Orçamentos de Oficinas</h3>
+                    <CampinasBudgetTable 
+                      requests={filteredCampinasRequests.filter(request => 
+                        request.status === 'em_negociacao'
+                      )} 
+                      isLoading={isLoadingCampinasRequests}
+                      onOpenDetails={handleOpenCampinasRequestDialog}
+                    />
+                  </div>
                 </TabsContent>
                 
                 <TabsContent value="aguardando" className="space-y-4">
