@@ -283,7 +283,7 @@ export default function BudgetsPage() {
               <CardContent>
                 <div className="text-3xl font-bold">
                   {budgetChats.filter(chat => !chat.isFinalized && (chat.maintenanceStatus === 'em_negociacao' || chat.maintenanceStatus === 'em_andamento')).length + 
-                   campinasRequests.filter(request => request.status === 'em_negociacao').length}
+                   campinasRequests.filter(request => request.status === 'em_negociacao' || request.status === 'em_analise').length}
                 </div>
               </CardContent>
             </Card>
@@ -576,7 +576,7 @@ export default function BudgetsPage() {
                     <h3 className="text-lg font-semibold mb-3">Orçamentos de Oficinas</h3>
                     <CampinasBudgetTable 
                       requests={filteredCampinasRequests.filter(request => 
-                        request.status === 'em_negociacao'
+                        request.status === 'em_negociacao' || request.status === 'em_analise'
                       )} 
                       isLoading={isLoadingCampinasRequests}
                       onOpenDetails={handleOpenCampinasRequestDialog}
