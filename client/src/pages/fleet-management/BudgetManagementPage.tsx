@@ -34,7 +34,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
 import MaintenanceChatHistory from "@/components/chat/MaintenanceChatHistory";
 import { formatCurrency } from "@/lib/utils";
-import { CircleAlert, BarChart3, CheckCircle, Clock, AlertCircle, FileText, Search, DollarSign, Calendar, CreditCard, Plus } from "lucide-react";
+import { CircleAlert, BarChart3, CheckCircle, Clock, AlertCircle, FileText, Search, DollarSign, Calendar, CreditCard, Plus, Eye, Printer } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Maintenance {
@@ -202,6 +202,10 @@ export default function BudgetManagementPage() {
   // Estados para aprovação/recusa de orçamentos
   const [rejectingBudget, setRejectingBudget] = useState<BudgetRequest | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  
+  // Estados para visualizar orçamento
+  const [viewingBudget, setViewingBudget] = useState<BudgetRequest | null>(null);
+  const [viewBudgetDialogOpen, setViewBudgetDialogOpen] = useState(false);
 
   // Função para filtrar oficinas com base na pesquisa
   const filteredWorkshops = workshops.filter(workshop => 
@@ -322,6 +326,17 @@ export default function BudgetManagementPage() {
         variant: "destructive"
       });
     }
+  };
+
+  // Função para visualizar detalhes do orçamento
+  const handleViewBudget = (budget: BudgetRequest) => {
+    setViewingBudget(budget);
+    setViewBudgetDialogOpen(true);
+  };
+
+  // Função para imprimir orçamento
+  const handlePrintBudget = () => {
+    window.print();
   };
 
   // Função para obter as manutenções com chats
@@ -1420,6 +1435,15 @@ export default function BudgetManagementPage() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex gap-2 justify-end">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => handleViewBudget(budget)}
+                                  className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  Ver
+                                </Button>
                                 {(budget.status === 'em_analise' || budget.status === 'em_negociacao') && (
                                   <>
                                     <Button 
@@ -1441,15 +1465,6 @@ export default function BudgetManagementPage() {
                                       Recusar
                                     </Button>
                                   </>
-                                )}
-                                {budget.status === 'pendente' && (
-                                  <span className="text-sm text-gray-500">Aguardando resposta</span>
-                                )}
-                                {budget.status === 'aprovado' && (
-                                  <span className="text-sm text-green-600 font-medium">Aprovado</span>
-                                )}
-                                {budget.status === 'rejeitado' && (
-                                  <span className="text-sm text-red-600 font-medium">Rejeitado</span>
                                 )}
                               </div>
                             </TableCell>
@@ -1813,6 +1828,133 @@ export default function BudgetManagementPage() {
             </Button>
             <Button onClick={submitBudgetRequest} className="bg-green-600 hover:bg-green-700">
               Enviar Solicitação
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para Visualizar Orçamento */}
+      <Dialog open={viewBudgetDialogOpen} onOpenChange={setViewBudgetDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto print:max-w-none print:max-h-none print:overflow-visible">
+          <DialogHeader className="print:hidden">
+            <DialogTitle>Detalhes do Orçamento</DialogTitle>
+            <DialogDescription>
+              Visualização completa do orçamento para impressão
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="print:p-0">
+            {viewingBudget && (
+              <div className="space-y-6">
+                {/* Cabeçalho para impressão */}
+                <div className="hidden print:block text-center mb-8">
+                  <h1 className="text-2xl font-bold">MURICION FLEET</h1>
+                  <h2 className="text-xl">Detalhes do Orçamento</h2>
+                  <p className="text-sm text-gray-600">Data de impressão: {new Date().toLocaleDateString('pt-BR')}</p>
+                </div>
+                
+                {/* Informações básicas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">Informações do Veículo</h3>
+                      <div className="space-y-2">
+                        <p><strong>Placa:</strong> {viewingBudget.vehicle_plate}</p>
+                        <p><strong>Modelo:</strong> {viewingBudget.vehicle_model}</p>
+                        {viewingBudget.chassis && <p><strong>Chassis:</strong> {viewingBudget.chassis}</p>}
+                        {viewingBudget.km && <p><strong>KM:</strong> {viewingBudget.km.toLocaleString()}</p>}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">Oficina</h3>
+                      <div className="space-y-2">
+                        <p><strong>Nome:</strong> {viewingBudget.workshop_name}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">Status e Valores</h3>
+                      <div className="space-y-2">
+                        <p><strong>Status:</strong> 
+                          <Badge 
+                            variant={
+                              viewingBudget.status === 'aprovado' ? 'default' : 
+                              viewingBudget.status === 'pendente' ? 'secondary' : 
+                              viewingBudget.status === 'em_analise' ? 'outline' :
+                              'destructive'
+                            }
+                            className="ml-2"
+                          >
+                            {viewingBudget.status === 'pendente' ? 'Aguardando' :
+                             viewingBudget.status === 'aprovado' ? 'Aprovado' :
+                             viewingBudget.status === 'em_analise' ? 'Em Análise' : viewingBudget.status}
+                          </Badge>
+                        </p>
+                        <p><strong>Valor Solicitado:</strong> {formatCurrency(viewingBudget.estimated_value || 0)}</p>
+                        {viewingBudget.approved_value && (
+                          <p><strong>Valor Aprovado:</strong> 
+                            <span className="text-green-600 font-medium ml-1">
+                              {formatCurrency(viewingBudget.approved_value)}
+                            </span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">Datas</h3>
+                      <div className="space-y-2">
+                        <p><strong>Data do Orçamento:</strong> {new Date(viewingBudget.created_at).toLocaleDateString('pt-BR')}</p>
+                        {viewingBudget.approved_at && (
+                          <p><strong>Data de Aprovação:</strong> {new Date(viewingBudget.approved_at).toLocaleDateString('pt-BR')}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Descrição do serviço */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Descrição do Serviço</h3>
+                  <div className="border rounded-lg p-4 bg-gray-50">
+                    <p className="whitespace-pre-line">{viewingBudget.description}</p>
+                  </div>
+                </div>
+                
+                {/* Informações adicionais */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">Solicitante</h3>
+                    <p><strong>Nome:</strong> {viewingBudget.requester_name || 'Não informado'}</p>
+                  </div>
+                  
+                  {viewingBudget.projeto && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">Projeto</h3>
+                      <p><strong>Projeto:</strong> {viewingBudget.projeto}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter className="print:hidden mt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => setViewBudgetDialogOpen(false)}
+            >
+              Fechar
+            </Button>
+            <Button 
+              onClick={handlePrintBudget}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Imprimir
             </Button>
           </DialogFooter>
         </DialogContent>
