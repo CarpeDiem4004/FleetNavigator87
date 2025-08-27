@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -198,6 +199,10 @@ export default function BudgetManagementPage() {
   const [projects, setProjects] = useState<{id: number, name: string}[]>([]);
   const [filteredBases, setFilteredBases] = useState<{id: number, name: string, project_id?: number}[]>([]);
 
+  // Estados para aprovação/recusa de orçamentos
+  const [rejectingBudget, setRejectingBudget] = useState<BudgetRequest | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+
   // Função para filtrar oficinas com base na pesquisa
   const filteredWorkshops = workshops.filter(workshop => 
     (workshop.name || '').toLowerCase().includes(searchWorkshop.toLowerCase()) ||
@@ -236,6 +241,86 @@ export default function BudgetManagementPage() {
       setFilteredBudgets([]);
     } finally {
       setLoadingBudgetRequests(false);
+    }
+  };
+
+  // Função para aprovar orçamento
+  const handleApproveBudget = async (budget: BudgetRequest) => {
+    try {
+      const response = await apiRequest("POST", `/api/fleet/budget-requests/${budget.id}/approve`, {
+        approved_value: budget.estimated_value
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "Sucesso",
+          description: "Orçamento aprovado com sucesso!",
+          variant: "default"
+        });
+        // Recarregar a lista de orçamentos
+        fetchBudgetRequests();
+      } else {
+        toast({
+          title: "Erro",
+          description: result.message || "Erro ao aprovar orçamento",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao aprovar orçamento:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível aprovar o orçamento",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Função para recusar orçamento
+  const handleRejectBudget = async () => {
+    if (!rejectingBudget || !rejectReason.trim()) {
+      toast({
+        title: "Erro",
+        description: "Por favor, informe o motivo da recusa",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await apiRequest("POST", `/api/fleet/budget-requests/${rejectingBudget.id}/reject`, {
+        reason: rejectReason
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "Sucesso",
+          description: "Orçamento recusado com sucesso!",
+          variant: "default"
+        });
+        // Recarregar a lista de orçamentos
+        fetchBudgetRequests();
+        // Limpar o modal
+        setRejectingBudget(null);
+        setRejectReason("");
+      } else {
+        toast({
+          title: "Erro",
+          description: result.message || "Erro ao recusar orçamento",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao recusar orçamento:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível recusar o orçamento",
+        variant: "destructive"
+      });
     }
   };
 
@@ -1259,6 +1344,7 @@ export default function BudgetManagementPage() {
                         <TableHead>Valor Aprovado</TableHead>
                         <TableHead>Data do Orçamento</TableHead>
                         <TableHead>Vencimento</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1329,6 +1415,41 @@ export default function BudgetManagementPage() {
                                     <AlertCircle className="h-3 w-3" />
                                     <span className="text-xs">Vencido</span>
                                   </div>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex gap-2 justify-end">
+                                {(budget.status === 'em_analise' || budget.status === 'em_negociacao') && (
+                                  <>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={() => handleApproveBudget(budget)}
+                                      className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                                    >
+                                      <CheckCircle className="h-4 w-4 mr-1" />
+                                      Aprovar
+                                    </Button>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={() => setRejectingBudget(budget)}
+                                      className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+                                    >
+                                      <CircleAlert className="h-4 w-4 mr-1" />
+                                      Recusar
+                                    </Button>
+                                  </>
+                                )}
+                                {budget.status === 'pendente' && (
+                                  <span className="text-sm text-gray-500">Aguardando resposta</span>
+                                )}
+                                {budget.status === 'aprovado' && (
+                                  <span className="text-sm text-green-600 font-medium">Aprovado</span>
+                                )}
+                                {budget.status === 'rejeitado' && (
+                                  <span className="text-sm text-red-600 font-medium">Rejeitado</span>
                                 )}
                               </div>
                             </TableCell>
@@ -1692,6 +1813,51 @@ export default function BudgetManagementPage() {
             </Button>
             <Button onClick={submitBudgetRequest} className="bg-green-600 hover:bg-green-700">
               Enviar Solicitação
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para Recusar Orçamento */}
+      <Dialog open={!!rejectingBudget} onOpenChange={(open) => !open && setRejectingBudget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Recusar Orçamento</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja recusar o orçamento de "{rejectingBudget?.workshop_name}" para o veículo {rejectingBudget?.vehicle_plate}?
+              Por favor, informe o motivo da recusa:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="reject-reason">Motivo da Recusa</Label>
+              <Textarea
+                id="reject-reason"
+                placeholder="Digite o motivo da recusa..."
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                className="mt-1"
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setRejectingBudget(null);
+                setRejectReason("");
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleRejectBudget}
+              disabled={!rejectReason.trim()}
+            >
+              <CircleAlert className="h-4 w-4 mr-2" />
+              Recusar Orçamento
             </Button>
           </DialogFooter>
         </DialogContent>
