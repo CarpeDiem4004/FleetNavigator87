@@ -64,17 +64,26 @@ export default function AutofreiSolicitacoes() {
     try {
       setIsLoading(true);
       
-      // Buscar token no localStorage
-      const token = localStorage.getItem('oficina_token') || 'auto_token_autofrei_225e2596c711cdcafa624fce2bfc6052';
+      // Token da oficina AUTOFREI
+      const oficinaToken = 'auto_token_autofrei_225e2596c711cdcafa624fce2bfc6052';
+      console.log('[AUTOFREI] Carregando solicitações...');
+      
+      // Temporariamente limpar authToken para esta requisição
+      const authTokenBackup = localStorage.getItem('authToken');
+      localStorage.removeItem('authToken');
       
       const response = await fetch('/api/campinas/budget-requests', {
         method: 'GET',
-        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${oficinaToken}`,
           'Content-Type': 'application/json'
         }
       });
+      
+      // Restaurar authToken original
+      if (authTokenBackup) {
+        localStorage.setItem('authToken', authTokenBackup);
+      }
       
       if (response.ok) {
         const result = await response.json();
@@ -84,22 +93,22 @@ export default function AutofreiSolicitacoes() {
             request.workshop_id === AUTOFREI_ID
           );
           setRequests(autofreiRequests);
-          console.log(`Solicitações carregadas para AUTOFREI: ${autofreiRequests.length}`);
+          console.log(`[AUTOFREI] ${autofreiRequests.length} solicitações carregadas`);
         } else {
-          console.error('Erro na resposta da API:', result.message);
+          console.error('[AUTOFREI] Erro na resposta:', result.message);
           setRequests([]);
         }
       } else {
-        console.error('Erro ao carregar solicitações:', response.status);
+        console.error('[AUTOFREI] Erro HTTP:', response.status);
         setRequests([]);
         toast({
           title: "Erro",
-          description: "Não foi possível carregar as solicitações",
+          description: `Erro ${response.status}: Não foi possível carregar as solicitações`,
           variant: "destructive"
         });
       }
     } catch (error) {
-      console.error('Erro ao carregar solicitações:', error);
+      console.error('[AUTOFREI] Erro ao carregar solicitações:', error);
       setRequests([]);
       toast({
         title: "Erro",

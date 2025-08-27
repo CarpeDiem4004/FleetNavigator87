@@ -16489,11 +16489,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Middleware para autenticação híbrida (usuário ou oficina)
   const hybridAuth = async (req: any, res: any, next: any) => {
-    // Primeiro tenta autenticação normal
+    console.log('[HYBRID-AUTH-DEBUG] Requisição recebida:', {
+      url: req.url,
+      method: req.method,
+      hasAuthHeader: !!req.headers.authorization,
+      userAgent: req.headers['user-agent']?.substring(0, 50),
+      origin: req.headers.origin,
+      referer: req.headers.referer
+    });
+
     const authHeader = req.headers.authorization;
     
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
+      console.log('[HYBRID-AUTH-DEBUG] Token encontrado:', token.substring(0, 20) + '...');
       
       // Verificar se é token de oficina
       if (token.startsWith('auto_token_')) {
@@ -16510,14 +16519,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             req.oficina = result.rows[0];
             req.isWorkshop = true;
             return next();
+          } else {
+            console.log('[HYBRID-AUTH] Token de oficina não encontrado no banco');
           }
         } catch (error) {
           console.error('[HYBRID-AUTH] Erro ao verificar token de oficina:', error);
         }
+      } else {
+        console.log('[HYBRID-AUTH-DEBUG] Token não é de oficina, tentando autenticação normal');
       }
+    } else {
+      console.log('[HYBRID-AUTH-DEBUG] Nenhum header Authorization encontrado');
     }
     
     // Se não for oficina, tentar autenticação normal
+    console.log('[HYBRID-AUTH-DEBUG] Tentando autenticação padrão...');
     return isAuthenticated(req, res, next);
   };
 
