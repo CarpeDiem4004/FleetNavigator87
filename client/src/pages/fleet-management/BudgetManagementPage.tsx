@@ -111,6 +111,14 @@ interface BudgetRequest {
   chassis?: string;
   km?: number;
   projeto?: string;
+  parts_json?: string;
+  parts_details?: Array<{
+    name: string;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+  }>;
 }
 
 interface BudgetSummary {
@@ -221,10 +229,26 @@ export default function BudgetManagementPage() {
       const result = await response.json();
       
       if (result.success) {
-        setBudgetRequests(result.data || []);
+        // Processar parts_json para parts_details
+        const processedData = (result.data || []).map((budget: any) => {
+          let parts_details = null;
+          if (budget.parts_json) {
+            try {
+              parts_details = JSON.parse(budget.parts_json);
+            } catch (error) {
+              console.error("Erro ao fazer parse do JSON das peças:", error);
+            }
+          }
+          return {
+            ...budget,
+            parts_details
+          };
+        });
+        
+        setBudgetRequests(processedData);
         setBudgetSummary(result.summary);
-        setFilteredBudgets(result.data || []);
-        console.log(`Orçamentos carregados: ${result.data.length}`);
+        setFilteredBudgets(processedData);
+        console.log(`Orçamentos carregados: ${processedData.length}`);
       } else {
         toast({
           title: "Erro",
@@ -1923,6 +1947,44 @@ export default function BudgetManagementPage() {
                     <p className="whitespace-pre-line">{viewingBudget.description}</p>
                   </div>
                 </div>
+
+                {/* Lista de Peças */}
+                {viewingBudget.parts_details && viewingBudget.parts_details.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">Peças e Materiais</h3>
+                    <div className="border rounded-lg overflow-hidden">
+                      <div className="bg-gray-50 px-4 py-2 border-b grid grid-cols-4 gap-4 font-medium text-sm">
+                        <div>Nome/Descrição</div>
+                        <div className="text-center">Quantidade</div>
+                        <div className="text-right">Valor Unitário</div>
+                        <div className="text-right">Valor Total</div>
+                      </div>
+                      {viewingBudget.parts_details.map((part, index) => (
+                        <div key={index} className="px-4 py-3 border-b last:border-b-0 grid grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <p className="font-medium">{part.name}</p>
+                            {part.description && (
+                              <p className="text-gray-600 text-xs">{part.description}</p>
+                            )}
+                          </div>
+                          <div className="text-center">{part.quantity}</div>
+                          <div className="text-right">{formatCurrency(part.unit_price)}</div>
+                          <div className="text-right font-medium">{formatCurrency(part.total_price)}</div>
+                        </div>
+                      ))}
+                      <div className="bg-gray-50 px-4 py-3 border-t-2">
+                        <div className="grid grid-cols-4 gap-4 font-bold">
+                          <div className="col-span-3 text-right">Total das Peças:</div>
+                          <div className="text-right">
+                            {formatCurrency(
+                              viewingBudget.parts_details.reduce((sum, part) => sum + part.total_price, 0)
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 {/* Informações adicionais */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

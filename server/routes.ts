@@ -16634,6 +16634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           workshop_name,
           status,
           estimated_value,
+          parts_json,
           approved_value,
           approved_by,
           approver_name,
