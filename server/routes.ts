@@ -16196,6 +16196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[BudgetRequests] Solicitação #${id} aprovada com sucesso`);
       res.json({ 
+        success: true,
         message: 'Solicitação de orçamento aprovada com sucesso',
         data: result.rows[0]
       });
@@ -16236,6 +16237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[BudgetRequests] Solicitação #${id} rejeitada com sucesso`);
       res.json({ 
+        success: true,
         message: 'Solicitação de orçamento rejeitada com sucesso',
         data: result.rows[0]
       });
