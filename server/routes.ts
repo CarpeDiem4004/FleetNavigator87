@@ -16681,6 +16681,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para aprovar orçamento de oficina
+  app.put("/api/campinas/budget-requests/:id/approve", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { approvedBy, approvedAt } = req.body;
+      
+      console.log(`[CampinaBudgets] Aprovando orçamento ID: ${id}`);
+      
+      // Verificar se o orçamento existe
+      const checkQuery = `SELECT * FROM campinas_budget_requests WHERE id = $1`;
+      const checkResult = await pool.query(checkQuery, [id]);
+      
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Orçamento não encontrado' 
+        });
+      }
+      
+      // Atualizar status para aprovado
+      const updateQuery = `
+        UPDATE campinas_budget_requests 
+        SET 
+          status = 'aprovado',
+          approved_by = $1,
+          approved_at = $2,
+          updated_at = NOW()
+        WHERE id = $3
+        RETURNING *;
+      `;
+      
+      const result = await pool.query(updateQuery, [approvedBy, approvedAt, id]);
+      
+      res.json({
+        success: true,
+        message: 'Orçamento aprovado com sucesso',
+        data: result.rows[0]
+      });
+      
+    } catch (error) {
+      console.error('Erro ao aprovar orçamento:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro ao aprovar orçamento' 
+      });
+    }
+  });
+
+  // API para recusar orçamento de oficina
+  app.put("/api/campinas/budget-requests/:id/reject", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { rejectedBy, rejectedAt, rejectionReason } = req.body;
+      
+      console.log(`[CampinaBudgets] Recusando orçamento ID: ${id}`);
+      
+      // Verificar se o orçamento existe
+      const checkQuery = `SELECT * FROM campinas_budget_requests WHERE id = $1`;
+      const checkResult = await pool.query(checkQuery, [id]);
+      
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Orçamento não encontrado' 
+        });
+      }
+      
+      // Atualizar status para recusado
+      const updateQuery = `
+        UPDATE campinas_budget_requests 
+        SET 
+          status = 'recusado',
+          rejected_by = $1,
+          rejected_at = $2,
+          rejection_reason = $3,
+          updated_at = NOW()
+        WHERE id = $4
+        RETURNING *;
+      `;
+      
+      const result = await pool.query(updateQuery, [rejectedBy, rejectedAt, rejectionReason, id]);
+      
+      res.json({
+        success: true,
+        message: 'Orçamento recusado com sucesso',
+        data: result.rows[0]
+      });
+      
+    } catch (error) {
+      console.error('Erro ao recusar orçamento:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro ao recusar orçamento' 
+      });
+    }
+  });
+
   // API para buscar orçamentos de uma oficina específica por período
   app.get("/api/fleet/workshop-budgets", isAuthenticated, async (req, res) => {
     try {

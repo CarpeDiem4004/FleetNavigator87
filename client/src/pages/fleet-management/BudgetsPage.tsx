@@ -26,6 +26,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
+import {
   Tabs,
   TabsContent,
   TabsList,
@@ -45,7 +52,11 @@ import {
   Clock,
   AlertCircle,
   Building2,
-  FileText
+  FileText,
+  Eye,
+  ThumbsUp,
+  ThumbsDown,
+  MoreHorizontal
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { format } from 'date-fns';
@@ -54,6 +65,7 @@ import { useAuth } from '@/context/AuthContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatCurrency } from '@/lib/utils';
 import ChatOficina from '@/components/workshop/ChatOficina';
+import { useToast } from '@/hooks/use-toast';
 
 // Interfaces
 interface BudgetChat {
@@ -236,6 +248,69 @@ export default function BudgetsPage() {
     };
   }, []);
   
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // Mutation para aprovar orçamento
+  const approveBudgetMutation = useMutation({
+    mutationFn: async (request: CampinasBudgetRequest) => {
+      const response = await apiRequest('PUT', `/api/campinas/budget-requests/${request.id}/approve`, {
+        approvedBy: user?.name || 'Administrador',
+        approvedAt: new Date().toISOString()
+      });
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Orçamento aprovado!",
+        description: "O orçamento foi aprovado com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/fleet/budget-requests'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao aprovar",
+        description: "Ocorreu um erro ao aprovar o orçamento. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Mutation para recusar orçamento
+  const rejectBudgetMutation = useMutation({
+    mutationFn: async ({ request, reason }: { request: CampinasBudgetRequest, reason: string }) => {
+      const response = await apiRequest('PUT', `/api/campinas/budget-requests/${request.id}/reject`, {
+        rejectedBy: user?.name || 'Administrador',
+        rejectedAt: new Date().toISOString(),
+        rejectionReason: reason
+      });
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Orçamento recusado",
+        description: "O orçamento foi recusado com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/fleet/budget-requests'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao recusar",
+        description: "Ocorreu um erro ao recusar o orçamento. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Funções para lidar com aprovação e recusa
+  const handleApproveBudget = (request: CampinasBudgetRequest) => {
+    approveBudgetMutation.mutate(request);
+  };
+  
+  const handleRejectBudget = (request: CampinasBudgetRequest, reason: string) => {
+    rejectBudgetMutation.mutate({ request, reason });
+  };
+  
   // Abrir diálogo de chat para negociação
   const handleOpenChatDialog = (chat: BudgetChat) => {
     if (isMounted.current) {
@@ -390,6 +465,8 @@ export default function BudgetsPage() {
                   requests={filteredCampinasRequests} 
                   isLoading={isLoadingCampinasRequests}
                   onOpenDetails={handleOpenCampinasRequestDialog}
+                  onApprove={handleApproveBudget}
+                  onReject={handleRejectBudget}
                 />
               </CardContent>
             )}
@@ -580,6 +657,8 @@ export default function BudgetsPage() {
                       )} 
                       isLoading={isLoadingCampinasRequests}
                       onOpenDetails={handleOpenCampinasRequestDialog}
+                      onApprove={handleApproveBudget}
+                      onReject={handleRejectBudget}
                     />
                   </div>
                 </TabsContent>
@@ -770,10 +849,14 @@ interface CampinasBudgetTableProps {
   requests: CampinasBudgetRequest[];
   isLoading: boolean;
   onOpenDetails: (request: CampinasBudgetRequest) => void;
+  onApprove?: (request: CampinasBudgetRequest) => void;
+  onReject?: (request: CampinasBudgetRequest, reason: string) => void;
 }
 
 // Componente de tabela para solicitações de orçamento da Base Campinas
-function CampinasBudgetTable({ requests, isLoading, onOpenDetails }: CampinasBudgetTableProps) {
+function CampinasBudgetTable({ requests, isLoading, onOpenDetails, onApprove, onReject }: CampinasBudgetTableProps) {
+  const [rejectingRequest, setRejectingRequest] = React.useState<CampinasBudgetRequest | null>(null);
+  const [rejectReason, setRejectReason] = React.useState('');
   // Função para formatar data
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
@@ -831,19 +914,114 @@ function CampinasBudgetTable({ requests, isLoading, onOpenDetails }: CampinasBud
               <CampinasBudgetStatusBadge status={request.status} />
             </TableCell>
             <TableCell className="text-right">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => onOpenDetails(request)}
-                className="w-full md:w-auto"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Detalhes
-              </Button>
+              <div className="flex gap-2 justify-end">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => onOpenDetails(request)}
+                  className="hidden md:flex"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Ver
+                </Button>
+                
+                {(request.status === 'em_negociacao' || request.status === 'em_analise') && (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => onApprove?.(request)}
+                      className="hidden md:flex bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                    >
+                      <ThumbsUp className="h-4 w-4 mr-2" />
+                      Aprovar
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setRejectingRequest(request)}
+                      className="hidden md:flex bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+                    >
+                      <ThumbsDown className="h-4 w-4 mr-2" />
+                      Recusar
+                    </Button>
+                  </>
+                )}
+                
+                {/* Menu dropdown para mobile */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="md:hidden">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onOpenDetails(request)}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Ver Detalhes
+                    </DropdownMenuItem>
+                    {(request.status === 'em_negociacao' || request.status === 'em_analise') && (
+                      <>
+                        <DropdownMenuItem onClick={() => onApprove?.(request)}>
+                          <ThumbsUp className="h-4 w-4 mr-2" />
+                          Aprovar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setRejectingRequest(request)}>
+                          <ThumbsDown className="h-4 w-4 mr-2" />
+                          Recusar
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </TableCell>
           </TableRow>
         ))}
       </TableBody>
     </Table>
+    
+    {/* Modal para rejeitar orçamento */}
+    <Dialog open={!!rejectingRequest} onOpenChange={(open) => !open && setRejectingRequest(null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Recusar Orçamento</DialogTitle>
+          <DialogDescription>
+            Tem certeza que deseja recusar o orçamento "{rejectingRequest?.title}"?
+            Por favor, informe o motivo da recusa:
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="reject-reason">Motivo da Recusa</Label>
+            <Textarea
+              id="reject-reason"
+              placeholder="Digite o motivo da recusa..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              className="mt-1"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setRejectingRequest(null)}>
+            Cancelar
+          </Button>
+          <Button 
+            variant="destructive" 
+            onClick={() => {
+              if (rejectingRequest && rejectReason.trim()) {
+                onReject?.(rejectingRequest, rejectReason);
+                setRejectingRequest(null);
+                setRejectReason('');
+              }
+            }}
+            disabled={!rejectReason.trim()}
+          >
+            Recusar Orçamento
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
