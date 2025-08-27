@@ -16584,7 +16584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           estimated_days = $5,
           priority = $6,
           workshop_observations = $7,
-          status = 'em_analise',
+          status = 'em_negociacao',
           responded_at = NOW(),
           updated_at = NOW()
         WHERE id = $1
