@@ -1859,7 +1859,7 @@ export default function BudgetManagementPage() {
 
       {/* Modal para Visualizar Orçamento */}
       <Dialog open={viewBudgetDialogOpen} onOpenChange={setViewBudgetDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto print:max-w-none print:max-h-none print:overflow-visible">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto print:max-w-none print:max-h-none print:overflow-visible print:shadow-none print:border-none">
           <DialogHeader className="print:hidden">
             <DialogTitle>Detalhes do Orçamento</DialogTitle>
             <DialogDescription>
@@ -1867,42 +1867,87 @@ export default function BudgetManagementPage() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="print:p-0">
+          <style jsx>{`
+            @media print {
+              @page {
+                size: A4;
+                margin: 1.5cm;
+              }
+              
+              .print-page-break {
+                page-break-before: always;
+              }
+              
+              .print-avoid-break {
+                page-break-inside: avoid;
+              }
+              
+              .print-section {
+                margin-bottom: 25px;
+                page-break-inside: avoid;
+              }
+              
+              .print-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 20px;
+              }
+              
+              .print-table th,
+              .print-table td {
+                border: 1px solid #333;
+                padding: 8px;
+                text-align: left;
+                font-size: 11px;
+              }
+              
+              .print-table th {
+                background-color: #f5f5f5;
+                font-weight: bold;
+              }
+            }
+          `}</style>
+          
+          <div className="print:p-4 print:bg-white">
             {viewingBudget && (
               <div className="space-y-6">
                 {/* Cabeçalho para impressão */}
-                <div className="hidden print:block text-center mb-8">
-                  <h1 className="text-2xl font-bold">MURICION FLEET</h1>
-                  <h2 className="text-xl">Detalhes do Orçamento</h2>
-                  <p className="text-sm text-gray-600">Data de impressão: {new Date().toLocaleDateString('pt-BR')}</p>
+                <div className="hidden print:block text-center mb-8 print-section border-b-2 border-gray-300 pb-4">
+                  <h1 className="text-3xl font-bold mb-2">MURICION FLEET</h1>
+                  <h2 className="text-xl mb-1">Sistema de Gestão de Frota</h2>
+                  <h3 className="text-lg font-semibold mb-3">DETALHES DO ORÇAMENTO</h3>
+                  <div className="text-sm text-gray-600">
+                    <p>Data de impressão: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
+                    <p>Orçamento ID: #{viewingBudget.id}</p>
+                  </div>
                 </div>
                 
                 {/* Informações básicas */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print-section print:grid-cols-2">
                   <div className="space-y-4">
                     <div>
-                      <h3 className="text-lg font-semibold mb-3">Informações do Veículo</h3>
-                      <div className="space-y-2">
-                        <p><strong>Placa:</strong> {viewingBudget.vehicle_plate}</p>
-                        <p><strong>Modelo:</strong> {viewingBudget.vehicle_model}</p>
-                        {viewingBudget.chassis && <p><strong>Chassis:</strong> {viewingBudget.chassis}</p>}
-                        {viewingBudget.km && <p><strong>KM:</strong> {viewingBudget.km.toLocaleString()}</p>}
+                      <h3 className="text-lg font-semibold mb-3 print:text-base print:font-bold">Informações do Veículo</h3>
+                      <div className="space-y-2 print:space-y-1">
+                        <p className="print:text-sm"><strong>Placa:</strong> {viewingBudget.vehicle_plate}</p>
+                        <p className="print:text-sm"><strong>Modelo:</strong> {viewingBudget.vehicle_model}</p>
+                        {viewingBudget.chassis && <p className="print:text-sm"><strong>Chassis:</strong> {viewingBudget.chassis}</p>}
+                        {viewingBudget.km && <p className="print:text-sm"><strong>KM:</strong> {viewingBudget.km.toLocaleString()}</p>}
                       </div>
                     </div>
                     
                     <div>
-                      <h3 className="text-lg font-semibold mb-3">Oficina</h3>
-                      <div className="space-y-2">
-                        <p><strong>Nome:</strong> {viewingBudget.workshop_name}</p>
+                      <h3 className="text-lg font-semibold mb-3 print:text-base print:font-bold">Oficina</h3>
+                      <div className="space-y-2 print:space-y-1">
+                        <p className="print:text-sm"><strong>Nome:</strong> {viewingBudget.workshop_name}</p>
                       </div>
                     </div>
                   </div>
                   
                   <div className="space-y-4">
                     <div>
-                      <h3 className="text-lg font-semibold mb-3">Status e Valores</h3>
-                      <div className="space-y-2">
-                        <p><strong>Status:</strong> 
+                      <h3 className="text-lg font-semibold mb-3 print:text-base print:font-bold">Status e Valores</h3>
+                      <div className="space-y-2 print:space-y-1">
+                        <p className="print:text-sm"><strong>Status:</strong> 
                           <Badge 
                             variant={
                               viewingBudget.status === 'aprovado' ? 'default' : 
@@ -1910,17 +1955,17 @@ export default function BudgetManagementPage() {
                               viewingBudget.status === 'em_analise' ? 'outline' :
                               'destructive'
                             }
-                            className="ml-2"
+                            className="ml-2 print:bg-gray-100 print:text-black print:border-gray-400 print:text-xs"
                           >
                             {viewingBudget.status === 'pendente' ? 'Aguardando' :
                              viewingBudget.status === 'aprovado' ? 'Aprovado' :
                              viewingBudget.status === 'em_analise' ? 'Em Análise' : viewingBudget.status}
                           </Badge>
                         </p>
-                        <p><strong>Valor Solicitado:</strong> {formatCurrency(viewingBudget.estimated_value || 0)}</p>
+                        <p className="print:text-sm"><strong>Valor Solicitado:</strong> {formatCurrency(viewingBudget.estimated_value || 0)}</p>
                         {viewingBudget.approved_value && (
-                          <p><strong>Valor Aprovado:</strong> 
-                            <span className="text-green-600 font-medium ml-1">
+                          <p className="print:text-sm"><strong>Valor Aprovado:</strong> 
+                            <span className="text-green-600 font-medium ml-1 print:text-black">
                               {formatCurrency(viewingBudget.approved_value)}
                             </span>
                           </p>
@@ -1929,11 +1974,11 @@ export default function BudgetManagementPage() {
                     </div>
                     
                     <div>
-                      <h3 className="text-lg font-semibold mb-3">Datas</h3>
-                      <div className="space-y-2">
-                        <p><strong>Data do Orçamento:</strong> {new Date(viewingBudget.created_at).toLocaleDateString('pt-BR')}</p>
+                      <h3 className="text-lg font-semibold mb-3 print:text-base print:font-bold">Datas</h3>
+                      <div className="space-y-2 print:space-y-1">
+                        <p className="print:text-sm"><strong>Data do Orçamento:</strong> {new Date(viewingBudget.created_at).toLocaleDateString('pt-BR')}</p>
                         {viewingBudget.approved_at && (
-                          <p><strong>Data de Aprovação:</strong> {new Date(viewingBudget.approved_at).toLocaleDateString('pt-BR')}</p>
+                          <p className="print:text-sm"><strong>Data de Aprovação:</strong> {new Date(viewingBudget.approved_at).toLocaleDateString('pt-BR')}</p>
                         )}
                       </div>
                     </div>
@@ -1941,18 +1986,18 @@ export default function BudgetManagementPage() {
                 </div>
                 
                 {/* Descrição do serviço */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Descrição do Serviço</h3>
-                  <div className="border rounded-lg p-4 bg-gray-50">
-                    <p className="whitespace-pre-line">{viewingBudget.description}</p>
+                <div className="print-section">
+                  <h3 className="text-lg font-semibold mb-3 print:text-base print:font-bold">Descrição do Serviço</h3>
+                  <div className="border rounded-lg p-4 bg-gray-50 print:border-gray-400 print:bg-white">
+                    <p className="whitespace-pre-line print:text-sm">{viewingBudget.description}</p>
                   </div>
                 </div>
 
                 {/* Lista de Peças */}
                 {viewingBudget.parts_details && viewingBudget.parts_details.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3">Peças e Materiais</h3>
-                    <div className="border rounded-lg overflow-hidden">
+                  <div className="print-section">
+                    <h3 className="text-lg font-semibold mb-3 print:text-base print:font-bold">Peças e Materiais</h3>
+                    <div className="print:hidden border rounded-lg overflow-hidden">
                       <div className="bg-gray-50 px-4 py-2 border-b grid grid-cols-4 gap-4 font-medium text-sm">
                         <div>Nome/Descrição</div>
                         <div className="text-center">Quantidade</div>
@@ -1983,22 +2028,69 @@ export default function BudgetManagementPage() {
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Tabela otimizada para impressão */}
+                    <table className="hidden print:table print-table w-full">
+                      <thead>
+                        <tr>
+                          <th style={{width: '40%'}}>Nome/Descrição</th>
+                          <th style={{width: '15%', textAlign: 'center'}}>Qtd</th>
+                          <th style={{width: '20%', textAlign: 'right'}}>Valor Unit.</th>
+                          <th style={{width: '25%', textAlign: 'right'}}>Valor Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {viewingBudget.parts_details.map((part, index) => (
+                          <tr key={index}>
+                            <td>
+                              <div>
+                                <strong>{part.name}</strong>
+                                {part.description && (
+                                  <div style={{fontSize: '10px', color: '#666'}}>{part.description}</div>
+                                )}
+                              </div>
+                            </td>
+                            <td style={{textAlign: 'center'}}>{part.quantity}</td>
+                            <td style={{textAlign: 'right'}}>{formatCurrency(part.unit_price)}</td>
+                            <td style={{textAlign: 'right', fontWeight: 'bold'}}>{formatCurrency(part.total_price)}</td>
+                          </tr>
+                        ))}
+                        <tr style={{backgroundColor: '#f5f5f5', fontWeight: 'bold'}}>
+                          <td colSpan={3} style={{textAlign: 'right', paddingRight: '10px'}}>
+                            <strong>Total das Peças:</strong>
+                          </td>
+                          <td style={{textAlign: 'right'}}>
+                            <strong>
+                              {formatCurrency(
+                                viewingBudget.parts_details.reduce((sum, part) => sum + part.total_price, 0)
+                              )}
+                            </strong>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 )}
                 
                 {/* Informações adicionais */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print-section print:grid-cols-2">
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Solicitante</h3>
-                    <p><strong>Nome:</strong> {viewingBudget.requester_name || 'Não informado'}</p>
+                    <h3 className="text-lg font-semibold mb-3 print:text-base print:font-bold">Solicitante</h3>
+                    <p className="print:text-sm"><strong>Nome:</strong> {viewingBudget.requester_name || 'Não informado'}</p>
                   </div>
                   
                   {viewingBudget.projeto && (
                     <div>
-                      <h3 className="text-lg font-semibold mb-3">Projeto</h3>
-                      <p><strong>Projeto:</strong> {viewingBudget.projeto}</p>
+                      <h3 className="text-lg font-semibold mb-3 print:text-base print:font-bold">Projeto</h3>
+                      <p className="print:text-sm"><strong>Projeto:</strong> {viewingBudget.projeto}</p>
                     </div>
                   )}
+                </div>
+                
+                {/* Rodapé para impressão */}
+                <div className="hidden print:block text-center text-xs text-gray-500 mt-8 pt-4 border-t border-gray-300">
+                  <p>Este documento foi gerado automaticamente pelo Sistema Muricion Fleet</p>
+                  <p>Para mais informações, entre em contato com a administração</p>
                 </div>
               </div>
             )}
