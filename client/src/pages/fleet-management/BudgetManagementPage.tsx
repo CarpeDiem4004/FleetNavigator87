@@ -275,7 +275,7 @@ export default function BudgetManagementPage() {
   // Função para aprovar orçamento
   const handleApproveBudget = async (budget: BudgetRequest) => {
     try {
-      const response = await apiRequest("POST", `/api/fleet/budget-requests/${budget.id}/approve`, {
+      const response = await apiRequest("PUT", `/api/fleet/budget-requests/${budget.id}/approve`, {
         approved_value: budget.estimated_value
       });
       
@@ -318,7 +318,7 @@ export default function BudgetManagementPage() {
     }
 
     try {
-      const response = await apiRequest("POST", `/api/fleet/budget-requests/${rejectingBudget.id}/reject`, {
+      const response = await apiRequest("PUT", `/api/fleet/budget-requests/${rejectingBudget.id}/reject`, {
         reason: rejectReason
       });
       
