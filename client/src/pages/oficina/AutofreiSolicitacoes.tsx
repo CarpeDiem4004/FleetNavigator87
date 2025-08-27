@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -388,90 +389,94 @@ export default function AutofreiSolicitacoes() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
           </div>
         ) : requests.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {requests.map((request) => (
-              <Card key={request.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-blue-500" />
+          <div className="border rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-16">#</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Veículo</TableHead>
+                  <TableHead>Projeto</TableHead>
+                  <TableHead>Solicitante</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-40">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {requests.map((request) => (
+                  <TableRow key={request.id} className="hover:bg-gray-50">
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-blue-500" />
                         #{request.id}
-                      </CardTitle>
-                      <CardDescription className="mt-1">
-                        {request.description}
-                      </CardDescription>
-                    </div>
-                    {getStatusBadge(request.status)}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {/* Informações do Veículo */}
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Car className="h-4 w-4" />
-                    <span className="font-medium">{request.vehicle_plate}</span>
-                    <span>-</span>
-                    <span>{request.vehicle_model}</span>
-                  </div>
-
-                  {/* Chassis e KM */}
-                  {(request.chassis || request.km) && (
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      {request.chassis && (
-                        <div className="flex items-center gap-1">
-                          <span className="font-medium">Chassis:</span>
-                          <span>{request.chassis}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="max-w-xs">
+                        <p className="font-medium text-sm">{request.description}</p>
+                        {(request.chassis || request.km) && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            {request.chassis && `Chassis: ${request.chassis}`}
+                            {request.chassis && request.km && ' • '}
+                            {request.km && `KM: ${request.km.toLocaleString()}`}
+                          </p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Car className="h-4 w-4 text-gray-400" />
+                        <div>
+                          <p className="font-medium text-sm">{request.vehicle_plate}</p>
+                          <p className="text-xs text-gray-500">{request.vehicle_model}</p>
                         </div>
-                      )}
-                      {request.km && (
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {request.projeto ? (
                         <div className="flex items-center gap-1">
-                          <span className="font-medium">KM:</span>
-                          <span>{request.km.toLocaleString()}</span>
+                          <MapPin className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm">{request.projeto}</span>
                         </div>
+                      ) : (
+                        <span className="text-gray-400 text-sm">-</span>
                       )}
-                    </div>
-                  )}
-
-                  {/* Projeto */}
-                  {request.projeto && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <MapPin className="h-4 w-4" />
-                      <span className="font-medium">Projeto:</span>
-                      <span>{request.projeto}</span>
-                    </div>
-                  )}
-
-                  {/* Solicitante */}
-                  {request.requester_name && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <User className="h-4 w-4" />
-                      <span className="font-medium">Solicitante:</span>
-                      <span>{request.requester_name}</span>
-                    </div>
-                  )}
-
-                  {/* Data */}
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Calendar className="h-4 w-4" />
-                    <span className="font-medium">Data:</span>
-                    <span>{formatDate(request.created_at)}</span>
-                  </div>
-
-                  {/* Ações */}
-                  <div className="pt-3 border-t">
-                    <Button 
-                      size="sm" 
-                      className="w-full"
-                      onClick={() => handleOpenResponse(request)}
-                      disabled={request.status === 'aprovado' || request.status === 'rejeitado'}
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      {request.status === 'pendente' ? 'Responder Solicitação' : 'Ver Resposta'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    </TableCell>
+                    <TableCell>
+                      {request.requester_name ? (
+                        <div className="flex items-center gap-1">
+                          <User className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm">{request.requester_name}</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-sm">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm">{formatDate(request.created_at)}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {getStatusBadge(request.status)}
+                    </TableCell>
+                    <TableCell>
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleOpenResponse(request)}
+                        disabled={request.status === 'aprovado' || request.status === 'rejeitado'}
+                        className="w-full"
+                      >
+                        <Send className="h-4 w-4 mr-1" />
+                        {request.status === 'pendente' ? 'Responder' : 'Ver'}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         ) : (
           <Card>
