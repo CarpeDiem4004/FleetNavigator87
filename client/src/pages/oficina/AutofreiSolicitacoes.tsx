@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, FileText, Clock, Calendar, User, Car, MapPin, Settings, Send, Calculator } from "lucide-react";
+import { ArrowLeft, FileText, Clock, Calendar, User, Car, MapPin, Settings, Send, Calculator, Plus, Trash2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
@@ -30,6 +30,12 @@ interface BudgetRequest {
 
 const AUTOFREI_ID = 12;
 
+interface Part {
+  id: string;
+  name: string;
+  value: string;
+}
+
 interface BudgetResponse {
   labor_cost: string;
   parts_cost: string;
@@ -37,6 +43,7 @@ interface BudgetResponse {
   estimated_days: string;
   priority: string;
   observations: string;
+  parts: Part[];
 }
 
 export default function AutofreiSolicitacoes() {
@@ -52,7 +59,8 @@ export default function AutofreiSolicitacoes() {
     total_cost: '',
     estimated_days: '',
     priority: 'normal',
-    observations: ''
+    observations: '',
+    parts: []
   });
   const { toast } = useToast();
 
@@ -146,44 +154,104 @@ export default function AutofreiSolicitacoes() {
       total_cost: '',
       estimated_days: '',
       priority: 'normal',
-      observations: ''
+      observations: '',
+      parts: []
     });
     setIsResponseOpen(true);
   };
 
+  const addPart = () => {
+    const newPart: Part = {
+      id: `part_${Date.now()}`,
+      name: '',
+      value: ''
+    };
+    setResponse(prev => ({
+      ...prev,
+      parts: [...prev.parts, newPart]
+    }));
+  };
+
+  const removePart = (partId: string) => {
+    setResponse(prev => ({
+      ...prev,
+      parts: prev.parts.filter(part => part.id !== partId)
+    }));
+  };
+
+  const updatePart = (partId: string, field: keyof Omit<Part, 'id'>, value: string) => {
+    setResponse(prev => ({
+      ...prev,
+      parts: prev.parts.map(part => 
+        part.id === partId ? { ...part, [field]: value } : part
+      )
+    }));
+  };
+
+  const calculatePartsTotal = () => {
+    return response.parts.reduce((total, part) => {
+      const value = parseFloat(part.value) || 0;
+      return total + value;
+    }, 0);
+  };
+
   const calculateTotal = () => {
-    const labor = parseFloat(response.labor_cost) || 0;
-    const parts = parseFloat(response.parts_cost) || 0;
-    const total = (labor + parts).toFixed(2);
-    setResponse(prev => ({ ...prev, total_cost: total }));
+    const laborCost = parseFloat(response.labor_cost) || 0;
+    const partsTotal = calculatePartsTotal();
+    return laborCost + partsTotal;
+  };
+
+  const handleCalculateTotal = () => {
+    const total = calculateTotal();
+    setResponse(prev => ({
+      ...prev,
+      total_cost: total.toFixed(2),
+      parts_cost: calculatePartsTotal().toFixed(2)
+    }));
+  };
+
+  const handleInputChange = (field: keyof BudgetResponse, value: string) => {
+    setResponse(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmitResponse = async () => {
     if (!selectedRequest) return;
 
-    // Validações básicas
-    if (!response.total_cost || parseFloat(response.total_cost) <= 0) {
+    // Validação básica
+    if (!response.labor_cost || !response.estimated_days) {
       toast({
-        title: "Erro",
-        description: "Por favor, informe um valor total válido",
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha Mão de Obra e Prazo Estimado",
         variant: "destructive"
       });
       return;
     }
 
-    if (!response.estimated_days || parseInt(response.estimated_days) <= 0) {
-      toast({
-        title: "Erro", 
-        description: "Por favor, informe o prazo estimado",
-        variant: "destructive"
-      });
-      return;
-    }
+    // Calcular valores finais
+    const partsTotal = calculatePartsTotal();
+    const totalValue = calculateTotal();
 
     try {
       setIsSubmitting(true);
       
       const token = localStorage.getItem('oficina_token') || 'auto_token_autofrei_225e2596c711cdcafa624fce2bfc6052';
+      
+      const submitData = {
+        request_id: selectedRequest.id,
+        labor_cost: parseFloat(response.labor_cost),
+        parts_cost: partsTotal,
+        total_cost: totalValue,
+        estimated_days: parseInt(response.estimated_days),
+        priority: response.priority,
+        observations: response.observations,
+        workshop_id: AUTOFREI_ID,
+        parts_breakdown: response.parts.map(part => ({
+          name: part.name,
+          value: parseFloat(part.value) || 0
+        }))
+      };
+
+      console.log('[AUTOFREI] Enviando cotação com peças detalhadas:', submitData);
       
       const response_data = await fetch('/api/budget-requests/respond', {
         method: 'POST',
@@ -192,16 +260,7 @@ export default function AutofreiSolicitacoes() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          request_id: selectedRequest.id,
-          labor_cost: parseFloat(response.labor_cost) || 0,
-          parts_cost: parseFloat(response.parts_cost) || 0,
-          total_cost: parseFloat(response.total_cost),
-          estimated_days: parseInt(response.estimated_days),
-          priority: response.priority,
-          observations: response.observations,
-          workshop_id: AUTOFREI_ID
-        })
+        body: JSON.stringify(submitData)
       });
 
       if (response_data.ok) {
@@ -209,8 +268,8 @@ export default function AutofreiSolicitacoes() {
         
         if (result.success) {
           toast({
-            title: "Resposta Enviada!",
-            description: "Sua cotação foi enviada com sucesso para a gestão de frotas",
+            title: "Cotação Enviada!",
+            description: "Sua cotação detalhada foi enviada com sucesso para a gestão de frotas",
             variant: "default"
           });
           
@@ -220,17 +279,17 @@ export default function AutofreiSolicitacoes() {
           // Recarregar lista de solicitações
           loadRequests();
         } else {
-          throw new Error(result.message || 'Erro ao enviar resposta');
+          throw new Error(result.message || 'Erro ao enviar cotação');
         }
       } else {
         throw new Error('Erro na comunicação com o servidor');
       }
       
     } catch (error) {
-      console.error('Erro ao enviar resposta:', error);
+      console.error('[AUTOFREI] Erro ao enviar cotação:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível enviar a resposta. Tente novamente.",
+        description: "Não foi possível enviar a cotação. Tente novamente.",
         variant: "destructive"
       });
     } finally {
@@ -455,49 +514,108 @@ export default function AutofreiSolicitacoes() {
                   step="0.01"
                   placeholder="0,00"
                   value={response.labor_cost}
-                  onChange={(e) => setResponse(prev => ({ ...prev, labor_cost: e.target.value }))}
-                  onBlur={calculateTotal}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="parts_cost">Peças/Materiais (R$)</Label>
-                <Input
-                  id="parts_cost"
-                  type="number"
-                  step="0.01"
-                  placeholder="0,00"
-                  value={response.parts_cost}
-                  onChange={(e) => setResponse(prev => ({ ...prev, parts_cost: e.target.value }))}
-                  onBlur={calculateTotal}
+                  onChange={(e) => handleInputChange('labor_cost', e.target.value)}
                 />
               </div>
             </div>
 
-            {/* Total Calculado */}
+            {/* Seção de Peças */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-medium">Peças/Materiais</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addPart}
+                  className="flex items-center gap-1"
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar Peça
+                </Button>
+              </div>
+
+              {/* Lista de Peças */}
+              {response.parts.length > 0 && (
+                <div className="space-y-3 border rounded-lg p-4 bg-gray-50">
+                  {response.parts.map((part, index) => (
+                    <div key={part.id} className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <Input
+                          placeholder="Nome da peça/material"
+                          value={part.name}
+                          onChange={(e) => updatePart(part.id, 'name', e.target.value)}
+                        />
+                      </div>
+                      <div className="w-32">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Valor"
+                          value={part.value}
+                          onChange={(e) => updatePart(part.id, 'value', e.target.value)}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removePart(part.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  
+                  {/* Total das Peças */}
+                  <div className="pt-2 border-t border-gray-200">
+                    <div className="flex justify-between items-center text-sm font-medium">
+                      <span>Total das Peças:</span>
+                      <span>R$ {calculatePartsTotal().toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {response.parts.length === 0 && (
+                <div className="text-center py-4 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
+                  Clique em "Adicionar Peça" para incluir peças no orçamento
+                </div>
+              )}
+            </div>
+
+            {/* Valor Total */}
             <div className="space-y-2">
-              <Label htmlFor="total_cost" className="flex items-center gap-2">
+              <Label className="flex items-center gap-2 text-base font-medium">
                 <Calculator className="h-4 w-4" />
                 Valor Total (R$) *
               </Label>
-              <Input
-                id="total_cost"
-                type="number"
-                step="0.01"
-                placeholder="0,00"
-                value={response.total_cost}
-                onChange={(e) => setResponse(prev => ({ ...prev, total_cost: e.target.value }))}
-                className="font-semibold text-lg"
-              />
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Mão de Obra:</span>
+                    <span>R$ {(parseFloat(response.labor_cost) || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Peças/Materiais:</span>
+                    <span>R$ {calculatePartsTotal().toFixed(2)}</span>
+                  </div>
+                  <div className="border-t border-blue-300 pt-2 flex justify-between font-bold text-lg">
+                    <span>Total:</span>
+                    <span>R$ {calculateTotal().toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
               <Button 
                 type="button" 
                 variant="outline" 
                 size="sm" 
-                onClick={calculateTotal}
+                onClick={handleCalculateTotal}
                 className="w-full"
               >
                 <Calculator className="h-4 w-4 mr-2" />
-                Calcular Total Automaticamente
+                Atualizar Valores
               </Button>
             </div>
 
@@ -554,7 +672,7 @@ export default function AutofreiSolicitacoes() {
             </Button>
             <Button 
               onClick={handleSubmitResponse}
-              disabled={isSubmitting || !response.total_cost || !response.estimated_days}
+              disabled={isSubmitting || !response.labor_cost || !response.estimated_days}
               className="flex items-center gap-2"
             >
               {isSubmitting ? (
