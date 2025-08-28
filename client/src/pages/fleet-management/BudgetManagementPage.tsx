@@ -157,6 +157,16 @@ const priorityMap: Record<string, { label: string; color: "default" | "warning" 
 export default function BudgetManagementPage() {
   const [maintenances, setMaintenances] = useState<Maintenance[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Função para formatar datas
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatDialogOpen, setChatDialogOpen] = useState(false);
