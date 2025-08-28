@@ -371,24 +371,44 @@ export default function BudgetManagementPage() {
     if (!deletingBudget) return;
 
     try {
-      await apiRequest("DELETE", `/api/campinas/budget-requests/${deletingBudget.id}`);
+      const response = await apiRequest("DELETE", `/api/campinas/budget-requests/${deletingBudget.id}`);
+      const result = await response.json();
 
-      toast({
-        title: "Orçamento excluído",
-        description: "Orçamento excluído com sucesso",
-        variant: "default"
-      });
+      if (result.success) {
+        toast({
+          title: "Orçamento excluído",
+          description: "Orçamento excluído com sucesso",
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: result.message || "Orçamento não encontrado ou já foi excluído",
+          variant: "destructive"
+        });
+      }
       
       setDeletingBudget(null);
       fetchBudgetRequests();
       fetchBudgetSummary();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao excluir orçamento:", error);
+      
+      let errorMessage = "Erro ao excluir orçamento";
+      if (error.message?.includes("404")) {
+        errorMessage = "Orçamento não encontrado - pode ter sido excluído anteriormente";
+      }
+      
       toast({
         title: "Erro",
-        description: "Erro ao excluir orçamento",
+        description: errorMessage,
         variant: "destructive"
       });
+      
+      setDeletingBudget(null);
+      // Atualiza a lista mesmo com erro para remover itens inexistentes
+      fetchBudgetRequests();
+      fetchBudgetSummary();
     }
   };
 
