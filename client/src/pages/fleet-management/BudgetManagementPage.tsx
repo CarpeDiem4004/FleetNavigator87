@@ -34,7 +34,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
 import MaintenanceChatHistory from "@/components/chat/MaintenanceChatHistory";
 import { formatCurrency } from "@/lib/utils";
-import { CircleAlert, BarChart3, CheckCircle, Clock, AlertCircle, FileText, Search, DollarSign, Calendar, CreditCard, Plus, Eye, Printer } from "lucide-react";
+import { CircleAlert, BarChart3, CheckCircle, Clock, AlertCircle, FileText, Search, DollarSign, Calendar, CreditCard, Plus, Eye, Printer, Trash2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Maintenance {
@@ -220,6 +220,7 @@ export default function BudgetManagementPage() {
   // Estados para aprovação/recusa de orçamentos
   const [rejectingBudget, setRejectingBudget] = useState<BudgetRequest | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [deletingBudget, setDeletingBudget] = useState<BudgetRequest | null>(null);
   
   // Estados para visualizar orçamento
   const [viewingBudget, setViewingBudget] = useState<BudgetRequest | null>(null);
@@ -360,6 +361,32 @@ export default function BudgetManagementPage() {
       toast({
         title: "Erro",
         description: "Não foi possível recusar o orçamento",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Função para excluir orçamento
+  const handleDeleteBudget = async () => {
+    if (!deletingBudget) return;
+
+    try {
+      await apiRequest("DELETE", `/api/campinas/budget-requests/${deletingBudget.id}`);
+
+      toast({
+        title: "Orçamento excluído",
+        description: "Orçamento excluído com sucesso",
+        variant: "default"
+      });
+      
+      setDeletingBudget(null);
+      fetchBudgetRequests();
+      fetchBudgetSummary();
+    } catch (error) {
+      console.error("Erro ao excluir orçamento:", error);
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir orçamento",
         variant: "destructive"
       });
     }
@@ -1505,6 +1532,15 @@ export default function BudgetManagementPage() {
                                     </Button>
                                   </>
                                 )}
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => setDeletingBudget(budget)}
+                                  className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Excluir
+                                </Button>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -2169,6 +2205,34 @@ export default function BudgetManagementPage() {
             >
               <CircleAlert className="h-4 w-4 mr-2" />
               Recusar Orçamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para Confirmar Exclusão de Orçamento */}
+      <Dialog open={!!deletingBudget} onOpenChange={(open) => !open && setDeletingBudget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir permanentemente o orçamento de "{deletingBudget?.workshop_name}" para o veículo {deletingBudget?.vehicle_plate}?
+              Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setDeletingBudget(null)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleDeleteBudget}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir Orçamento
             </Button>
           </DialogFooter>
         </DialogContent>

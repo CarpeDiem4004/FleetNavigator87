@@ -16781,6 +16781,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para excluir orçamento de oficina
+  app.delete("/api/campinas/budget-requests/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      console.log(`[CampinaBudgets] Excluindo orçamento ID: ${id}`);
+      
+      // Verificar se o orçamento existe
+      const checkQuery = `SELECT * FROM campinas_budget_requests WHERE id = $1`;
+      const checkResult = await pool.query(checkQuery, [id]);
+      
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Orçamento não encontrado' 
+        });
+      }
+      
+      // Excluir o orçamento
+      const deleteQuery = `DELETE FROM campinas_budget_requests WHERE id = $1 RETURNING *`;
+      const result = await pool.query(deleteQuery, [id]);
+      
+      res.json({
+        success: true,
+        message: 'Orçamento excluído com sucesso',
+        data: result.rows[0]
+      });
+      
+    } catch (error) {
+      console.error('Erro ao excluir orçamento:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro ao excluir orçamento' 
+      });
+    }
+  });
+
   // API para buscar orçamentos de uma oficina específica por período
   app.get("/api/fleet/workshop-budgets", isAuthenticated, async (req, res) => {
     try {
