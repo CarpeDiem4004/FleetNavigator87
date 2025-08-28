@@ -605,7 +605,7 @@ export default function BudgetManagementPage() {
   const filteredMaintenances = maintenances.filter(maintenance => {
     if (activeTab === "all") return true;
     if (activeTab === "negotiation") return maintenance.status === "em_negociacao";
-    if (activeTab === "approved") return maintenance.status === "orcamento_aprovado";
+    if (activeTab === "approved") return maintenance.status === "aprovado";
     return true;
   });
 
@@ -1264,11 +1264,11 @@ export default function BudgetManagementPage() {
             </CardHeader>
             <CardContent>
               {/* O mesmo conteúdo da tabela é renderizado pelo filtro */}
-              {loading ? (
+              {loadingBudgetRequests ? (
                 <div className="flex justify-center items-center p-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
-              ) : filteredMaintenances.length === 0 ? (
+              ) : budgetRequests.filter(b => b.status === 'aprovado').length === 0 ? (
                 <Alert variant="default" className="mb-4">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Nenhum dado encontrado</AlertTitle>
@@ -1280,51 +1280,43 @@ export default function BudgetManagementPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Veículo</TableHead>
+                      <TableHead>Descrição</TableHead>
                       <TableHead>Oficina</TableHead>
-                      <TableHead>Base</TableHead>
+                      <TableHead>Veículo</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Prioridade</TableHead>
-                      <TableHead>Orçamento Inicial</TableHead>
-                      <TableHead>Orçamento Final</TableHead>
+                      <TableHead>Valor Solicitado</TableHead>
+                      <TableHead>Data Aprovação</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredMaintenances.map((maintenance) => (
-                      <TableRow key={maintenance.maintenanceChatId}>
+                    {budgetRequests.filter(b => b.status === 'aprovado').map((budget) => (
+                      <TableRow key={budget.id}>
                         <TableCell className="font-medium">
-                          {maintenance.vehiclePlate} - {maintenance.vehicleModel}
+                          {budget.description}
                         </TableCell>
-                        <TableCell>{maintenance.workshopName}</TableCell>
-                        <TableCell>{maintenance.baseName}</TableCell>
+                        <TableCell>{budget.workshop_name}</TableCell>
                         <TableCell>
-                          <Badge variant={statusMap[maintenance.status]?.color || "default"}>
-                            {statusMap[maintenance.status]?.label || maintenance.status}
+                          {budget.vehicle_plate ? `${budget.vehicle_plate} - ${budget.vehicle_model}` : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="default">
+                            Aprovado
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={priorityMap[maintenance.priority]?.color || "default"}>
-                            {priorityMap[maintenance.priority]?.label || maintenance.priority}
-                          </Badge>
+                          {budget.estimated_value ? formatCurrency(budget.estimated_value) : 'N/A'}
                         </TableCell>
                         <TableCell>
-                          {maintenance.initialBudget 
-                            ? formatCurrency(Number(maintenance.initialBudget)) 
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          {maintenance.finalBudget 
-                            ? formatCurrency(Number(maintenance.finalBudget)) 
-                            : "-"}
+                          {budget.approved_at ? formatDate(budget.approved_at) : 'N/A'}
                         </TableCell>
                         <TableCell className="text-right">
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            onClick={() => openChat(maintenance)}
+                            onClick={() => openBudgetDialog(budget)}
                           >
-                            Ver Chat
+                            Ver Detalhes
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -1616,7 +1608,7 @@ export default function BudgetManagementPage() {
                     initialMessages={chatMessages}
                     isWorkshop={false}
                     refreshChat={() => fetchChatMessages(selectedMaintenance.id)}
-                    readOnly={selectedMaintenance.isFinalized || selectedMaintenance.status === "orcamento_aprovado"}
+                    readOnly={selectedMaintenance.isFinalized || selectedMaintenance.status === "aprovado"}
                   />
                 )}
               </div>
