@@ -276,7 +276,7 @@ export default function BudgetManagementPage() {
   const handleApproveBudget = async (budget: BudgetRequest) => {
     try {
       const response = await apiRequest("PUT", `/api/campinas/budget-requests/${budget.id}/approve`, {
-        approvedBy: "Administrador",
+        approvedBy: 1,
         approvedAt: new Date().toISOString()
       });
       
@@ -320,7 +320,7 @@ export default function BudgetManagementPage() {
 
     try {
       const response = await apiRequest("PUT", `/api/campinas/budget-requests/${rejectingBudget.id}/reject`, {
-        rejectedBy: "Administrador",
+        rejectedBy: 1,
         rejectedAt: new Date().toISOString(),
         rejectionReason: rejectReason
       });
@@ -792,7 +792,7 @@ export default function BudgetManagementPage() {
         "PUT",
         `/api/campinas/budget-requests/${requestId}/approve`,
         {
-          approvedBy: "Administrador",
+          approvedBy: 1,
           approvedAt: new Date().toISOString()
         }
       );
@@ -823,7 +823,7 @@ export default function BudgetManagementPage() {
         "PUT",
         `/api/campinas/budget-requests/${requestId}/reject`,
         { 
-          rejectedBy: "Administrador",
+          rejectedBy: 1,
           rejectedAt: new Date().toISOString(),
           rejectionReason: comments 
         }
