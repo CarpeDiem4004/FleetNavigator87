@@ -383,17 +383,23 @@ export const useBasePermission = (): BasePermissionHook => {
       return false;
     }
     
-    // VERIFICAÇÃO RIGOROSA DE ADMIN - Várias formas de detectar admin
+    // VERIFICAÇÃO RIGOROSA DE ADMIN E CEO - Várias formas de detectar admin ou CEO
     const isAdmin = (
       user.role?.toLowerCase() === 'admin' || 
       user.role?.toUpperCase() === 'ADMIN' ||
       user.role === 'admin' ||
       user.role === 'ADMIN' ||
+      user.role?.toLowerCase() === 'ceo' || 
+      user.role?.toUpperCase() === 'CEO' ||
+      user.role === 'ceo' ||
+      user.role === 'CEO' ||
+      user.role?.toLowerCase() === 'gerente_geral' ||
+      user.role === 'gerente_geral' ||
       (user.email && ['joao.paulo@muricionfleet.com', 'regio@muricionfleet.com', 'andre.rosa@muricionfleet.com', 'admin@muricionfleet.com'].includes(user.email.toLowerCase()))
     );
     
     if (isAdmin) {
-      console.log(`Permission granted for admin user to route: ${route} (admin role: '${user.role}', email: '${user.email}')`);
+      console.log(`Permission granted for admin/CEO user to route: ${route} (role: '${user.role}', email: '${user.email}')`);
       return true;
     }
     
@@ -417,11 +423,15 @@ export const useBasePermission = (): BasePermissionHook => {
       return hasAccess;
     }
     
-    // Usuários não-admin não podem acessar a página de usuários ou bases
+    // Usuários não-admin e não-CEO não podem acessar a página de usuários ou bases
     if ((route === '/users' || route === '/bases') && 
         user.role?.toLowerCase() !== 'admin' && 
-        user.role?.toUpperCase() !== 'ADMIN') {
-      console.log(`Permission denied for non-admin user to ${route}`);
+        user.role?.toUpperCase() !== 'ADMIN' &&
+        user.role?.toLowerCase() !== 'ceo' && 
+        user.role?.toUpperCase() !== 'CEO' &&
+        user.role?.toLowerCase() !== 'gerente_geral' &&
+        user.role !== 'gerente_geral') {
+      console.log(`Permission denied for non-admin/non-CEO user to ${route}`);
       return false;
     }
     
