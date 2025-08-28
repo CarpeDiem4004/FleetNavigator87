@@ -1424,16 +1424,22 @@ export default function BudgetManagementPage() {
                             </TableCell>
                             <TableCell>
                               <Badge 
-                                variant={
-                                  budget.status === 'aprovado' ? 'default' : 
-                                  budget.status === 'pendente' ? 'secondary' : 
-                                  budget.status === 'em_analise' ? 'outline' :
-                                  'destructive'
+                                variant="default"
+                                className={
+                                  budget.status === 'aprovado' ? 'bg-green-100 text-green-800 border-green-300' :
+                                  budget.status === 'pendente' ? 'bg-orange-100 text-orange-800 border-orange-300' :
+                                  budget.status === 'em_analise' ? 'bg-blue-100 text-blue-800 border-blue-300' :
+                                  budget.status === 'em_negociacao' ? 'bg-purple-100 text-purple-800 border-purple-300' :
+                                  budget.status === 'recusado' ? 'bg-red-100 text-red-800 border-red-300' :
+                                  'bg-gray-100 text-gray-800 border-gray-300'
                                 }
                               >
-                                {budget.status === 'pendente' ? 'Aguardando' :
-                                 budget.status === 'aprovado' ? 'Aprovado' :
-                                 budget.status === 'em_analise' ? 'Em Análise' : budget.status}
+                                {budget.status === 'pendente' ? '⏳ Aguardando' :
+                                 budget.status === 'aprovado' ? '✅ Aprovado' :
+                                 budget.status === 'em_analise' ? '🔍 Em Análise' :
+                                 budget.status === 'em_negociacao' ? '💬 Em Negociação' :
+                                 budget.status === 'recusado' ? '❌ Recusado' :
+                                 budget.status}
                               </Badge>
                             </TableCell>
                             <TableCell>
