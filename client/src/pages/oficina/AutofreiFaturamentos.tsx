@@ -44,57 +44,11 @@ export default function AutofreiFaturamentos() {
   const loadFaturamentos = async () => {
     try {
       setIsLoading(true);
-      // Simulando dados para demonstração
+      // Sistema limpo - aguardando dados reais
       setTimeout(() => {
-        setFaturamentos([
-          {
-            id: 1,
-            numeroNF: "00001",
-            cliente: "Grupo Pereira",
-            veiculo: "ABC1234",
-            servicos: "Troca de pastilhas de freio e discos",
-            valor: 450.00,
-            dataEmissao: "2025-08-20",
-            dataVencimento: "2025-08-30",
-            status: "pago",
-            formaPagamento: "PIX"
-          },
-          {
-            id: 2,
-            numeroNF: "00002", 
-            cliente: "Santa Clara",
-            veiculo: "XYZ5678",
-            servicos: "Revisão completa e troca de filtros",
-            valor: 320.00,
-            dataEmissao: "2025-08-21",
-            dataVencimento: "2025-08-31",
-            status: "pendente"
-          },
-          {
-            id: 3,
-            numeroNF: "00003",
-            cliente: "Grupo Pereira", 
-            veiculo: "DEF9012",
-            servicos: "Alinhamento e balanceamento",
-            valor: 180.00,
-            dataEmissao: "2025-08-15",
-            dataVencimento: "2025-08-25",
-            status: "vencido"
-          },
-          {
-            id: 4,
-            numeroNF: "00004",
-            cliente: "Full Meli",
-            veiculo: "GHI3456", 
-            servicos: "Manutenção do sistema elétrico",
-            valor: 680.00,
-            dataEmissao: "2025-08-22",
-            dataVencimento: "2025-09-01",
-            status: "pendente"
-          }
-        ]);
+        setFaturamentos([]);
         setIsLoading(false);
-      }, 1000);
+      }, 500);
     } catch (error) {
       console.error('Erro ao carregar faturamentos:', error);
       setIsLoading(false);

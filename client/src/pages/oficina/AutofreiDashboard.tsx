@@ -53,34 +53,11 @@ export default function AutofreiDashboard() {
   const loadServiceOrders = async () => {
     try {
       setIsLoading(true);
-      // Simulando dados para demonstração
+      // Sistema limpo - aguardando dados reais
       setTimeout(() => {
-        setServiceOrders([
-          {
-            id: 1,
-            vehiclePlate: "ABC1234",
-            description: "Troca de pastilhas de freio e discos",
-            status: "em_andamento",
-            priority: "alta",
-            entryDate: "2025-08-21",
-            estimatedCompletion: "2025-08-22",
-            initialBudget: "450.00",
-            maintenanceType: "freios"
-          },
-          {
-            id: 2,
-            vehiclePlate: "XYZ5678",
-            description: "Revisão completa e troca de filtros",
-            status: "aguardando_peca",
-            priority: "normal",
-            entryDate: "2025-08-20",
-            estimatedCompletion: "2025-08-23",
-            initialBudget: "320.00",
-            maintenanceType: "revisao"
-          }
-        ]);
+        setServiceOrders([]);
         setIsLoading(false);
-      }, 1000);
+      }, 500);
     } catch (error) {
       console.error('Erro ao carregar ordens de serviço:', error);
       setIsLoading(false);
