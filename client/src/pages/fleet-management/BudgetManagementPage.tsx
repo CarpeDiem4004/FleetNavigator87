@@ -275,8 +275,9 @@ export default function BudgetManagementPage() {
   // Função para aprovar orçamento
   const handleApproveBudget = async (budget: BudgetRequest) => {
     try {
-      const response = await apiRequest("PUT", `/api/fleet/budget-requests/${budget.id}/approve`, {
-        approvedValue: budget.estimated_value
+      const response = await apiRequest("PUT", `/api/campinas/budget-requests/${budget.id}/approve`, {
+        approvedBy: "Administrador",
+        approvedAt: new Date().toISOString()
       });
       
       const result = await response.json();
@@ -318,8 +319,10 @@ export default function BudgetManagementPage() {
     }
 
     try {
-      const response = await apiRequest("PUT", `/api/fleet/budget-requests/${rejectingBudget.id}/reject`, {
-        comments: rejectReason
+      const response = await apiRequest("PUT", `/api/campinas/budget-requests/${rejectingBudget.id}/reject`, {
+        rejectedBy: "Administrador",
+        rejectedAt: new Date().toISOString(),
+        rejectionReason: rejectReason
       });
       
       const result = await response.json();
@@ -787,10 +790,10 @@ export default function BudgetManagementPage() {
     try {
       const response = await apiRequest(
         "PUT",
-        `/api/fleet/budget-requests/${requestId}/approve`,
+        `/api/campinas/budget-requests/${requestId}/approve`,
         {
-          approvedValue,
-          approvedBy: "Administrador"
+          approvedBy: "Administrador",
+          approvedAt: new Date().toISOString()
         }
       );
       
@@ -818,8 +821,12 @@ export default function BudgetManagementPage() {
     try {
       const response = await apiRequest(
         "PUT",
-        `/api/fleet/budget-requests/${requestId}/reject`,
-        { comments }
+        `/api/campinas/budget-requests/${requestId}/reject`,
+        { 
+          rejectedBy: "Administrador",
+          rejectedAt: new Date().toISOString(),
+          rejectionReason: comments 
+        }
       );
       
       toast({
