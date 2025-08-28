@@ -263,12 +263,12 @@ export default function AutofreiSolicitacoes() {
         </div>
         ${request.estimated_value ? `
           <div style="margin: 20px 0;">
-            <strong>Valor Estimado:</strong> R$ ${request.estimated_value.toFixed(2)}
+            <strong>Valor Estimado:</strong> R$ ${Number(request.estimated_value).toFixed(2)}
           </div>
         ` : ''}
         ${request.approved_value ? `
           <div style="margin: 20px 0;">
-            <strong>Valor Aprovado:</strong> R$ ${request.approved_value.toFixed(2)}
+            <strong>Valor Aprovado:</strong> R$ ${Number(request.approved_value).toFixed(2)}
           </div>
         ` : ''}
       </div>
