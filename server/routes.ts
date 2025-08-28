@@ -3577,90 +3577,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Listar todos os checklists do Line Hall
   app.get('/api/line-hall/checklists', isAuthenticated, async (req, res) => {
     try {
-      // Simular dados de checklist com informações de quilometragem
-      const mockChecklists = [
-        {
-          id: 1,
-          driver_name: 'João Silva',
-          vehicle_plate: 'ABC1234',
-          checklist_type: 'saida_garagem',
-          status: 'concluido',
-          created_at: '2024-05-26T08:00:00Z',
-          completed_at: '2024-05-26T08:15:00Z',
-          km_inicial: 125840,
-          km_final: null,
-          dias_na_garagem: 0,
-          items: [
-            { item: 'Verificar freios', status: 'ok', observations: '' },
-            { item: 'Verificar pneus', status: 'ok', observations: '' },
-            { item: 'Verificar óleo', status: 'problema', observations: 'Nível baixo' },
-            { item: 'Verificar combustível', status: 'ok', observations: '' },
-            { item: 'Verificar documentação', status: 'ok', observations: '' }
-          ]
-        },
-        {
-          id: 2,
-          driver_name: 'Carlos Santos',
-          vehicle_plate: 'DEF5678',
-          checklist_type: 'entrada_garagem',
-          status: 'concluido',
-          created_at: '2024-05-24T18:30:00Z',
-          completed_at: '2024-05-24T18:45:00Z',
-          km_inicial: 98750,
-          km_final: 99120,
-          dias_na_garagem: 2,
-          items: [
-            { item: 'Verificar freios', status: 'ok', observations: '' },
-            { item: 'Verificar pneus', status: 'ok', observations: '' },
-            { item: 'Verificar óleo', status: 'ok', observations: '' },
-            { item: 'Verificar combustível', status: 'ok', observations: '' },
-            { item: 'Verificar documentação', status: 'ok', observations: '' }
-          ]
-        },
-        {
-          id: 3,
-          driver_name: 'Maria Oliveira',
-          vehicle_plate: 'GHI9012',
-          checklist_type: 'entrada_garagem',
-          status: 'concluido',
-          created_at: '2024-05-23T17:15:00Z',
-          completed_at: '2024-05-23T17:30:00Z',
-          km_inicial: 87200,
-          km_final: 87580,
-          dias_na_garagem: 3,
-          items: [
-            { item: 'Verificar freios', status: 'ok', observations: '' },
-            { item: 'Verificar pneus', status: 'problema', observations: 'Pneu dianteiro com baixa pressão' },
-            { item: 'Verificar óleo', status: 'ok', observations: '' },
-            { item: 'Verificar combustível', status: 'ok', observations: '' },
-            { item: 'Verificar documentação', status: 'ok', observations: '' }
-          ]
-        },
-        {
-          id: 4,
-          driver_name: 'Pedro Lima',
-          vehicle_plate: 'JKL3456',
-          checklist_type: 'entrada_garagem',
-          status: 'concluido',
-          created_at: '2024-05-20T19:00:00Z',
-          completed_at: '2024-05-20T19:15:00Z',
-          km_inicial: 145600,
-          km_final: 146200,
-          dias_na_garagem: 6,
-          items: [
-            { item: 'Verificar freios', status: 'ok', observations: '' },
-            { item: 'Verificar pneus', status: 'ok', observations: '' },
-            { item: 'Verificar óleo', status: 'ok', observations: '' },
-            { item: 'Verificar combustível', status: 'ok', observations: '' },
-            { item: 'Verificar documentação', status: 'ok', observations: '' }
-          ]
-        }
-      ];
+      // Buscar dados reais da tabela line_hall_checklists
+      const result = await storage.query(`
+        SELECT 
+          id,
+          motorista_nome as driver_name,
+          placa_cavalo as vehicle_plate,
+          status,
+          created_at,
+          completed_at,
+          km_inicial,
+          km_final,
+          items
+        FROM line_hall_checklists
+        ORDER BY created_at DESC
+      `);
+
+      const checklists = result.rows || [];
 
       return res.status(200).json({
         success: true,
-        data: mockChecklists,
-        count: mockChecklists.length
+        data: checklists,
+        count: checklists.length
       });
     } catch (error: any) {
       console.error('Erro ao buscar checklists:', error);
@@ -3675,18 +3613,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Estatísticas de veículos na garagem
   app.get('/api/line-hall/garage-stats', isAuthenticated, async (req, res) => {
     try {
-      // Simular dados de veículos na garagem baseado nos checklists de entrada
-      const vehiculosNaGaragem = [
-        { plate: 'DEF5678', driver_name: 'Carlos Santos', dias_na_garagem: 2, km_final: 99120 },
-        { plate: 'GHI9012', driver_name: 'Maria Oliveira', dias_na_garagem: 3, km_final: 87580 },
-        { plate: 'JKL3456', driver_name: 'Pedro Lima', dias_na_garagem: 6, km_final: 146200 }
-      ];
+      // Buscar dados reais de veículos na garagem baseado nas movimentações do pátio
+      const result = await storage.query(`
+        SELECT DISTINCT
+          mp.placa as plate,
+          mp.nome_motorista as driver_name,
+          DATE_PART('day', NOW() - mp.data_entrada) as dias_na_garagem,
+          mp.created_at
+        FROM movimentacoes_patio mp
+        WHERE mp.tipo_movimento = 'Entrada para pernoite'
+        AND NOT EXISTS (
+          SELECT 1 FROM movimentacoes_patio mp2 
+          WHERE mp2.placa = mp.placa 
+          AND mp2.tipo_movimento LIKE 'Saída%' 
+          AND mp2.created_at > mp.created_at
+        )
+        ORDER BY mp.created_at DESC
+      `);
+
+      const vehiculosNaGaragem = result.rows || [];
+      const total = vehiculosNaGaragem.length;
+      const media = total > 0 ? Math.round(vehiculosNaGaragem.reduce((acc, v) => acc + (v.dias_na_garagem || 0), 0) / total) : 0;
 
       return res.status(200).json({
         success: true,
         data: vehiculosNaGaragem,
-        total_veiculos: vehiculosNaGaragem.length,
-        media_dias: Math.round(vehiculosNaGaragem.reduce((acc, v) => acc + v.dias_na_garagem, 0) / vehiculosNaGaragem.length)
+        total_veiculos: total,
+        media_dias: media
       });
     } catch (error: any) {
       console.error('Erro ao buscar estatísticas da garagem:', error);
