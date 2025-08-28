@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, FileText, Clock, Calendar, User, Car, MapPin, Settings, Send, Calculator, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, FileText, Clock, Calendar, User, Car, MapPin, Settings, Send, Calculator, Plus, Trash2, Eye, Printer, CheckCircle, XCircle, Edit } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
@@ -131,16 +131,32 @@ export default function AutofreiSolicitacoes() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      'pendente': { label: 'Pendente', variant: 'secondary' as const },
-      'em_analise': { label: 'Em Análise', variant: 'outline' as const },
-      'aprovado': { label: 'Aprovado', variant: 'default' as const },
-      'rejeitado': { label: 'Rejeitado', variant: 'destructive' as const }
+      'pendente': { 
+        label: '⏳ Pendente', 
+        className: 'bg-orange-100 text-orange-800 border-orange-300'
+      },
+      'em_analise': { 
+        label: '🔍 Em Análise', 
+        className: 'bg-blue-100 text-blue-800 border-blue-300'
+      },
+      'aprovado': { 
+        label: '✅ Aprovado', 
+        className: 'bg-green-100 text-green-800 border-green-300'
+      },
+      'rejeitado': { 
+        label: '❌ Recusado', 
+        className: 'bg-red-100 text-red-800 border-red-300'
+      },
+      'recusado': { 
+        label: '❌ Recusado', 
+        className: 'bg-red-100 text-red-800 border-red-300'
+      }
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || 
-                  { label: status, variant: 'secondary' as const };
+                  { label: status, className: 'bg-gray-100 text-gray-800 border-gray-300' };
     
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return <Badge variant="default" className={config.className}>{config.label}</Badge>;
   };
 
   const formatDate = (dateString: string) => {
@@ -213,6 +229,57 @@ export default function AutofreiSolicitacoes() {
 
   const handleInputChange = (field: keyof BudgetResponse, value: string) => {
     setResponse(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleViewRequest = (request: BudgetRequest) => {
+    setSelectedRequest(request);
+    // Carregar dados existentes se houver
+    setResponse({
+      labor_cost: '',
+      parts_cost: '',
+      total_cost: '',
+      estimated_days: '',
+      priority: 'normal',
+      observations: '',
+      parts: []
+    });
+    setIsResponseOpen(true);
+  };
+
+  const handlePrintRequest = (request: BudgetRequest) => {
+    // Criar um HTML para impressão
+    const printContent = `
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h1>Orçamento - ${request.vehicle_plate}</h1>
+        <hr>
+        <div style="margin: 20px 0;">
+          <strong>Veículo:</strong> ${request.vehicle_plate} - ${request.vehicle_model}<br>
+          <strong>Descrição:</strong> ${request.description}<br>
+          <strong>Projeto:</strong> ${request.projeto || 'N/A'}<br>
+          <strong>Status:</strong> ${request.status}<br>
+          <strong>Data:</strong> ${formatDate(request.created_at)}<br>
+          ${request.chassis ? `<strong>Chassis:</strong> ${request.chassis}<br>` : ''}
+          ${request.km ? `<strong>KM:</strong> ${request.km.toLocaleString()}<br>` : ''}
+        </div>
+        ${request.estimated_value ? `
+          <div style="margin: 20px 0;">
+            <strong>Valor Estimado:</strong> R$ ${request.estimated_value.toFixed(2)}
+          </div>
+        ` : ''}
+        ${request.approved_value ? `
+          <div style="margin: 20px 0;">
+            <strong>Valor Aprovado:</strong> R$ ${request.approved_value.toFixed(2)}
+          </div>
+        ` : ''}
+      </div>
+    `;
+    
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.print();
+    }
   };
 
   const handleSubmitResponse = async () => {
@@ -463,15 +530,59 @@ export default function AutofreiSolicitacoes() {
                       {getStatusBadge(request.status)}
                     </TableCell>
                     <TableCell>
-                      <Button 
-                        size="sm" 
-                        onClick={() => handleOpenResponse(request)}
-                        disabled={request.status === 'aprovado' || request.status === 'rejeitado'}
-                        className="w-full"
-                      >
-                        <Send className="h-4 w-4 mr-1" />
-                        {request.status === 'pendente' ? 'Responder' : 'Ver'}
-                      </Button>
+                      <div className="flex gap-2">
+                        {request.status === 'aprovado' ? (
+                          <>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleViewRequest(request)}
+                              className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handlePrintRequest(request)}
+                              className="bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200"
+                            >
+                              <Printer className="h-4 w-4 mr-1" />
+                              Imprimir
+                            </Button>
+                          </>
+                        ) : request.status === 'recusado' || request.status === 'rejeitado' ? (
+                          <>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleViewRequest(request)}
+                              className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleOpenResponse(request)}
+                              className="bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200"
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Alterar
+                            </Button>
+                          </>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleOpenResponse(request)}
+                            className="w-full"
+                          >
+                            <Send className="h-4 w-4 mr-1" />
+                            Responder
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -493,18 +604,36 @@ export default function AutofreiSolicitacoes() {
         )}
       </div>
 
-      {/* Modal de Resposta */}
+      {/* Modal de Resposta/Visualização */}
       <Dialog open={isResponseOpen} onOpenChange={setIsResponseOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Send className="h-5 w-5 text-blue-500" />
-              Responder Solicitação #{selectedRequest?.id}
+              {selectedRequest?.status === 'aprovado' ? (
+                <>
+                  <Eye className="h-5 w-5 text-green-500" />
+                  Orçamento Aprovado #{selectedRequest?.id}
+                </>
+              ) : selectedRequest?.status === 'recusado' || selectedRequest?.status === 'rejeitado' ? (
+                <>
+                  <Edit className="h-5 w-5 text-orange-500" />
+                  Alterar Orçamento #{selectedRequest?.id}
+                </>
+              ) : (
+                <>
+                  <Send className="h-5 w-5 text-blue-500" />
+                  Responder Solicitação #{selectedRequest?.id}
+                </>
+              )}
             </DialogTitle>
             <DialogDescription>
               {selectedRequest?.vehicle_plate} - {selectedRequest?.vehicle_model}
               <br />
               <strong>Serviço:</strong> {selectedRequest?.description}
+              <br />
+              <div className="mt-2">
+                <strong>Status:</strong> {getStatusBadge(selectedRequest?.status || '')}
+              </div>
             </DialogDescription>
           </DialogHeader>
 
@@ -520,6 +649,7 @@ export default function AutofreiSolicitacoes() {
                   placeholder="0,00"
                   value={response.labor_cost}
                   onChange={(e) => handleInputChange('labor_cost', e.target.value)}
+                  disabled={selectedRequest?.status === 'aprovado'}
                 />
               </div>
             </div>
@@ -534,6 +664,7 @@ export default function AutofreiSolicitacoes() {
                   size="sm"
                   onClick={addPart}
                   className="flex items-center gap-1"
+                  disabled={selectedRequest?.status === 'aprovado'}
                 >
                   <Plus className="h-4 w-4" />
                   Adicionar Peça
@@ -550,6 +681,7 @@ export default function AutofreiSolicitacoes() {
                           placeholder="Nome da peça/material"
                           value={part.name}
                           onChange={(e) => updatePart(part.id, 'name', e.target.value)}
+                          disabled={selectedRequest?.status === 'aprovado'}
                         />
                       </div>
                       <div className="w-32">
@@ -559,6 +691,7 @@ export default function AutofreiSolicitacoes() {
                           placeholder="Valor"
                           value={part.value}
                           onChange={(e) => updatePart(part.id, 'value', e.target.value)}
+                          disabled={selectedRequest?.status === 'aprovado'}
                         />
                       </div>
                       <Button
@@ -567,6 +700,7 @@ export default function AutofreiSolicitacoes() {
                         size="sm"
                         onClick={() => removePart(part.id)}
                         className="text-red-600 hover:text-red-700"
+                        disabled={selectedRequest?.status === 'aprovado'}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -635,12 +769,13 @@ export default function AutofreiSolicitacoes() {
                   placeholder="Ex: 3"
                   value={response.estimated_days}
                   onChange={(e) => setResponse(prev => ({ ...prev, estimated_days: e.target.value }))}
+                  disabled={selectedRequest?.status === 'aprovado'}
                 />
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="priority">Prioridade</Label>
-                <Select value={response.priority} onValueChange={(value) => setResponse(prev => ({ ...prev, priority: value }))}>
+                <Select value={response.priority} onValueChange={(value) => setResponse(prev => ({ ...prev, priority: value }))} disabled={selectedRequest?.status === 'aprovado'}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a prioridade" />
                   </SelectTrigger>
@@ -663,6 +798,7 @@ export default function AutofreiSolicitacoes() {
                 value={response.observations}
                 onChange={(e) => setResponse(prev => ({ ...prev, observations: e.target.value }))}
                 rows={4}
+                disabled={selectedRequest?.status === 'aprovado'}
               />
             </div>
           </div>
@@ -673,20 +809,35 @@ export default function AutofreiSolicitacoes() {
               onClick={() => setIsResponseOpen(false)}
               disabled={isSubmitting}
             >
-              Cancelar
+              {selectedRequest?.status === 'aprovado' ? 'Fechar' : 'Cancelar'}
             </Button>
-            <Button 
-              onClick={handleSubmitResponse}
-              disabled={isSubmitting || !response.labor_cost || !response.estimated_days}
-              className="flex items-center gap-2"
-            >
-              {isSubmitting ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-              {isSubmitting ? 'Enviando...' : 'Enviar Cotação'}
-            </Button>
+            
+            {selectedRequest?.status === 'aprovado' && (
+              <Button 
+                variant="outline"
+                onClick={() => selectedRequest && handlePrintRequest(selectedRequest)}
+                className="flex items-center gap-1"
+              >
+                <Printer className="h-4 w-4" />
+                Imprimir
+              </Button>
+            )}
+            
+            {selectedRequest?.status !== 'aprovado' && (
+              <Button 
+                onClick={handleSubmitResponse}
+                disabled={isSubmitting || !response.labor_cost || !response.estimated_days}
+                className="flex items-center gap-2"
+              >
+                {isSubmitting ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                {isSubmitting ? 'Enviando...' : 
+                 selectedRequest?.status === 'recusado' || selectedRequest?.status === 'rejeitado' ? 'Enviar Novamente' : 'Enviar Cotação'}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
