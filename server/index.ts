@@ -88,6 +88,40 @@ console.log(`[SISTEMA] TZ environment: ${process.env.TZ}`);
 
 const app = express();
 
+// MIDDLEWARE PWA PRIMEIRO - ANTES DE QUALQUER OUTRO MIDDLEWARE
+app.get('/manifest.json', (req, res) => {
+  try {
+    res.setHeader('Content-Type', 'application/manifest+json');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    const manifestPath = path.join(process.cwd(), 'public', 'manifest.json');
+    console.log('[PWA] Serving manifest.json from:', manifestPath);
+    res.sendFile(manifestPath);
+  } catch (error) {
+    console.error('[PWA] Error serving manifest.json:', error);
+    res.status(500).json({ error: 'Failed to serve manifest.json' });
+  }
+});
+
+app.get('/service-worker.js', (req, res) => {
+  try {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Cache-Control', 'no-cache');
+    const swPath = path.join(process.cwd(), 'public', 'service-worker.js');
+    console.log('[PWA] Serving service-worker.js from:', swPath);
+    res.sendFile(swPath);
+  } catch (error) {
+    console.error('[PWA] Error serving service-worker.js:', error);
+    res.status(500).json({ error: 'Failed to serve service-worker.js' });
+  }
+});
+
+// Servir ícones PWA
+app.use('/icons', express.static(path.join(process.cwd(), 'public', 'icons'), {
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+  }
+}));
+
 // INTERCEPTOR CRÍTICO PARA BASES - REGISTRAR ANTES DE QUALQUER MIDDLEWARE
 app.use((req, res, next) => {
   // Interceptar PATCH /api/bases/:id especificamente  
@@ -2372,6 +2406,7 @@ app.use((req, res, next) => {
     // Se estiver autenticado, continuar
     next();
   });
+
 
   // Servir arquivos estáticos de uploads de equipamentos
   app.use('/uploads', express.static(path.join(process.cwd(), 'server', 'uploads')));

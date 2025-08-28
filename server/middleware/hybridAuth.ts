@@ -58,6 +58,17 @@ export const hybridAuth = async (req: Request, res: Response, next: NextFunction
       }
     }
     
+    // Para desenvolvimento, garantir configuração adequada da sessão
+    if (req.hostname.includes('replit.dev') && req.session) {
+      // Configurar sessão para desenvolvimento
+      const sessionCookie = (req.session as any).cookie;
+      if (!sessionCookie.domain) {
+        sessionCookie.domain = req.hostname;
+        sessionCookie.secure = false; // HTTP em desenvolvimento
+        console.log(`[HybridAuth] Configurando sessão para desenvolvimento: ${req.hostname}`);
+      }
+    }
+    
     return next();
   }
 

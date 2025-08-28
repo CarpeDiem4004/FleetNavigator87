@@ -54,7 +54,11 @@ export class PWAManager {
   }
 
   private async registerServiceWorker(): Promise<void> {
-    if ('serviceWorker' in navigator && !import.meta.env.DEV) {
+    // Só registrar service worker em produção E no domínio correto
+    const isProduction = !import.meta.env.DEV;
+    const isCorrectDomain = window.location.hostname.includes('gestaoonfleet.com.br') || window.location.hostname.includes('replit.dev');
+    
+    if ('serviceWorker' in navigator && isProduction && isCorrectDomain) {
       try {
         const registration = await navigator.serviceWorker.register('/service-worker.js', {
           scope: '/'
