@@ -315,6 +315,8 @@ const basicRoutes = [
   '/postos/visao-geral',                 // Visão Geral dos Postos
   '/postos',                             // Postos de Abastecimento
   '/postos/historico-consolidado',       // Histórico Consolidado de Abastecimentos
+  '/posto/alair_v2',                     // Posto Alair V2
+  '/posto/alair_v2/public',              // Posto Alair V2 Public
   '/bases',                              // Bases
   '/bases/campinas',                     // Base Campinas
   '/bases/campinas/despesas',            // Despesas Campinas
