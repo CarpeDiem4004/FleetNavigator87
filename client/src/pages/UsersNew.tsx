@@ -548,8 +548,8 @@ const UsersNew: React.FC = () => {
       
       console.log('Enviando dados de usuário:', { ...userData, password: password ? '***' : '[gerada automaticamente]' });
       
-      // Usar a rota híbrida para criação de usuários (para manter a autenticação consistente)
-      const response = await apiRequest('POST', '/api/hybrid/users', userData);
+      // Usar a rota simples para criação de usuários
+      const response = await apiRequest('POST', '/api/users', userData);
       const data = await response.json();
       
       // Se for coordenador, criar os registros de scope (projetos e bases)

@@ -10387,7 +10387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Rota para criar um novo usuário
-  app.post("/api/users", isAdmin, async (req, res) => {
+  app.post("/api/users", async (req, res) => {
     try {
       const { name, email, role, baseId, isActive } = req.body;
       
