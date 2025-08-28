@@ -16781,6 +16781,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para limpar dados da oficina AUTOFREI (apenas para admins)
+  app.delete("/api/campinas/cleanup-autofrei-data", isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, message: "Usuário não autenticado" });
+      }
+
+      // Verificar se é admin
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: "Acesso negado. Apenas administradores podem limpar dados." });
+      }
+
+      console.log(`[CLEANUP-AUTOFREI] Admin ${req.user.email} solicitando limpeza dos dados da AUTOFREI`);
+
+      // Começar transação para garantir atomicidade
+      await pool.query('BEGIN');
+
+      try {
+        // 1. Remover dados de orçamentos da oficina AUTOFREI (ID: 12)
+        const budgetResult = await pool.query(
+          'DELETE FROM workshop_budgets WHERE workshop_id = $1',
+          [12]
+        );
+
+        // 2. Remover configurações de faturamento da oficina AUTOFREI (se existirem)
+        const billingConfigResult = await pool.query(
+          'DELETE FROM workshop_billing_config WHERE workshop_id = $1',
+          [12]
+        );
+
+        // 3. Limpar tokens de acesso da oficina AUTOFREI (se existirem)
+        const tokensResult = await pool.query(
+          'DELETE FROM workshop_external_tokens WHERE workshop_id = $1',
+          [12]
+        );
+
+        await pool.query('COMMIT');
+
+        console.log(`[CLEANUP-AUTOFREI] Limpeza concluída:`, {
+          budgetsRemoved: budgetResult.rowCount,
+          billingConfigsRemoved: billingConfigResult.rowCount,
+          tokensRemoved: tokensResult.rowCount
+        });
+
+        return res.status(200).json({ 
+          success: true,
+          message: "Dados da oficina AUTOFREI limpos com sucesso",
+          details: {
+            budgetsRemoved: budgetResult.rowCount,
+            billingConfigsRemoved: billingConfigResult.rowCount,
+            tokensRemoved: tokensResult.rowCount
+          }
+        });
+
+      } catch (error) {
+        await pool.query('ROLLBACK');
+        throw error;
+      }
+
+    } catch (error) {
+      console.error("Erro ao limpar dados da AUTOFREI:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Erro interno do servidor ao limpar dados",
+        error: error.message
+      });
+    }
+  });
+
   // API para excluir orçamento de oficina
   app.delete("/api/campinas/budget-requests/:id", isAuthenticated, async (req, res) => {
     try {

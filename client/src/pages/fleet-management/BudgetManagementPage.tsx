@@ -412,6 +412,50 @@ export default function BudgetManagementPage() {
     }
   };
 
+  // Função para limpar dados da AUTOFREI (apenas admin)
+  const handleCleanupAutofreiData = async () => {
+    const confirmed = window.confirm(
+      "⚠️ ATENÇÃO: Esta ação irá limpar TODOS os dados da oficina AUTOFREI (orçamentos, faturamentos e configurações).\n\nEssa ação não pode ser desfeita. Deseja continuar?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await apiRequest("DELETE", "/api/campinas/cleanup-autofrei-data");
+      const result = await response.json();
+
+      if (result.success) {
+        toast({
+          title: "Limpeza concluída",
+          description: `AUTOFREI: ${result.details.budgetsRemoved} orçamentos, ${result.details.billingConfigsRemoved} configs e ${result.details.tokensRemoved} tokens removidos`,
+          variant: "default"
+        });
+        
+        fetchBudgetRequests();
+        fetchBudgetSummary();
+      } else {
+        toast({
+          title: "Erro",
+          description: result.message || "Erro ao limpar dados da AUTOFREI",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      console.error("Erro ao limpar dados da AUTOFREI:", error);
+      
+      let errorMessage = "Erro ao limpar dados da AUTOFREI";
+      if (error.message?.includes("403")) {
+        errorMessage = "Acesso negado. Apenas administradores podem executar esta ação.";
+      }
+      
+      toast({
+        title: "Erro",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    }
+  };
+
   // Função para visualizar detalhes do orçamento
   const handleViewBudget = (budget: BudgetRequest) => {
     setViewingBudget(budget);
@@ -925,6 +969,14 @@ export default function BudgetManagementPage() {
             </Button>
             <Button onClick={() => fetchMaintenancesWithChats()}>
               Atualizar Manutenções
+            </Button>
+            <Button 
+              onClick={handleCleanupAutofreiData}
+              variant="outline"
+              className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-300"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Limpar AUTOFREI
             </Button>
           </div>
         </div>
