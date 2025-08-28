@@ -103,6 +103,25 @@ export default function LoginSimple() {
           <div className="text-sm text-center">
             Não tem uma conta? <a href="/register" className="text-primary hover:underline">Cadastre-se</a>
           </div>
+          
+          {/* Link da Oficina AUTOFREI */}
+          <div className="border-t pt-3 mt-3">
+            <p className="text-xs text-center text-gray-600 mb-2">Acesso Oficina AUTOFREI:</p>
+            <div className="text-center">
+              <a 
+                href="https://gestaoonfleet.com.br/oficina/autofrei/dashboard" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium"
+              >
+                🔧 AUTOFREI - Portal da Oficina
+              </a>
+            </div>
+            <p className="text-xs text-center text-gray-500 mt-1">
+              CNPJ: 33.704.013/0001-09
+            </p>
+          </div>
+          
           <p className="text-xs text-center text-gray-500">
             Este é um sistema de gerenciamento de frota desenvolvido para fins de demonstração.
           </p>
