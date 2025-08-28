@@ -1310,8 +1310,8 @@ export default function BudgetManagementPage() {
                           {budget.vehicle_plate ? `${budget.vehicle_plate} - ${budget.vehicle_model}` : 'N/A'}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="default">
-                            Aprovado
+                          <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">
+                            ✅ Aprovado
                           </Badge>
                         </TableCell>
                         <TableCell>
