@@ -336,9 +336,9 @@ export default function MaintenancePage() {
       }
       return res.json();
     },
-    refetchOnWindowFocus: true, // Atualiza ao focar a janela
-    refetchInterval: 10000, // Atualiza a cada 10 segundos
-    retry: 3 // Tenta novamente em caso de falha
+    refetchOnWindowFocus: false, // Desabilitar refresh excessivo
+    refetchInterval: 30000, // Atualiza a cada 30 segundos
+    retry: 2 // Reduzir tentativas
   });
   
   // Consulta específica para solicitações pendentes da Base Campinas
@@ -354,9 +354,9 @@ export default function MaintenancePage() {
       }
       return res.json();
     },
-    refetchOnWindowFocus: true,
-    refetchInterval: 5000, // Atualiza a cada 5 segundos
-    retry: 3 // Tenta novamente em caso de falha
+    refetchOnWindowFocus: false,
+    refetchInterval: 60000, // Atualiza a cada 60 segundos
+    retry: 2 // Reduzir tentativas
   });
 
   // Mutation para criar manutenção

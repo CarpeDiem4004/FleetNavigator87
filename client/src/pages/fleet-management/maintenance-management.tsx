@@ -297,10 +297,10 @@ export default function MaintenanceManagement() {
     loadData();
     loadNegotiations();
 
-    // Set up auto-refresh every 30 seconds to get real-time updates from workshops
+    // Set up auto-refresh every 60 seconds to prevent interface duplications
     const intervalId = setInterval(() => {
       loadData();
-    }, 30000);
+    }, 60000);
 
     return () => clearInterval(intervalId);
   }, []);
