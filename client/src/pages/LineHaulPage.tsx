@@ -135,7 +135,6 @@ const LineHaulPage = () => {
   const [checklists, setChecklists] = useState<DriverChecklist[]>([]);
   
   // Estados para diálogos
-  const [isCreatingTrip, setIsCreatingTrip] = useState(false);
   const [isCreatingRoute, setIsCreatingRoute] = useState(false);
   const [showRoutes, setShowRoutes] = useState(false);
   const [showRoutesList, setShowRoutesList] = useState(false);
@@ -156,20 +155,6 @@ const LineHaulPage = () => {
     totalRoutes: 0
   });
   
-  // Estado para formulário de viagem
-  const [currentTrip, setCurrentTrip] = useState<Partial<LineHallTrip>>({
-    placa_cavalo: '',
-    placa_carreta_1: '',
-    placa_carreta_2: '',
-    motorista_id: 0,
-    motorista_nome: '',
-    horario_carregamento: '',
-    status_viagem: 'Programada',
-    observacoes: '',
-    rota_selecionada: '',
-    data_viagem: new Date().toISOString().split('T')[0],
-    km_total: 0
-  });
 
   // Estado para formulário de nova rota
   const [newRoute, setNewRoute] = useState({
@@ -1120,13 +1105,6 @@ const LineHaulPage = () => {
               <Route className="h-4 w-4 mr-2" />
               Gerenciar Rotas ({stats.totalRoutes})
             </Button>
-            <Button 
-              className="bg-purple-500 hover:bg-purple-600 text-white"
-              onClick={() => setIsCreatingTrip(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Viagem
-            </Button>
           </div>
 
           {/* Barra de busca */}
@@ -1416,97 +1394,6 @@ const LineHaulPage = () => {
         </>
         )}
 
-        {/* Dialog para Nova Viagem */}
-        <Dialog open={isCreatingTrip} onOpenChange={setIsCreatingTrip}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Registrar Nova Viagem</DialogTitle>
-              <DialogDescription>
-                Preencha os dados da viagem do Line Haul
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Placa do Cavalo *</Label>
-                  <Select value={currentTrip.placa_cavalo || ''} onValueChange={(value) => setCurrentTrip(prev => ({ ...prev, placa_cavalo: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o cavalo mecânico" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {vehicles.filter(vehicle => vehicle.vehicleType === 'cavalo_mecanico').map((vehicle) => (
-                        <SelectItem key={vehicle.id} value={vehicle.plate}>
-                          {vehicle.plate} - {vehicle.model}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Placa da Carreta 1 *</Label>
-                  <Select value={currentTrip.placa_carreta_1 || ''} onValueChange={(value) => setCurrentTrip(prev => ({ ...prev, placa_carreta_1: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a primeira carreta" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {vehicles.filter(vehicle => vehicle.vehicleType === 'carreta').map((vehicle) => (
-                        <SelectItem key={vehicle.id} value={vehicle.plate}>
-                          {vehicle.plate} - {vehicle.model}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Motorista *</Label>
-                  <DriverAutocomplete
-                    value={currentTrip.motorista_nome || ''}
-                    onValueChange={(value) => {
-                      const selectedDriver = drivers.find(driver => driver.nome === value);
-                      if (selectedDriver) {
-                        setCurrentTrip(prev => ({
-                          ...prev,
-                          motorista_nome: selectedDriver.nome,
-                          motorista_id: selectedDriver.id
-                        }));
-                      }
-                    }}
-                    drivers={drivers}
-                    placeholder="Selecione o motorista"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Rota</Label>
-                  <Select value={currentTrip.rota_selecionada || ''} onValueChange={(value) => setCurrentTrip(prev => ({ ...prev, rota_selecionada: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a rota" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {routes.map((route) => (
-                        <SelectItem key={route.id} value={route.id.toString()}>
-                          {route.nome_ponto_a} → {route.nome_ponto_b} ({route.km_total} km)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsCreatingTrip(false)}>
-                Cancelar
-              </Button>
-              <Button type="button" disabled={isLoading}>
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : null}
-                Cadastrar Viagem
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         {/* Dialog para Gerenciar Rotas */}
         <Dialog open={showRoutes} onOpenChange={setShowRoutes}>
