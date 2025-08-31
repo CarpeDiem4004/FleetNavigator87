@@ -25,8 +25,6 @@ interface Trip {
   placa_carreta_1: string
   placa_carreta_2?: string
   motorista_nome: string
-  local_carregamento: string
-  local_descarregamento: string
   data_viagem: string
   horario_carregamento?: string
   status_viagem: string
@@ -440,31 +438,6 @@ export default function MotoristaLineHall() {
                       <p className="font-bold text-purple-800">{trip.placa_carreta_2}</p>
                     </div>
                   )}
-                </div>
-
-                <Separator />
-
-                {/* Locais */}
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="bg-green-100 p-2 rounded-full">
-                      <MapPin className="h-4 w-4 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Local de Carregamento</p>
-                      <p className="font-semibold">{trip.local_carregamento}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <div className="bg-red-100 p-2 rounded-full">
-                      <Navigation className="h-4 w-4 text-red-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Local de Descarregamento</p>
-                      <p className="font-semibold">{trip.local_descarregamento}</p>
-                    </div>
-                  </div>
                 </div>
 
                 <Separator />

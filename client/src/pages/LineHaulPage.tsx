@@ -37,8 +37,6 @@ interface LineHallTrip {
   placa_carreta_2?: string | null;
   motorista_id: number;
   motorista_nome: string;
-  local_carregamento: string;
-  local_descarregamento: string;
   horario_carregamento?: string | null;
   status_viagem: string;
   data_inicio: string;
@@ -165,8 +163,6 @@ const LineHaulPage = () => {
     placa_carreta_2: '',
     motorista_id: 0,
     motorista_nome: '',
-    local_carregamento: '',
-    local_descarregamento: '',
     horario_carregamento: '',
     status_viagem: 'Programada',
     observacoes: '',
@@ -1495,24 +1491,6 @@ const LineHaulPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Local de Carregamento *</Label>
-                  <Input
-                    placeholder="Ex: São Paulo - SP"
-                    value={currentTrip.local_carregamento || ''}
-                    onChange={(e) => setCurrentTrip(prev => ({ ...prev, local_carregamento: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Local de Descarregamento *</Label>
-                  <Input
-                    placeholder="Ex: Rio de Janeiro - RJ"
-                    value={currentTrip.local_descarregamento || ''}
-                    onChange={(e) => setCurrentTrip(prev => ({ ...prev, local_descarregamento: e.target.value }))}
-                  />
                 </div>
               </div>
             </div>

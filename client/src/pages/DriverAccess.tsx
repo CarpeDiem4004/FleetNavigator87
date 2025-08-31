@@ -21,8 +21,6 @@ interface DriverData {
   tipo_veiculo?: string;
   placa_carreta?: string;
   viagem?: {
-    local_carregamento: string;
-    local_descarregamento: string;
     data_viagem: string;
     horario_carregamento: string;
     status: string;
@@ -528,23 +526,6 @@ const DriverAccess: React.FC = () => {
         {driver.viagem && (
           <Card>
             <CardContent className="p-6 space-y-4">
-              {/* Local de Carregamento */}
-              <div className="flex items-start space-x-3">
-                <div className="w-4 h-4 bg-green-500 rounded-full mt-1"></div>
-                <div>
-                  <div className="text-sm text-gray-600">Local de Carregamento</div>
-                  <div className="font-semibold">{driver.viagem.local_carregamento}</div>
-                </div>
-              </div>
-
-              {/* Local de Descarregamento */}
-              <div className="flex items-start space-x-3">
-                <div className="w-4 h-4 bg-red-500 rounded-full mt-1"></div>
-                <div>
-                  <div className="text-sm text-gray-600">Local de Descarregamento</div>
-                  <div className="font-semibold">{driver.viagem.local_descarregamento}</div>
-                </div>
-              </div>
 
               {/* Data e Horário */}
               <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
@@ -942,11 +923,11 @@ const FuelRequestModal = ({ driver, onClose }: { driver: any; onClose: () => voi
         motorista_cpf: driver.cpf,
         veiculo_placa: driver.placa_veiculo,
         veiculo_modelo: driver.tipo_veiculo,
-        rota_origem: driver.viagem?.local_carregamento,
-        rota_destino: driver.viagem?.local_descarregamento,
+        rota_origem: 'Rota Line Haul',
+        rota_destino: 'Destino Line Haul',
         data_solicitacao: now.toISOString().split('T')[0],
         horario_solicitacao: now.toTimeString().split(' ')[0],
-        km_total: calculateTotalKm(driver.viagem?.local_carregamento, driver.viagem?.local_destino),
+        km_total: 150, // Valor padrão para Line Haul
         horario_abastecimento: fuelTime,
         telefone_motorista: phone,
         status: 'pendente'
@@ -1032,7 +1013,7 @@ const FuelRequestModal = ({ driver, onClose }: { driver: any; onClose: () => voi
               <div>
                 <Label className="text-sm font-medium text-gray-700">Rota</Label>
                 <div className="p-2 bg-gray-50 rounded border">
-                  {driver?.viagem?.local_carregamento || 'Origem'} → {driver?.viagem?.local_descarregamento || 'Destino'}
+                  Rota Line Haul → Destino conforme programação
                 </div>
               </div>
 
@@ -1056,7 +1037,7 @@ const FuelRequestModal = ({ driver, onClose }: { driver: any; onClose: () => voi
               <div>
                 <Label className="text-sm font-medium text-gray-700">KM Total Estimado</Label>
                 <div className="p-2 bg-gray-50 rounded border">
-                  {calculateTotalKm(driver?.viagem?.local_carregamento, driver?.viagem?.local_destino)} km
+                  150 km (estimativa Line Haul)
                 </div>
               </div>
 

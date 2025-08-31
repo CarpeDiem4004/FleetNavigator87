@@ -2833,8 +2833,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         placa_carreta_2,
         motorista_id,
         motorista_nome,
-        local_carregamento,
-        local_descarregamento,
         horario_carregamento,
         status_viagem,
         data_inicio,
@@ -2843,8 +2841,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } = req.body;
       
       // Validar campos obrigatórios
-      if (!placa_cavalo || !placa_carreta_1 || !motorista_id || !motorista_nome || 
-          !local_carregamento || !local_descarregamento || !status_viagem) {
+      if (!placa_cavalo || !placa_carreta_1 || !motorista_id || !motorista_nome || !status_viagem) {
         return res.status(400).json({
           success: false,
           message: 'Campos obrigatórios não preenchidos'
@@ -2859,8 +2856,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           placa_carreta_2,
           motorista_id,
           motorista_nome,
-          local_carregamento,
-          local_descarregamento,
           horario_carregamento,
           status_viagem,
           data_inicio,
@@ -2869,7 +2864,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           created_at,
           updated_at
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()
         ) RETURNING id
       `;
       
@@ -2879,8 +2874,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         placa_carreta_2 ? placa_carreta_2.toUpperCase() : null,
         parseInt(motorista_id),
         motorista_nome,
-        local_carregamento,
-        local_descarregamento,
         horario_carregamento || null,
         status_viagem,
         data_inicio || new Date(),
@@ -2921,8 +2914,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         placa_carreta_2,
         motorista_id,
         motorista_nome,
-        local_carregamento,
-        local_descarregamento,
         horario_carregamento,
         status_viagem,
         data_inicio,
@@ -2954,15 +2945,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           placa_carreta_2 = $3,
           motorista_id = $4,
           motorista_nome = $5,
-          local_carregamento = $6,
-          local_descarregamento = $7,
-          horario_carregamento = $8,
-          status_viagem = $9,
-          data_inicio = $10,
-          data_fim = $11,
-          observacoes = $12,
+          horario_carregamento = $6,
+          status_viagem = $7,
+          data_inicio = $8,
+          data_fim = $9,
+          observacoes = $10,
           updated_at = NOW()
-        WHERE id = $13
+        WHERE id = $11
         RETURNING *
       `;
       
@@ -2972,8 +2961,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         placa_carreta_2 ? placa_carreta_2.toUpperCase() : checkResult.rows[0].placa_carreta_2,
         motorista_id ? parseInt(motorista_id) : checkResult.rows[0].motorista_id,
         motorista_nome || checkResult.rows[0].motorista_nome,
-        local_carregamento || checkResult.rows[0].local_carregamento,
-        local_descarregamento || checkResult.rows[0].local_descarregamento,
         horario_carregamento || checkResult.rows[0].horario_carregamento,
         status_viagem || checkResult.rows[0].status_viagem,
         data_inicio || checkResult.rows[0].data_inicio,
@@ -17634,18 +17621,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           COALESCE(lhs.cavalo_placa, 'Line Hall Shopee') as placa_veiculo,
           'Cavalo Mecânico' as tipo_veiculo,
           lhs.carreta1_placa as placa_carreta,
-          CASE 
-            WHEN lhs.rota IS NOT NULL THEN SPLIT_PART(lhs.rota, ' - ', 1)
-            ELSE 'Centro de Distribuição Shopee - São Paulo'
-          END as local_carregamento,
-          CASE 
-            WHEN lhs.rota IS NOT NULL THEN 
-              CASE 
-                WHEN SPLIT_PART(lhs.rota, ' - ', 3) ~ '^[0-9]+ km$' THEN SPLIT_PART(lhs.rota, ' - ', 2)
-                ELSE SPLIT_PART(lhs.rota, ' - ', 2)
-              END
-            ELSE 'Destino conforme programação'
-          END as local_descarregamento,
           COALESCE(TO_CHAR(lhs.data_viagem, 'YYYY-MM-DD'), TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD')) as data_viagem,
           COALESCE(TO_CHAR(lhs.created_at, 'HH24:MI:SS'), '08:00:00') as horario_carregamento,
           COALESCE(lhs.status, 'Aguardando') as status_viagem
@@ -17680,8 +17655,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tipo_veiculo: motorista.tipo_veiculo,
           placa_carreta: motorista.placa_carreta,
           viagem: {
-            local_carregamento: motorista.local_carregamento,
-            local_descarregamento: motorista.local_descarregamento,
             data_viagem: motorista.data_viagem,
             horario_carregamento: motorista.horario_carregamento,
             status: motorista.status_viagem

@@ -38,8 +38,6 @@ interface Trip {
   placa_carreta_1: string;
   placa_carreta_2?: string;
   motorista_nome: string;
-  local_carregamento: string;
-  local_descarregamento: string;
   data_viagem: string;
   horario_carregamento?: string;
   status_viagem: string;
@@ -503,16 +501,8 @@ export default function MotoristaLineHallPWA() {
               <div className="flex items-center space-x-3">
                 <MapPin className="h-4 w-4 text-gray-500" />
                 <div>
-                  <p className="font-medium">Origem</p>
-                  <p className="text-sm text-gray-600">{trip.local_carregamento}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                <MapPin className="h-4 w-4 text-gray-500" />
-                <div>
-                  <p className="font-medium">Destino</p>
-                  <p className="text-sm text-gray-600">{trip.local_descarregamento}</p>
+                  <p className="font-medium">Rota</p>
+                  <p className="text-sm text-gray-600">Line Haul Shopee</p>
                 </div>
               </div>
             </div>

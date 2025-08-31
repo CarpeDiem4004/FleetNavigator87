@@ -145,8 +145,6 @@ router.post('/viagem', async (req, res) => {
       placa_carreta_2,
       motorista_id,
       motorista_nome,
-      local_carregamento,
-      local_descarregamento,
       horario_carregamento,
       status_viagem,
       observacoes
@@ -155,18 +153,18 @@ router.post('/viagem', async (req, res) => {
     const insertQuery = `
       INSERT INTO line_hall_shopee (
         placa_cavalo, placa_carreta_1, placa_carreta_2,
-        motorista_id, motorista_nome, local_carregamento,
-        local_descarregamento, horario_carregamento,
+        motorista_id, motorista_nome,
+        horario_carregamento,
         status_viagem, observacoes
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `;
     
     const result = await pool.query(insertQuery, [
       placa_cavalo, placa_carreta_1, placa_carreta_2,
-      motorista_id, motorista_nome, local_carregamento,
-      local_descarregamento, horario_carregamento,
+      motorista_id, motorista_nome,
+      horario_carregamento,
       status_viagem, observacoes
     ]);
     

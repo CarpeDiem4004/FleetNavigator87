@@ -24,8 +24,6 @@ interface LineHallTrip {
   placa_carreta_2?: string | null;
   motorista_id: number;
   motorista_nome: string;
-  local_carregamento: string;
-  local_descarregamento: string;
   horario_carregamento?: string | null;
   status_viagem: string;
   data_inicio: string;
@@ -150,8 +148,6 @@ export default function LineHallShopeePage() {
     placa_carreta_2: '',
     motorista_id: 0,
     motorista_nome: '',
-    local_carregamento: '',
-    local_descarregamento: '',
     horario_carregamento: '',
     status_viagem: 'Concluída',
     observacoes: '',
@@ -256,8 +252,7 @@ export default function LineHallShopeePage() {
     try {
       // Validar campos obrigatórios
       if (!currentTrip.placa_cavalo || !currentTrip.placa_carreta_1 || 
-          !currentTrip.motorista_nome || !currentTrip.local_carregamento || 
-          !currentTrip.local_descarregamento || !currentTrip.status_viagem) {
+          !currentTrip.motorista_nome || !currentTrip.status_viagem) {
         toast({
           title: "Campos obrigatórios",
           description: "Preencha todos os campos obrigatórios",
@@ -283,8 +278,6 @@ export default function LineHallShopeePage() {
           placa_carreta_2: '',
           motorista_id: 0,
           motorista_nome: '',
-          local_carregamento: '',
-          local_descarregamento: '',
           horario_carregamento: '',
           status_viagem: 'Concluída',
           observacoes: ''
@@ -628,9 +621,7 @@ export default function LineHallShopeePage() {
       (trip.placa_cavalo?.toLowerCase() || '').includes(searchLower) ||
       (trip.placa_carreta_1?.toLowerCase() || '').includes(searchLower) ||
       (trip.placa_carreta_2?.toLowerCase() || '').includes(searchLower) ||
-      (trip.motorista_nome?.toLowerCase() || '').includes(searchLower) ||
-      (trip.local_carregamento?.toLowerCase() || '').includes(searchLower) ||
-      (trip.local_descarregamento?.toLowerCase() || '').includes(searchLower)
+      (trip.motorista_nome?.toLowerCase() || '').includes(searchLower)
     );
   });
 
@@ -992,8 +983,6 @@ export default function LineHallShopeePage() {
                             if (selectedRoute) {
                               setCurrentTrip(prev => ({
                                 ...prev,
-                                local_carregamento: selectedRoute.nome_ponto_a,
-                                local_descarregamento: selectedRoute.nome_ponto_b,
                                 km_total: selectedRoute.km_total
                               }));
                             }
@@ -1611,9 +1600,7 @@ export default function LineHallShopeePage() {
                         </TableCell>
                         <TableCell>{trip.motorista_nome}</TableCell>
                         <TableCell>
-                          <span className="font-medium">{trip.local_carregamento}</span> 
-                          <span className="mx-1">→</span> 
-                          <span>{trip.local_descarregamento}</span>
+                          <span className="font-medium">Rota Line Haul</span>
                         </TableCell>
                         <TableCell>{trip.horario_carregamento || '-'}</TableCell>
                         <TableCell>
@@ -1699,28 +1686,6 @@ export default function LineHallShopeePage() {
                   name="motorista_nome"
                   placeholder="Nome do Motorista"
                   value={currentTrip.motorista_nome || ''}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit_local_carregamento">Local Carregamento *</Label>
-                <Input
-                  id="edit_local_carregamento"
-                  name="local_carregamento"
-                  placeholder="Local de Carregamento"
-                  value={currentTrip.local_carregamento || ''}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit_local_descarregamento">Local Descarregamento *</Label>
-                <Input
-                  id="edit_local_descarregamento"
-                  name="local_descarregamento"
-                  placeholder="Local de Descarregamento"
-                  value={currentTrip.local_descarregamento || ''}
                   onChange={handleInputChange}
                 />
               </div>

@@ -1728,7 +1728,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => handleOpenHistory(solicitacao.placa)}
+                              onClick={() => handleViewFuelHistory(solicitacao.placa)}
                               className="text-xs"
                             >
                               <History className="w-3 h-3 mr-1" />
@@ -1738,9 +1738,9 @@ const FuelCardRequestsPanel: React.FC = () => {
                             {/* Botão WhatsApp apenas para solicitações do Line Haul */}
                             {solicitacao.telefone_motorista && (
                               <WhatsAppResponseButton 
-                                telefone={solicitacao.telefone_motorista}
-                                solicitacao={solicitacao}
-                                tipo="line_haul"
+                                solicitation={solicitacao}
+                                variant="outline"
+                                size="sm"
                               />
                             )}
                           </div>
