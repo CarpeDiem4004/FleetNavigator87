@@ -221,6 +221,21 @@ const FuelCardRequestsPanel: React.FC = () => {
     );
   };
 
+  // Função para filtrar solicitações do Line Haul
+  const getLineHallSolicitations = () => {
+    return filteredSolicitations.filter(s => s.origem_tipo === 'line_hall');
+  };
+
+  // Função para verificar se há solicitações novas do Line Haul (últimas 24h)
+  const hasNewLineHallRequests = () => {
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    return getLineHallSolicitations().some(s => {
+      const solicitationDate = new Date(s.data_solicitacao);
+      return solicitationDate > yesterday && (s.status === 'Pendente' || s.status === 'pendente');
+    });
+  };
+
   const getTotalValue = (solicitations: FuelCardSolicitation[]) => {
     return solicitations.reduce((total, s) => {
       const valor = s.valor_solicitado || s.valor_calculado || 0;
@@ -1104,7 +1119,7 @@ const FuelCardRequestsPanel: React.FC = () => {
         {/* Sistema de Abas com Cards de Resumo */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="flex items-center justify-between">
-            <TabsList className="grid w-auto grid-cols-2">
+            <TabsList className="grid w-auto grid-cols-3">
               <TabsTrigger value="pendentes" className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
                 Pendentes ({getPendingSolicitations().length})
@@ -1112,6 +1127,15 @@ const FuelCardRequestsPanel: React.FC = () => {
               <TabsTrigger value="atendidas" className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4" />
                 Atendidas ({getCompletedSolicitations().length})
+              </TabsTrigger>
+              <TabsTrigger value="linehaul" className={`flex items-center gap-2 ${
+                hasNewLineHallRequests() ? 'animate-pulse bg-blue-100 border-blue-300' : ''
+              }`}>
+                <Truck className="h-4 w-4" />
+                Line Haul ({getLineHallSolicitations().length})
+                {hasNewLineHallRequests() && (
+                  <div className="ml-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
+                )}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -1535,6 +1559,204 @@ const FuelCardRequestsPanel: React.FC = () => {
                             />
                           </div>
                         </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      {/* Aba de Solicitações Line Haul */}
+      <TabsContent value="linehaul" className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Line Haul</CardTitle>
+              <Truck className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{getLineHallSolicitations().length}</div>
+              <p className="text-xs text-muted-foreground">Solicitações do Line Haul</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Valor Total Line Haul</CardTitle>
+              <DollarSign className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                {formatCurrency(getTotalValue(getLineHallSolicitations()))}
+              </div>
+              <p className="text-xs text-muted-foreground">Valor total das solicitações Line Haul</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pendentes Line Haul</CardTitle>
+              <Clock className="h-4 w-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">
+                {getLineHallSolicitations().filter(s => 
+                  s.status === 'Pendente' || s.status === 'pendente' || 
+                  s.status === 'Em Análise' || s.status === 'em_analise'
+                ).length}
+              </div>
+              <p className="text-xs text-muted-foreground">Aguardando processamento</p>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex justify-between">
+              <div>
+                <CardTitle>Solicitações Line Haul</CardTitle>
+                <CardDescription>
+                  Mostrando {getLineHallSolicitations().length} solicitações do Line Haul
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                {(user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
+                  <Button onClick={fetchSolicitations} variant="outline" size="sm">
+                    Atualizar
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center space-x-4">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-[250px]" />
+                      <Skeleton className="h-4 w-[200px]" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="text-center py-6 text-red-500">
+                <AlertCircle className="w-10 h-10 mx-auto mb-2" />
+                <p>{error}</p>
+                <Button onClick={fetchSolicitations} className="mt-4">
+                  Tentar novamente
+                </Button>
+              </div>
+            ) : getLineHallSolicitations().length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">
+                Nenhuma solicitação do Line Haul encontrada.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="max-h-[600px] overflow-y-auto">
+                  {getLineHallSolicitations().map((solicitacao, index) => (
+                    <div 
+                      key={`${solicitacao.id}-${solicitacao.origem_tipo}-${index}`} 
+                      className="p-4 rounded-lg border transition-all duration-200 hover:shadow-md bg-blue-50 border-blue-200 border-l-4 border-l-blue-500"
+                    >
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                        {/* Repetição do solicitante */}
+                        {getDailyRequestCount(solicitacao.placa, solicitacao.data_solicitacao) > 1 && (
+                          <div className="lg:col-span-12 mb-2">
+                            <div className="flex items-center gap-2 p-2 bg-red-100 border border-red-300 rounded text-red-800 text-xs">
+                              <AlertTriangle className="h-4 w-4" />
+                              <span className="font-semibold">ATENÇÃO:</span>
+                              <span>Esta placa teve {getDailyRequestCount(solicitacao.placa, solicitacao.data_solicitacao)} solicitações no mesmo dia</span>
+                              <span className="ml-auto font-mono">{solicitudeCounts[solicitacao.placa] || 0} total</span>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Placa e Motorista */}
+                        <div className="lg:col-span-3">
+                          <p className="font-medium text-lg">{solicitacao.placa}</p>
+                          <p className="text-sm text-gray-600">{solicitacao.motorista || 'Motorista não informado'}</p>
+                          <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_calculado || solicitacao.valor_solicitado)} - {solicitacao.km_total || '-'} km</p>
+                          {solicitacao.rota_origem && solicitacao.rota_destino && (
+                            <p className="text-xs text-blue-600">
+                              {solicitacao.rota_origem} → {solicitacao.rota_destino}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Operação e Base */}
+                        <div className="lg:col-span-2">
+                          <Badge variant="outline" className="bg-blue-100 text-blue-800 mb-1">
+                            Line Haul
+                          </Badge>
+                          <p className="text-xs text-gray-500 truncate">{solicitacao.base || '-'}</p>
+                          {solicitacao.veiculo_modelo && (
+                            <p className="text-xs text-gray-600">{solicitacao.veiculo_modelo}</p>
+                          )}
+                        </div>
+
+                        {/* Status e Data */}
+                        <div className="lg:col-span-2">
+                          {getStatusBadge(solicitacao.status)}
+                          <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</p>
+                          {solicitacao.data_atendimento && (
+                            <p className="text-xs text-green-600 font-medium">Atendido: {formatDate(solicitacao.data_atendimento).split(',')[0]}</p>
+                          )}
+                          {solicitacao.horario_abastecimento && (
+                            <p className="text-xs text-blue-600">Horário: {solicitacao.horario_abastecimento}</p>
+                          )}
+                        </div>
+
+                        {/* Ações */}
+                        <div className="lg:col-span-3">
+                          <div className="flex flex-wrap gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleOpenSolicitation(solicitacao)}
+                              className="text-xs"
+                            >
+                              <AlertCircle className="w-3 h-3 mr-1" />
+                              Visualizar
+                            </Button>
+                            
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleOpenHistory(solicitacao.placa)}
+                              className="text-xs"
+                            >
+                              <History className="w-3 h-3 mr-1" />
+                              Histórico
+                            </Button>
+                            
+                            {/* Botão WhatsApp apenas para solicitações do Line Haul */}
+                            {solicitacao.telefone_motorista && (
+                              <WhatsAppResponseButton 
+                                telefone={solicitacao.telefone_motorista}
+                                solicitacao={solicitacao}
+                                tipo="line_haul"
+                              />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Informações Adicionais do Line Haul */}
+                        {solicitacao.calculo_detalhes && (
+                          <div className="lg:col-span-12 mt-4 p-3 bg-gray-50 rounded">
+                            <div className="text-xs text-gray-600 grid grid-cols-2 md:grid-cols-4 gap-2">
+                              <div><strong>KM Rota:</strong> {solicitacao.calculo_detalhes.km_rota}</div>
+                              <div><strong>KM Acréscimo:</strong> {solicitacao.calculo_detalhes.km_acrescimo}</div>
+                              <div><strong>Consumo Médio:</strong> {solicitacao.calculo_detalhes.consumo_medio}</div>
+                              <div><strong>Litros:</strong> {solicitacao.calculo_detalhes.litros_necessarios}</div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
