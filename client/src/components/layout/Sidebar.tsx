@@ -255,7 +255,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     ]},
     // Item de menu separado para Cartão de Abastecimento
     { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
-      { name: 'Operações', href: '/fuel-card', icon: CreditCard },
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList },
       { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard }
     ]},
@@ -311,7 +310,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     ]},
     // Item de menu separado para Cartão de Abastecimento
     { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
-      { name: 'Operações', href: '/fuel-card', icon: CreditCard },
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList },
       { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard }
     ]},
@@ -333,7 +331,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   const fuelManagerItems: NavItem[] = [
     { name: 'Dashboard', href: '/', icon: Gauge },
     { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
-      { name: 'Operações', href: '/fuel-card', icon: CreditCard },
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList },
       { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard }
     ]},
@@ -370,7 +367,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Pneus', href: '/tires', icon: CircleDot },
     { name: 'Equipamentos', href: '/equipment', icon: Package },
     { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
-      { name: 'Operações', href: '/fuel-card', icon: CreditCard },
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList },
       { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard }
     ]},
