@@ -244,10 +244,10 @@ const FuelCardRequestsPanel: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // OTIMIZAÇÃO: Parâmetros de paginação e cache
+      // OTIMIZAÇÃO: Usar endpoint público para carregar dados sem autenticação
       const page = 1;
-      const limit = 50;
-      const response = await apiRequest('GET', `/api/fuel-card-solicitations?page=${page}&limit=${limit}`);
+      const limit = 2000; // Aumentar limite para carregar mais dados
+      const response = await fetch(`/api/public/fuel-card/solicitations?page=${page}&limit=${limit}`);
       const data = await response.json();
       
       if (data.success) {
@@ -276,7 +276,8 @@ const FuelCardRequestsPanel: React.FC = () => {
 
   const fetchProjects = async () => {
     try {
-      const response = await apiRequest('GET', '/api/projects-with-bases');
+      // Usar endpoint público para projetos
+      const response = await fetch('/api/public/projects-with-bases');
       const data = await response.json();
       
       if (data.success) {
