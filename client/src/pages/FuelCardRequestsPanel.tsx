@@ -193,6 +193,37 @@ const FuelCardRequestsPanel: React.FC = () => {
     return dailyRepeats;
   };
 
+  // Função para obter a última solicitação de uma placa
+  const getLastRequestForPlate = (placa: string): FuelCardSolicitation | null => {
+    const plateSolicitations = solicitations
+      .filter(s => s.placa === placa)
+      .sort((a, b) => new Date(b.data_solicitacao).getTime() - new Date(a.data_solicitacao).getTime());
+    
+    return plateSolicitations.length > 0 ? plateSolicitations[0] : null;
+  };
+
+  // Função para calcular diferença de km entre solicitações do Line Haul
+  const getKmDifferenceForLineHaul = (currentSolicitation: FuelCardSolicitation): number | null => {
+    if (currentSolicitation.origem_tipo !== 'line_hall') return null;
+    
+    const currentKm = currentSolicitation.km_total || currentSolicitation.km_veiculo || 0;
+    
+    // Buscar solicitações anteriores da mesma placa do Line Haul
+    const previousSolicitations = solicitations
+      .filter(s => 
+        s.placa === currentSolicitation.placa && 
+        s.origem_tipo === 'line_hall' &&
+        s.id !== currentSolicitation.id &&
+        new Date(s.data_solicitacao) < new Date(currentSolicitation.data_solicitacao)
+      )
+      .sort((a, b) => new Date(b.data_solicitacao).getTime() - new Date(a.data_solicitacao).getTime());
+    
+    if (previousSolicitations.length === 0) return null;
+    
+    const previousKm = previousSolicitations[0].km_total || previousSolicitations[0].km_veiculo || 0;
+    return currentKm - previousKm;
+  };
+
   // Verificar se uma placa tem múltiplas solicitações em um dia específico
   const hasMultipleRequestsToday = (placa: string, dataString: string) => {
     const date = new Date(dataString).toDateString();
@@ -1304,6 +1335,33 @@ const FuelCardRequestsPanel: React.FC = () => {
                           <p className="text-xs text-blue-600 font-bold mb-1">🚛 MOTORISTA DO VEÍCULO</p>
                           <p className="text-sm font-medium text-gray-900 truncate">{solicitacao.motorista || (solicitacao as any).driver_name || 'Motorista não informado'}</p>
                           <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_solicitado)} - {solicitacao.km_total || solicitacao.km_veiculo || '-'} km</p>
+                          
+                          {/* Exibir informações específicas para Line Haul */}
+                          {solicitacao.origem_tipo === 'line_hall' && (() => {
+                            const lastRequest = getLastRequestForPlate(solicitacao.placa);
+                            const kmDifference = getKmDifferenceForLineHaul(solicitacao);
+                            
+                            return (
+                              <div className="mt-1 space-y-1">
+                                {lastRequest && lastRequest.id !== solicitacao.id && (
+                                  <p className="text-xs text-blue-700 font-medium">
+                                    📅 Última: {format(new Date(lastRequest.data_solicitacao), 'dd/MM HH:mm', { locale: ptBR })} 
+                                    ({lastRequest.km_total || lastRequest.km_veiculo || '-'} km)
+                                  </p>
+                                )}
+                                {kmDifference !== null && kmDifference > 0 && (
+                                  <p className="text-xs text-green-700 font-medium">
+                                    🚗 Diferença: +{kmDifference} km desde última solicitação
+                                  </p>
+                                )}
+                                {kmDifference !== null && kmDifference <= 0 && (
+                                  <p className="text-xs text-orange-700 font-medium">
+                                    ⚠️ Km igual ou menor que solicitação anterior ({kmDifference} km)
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         {/* Operação e Base */}
@@ -1506,6 +1564,33 @@ const FuelCardRequestsPanel: React.FC = () => {
                           <p className="font-medium text-lg">{solicitacao.placa}</p>
                           <p className="text-sm text-gray-600">{solicitacao.motorista || (solicitacao as any).nome_motorista || 'Motorista não informado'}</p>
                           <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_solicitado)} - {solicitacao.km_total || solicitacao.km_veiculo || '-'} km</p>
+                          
+                          {/* Exibir informações específicas para Line Haul (seção atendidas) */}
+                          {solicitacao.origem_tipo === 'line_hall' && (() => {
+                            const lastRequest = getLastRequestForPlate(solicitacao.placa);
+                            const kmDifference = getKmDifferenceForLineHaul(solicitacao);
+                            
+                            return (
+                              <div className="mt-1 space-y-1">
+                                {lastRequest && lastRequest.id !== solicitacao.id && (
+                                  <p className="text-xs text-blue-700 font-medium">
+                                    📅 Última: {format(new Date(lastRequest.data_solicitacao), 'dd/MM HH:mm', { locale: ptBR })} 
+                                    ({lastRequest.km_total || lastRequest.km_veiculo || '-'} km)
+                                  </p>
+                                )}
+                                {kmDifference !== null && kmDifference > 0 && (
+                                  <p className="text-xs text-green-700 font-medium">
+                                    🚗 Diferença: +{kmDifference} km desde última solicitação
+                                  </p>
+                                )}
+                                {kmDifference !== null && kmDifference <= 0 && (
+                                  <p className="text-xs text-orange-700 font-medium">
+                                    ⚠️ Km igual ou menor que solicitação anterior ({kmDifference} km)
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         {/* Operação e Base */}
