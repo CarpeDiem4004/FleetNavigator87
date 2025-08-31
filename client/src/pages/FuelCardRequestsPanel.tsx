@@ -2207,7 +2207,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                         </div>
 
                         {/* Conteúdo Principal */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className={`grid grid-cols-1 gap-4 ${isCardRequest ? 'md:grid-cols-5' : 'md:grid-cols-4'}`}>
                           <div>
                             <Label className="text-xs text-gray-500">
                               {isCardRequest ? 'Origem' : 'Posto/Local'}
@@ -2236,15 +2236,25 @@ const FuelCardRequestsPanel: React.FC = () => {
 
                           <div>
                             <Label className="text-xs text-gray-500">
-                              {isCardRequest ? 'Base/Projeto' : 'Quilometragem'}
+                              {isCardRequest ? 'Quilometragem' : 'Quilometragem'}
                             </Label>
                             <div className="font-medium">
                               {isCardRequest 
-                                ? (item.base || 'Não informado') 
+                                ? (item.km_total || item.km_veiculo || item.km || 'Não informado')
                                 : (item.km_atual || item.km_veiculo || 'Não informado')
                               }
                             </div>
                           </div>
+
+                          {/* Nova coluna para Base/Projeto nas solicitações */}
+                          {isCardRequest && (
+                            <div>
+                              <Label className="text-xs text-gray-500">Base/Projeto</Label>
+                              <div className="font-medium">
+                                {item.base || 'Não informado'}
+                              </div>
+                            </div>
+                          )}
                         </div>
                         
                         {/* Informações Adicionais */}
