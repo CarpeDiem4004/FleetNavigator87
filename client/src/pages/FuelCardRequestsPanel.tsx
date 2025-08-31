@@ -239,9 +239,54 @@ const FuelCardRequestsPanel: React.FC = () => {
   };
 
   // Memorização das listas filtradas para melhor performance
-  const filteredSolicitations = useMemo(() => getFilteredSolicitations(), [
-    solicitations, searchQuery, statusFilter, projectFilter, baseFilter, dateFilter
-  ]);
+  const filteredSolicitations = useMemo(() => {
+    return solicitations.filter(sol => {
+      // Filtro por status
+      if (statusFilter !== 'all' && sol.status !== statusFilter) {
+        return false;
+      }
+      
+      // Filtro por data
+      if (dateFilter) {
+        const solDate = new Date(sol.data_solicitacao).toISOString().split('T')[0];
+        if (solDate !== dateFilter) {
+          return false;
+        }
+      }
+      
+      // Filtro por projeto
+      if (projectFilter !== 'all') {
+        // Buscar o projeto selecionado e suas bases
+        const selectedProject = projects.find(p => p.id.toString() === projectFilter);
+        if (selectedProject) {
+          const projectBases = selectedProject.bases?.map((b: any) => b.base_name) || [];
+          if (!projectBases.includes(sol.base)) {
+            return false;
+          }
+        }
+      }
+      
+      // Filtro por base
+      if (baseFilter !== 'all' && sol.base !== baseFilter) {
+        return false;
+      }
+      
+      // Filtro por busca
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        return (
+          sol.placa?.toLowerCase().includes(query) ||
+          sol.motorista?.toLowerCase().includes(query) ||
+          sol.solicitante?.toLowerCase().includes(query) ||
+          sol.requested_by?.toLowerCase().includes(query) ||
+          sol.atendido_por?.toLowerCase().includes(query) ||
+          sol.base?.toLowerCase().includes(query)
+        );
+      }
+      
+      return true;
+    });
+  }, [solicitations, searchQuery, statusFilter, projectFilter, baseFilter, dateFilter, projects]);
 
   const pendingSolicitations = useMemo(() => {
     return filteredSolicitations.filter(s => 
