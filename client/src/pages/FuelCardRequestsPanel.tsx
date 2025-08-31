@@ -2157,7 +2157,17 @@ const FuelCardRequestsPanel: React.FC = () => {
         </Sheet>
 
         {/* Modal de Histórico Completo (Abastecimentos + Solicitações de Recarga) */}
-        <Dialog open={historyModalOpen} onOpenChange={setHistoryModalOpen}>
+        <Dialog 
+          open={historyModalOpen} 
+          onOpenChange={(open) => {
+            if (!open) {
+              setHistoryModalOpen(false);
+              setLoadingHistory(false);
+              setFuelHistory([]);
+              setSelectedPlaca('');
+            }
+          }}
+        >
           <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center">
