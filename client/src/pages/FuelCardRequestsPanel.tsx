@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -193,17 +193,17 @@ const FuelCardRequestsPanel: React.FC = () => {
     return dailyRepeats;
   };
 
-  // Função para obter a última solicitação de uma placa
-  const getLastRequestForPlate = (placa: string): FuelCardSolicitation | null => {
+  // Memorização da função para obter a última solicitação de uma placa
+  const getLastRequestForPlate = useCallback((placa: string): FuelCardSolicitation | null => {
     const plateSolicitations = solicitations
       .filter(s => s.placa === placa)
       .sort((a, b) => new Date(b.data_solicitacao).getTime() - new Date(a.data_solicitacao).getTime());
     
     return plateSolicitations.length > 0 ? plateSolicitations[0] : null;
-  };
+  }, [solicitations]);
 
-  // Função para calcular diferença de km entre solicitações do Line Haul
-  const getKmDifferenceForLineHaul = (currentSolicitation: FuelCardSolicitation): number | null => {
+  // Memorização da função para calcular diferença de km entre solicitações do Line Haul
+  const getKmDifferenceForLineHaul = useCallback((currentSolicitation: FuelCardSolicitation): number | null => {
     if (currentSolicitation.origem_tipo !== 'line_hall') return null;
     
     const currentKm = currentSolicitation.km_total || currentSolicitation.km_veiculo || (currentSolicitation as any).km || 0;
@@ -222,7 +222,7 @@ const FuelCardRequestsPanel: React.FC = () => {
     
     const previousKm = previousSolicitations[0].km_total || previousSolicitations[0].km_veiculo || (previousSolicitations[0] as any).km || 0;
     return currentKm - previousKm;
-  };
+  }, [solicitations]);
 
   // Verificar se uma placa tem múltiplas solicitações em um dia específico
   const hasMultipleRequestsToday = (placa: string, dataString: string) => {
@@ -238,50 +238,59 @@ const FuelCardRequestsPanel: React.FC = () => {
     return dailyRepeats[placa]?.[date] || 1;
   };
 
-  // Funções para calcular totais por aba
-  const getPendingSolicitations = () => {
+  // Memorização das listas filtradas para melhor performance
+  const filteredSolicitations = useMemo(() => getFilteredSolicitations(), [
+    solicitations, searchQuery, statusFilter, projectFilter, baseFilter, dateFilter
+  ]);
+
+  const pendingSolicitations = useMemo(() => {
     return filteredSolicitations.filter(s => 
       s.status === 'Pendente' || s.status === 'pendente' || 
       s.status === 'Em Análise' || s.status === 'em_analise'
     );
-  };
+  }, [filteredSolicitations]);
 
-  const getCompletedSolicitations = () => {
+  const completedSolicitations = useMemo(() => {
     return filteredSolicitations.filter(s => 
       s.status === 'Recarga Efetuada' || s.status === 'Negado'
     );
-  };
+  }, [filteredSolicitations]);
 
-  // Função para filtrar solicitações do Line Haul
-  const getLineHallSolicitations = () => {
+  const lineHallSolicitations = useMemo(() => {
     return filteredSolicitations.filter(s => s.origem_tipo === 'line_hall');
-  };
+  }, [filteredSolicitations]);
 
-  // Função para verificar se há solicitações novas do Line Haul (últimas 24h)
-  const hasNewLineHallRequests = () => {
+  // Função legacy para compatibilidade
+  const getPendingSolicitations = useCallback(() => pendingSolicitations, [pendingSolicitations]);
+  const getCompletedSolicitations = useCallback(() => completedSolicitations, [completedSolicitations]);
+  const getLineHallSolicitations = useCallback(() => lineHallSolicitations, [lineHallSolicitations]);
+
+  // Memorização da verificação de solicitações novas do Line Haul (últimas 24h)
+  const hasNewLineHallRequests = useMemo(() => {
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    return getLineHallSolicitations().some(s => {
+    return lineHallSolicitations.some(s => {
       const solicitationDate = new Date(s.data_solicitacao);
       return solicitationDate > yesterday && (s.status === 'Pendente' || s.status === 'pendente');
     });
-  };
+  }, [lineHallSolicitations]);
 
-  const getTotalValue = (solicitations: FuelCardSolicitation[]) => {
+  // Memorização de cálculos de valor para melhor performance
+  const getTotalValue = useCallback((solicitations: FuelCardSolicitation[]) => {
     return solicitations.reduce((total, s) => {
       const valor = s.valor_solicitado || s.valor_calculado || 0;
       return total + Number(valor);
     }, 0);
-  };
+  }, []);
 
-  const getApprovedValue = (solicitations: FuelCardSolicitation[]) => {
+  const getApprovedValue = useCallback((solicitations: FuelCardSolicitation[]) => {
     return solicitations
       .filter(s => s.status === 'Recarga Efetuada')
       .reduce((total, s) => {
         const valor = s.valor_solicitado || s.valor_calculado || 0;
         return total + Number(valor);
       }, 0);
-  };
+  }, []);
 
 
 
@@ -936,7 +945,6 @@ const FuelCardRequestsPanel: React.FC = () => {
   };
   
   const statistics = getStatistics();
-  const filteredSolicitations = getFilteredSolicitations();
   
   return (
     <AppLayout>
@@ -1160,11 +1168,11 @@ const FuelCardRequestsPanel: React.FC = () => {
                 Atendidas ({getCompletedSolicitations().length})
               </TabsTrigger>
               <TabsTrigger value="linehaul" className={`flex items-center gap-2 ${
-                hasNewLineHallRequests() ? 'animate-pulse bg-blue-100 border-blue-300' : ''
+                hasNewLineHallRequests ? 'animate-pulse bg-blue-100 border-blue-300' : ''
               }`}>
                 <Truck className="h-4 w-4" />
                 Line Haul ({getLineHallSolicitations().length})
-                {hasNewLineHallRequests() && (
+                {hasNewLineHallRequests && (
                   <div className="ml-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
                 )}
               </TabsTrigger>
