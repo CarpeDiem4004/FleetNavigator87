@@ -242,12 +242,15 @@ export default function BudgetManagementPage() {
       if (result.success) {
         // Processar parts_json para parts_details
         const processedData = (result.data || []).map((budget: any) => {
-          let parts_details = null;
+          let parts_details = [];
           if (budget.parts_json) {
             try {
-              parts_details = JSON.parse(budget.parts_json);
+              const parsed = JSON.parse(budget.parts_json);
+              // Garantir que sempre seja um array
+              parts_details = Array.isArray(parsed) ? parsed : [];
             } catch (error) {
               console.error("Erro ao fazer parse do JSON das peças:", error);
+              parts_details = [];
             }
           }
           return {

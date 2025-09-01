@@ -119,9 +119,11 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
   const loadBudgetParts = (budget: Budget) => {
     if (budget.parts_json) {
       try {
-        const parsedParts = JSON.parse(budget.parts_json) as PartItem[];
-        setParts(parsedParts);
-        const total = parsedParts.reduce((sum, part) => sum + part.total, 0);
+        const parsedParts = JSON.parse(budget.parts_json);
+        // Garantir que parsedParts seja um array
+        const partsArray = Array.isArray(parsedParts) ? parsedParts : [];
+        setParts(partsArray);
+        const total = partsArray.reduce((sum, part) => sum + (part.total || 0), 0);
         setPartsTotalValue(total);
       } catch (error) {
         console.error('Erro ao carregar peças do orçamento:', error);

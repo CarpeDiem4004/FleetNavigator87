@@ -249,7 +249,6 @@ export default function BudgetsPage() {
   }, []);
   
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   
   // Mutation para aprovar orçamento
   const approveBudgetMutation = useMutation({
