@@ -16648,7 +16648,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         estimated_days, 
         priority, 
         observations,
-        workshop_id 
+        workshop_id,
+        parts_json 
       } = req.body;
 
       // Validações
@@ -16682,6 +16683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           estimated_days = $5,
           priority = $6,
           workshop_observations = $7,
+          parts_json = $8,
           status = 'em_negociacao',
           responded_at = NOW(),
           updated_at = NOW()
@@ -16696,7 +16698,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         parts_cost || 0,
         estimated_days,
         priority || 'normal',
-        observations || ''
+        observations || '',
+        parts_json ? JSON.stringify(parts_json) : null
       ]);
 
       console.log(`[BudgetResponse] Resposta enviada para solicitação #${request_id}`);

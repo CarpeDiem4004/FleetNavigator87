@@ -313,6 +313,10 @@ export default function AutofreiSolicitacoes() {
         priority: response.priority,
         observations: response.observations,
         workshop_id: AUTOFREI_ID,
+        parts_json: JSON.stringify(response.parts.map(part => ({
+          name: part.name,
+          value: parseFloat(part.value) || 0
+        }))),
         parts_breakdown: response.parts.map(part => ({
           name: part.name,
           value: parseFloat(part.value) || 0
