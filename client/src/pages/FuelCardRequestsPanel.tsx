@@ -959,27 +959,13 @@ const FuelCardRequestsPanel: React.FC = () => {
     ).length;
     const atendidas = solicitations.filter(s => s.status === 'Recarga Efetuada' || s.status === 'atendido').length;
     
-    // Debug: verificar estrutura dos dados
-    console.log('Debugging valor calculation:', {
-      totalSolicitations: solicitations.length,
-      recargasEfetuadas: solicitations.filter(s => s.status === 'Recarga Efetuada'),
-      sampleData: solicitations.slice(0, 2)
-    });
-    
     // Calcular valor total atendido com validação numérica
     const valorTotalAtendido = solicitations
       .filter(s => s.status === 'Recarga Efetuada')
       .reduce((total, s) => {
         const valor = parseFloat(s.valor_solicitado?.toString() || '0');
-        console.log('Processing value:', { 
-          status: s.status, 
-          valor_solicitado: s.valor_solicitado, 
-          parsed: valor 
-        });
         return total + (isNaN(valor) ? 0 : valor);
       }, 0);
-    
-    console.log('Final valorTotalAtendido:', valorTotalAtendido);
     
     // Calcular placas com múltiplas solicitações no mesmo dia
     const placasRepetidas = solicitations.filter(s => 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'murici-fleet-v2.0.0';
+const CACHE_NAME = 'murici-fleet-v2.0.1';
 const STATIC_CACHE_URLS = [
   '/',
   '/manifest.json',
@@ -7,7 +7,7 @@ const STATIC_CACHE_URLS = [
   '/icons/favicon.svg'
 ];
 
-const DYNAMIC_CACHE_NAME = 'murici-fleet-dynamic-v2';
+const DYNAMIC_CACHE_NAME = 'murici-fleet-dynamic-v2.1';
 
 // Install Service Worker
 self.addEventListener('install', (event) => {
@@ -77,8 +77,8 @@ self.addEventListener('fetch', (event) => {
           // Clone response for caching
           const responseClone = response.clone();
           
-          // Cache successful responses
-          if (response.status === 200) {
+          // Cache successful responses - ONLY for GET requests
+          if (response.status === 200 && request.method === 'GET') {
             caches.open(DYNAMIC_CACHE_NAME)
               .then((cache) => {
                 cache.put(request, responseClone);
@@ -227,17 +227,9 @@ async function syncPendingChecklists() {
     const cache = await caches.open(DYNAMIC_CACHE_NAME);
     const keys = await cache.keys();
     
-    for (const request of keys) {
-      if (request.url.includes('/api/line-hall/checklist') && request.method === 'POST') {
-        try {
-          await fetch(request);
-          await cache.delete(request);
-          console.log('[Service Worker] Synced pending checklist');
-        } catch (error) {
-          console.error('[Service Worker] Failed to sync checklist:', error);
-        }
-      }
-    }
+    // Note: Since we now only cache GET requests, this function is for future reference
+    // In case we implement a different strategy for offline POST request queuing
+    console.log('[Service Worker] Sync function called, but no POST requests are cached');
   } catch (error) {
     console.error('[Service Worker] Sync failed:', error);
   }
