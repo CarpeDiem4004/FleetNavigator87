@@ -468,7 +468,28 @@ export default function BudgetManagementPage() {
 
   // Função para visualizar detalhes do orçamento
   const handleViewBudget = (budget: BudgetRequest) => {
-    setViewingBudget(budget);
+    // Processar parts_json para parts_details na visualização
+    let processedBudget = { ...budget };
+    
+    if (budget.parts_json && (!budget.parts_details || budget.parts_details.length === 0)) {
+      try {
+        const parsed = JSON.parse(budget.parts_json);
+        const rawParts = Array.isArray(parsed) ? parsed : [];
+        processedBudget.parts_details = rawParts.map(part => ({
+          name: part.name || 'Peça sem nome',
+          description: part.description || '',
+          quantity: part.quantity || 1,
+          unit_price: part.value || part.unit_price || 0,
+          total_price: part.value || part.total_price || (part.quantity || 1) * (part.unit_price || 0)
+        }));
+        console.log("DEBUG processedBudget.parts_details:", processedBudget.parts_details);
+      } catch (error) {
+        console.error("Erro ao processar parts_json:", error);
+        processedBudget.parts_details = [];
+      }
+    }
+    
+    setViewingBudget(processedBudget);
     setViewBudgetDialogOpen(true);
   };
 
