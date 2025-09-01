@@ -246,8 +246,15 @@ export default function BudgetManagementPage() {
           if (budget.parts_json) {
             try {
               const parsed = JSON.parse(budget.parts_json);
-              // Garantir que sempre seja um array
-              parts_details = Array.isArray(parsed) ? parsed : [];
+              // Garantir que sempre seja um array e mapear campos corretamente
+              const rawParts = Array.isArray(parsed) ? parsed : [];
+              parts_details = rawParts.map(part => ({
+                name: part.name || 'Peça sem nome',
+                description: part.description || '',
+                quantity: part.quantity || 1,
+                unit_price: part.value || part.unit_price || 0,
+                total_price: part.value || part.total_price || (part.quantity || 1) * (part.unit_price || 0)
+              }));
             } catch (error) {
               console.error("Erro ao fazer parse do JSON das peças:", error);
               parts_details = [];
