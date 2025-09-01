@@ -2127,7 +2127,7 @@ export default function BudgetManagementPage() {
                         <div className="text-right">Valor Unitário</div>
                         <div className="text-right">Valor Total</div>
                       </div>
-                      {viewingBudget.parts_details.map((part, index) => (
+                      {(viewingBudget.parts_details || []).map((part, index) => (
                         <div key={index} className="px-4 py-3 border-b last:border-b-0 grid grid-cols-4 gap-4 text-sm">
                           <div>
                             <p className="font-medium">{part.name}</p>
@@ -2145,7 +2145,7 @@ export default function BudgetManagementPage() {
                           <div className="col-span-3 text-right">Total das Peças:</div>
                           <div className="text-right">
                             {formatCurrency(
-                              viewingBudget.parts_details.reduce((sum, part) => sum + part.total_price, 0)
+                              (viewingBudget.parts_details || []).reduce((sum, part) => sum + part.total_price, 0)
                             )}
                           </div>
                         </div>
@@ -2163,7 +2163,7 @@ export default function BudgetManagementPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {viewingBudget.parts_details.map((part, index) => (
+                        {(viewingBudget.parts_details || []).map((part, index) => (
                           <tr key={index}>
                             <td>
                               <div>
@@ -2185,7 +2185,7 @@ export default function BudgetManagementPage() {
                           <td style={{textAlign: 'right'}}>
                             <strong>
                               {formatCurrency(
-                                viewingBudget.parts_details.reduce((sum, part) => sum + part.total_price, 0)
+                                (viewingBudget.parts_details || []).reduce((sum, part) => sum + part.total_price, 0)
                               )}
                             </strong>
                           </td>

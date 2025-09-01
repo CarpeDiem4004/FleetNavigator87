@@ -349,7 +349,7 @@ export default function WorkshopBudgets() {
         
         // Criar tabela de peças
         const tableColumns = ['Descrição', 'Qtd', 'Valor Unit.', 'Total'];
-        const tableRows = budget.parts_details.map(part => [
+        const tableRows = (budget.parts_details || []).map(part => [
           part.description,
           part.quantity.toString(),
           formatCurrency(part.unitPrice),
@@ -966,7 +966,7 @@ export default function WorkshopBudgets() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {selectedBudget.parts_details.map((part, index) => (
+                          {(selectedBudget.parts_details || []).map((part, index) => (
                             <TableRow key={index}>
                               <TableCell>{part.description}</TableCell>
                               <TableCell>{part.quantity}</TableCell>
