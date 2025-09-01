@@ -16727,13 +16727,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const query = `
         SELECT 
-          *,
-          projects.name as projeto,
-          workshops.name as workshop_name
+          *
         FROM campinas_budget_requests 
-        LEFT JOIN projects ON campinas_budget_requests.projeto_id = projects.id
-        LEFT JOIN workshops ON campinas_budget_requests.workshop_id = workshops.id
-        WHERE campinas_budget_requests.id = $1
+        WHERE id = $1
       `;
       
       const result = await pool.query(query, [id]);

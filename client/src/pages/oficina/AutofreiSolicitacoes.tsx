@@ -257,12 +257,26 @@ export default function AutofreiSolicitacoes() {
           // Processar parts_json se existe
           if (budgetData.parts_json) {
             try {
-              const parsedParts = JSON.parse(budgetData.parts_json);
+              console.log('DEBUG - parts_json bruto:', budgetData.parts_json);
+              
+              // O parts_json pode estar como string escapada, então precisamos fazer parse duplo
+              let parsedParts = budgetData.parts_json;
+              if (typeof parsedParts === 'string') {
+                parsedParts = JSON.parse(parsedParts);
+              }
+              if (typeof parsedParts === 'string') {
+                parsedParts = JSON.parse(parsedParts);
+              }
+              
+              console.log('DEBUG - parts_json processado:', parsedParts);
+              
               existingParts = Array.isArray(parsedParts) ? parsedParts.map((part, index) => ({
                 id: `part_${index}_${Date.now()}`,
                 name: part.name || '',
                 value: (part.value || 0).toString()
               })) : [];
+              
+              console.log('DEBUG - peças processadas:', existingParts);
             } catch (e) {
               console.error('Erro ao processar parts_json:', e);
               existingParts = [];
