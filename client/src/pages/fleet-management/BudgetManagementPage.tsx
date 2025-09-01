@@ -245,9 +245,20 @@ export default function BudgetManagementPage() {
           let parts_details = [];
           if (budget.parts_json) {
             try {
-              const parsed = JSON.parse(budget.parts_json);
-              // Garantir que sempre seja um array e mapear campos corretamente
+              console.log("DEBUG fetchBudgetRequests - budget.parts_json:", budget.parts_json);
+              
+              // Fazer parse duplo se necessário
+              let parsed = budget.parts_json;
+              if (typeof parsed === 'string') {
+                parsed = JSON.parse(parsed);
+              }
+              if (typeof parsed === 'string') {
+                parsed = JSON.parse(parsed);
+              }
+              
+              console.log("DEBUG fetchBudgetRequests - parsed:", parsed);
               const rawParts = Array.isArray(parsed) ? parsed : [];
+              
               parts_details = rawParts.map(part => ({
                 name: part.name || 'Peça sem nome',
                 description: part.description || '',
@@ -255,6 +266,7 @@ export default function BudgetManagementPage() {
                 unit_price: part.value || part.unit_price || 0,
                 total_price: part.value || part.total_price || (part.quantity || 1) * (part.unit_price || 0)
               }));
+              console.log("DEBUG fetchBudgetRequests - parts_details:", parts_details);
             } catch (error) {
               console.error("Erro ao fazer parse do JSON das peças:", error);
               parts_details = [];
@@ -473,8 +485,22 @@ export default function BudgetManagementPage() {
     
     if (budget.parts_json && (!budget.parts_details || budget.parts_details.length === 0)) {
       try {
-        const parsed = JSON.parse(budget.parts_json);
+        console.log("DEBUG budget.parts_json BRUTO:", budget.parts_json);
+        console.log("DEBUG budget.parts_json TIPO:", typeof budget.parts_json);
+        
+        // Fazer parse duplo se necessário (caso esteja como string escapada)
+        let parsed = budget.parts_json;
+        if (typeof parsed === 'string') {
+          parsed = JSON.parse(parsed);
+        }
+        if (typeof parsed === 'string') {
+          parsed = JSON.parse(parsed);
+        }
+        
+        console.log("DEBUG parsed FINAL:", parsed);
         const rawParts = Array.isArray(parsed) ? parsed : [];
+        console.log("DEBUG rawParts:", rawParts);
+        
         processedBudget.parts_details = rawParts.map(part => ({
           name: part.name || 'Peça sem nome',
           description: part.description || '',
@@ -482,7 +508,7 @@ export default function BudgetManagementPage() {
           unit_price: part.value || part.unit_price || 0,
           total_price: part.value || part.total_price || (part.quantity || 1) * (part.unit_price || 0)
         }));
-        console.log("DEBUG processedBudget.parts_details:", processedBudget.parts_details);
+        console.log("DEBUG processedBudget.parts_details FINAL:", processedBudget.parts_details);
       } catch (error) {
         console.error("Erro ao processar parts_json:", error);
         processedBudget.parts_details = [];
