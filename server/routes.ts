@@ -16719,6 +16719,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para buscar um orçamento específico por ID
+  app.get("/api/campinas/budget-requests/:id", hybridAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      console.log(`[CampinaBudgets] Buscando orçamento específico ID: ${id}`);
+      
+      const query = `
+        SELECT 
+          *,
+          projects.name as projeto,
+          workshops.name as workshop_name
+        FROM campinas_budget_requests 
+        LEFT JOIN projects ON campinas_budget_requests.projeto_id = projects.id
+        LEFT JOIN workshops ON campinas_budget_requests.workshop_id = workshops.id
+        WHERE campinas_budget_requests.id = $1
+      `;
+      
+      const result = await pool.query(query, [id]);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Orçamento não encontrado"
+        });
+      }
+      
+      const budget = result.rows[0];
+      console.log(`[CampinaBudgets] Orçamento ${id} encontrado:`, budget.vehicle_plate);
+      
+      res.json({
+        success: true,
+        data: budget
+      });
+    } catch (error) {
+      console.error('[CampinaBudgets] Erro ao buscar orçamento específico:', error);
+      res.status(500).json({
+        success: false,
+        message: "Erro interno do servidor"
+      });
+    }
+  });
+
   // API para buscar orçamentos recebidos das oficinas (campinas_budget_requests)
   app.get("/api/campinas/budget-requests", hybridAuth, async (req, res) => {
     try {

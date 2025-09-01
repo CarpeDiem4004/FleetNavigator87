@@ -231,18 +231,103 @@ export default function AutofreiSolicitacoes() {
     setResponse(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleViewRequest = (request: BudgetRequest) => {
+  const handleViewRequest = async (request: BudgetRequest) => {
     setSelectedRequest(request);
-    // Carregar dados existentes se houver
-    setResponse({
-      labor_cost: '',
-      parts_cost: '',
-      total_cost: '',
-      estimated_days: '',
-      priority: 'normal',
-      observations: '',
-      parts: []
-    });
+    
+    // Carregar dados existentes se houver um orçamento salvo
+    try {
+      const token = localStorage.getItem('oficina_token') || 'auto_token_autofrei_225e2596c711cdcafa624fce2bfc6052';
+      
+      const response = await fetch(`/api/campinas/budget-requests/${request.id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const budgetData = result.data;
+        
+        // Se existe um orçamento salvo, carregar os dados
+        if (budgetData && budgetData.estimated_value) {
+          let existingParts: Part[] = [];
+          
+          // Processar parts_json se existe
+          if (budgetData.parts_json) {
+            try {
+              const parsedParts = JSON.parse(budgetData.parts_json);
+              existingParts = Array.isArray(parsedParts) ? parsedParts.map((part, index) => ({
+                id: `part_${index}_${Date.now()}`,
+                name: part.name || '',
+                value: (part.value || 0).toString()
+              })) : [];
+            } catch (e) {
+              console.error('Erro ao processar parts_json:', e);
+              existingParts = [];
+            }
+          }
+          
+          // Calcular valores
+          const partsTotal = existingParts.reduce((total, part) => total + (parseFloat(part.value) || 0), 0);
+          const estimatedValue = parseFloat(budgetData.estimated_value) || 0;
+          const laborCost = Math.max(0, estimatedValue - partsTotal);
+          
+          setResponse({
+            labor_cost: laborCost.toString(),
+            parts_cost: partsTotal.toFixed(2),
+            total_cost: estimatedValue.toFixed(2),
+            estimated_days: budgetData.estimated_days ? budgetData.estimated_days.toString() : '',
+            priority: budgetData.priority || 'normal',
+            observations: budgetData.observations || '',
+            parts: existingParts
+          });
+          
+          console.log('DEBUG - Dados carregados:', {
+            estimated_value: budgetData.estimated_value,
+            parts_json: budgetData.parts_json,
+            parts: existingParts
+          });
+        } else {
+          // Orçamento novo - inicializar vazio
+          setResponse({
+            labor_cost: '',
+            parts_cost: '',
+            total_cost: '',
+            estimated_days: '',
+            priority: 'normal',
+            observations: '',
+            parts: []
+          });
+        }
+      } else {
+        console.error('Erro ao carregar dados do orçamento:', response.status);
+        // Fallback para inicialização vazia
+        setResponse({
+          labor_cost: '',
+          parts_cost: '',
+          total_cost: '',
+          estimated_days: '',
+          priority: 'normal',
+          observations: '',
+          parts: []
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados existentes:', error);
+      // Fallback para inicialização vazia
+      setResponse({
+        labor_cost: '',
+        parts_cost: '',
+        total_cost: '',
+        estimated_days: '',
+        priority: 'normal',
+        observations: '',
+        parts: []
+      });
+    }
+    
     setIsResponseOpen(true);
   };
 
