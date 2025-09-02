@@ -108,6 +108,8 @@ interface BudgetRequest {
   requester_name?: string;
   created_at: string;
   approved_at?: string;
+  approved_by?: number;
+  approver_name?: string;
   chassis?: string;
   km?: number;
   projeto?: string;
@@ -1321,6 +1323,7 @@ export default function BudgetManagementPage() {
                       <TableHead>Veículo</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Valor Solicitado</TableHead>
+                      <TableHead>Quem Aprovou</TableHead>
                       <TableHead>Data Aprovação</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
@@ -1342,6 +1345,9 @@ export default function BudgetManagementPage() {
                         </TableCell>
                         <TableCell>
                           {budget.estimated_value ? formatCurrency(budget.estimated_value) : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {budget.approver_name || budget.approved_by || 'N/A'}
                         </TableCell>
                         <TableCell>
                           {budget.approved_at ? formatDate(budget.approved_at) : 'N/A'}

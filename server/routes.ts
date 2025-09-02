@@ -16764,36 +16764,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const query = `
         SELECT 
-          id,
-          vehicle_plate,
-          vehicle_model,
-          description,
-          requester_name,
-          base_id,
-          workshop_id,
-          workshop_name,
-          status,
-          estimated_value,
-          parts_json,
-          approved_value,
-          approved_by,
-          approver_name,
-          approved_at,
-          attachment_url,
-          created_at,
-          updated_at,
-          km,
-          projeto,
-          chassis
-        FROM campinas_budget_requests 
+          cbr.id,
+          cbr.vehicle_plate,
+          cbr.vehicle_model,
+          cbr.description,
+          cbr.requester_name,
+          cbr.base_id,
+          cbr.workshop_id,
+          cbr.workshop_name,
+          cbr.status,
+          cbr.estimated_value,
+          cbr.parts_json,
+          cbr.approved_value,
+          cbr.approved_by,
+          u.name as approver_name,
+          cbr.approved_at,
+          cbr.attachment_url,
+          cbr.created_at,
+          cbr.updated_at,
+          cbr.km,
+          cbr.projeto,
+          cbr.chassis
+        FROM campinas_budget_requests cbr
+        LEFT JOIN users u ON cbr.approved_by = u.id
         ORDER BY 
-          CASE status 
+          CASE cbr.status 
             WHEN 'pendente' THEN 1 
             WHEN 'em_analise' THEN 2 
             WHEN 'aprovado' THEN 3 
             ELSE 4 
           END,
-          created_at DESC
+          cbr.created_at DESC
       `;
       
       const result = await pool.query(query);
