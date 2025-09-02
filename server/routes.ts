@@ -16846,6 +16846,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         UPDATE campinas_budget_requests 
         SET 
           status = 'aprovado',
+          approved_value = estimated_value,
           approved_by = $1,
           approved_at = $2,
           updated_at = NOW()
