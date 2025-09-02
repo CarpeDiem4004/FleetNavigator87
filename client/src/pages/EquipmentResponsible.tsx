@@ -139,7 +139,7 @@ export default function EquipmentResponsible() {
 
   // Buscar termos de responsabilidade
   const { data: responsibilityTerms = [], isLoading } = useQuery({
-    queryKey: ["/api/equipment/responsibility-terms"],
+    queryKey: ["/api/equipment/equipment-responsibility-terms"],
   });
 
   // Filtrar dados com base na busca e status
@@ -163,13 +163,13 @@ export default function EquipmentResponsible() {
   // Mutation para criar novo termo de responsabilidade
   const createMutation = useMutation({
     mutationFn: async (data: ResponsibleFormData) => {
-      return apiRequest("/api/equipment/responsibility-terms", {
+      return apiRequest("/api/equipment/equipment-responsibility-terms", {
         method: "POST",
         body: JSON.stringify(data),
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/equipment/responsibility-terms"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/equipment/equipment-responsibility-terms"] });
       queryClient.invalidateQueries({ queryKey: ["/api/equipment"] });
       toast({
         title: "Sucesso",
@@ -190,13 +190,13 @@ export default function EquipmentResponsible() {
   // Mutation para atualizar termo de responsabilidade
   const updateMutation = useMutation({
     mutationFn: async (data: ResponsibleFormData) => {
-      return apiRequest(`/api/equipment/responsibility-terms/${editingId}`, {
+      return apiRequest(`/api/equipment/equipment-responsibility-terms/${editingId}`, {
         method: "PUT",
         body: JSON.stringify(data),
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/equipment/responsibility-terms"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/equipment/equipment-responsibility-terms"] });
       queryClient.invalidateQueries({ queryKey: ["/api/equipment"] });
       toast({
         title: "Sucesso",
@@ -219,13 +219,13 @@ export default function EquipmentResponsible() {
   // Mutation para marcar retorno do equipamento
   const returnMutation = useMutation({
     mutationFn: async ({ id, condition }: { id: number; condition: string }) => {
-      return apiRequest(`/api/equipment/responsibility-terms/${id}/return`, {
+      return apiRequest(`/api/equipment/equipment-responsibility-terms/${id}/return`, {
         method: "PUT",
         body: JSON.stringify({ condition_at_return: condition }),
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/equipment/responsibility-terms"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/equipment/equipment-responsibility-terms"] });
       queryClient.invalidateQueries({ queryKey: ["/api/equipment"] });
       toast({
         title: "Sucesso",

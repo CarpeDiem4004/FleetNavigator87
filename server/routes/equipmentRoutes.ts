@@ -139,10 +139,105 @@ router.get('/dashboard', async (req, res) => {
   }
 });
 
+// GET /api/equipment-responsibility-terms - Mover para posição mais alta para evitar conflito com /:id
+router.get('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req, res) => {
+  try {
+    console.log('[TERMS] Iniciando busca de termos de responsabilidade...');
+    
+    // Primeiro buscar apenas os termos sem join para debug
+    const termsBasic = await db
+      .select()
+      .from(equipmentResponsibilityTerms)
+      .orderBy(desc(equipmentResponsibilityTerms.created_at));
+
+    console.log('[TERMS] Termos básicos encontrados:', termsBasic.length);
+
+    // Agora fazer query SQL direta para buscar com a tabela equipment correta
+    const terms = await db.execute(`
+      SELECT 
+          ert.id,
+          ert.equipment_id,
+          ert.user_id,
+          ert.full_name,
+          ert.cpf,
+          ert.phone,
+          ert.department,
+          ert.address,
+          ert.assigned_at,
+          ert.returned_at,
+          ert.assigned_by,
+          ert.returned_by,
+          ert.term_content,
+          ert.condition_at_assignment,
+          ert.condition_at_return,
+          ert.notes,
+          ert.is_active,
+          ert.created_at,
+          ert.updated_at,
+          e.name as equipment_name,
+          e.type as equipment_type,
+          e.serial_number as equipment_serial
+      FROM equipment_responsibility_terms ert
+      LEFT JOIN equipment e ON ert.equipment_id = e.id
+      ORDER BY ert.created_at DESC
+    `);
+
+    console.log('[TERMS] Query SQL executada, termos encontrados:', terms.rows?.length || 0);
+
+    // Estruturar dados para compatibilidade com frontend
+    const formattedTerms = (terms.rows || []).map((term: any) => ({
+      id: term.id,
+      equipment_id: term.equipment_id,
+      user_id: term.user_id,
+      full_name: term.full_name,
+      cpf: term.cpf,
+      phone: term.phone,
+      department: term.department,
+      address: term.address,
+      assigned_at: term.assigned_at,
+      returned_at: term.returned_at,
+      assigned_by: term.assigned_by,
+      returned_by: term.returned_by,
+      term_content: term.term_content,
+      condition_at_assignment: term.condition_at_assignment,
+      condition_at_return: term.condition_at_return,
+      notes: term.notes,
+      is_active: term.is_active,
+      created_at: term.created_at,
+      updated_at: term.updated_at,
+      equipment: {
+        id: term.equipment_id,
+        name: term.equipment_name || 'Equipamento não encontrado',
+        type: term.equipment_type || 'unknown',
+        serial_number: term.equipment_serial || '',
+      }
+    }));
+
+    console.log('[TERMS] Dados formatados para o frontend:', formattedTerms.length);
+    res.json({ success: true, data: formattedTerms });
+    
+  } catch (error) {
+    console.error('[TERMS] Erro detalhado ao buscar termos de responsabilidade:', error);
+    console.error('[TERMS] Stack trace:', error.stack);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Erro interno do servidor', 
+      details: error.message 
+    });
+  }
+});
+
 // GET /api/equipment/:id - Buscar equipamento por ID
 router.get('/:id', async (req, res) => {
   try {
+    console.log('[EQUIPMENT-ID] Rota /:id capturou:', req.params.id);
     const equipmentId = parseInt(req.params.id);
+    
+    // Validar se o ID é um número válido
+    if (isNaN(equipmentId)) {
+      console.log('[EQUIPMENT-ID] ID inválido detectado:', req.params.id);
+      return res.status(400).json({ success: false, error: 'ID do equipamento inválido' });
+    }
     
     const equipment = await db
       .select()
@@ -256,48 +351,6 @@ router.delete('/:id', async (req, res) => {
     res.json({ success: true, message: 'Equipamento deletado com sucesso' });
   } catch (error) {
     console.error('Erro ao deletar equipamento:', error);
-    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
-  }
-});
-
-// GET /api/equipment-responsibility-terms - Listar todos os termos de responsabilidade
-router.get('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req, res) => {
-  try {
-    const terms = await db
-      .select({
-        id: equipmentResponsibilityTerms.id,
-        equipment_id: equipmentResponsibilityTerms.equipment_id,
-        user_id: equipmentResponsibilityTerms.user_id,
-        full_name: equipmentResponsibilityTerms.full_name,
-        cpf: equipmentResponsibilityTerms.cpf,
-        phone: equipmentResponsibilityTerms.phone,
-        department: equipmentResponsibilityTerms.department,
-        address: equipmentResponsibilityTerms.address,
-        assigned_at: equipmentResponsibilityTerms.assigned_at,
-        returned_at: equipmentResponsibilityTerms.returned_at,
-        assigned_by: equipmentResponsibilityTerms.assigned_by,
-        returned_by: equipmentResponsibilityTerms.returned_by,
-        term_content: equipmentResponsibilityTerms.term_content,
-        condition_at_assignment: equipmentResponsibilityTerms.condition_at_assignment,
-        condition_at_return: equipmentResponsibilityTerms.condition_at_return,
-        notes: equipmentResponsibilityTerms.notes,
-        is_active: equipmentResponsibilityTerms.is_active,
-        created_at: equipmentResponsibilityTerms.created_at,
-        updated_at: equipmentResponsibilityTerms.updated_at,
-        equipment_name: equipments.name,
-        equipment_type: equipments.type,
-        equipment_serial: equipments.serial_number,
-        user_name: users.name,
-        user_email: users.email
-      })
-      .from(equipmentResponsibilityTerms)
-      .leftJoin(equipments, eq(equipmentResponsibilityTerms.equipment_id, equipments.id))
-      .leftJoin(users, eq(equipmentResponsibilityTerms.user_id, users.id))
-      .orderBy(desc(equipmentResponsibilityTerms.created_at));
-
-    res.json({ success: true, data: terms });
-  } catch (error) {
-    console.error('Erro ao buscar termos de responsabilidade:', error);
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 });
