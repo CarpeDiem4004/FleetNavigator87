@@ -261,13 +261,20 @@ export default function BudgetManagementPage() {
               console.log("DEBUG fetchBudgetRequests - parsed:", parsed);
               const rawParts = Array.isArray(parsed) ? parsed : [];
               
-              parts_details = rawParts.map(part => ({
-                name: part.name || 'Peça sem nome',
-                description: part.description || '',
-                quantity: part.quantity || 1,
-                unit_price: part.value || part.unit_price || 0,
-                total_price: part.value || part.total_price || (part.quantity || 1) * (part.unit_price || 0)
-              }));
+              parts_details = rawParts.map(part => {
+                // Suporte para formato antigo (value) e novo (unit_price)
+                const unitPrice = part.unit_price || part.value || 0;
+                const quantity = part.quantity || 1;
+                const totalPrice = part.total_price || (quantity * unitPrice);
+                
+                return {
+                  name: part.name || 'Peça sem nome',
+                  description: part.description || part.name || '',
+                  quantity: quantity,
+                  unit_price: unitPrice,
+                  total_price: totalPrice
+                };
+              });
               console.log("DEBUG fetchBudgetRequests - parts_details:", parts_details);
             } catch (error) {
               console.error("Erro ao fazer parse do JSON das peças:", error);

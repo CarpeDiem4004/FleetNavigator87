@@ -414,11 +414,17 @@ export default function AutofreiSolicitacoes() {
         workshop_id: AUTOFREI_ID,
         parts_json: JSON.stringify(response.parts.map(part => ({
           name: part.name,
-          value: parseFloat(part.value) || 0
+          description: part.name,
+          quantity: 1,
+          unit_price: parseFloat(part.value) || 0,
+          total_price: parseFloat(part.value) || 0
         }))),
         parts_breakdown: response.parts.map(part => ({
           name: part.name,
-          value: parseFloat(part.value) || 0
+          description: part.name,
+          quantity: 1,
+          unit_price: parseFloat(part.value) || 0,
+          total_price: parseFloat(part.value) || 0
         }))
       };
 

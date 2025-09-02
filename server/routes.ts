@@ -16699,7 +16699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         estimated_days,
         priority || 'normal',
         observations || '',
-        parts_json ? JSON.stringify(parts_json) : null
+        parts_json || null
       ]);
 
       console.log(`[BudgetResponse] Resposta enviada para solicitação #${request_id}`);
