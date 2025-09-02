@@ -16808,8 +16808,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           pendente: result.rows.filter(r => r.status === 'pendente').length,
           aprovado: result.rows.filter(r => r.status === 'aprovado').length,
           em_analise: result.rows.filter(r => r.status === 'em_analise').length,
-          valor_total_solicitado: result.rows.reduce((sum, r) => sum + (r.estimated_value || 0), 0),
-          valor_total_aprovado: result.rows.reduce((sum, r) => sum + (r.approved_value || 0), 0)
+          valor_total_solicitado: result.rows.reduce((sum, r) => sum + parseFloat(r.estimated_value || '0'), 0),
+          valor_total_aprovado: result.rows.reduce((sum, r) => sum + parseFloat(r.approved_value || '0'), 0)
         }
       });
     } catch (error) {
