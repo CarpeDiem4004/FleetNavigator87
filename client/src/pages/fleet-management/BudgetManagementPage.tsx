@@ -34,7 +34,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
 import MaintenanceChatHistory from "@/components/chat/MaintenanceChatHistory";
 import { formatCurrency } from "@/lib/utils";
-import { CircleAlert, BarChart3, CheckCircle, Clock, AlertCircle, FileText, Search, DollarSign, Calendar, CreditCard, Plus, Eye, Printer, Trash2 } from "lucide-react";
+import { CircleAlert, BarChart3, CheckCircle, Clock, AlertCircle, FileText, Search, DollarSign, Calendar, CreditCard, Plus, Eye, Printer, Trash2, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Maintenance {
@@ -215,6 +215,21 @@ export default function BudgetManagementPage() {
     workshop_id: "",
     description: ""
   });
+
+  // Estados para gerenciar lista de peças/serviços
+  const [budgetItems, setBudgetItems] = useState<Array<{
+    name: string;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+  }>>([]);
+  const [newItem, setNewItem] = useState({
+    name: "",
+    description: "",
+    quantity: 1,
+    unit_price: 0
+  });
   const [bases, setBases] = useState<{id: number, name: string, project_id?: number}[]>([]);
   const [projects, setProjects] = useState<{id: number, name: string}[]>([]);
   const [filteredBases, setFilteredBases] = useState<{id: number, name: string, project_id?: number}[]>([]);
@@ -233,6 +248,66 @@ export default function BudgetManagementPage() {
     (workshop.name || '').toLowerCase().includes(searchWorkshop.toLowerCase()) ||
     (workshop.cnpj || '').includes(searchWorkshop)
   );
+
+  // Funções para gerenciar lista de peças/serviços
+  const addBudgetItem = () => {
+    if (!newItem.name || !newItem.description || newItem.unit_price <= 0) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha nome, descrição e preço unitário",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const totalPrice = newItem.quantity * newItem.unit_price;
+    const item = {
+      ...newItem,
+      total_price: totalPrice
+    };
+
+    setBudgetItems(prev => [...prev, item]);
+    setNewItem({
+      name: "",
+      description: "",
+      quantity: 1,
+      unit_price: 0
+    });
+
+    toast({
+      title: "Item adicionado",
+      description: "Peça/serviço adicionado ao orçamento",
+    });
+  };
+
+  const removeBudgetItem = (index: number) => {
+    setBudgetItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const calculateTotalBudget = () => {
+    return budgetItems.reduce((total, item) => total + item.total_price, 0);
+  };
+
+  // Função para resetar o formulário de solicitação
+  const resetRequestForm = () => {
+    setRequestForm({
+      vehicle_plate: "",
+      km: "",
+      vehicle_model: "",
+      chassis: "",
+      projeto: "",
+      base_id: "",
+      workshop_id: "",
+      description: ""
+    });
+    setBudgetItems([]);
+    setNewItem({
+      name: "",
+      description: "",
+      quantity: 1,
+      unit_price: 0
+    });
+  };
 
   // Função para obter os orçamentos recebidos das oficinas
   const fetchBudgetRequests = async () => {
@@ -678,10 +753,14 @@ export default function BudgetManagementPage() {
         return;
       }
 
-      const response = await apiRequest("POST", "/api/campinas/budget-requests", {
+      const submitData = {
         ...requestForm,
-        km: parseInt(requestForm.km) || 0
-      });
+        km: parseInt(requestForm.km) || 0,
+        parts_json: budgetItems.length > 0 ? JSON.stringify(budgetItems) : null,
+        estimated_value: calculateTotalBudget()
+      };
+
+      const response = await apiRequest("POST", "/api/campinas/budget-requests", submitData);
 
       if (response.ok) {
         toast({
@@ -690,16 +769,8 @@ export default function BudgetManagementPage() {
           variant: "success"
         });
         
+        resetRequestForm();
         setRequestDialogOpen(false);
-        setRequestForm({
-          vehicle_plate: "",
-          km: "",
-          vehicle_model: "",
-          projeto: "",
-          base_id: "",
-          workshop_id: "",
-          description: ""
-        });
         
         // Recarregar dados
         fetchBudgetRequests();
@@ -1910,7 +1981,7 @@ export default function BudgetManagementPage() {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRequestDialogOpen(false)}>
+            <Button variant="outline" onClick={() => { resetRequestForm(); setRequestDialogOpen(false); }}>
               Cancelar
             </Button>
             <Button onClick={submitBudgetRequest} className="bg-green-600 hover:bg-green-700">
