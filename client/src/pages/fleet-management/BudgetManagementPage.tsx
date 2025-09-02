@@ -1199,9 +1199,23 @@ export default function BudgetManagementPage() {
                           {budget.approved_at ? formatDate(budget.approved_at) : '-'}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={budget.status === 'aprovado' ? "default" : "outline"}>
-                            {budget.status === 'aprovado' ? "Faturado" : "Pendente"}
-                          </Badge>
+                          {budget.status === 'aprovado' ? (
+                            <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">
+                              💰 Faturado
+                            </Badge>
+                          ) : budget.status === 'pendente' ? (
+                            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300">
+                              ⏳ Aguardando Aprovação
+                            </Badge>
+                          ) : budget.status === 'rejeitado' ? (
+                            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300">
+                              ❌ Não Faturado
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-300">
+                              📋 Em Análise
+                            </Badge>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
