@@ -1027,14 +1027,6 @@ export default function BudgetManagementPage() {
             <Button onClick={() => fetchMaintenancesWithChats()}>
               Atualizar Manutenções
             </Button>
-            <Button 
-              onClick={handleCleanupAutofreiData}
-              variant="outline"
-              className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-300"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Limpar AUTOFREI
-            </Button>
           </div>
         </div>
 
