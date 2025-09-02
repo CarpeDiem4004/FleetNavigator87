@@ -349,7 +349,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </div>
           {/* Rodapé discreto */}
           <footer className="text-center py-2 text-xs text-gray-400 bg-gray-50 border-t">
-            Desenvolvido por Carpe Diem 4004 | suporte 11 970558053
+            Desenvolvido por Carpe Diem 4004 | suporte 11 970558053 | Sistema v2.9.2
           </footer>
         </main>
       </div>

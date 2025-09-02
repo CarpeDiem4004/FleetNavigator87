@@ -3,6 +3,12 @@
 ## Overview
 This is a comprehensive fleet management system designed to manage vehicle maintenance, fuel records, towing services, and fuel cards. It integrates with external fuel stations, provides complete fleet tracking, and streamlines operational workflows. The system aims for significant market potential by offering mobile-optimized interfaces and a complete suite of tools for fleet operation and analysis, including financial tracking and detailed reporting capabilities.
 
+## Recent Changes: Latest modifications with dates
+
+### Setembro 2025
+- **02/09/2025**: Adicionada versão do sistema (v2.9.2) no rodapé para rastreamento de atualizações
+- **02/09/2025**: Resolvido sistema crítico de detalhamento de peças - corrigido JSON duplo no backend e padronizada estrutura de dados entre oficina e sistema principal
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
