@@ -66,6 +66,9 @@ function getConsumoByModel(modelo: string): number {
 let cacheData: { data: any[], timestamp: number } | null = null;
 const CACHE_TTL = 30000; // 30 segundos
 
+// Limpar cache após correção dos campos
+cacheData = null;
+
 export async function getFuelCardSolicitations(req: Request, res: Response) {
   try {
     // OTIMIZAÇÃO: Usar cache se disponível e não expirado
@@ -236,8 +239,8 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           COALESCE(fcr.card_type, 'Padrão') as tipo_cartao,
           COALESCE(fcr.provider, 'Padrão') as provedor_cartao,
           COALESCE(fcr.card_number, '') as numero_cartao,
-          COALESCE(fcr.requested_by, 'Motorista não informado') as motorista,
-          COALESCE(fcr.driver_name, 'Nome não informado') as solicitante,
+          COALESCE(fcr.driver_name, 'Motorista não informado') as motorista,
+          COALESCE(fcr.requested_by, 'Nome não informado') as solicitante,
           COALESCE(fcr.driver_phone, '') as telefone_celular,
           COALESCE(fcr.reason, 'Sem observações') as observacoes,
           fcr.status,
