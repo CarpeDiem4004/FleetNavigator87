@@ -6,6 +6,9 @@ This is a comprehensive fleet management system designed to manage vehicle maint
 ## Recent Changes: Latest modifications with dates
 
 ### Setembro 2025
+- **02/09/2025**: Atualizações gerais do sistema (v2.9.4)
+- **02/09/2025**: Sistema de versionamento automático implementado (v2.9.3) - versão dinâmica nos layouts, script de incremento automático e controle de changelog integrado
+- **02/09/2025**: Correção do cálculo de valor total atendido - incluindo status "atendido" além de "Recarga Efetuada" 
 - **02/09/2025**: Adicionada versão do sistema (v2.9.2) no rodapé para rastreamento de atualizações
 - **02/09/2025**: Resolvido sistema crítico de detalhamento de peças - corrigido JSON duplo no backend e padronizada estrutura de dados entre oficina e sistema principal
 

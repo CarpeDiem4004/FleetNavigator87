@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react';
+import { APP_VERSION } from '@shared/version';
 
 interface MainLayoutSimpleProps {
   children: ReactNode;
@@ -17,7 +18,7 @@ const MainLayoutSimple: React.FC<MainLayoutSimpleProps> = ({ children }) => {
           &copy; {new Date().getFullYear()} Muricion Fleet - Todos os direitos reservados
           <br />
           <span className="text-xs text-gray-400">
-            Desenvolvido por Carpe Diem 4004 | suporte 11 970558053 | Sistema v2.9.2
+            Desenvolvido por Carpe Diem 4004 | suporte 11 970558053 | Sistema {APP_VERSION.full}
           </span>
         </div>
       </footer>

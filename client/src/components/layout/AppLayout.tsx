@@ -29,6 +29,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { APP_VERSION } from '@shared/version';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -349,7 +350,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </div>
           {/* Rodapé discreto */}
           <footer className="text-center py-2 text-xs text-gray-400 bg-gray-50 border-t">
-            Desenvolvido por Carpe Diem 4004 | suporte 11 970558053 | Sistema v2.9.2
+            Desenvolvido por Carpe Diem 4004 | suporte 11 970558053 | Sistema {APP_VERSION.full}
           </footer>
         </main>
       </div>
