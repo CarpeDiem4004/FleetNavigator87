@@ -1135,11 +1135,7 @@ export default function BudgetManagementPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {formatCurrency(
-                          workshopBudgets
-                            .filter(b => b.status === "aprovado")
-                            .reduce((sum, b) => sum + b.total_cost, 0)
-                        )}
+                        {budgetSummary ? formatCurrency(budgetSummary.valor_total_aprovado || 0) : 'R$ 0,00'}
                       </div>
                     </CardContent>
                   </Card>
@@ -1148,30 +1144,63 @@ export default function BudgetManagementPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Número do Orçamento</TableHead>
-                      <TableHead>Valor</TableHead>
+                      <TableHead>Placa do Veículo</TableHead>
+                      <TableHead>Valor Solicitado</TableHead>
+                      <TableHead>Valor Aprovado</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Data de Aprovação</TableHead>
                       <TableHead>Faturado</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {workshopBudgets.map((budget) => (
+                    {budgetRequests.map((budget) => (
                       <TableRow key={budget.id}>
                         <TableCell className="font-medium">
                           #{budget.id}
                         </TableCell>
-                        <TableCell>{formatCurrency(budget.total_cost)}</TableCell>
                         <TableCell>
-                          <Badge variant={budget.status === "aprovado" ? "default" : "secondary"}>
-                            {budget.status}
+                          <span className="font-medium text-blue-600">
+                            {budget.vehicle_plate || 'N/A'}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-medium">
+                            {formatCurrency(budget.estimated_value || 0)}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {budget.approved_value ? (
+                            <span className="font-medium text-green-600">
+                              {formatCurrency(budget.approved_value)}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant="default"
+                            className={
+                              budget.status === 'aprovado' ? 'bg-green-100 text-green-800 border-green-300' :
+                              budget.status === 'pendente' ? 'bg-orange-100 text-orange-800 border-orange-300' :
+                              budget.status === 'em_analise' ? 'bg-blue-100 text-blue-800 border-blue-300' :
+                              budget.status === 'rejeitado' ? 'bg-red-100 text-red-800 border-red-300' :
+                              'bg-gray-100 text-gray-800 border-gray-300'
+                            }
+                          >
+                            {budget.status === 'pendente' ? '⏳ Aguardando' :
+                             budget.status === 'aprovado' ? '✅ Aprovado' :
+                             budget.status === 'em_analise' ? '🔍 Em Análise' :
+                             budget.status === 'rejeitado' ? '❌ Rejeitado' :
+                             budget.status}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {budget.approved_date ? new Date(budget.approved_date).toLocaleDateString() : "-"}
+                          {budget.approved_at ? formatDate(budget.approved_at) : '-'}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={budget.is_billed ? "default" : "outline"}>
-                            {budget.is_billed ? "Sim" : "Não"}
+                          <Badge variant={budget.status === 'aprovado' ? "default" : "outline"}>
+                            {budget.status === 'aprovado' ? "Faturado" : "Pendente"}
                           </Badge>
                         </TableCell>
                       </TableRow>
