@@ -138,7 +138,7 @@ export default function EquipmentResponsible() {
   });
 
   // Buscar termos de responsabilidade
-  const { data: responsibilityTerms = [], isLoading } = useQuery({
+  const { data: responsibilityTerms = [], isLoading } = useQuery<ResponsibilityTerm[]>({
     queryKey: ["/api/equipment/equipment-responsibility-terms"],
   });
 
@@ -163,10 +163,15 @@ export default function EquipmentResponsible() {
   // Mutation para criar novo termo de responsabilidade
   const createMutation = useMutation({
     mutationFn: async (data: ResponsibleFormData) => {
-      return apiRequest("/api/equipment/equipment-responsibility-terms", {
+      const response = await fetch("/api/equipment/equipment-responsibility-terms", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(data),
       });
+      if (!response.ok) throw new Error('Erro ao criar termo');
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/equipment/equipment-responsibility-terms"] });
@@ -190,10 +195,15 @@ export default function EquipmentResponsible() {
   // Mutation para atualizar termo de responsabilidade
   const updateMutation = useMutation({
     mutationFn: async (data: ResponsibleFormData) => {
-      return apiRequest(`/api/equipment/equipment-responsibility-terms/${editingId}`, {
+      const response = await fetch(`/api/equipment/equipment-responsibility-terms/${editingId}`, {
         method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(data),
       });
+      if (!response.ok) throw new Error('Erro ao atualizar termo');
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/equipment/equipment-responsibility-terms"] });
@@ -219,10 +229,15 @@ export default function EquipmentResponsible() {
   // Mutation para marcar retorno do equipamento
   const returnMutation = useMutation({
     mutationFn: async ({ id, condition }: { id: number; condition: string }) => {
-      return apiRequest(`/api/equipment/equipment-responsibility-terms/${id}/return`, {
+      const response = await fetch(`/api/equipment/equipment-responsibility-terms/${id}/return`, {
         method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ condition_at_return: condition }),
       });
+      if (!response.ok) throw new Error('Erro ao marcar retorno');
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/equipment/equipment-responsibility-terms"] });
