@@ -1014,9 +1014,9 @@ const FuelCardRequestsPanel: React.FC = () => {
     ).length;
     const atendidas = solicitations.filter(s => s.status === 'Recarga Efetuada' || s.status === 'atendido').length;
     
-    // Calcular valor total atendido com validação numérica
+    // Calcular valor total atendido com validação numérica - incluindo ambos os status
     const valorTotalAtendido = solicitations
-      .filter(s => s.status === 'Recarga Efetuada')
+      .filter(s => s.status === 'Recarga Efetuada' || s.status === 'atendido')
       .reduce((total, s) => {
         const valor = parseFloat(s.valor_solicitado?.toString() || '0');
         return total + (isNaN(valor) ? 0 : valor);
