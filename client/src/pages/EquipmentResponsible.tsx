@@ -139,7 +139,7 @@ export default function EquipmentResponsible() {
 
   // Buscar termos de responsabilidade
   const { data: responsibilityTerms = [], isLoading } = useQuery<ResponsibilityTerm[]>({
-    queryKey: ["/api/equipment-responsibility-terms"],
+    queryKey: ["/api/equipment/equipment-responsibility-terms"],
     select: (data: any) => {
       console.log('[FRONTEND] Dados recebidos do backend:', data);
       return data?.data || data || [];
@@ -167,7 +167,7 @@ export default function EquipmentResponsible() {
   // Mutation para criar novo termo de responsabilidade
   const createMutation = useMutation({
     mutationFn: async (data: ResponsibleFormData) => {
-      const response = await fetch("/api/equipment-responsibility-terms", {
+      const response = await fetch("/api/equipment/equipment-responsibility-terms", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -178,7 +178,7 @@ export default function EquipmentResponsible() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/equipment-responsibility-terms"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/equipment/equipment-responsibility-terms"] });
       queryClient.invalidateQueries({ queryKey: ["/api/equipment"] });
       toast({
         title: "Sucesso",
@@ -199,7 +199,7 @@ export default function EquipmentResponsible() {
   // Mutation para atualizar termo de responsabilidade
   const updateMutation = useMutation({
     mutationFn: async (data: ResponsibleFormData) => {
-      const response = await fetch(`/api/equipment-responsibility-terms/${editingId}`, {
+      const response = await fetch(`/api/equipment/equipment-responsibility-terms/${editingId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -210,7 +210,7 @@ export default function EquipmentResponsible() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/equipment-responsibility-terms"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/equipment/equipment-responsibility-terms"] });
       queryClient.invalidateQueries({ queryKey: ["/api/equipment"] });
       toast({
         title: "Sucesso",
@@ -233,7 +233,7 @@ export default function EquipmentResponsible() {
   // Mutation para marcar retorno do equipamento
   const returnMutation = useMutation({
     mutationFn: async ({ id, condition }: { id: number; condition: string }) => {
-      const response = await fetch(`/api/equipment-responsibility-terms/${id}/return`, {
+      const response = await fetch(`/api/equipment/equipment-responsibility-terms/${id}/return`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -244,7 +244,7 @@ export default function EquipmentResponsible() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/equipment-responsibility-terms"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/equipment/equipment-responsibility-terms"] });
       queryClient.invalidateQueries({ queryKey: ["/api/equipment"] });
       toast({
         title: "Sucesso",
