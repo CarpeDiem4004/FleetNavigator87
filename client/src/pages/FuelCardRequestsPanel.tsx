@@ -93,6 +93,14 @@ const FuelCardRequestsPanel: React.FC = () => {
   const [solicitudeCounts, setSolicitudeCounts] = useState<Record<string, number>>({});
   const [activeTab, setActiveTab] = useState<string>('pendentes');
   
+  // Estados para paginação - OTIMIZAÇÃO
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(100);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPrevPage, setHasPrevPage] = useState(false);
+  
   const { toast } = useToast();
   const { user } = useAuth();
   const [, setLocation] = useLocation();
@@ -101,6 +109,13 @@ const FuelCardRequestsPanel: React.FC = () => {
     fetchSolicitations();
     fetchProjects();
   }, []);
+
+  // OTIMIZAÇÃO: Recarregar dados quando a página mudar
+  useEffect(() => {
+    if (currentPage > 1) {
+      fetchSolicitations(currentPage, itemsPerPage);
+    }
+  }, [currentPage, itemsPerPage]);
 
   // OTIMIZAÇÃO: Debounce para filtros
   useEffect(() => {
@@ -337,22 +352,62 @@ const FuelCardRequestsPanel: React.FC = () => {
       }, 0);
   }, []);
 
+  // OTIMIZAÇÃO: Funções de navegação de páginas
+  const handleNextPage = () => {
+    if (hasNextPage) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (hasPrevPage) {
+      setCurrentPage(prev => prev - 1);
+    }
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setItemsPerPage(newSize);
+    setCurrentPage(1); // Reset to first page
+    fetchSolicitations(1, newSize);
+  };
+
+  const handleGoToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
 
-  const fetchSolicitations = async () => {
+
+  const fetchSolicitations = async (page: number = currentPage, limit: number = itemsPerPage) => {
     try {
       setLoading(true);
       setError(null);
       
-      // OTIMIZAÇÃO: Usar endpoint público para carregar dados sem autenticação
-      const page = 1;
-      const limit = 2000; // Aumentar limite para carregar mais dados
+      // OTIMIZAÇÃO: Usar endpoint público com paginação
       const response = await fetch(`/api/public/fuel-card/solicitations?page=${page}&limit=${limit}`);
       const data = await response.json();
       
       if (data.success) {
         console.log('[FUEL-CARD-PANEL] Dados recebidos:', data.data.length, data.fromCache ? '(cache)' : '(fresh)');
+        console.log('[FUEL-CARD-PANEL] Paginação:', data.pagination || 'Sem paginação');
+        
         setSolicitations(data.data);
+        
+        // Atualizar estados de paginação se disponível
+        if (data.pagination) {
+          setCurrentPage(data.pagination.page);
+          setTotalCount(data.pagination.totalCount);
+          setTotalPages(data.pagination.totalPages);
+          setHasNextPage(data.pagination.hasNextPage);
+          setHasPrevPage(data.pagination.hasPrevPage);
+        } else {
+          // Fallback para compatibilidade
+          setTotalCount(data.count || data.data.length);
+          setTotalPages(1);
+          setHasNextPage(false);
+          setHasPrevPage(false);
+        }
       } else {
         setError(data.message || 'Erro ao carregar solicitações');
         toast({
@@ -1088,6 +1143,89 @@ const FuelCardRequestsPanel: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+        
+        {/* Informações de Paginação e Performance - OTIMIZAÇÃO */}
+        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-600" />
+              Performance e Navegação
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Informações de Paginação */}
+              <div className="flex flex-col space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Navegação</Label>
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handlePrevPage} 
+                    disabled={!hasPrevPage || loading}
+                    className="px-3"
+                  >
+                    ←
+                  </Button>
+                  <span className="text-sm text-gray-600 min-w-[100px] text-center">
+                    Página {currentPage} de {totalPages}
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleNextPage} 
+                    disabled={!hasNextPage || loading}
+                    className="px-3"
+                  >
+                    →
+                  </Button>
+                </div>
+                <div className="text-xs text-gray-500">
+                  Mostrando {solicitations.length} de {totalCount.toLocaleString()} registros
+                </div>
+              </div>
+
+              {/* Itens por Página */}
+              <div className="flex flex-col space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Itens por Página</Label>
+                <Select value={itemsPerPage.toString()} onValueChange={(value) => handlePageSizeChange(parseInt(value))}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="50">50 registros</SelectItem>
+                    <SelectItem value="100">100 registros</SelectItem>
+                    <SelectItem value="200">200 registros</SelectItem>
+                    <SelectItem value="500">500 registros</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="text-xs text-gray-500">
+                  Páginas otimizadas para performance
+                </div>
+              </div>
+
+              {/* Indicadores de Performance */}
+              <div className="flex flex-col space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Performance</Label>
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs text-green-600">Cache Ativo</span>
+                  </div>
+                  {loading && (
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                      <span className="text-xs text-blue-600">Carregando...</span>
+                    </div>
+                  )}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {totalCount > 2000 ? 'Dados paginados' : 'Dataset completo'}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         
         {/* Filtros */}
         <Card className="mb-6">

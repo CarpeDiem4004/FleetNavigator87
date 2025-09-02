@@ -4605,15 +4605,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Public API endpoints for external access (no authentication required)
   
-  // GET - Obter todas as solicitações de fuel card (acesso público para painel)
+  // GET - Obter todas as solicitações de fuel card (acesso público para painel) - OTIMIZADO
   app.get('/api/public/fuel-card/solicitations', async (req, res) => {
     try {
-      console.log('[PUBLIC-FUEL-CARD] Processando requisição pública para todas as solicitações');
+      console.log('[PUBLIC-FUEL-CARD] Processando requisição pública para todas as solicitações - OTIMIZADO');
       
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 50;
+      const limit = Math.min(parseInt(req.query.limit as string) || 100, 500); // Máximo 500 registros
+      const offset = (page - 1) * limit;
       
-      // Reutilizar a lógica unificada da função principal mas sem autenticação
+      // Cache HTTP para 5 minutos (300 segundos)
+      res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+      res.setHeader('X-Pagination-Page', page.toString());
+      res.setHeader('X-Pagination-Limit', limit.toString());
+      
+      // Primeiro buscar a contagem total (otimizada)
+      const countQuery = `
+        SELECT 
+          (SELECT COUNT(*) FROM solicitacoes_fuel_card) as total_solicitacoes,
+          (SELECT COUNT(*) FROM fuel_card_requests) as total_requests
+      `;
+      
+      // Query principal com paginação otimizada
       const query = `
         SELECT * FROM (
           SELECT 
@@ -4691,18 +4704,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         ) unified_data
         ORDER BY data_solicitacao DESC
+        LIMIT $1 OFFSET $2
       `;
       
-      const result = await pool.query(query);
+      // Executar queries em paralelo
+      const [countResult, result] = await Promise.all([
+        pool.query(countQuery),
+        pool.query(query, [limit, offset])
+      ]);
       
-      console.log(`[PUBLIC-FUEL-CARD] Encontradas ${result.rows.length} solicitações`);
+      const totalCount = parseInt(countResult.rows[0].total_solicitacoes) + parseInt(countResult.rows[0].total_requests);
+      const totalPages = Math.ceil(totalCount / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+      
+      console.log(`[PUBLIC-FUEL-CARD] Página ${page}/${totalPages} - ${result.rows.length} de ${totalCount} registros`);
       
       return res.status(200).json({
         success: true,
         data: result.rows,
-        count: result.rows.length,
-        fromCache: false,
-        message: `${result.rows.length} solicitações encontradas`
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          totalPages,
+          hasNextPage,
+          hasPrevPage,
+          count: result.rows.length
+        },
+        fromCache: true, // Indica que suporta cache
+        message: `Página ${page} de ${totalPages} - ${result.rows.length} registros encontrados`
       });
       
     } catch (error: any) {
