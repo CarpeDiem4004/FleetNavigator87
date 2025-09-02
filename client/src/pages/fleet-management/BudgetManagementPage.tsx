@@ -251,19 +251,19 @@ export default function BudgetManagementPage() {
 
   // Funções para gerenciar lista de peças/serviços
   const addBudgetItem = () => {
-    if (!newItem.name || !newItem.description || newItem.unit_price <= 0) {
+    if (!newItem.name || !newItem.description) {
       toast({
         title: "Campos obrigatórios",
-        description: "Preencha nome, descrição e preço unitário",
+        description: "Preencha nome e descrição da peça/serviço",
         variant: "destructive"
       });
       return;
     }
 
-    const totalPrice = newItem.quantity * newItem.unit_price;
     const item = {
       ...newItem,
-      total_price: totalPrice
+      unit_price: 0, // A oficina vai preencher o preço
+      total_price: 0  // A oficina vai calcular o total
     };
 
     setBudgetItems(prev => [...prev, item]);
@@ -276,7 +276,7 @@ export default function BudgetManagementPage() {
 
     toast({
       title: "Item adicionado",
-      description: "Peça/serviço adicionado ao orçamento",
+      description: "Peça/serviço adicionado à lista",
     });
   };
 
@@ -564,39 +564,22 @@ export default function BudgetManagementPage() {
 
   // Função para visualizar detalhes do orçamento
   const handleViewBudget = (budget: BudgetRequest) => {
-    console.log("🔍 DEBUG handleViewBudget - budget completo:", budget);
-    
     // Processar parts_json para parts_details na visualização
     let processedBudget = { ...budget };
     
     // Sempre tentar processar parts_json se existir
     if (budget.parts_json) {
       try {
-        console.log("🔍 DEBUG budget.parts_json BRUTO:", budget.parts_json);
-        console.log("🔍 DEBUG budget.parts_json TIPO:", typeof budget.parts_json);
-        
         // Fazer parse duplo se necessário (caso esteja como string escapada)
         let parsed = budget.parts_json;
         if (typeof parsed === 'string') {
-          try {
-            parsed = JSON.parse(parsed);
-            console.log("🔍 DEBUG primeiro parse:", parsed);
-          } catch (e) {
-            console.log("🔍 DEBUG erro no primeiro parse:", e);
-          }
+          parsed = JSON.parse(parsed);
         }
         if (typeof parsed === 'string') {
-          try {
-            parsed = JSON.parse(parsed);
-            console.log("🔍 DEBUG segundo parse:", parsed);
-          } catch (e) {
-            console.log("🔍 DEBUG erro no segundo parse:", e);
-          }
+          parsed = JSON.parse(parsed);
         }
         
-        console.log("🔍 DEBUG parsed FINAL:", parsed);
         const rawParts = Array.isArray(parsed) ? parsed : [];
-        console.log("🔍 DEBUG rawParts:", rawParts);
         
         if (rawParts.length > 0) {
           processedBudget.parts_details = rawParts.map(part => ({
@@ -606,21 +589,16 @@ export default function BudgetManagementPage() {
             unit_price: part.value || part.unit_price || 0,
             total_price: part.total_price || part.value || (part.quantity || 1) * (part.unit_price || part.value || 0)
           }));
-          console.log("🔍 DEBUG processedBudget.parts_details FINAL:", processedBudget.parts_details);
         } else {
-          console.log("🔍 DEBUG rawParts está vazio");
           processedBudget.parts_details = [];
         }
       } catch (error) {
-        console.error("🔍 DEBUG Erro ao processar parts_json:", error);
+        console.error("Erro ao processar parts_json:", error);
         processedBudget.parts_details = [];
       }
     } else {
-      console.log("🔍 DEBUG budget.parts_json não existe");
       processedBudget.parts_details = [];
     }
-    
-    console.log("🔍 DEBUG processedBudget.parts_details LENGTH:", processedBudget.parts_details?.length || 0);
     
     setViewingBudget(processedBudget);
     setViewBudgetDialogOpen(true);
@@ -2003,6 +1981,84 @@ export default function BudgetManagementPage() {
               placeholder="Descreva detalhadamente o problema ou serviço necessário..."
             />
           </div>
+          
+          {/* Seção para adicionar peças/serviços */}
+          <div className="space-y-4 border-t pt-4">
+            <h4 className="text-sm font-medium">Lista de Peças/Serviços</h4>
+            <p className="text-xs text-gray-600">Adicione as peças ou serviços que precisam de orçamento. A oficina vai preencher os preços.</p>
+            
+            {/* Formulário para adicionar nova peça */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="nome-peca">Nome da Peça/Serviço</Label>
+                <Input
+                  id="nome-peca"
+                  value={newItem.name}
+                  onChange={(e) => setNewItem(prev => ({...prev, name: e.target.value}))}
+                  placeholder="Ex: Amortecedor dianteiro"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="descricao-peca">Descrição</Label>
+                <Input
+                  id="descricao-peca"
+                  value={newItem.description}
+                  onChange={(e) => setNewItem(prev => ({...prev, description: e.target.value}))}
+                  placeholder="Ex: Par de amortecedores lado direito"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quantidade">Quantidade</Label>
+                <Input
+                  id="quantidade"
+                  type="number"
+                  min="1"
+                  value={newItem.quantity}
+                  onChange={(e) => setNewItem(prev => ({...prev, quantity: parseInt(e.target.value) || 1}))}
+                />
+              </div>
+              <div className="flex items-end">
+                <Button 
+                  type="button" 
+                  onClick={addBudgetItem}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Adicionar à Lista
+                </Button>
+              </div>
+            </div>
+            
+            {/* Lista de peças adicionadas */}
+            {budgetItems.length > 0 && (
+              <div className="space-y-2">
+                <Label>Peças/Serviços Adicionados ({budgetItems.length})</Label>
+                <div className="border rounded-lg max-h-40 overflow-y-auto">
+                  {budgetItems.map((item, index) => (
+                    <div key={index} className="p-3 border-b last:border-b-0 flex justify-between items-start">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{item.name}</p>
+                        {item.description && (
+                          <p className="text-xs text-gray-600">{item.description}</p>
+                        )}
+                        <p className="text-xs text-gray-500">Quantidade: {item.quantity}</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeBudgetItem(index)}
+                        className="text-red-600 hover:text-red-800 ml-2"
+                      >
+                        ✕
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          
           <DialogFooter>
             <Button variant="outline" onClick={() => { resetRequestForm(); setRequestDialogOpen(false); }}>
               Cancelar
