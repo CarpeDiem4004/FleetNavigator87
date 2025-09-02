@@ -34,7 +34,10 @@ const AUTOFREI_ID = 12;
 interface Part {
   id: string;
   name: string;
-  value: string;
+  description: string;
+  quantity: number;
+  unit_price: string;
+  isFromRequest?: boolean; // Indica se é uma peça da solicitação original
 }
 
 interface BudgetResponse {
@@ -181,7 +184,10 @@ export default function AutofreiSolicitacoes() {
     const newPart: Part = {
       id: `part_${Date.now()}`,
       name: '',
-      value: ''
+      description: '',
+      quantity: 1,
+      unit_price: '',
+      isFromRequest: false
     };
     setResponse(prev => ({
       ...prev,
@@ -196,7 +202,7 @@ export default function AutofreiSolicitacoes() {
     }));
   };
 
-  const updatePart = (partId: string, field: keyof Omit<Part, 'id'>, value: string) => {
+  const updatePart = (partId: string, field: keyof Omit<Part, 'id'>, value: string | number) => {
     setResponse(prev => ({
       ...prev,
       parts: prev.parts.map(part => 
@@ -207,8 +213,8 @@ export default function AutofreiSolicitacoes() {
 
   const calculatePartsTotal = () => {
     return response.parts.reduce((total, part) => {
-      const value = parseFloat(part.value) || 0;
-      return total + value;
+      const unitPrice = parseFloat(part.unit_price) || 0;
+      return total + (unitPrice * part.quantity);
     }, 0);
   };
 
@@ -250,41 +256,40 @@ export default function AutofreiSolicitacoes() {
         const result = await response.json();
         const budgetData = result.data;
         
-        // Se existe um orçamento salvo, carregar os dados
-        if (budgetData && budgetData.estimated_value) {
-          let existingParts: Part[] = [];
-          
-          // Processar parts_json se existe
-          if (budgetData.parts_json) {
-            try {
-              console.log('DEBUG - parts_json bruto:', budgetData.parts_json);
-              
-              // O parts_json pode estar como string escapada, então precisamos fazer parse duplo
-              let parsedParts = budgetData.parts_json;
-              if (typeof parsedParts === 'string') {
-                parsedParts = JSON.parse(parsedParts);
-              }
-              if (typeof parsedParts === 'string') {
-                parsedParts = JSON.parse(parsedParts);
-              }
-              
-              console.log('DEBUG - parts_json processado:', parsedParts);
-              
-              existingParts = Array.isArray(parsedParts) ? parsedParts.map((part, index) => ({
-                id: `part_${index}_${Date.now()}`,
-                name: part.name || '',
-                value: (part.value || 0).toString()
-              })) : [];
-              
-              console.log('DEBUG - peças processadas:', existingParts);
-            } catch (e) {
-              console.error('Erro ao processar parts_json:', e);
-              existingParts = [];
+        let requestParts: Part[] = [];
+        
+        // PRIMEIRO: Carregar peças da solicitação original (se houver)
+        if (budgetData && budgetData.parts_json) {
+          try {
+            // O parts_json pode estar como string escapada, então precisamos fazer parse duplo
+            let parsedParts = budgetData.parts_json;
+            if (typeof parsedParts === 'string') {
+              parsedParts = JSON.parse(parsedParts);
             }
+            if (typeof parsedParts === 'string') {
+              parsedParts = JSON.parse(parsedParts);
+            }
+            
+            if (Array.isArray(parsedParts) && parsedParts.length > 0) {
+              requestParts = parsedParts.map((part, index) => ({
+                id: `request_part_${index}_${Date.now()}`,
+                name: part.name || '',
+                description: part.description || part.name || '',
+                quantity: part.quantity || 1,
+                unit_price: (part.unit_price || part.value || 0).toString(),
+                isFromRequest: true
+              }));
+            }
+          } catch (e) {
+            console.error('Erro ao processar parts_json da solicitação:', e);
+            requestParts = [];
           }
-          
+        }
+        
+        // Se existe um orçamento já respondido, carregar os dados salvos
+        if (budgetData && budgetData.estimated_value) {
           // Calcular valores
-          const partsTotal = existingParts.reduce((total, part) => total + (parseFloat(part.value) || 0), 0);
+          const partsTotal = requestParts.reduce((total, part) => total + (parseFloat(part.unit_price) * part.quantity), 0);
           const estimatedValue = parseFloat(budgetData.estimated_value) || 0;
           const laborCost = Math.max(0, estimatedValue - partsTotal);
           
@@ -295,16 +300,10 @@ export default function AutofreiSolicitacoes() {
             estimated_days: budgetData.estimated_days ? budgetData.estimated_days.toString() : '',
             priority: budgetData.priority || 'normal',
             observations: budgetData.observations || '',
-            parts: existingParts
-          });
-          
-          console.log('DEBUG - Dados carregados:', {
-            estimated_value: budgetData.estimated_value,
-            parts_json: budgetData.parts_json,
-            parts: existingParts
+            parts: requestParts
           });
         } else {
-          // Orçamento novo - inicializar vazio
+          // Orçamento novo - carregar peças da solicitação sem preços
           setResponse({
             labor_cost: '',
             parts_cost: '',
@@ -312,7 +311,7 @@ export default function AutofreiSolicitacoes() {
             estimated_days: '',
             priority: 'normal',
             observations: '',
-            parts: []
+            parts: requestParts.map(part => ({ ...part, unit_price: '' })) // Limpar preços para nova cotação
           });
         }
       } else {
@@ -414,17 +413,17 @@ export default function AutofreiSolicitacoes() {
         workshop_id: AUTOFREI_ID,
         parts_json: JSON.stringify(response.parts.map(part => ({
           name: part.name,
-          description: part.name,
-          quantity: 1,
-          unit_price: parseFloat(part.value) || 0,
-          total_price: parseFloat(part.value) || 0
+          description: part.description,
+          quantity: part.quantity,
+          unit_price: parseFloat(part.unit_price) || 0,
+          total_price: (parseFloat(part.unit_price) || 0) * part.quantity
         }))),
         parts_breakdown: response.parts.map(part => ({
           name: part.name,
-          description: part.name,
-          quantity: 1,
-          unit_price: parseFloat(part.value) || 0,
-          total_price: parseFloat(part.value) || 0
+          description: part.description,
+          quantity: part.quantity,
+          unit_price: parseFloat(part.unit_price) || 0,
+          total_price: (parseFloat(part.unit_price) || 0) * part.quantity
         }))
       };
 
@@ -804,35 +803,92 @@ export default function AutofreiSolicitacoes() {
               {response.parts.length > 0 && (
                 <div className="space-y-3 border rounded-lg p-4 bg-gray-50">
                   {response.parts.map((part, index) => (
-                    <div key={part.id} className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <Input
-                          placeholder="Nome da peça/material"
-                          value={part.name}
-                          onChange={(e) => updatePart(part.id, 'name', e.target.value)}
-                          disabled={selectedRequest?.status === 'aprovado'}
-                        />
+                    <div key={part.id} className="space-y-2 border-b border-gray-200 pb-3 last:border-b-0">
+                      {part.isFromRequest && (
+                        <div className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded">
+                          ⚙️ Peça da Solicitação Original
+                        </div>
+                      )}
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        {/* Nome */}
+                        <div>
+                          <Label className="text-xs text-gray-600">Nome da Peça</Label>
+                          <Input
+                            placeholder="Nome da peça/material"
+                            value={part.name}
+                            onChange={(e) => updatePart(part.id, 'name', e.target.value)}
+                            disabled={selectedRequest?.status === 'aprovado' || part.isFromRequest}
+                            className={part.isFromRequest ? 'bg-blue-50' : ''}
+                          />
+                        </div>
+                        
+                        {/* Descrição */}
+                        <div>
+                          <Label className="text-xs text-gray-600">Descrição</Label>
+                          <Input
+                            placeholder="Descrição detalhada"
+                            value={part.description}
+                            onChange={(e) => updatePart(part.id, 'description', e.target.value)}
+                            disabled={selectedRequest?.status === 'aprovado' || part.isFromRequest}
+                            className={part.isFromRequest ? 'bg-blue-50' : ''}
+                          />
+                        </div>
+                        
+                        {/* Quantidade */}
+                        <div>
+                          <Label className="text-xs text-gray-600">Qtd</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            placeholder="Qtd"
+                            value={part.quantity}
+                            onChange={(e) => updatePart(part.id, 'quantity', parseInt(e.target.value) || 1)}
+                            disabled={selectedRequest?.status === 'aprovado' || part.isFromRequest}
+                            className={part.isFromRequest ? 'bg-blue-50' : ''}
+                          />
+                        </div>
                       </div>
-                      <div className="w-32">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="Valor"
-                          value={part.value}
-                          onChange={(e) => updatePart(part.id, 'value', e.target.value)}
-                          disabled={selectedRequest?.status === 'aprovado'}
-                        />
+                      
+                      <div className="flex items-center gap-2">
+                        {/* Preço Unitário */}
+                        <div className="flex-1">
+                          <Label className="text-xs text-gray-600">Preço Unitário (R$)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0,00"
+                            value={part.unit_price}
+                            onChange={(e) => updatePart(part.id, 'unit_price', e.target.value)}
+                            disabled={selectedRequest?.status === 'aprovado'}
+                            className="font-medium"
+                          />
+                        </div>
+                        
+                        {/* Total da Peça */}
+                        <div className="w-32">
+                          <Label className="text-xs text-gray-600">Total</Label>
+                          <div className="h-10 bg-gray-100 border rounded px-3 flex items-center text-sm font-medium">
+                            R$ {((parseFloat(part.unit_price) || 0) * part.quantity).toFixed(2)}
+                          </div>
+                        </div>
+                        
+                        {/* Botão Remover (apenas para peças adicionais) */}
+                        {!part.isFromRequest && (
+                          <div className="pt-5">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removePart(part.id)}
+                              className="text-red-600 hover:text-red-700"
+                              disabled={selectedRequest?.status === 'aprovado'}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removePart(part.id)}
-                        className="text-red-600 hover:text-red-700"
-                        disabled={selectedRequest?.status === 'aprovado'}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
                   ))}
                   
@@ -848,7 +904,9 @@ export default function AutofreiSolicitacoes() {
 
               {response.parts.length === 0 && (
                 <div className="text-center py-4 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
-                  Clique em "Adicionar Peça" para incluir peças no orçamento
+                  <p className="font-medium">Nenhuma peça solicitada</p>
+                  <p className="text-sm mt-1">Esta solicitação não possui lista de peças específicas.</p>
+                  <p className="text-sm">Use "Adicionar Peça" para incluir materiais necessários.</p>
                 </div>
               )}
             </div>
