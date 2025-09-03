@@ -322,7 +322,6 @@ export default function BudgetManagementPage() {
           let parts_details = [];
           if (budget.parts_json) {
             try {
-              console.log("DEBUG fetchBudgetRequests - budget.parts_json:", budget.parts_json);
               
               // Fazer parse duplo se necessário
               let parsed = budget.parts_json;
@@ -333,7 +332,6 @@ export default function BudgetManagementPage() {
                 parsed = JSON.parse(parsed);
               }
               
-              console.log("DEBUG fetchBudgetRequests - parsed:", parsed);
               const rawParts = Array.isArray(parsed) ? parsed : [];
               
               parts_details = rawParts.map(part => {
@@ -350,7 +348,6 @@ export default function BudgetManagementPage() {
                   total_price: totalPrice
                 };
               });
-              console.log("DEBUG fetchBudgetRequests - parts_details:", parts_details);
             } catch (error) {
               console.error("Erro ao fazer parse do JSON das peças:", error);
               parts_details = [];
