@@ -43,11 +43,16 @@ export default function AutofreiDashboard() {
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pendingRequests, setPendingRequests] = useState(0);
+  const [ordensAtivas, setOrdensAtivas] = useState(0);
+  const [aguardandoPecas, setAguardandoPecas] = useState(0);
+  const [concluidasHoje, setConcluidasHoje] = useState(0);
+  const [faturamentoMes, setFaturamentoMes] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
     loadServiceOrders();
     loadPendingRequests();
+    loadDashboardData();
   }, []);
 
   const loadServiceOrders = async () => {
@@ -91,6 +96,62 @@ export default function AutofreiDashboard() {
       }
     } catch (error) {
       console.error('Erro ao carregar solicitações pendentes:', error);
+    }
+  };
+
+  const loadDashboardData = async () => {
+    try {
+      const token = localStorage.getItem('oficina_token') || 'auto_token_autofrei_225e2596c711cdcafa624fce2bfc6052';
+      
+      const response = await fetch('/api/campinas/budget-requests', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // Filtrar apenas orçamentos da AUTOFREI
+          const autofreiRequests = result.data.filter((request: any) => 
+            request.workshop_id === AUTOFREI_ID
+          );
+
+          // Calcular dados do dashboard
+          const hoje = new Date().toISOString().split('T')[0];
+
+          // 1. Ordens Ativas - em negociação, aprovado, em andamento
+          const ativas = autofreiRequests.filter((req: any) => 
+            ['em_negociacao', 'aprovado', 'em_andamento'].includes(req.status)
+          ).length;
+          setOrdensAtivas(ativas);
+
+          // 2. Aguardando Peças - orçamentos que têm peças definidas mas ainda não foram finalizados
+          const aguardando = autofreiRequests.filter((req: any) => 
+            req.status === 'aguardando_pecas' || 
+            (req.parts_json && req.parts_json !== '[]' && ['em_negociacao', 'aprovado'].includes(req.status))
+          ).length;
+          setAguardandoPecas(aguardando);
+
+          // 3. Concluídas Hoje - orçamentos atualizados hoje com status concluído
+          const concluidas = autofreiRequests.filter((req: any) => {
+            const updateDate = req.updated_at ? req.updated_at.split('T')[0] : req.created_at.split('T')[0];
+            return updateDate === hoje && ['concluido', 'finalizado', 'entregue'].includes(req.status);
+          }).length;
+          setConcluidasHoje(concluidas);
+
+          // 4. Faturamento - soma dos valores dos orçamentos aprovados/concluídos
+          const faturamento = autofreiRequests
+            .filter((req: any) => ['aprovado', 'concluido', 'finalizado', 'entregue'].includes(req.status))
+            .reduce((total: number, req: any) => total + (parseFloat(req.estimated_value) || 0), 0);
+          setFaturamentoMes(faturamento);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados do dashboard:', error);
     }
   };
 
@@ -173,7 +234,7 @@ export default function AutofreiDashboard() {
               <Car className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{serviceOrders.filter(so => so.status !== 'concluido').length}</div>
+              <div className="text-2xl font-bold">{ordensAtivas}</div>
               <p className="text-xs text-muted-foreground">Em andamento</p>
             </CardContent>
           </Card>
@@ -184,7 +245,7 @@ export default function AutofreiDashboard() {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{serviceOrders.filter(so => so.status === 'aguardando_peca').length}</div>
+              <div className="text-2xl font-bold">{aguardandoPecas}</div>
               <p className="text-xs text-muted-foreground">Pendentes</p>
             </CardContent>
           </Card>
@@ -195,7 +256,7 @@ export default function AutofreiDashboard() {
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{serviceOrders.filter(so => so.status === 'concluido').length}</div>
+              <div className="text-2xl font-bold">{concluidasHoje}</div>
               <p className="text-xs text-muted-foreground">Finalizadas</p>
             </CardContent>
           </Card>
@@ -206,7 +267,7 @@ export default function AutofreiDashboard() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">R$ 0,00</div>
+              <div className="text-2xl font-bold">R$ {faturamentoMes.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
               <p className="text-xs text-muted-foreground">Este mês</p>
             </CardContent>
           </Card>
