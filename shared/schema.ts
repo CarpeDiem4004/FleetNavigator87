@@ -987,9 +987,12 @@ export const equipments = pgTable("equipments", {
 export const equipmentRequests = pgTable("equipment_requests", {
   id: serial("id").primaryKey(),
   requester_name: text("requester_name").notNull(),
+  requester_cpf: text("requester_cpf").notNull(),
   requester_email: text("requester_email").notNull(),
   requester_phone: text("requester_phone").notNull(),
+  requester_base_address: text("requester_base_address").notNull(),
   requester_department: text("requester_department").notNull(),
+  requester_function: text("requester_function").notNull(),
   equipment_type: equipmentTypeEnum("equipment_type").notNull(),
   equipment_description: text("equipment_description").notNull(),
   justification: text("justification").notNull(),
@@ -997,6 +1000,7 @@ export const equipmentRequests = pgTable("equipment_requests", {
   status: equipmentRequestStatusEnum("status").notNull().default('pendente'),
   requested_delivery_date: date("requested_delivery_date"),
   manager_approval: text("manager_approval"), // Nome do gestor que aprova
+  manager_phone: text("manager_phone"), // Telefone do gestor que aprova
   manager_comments: text("manager_comments"),
   approved_at: timestamp("approved_at"),
   approved_by: integer("approved_by").references(() => users.id),
