@@ -572,8 +572,22 @@ export function setupAuth(app: Express) {
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
       
-      // Verificar senha
-      const isPasswordValid = await bcrypt.compare(password, user.password);
+      // Verificar senha (suporte a bcrypt e scrypt legado)
+      let isPasswordValid = false;
+      
+      if (user.password && user.password.startsWith('$2b$')) {
+        // Verificação de senha com bcrypt
+        isPasswordValid = await bcrypt.compare(password, user.password);
+        console.log(`[login-base] Verificação bcrypt resultado: ${isPasswordValid}`);
+      } else if (user.password && user.password.includes('.')) {
+        // Verificação de senha com hash scrypt antigo
+        isPasswordValid = await comparePasswords(password, user.password);
+        console.log(`[login-base] Verificação scrypt resultado: ${isPasswordValid}`);
+      } else {
+        // Para compatibilidade com senhas antigas sem hash
+        isPasswordValid = password === user.password;
+        console.log(`[login-base] ATENÇÃO: Usuário ${email} está usando senha não-hashed. Recomenda-se atualizar.`);
+      }
       
       if (!isPasswordValid) {
         console.log(`[login-base] Senha inválida para: ${email}`);
