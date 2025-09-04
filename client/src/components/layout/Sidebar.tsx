@@ -27,7 +27,8 @@ import {
   ChevronDown,
   ChevronRight,
   Droplets,
-  ExternalLink
+  ExternalLink,
+  Settings
 
 } from 'lucide-react';
 
@@ -259,7 +260,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard }
     ]},
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
-    { name: 'Equipamentos', href: '/equipment', icon: Package },
+    { name: 'Equipamentos', href: '#', icon: Package, subItems: [
+      { name: 'Gestão de Equipamentos', href: '/equipment', icon: Package },
+      { name: 'Solicitar Equipamento', href: '/equipment/request', icon: FileText },
+      { name: 'Gerenciar Solicitações', href: '/equipment/requests/admin', icon: Settings }
+    ]},
     { name: 'Line Hall', href: '/line-hall-shopee', icon: Map },
     { name: 'Parceiros de Guincho', href: '#', icon: Truck, subItems: [
       { name: 'Parceiros', href: '/fleet-management/towing-partners', icon: Truck },
@@ -281,7 +286,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Credenciais das Oficinas', href: '/maintenance/oficinas-credentials', icon: KeyRound },
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
-    { name: 'Equipamentos', href: '/equipment', icon: Package },
+    { name: 'Equipamentos', href: '#', icon: Package, subItems: [
+      { name: 'Gestão de Equipamentos', href: '/equipment', icon: Package },
+      { name: 'Solicitar Equipamento', href: '/equipment/request', icon: FileText },
+      { name: 'Gerenciar Solicitações', href: '/equipment/requests/admin', icon: Settings }
+    ]},
     { name: 'Pneus', href: '/tires', icon: CircleDot },
     { name: 'Parceiros de Guincho', href: '#', icon: Truck, subItems: [
       { name: 'Parceiros', href: '/fleet-management/towing-partners', icon: Truck },
@@ -365,7 +374,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
-    { name: 'Equipamentos', href: '/equipment', icon: Package },
+    { name: 'Equipamentos', href: '#', icon: Package, subItems: [
+      { name: 'Gestão de Equipamentos', href: '/equipment', icon: Package },
+      { name: 'Solicitar Equipamento', href: '/equipment/request', icon: FileText },
+      { name: 'Gerenciar Solicitações', href: '/equipment/requests/admin', icon: Settings }
+    ]},
     { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList },
       { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard }

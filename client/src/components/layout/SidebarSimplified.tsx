@@ -27,6 +27,7 @@ import {
   ChevronDown,
   ChevronRight,
   Droplets,
+  Settings,
 } from 'lucide-react';
 
 // Constantes para itens de menu de bases
@@ -196,7 +197,11 @@ const SidebarSimplified: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Lista unificada de todos os itens de navegação com controle de roles
   const allMenuItems: NavItem[] = [
     { name: 'Dashboard', href: '/', icon: Gauge, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_combustivel'] },
-    { name: 'Equipamentos', href: '/equipment', icon: Package, roles: ['admin', 'gestor_frota', 'line_hall'] },
+    { name: 'Equipamentos', href: '#', icon: Package, roles: ['admin', 'gestor_frota', 'line_hall'], subItems: [
+      { name: 'Gestão de Equipamentos', href: '/equipment', icon: Package },
+      { name: 'Solicitar Equipamento', href: '/equipment/request', icon: FileText },
+      { name: 'Gerenciar Solicitações', href: '/equipment/requests/admin', icon: Settings, roles: ['admin'] }
+    ]},
     { name: 'Dashboard Executivo', href: '/executive-dashboard', icon: BarChart4, roles: ['admin', 'gestor_frota', 'line_hall'] },
     { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_combustivel'] },
     { name: 'Veículos', href: '/vehicles', icon: Truck, roles: ['admin', 'gestor_frota', 'line_hall'] },

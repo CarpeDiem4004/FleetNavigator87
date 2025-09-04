@@ -156,6 +156,8 @@ import DriverMaintenanceRequest from "@/pages/DriverMaintenanceRequest";
 import LineHallVehicleRegistration from "@/pages/LineHallVehicleRegistration";
 import LineHallFuelCardRequests from "@/pages/LineHallFuelCardRequests";
 import Equipment from "@/pages/Equipment";
+import EquipmentRequest from "@/pages/EquipmentRequest";
+import EquipmentRequestsAdmin from "@/pages/EquipmentRequestsAdmin";
 import CoordinatorManagement from "@/pages/CoordinatorManagement";
 import TestMaintenancePlates from "@/pages/TestMaintenancePlates";
 import TestLoginBase from "@/pages/TestLoginBase";
@@ -732,6 +734,8 @@ function App() {
             <Redirect to="/fleet-management/budgets" />
           </Route>
           <ProtectedRoute path="/equipment" component={Equipment} />
+          <ProtectedRoute path="/equipment/request" component={EquipmentRequest} />
+          <ProtectedRoute path="/equipment/requests/admin" component={EquipmentRequestsAdmin} />
           <ProtectedRoute path="/fleet-management/towing-partners" component={TowingPartnersPage} />
           <ProtectedRoute path="/fleet-management/towing-partners/new" component={NewTowingPartnerPage} />
           <ProtectedRoute path="/fleet-management/towing-partners/requests" component={TowingRequestsPage} />

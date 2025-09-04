@@ -91,6 +91,8 @@ const equipmentTypeLabels = {
   telefone_fixo: 'Telefone Fixo',
   camera: 'Câmera',
   projetor: 'Projetor',
+  email: 'Email',
+  chip: 'Chip',
   outros: 'Outros'
 };
 

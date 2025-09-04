@@ -87,6 +87,8 @@ export const equipmentTypeEnum = pgEnum('equipment_type', [
   'telefone_fixo',        // Telefone fixo
   'camera',               // Câmera
   'projetor',             // Projetor
+  'email',                // Conta de email
+  'chip',                 // Chip de celular
   'outros'                // Outros equipamentos
 ]);
 
@@ -106,6 +108,25 @@ export const equipmentConditionEnum = pgEnum('equipment_condition', [
   'regular',              // Estado regular
   'ruim',                 // Estado ruim
   'defeituoso'            // Defeituoso
+]);
+
+// Enums para sistema de solicitação de equipamentos
+export const equipmentRequestStatusEnum = pgEnum('equipment_request_status', [
+  'pendente',             // Solicitação aguardando análise
+  'em_analise',           // Em análise pela equipe
+  'aprovado',             // Solicitação aprovada
+  'rejeitado',            // Solicitação rejeitada
+  'em_separacao',         // Equipamento sendo separado
+  'pronto_retirada',      // Pronto para retirada
+  'entregue',             // Entregue ao solicitante
+  'cancelado'             // Solicitação cancelada
+]);
+
+export const equipmentRequestPriorityEnum = pgEnum('equipment_request_priority', [
+  'baixa',                // Prioridade baixa
+  'normal',               // Prioridade normal
+  'alta',                 // Prioridade alta
+  'urgente'               // Prioridade urgente
 ]);
 
 // Create the projects table
@@ -962,6 +983,35 @@ export const equipments = pgTable("equipments", {
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
+// Tabela de solicitações de equipamentos
+export const equipmentRequests = pgTable("equipment_requests", {
+  id: serial("id").primaryKey(),
+  requester_name: text("requester_name").notNull(),
+  requester_email: text("requester_email").notNull(),
+  requester_phone: text("requester_phone").notNull(),
+  requester_department: text("requester_department").notNull(),
+  equipment_type: equipmentTypeEnum("equipment_type").notNull(),
+  equipment_description: text("equipment_description").notNull(),
+  justification: text("justification").notNull(),
+  urgency_level: equipmentRequestPriorityEnum("urgency_level").notNull().default('normal'),
+  status: equipmentRequestStatusEnum("status").notNull().default('pendente'),
+  requested_delivery_date: date("requested_delivery_date"),
+  manager_approval: text("manager_approval"), // Nome do gestor que aprova
+  manager_comments: text("manager_comments"),
+  approved_at: timestamp("approved_at"),
+  approved_by: integer("approved_by").references(() => users.id),
+  rejected_at: timestamp("rejected_at"),
+  rejected_by: integer("rejected_by").references(() => users.id),
+  rejection_reason: text("rejection_reason"),
+  assigned_equipment_id: integer("assigned_equipment_id").references(() => equipments.id),
+  delivered_at: timestamp("delivered_at"),
+  delivered_by: integer("delivered_by").references(() => users.id),
+  whatsapp_notification_sent: boolean("whatsapp_notification_sent").default(false),
+  whatsapp_phone: text("whatsapp_phone"), // Telefone para notificação WhatsApp
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
 // Tabela de termos de responsabilidade
 export const equipmentResponsibilityTerms = pgTable("equipment_responsibility_terms", {
   id: serial("id").primaryKey(),
@@ -1023,6 +1073,7 @@ export const equipmentsRelations = relations(equipments, ({ many }) => ({
   responsibilityTerms: many(equipmentResponsibilityTerms),
   maintenanceRecords: many(equipmentMaintenance),
   movements: many(equipmentMovements),
+  requests: many(equipmentRequests),
 }));
 
 export const equipmentResponsibilityTermsRelations = relations(equipmentResponsibilityTerms, ({ one }) => ({
@@ -1066,6 +1117,25 @@ export const equipmentMovementsRelations = relations(equipmentMovements, ({ one 
   }),
   movedBy: one(users, {
     fields: [equipmentMovements.moved_by],
+    references: [users.id],
+  }),
+}));
+
+export const equipmentRequestsRelations = relations(equipmentRequests, ({ one }) => ({
+  assignedEquipment: one(equipments, {
+    fields: [equipmentRequests.assigned_equipment_id],
+    references: [equipments.id],
+  }),
+  approvedBy: one(users, {
+    fields: [equipmentRequests.approved_by],
+    references: [users.id],
+  }),
+  rejectedBy: one(users, {
+    fields: [equipmentRequests.rejected_by],
+    references: [users.id],
+  }),
+  deliveredBy: one(users, {
+    fields: [equipmentRequests.delivered_by],
     references: [users.id],
   }),
 }));
@@ -1143,6 +1213,9 @@ export const insertEquipmentSchema = createInsertSchema(equipments).extend({
 export const insertEquipmentResponsibilityTermSchema = createInsertSchema(equipmentResponsibilityTerms);
 export const insertEquipmentMaintenanceSchema = createInsertSchema(equipmentMaintenance);
 export const insertEquipmentMovementSchema = createInsertSchema(equipmentMovements);
+export const insertEquipmentRequestSchema = createInsertSchema(equipmentRequests).extend({
+  requested_delivery_date: z.string().transform(val => val === '' ? null : val).optional(),
+});
 
 // Tipos TypeScript
 export type FuelCard = typeof fuelCards.$inferSelect;
@@ -1155,6 +1228,8 @@ export type EquipmentMaintenance = typeof equipmentMaintenance.$inferSelect;
 export type InsertEquipmentMaintenance = z.infer<typeof insertEquipmentMaintenanceSchema>;
 export type EquipmentMovement = typeof equipmentMovements.$inferSelect;
 export type InsertEquipmentMovement = z.infer<typeof insertEquipmentMovementSchema>;
+export type EquipmentRequest = typeof equipmentRequests.$inferSelect;
+export type InsertEquipmentRequest = z.infer<typeof insertEquipmentRequestSchema>;
 
 // Schemas e tipos para abastecimento pós-pago
 export const insertPostoExternalSchema = createInsertSchema(postosExternal);

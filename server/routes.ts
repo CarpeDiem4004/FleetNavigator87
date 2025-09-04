@@ -53,6 +53,28 @@ import {
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { initResyncRoutes } from "./routes/sessionResyncRoute";
+
+// Função para envio de WhatsApp - Mockada para exemplo, integre com API real
+async function sendWhatsAppNotification(phone: string, message: string) {
+  try {
+    console.log(`[WhatsApp] Enviando mensagem para ${phone}: ${message}`);
+    
+    // AQUI: Integrar com API real do WhatsApp (Twilio, WhatsApp Business API, etc.)
+    // Exemplo com Twilio:
+    // const twilioClient = require('twilio')(ACCOUNT_SID, AUTH_TOKEN);
+    // await twilioClient.messages.create({
+    //   from: 'whatsapp:+5511999999999',
+    //   to: `whatsapp:${phone}`,
+    //   body: message
+    // });
+    
+    // Por enquanto, apenas simular o envio
+    return { success: true, message: 'Mensagem enviada com sucesso (simulado)' };
+  } catch (error) {
+    console.error('[WhatsApp] Erro ao enviar mensagem:', error);
+    throw error;
+  }
+}
 import { getDashboardKPIs, getPainelPrincipal } from "./dashboardApi";
 // middleware de autenticação híbrida já importado abaixo como alias
 import { getExecutiveDashboard } from "./executiveDashboard";
@@ -2089,6 +2111,211 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rotas de equipamentos
   app.use('/api/equipment', equipmentRoutes);
+
+  // API para solicitações de equipamentos
+  app.post('/api/equipment-requests', async (req, res) => {
+    try {
+      const { db } = await import('./db.js');
+      const { equipmentRequests, insertEquipmentRequestSchema } = await import('../shared/schema.js');
+      
+      // Validar dados
+      const validatedData = insertEquipmentRequestSchema.parse(req.body);
+      
+      // Inserir no banco
+      const [newRequest] = await db.insert(equipmentRequests)
+        .values({
+          ...validatedData,
+          status: 'pendente',
+          created_at: new Date(),
+          updated_at: new Date()
+        })
+        .returning();
+
+      // Enviar notificação WhatsApp (se configurado)
+      if (newRequest.whatsapp_phone) {
+        try {
+          await sendWhatsAppNotification(
+            newRequest.whatsapp_phone,
+            `🔔 Solicitação de Equipamento Recebida!\n\nProtocolo: #${newRequest.id}\nTipo: ${newRequest.equipment_type}\nStatus: Aguardando análise\n\nVocê receberá atualizações neste número.`
+          );
+          
+          await db.update(equipmentRequests)
+            .set({ whatsapp_notification_sent: true })
+            .where({ id: newRequest.id });
+        } catch (whatsappError) {
+          console.error('Erro ao enviar WhatsApp:', whatsappError);
+          // Continue mesmo se o WhatsApp falhar
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        data: newRequest,
+        message: 'Solicitação criada com sucesso'
+      });
+    } catch (error) {
+      console.error('Erro ao criar solicitação de equipamento:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Erro interno do servidor',
+        message: error.message 
+      });
+    }
+  });
+
+  app.get('/api/equipment-requests', async (req, res) => {
+    try {
+      const { db } = await import('./db.js');
+      const { equipmentRequests, users } = await import('../shared/schema.js');
+      const { desc, eq, and } = await import('drizzle-orm');
+      
+      // Filtros opcionais
+      const { status, equipment_type } = req.query;
+      const filters = [];
+      
+      if (status) filters.push(eq(equipmentRequests.status, status as string));
+      if (equipment_type) filters.push(eq(equipmentRequests.equipment_type, equipment_type as string));
+      
+      // Buscar solicitações com informações do usuário
+      const requests = await db
+        .select({
+          id: equipmentRequests.id,
+          requester_name: equipmentRequests.requester_name,
+          requester_email: equipmentRequests.requester_email,
+          requester_phone: equipmentRequests.requester_phone,
+          requester_department: equipmentRequests.requester_department,
+          equipment_type: equipmentRequests.equipment_type,
+          equipment_description: equipmentRequests.equipment_description,
+          justification: equipmentRequests.justification,
+          urgency_level: equipmentRequests.urgency_level,
+          status: equipmentRequests.status,
+          requested_delivery_date: equipmentRequests.requested_delivery_date,
+          manager_approval: equipmentRequests.manager_approval,
+          manager_comments: equipmentRequests.manager_comments,
+          approved_at: equipmentRequests.approved_at,
+          rejected_at: equipmentRequests.rejected_at,
+          rejection_reason: equipmentRequests.rejection_reason,
+          delivered_at: equipmentRequests.delivered_at,
+          created_at: equipmentRequests.created_at,
+          updated_at: equipmentRequests.updated_at,
+          approved_by_name: users.name
+        })
+        .from(equipmentRequests)
+        .leftJoin(users, eq(equipmentRequests.approved_by, users.id))
+        .where(filters.length > 0 ? and(...filters) : undefined)
+        .orderBy(desc(equipmentRequests.created_at));
+
+      // Calcular estatísticas
+      const allRequests = await db.select().from(equipmentRequests);
+      const stats = {
+        total: allRequests.length,
+        pendente: allRequests.filter(r => r.status === 'pendente').length,
+        em_analise: allRequests.filter(r => r.status === 'em_analise').length,
+        aprovado: allRequests.filter(r => r.status === 'aprovado').length,
+        rejeitado: allRequests.filter(r => r.status === 'rejeitado').length,
+        entregue: allRequests.filter(r => r.status === 'entregue').length
+      };
+
+      res.json({ success: true, data: requests, stats });
+    } catch (error) {
+      console.error('Erro ao buscar solicitações:', error);
+      res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+    }
+  });
+
+  app.put('/api/equipment-requests/:id/approve', async (req, res) => {
+    try {
+      const { db } = await import('./db.js');
+      const { equipmentRequests } = await import('../shared/schema.js');
+      const { eq } = await import('drizzle-orm');
+      
+      const requestId = parseInt(req.params.id);
+      const { manager_comments } = req.body;
+      
+      // Buscar solicitação
+      const [request] = await db.select().from(equipmentRequests)
+        .where(eq(equipmentRequests.id, requestId));
+      
+      if (!request) {
+        return res.status(404).json({ success: false, message: 'Solicitação não encontrada' });
+      }
+
+      // Atualizar status
+      const [updatedRequest] = await db.update(equipmentRequests)
+        .set({
+          status: 'aprovado',
+          approved_at: new Date(),
+          manager_comments: manager_comments || null,
+          updated_at: new Date()
+        })
+        .where(eq(equipmentRequests.id, requestId))
+        .returning();
+
+      // Enviar notificação WhatsApp
+      if (request.whatsapp_phone) {
+        try {
+          await sendWhatsAppNotification(
+            request.whatsapp_phone,
+            `✅ Solicitação Aprovada!\n\nProtocolo: #${requestId}\nTipo: ${request.equipment_type}\nStatus: APROVADO\n\n${manager_comments ? `Comentários: ${manager_comments}\n\n` : ''}Aguarde o contato para retirada.`
+          );
+        } catch (whatsappError) {
+          console.error('Erro ao enviar WhatsApp:', whatsappError);
+        }
+      }
+
+      res.json({ success: true, data: updatedRequest });
+    } catch (error) {
+      console.error('Erro ao aprovar solicitação:', error);
+      res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+    }
+  });
+
+  app.put('/api/equipment-requests/:id/reject', async (req, res) => {
+    try {
+      const { db } = await import('./db.js');
+      const { equipmentRequests } = await import('../shared/schema.js');
+      const { eq } = await import('drizzle-orm');
+      
+      const requestId = parseInt(req.params.id);
+      const { rejection_reason } = req.body;
+      
+      // Buscar solicitação
+      const [request] = await db.select().from(equipmentRequests)
+        .where(eq(equipmentRequests.id, requestId));
+      
+      if (!request) {
+        return res.status(404).json({ success: false, message: 'Solicitação não encontrada' });
+      }
+
+      // Atualizar status
+      const [updatedRequest] = await db.update(equipmentRequests)
+        .set({
+          status: 'rejeitado',
+          rejected_at: new Date(),
+          rejection_reason: rejection_reason || 'Não especificado',
+          updated_at: new Date()
+        })
+        .where(eq(equipmentRequests.id, requestId))
+        .returning();
+
+      // Enviar notificação WhatsApp
+      if (request.whatsapp_phone) {
+        try {
+          await sendWhatsAppNotification(
+            request.whatsapp_phone,
+            `❌ Solicitação Rejeitada\n\nProtocolo: #${requestId}\nTipo: ${request.equipment_type}\nStatus: REJEITADO\n\nMotivo: ${rejection_reason}\n\nVocê pode fazer uma nova solicitação se necessário.`
+          );
+        } catch (whatsappError) {
+          console.error('Erro ao enviar WhatsApp:', whatsappError);
+        }
+      }
+
+      res.json({ success: true, data: updatedRequest });
+    } catch (error) {
+      console.error('Erro ao rejeitar solicitação:', error);
+      res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+    }
+  });
 
 
 
