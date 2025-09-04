@@ -38,7 +38,6 @@ const equipmentRequestSchema = z.object({
   manager_approval: z.string().min(1, "Nome do gestor é obrigatório"),
   manager_phone: z.string().min(10, "Telefone do gestor deve ter pelo menos 10 dígitos"),
   equipment_type: z.enum(['notebook', 'celular', 'email', 'chip']),
-  equipment_description: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
   justification: z.string().min(20, "Motivo da solicitação deve ter pelo menos 20 caracteres"),
   urgency_level: z.enum(['baixa', 'normal', 'alta', 'urgente']).default('normal'),
   requested_delivery_date: z.string().optional(),
@@ -356,25 +355,7 @@ export default function EquipmentRequest() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="equipment_description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descrição do Equipamento *</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Descreva as especificações desejadas (ex: Notebook i5, 8GB RAM, SSD 256GB)"
-                          rows={3}
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
+<FormField
                   control={form.control}
                   name="justification"
                   render={({ field }) => (

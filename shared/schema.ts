@@ -994,7 +994,6 @@ export const equipmentRequests = pgTable("equipment_requests", {
   requester_department: text("requester_department").notNull(),
   requester_function: text("requester_function").notNull(),
   equipment_type: equipmentTypeEnum("equipment_type").notNull(),
-  equipment_description: text("equipment_description").notNull(),
   justification: text("justification").notNull(),
   urgency_level: equipmentRequestPriorityEnum("urgency_level").notNull().default('normal'),
   status: equipmentRequestStatusEnum("status").notNull().default('pendente'),
