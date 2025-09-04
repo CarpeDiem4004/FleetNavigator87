@@ -734,7 +734,7 @@ function App() {
             <Redirect to="/fleet-management/budgets" />
           </Route>
           <ProtectedRoute path="/equipment" component={Equipment} />
-          <ProtectedRoute path="/equipment/request" component={EquipmentRequest} />
+          <Route path="/equipment/request" component={EquipmentRequest} />
           <ProtectedRoute path="/equipment/requests/admin" component={EquipmentRequestsAdmin} />
           <ProtectedRoute path="/fleet-management/towing-partners" component={TowingPartnersPage} />
           <ProtectedRoute path="/fleet-management/towing-partners/new" component={NewTowingPartnerPage} />
