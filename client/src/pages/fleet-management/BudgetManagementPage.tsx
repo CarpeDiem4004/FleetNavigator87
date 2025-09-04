@@ -902,9 +902,18 @@ export default function BudgetManagementPage() {
       const selectedWorkshop = workshops.find(w => w.id === selectedWorkshopId);
       if (!selectedWorkshop) return;
 
-      const totalValue = budgetRequests
-        .filter(b => b.status === "aprovado")
-        .reduce((sum, b) => sum + (b.approved_value || 0), 0);
+      // Usar o valor total aprovado do summary se disponível, caso contrário calcular
+      let totalValue = 0;
+      
+      if (budgetSummary && budgetSummary.valor_total_aprovado) {
+        totalValue = budgetSummary.valor_total_aprovado;
+      } else {
+        totalValue = budgetRequests
+          .filter(b => b.status === "aprovado")
+          .reduce((sum, b) => sum + (b.approved_value || 0), 0);
+      }
+
+      console.log('[ConfigureFaturamento] Valor calculado:', totalValue, 'Summary:', budgetSummary);
 
       setBillingData({
         workshopId: selectedWorkshop.id,
