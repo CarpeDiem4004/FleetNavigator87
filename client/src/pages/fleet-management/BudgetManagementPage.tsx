@@ -309,11 +309,39 @@ export default function BudgetManagementPage() {
     });
   };
 
-  // Função para obter os orçamentos recebidos das oficinas
-  const fetchBudgetRequests = async () => {
+  // Função para obter os orçamentos recebidos das oficinas com filtros
+  const fetchBudgetRequests = async (useFilters = false) => {
     try {
       setLoadingBudgetRequests(true);
-      const response = await apiRequest("GET", "/api/campinas/budget-requests");
+      
+      // Construir parâmetros de consulta baseados nos filtros se solicitado
+      let url = `/api/campinas/budget-requests`;
+      
+      if (useFilters) {
+        const queryParams = new URLSearchParams();
+        
+        // Adicionar filtro de oficina se selecionada
+        if (selectedWorkshopId) {
+          queryParams.append('workshop_id', selectedWorkshopId.toString());
+        }
+        
+        // Adicionar filtros de data se especificados
+        if (dateFrom) {
+          queryParams.append('date_from', dateFrom);
+        }
+        
+        if (dateTo) {
+          queryParams.append('date_to', dateTo);
+        }
+        
+        if (queryParams.toString()) {
+          url += `?${queryParams.toString()}`;
+        }
+      }
+      
+      console.log('[BudgetSearch] URL da busca:', url);
+      
+      const response = await apiRequest("GET", url);
       const result = await response.json();
       
       if (result.success) {
@@ -362,7 +390,16 @@ export default function BudgetManagementPage() {
         setBudgetRequests(processedData);
         setBudgetSummary(result.summary);
         setFilteredBudgets(processedData);
+        setWorkshopBudgets(processedData); // Manter compatibilidade
         console.log(`Orçamentos carregados: ${processedData.length}`);
+        
+        if (useFilters) {
+          toast({
+            title: "Busca concluída",
+            description: `${processedData.length} orçamentos encontrados para o período selecionado`,
+            variant: "default"
+          });
+        }
       } else {
         toast({
           title: "Erro",
@@ -371,6 +408,7 @@ export default function BudgetManagementPage() {
         });
         setBudgetRequests([]);
         setFilteredBudgets([]);
+        setWorkshopBudgets([]);
       }
     } catch (error) {
       console.error("Erro ao buscar orçamentos das oficinas:", error);
@@ -381,8 +419,10 @@ export default function BudgetManagementPage() {
       });
       setBudgetRequests([]);
       setFilteredBudgets([]);
+      setWorkshopBudgets([]);
     } finally {
       setLoadingBudgetRequests(false);
+      setLoadingWorkshopBudgets(false);
     }
   };
 
@@ -785,61 +825,16 @@ export default function BudgetManagementPage() {
     }
   };
 
-  // Função para buscar orçamentos de uma oficina em período específico
-  const fetchWorkshopBudgets = async () => {
-    try {
-      setLoadingWorkshopBudgets(true);
-      
-      // Construir parâmetros de consulta baseados nos filtros selecionados
-      const queryParams = new URLSearchParams();
-      
-      // Adicionar filtro de oficina se selecionada
-      if (selectedWorkshopId) {
-        queryParams.append('workshop_id', selectedWorkshopId.toString());
-      }
-      
-      // Adicionar filtros de data se especificados
-      if (dateFrom) {
-        queryParams.append('date_from', dateFrom);
-      }
-      
-      if (dateTo) {
-        queryParams.append('date_to', dateTo);
-      }
-      
-      // Construir URL com parâmetros ou sem filtros (busca todos os dados)
-      const url = queryParams.toString() 
-        ? `/api/campinas/budget-requests?${queryParams.toString()}`
-        : `/api/campinas/budget-requests`;
-      
-      console.log('[BudgetSearch] Buscando orçamentos com filtros:', {
-        selectedWorkshopId,
-        dateFrom,
-        dateTo,
-        url
-      });
-      
-      const response = await apiRequest("GET", url);
-      const data = await response.json();
-      
-      if (data.success) {
-        console.log(`[BudgetSearch] ${data.data?.length || 0} orçamentos encontrados`);
-        setWorkshopBudgets(data.data || []);
-        setBudgetSummary(data.summary);
-      } else {
-        console.error("Erro na resposta da API:", data);
-        setWorkshopBudgets([]);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar orçamentos das oficinas:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os orçamentos das oficinas",
-        variant: "destructive"
-      });
-    } finally {
-      setLoadingWorkshopBudgets(false);
-    }
+  // Função para aplicar filtros nos orçamentos
+  const handleFilterSearch = () => {
+    console.log('[FilterSearch] Aplicando filtros:', {
+      selectedWorkshopId,
+      dateFrom,
+      dateTo
+    });
+    
+    // Buscar com filtros aplicados
+    fetchBudgetRequests(true);
   };
 
   // Função para buscar dados de acompanhamento de faturamento
@@ -907,9 +902,9 @@ export default function BudgetManagementPage() {
       const selectedWorkshop = workshops.find(w => w.id === selectedWorkshopId);
       if (!selectedWorkshop) return;
 
-      const totalValue = workshopBudgets
+      const totalValue = budgetRequests
         .filter(b => b.status === "aprovado")
-        .reduce((sum, b) => sum + b.total_cost, 0);
+        .reduce((sum, b) => sum + (b.approved_value || 0), 0);
 
       setBillingData({
         workshopId: selectedWorkshop.id,
@@ -946,7 +941,7 @@ export default function BudgetManagementPage() {
         totalValue: billingData.totalValue,
         installments: billingData.installments,
         dueDates: billingData.dueDates,
-        budgetIds: workshopBudgets.filter(b => b.status === "aprovado").map(b => b.id)
+        budgetIds: budgetRequests.filter(b => b.status === "aprovado").map(b => b.id)
       });
 
       toast({
@@ -1191,10 +1186,10 @@ export default function BudgetManagementPage() {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button onClick={fetchWorkshopBudgets} disabled={loadingWorkshopBudgets}>
-                {loadingWorkshopBudgets ? "Carregando..." : "Buscar Orçamentos"}
+              <Button onClick={handleFilterSearch} disabled={loadingBudgetRequests}>
+                {loadingBudgetRequests ? "Carregando..." : "Buscar Orçamentos"}
               </Button>
-              {workshopBudgets.length > 0 && (
+              {budgetRequests.length > 0 && (
                 <Button onClick={configureBilling} variant="outline">
                   <CreditCard className="h-4 w-4 mr-2" />
                   Configurar Faturamento
@@ -1212,7 +1207,7 @@ export default function BudgetManagementPage() {
                       <CardTitle className="text-sm">Total de Orçamentos</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{workshopBudgets.length}</div>
+                      <div className="text-2xl font-bold">{budgetRequests.length}</div>
                     </CardContent>
                   </Card>
                   <Card>
@@ -1221,7 +1216,7 @@ export default function BudgetManagementPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {workshopBudgets.filter(b => b.status === "aprovado").length}
+                        {budgetRequests.filter(b => b.status === "aprovado").length}
                       </div>
                     </CardContent>
                   </Card>
