@@ -42,8 +42,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
-import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download, Search, History, Clock, Wrench, Paperclip, Eye, Upload, RefreshCw } from "lucide-react";
+import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download, Search, History, Clock, Wrench, Paperclip, Eye, Upload, RefreshCw, ClipboardList } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 import jsPDF from "jspdf";
 
 // Schema para validação do formulário de equipamento
@@ -556,10 +557,24 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
             Gerencie notebooks, celulares e outros equipamentos da empresa
           </p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Equipamento
-        </Button>
+        <div className="flex space-x-2">
+          <Link href="/equipment/request">
+            <Button variant="outline">
+              <FileText className="mr-2 h-4 w-4" />
+              Solicitar Equipamento
+            </Button>
+          </Link>
+          <Link href="/equipment/requests/admin">
+            <Button variant="secondary">
+              <ClipboardList className="mr-2 h-4 w-4" />
+              Gerenciar Solicitações
+            </Button>
+          </Link>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Equipamento
+          </Button>
+        </div>
       </div>
 
       {/* Abas */}
