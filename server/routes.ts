@@ -2185,7 +2185,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           requester_phone: equipmentRequests.requester_phone,
           requester_department: equipmentRequests.requester_department,
           equipment_type: equipmentRequests.equipment_type,
-          equipment_description: equipmentRequests.equipment_description,
           justification: equipmentRequests.justification,
           urgency_level: equipmentRequests.urgency_level,
           status: equipmentRequests.status,
@@ -2198,7 +2197,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           delivered_at: equipmentRequests.delivered_at,
           created_at: equipmentRequests.created_at,
           updated_at: equipmentRequests.updated_at,
-          approved_by_name: users.name
+          approved_by_name: users.name,
+          requester_cpf: equipmentRequests.requester_cpf,
+          requester_base_address: equipmentRequests.requester_base_address,
+          requester_function: equipmentRequests.requester_function,
+          manager_phone: equipmentRequests.manager_phone
         })
         .from(equipmentRequests)
         .leftJoin(users, eq(equipmentRequests.approved_by, users.id))
