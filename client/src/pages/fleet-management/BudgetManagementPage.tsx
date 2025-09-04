@@ -1831,7 +1831,7 @@ export default function BudgetManagementPage() {
                 <SelectContent>
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
                     <SelectItem key={num} value={num.toString()}>
-                      {num}x de {formatCurrency(billingData.totalValue / num)}
+                      {num}x de {formatCurrency((billingData.totalValue || 0) / num)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1862,7 +1862,7 @@ export default function BudgetManagementPage() {
                         />
                       </div>
                       <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {formatCurrency(billingData.totalValue / billingData.installments)}
+                        {formatCurrency((billingData.totalValue || 0) / (billingData.installments || 1))}
                       </span>
                     </div>
                   ))}
