@@ -44,7 +44,8 @@ import {
   Eye,
   MessageSquare,
   Filter,
-  RefreshCw
+  RefreshCw,
+  Send
 } from "lucide-react";
 
 const statusLabels = {
@@ -154,6 +155,20 @@ export default function EquipmentRequestsAdmin() {
     },
     onError: () => {
       toast({ title: "Erro ao rejeitar solicitação", variant: "destructive" });
+    }
+  });
+
+  // WhatsApp status notification mutation
+  const whatsappMutation = useMutation({
+    mutationFn: async (requestId: number) => {
+      const response = await apiRequest("POST", `/api/equipment-requests/${requestId}/send-whatsapp-status`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Mensagem WhatsApp enviada com sucesso!", variant: "default" });
+    },
+    onError: () => {
+      toast({ title: "Erro ao enviar mensagem WhatsApp", variant: "destructive" });
     }
   });
 
@@ -351,12 +366,24 @@ export default function EquipmentRequestsAdmin() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
+                          {request.whatsapp_phone && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-green-600 hover:text-green-700"
+                              onClick={() => whatsappMutation.mutate(request.id)}
+                              disabled={whatsappMutation.isPending}
+                              title="Enviar status via WhatsApp"
+                            >
+                              <Send className="h-4 w-4" />
+                            </Button>
+                          )}
                           {request.status === 'pendente' && (
                             <>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="text-green-600 hover:text-green-700"
+                                className="text-blue-600 hover:text-blue-700"
                                 onClick={() => handleAction(request, 'approve')}
                               >
                                 <CheckCircle className="h-4 w-4" />

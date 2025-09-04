@@ -2320,7 +2320,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para enviar status via WhatsApp
+  app.post('/api/equipment-requests/:id/send-whatsapp-status', async (req, res) => {
+    try {
+      const { db } = await import('./db.js');
+      const { equipmentRequests } = await import('../shared/schema.js');
+      const { eq } = await import('drizzle-orm');
+      
+      const requestId = parseInt(req.params.id);
+      
+      // Buscar solicitação
+      const [request] = await db.select().from(equipmentRequests)
+        .where(eq(equipmentRequests.id, requestId));
+      
+      if (!request) {
+        return res.status(404).json({ success: false, message: 'Solicitação não encontrada' });
+      }
 
+      if (!request.whatsapp_phone) {
+        return res.status(400).json({ success: false, message: 'WhatsApp não cadastrado' });
+      }
+
+      // Mapear status para mensagem
+      const statusMessages = {
+        pendente: '⏳ Aguardando Análise',
+        em_analise: '🔍 Em Análise',
+        aprovado: '✅ APROVADO',
+        rejeitado: '❌ REJEITADO',
+        em_separacao: '📦 Em Separação',
+        pronto_retirada: '✅ Pronto para Retirada',
+        entregue: '✅ ENTREGUE',
+        cancelado: '❌ CANCELADO'
+      };
+
+      const statusMessage = statusMessages[request.status as keyof typeof statusMessages] || request.status;
+      
+      // Montar mensagem personalizada
+      let message = `📋 Status da Solicitação\n\n🔢 Protocolo: #${requestId}\n📱 Tipo: ${request.equipment_type.toUpperCase()}\n⚡ Status: ${statusMessage}`;
+      
+      // Adicionar informações específicas por status
+      if (request.status === 'aprovado' && request.manager_comments) {
+        message += `\n💬 Comentários: ${request.manager_comments}`;
+      }
+      
+      if (request.status === 'rejeitado' && request.rejection_reason) {
+        message += `\n❌ Motivo: ${request.rejection_reason}`;
+      }
+      
+      if (request.status === 'pronto_retirada') {
+        message += `\n\n🏢 Seu equipamento está pronto para retirada!\nEntre em contato para agendar.`;
+      }
+      
+      if (request.status === 'entregue') {
+        message += `\n\n🎉 Equipamento entregue com sucesso!`;
+      }
+      
+      message += `\n\n📅 Última atualização: ${new Date().toLocaleDateString('pt-BR')}`;
+      
+      // Enviar WhatsApp
+      try {
+        await sendWhatsAppNotification(request.whatsapp_phone, message);
+      } catch (whatsappError) {
+        console.error('Erro ao enviar WhatsApp:', whatsappError);
+        return res.status(500).json({ success: false, message: 'Erro ao enviar WhatsApp' });
+      }
+
+      res.json({ success: true, message: 'Status enviado via WhatsApp com sucesso' });
+    } catch (error) {
+      console.error('Erro ao enviar status WhatsApp:', error);
+      res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+    }
+  });
 
   // Endpoint de dashboard de equipamentos - SEM AUTENTICAÇÃO
   app.get('/api/equipment-dashboard', async (req, res) => {
