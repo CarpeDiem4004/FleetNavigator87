@@ -16793,6 +16793,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('[CampinaBudgets] Buscando orçamentos recebidos das oficinas...');
       
+      // Extrair parâmetros de busca da query
+      const { workshop_id, date_from, date_to } = req.query;
+      
+      console.log('[CampinaBudgets] Filtros aplicados:', {
+        workshop_id,
+        date_from,
+        date_to
+      });
+      
+      // Construir WHERE clauses dinamicamente
+      const whereConditions: string[] = [];
+      const queryParams: any[] = [];
+      let paramCount = 0;
+      
+      if (workshop_id) {
+        paramCount++;
+        whereConditions.push(`cbr.workshop_id = $${paramCount}`);
+        queryParams.push(parseInt(workshop_id as string));
+      }
+      
+      if (date_from) {
+        paramCount++;
+        whereConditions.push(`DATE(cbr.created_at) >= $${paramCount}`);
+        queryParams.push(date_from);
+      }
+      
+      if (date_to) {
+        paramCount++;
+        whereConditions.push(`DATE(cbr.created_at) <= $${paramCount}`);
+        queryParams.push(date_to);
+      }
+      
+      const whereClause = whereConditions.length > 0 
+        ? `WHERE ${whereConditions.join(' AND ')}`
+        : '';
+      
       const query = `
         SELECT 
           cbr.id,
@@ -16818,6 +16854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cbr.chassis
         FROM campinas_budget_requests cbr
         LEFT JOIN users u ON cbr.approved_by = u.id
+        ${whereClause}
         ORDER BY 
           CASE cbr.status 
             WHEN 'pendente' THEN 1 
@@ -16828,7 +16865,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cbr.created_at DESC
       `;
       
-      const result = await pool.query(query);
+      console.log('[CampinaBudgets] Query executada:', query);
+      console.log('[CampinaBudgets] Parâmetros:', queryParams);
+      
+      const result = await pool.query(query, queryParams);
       
       console.log(`[CampinaBudgets] Encontrados ${result.rowCount} orçamentos`);
       

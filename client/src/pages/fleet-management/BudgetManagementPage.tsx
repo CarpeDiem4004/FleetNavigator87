@@ -787,17 +787,43 @@ export default function BudgetManagementPage() {
 
   // Função para buscar orçamentos de uma oficina em período específico
   const fetchWorkshopBudgets = async () => {
-    // Para a nova funcionalidade, não precisamos mais de workshop ID específico
-    // Vamos buscar todos os orçamentos das oficinas
     try {
       setLoadingWorkshopBudgets(true);
-      const response = await apiRequest(
-        "GET", 
-        `/api/campinas/budget-requests`
-      );
+      
+      // Construir parâmetros de consulta baseados nos filtros selecionados
+      const queryParams = new URLSearchParams();
+      
+      // Adicionar filtro de oficina se selecionada
+      if (selectedWorkshopId) {
+        queryParams.append('workshop_id', selectedWorkshopId.toString());
+      }
+      
+      // Adicionar filtros de data se especificados
+      if (dateFrom) {
+        queryParams.append('date_from', dateFrom);
+      }
+      
+      if (dateTo) {
+        queryParams.append('date_to', dateTo);
+      }
+      
+      // Construir URL com parâmetros ou sem filtros (busca todos os dados)
+      const url = queryParams.toString() 
+        ? `/api/campinas/budget-requests?${queryParams.toString()}`
+        : `/api/campinas/budget-requests`;
+      
+      console.log('[BudgetSearch] Buscando orçamentos com filtros:', {
+        selectedWorkshopId,
+        dateFrom,
+        dateTo,
+        url
+      });
+      
+      const response = await apiRequest("GET", url);
       const data = await response.json();
       
       if (data.success) {
+        console.log(`[BudgetSearch] ${data.data?.length || 0} orçamentos encontrados`);
         setWorkshopBudgets(data.data || []);
         setBudgetSummary(data.summary);
       } else {
