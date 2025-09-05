@@ -420,7 +420,7 @@ export default function AutofreiSolicitacoes() {
                   
                   return `
                     <tr>
-                      <td style="border: 1px solid #ddd; padding: 8px;">${part.name || part.description || 'N/A'}</td>
+                      <td style="border: 1px solid #ddd; padding: 8px;">${(part.name || part.description || 'N/A').toString()}</td>
                       <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${quantity}</td>
                       <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">R$ ${unitPrice.toFixed(2)}</td>
                       <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">R$ ${total.toFixed(2)}</td>
@@ -458,7 +458,7 @@ export default function AutofreiSolicitacoes() {
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <h1 style="margin: 0; font-size: 18px; font-weight: bold;">Auto Center Rio de Janeiro LTDA</h1>
               <div style="text-align: right; font-size: 10px;">
-                <div>${formatDate(new Date())}</div>
+                <div>${new Date().toLocaleDateString('pt-BR')}</div>
                 <div>about:blank</div>
               </div>
             </div>
@@ -482,7 +482,8 @@ export default function AutofreiSolicitacoes() {
             <div class="info-line"><strong>Data:</strong> ${formatDate(request.created_at)}</div>
             ${request.chassis ? `<div class="info-line"><strong>Chassis:</strong> ${request.chassis}</div>` : ''}
             ${request.km ? `<div class="info-line"><strong>KM:</strong> ${request.km.toLocaleString()}</div>` : ''}
-            ${budgetData?.workshop_observations ? `<div class="info-line"><strong>Aprovado por:</strong> Administrador</div>` : ''}
+            ${budgetData?.approved_by || budgetData?.approver_name ? `<div class="info-line"><strong>Aprovado por:</strong> ${budgetData.approver_name || budgetData.approved_by || 'Administrador'}</div>` : ''}
+            ${budgetData?.approved_at ? `<div class="info-line"><strong>Data de aprovação:</strong> ${new Date(budgetData.approved_at).toLocaleDateString('pt-BR')}</div>` : ''}
           </div>
           
           <hr>

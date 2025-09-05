@@ -16966,6 +16966,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return isAuthenticated(req, res, next);
   };
 
+  // API para buscar detalhes de solicitação de orçamento
+  app.get("/api/budget-requests/:id/details", hybridAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      console.log(`[BudgetDetails] Buscando detalhes para solicitação ${id}`);
+      
+      const query = `
+        SELECT 
+          cbr.*,
+          u.name as approver_name,
+          u.email as approver_email
+        FROM campinas_budget_requests cbr
+        LEFT JOIN users u ON cbr.approved_by = u.id
+        WHERE cbr.id = $1
+      `;
+      
+      const result = await pool.query(query, [id]);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Solicitação não encontrada'
+        });
+      }
+      
+      const data = result.rows[0];
+      
+      console.log(`[BudgetDetails] Dados encontrados:`, {
+        id: data.id,
+        hasPartsJson: !!data.parts_json,
+        approverName: data.approver_name,
+        status: data.status
+      });
+      
+      return res.status(200).json({
+        success: true,
+        data: data
+      });
+      
+    } catch (error) {
+      console.error('[BudgetDetails] Erro ao buscar detalhes:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
+
   // API para responder solicitações de orçamento (oficinas)
   app.post("/api/budget-requests/respond", hybridAuth, async (req, res) => {
     try {
