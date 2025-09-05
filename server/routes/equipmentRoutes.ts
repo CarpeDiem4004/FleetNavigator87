@@ -360,7 +360,7 @@ router.post('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req
   try {
     const validatedData = insertEquipmentResponsibilityTermSchema.parse(req.body);
     
-    // Verificar se o equipamento está disponível
+    // Verificar se o equipamento existe e está disponível
     const equipment = await db
       .select()
       .from(equipments)
@@ -369,6 +369,14 @@ router.post('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req
 
     if (equipment.length === 0) {
       return res.status(404).json({ success: false, error: 'Equipamento não encontrado' });
+    }
+
+    // Verificar se o equipamento está disponível (não pode estar em uso, manutenção, etc.)
+    if (equipment[0].status !== 'disponivel') {
+      return res.status(400).json({ 
+        success: false, 
+        error: `Equipamento não está disponível. Status atual: ${equipment[0].status}. Apenas equipamentos disponíveis podem ter termos de responsabilidade criados.` 
+      });
     }
 
     // Verificar se já existe um termo ativo para este equipamento

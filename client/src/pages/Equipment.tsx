@@ -435,6 +435,25 @@ export default function Equipment() {
   };
 
   const handleCreateTerm = (equipment: any) => {
+    // Verificar se o equipamento está disponível para criar termo
+    if (equipment.status === 'em_uso') {
+      toast({
+        title: "Equipamento indisponível",
+        description: "Este equipamento já está em uso. Para criar um novo termo, primeiro marque o atual como devolvido.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (equipment.status !== 'disponivel') {
+      toast({
+        title: "Equipamento indisponível",
+        description: "Apenas equipamentos com status 'Disponível' podem ter termos de responsabilidade criados.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setSelectedEquipmentForTerm(equipment);
     setIsTermDialogOpen(true);
   };
@@ -771,7 +790,9 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                               variant="ghost"
                               size="sm"
                               onClick={() => handleCreateTerm(equipment)}
-                              title="Criar Termo de Responsabilidade"
+                              title={equipment.status === 'em_uso' ? 'Equipamento já está em uso - não é possível criar novo termo' : 'Criar Termo de Responsabilidade'}
+                              disabled={equipment.status === 'em_uso'}
+                              className={equipment.status === 'em_uso' ? 'opacity-50 cursor-not-allowed' : ''}
                             >
                               <UserCheck className="h-4 w-4" />
                             </Button>
