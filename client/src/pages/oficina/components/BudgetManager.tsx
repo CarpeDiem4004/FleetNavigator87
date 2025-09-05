@@ -304,35 +304,74 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
         try {
           // Cabeçalho da oficina
           doc.setFontSize(18);
+          doc.setFont("helvetica", "bold");
           doc.text(workshop.name || 'Oficina', 20, 20);
+          
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "normal");
+          doc.text(new Date().toLocaleDateString('pt-BR'), 150, 15);
+          doc.text('about:blank', 150, 25);
+          
           doc.setFontSize(12);
-          doc.text(`CNPJ: ${workshop.cnpj || 'N/A'}`, 20, 30);
-          if (workshop.endereco) doc.text(`Endereço: ${workshop.endereco}`, 20, 40);
-          if (workshop.telefone) doc.text(`Telefone: ${workshop.telefone}`, 20, 50);
-          if (workshop.email) doc.text(`Email: ${workshop.email}`, 20, 60);
+          doc.text(`CNPJ: ${workshop.cnpj || 'N/A'}`, 20, 35);
+          if (workshop.endereco) doc.text(`Endereço: ${workshop.endereco}`, 20, 45);
+          if (workshop.telefone) doc.text(`Telefone: ${workshop.telefone}`, 20, 55);
+          if (workshop.email) doc.text(`Email: ${workshop.email}`, 20, 65);
+          
+          // Linha separadora
+          doc.line(20, 75, 190, 75);
           
           // Título do orçamento
           doc.setFontSize(16);
-          doc.text(`ORÇAMENTO Nº ${budgetData.budget_number || 'N/A'}`, 20, 80);
+          doc.setFont("helvetica", "bold");
+          doc.text(`Orçamento - ${budgetData.budget_number || 'N/A'}`, 20, 90);
           
           // Dados do serviço
           doc.setFontSize(12);
-          doc.text(`Número do Serviço: ${budgetData.service_number || 'N/A'}`, 20, 95);
+          doc.setFont("helvetica", "normal");
           doc.text(`Veículo: ${budgetData.vehicle_plate || 'N/A'} - ${budgetData.vehicle_model || 'N/A'}`, 20, 105);
-          doc.text(`Tipo: ${budgetData.vehicle_type || 'N/A'}`, 20, 115);
-          doc.text(`KM Atual: ${budgetData.current_km || 'N/A'}`, 20, 125);
+          doc.text(`Descrição: ${(budgetData.labor_description || 'N/A').substring(0, 80)}`, 20, 115);
           
-          // Serviços e custos
-          doc.text('SERVIÇOS:', 20, 145);
-          doc.text(`Mão de obra: ${budgetData.labor_description || 'N/A'}`, 20, 155);
-          doc.text(`Custo da mão de obra: ${formatCurrencyForPDF(budgetData.labor_cost)}`, 20, 165);
-          
-          if (budgetData.labor_hours) {
-            doc.text(`Horas de trabalho: ${budgetData.labor_hours}h`, 20, 175);
+          if (budgetData.labor_description && budgetData.labor_description.length > 80) {
+            const remainingText = budgetData.labor_description.substring(80);
+            const wrappedText = doc.splitTextToSize(remainingText, 170);
+            let currentLineY = 125;
+            wrappedText.forEach((line: string) => {
+              doc.text(line, 20, currentLineY);
+              currentLineY += 10;
+            });
           }
           
+          let infoY = budgetData.labor_description && budgetData.labor_description.length > 80 ? 
+            125 + Math.ceil((budgetData.labor_description.length - 80) / 70) * 10 + 10 : 125;
+          
+          doc.text(`Projeto: ${budgetData.base_name || '13'}`, 20, infoY);
+          doc.text(`Status: ${budgetData.status || 'aprovado'}`, 20, infoY + 10);
+          doc.text(`Data: ${new Date(budgetData.created_at || new Date()).toLocaleDateString('pt-BR')}`, 20, infoY + 20);
+          
+          // Informações de aprovação
+          if (budgetData.approved_by_name) {
+            doc.text(`Aprovado por: ${budgetData.approved_by_name}`, 20, infoY + 30);
+            if (budgetData.approved_date) {
+              doc.text(`Data de aprovação: ${new Date(budgetData.approved_date).toLocaleDateString('pt-BR')}`, 20, infoY + 40);
+            }
+          }
+          
+          // Ajustar posição para seção de valores
+          let valuesY = infoY + (budgetData.approved_by_name ? 50 : 30);
+          
+          // Linha separadora antes dos valores
+          doc.line(20, valuesY, 190, valuesY);
+          valuesY += 15;
+          
+          // Valores
+          doc.setFontSize(14);
+          doc.setFont("helvetica", "bold");
+          doc.text(`Valor Estimado: ${formatCurrencyForPDF(budgetData.total_cost)}`, 20, valuesY);
+          doc.text(`Valor Aprovado: ${formatCurrencyForPDF(budgetData.total_cost)}`, 20, valuesY + 15);
+          
           // Detalhamento das peças
-          let currentY = 185;
+          let currentY = valuesY + 40;
           if (budgetData.parts_json) {
             try {
               const parts = JSON.parse(budgetData.parts_json);
@@ -405,9 +444,7 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
             currentY += 15;
           }
           
-          // Total
-          doc.setFontSize(14);
-          doc.text(`TOTAL GERAL: ${formatCurrencyForPDF(budgetData.total_cost)}`, 20, currentY);
+          // Total (remover, já mostrado anteriormente)
           
           // Prazo estimado
           currentY += 15;
