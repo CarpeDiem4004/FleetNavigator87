@@ -1462,7 +1462,7 @@ export default function BudgetManagementPage() {
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            onClick={() => openBudgetDialog(budget)}
+                            onClick={() => handleViewBudget(budget)}
                           >
                             Ver Detalhes
                           </Button>
