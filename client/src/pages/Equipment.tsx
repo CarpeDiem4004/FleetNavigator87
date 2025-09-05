@@ -897,9 +897,9 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Termos de Responsabilidade Ativos</CardTitle>
+              <CardTitle>Histórico de Termos de Responsabilidade</CardTitle>
               <CardDescription>
-                Visualize e gerencie termos de responsabilidade para equipamentos
+                Visualize todos os termos de responsabilidade (ativos e devolvidos)
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -912,7 +912,8 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                       <th className="text-left p-2">CPF</th>
                       <th className="text-left p-2">Departamento</th>
                       <th className="text-left p-2">Data de Entrega</th>
-                      <th className="text-left p-2">Documento</th>
+                      <th className="text-left p-2">Data de Devolução</th>
+                      <th className="text-left p-2">Status</th>
                       <th className="text-left p-2">Ações</th>
                     </tr>
                   </thead>
