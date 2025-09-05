@@ -23,6 +23,8 @@ interface BudgetRequest {
   chassis?: string;
   km?: number;
   projeto?: string;
+  project_name?: string;
+  base_name?: string;
   created_at: string;
   requester_name?: string;
   estimated_value?: number;
@@ -477,7 +479,8 @@ export default function AutofreiSolicitacoes() {
           <div class="section">
             <div class="info-line"><strong>Veículo:</strong> ${request.vehicle_plate} - ${request.vehicle_model}</div>
             <div class="info-line"><strong>Descrição:</strong> ${request.description}</div>
-            <div class="info-line"><strong>Projeto:</strong> ${request.projeto || '13'}</div>
+            <div class="info-line"><strong>Projeto:</strong> ${budgetData?.project_name || request.project_name || 'N/A'}</div>
+            <div class="info-line"><strong>Base:</strong> ${budgetData?.base_name || request.base_name || 'N/A'}</div>
             <div class="info-line"><strong>Status:</strong> ${request.status}</div>
             <div class="info-line"><strong>Data:</strong> ${formatDate(request.created_at)}</div>
             ${request.chassis ? `<div class="info-line"><strong>Chassis:</strong> ${request.chassis}</div>` : ''}

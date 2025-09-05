@@ -16977,9 +16977,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELECT 
           cbr.*,
           u.name as approver_name,
-          u.email as approver_email
+          u.email as approver_email,
+          p.name as project_name,
+          b.name as base_name
         FROM campinas_budget_requests cbr
         LEFT JOIN users u ON cbr.approved_by = u.id
+        LEFT JOIN projects p ON p.id = cbr.projeto::integer
+        LEFT JOIN bases b ON b.id = cbr.base_id
         WHERE cbr.id = $1
       `;
       
@@ -17107,9 +17111,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const query = `
         SELECT 
-          *
-        FROM campinas_budget_requests 
-        WHERE id = $1
+          cbr.*,
+          p.name as project_name,
+          b.name as base_name
+        FROM campinas_budget_requests cbr
+        LEFT JOIN projects p ON p.id = cbr.projeto::integer
+        LEFT JOIN bases b ON b.id = cbr.base_id
+        WHERE cbr.id = $1
       `;
       
       const result = await pool.query(query, [id]);
@@ -17200,9 +17208,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cbr.updated_at,
           cbr.km,
           cbr.projeto,
-          cbr.chassis
+          cbr.chassis,
+          p.name as project_name,
+          b.name as base_name
         FROM campinas_budget_requests cbr
         LEFT JOIN users u ON cbr.approved_by = u.id
+        LEFT JOIN projects p ON p.id = cbr.projeto::integer
+        LEFT JOIN bases b ON b.id = cbr.base_id
         ${whereClause}
         ORDER BY 
           CASE cbr.status 

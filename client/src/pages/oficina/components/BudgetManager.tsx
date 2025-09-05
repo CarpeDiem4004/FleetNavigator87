@@ -345,7 +345,7 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
           let infoY = budgetData.labor_description && budgetData.labor_description.length > 80 ? 
             125 + Math.ceil((budgetData.labor_description.length - 80) / 70) * 10 + 10 : 125;
           
-          doc.text(`Projeto: ${budgetData.base_name || '13'}`, 20, infoY);
+          doc.text(`Projeto: ${budgetData.project_name || budgetData.base_name || '13'}`, 20, infoY);
           doc.text(`Status: ${budgetData.status || 'aprovado'}`, 20, infoY + 10);
           doc.text(`Data: ${new Date(budgetData.created_at || new Date()).toLocaleDateString('pt-BR')}`, 20, infoY + 20);
           
