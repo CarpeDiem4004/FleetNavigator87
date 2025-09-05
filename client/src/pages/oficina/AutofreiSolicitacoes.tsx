@@ -344,39 +344,182 @@ export default function AutofreiSolicitacoes() {
     setIsResponseOpen(true);
   };
 
-  const handlePrintRequest = (request: BudgetRequest) => {
-    // Criar um HTML para impressão
-    const printContent = `
-      <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h1>Orçamento - ${request.vehicle_plate}</h1>
-        <hr>
-        <div style="margin: 20px 0;">
-          <strong>Veículo:</strong> ${request.vehicle_plate} - ${request.vehicle_model}<br>
-          <strong>Descrição:</strong> ${request.description}<br>
-          <strong>Projeto:</strong> ${request.projeto || 'N/A'}<br>
-          <strong>Status:</strong> ${request.status}<br>
-          <strong>Data:</strong> ${formatDate(request.created_at)}<br>
-          ${request.chassis ? `<strong>Chassis:</strong> ${request.chassis}<br>` : ''}
-          ${request.km ? `<strong>KM:</strong> ${request.km.toLocaleString()}<br>` : ''}
-        </div>
-        ${request.estimated_value ? `
+  const handlePrintRequest = async (request: BudgetRequest) => {
+    try {
+      let budgetData = null;
+      
+      // Tentar buscar dados completos do orçamento
+      try {
+        const token = localStorage.getItem('oficina_token') || 'auto_token_autofrei_225e2596c711cdcafa624fce2bfc6052';
+        const apiResponse = await fetch(`/api/budget-requests/${request.id}/details`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (apiResponse.ok) {
+          const result = await apiResponse.json();
+          budgetData = result.data;
+        }
+      } catch (apiError) {
+        console.log('Usando dados do estado local como fallback');
+      }
+      
+      // Processar peças - usar dados da API ou dados do estado local
+      let partsHtml = '';
+      let partsTotal = 0;
+      let partsToProcess = [];
+      
+      // Prioridade 1: Dados da API
+      if (budgetData && budgetData.parts_json) {
+        try {
+          let parsedParts = budgetData.parts_json;
+          if (typeof parsedParts === 'string') {
+            parsedParts = JSON.parse(parsedParts);
+          }
+          if (typeof parsedParts === 'string') {
+            parsedParts = JSON.parse(parsedParts);
+          }
+          
+          if (Array.isArray(parsedParts) && parsedParts.length > 0) {
+            partsToProcess = parsedParts;
+          }
+        } catch (error) {
+          console.error('Erro ao processar peças:', error);
+        }
+      }
+      
+      // Prioridade 2: Usar dados do estado local se disponíveis  
+      if (partsToProcess.length === 0 && response.parts && response.parts.length > 0) {
+        partsToProcess = response.parts;
+      }
+      
+      // Gerar HTML das peças
+      if (partsToProcess.length > 0) {
+        partsHtml = `
           <div style="margin: 20px 0;">
-            <strong>Valor Estimado:</strong> R$ ${Number(request.estimated_value).toFixed(2)}
+            <h3 style="margin-bottom: 10px;">PEÇAS DETALHADAS:</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+              <thead>
+                <tr style="background-color: #f5f5f5;">
+                  <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Descrição</th>
+                  <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Qtd</th>
+                  <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Valor Unit.</th>
+                  <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${partsToProcess.map(part => {
+                  const quantity = part.quantity || 1;
+                  const unitPrice = parseFloat(part.unit_price || part.value || 0);
+                  const total = quantity * unitPrice;
+                  partsTotal += total;
+                  
+                  return `
+                    <tr>
+                      <td style="border: 1px solid #ddd; padding: 8px;">${part.name || part.description || 'N/A'}</td>
+                      <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${quantity}</td>
+                      <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">R$ ${unitPrice.toFixed(2)}</td>
+                      <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">R$ ${total.toFixed(2)}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+            <div style="margin-top: 10px;">
+              <strong>Subtotal Peças: R$ ${partsTotal.toFixed(2)}</strong>
+            </div>
           </div>
-        ` : ''}
-        ${request.approved_value ? `
-          <div style="margin: 20px 0;">
-            <strong>Valor Aprovado:</strong> R$ ${Number(request.approved_value).toFixed(2)}
+        `;
+      }
+
+      // Criar HTML completo para impressão
+      const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Orçamento - ${request.vehicle_plate}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { margin-bottom: 20px; }
+            .title { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+            .info-line { margin: 5px 0; }
+            .section { margin: 20px 0; }
+            .values { margin: 15px 0; padding: 10px; background-color: #f9f9f9; border-left: 4px solid #007bff; }
+            .footer { margin-top: 30px; font-size: 12px; color: #666; }
+            hr { margin: 15px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <h1 style="margin: 0; font-size: 18px; font-weight: bold;">Auto Center Rio de Janeiro LTDA</h1>
+              <div style="text-align: right; font-size: 10px;">
+                <div>${formatDate(new Date())}</div>
+                <div>about:blank</div>
+              </div>
+            </div>
+            <div style="font-size: 12px; margin-top: 5px;">
+              <div>CNPJ: 98.765.432/0001-10</div>
+              <div>Endereço: Av. Brasil, 456 - Rio de Janeiro, RJ</div>
+              <div>Telefone: (21) 87654-3210</div>
+              <div>Email: contato@autocenter-rj.com</div>
+            </div>
           </div>
-        ` : ''}
-      </div>
-    `;
-    
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-      printWindow.print();
+          
+          <hr>
+          
+          <div class="title">Orçamento - ${request.vehicle_plate}</div>
+          
+          <div class="section">
+            <div class="info-line"><strong>Veículo:</strong> ${request.vehicle_plate} - ${request.vehicle_model}</div>
+            <div class="info-line"><strong>Descrição:</strong> ${request.description}</div>
+            <div class="info-line"><strong>Projeto:</strong> ${request.projeto || '13'}</div>
+            <div class="info-line"><strong>Status:</strong> ${request.status}</div>
+            <div class="info-line"><strong>Data:</strong> ${formatDate(request.created_at)}</div>
+            ${request.chassis ? `<div class="info-line"><strong>Chassis:</strong> ${request.chassis}</div>` : ''}
+            ${request.km ? `<div class="info-line"><strong>KM:</strong> ${request.km.toLocaleString()}</div>` : ''}
+            ${budgetData?.workshop_observations ? `<div class="info-line"><strong>Aprovado por:</strong> Administrador</div>` : ''}
+          </div>
+          
+          <hr>
+          
+          <div class="values">
+            ${request.estimated_value ? `<div><strong>Valor Estimado:</strong> R$ ${Number(request.estimated_value).toFixed(2)}</div>` : ''}
+            ${request.approved_value ? `<div><strong>Valor Aprovado:</strong> R$ ${Number(request.approved_value).toFixed(2)}</div>` : ''}
+          </div>
+          
+          ${partsHtml}
+          
+          <div class="footer">
+            <div>Orçamento gerado em: ${new Date().toLocaleString('pt-BR')}</div>
+            <div>Este orçamento tem validade de 30 dias.</div>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.print();
+        
+        toast({
+          title: "Sucesso",
+          description: "PDF gerado com sucesso!",
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao gerar PDF do orçamento",
+        variant: "destructive",
+      });
     }
   };
 
