@@ -415,7 +415,7 @@ export default function FuelCardSolicitation() {
                           <Input placeholder="Número do cartão" {...field} />
                         </FormControl>
                         <FormDescription>
-                          Informe o número do cartão de combustível
+                          Informe a placa impressa do cartão que irá usar para abastecer
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
