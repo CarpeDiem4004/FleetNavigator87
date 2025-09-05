@@ -42,7 +42,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
-import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download, Search, History, Clock, Wrench, Paperclip, Eye, Upload, RefreshCw, ClipboardList } from "lucide-react";
+import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download, Search, History, Clock, Wrench, Paperclip, Eye, Upload, RefreshCw, ClipboardList, CheckCircle, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import jsPDF from "jspdf";
@@ -156,6 +156,10 @@ export default function Equipment() {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [forceRefreshKey, setForceRefreshKey] = useState(0);
+  const [selectedTermToView, setSelectedTermToView] = useState<any>(null);
+  const [isViewTermDialogOpen, setIsViewTermDialogOpen] = useState(false);
+  const [selectedEquipmentForReturn, setSelectedEquipmentForReturn] = useState<any>(null);
+  const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -456,6 +460,53 @@ export default function Equipment() {
     
     setSelectedEquipmentForTerm(equipment);
     setIsTermDialogOpen(true);
+  };
+
+  const handleViewTerm = async (equipment: any) => {
+    try {
+      const response = await apiRequest('GET', `/api/equipment-responsibility-terms/equipment/${equipment.id}/active`);
+      if (response.success && response.data) {
+        setSelectedTermToView(response.data);
+        setIsViewTermDialogOpen(true);
+      } else {
+        toast({
+          title: "Termo não encontrado",
+          description: "Não foi encontrado um termo ativo para este equipamento.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao buscar termo:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar termo de responsabilidade.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReturnEquipment = async (equipment: any) => {
+    try {
+      const response = await apiRequest('GET', `/api/equipment-responsibility-terms/equipment/${equipment.id}/active`);
+      if (response.success && response.data) {
+        setSelectedEquipmentForReturn(equipment);
+        setSelectedTermToView(response.data);
+        setIsReturnDialogOpen(true);
+      } else {
+        toast({
+          title: "Termo não encontrado",
+          description: "Não foi encontrado um termo ativo para registrar a devolução.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao buscar termo para devolução:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar termo para devolução.",
+        variant: "destructive",
+      });
+    }
   };
 
   const generateTermPDF = (termData: ResponsibilityTermFormData, equipment: any) => {
@@ -766,7 +817,7 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                         </td>
                         <td className="p-2">{equipmentConditionLabels[equipment.condition]}</td>
                         <td className="p-2">
-                          <div className="flex gap-2">
+                          <div className="flex gap-1">
                             <Button
                               variant="ghost"
                               size="sm"
@@ -786,16 +837,40 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                             >
                               <History className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleCreateTerm(equipment)}
-                              title={equipment.status === 'em_uso' ? 'Equipamento já está em uso - não é possível criar novo termo' : 'Criar Termo de Responsabilidade'}
-                              disabled={equipment.status === 'em_uso'}
-                              className={equipment.status === 'em_uso' ? 'opacity-50 cursor-not-allowed' : ''}
-                            >
-                              <UserCheck className="h-4 w-4" />
-                            </Button>
+                            
+                            {/* Botões condicionais baseados no status */}
+                            {equipment.status === 'em_uso' ? (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleViewTerm(equipment)}
+                                  title="Ver Termo de Responsabilidade"
+                                >
+                                  <FileText className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleReturnEquipment(equipment)}
+                                  title="Registrar Devolução/Baixa"
+                                >
+                                  <RotateCcw className="h-4 w-4" />
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleCreateTerm(equipment)}
+                                title={equipment.status !== 'disponivel' ? 'Apenas equipamentos disponíveis podem ter termos criados' : 'Criar Termo de Responsabilidade'}
+                                disabled={equipment.status !== 'disponivel'}
+                                className={equipment.status !== 'disponivel' ? 'opacity-50 cursor-not-allowed' : ''}
+                              >
+                                <UserCheck className="h-4 w-4" />
+                              </Button>
+                            )}
+                            
                             <Button
                               variant="ghost"
                               size="sm"
@@ -1561,6 +1636,189 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
               {uploadTermMutation.isPending ? 'Enviando...' : 'Anexar'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para Visualizar Termo */}
+      <Dialog open={isViewTermDialogOpen} onOpenChange={setIsViewTermDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Termo de Responsabilidade</DialogTitle>
+            <DialogDescription>
+              Visualização do termo ativo para: {selectedTermToView?.equipment_name}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedTermToView && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Equipamento</Label>
+                  <p className="text-sm">{selectedTermToView.equipment_name}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Marca/Modelo</Label>
+                  <p className="text-sm">{selectedTermToView.equipment_brand} {selectedTermToView.equipment_model}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Número de Série</Label>
+                  <p className="text-sm">{selectedTermToView.equipment_serial || 'N/A'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Responsável</Label>
+                  <p className="text-sm">{selectedTermToView.full_name}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">CPF</Label>
+                  <p className="text-sm">{selectedTermToView.cpf}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Departamento</Label>
+                  <p className="text-sm">{selectedTermToView.department}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Cargo</Label>
+                  <p className="text-sm">{selectedTermToView.position || 'N/A'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Data de Entrega</Label>
+                  <p className="text-sm">
+                    {selectedTermToView.delivered_at 
+                      ? new Date(selectedTermToView.delivered_at).toLocaleDateString('pt-BR')
+                      : new Date(selectedTermToView.created_at).toLocaleDateString('pt-BR')
+                    }
+                  </p>
+                </div>
+              </div>
+
+              {selectedTermToView.address && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Endereço</Label>
+                  <p className="text-sm">{selectedTermToView.address}</p>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsViewTermDialogOpen(false)}>
+                  Fechar
+                </Button>
+                <Button onClick={() => {
+                  // Gerar PDF do termo
+                  if (selectedTermToView) {
+                    generateTermPDF(selectedTermToView, { 
+                      name: selectedTermToView.equipment_name,
+                      brand: selectedTermToView.equipment_brand,
+                      model: selectedTermToView.equipment_model,
+                      serial_number: selectedTermToView.equipment_serial
+                    });
+                  }
+                }}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Baixar PDF
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para Registrar Devolução */}
+      <Dialog open={isReturnDialogOpen} onOpenChange={setIsReturnDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registrar Devolução do Equipamento</DialogTitle>
+            <DialogDescription>
+              Registre a devolução do equipamento: {selectedEquipmentForReturn?.name}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {selectedTermToView && (
+              <div className="bg-gray-50 p-3 rounded">
+                <p className="text-sm text-gray-600">
+                  <strong>Responsável:</strong> {selectedTermToView.full_name}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Departamento:</strong> {selectedTermToView.department}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Data de Entrega:</strong> {
+                    selectedTermToView.delivered_at 
+                      ? new Date(selectedTermToView.delivered_at).toLocaleDateString('pt-BR')
+                      : new Date(selectedTermToView.created_at).toLocaleDateString('pt-BR')
+                  }
+                </p>
+              </div>
+            )}
+
+            <div>
+              <Label htmlFor="condition_at_return">Condição do Equipamento na Devolução</Label>
+              <select 
+                id="condition_at_return" 
+                className="w-full p-2 border rounded-md"
+                defaultValue="otimo"
+              >
+                <option value="novo">Novo</option>
+                <option value="otimo">Ótimo</option>
+                <option value="bom">Bom</option>
+                <option value="regular">Regular</option>
+                <option value="ruim">Ruim</option>
+                <option value="quebrado">Quebrado</option>
+              </select>
+            </div>
+
+            <div>
+              <Label htmlFor="return_notes">Observações (opcional)</Label>
+              <textarea 
+                id="return_notes"
+                className="w-full p-2 border rounded-md"
+                rows={3}
+                placeholder="Observações sobre a devolução do equipamento..."
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsReturnDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={async () => {
+                if (!selectedTermToView) return;
+                
+                try {
+                  const conditionSelect = document.getElementById('condition_at_return') as HTMLSelectElement;
+                  const notesTextarea = document.getElementById('return_notes') as HTMLTextAreaElement;
+                  
+                  const response = await apiRequest('PUT', `/api/equipment-responsibility-terms/${selectedTermToView.id}/return`, {
+                    condition_at_return: conditionSelect.value,
+                    notes: notesTextarea.value || null,
+                  });
+
+                  if (response.success) {
+                    toast({
+                      title: "Devolução registrada",
+                      description: "O equipamento foi marcado como devolvido com sucesso!",
+                    });
+                    
+                    // Forçar atualização
+                    setForceRefreshKey(prev => prev + 1);
+                    queryClient.clear();
+                    
+                    setIsReturnDialogOpen(false);
+                  }
+                } catch (error) {
+                  console.error('Erro ao registrar devolução:', error);
+                  toast({
+                    title: "Erro",
+                    description: "Erro ao registrar devolução do equipamento.",
+                    variant: "destructive",
+                  });
+                }
+              }}>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Confirmar Devolução
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

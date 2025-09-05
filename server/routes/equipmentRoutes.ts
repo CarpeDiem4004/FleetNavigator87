@@ -227,6 +227,72 @@ router.get('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req,
   }
 });
 
+// GET /api/equipment-responsibility-terms/equipment/:equipmentId/active - Buscar termo ativo de um equipamento
+router.get('/equipment-responsibility-terms/equipment/:equipmentId/active', unifiedAuthMiddleware, async (req, res) => {
+  try {
+    const equipmentId = parseInt(req.params.equipmentId);
+    
+    const term = await db.execute(`
+      SELECT
+        ert.id,
+        ert.equipment_id,
+        ert.full_name,
+        ert.cpf,
+        ert.phone,
+        ert.department,
+        ert.position,
+        ert.address,
+        ert.assigned_at,
+        ert.delivered_at,
+        ert.is_active,
+        ert.document_path,
+        ert.created_at,
+        e.name as equipment_name,
+        e.type as equipment_type,
+        e.brand as equipment_brand,
+        e.model as equipment_model,
+        e.serial_number as equipment_serial
+      FROM equipment_responsibility_terms ert
+      LEFT JOIN equipment e ON ert.equipment_id = e.id
+      WHERE ert.equipment_id = ${equipmentId}
+        AND ert.is_active = true
+        AND ert.returned_at IS NULL
+      LIMIT 1
+    `);
+
+    if (!term.rows || term.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Nenhum termo ativo encontrado para este equipamento' });
+    }
+
+    const termData = term.rows[0];
+    res.json({ 
+      success: true, 
+      data: {
+        id: termData.id,
+        equipment_id: termData.equipment_id,
+        equipment_name: termData.equipment_name,
+        equipment_type: termData.equipment_type,
+        equipment_brand: termData.equipment_brand,
+        equipment_model: termData.equipment_model,
+        equipment_serial: termData.equipment_serial,
+        full_name: termData.full_name,
+        cpf: termData.cpf,
+        phone: termData.phone,
+        department: termData.department,
+        position: termData.position,
+        address: termData.address,
+        delivered_at: termData.delivered_at,
+        is_active: termData.is_active,
+        document_path: termData.document_path,
+        created_at: termData.created_at,
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao buscar termo ativo:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
+});
+
 // GET /api/equipment/:id - Buscar equipamento por ID
 router.get('/:id', async (req, res) => {
   try {
