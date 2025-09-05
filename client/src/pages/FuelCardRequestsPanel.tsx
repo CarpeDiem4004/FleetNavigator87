@@ -312,7 +312,7 @@ const FuelCardRequestsPanel: React.FC = () => {
 
   const completedSolicitations = useMemo(() => {
     return filteredSolicitations.filter(s => 
-      s.status === 'Recarga Efetuada' || s.status === 'Negado'
+      s.status === 'Recarga Efetuada' || s.status === 'atendido' || s.status === 'Negado'
     );
   }, [filteredSolicitations]);
 
@@ -345,7 +345,7 @@ const FuelCardRequestsPanel: React.FC = () => {
 
   const getApprovedValue = useCallback((solicitations: FuelCardSolicitation[]) => {
     return solicitations
-      .filter(s => s.status === 'Recarga Efetuada')
+      .filter(s => s.status === 'Recarga Efetuada' || s.status === 'atendido')
       .reduce((total, s) => {
         const valor = s.valor_solicitado || s.valor_calculado || 0;
         return total + Number(valor);
