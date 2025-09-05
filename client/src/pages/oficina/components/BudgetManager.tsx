@@ -331,32 +331,106 @@ export default function BudgetManager({ token, onClose }: BudgetManagerProps) {
             doc.text(`Horas de trabalho: ${budgetData.labor_hours}h`, 20, 175);
           }
           
-          if (budgetData.parts_description) {
-            doc.text(`Peças: ${budgetData.parts_description}`, 20, 185);
-            doc.text(`Custo das peças: ${formatCurrencyForPDF(budgetData.parts_cost)}`, 20, 195);
+          // Detalhamento das peças
+          let currentY = 185;
+          if (budgetData.parts_json) {
+            try {
+              const parts = JSON.parse(budgetData.parts_json);
+              if (Array.isArray(parts) && parts.length > 0) {
+                doc.text('PEÇAS DETALHADAS:', 20, currentY);
+                currentY += 10;
+                
+                // Cabeçalho da tabela
+                doc.setFontSize(10);
+                doc.text('Descrição', 20, currentY);
+                doc.text('Qtd', 120, currentY);
+                doc.text('Valor Unit.', 140, currentY);
+                doc.text('Total', 170, currentY);
+                currentY += 5;
+                
+                // Linha separadora
+                doc.line(20, currentY, 190, currentY);
+                currentY += 8;
+                
+                // Listar cada peça
+                parts.forEach((part: any) => {
+                  const description = part.description || 'N/A';
+                  const quantity = part.quantity || 0;
+                  const unitPrice = part.unitPrice || 0;
+                  const total = part.total || 0;
+                  
+                  // Quebrar descrição longa
+                  const maxDescWidth = 90;
+                  const descLines = doc.splitTextToSize(description, maxDescWidth);
+                  
+                  doc.text(descLines[0], 20, currentY);
+                  doc.text(quantity.toString(), 120, currentY);
+                  doc.text(formatCurrencyForPDF(unitPrice), 140, currentY);
+                  doc.text(formatCurrencyForPDF(total), 170, currentY);
+                  
+                  currentY += 8;
+                  
+                  // Se há mais linhas na descrição
+                  if (descLines.length > 1) {
+                    for (let i = 1; i < descLines.length; i++) {
+                      doc.text(descLines[i], 20, currentY);
+                      currentY += 6;
+                    }
+                  }
+                });
+                
+                // Linha separadora final
+                doc.line(20, currentY, 190, currentY);
+                currentY += 10;
+                
+                doc.setFontSize(12);
+                doc.text(`Subtotal Peças: ${formatCurrencyForPDF(budgetData.parts_cost)}`, 20, currentY);
+                currentY += 15;
+              }
+            } catch (error) {
+              console.error('Erro ao processar peças JSON:', error);
+              // Fallback para descrição simples
+              if (budgetData.parts_description) {
+                doc.text(`Peças: ${budgetData.parts_description}`, 20, currentY);
+                currentY += 10;
+                doc.text(`Custo das peças: ${formatCurrencyForPDF(budgetData.parts_cost)}`, 20, currentY);
+                currentY += 15;
+              }
+            }
+          } else if (budgetData.parts_description) {
+            // Fallback para descrição simples quando não há JSON
+            doc.text(`Peças: ${budgetData.parts_description}`, 20, currentY);
+            currentY += 10;
+            doc.text(`Custo das peças: ${formatCurrencyForPDF(budgetData.parts_cost)}`, 20, currentY);
+            currentY += 15;
           }
           
           // Total
           doc.setFontSize(14);
-          doc.text(`TOTAL: ${formatCurrencyForPDF(budgetData.total_cost)}`, 20, 215);
+          doc.text(`TOTAL GERAL: ${formatCurrencyForPDF(budgetData.total_cost)}`, 20, currentY);
           
           // Prazo estimado
+          currentY += 15;
           if (budgetData.estimated_days) {
             doc.setFontSize(12);
-            doc.text(`Prazo estimado: ${budgetData.estimated_days} dias`, 20, 230);
+            doc.text(`Prazo estimado: ${budgetData.estimated_days} dias`, 20, currentY);
+            currentY += 15;
           }
           
           // Observações
           if (budgetData.notes) {
-            doc.text('Observações:', 20, 245);
+            doc.text('Observações:', 20, currentY);
+            currentY += 10;
             const splitNotes = doc.splitTextToSize(budgetData.notes, 170);
-            doc.text(splitNotes, 20, 255);
+            doc.text(splitNotes, 20, currentY);
+            currentY += (splitNotes.length * 6) + 15;
           }
           
           // Rodapé
           doc.setFontSize(10);
-          doc.text(`Orçamento gerado em: ${new Date().toLocaleString('pt-BR')}`, 20, 280);
-          doc.text('Este orçamento tem validade de 30 dias.', 20, 290);
+          doc.text(`Orçamento gerado em: ${new Date().toLocaleString('pt-BR')}`, 20, currentY);
+          currentY += 10;
+          doc.text('Este orçamento tem validade de 30 dias.', 20, currentY);
           
           // Baixar PDF
           doc.save(`orcamento-${budgetData.budget_number || 'orcamento'}.pdf`);
