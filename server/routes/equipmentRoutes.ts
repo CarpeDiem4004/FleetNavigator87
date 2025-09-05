@@ -402,6 +402,19 @@ router.post('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req
       .set({ status: 'em_uso', updated_at: new Date() })
       .where(eq(equipments.id, validatedData.equipment_id));
 
+    // Registrar movimentação no histórico automaticamente
+    await db
+      .insert(equipmentMovements)
+      .values({
+        equipment_id: validatedData.equipment_id,
+        to_user_id: req.user?.id || null,
+        to_location: validatedData.department || null,
+        movement_type: 'assignment',
+        moved_by: req.user?.id || 1, // ID do usuário logado ou admin padrão
+        moved_at: new Date(),
+        notes: `Termo de responsabilidade criado para ${validatedData.full_name} - ${validatedData.department}`
+      });
+
     res.status(201).json({ success: true, data: newTerm[0] });
   } catch (error) {
     console.error('Erro ao criar termo de responsabilidade:', error);

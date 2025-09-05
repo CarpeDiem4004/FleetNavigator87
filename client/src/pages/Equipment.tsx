@@ -337,14 +337,23 @@ export default function Equipment() {
   const createTermMutation = useMutation({
     mutationFn: (data: ResponsibilityTermFormData) => apiRequest('POST', '/api/equipment-responsibility-terms', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/equipment'] });
+      // Invalidar todas as queries relacionadas para refletir as mudanças
+      queryClient.invalidateQueries({ queryKey: ['/api/equipment-list'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/equipment-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['/api/equipment-responsibility-terms'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/equipment-movements'] });
+      
+      // Forçar atualização imediata
+      setForceRefreshKey(prev => prev + 1);
+      refetchEquipments();
+      refetchDashboard();
+      
       setIsTermDialogOpen(false);
       setSelectedEquipmentForTerm(null);
       termForm.reset();
       toast({
         title: "Sucesso",
-        description: "Termo de responsabilidade criado com sucesso!",
+        description: "Termo de responsabilidade criado! Equipamento agora está 'Em Uso' e movimentação registrada no histórico.",
       });
     },
     onError: (error) => {
