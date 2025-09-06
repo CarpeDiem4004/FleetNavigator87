@@ -193,6 +193,56 @@ export default function EquipmentRequestsAdmin() {
            new Date(dateString).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
 
+  const openWhatsApp = (request: any) => {
+    // Mapear status para mensagem
+    const statusMessages = {
+      pendente: '⏳ Aguardando Análise',
+      em_analise: '🔍 Em Análise',
+      aprovado: '✅ APROVADO',
+      rejeitado: '❌ REJEITADO',
+      em_separacao: '📦 Em Separação',
+      pronto_retirada: '✅ Pronto para Retirada',
+      entregue: '✅ ENTREGUE',
+      cancelado: '❌ CANCELADO'
+    };
+
+    const statusMessage = statusMessages[request.status as keyof typeof statusMessages] || request.status;
+    
+    // Montar mensagem personalizada
+    let message = `📋 *Status da Solicitação*\n\n🔢 *Protocolo:* #${request.id}\n📱 *Tipo:* ${request.equipment_type.toUpperCase()}\n⚡ *Status:* ${statusMessage}`;
+    
+    // Adicionar informações específicas por status
+    if (request.status === 'aprovado' && request.manager_comments) {
+      message += `\n💬 *Comentários:* ${request.manager_comments}`;
+    }
+    
+    if (request.status === 'rejeitado' && request.rejection_reason) {
+      message += `\n❌ *Motivo:* ${request.rejection_reason}`;
+    }
+    
+    if (request.status === 'pronto_retirada') {
+      message += `\n\n🏢 Seu equipamento está pronto para retirada!\nEntre em contato para agendar.`;
+    }
+    
+    if (request.status === 'entregue') {
+      message += `\n\n🎉 Equipamento entregue com sucesso!`;
+    }
+    
+    message += `\n\n📅 *Última atualização:* ${new Date().toLocaleDateString('pt-BR')}`;
+
+    // Formatar número do WhatsApp (remover caracteres especiais)
+    const cleanPhone = request.whatsapp_phone.replace(/\D/g, '');
+    
+    // Codificar mensagem para URL
+    const encodedMessage = encodeURIComponent(message);
+    
+    // Criar link do WhatsApp
+    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+    
+    // Abrir WhatsApp
+    window.open(whatsappUrl, '_blank');
+  };
+
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
@@ -375,8 +425,7 @@ export default function EquipmentRequestsAdmin() {
                                   ? "text-green-600 hover:text-green-700 border-green-500 bg-green-50" 
                                   : "text-green-600 hover:text-green-700"
                               }
-                              onClick={() => whatsappMutation.mutate(request.id)}
-                              disabled={whatsappMutation.isPending}
+                              onClick={() => openWhatsApp(request)}
                               title={
                                 request.status !== 'pendente'
                                   ? `Notificar mudança de status para: ${statusLabels[request.status as keyof typeof statusLabels]}`
