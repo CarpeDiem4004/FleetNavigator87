@@ -35,6 +35,8 @@ const equipmentRequestSchema = z.object({
   requester_base_address: z.string().min(1, "Endereço da base é obrigatório"),
   requester_department: z.string().min(1, "Departamento é obrigatório"),
   requester_function: z.string().min(1, "Função é obrigatória"),
+  project_name: z.string().min(1, "Nome do projeto é obrigatório"),
+  base_name: z.string().min(1, "Nome da base é obrigatório"),
   manager_approval: z.string().min(1, "Nome do gestor é obrigatório"),
   manager_phone: z.string().min(10, "Telefone do gestor deve ter pelo menos 10 dígitos"),
   equipment_type: z.enum(['notebook', 'celular', 'email', 'chip']),
@@ -257,6 +259,36 @@ export default function EquipmentRequest() {
                     </FormItem>
                   )}
                 />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="project_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome do Projeto *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome do projeto" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="base_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Base *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome da base" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
