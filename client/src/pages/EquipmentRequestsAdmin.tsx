@@ -370,12 +370,23 @@ export default function EquipmentRequestsAdmin() {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="text-green-600 hover:text-green-700"
+                              className={
+                                request.status !== 'pendente' 
+                                  ? "text-green-600 hover:text-green-700 border-green-500 bg-green-50" 
+                                  : "text-green-600 hover:text-green-700"
+                              }
                               onClick={() => whatsappMutation.mutate(request.id)}
                               disabled={whatsappMutation.isPending}
-                              title="Enviar status via WhatsApp"
+                              title={
+                                request.status !== 'pendente'
+                                  ? `Notificar mudança de status para: ${statusLabels[request.status as keyof typeof statusLabels]}`
+                                  : "Enviar status via WhatsApp"
+                              }
                             >
                               <Send className="h-4 w-4" />
+                              {request.status !== 'pendente' && (
+                                <span className="ml-1 text-xs font-semibold">!</span>
+                              )}
                             </Button>
                           )}
                           {request.status === 'pendente' && (
