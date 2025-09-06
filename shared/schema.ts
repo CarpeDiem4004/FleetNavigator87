@@ -993,6 +993,8 @@ export const equipmentRequests = pgTable("equipment_requests", {
   requester_base_address: text("requester_base_address").notNull(),
   requester_department: text("requester_department").notNull(),
   requester_function: text("requester_function").notNull(),
+  project_name: text("project_name").notNull(),
+  base_name: text("base_name").notNull(),
   equipment_type: equipmentTypeEnum("equipment_type").notNull(),
   justification: text("justification").notNull(),
   urgency_level: equipmentRequestPriorityEnum("urgency_level").notNull().default('normal'),

@@ -430,58 +430,107 @@ export default function EquipmentRequestsAdmin() {
           </DialogHeader>
           
           {selectedRequest && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Solicitante</label>
-                  <div className="text-sm">{selectedRequest.requester_name}</div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Departamento</label>
-                  <div className="text-sm">{selectedRequest.requester_department}</div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Email</label>
-                  <div className="text-sm">{selectedRequest.requester_email}</div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Telefone</label>
-                  <div className="text-sm">{selectedRequest.requester_phone}</div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Tipo de Equipamento</label>
-                  <div className="text-sm">
-                    {equipmentTypeLabels[selectedRequest.equipment_type as keyof typeof equipmentTypeLabels]}
+            <div className="space-y-6">
+              {/* Dados Pessoais */}
+              <div>
+                <h3 className="text-lg font-medium mb-3 text-gray-900 border-b pb-2">Dados Pessoais</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Solicitante</label>
+                    <div className="text-sm">{selectedRequest.requester_name}</div>
                   </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Urgência</label>
-                  <div className={`text-sm ${urgencyColors[selectedRequest.urgency_level as keyof typeof urgencyColors]}`}>
-                    {selectedRequest.urgency_level.toUpperCase()}
+                  <div>
+                    <label className="text-sm font-medium">CPF</label>
+                    <div className="text-sm">{selectedRequest.requester_cpf}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Email</label>
+                    <div className="text-sm">{selectedRequest.requester_email}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Telefone</label>
+                    <div className="text-sm">{selectedRequest.requester_phone}</div>
                   </div>
                 </div>
               </div>
 
+              {/* Dados Profissionais */}
               <div>
-                <label className="text-sm font-medium">Descrição</label>
-                <div className="text-sm bg-gray-50 p-3 rounded">
-                  {selectedRequest.equipment_description}
+                <h3 className="text-lg font-medium mb-3 text-gray-900 border-b pb-2">Dados Profissionais</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium">Endereço da Base</label>
+                    <div className="text-sm bg-gray-50 p-2 rounded">{selectedRequest.requester_base_address}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">Nome do Projeto</label>
+                      <div className="text-sm">{selectedRequest.project_name}</div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Base</label>
+                      <div className="text-sm">{selectedRequest.base_name}</div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">Departamento</label>
+                      <div className="text-sm">{selectedRequest.requester_department}</div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Função</label>
+                      <div className="text-sm">{selectedRequest.requester_function}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
+              {/* Dados do Gestor */}
               <div>
-                <label className="text-sm font-medium">Justificativa</label>
-                <div className="text-sm bg-gray-50 p-3 rounded">
-                  {selectedRequest.justification}
+                <h3 className="text-lg font-medium mb-3 text-gray-900 border-b pb-2">Dados do Gestor</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Nome do Gestor</label>
+                    <div className="text-sm">{selectedRequest.manager_approval}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Telefone do Gestor</label>
+                    <div className="text-sm">{selectedRequest.manager_phone}</div>
+                  </div>
                 </div>
               </div>
 
+              {/* Solicitação de Equipamento */}
               <div>
-                <label className="text-sm font-medium">Gestor Aprovador</label>
-                <div className="text-sm">{selectedRequest.manager_approval}</div>
+                <h3 className="text-lg font-medium mb-3 text-gray-900 border-b pb-2">Solicitação de Equipamento</h3>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">Tipo de Equipamento</label>
+                      <div className="text-sm">
+                        {equipmentTypeLabels[selectedRequest.equipment_type as keyof typeof equipmentTypeLabels]}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Urgência</label>
+                      <div className={`text-sm ${urgencyColors[selectedRequest.urgency_level as keyof typeof urgencyColors]}`}>
+                        {selectedRequest.urgency_level.toUpperCase()}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Justificativa</label>
+                    <div className="text-sm bg-gray-50 p-3 rounded">
+                      {selectedRequest.justification}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">WhatsApp para Notificações</label>
+                    <div className="text-sm">{selectedRequest.whatsapp_phone}</div>
+                  </div>
+                </div>
               </div>
 
               {actionType === 'approve' && (
