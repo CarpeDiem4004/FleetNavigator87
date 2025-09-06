@@ -2201,7 +2201,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           requester_cpf: equipmentRequests.requester_cpf,
           requester_base_address: equipmentRequests.requester_base_address,
           requester_function: equipmentRequests.requester_function,
-          manager_phone: equipmentRequests.manager_phone
+          project_name: equipmentRequests.project_name,
+          base_name: equipmentRequests.base_name,
+          manager_phone: equipmentRequests.manager_phone,
+          whatsapp_phone: equipmentRequests.whatsapp_phone
         })
         .from(equipmentRequests)
         .leftJoin(users, eq(equipmentRequests.approved_by, users.id))
