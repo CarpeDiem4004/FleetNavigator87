@@ -2323,6 +2323,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para atualizar status da solicitação de equipamento
+  app.put('/api/equipment-requests/:id/status', async (req, res) => {
+    try {
+      const { db } = await import('./db.js');
+      const { equipmentRequests } = await import('../shared/schema.js');
+      const { eq } = await import('drizzle-orm');
+      
+      const requestId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      // Validar status
+      const validStatuses = ['pendente', 'em_analise', 'aprovado', 'rejeitado', 'em_separacao', 'pronto_retirada', 'entregue', 'cancelado'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ success: false, message: 'Status inválido' });
+      }
+      
+      // Atualizar status
+      await db
+        .update(equipmentRequests)
+        .set({ 
+          status,
+          updated_at: new Date()
+        })
+        .where(eq(equipmentRequests.id, requestId));
+      
+      res.json({ 
+        success: true, 
+        message: 'Status atualizado com sucesso',
+        data: { id: requestId, status }
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+    }
+  });
+
   // Endpoint para enviar status via WhatsApp
   app.post('/api/equipment-requests/:id/send-whatsapp-status', async (req, res) => {
     try {

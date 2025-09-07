@@ -93,6 +93,7 @@ export default function EquipmentRequestsAdmin() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingStatus, setEditingStatus] = useState<{requestId: number, currentStatus: string} | null>(null);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -170,6 +171,24 @@ export default function EquipmentRequestsAdmin() {
     },
     onError: () => {
       toast({ title: "Erro ao enviar mensagem WhatsApp", variant: "destructive" });
+    }
+  });
+
+  // Update status mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number, status: string }) => {
+      const response = await apiRequest("PUT", `/api/equipment-requests/${id}/status`, {
+        status
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: "Status atualizado com sucesso!", variant: "default" });
+      queryClient.invalidateQueries({ queryKey: ['equipment-requests'] });
+      setEditingStatus(null);
+    },
+    onError: () => {
+      toast({ title: "Erro ao atualizar status", variant: "destructive" });
     }
   });
 
@@ -439,25 +458,43 @@ export default function EquipmentRequestsAdmin() {
                               )}
                             </Button>
                           )}
-                          {request.status === 'pendente' && (
-                            <>
+                          {/* Status Update Dropdown */}
+                          {editingStatus?.requestId === request.id ? (
+                            <div className="flex gap-1">
+                              <Select
+                                value={editingStatus?.currentStatus}
+                                onValueChange={(value) => {
+                                  updateStatusMutation.mutate({ id: request.id, status: value });
+                                }}
+                              >
+                                <SelectTrigger className="w-32 h-8">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="em_analise">Em Análise</SelectItem>
+                                  <SelectItem value="aprovado">Aprovado</SelectItem>
+                                  <SelectItem value="rejeitado">Rejeitado</SelectItem>
+                                  <SelectItem value="entregue">Entregue</SelectItem>
+                                </SelectContent>
+                              </Select>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="text-blue-600 hover:text-blue-700"
-                                onClick={() => handleAction(request, 'approve')}
+                                onClick={() => setEditingStatus(null)}
                               >
-                                <CheckCircle className="h-4 w-4" />
+                                <XCircle className="h-3 w-3" />
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-red-600 hover:text-red-700"
-                                onClick={() => handleAction(request, 'reject')}
-                              >
-                                <XCircle className="h-4 w-4" />
-                              </Button>
-                            </>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-purple-600 hover:text-purple-700"
+                              onClick={() => setEditingStatus({ requestId: request.id, currentStatus: request.status })}
+                              title="Editar Status"
+                            >
+                              <Settings className="h-4 w-4" />
+                            </Button>
                           )}
                         </div>
                       </TableCell>
