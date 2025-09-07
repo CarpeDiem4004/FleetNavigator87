@@ -117,7 +117,8 @@ export default function EquipmentRequestsAdmin() {
   const filteredRequests = requests.filter((request: any) =>
     (request.requester_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (request.requester_department || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (request.equipment_description || '').toLowerCase().includes(searchTerm.toLowerCase())
+    (request.equipment_description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (request.id || '').toString().includes(searchTerm)
   );
 
   // Approve mutation
