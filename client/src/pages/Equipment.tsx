@@ -43,7 +43,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
-import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download, Search, History, Clock, Wrench, Paperclip, Eye, Upload, RefreshCw, ClipboardList, CheckCircle, RotateCcw } from "lucide-react";
+import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download, Search, History, Clock, Wrench, Paperclip, Eye, Upload, RefreshCw, ClipboardList, CheckCircle, RotateCcw, Share, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import jsPDF from "jspdf";
@@ -161,6 +161,7 @@ export default function Equipment() {
   const [isViewTermDialogOpen, setIsViewTermDialogOpen] = useState(false);
   const [selectedEquipmentForReturn, setSelectedEquipmentForReturn] = useState<any>(null);
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -638,12 +639,10 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
           </p>
         </div>
         <div className="flex space-x-2">
-          <Link href="/equipment/request">
-            <Button variant="outline">
-              <FileText className="mr-2 h-4 w-4" />
-              Solicitar Equipamento
-            </Button>
-          </Link>
+          <Button variant="outline" onClick={() => setIsShareDialogOpen(true)}>
+            <Share className="mr-2 h-4 w-4" />
+            Link Solicitação Equipamento
+          </Button>
           <Link href="/equipment/requests/admin">
             <Button variant="secondary">
               <ClipboardList className="mr-2 h-4 w-4" />
@@ -1853,6 +1852,59 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para compartilhar link de solicitação */}
+      <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Share className="h-5 w-5" />
+              Link para Solicitação de Equipamentos
+            </DialogTitle>
+            <DialogDescription>
+              Compartilhe este link com sua equipe para que possam solicitar equipamentos
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm font-medium text-gray-700 mb-2">Link para compartilhar:</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={`${window.location.origin}/equipment/request`}
+                  readOnly
+                  className="flex-1 px-3 py-2 text-sm bg-white border border-gray-300 rounded-md"
+                />
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/equipment/request`);
+                    toast({
+                      title: "Link copiado!",
+                      description: "O link foi copiado para a área de transferência",
+                    });
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="text-sm text-gray-600">
+              <p>📱 <strong>Como usar:</strong></p>
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                <li>Envie este link para sua equipe via WhatsApp, email ou Slack</li>
+                <li>Colaboradores podem preencher o formulário diretamente</li>
+                <li>Solicitações aparecerão na aba "Gerenciar Solicitações"</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsShareDialogOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
