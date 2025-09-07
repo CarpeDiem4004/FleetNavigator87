@@ -679,6 +679,16 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
         >
           Termos de Responsabilidade
         </button>
+        <button
+          onClick={() => setActiveTab('collaborators')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'collaborators' 
+              ? 'border-b-2 border-blue-500 text-blue-600' 
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Colaboradores com Equipamentos
+        </button>
       </div>
 
       {/* Conteúdo das abas */}
@@ -1019,6 +1029,28 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Aba de Colaboradores com Equipamentos */}
+      {activeTab === 'collaborators' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserCheck className="h-5 w-5" />
+                Colaboradores com Equipamentos
+              </CardTitle>
+              <CardDescription>
+                Visualização consolidada de todos os colaboradores que possuem equipamentos
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <CollaboratorsWithEquipmentTable />
               </div>
             </CardContent>
           </Card>
