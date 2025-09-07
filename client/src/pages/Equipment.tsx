@@ -1858,3 +1858,71 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
     </div>
   );
 }
+
+// Componente para tabela de colaboradores com equipamentos
+function CollaboratorsWithEquipmentTable() {
+  const { data: collaborators, isLoading, error } = useQuery({
+    queryKey: ['/api/equipment/collaborators'],
+    queryFn: () => apiRequest('GET', '/api/equipment/collaborators')
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-600">Carregando colaboradores...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-red-600">Erro ao carregar colaboradores com equipamentos</p>
+      </div>
+    );
+  }
+
+  const collaboratorsList = collaborators?.data || [];
+
+  if (collaboratorsList.length === 0) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-gray-600">Nenhum colaborador com equipamentos encontrado</p>
+      </div>
+    );
+  }
+
+  return (
+    <table className="w-full">
+      <thead>
+        <tr className="border-b bg-gray-50">
+          <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Nome</th>
+          <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">CPF</th>
+          <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Telefone</th>
+          <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Projeto</th>
+          <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Base</th>
+          <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Equipamentos</th>
+          <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Tipos</th>
+        </tr>
+      </thead>
+      <tbody>
+        {collaboratorsList.map((collaborator, index) => (
+          <tr key={collaborator.cpf} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+            <td className="px-4 py-3 text-sm text-gray-900">{collaborator.fullName}</td>
+            <td className="px-4 py-3 text-sm text-gray-600">{collaborator.cpf}</td>
+            <td className="px-4 py-3 text-sm text-gray-600">{collaborator.phone}</td>
+            <td className="px-4 py-3 text-sm text-gray-600">{collaborator.project || '-'}</td>
+            <td className="px-4 py-3 text-sm text-gray-600">{collaborator.base || '-'}</td>
+            <td className="px-4 py-3 text-sm text-center">
+              <Badge variant="secondary">{collaborator.equipmentCount}</Badge>
+            </td>
+            <td className="px-4 py-3 text-sm text-gray-600">{collaborator.equipmentTypes}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
