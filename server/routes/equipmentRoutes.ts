@@ -15,7 +15,7 @@ import {
   type EquipmentMaintenance,
   type EquipmentMovement
 } from "@shared/schema";
-import { eq, desc, and, isNull, count } from "drizzle-orm";
+import { eq, desc, and, isNull, count, sql } from "drizzle-orm";
 import { unifiedAuthMiddleware } from "../utils/auth-utils";
 import multer from "multer";
 import path from "path";
@@ -290,6 +290,100 @@ router.get('/equipment-responsibility-terms/equipment/:equipmentId/active', unif
   } catch (error) {
     console.error('Erro ao buscar termo ativo:', error);
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
+});
+
+// Rota para buscar colaboradores com equipamentos
+router.get('/collaborators', async (req, res) => {
+  try {
+    // Adicionar headers anti-cache
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'Surrogate-Control': 'no-store'
+    });
+
+    // Buscar todos os termos de responsabilidade com informações dos equipamentos usando SQL simples
+    const result = await db.execute(sql`
+      SELECT 
+        ert.id,
+        ert.full_name as "fullName",
+        ert.cpf,
+        ert.phone,
+        ert.department,
+        e.name as "equipmentName",
+        e.type as "equipmentType",
+        ert.assigned_at as "assignedAt"
+      FROM equipment_responsibility_terms ert
+      LEFT JOIN equipments e ON ert.equipment_id = e.id
+      WHERE ert.returned_at IS NULL
+      ORDER BY ert.assigned_at DESC
+    `);
+    
+    const responsibilityTerms = result.rows || [];
+
+    // Agrupar por colaborador (CPF) e unificar os dados
+    const collaboratorsMap = new Map();
+
+    responsibilityTerms.forEach(term => {
+      if (!term || !term.cpf) return; // Skip invalid records
+      
+      const key = term.cpf;
+      
+      if (collaboratorsMap.has(key)) {
+        // Adicionar equipamento à lista existente
+        const existing = collaboratorsMap.get(key);
+        if (existing && existing.equipments) {
+          existing.equipments.push({
+            name: term.equipmentName || 'N/A',
+            type: term.equipmentType || 'N/A',
+            assignedAt: term.assignedAt
+          });
+        }
+      } else {
+        // Criar novo registro do colaborador
+        collaboratorsMap.set(key, {
+          fullName: term.fullName || 'N/A',
+          cpf: term.cpf,
+          phone: term.phone || 'N/A',
+          department: term.department || 'N/A',
+          project: 'N/A', // Campo solicitado pelo usuário
+          base: 'N/A',    // Campo solicitado pelo usuário
+          equipments: [{
+            name: term.equipmentName || 'N/A',
+            type: term.equipmentType || 'N/A',
+            assignedAt: term.assignedAt
+          }]
+        });
+      }
+    });
+
+    // Converter Map para array
+    const collaborators = Array.from(collaboratorsMap.values()).map(collaborator => {
+      if (!collaborator || !collaborator.equipments) {
+        return null;
+      }
+      return {
+        ...collaborator,
+        equipmentCount: collaborator.equipments.length,
+        equipmentTypes: [...new Set(collaborator.equipments.map(eq => eq.type || 'N/A'))].join(', ')
+      };
+    }).filter(c => c !== null);
+
+    res.json({
+      success: true,
+      data: collaborators,
+      total: collaborators.length
+    });
+
+  } catch (error) {
+    console.error('Erro ao buscar colaboradores com equipamentos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    });
   }
 });
 
@@ -799,90 +893,5 @@ router.get('/equipment-maintenance/:equipmentId', async (req, res) => {
   }
 });
 
-// Rota para buscar colaboradores com equipamentos
-router.get('/collaborators', async (req, res) => {
-  try {
-    // Adicionar headers anti-cache
-    res.set({
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0',
-      'Surrogate-Control': 'no-store'
-    });
-
-    // Buscar todos os termos de responsabilidade com informações dos equipamentos
-    const responsibilityTerms = await db
-      .select({
-        id: equipmentResponsibilityTerms.id,
-        fullName: equipmentResponsibilityTerms.fullName,
-        cpf: equipmentResponsibilityTerms.cpf,
-        phone: equipmentResponsibilityTerms.phone,
-        department: equipmentResponsibilityTerms.department,
-        project: equipmentResponsibilityTerms.project,
-        base: equipmentResponsibilityTerms.base,
-        equipmentName: equipments.name,
-        equipmentType: equipments.type,
-        createdAt: equipmentResponsibilityTerms.createdAt,
-        returnedAt: equipmentResponsibilityTerms.returnedAt
-      })
-      .from(equipmentResponsibilityTerms)
-      .leftJoin(equipments, eq(equipmentResponsibilityTerms.equipmentId, equipments.id))
-      .where(isNull(equipmentResponsibilityTerms.returnedAt)) // Apenas equipamentos não devolvidos
-      .orderBy(desc(equipmentResponsibilityTerms.createdAt));
-
-    // Agrupar por colaborador (CPF) e unificar os dados
-    const collaboratorsMap = new Map();
-
-    responsibilityTerms.forEach(term => {
-      const key = term.cpf;
-      
-      if (collaboratorsMap.has(key)) {
-        // Adicionar equipamento à lista existente
-        const existing = collaboratorsMap.get(key);
-        existing.equipments.push({
-          name: term.equipmentName,
-          type: term.equipmentType,
-          assignedAt: term.createdAt
-        });
-      } else {
-        // Criar novo registro do colaborador
-        collaboratorsMap.set(key, {
-          fullName: term.fullName,
-          cpf: term.cpf,
-          phone: term.phone,
-          department: term.department,
-          project: term.project,
-          base: term.base,
-          equipments: [{
-            name: term.equipmentName,
-            type: term.equipmentType,
-            assignedAt: term.createdAt
-          }]
-        });
-      }
-    });
-
-    // Converter Map para array
-    const collaborators = Array.from(collaboratorsMap.values()).map(collaborator => ({
-      ...collaborator,
-      equipmentCount: collaborator.equipments.length,
-      equipmentTypes: [...new Set(collaborator.equipments.map(eq => eq.type))].join(', ')
-    }));
-
-    res.json({
-      success: true,
-      data: collaborators,
-      total: collaborators.length
-    });
-
-  } catch (error) {
-    console.error('Erro ao buscar colaboradores com equipamentos:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erro interno do servidor',
-      error: error instanceof Error ? error.message : 'Erro desconhecido'
-    });
-  }
-});
 
 export default router;
