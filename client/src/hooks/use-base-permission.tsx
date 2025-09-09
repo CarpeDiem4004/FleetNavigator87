@@ -650,6 +650,8 @@ export const useBasePermission = (): BasePermissionHook => {
       const gestorEquipamentosRoutes = [
         '/',                               // Dashboard
         '/equipment',                      // Gestão de Equipamentos
+        '/equipment/request',              // Formulário de Solicitação de Equipamentos
+        '/equipment/requests/admin',       // Gerenciar Solicitações de Equipamentos
         '/vehicles',                       // Veículos
         '/maintenance',                    // Manutenções
         '/manutencao',                     // Alias para Manutenção
