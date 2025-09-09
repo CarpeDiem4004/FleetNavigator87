@@ -196,19 +196,19 @@ const SidebarSimplified: React.FC<SidebarProps> = ({ open, setOpen }) => {
   
   // Lista unificada de todos os itens de navegação com controle de roles
   const allMenuItems: NavItem[] = [
-    { name: 'Dashboard', href: '/', icon: Gauge, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_combustivel'] },
-    { name: 'Equipamentos', href: '#', icon: Package, roles: ['admin', 'gestor_frota', 'line_hall'], subItems: [
+    { name: 'Dashboard', href: '/', icon: Gauge, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_combustivel', 'gestor_equipamentos'] },
+    { name: 'Equipamentos', href: '#', icon: Package, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_equipamentos'], subItems: [
       { name: 'Gestão de Equipamentos', href: '/equipment', icon: Package },
       { name: 'Solicitar Equipamento', href: '/equipment/request', icon: FileText },
-      { name: 'Gerenciar Solicitações', href: '/equipment/requests/admin', icon: Settings, roles: ['admin'] }
+      { name: 'Gerenciar Solicitações', href: '/equipment/requests/admin', icon: Settings, roles: ['admin', 'gestor_equipamentos'] }
     ]},
-    { name: 'Dashboard Executivo', href: '/executive-dashboard', icon: BarChart4, roles: ['admin', 'gestor_frota', 'line_hall'] },
+    { name: 'Dashboard Executivo', href: '/executive-dashboard', icon: BarChart4, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_equipamentos'] },
     { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_combustivel'] },
-    { name: 'Veículos', href: '/vehicles', icon: Truck, roles: ['admin', 'gestor_frota', 'line_hall'] },
-    { name: 'Motoristas', href: '/drivers', icon: Users, roles: ['admin', 'gestor_frota', 'line_hall'] },
-    { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText, roles: ['admin', 'gestor_frota', 'line_hall'] },
-    { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench, roles: ['admin', 'gestor_frota', 'line_hall'] },
-    { name: 'Pneus', href: '/tires', icon: CircleDot, roles: ['admin', 'gestor_frota', 'line_hall'] },
+    { name: 'Veículos', href: '/vehicles', icon: Truck, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_equipamentos'] },
+    { name: 'Motoristas', href: '/drivers', icon: Users, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_equipamentos'] },
+    { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_equipamentos'] },
+    { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_equipamentos'] },
+    { name: 'Pneus', href: '/tires', icon: CircleDot, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_equipamentos'] },
     
     // Menu de Abastecimentos com submenu
     { name: 'Abastecimentos', href: '#', icon: Fuel, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_combustivel'], subItems: [
