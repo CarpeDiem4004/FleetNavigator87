@@ -93,8 +93,7 @@ const HistoricoGeralPage = () => {
   // Verificar se é admin
   const isAdmin = user?.role === 'admin';
   
-  // Log temporário para debug
-  console.log('DEBUG - User object:', user, 'isAdmin:', isAdmin);
+  // Verificar se é admin
   
   // Função para obter a base específica registrada ou fazer fallback para mapeamento
   const getBaseFromAbastecimento = (item: any): string => {
@@ -774,13 +773,7 @@ const HistoricoGeralPage = () => {
       
       // Log dos primeiros 3 registros para debug
       if (todosAbastecimentos.length > 0) {
-        console.log("[DEBUG] Primeiros 3 abastecimentos:", todosAbastecimentos.slice(0, 3).map(a => ({
-          id: a.id,
-          placa: a.placa,
-          posto: a.posto,
-          created_at: a.created_at,
-          project: a.project
-        })));
+        // Abastecimentos carregados com sucesso
       }
       
       // Ordenar por data (mais recentes primeiro)
@@ -827,7 +820,6 @@ const HistoricoGeralPage = () => {
       
       // Garantir que apenas a data seja mostrada, sem horário
       const dataFormatada = format(data, 'dd/MM/yyyy');
-      console.log(`[DEBUG] Formatando data: ${dataString} -> ${dataFormatada}`);
       return dataFormatada;
     } catch (error) {
       console.error('Erro ao formatar data:', error);
@@ -1094,63 +1086,14 @@ const HistoricoGeralPage = () => {
   const endIndex = startIndex + itemsPerPage;
   const paginatedData = filteredData.slice(startIndex, endIndex);
   
-  // Debug logs
-  console.log("[RENDER] Estado atual:", {
-    abastecimentos: abastecimentos.length,
-    filteredData: filteredData.length,
-    paginatedData: paginatedData.length,
-    isLoading,
-    searchTerm,
-    dateStart,
-    dateEnd
-  });
+  // Estado atual do componente renderizado
 
   // Reset página quando mudar filtros
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, dateStart, dateEnd]);
 
-  // Debug logs para entender o filtro
-  React.useEffect(() => {
-    if (dateStart || dateEnd) {
-      console.log(`[FILTER_DEBUG] ========================================`);
-      console.log(`[FILTER_DEBUG] Total abastecimentos: ${abastecimentos.length}, Filtrados: ${filteredData.length}`);
-      console.log(`[FILTER_DEBUG] Filtros ativos - Data inicial: ${dateStart || 'não definida'}, Data final: ${dateEnd || 'não definida'}`);
-      
-      if (abastecimentos.length > 0) {
-        const sampleDates = abastecimentos.slice(0, 10).map(item => {
-          const itemDate = new Date(item.created_at);
-          return {
-            id: item.id,
-            created_at: item.created_at,
-            placa: item.placa,
-            formatted_date: itemDate.toLocaleDateString('pt-BR'),
-            iso_date: itemDate.toISOString().split('T')[0]
-          };
-        });
-        console.log(`[FILTER_DEBUG] Amostra de 10 registros com datas:`, sampleDates);
-        
-        // Verificar se há dados para a data específica selecionada
-        if (dateStart) {
-          const selectedRecords = abastecimentos.filter(item => {
-            const itemDate = new Date(item.created_at);
-            const itemDateISO = itemDate.toISOString().split('T')[0];
-            return itemDateISO === dateStart;
-          });
-          console.log(`[FILTER_DEBUG] Registros para ${dateStart}: ${selectedRecords.length}`);
-          if (selectedRecords.length > 0) {
-            console.log(`[FILTER_DEBUG] Primeiros 3 registros da data selecionada:`, selectedRecords.slice(0, 3).map(r => ({
-              id: r.id,
-              placa: r.placa,
-              created_at: r.created_at,
-              posto: r.posto
-            })));
-          }
-        }
-      }
-      console.log(`[FILTER_DEBUG] ========================================`);
-    }
-  }, [dateStart, dateEnd, abastecimentos.length, filteredData.length]);
+  // Filtro de dados aplicado
 
   // Cálculos para os mostradores
   const calcularConsolidado = () => {
@@ -1396,17 +1339,9 @@ const HistoricoGeralPage = () => {
       const dados = calcularConsolidado();
       setDadosConsolidados(dados);
     }
-  }, [abastecimentos]);
+  }, [abastecimentos.length]); // Usar .length para evitar loop infinito
   
-  // Log para debug da exibição de projetos
-  useEffect(() => {
-    console.log("[DEBUG] Projetos ordenados:", dadosConsolidados.projetosOrdenados);
-    console.log("[DEBUG] Verificando dados dos projetos:", {
-      temProjetos: dadosConsolidados.projetosOrdenados && dadosConsolidados.projetosOrdenados.length > 0,
-      qtdProjetos: dadosConsolidados.projetosOrdenados ? dadosConsolidados.projetosOrdenados.length : 0,
-      tipoVariavel: typeof dadosConsolidados.projetosOrdenados
-    });
-  }, [dadosConsolidados.projetosOrdenados]);
+  // Dados de projetos ordenados atualizados
 
   return (
     <div className="container mx-auto p-4">
