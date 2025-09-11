@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase, fetchRecords } from '@/lib/supabase-compat';
+import { supabase } from '@/lib/supabase-compat';
 import { format } from 'date-fns';
 import { FaGasPump, FaMoneyBillWave, FaCar, FaWater, FaProjectDiagram, FaTruck, FaTrash } from 'react-icons/fa';
 import { BsFillFuelPumpFill } from 'react-icons/bs';
@@ -152,8 +152,8 @@ const HistoricoGeralPage = () => {
     return projectoUpper || '-';
   };
 
-  // Implementação local da função fetchRecords para evitar problemas de importação
-  const fetchRecords = async (
+  // Implementação local da função fetchRecordsLocal para evitar problemas de importação
+  const fetchRecordsLocal = async (
     table: string,
     options: { 
       columns?: string; 
@@ -586,7 +586,7 @@ const HistoricoGeralPage = () => {
       
       // Buscar recebimentos de cada posto
       for (const posto of postos) {
-        const { success, data, error } = await fetchRecords(`recebimentos_posto_${posto}`, {
+        const { success, data, error } = await fetchRecordsLocal(`recebimentos_posto_${posto}`, {
           order: { column: 'created_at', ascending: false }
         });
         
@@ -721,7 +721,7 @@ const HistoricoGeralPage = () => {
       try {
         // 2. Buscar abastecimentos diretos do Supabase usando a tabela correta 'abastecimentos'
         // (não 'abastecimentos_postos' que não existe)
-        const response = await fetchRecords('abastecimentos', {
+        const response = await fetchRecordsLocal('abastecimentos', {
           limit: 500 // Aumentamos o limite para trazer mais registros
         });
         
@@ -1222,8 +1222,7 @@ const HistoricoGeralPage = () => {
         'USO OPERACIONAL'
       ];
       
-      // Log para diagnóstico
-      console.log(`[NORMALIZAÇÃO] Tentando normalizar projeto: "${projeto}"`);
+      // Normalizando projeto
       
       // Verificação específica para "MANUTENÇÃO" com diferentes variações
       if (projeto === "MANUTENÇÃO" || projeto === "MANUTENCAO" || 
@@ -1271,10 +1270,7 @@ const HistoricoGeralPage = () => {
       const litros = typeof litrosRaw === 'string' ? parseFloat(litrosRaw) : litrosRaw;
       const litrosValidos = isNaN(litros) ? 0 : litros;
       
-      // Log de diagnóstico apenas para valores significativos (mais de 10 litros)
-      if (litrosValidos > 10) {
-        console.log(`[INFO] Abastecimento computado: ${item.placa} - ${litrosValidos.toFixed(2)}L - Projeto: ${projeto}`);
-      }
+      // Abastecimento computado com sucesso
       
       // Registrar todos os abastecimentos com litros > 0
       if (litrosValidos > 0) {
@@ -1284,8 +1280,7 @@ const HistoricoGeralPage = () => {
       return acc;
     }, {} as Record<string, number>);
     
-    // Log detalhado do consumo por projeto
-    console.log("[RELATÓRIO] Total de litros por projeto:", consumoPorProjeto);
+    // Consumo por projeto calculado
     
     // Ordenar projetos por consumo (do maior para o menor)
     const projetosOrdenados = Object.entries(consumoPorProjeto)
