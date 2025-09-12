@@ -604,16 +604,29 @@ router.post('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req
       });
     }
 
+    // Criar termo com is_active=true e assigned_at=now
+    const termData = {
+      ...validatedData,
+      is_active: true,
+      assigned_at: new Date(),
+      returned_at: null
+    };
+
     const newTerm = await db
       .insert(equipmentResponsibilityTerms)
-      .values(validatedData)
+      .values(termData)
       .returning();
 
+    console.log('[TERMO CRIADO] ID:', newTerm[0]?.id, 'Equipment ID:', validatedData.equipment_id);
+
     // Atualizar status do equipamento para "em_uso"
-    await db
+    const equipmentUpdate = await db
       .update(equipments)
       .set({ status: 'em_uso', updated_at: new Date() })
-      .where(eq(equipments.id, validatedData.equipment_id));
+      .where(eq(equipments.id, validatedData.equipment_id))
+      .returning();
+
+    console.log('[EQUIPAMENTO ATUALIZADO] Status:', equipmentUpdate[0]?.status, 'Equipment ID:', validatedData.equipment_id);
 
     // Registrar movimentação no histórico automaticamente
     await db
