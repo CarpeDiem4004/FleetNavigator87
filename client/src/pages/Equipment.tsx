@@ -231,8 +231,11 @@ export default function Equipment() {
   console.log('Dashboard carregado:', dashboard);
 
   // Query para buscar termos de responsabilidade
-  const { data: responsibilityTermsResponse } = useQuery({
+  const { data: responsibilityTermsResponse, refetch: refetchTerms } = useQuery({
     queryKey: ['/api/equipment-responsibility-terms'],
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
   
   const responsibilityTerms = responsibilityTermsResponse?.data || [];
@@ -356,10 +359,11 @@ export default function Equipment() {
       queryClient.invalidateQueries({ queryKey: ['/api/equipment-responsibility-terms'] });
       queryClient.invalidateQueries({ queryKey: ['/api/equipment-movements'] });
       
-      // Forçar atualização imediata
+      // Forçar atualização imediata com refetch específico dos termos
       setForceRefreshKey(prev => prev + 1);
       refetchEquipments();
       refetchDashboard();
+      refetchTerms(); // NOVO: refetch específico para termos
       
       setIsTermDialogOpen(false);
       setSelectedEquipmentForTerm(null);
