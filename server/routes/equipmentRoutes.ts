@@ -542,11 +542,7 @@ router.delete('/:id', async (req, res) => {
 // POST /api/equipment-responsibility-terms - Criar novo termo de responsabilidade
 router.post('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req, res) => {
   try {
-    console.log('🔍 [CRIAR TERMO] Dados recebidos:', JSON.stringify(req.body, null, 2));
-    
     const validatedData = insertEquipmentResponsibilityTermSchema.parse(req.body);
-    console.log('🔍 [CRIAR TERMO] Dados validados:', JSON.stringify(validatedData, null, 2));
-    console.log('🔍 [CRIAR TERMO] Equipment ID a validar:', validatedData.equipment_id);
     
     // Verificar se o equipamento existe e está disponível
     const equipment = await db
@@ -555,19 +551,8 @@ router.post('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req
       .where(eq(equipments.id, validatedData.equipment_id))
       .limit(1);
 
-    console.log('🔍 [CRIAR TERMO] Equipamento encontrado:', equipment.length, equipment[0] ? JSON.stringify(equipment[0], null, 2) : 'NENHUM');
-
     if (equipment.length === 0) {
-      console.log('❌ [CRIAR TERMO] Equipamento não encontrado para ID:', validatedData.equipment_id);
-      
-      // Listar todos os equipamentos disponíveis para debug
-      const allEquipments = await db.select().from(equipments);
-      console.log('🔍 [CRIAR TERMO] Equipamentos disponíveis na base:', allEquipments.map(e => `ID: ${e.id}, Nome: ${e.name}`));
-      
-      return res.status(404).json({ 
-        success: false, 
-        error: `Equipamento não encontrado. ID solicitado: ${validatedData.equipment_id}. Verifique se este equipamento ainda existe no sistema.` 
-      });
+      return res.status(404).json({ success: false, error: 'Equipamento não encontrado' });
     }
 
     // Verificar se o equipamento está disponível (não pode estar em uso, manutenção, etc.)
