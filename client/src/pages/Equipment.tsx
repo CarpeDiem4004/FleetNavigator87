@@ -314,6 +314,7 @@ export default function Equipment() {
       queryClient.invalidateQueries({ queryKey: ['/api/equipment-list'] });
       queryClient.invalidateQueries({ queryKey: ['/api/equipment-dashboard'] });
       setEditingEquipment(null);
+      setIsCreateDialogOpen(false);
       form.reset();
       toast({
         title: "Sucesso",
@@ -471,15 +472,6 @@ export default function Equipment() {
       toast({
         title: "Equipamento indisponível",
         description: `Equipamento não está disponível (Status: ${equipment.status}). Apenas equipamentos disponíveis podem ter termos criados.`,
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (equipment.status !== 'disponivel') {
-      toast({
-        title: "Equipamento indisponível",
-        description: "Apenas equipamentos com status 'Disponível' podem ter termos de responsabilidade criados.",
         variant: "destructive",
       });
       return;
@@ -651,6 +643,12 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
     form.reset();
   };
 
+  const handleCreateNew = () => {
+    setEditingEquipment(null); // Garantir que não está editando
+    form.reset();
+    setIsCreateDialogOpen(true);
+  };
+
   if (isLoading) {
     return <div className="p-8">Carregando...</div>;
   }
@@ -675,7 +673,7 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
               Gerenciar Solicitações
             </Button>
           </Link>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Button onClick={handleCreateNew}>
             <Plus className="mr-2 h-4 w-4" />
             Novo Equipamento
           </Button>
