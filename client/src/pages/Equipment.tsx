@@ -369,9 +369,13 @@ export default function Equipment() {
       setIsTermDialogOpen(false);
       setSelectedEquipmentForTerm(null);
       termForm.reset();
+      
+      // Mudar para a aba de termos para mostrar o novo termo
+      setActiveTab('terms');
+      
       toast({
         title: "Sucesso",
-        description: "Termo de responsabilidade criado! Equipamento agora está 'Em Uso' e movimentação registrada no histórico.",
+        description: "Termo de responsabilidade criado! Equipamento agora está 'Em Uso' e aparece na aba Termos.",
       });
     },
     onError: (error) => {
