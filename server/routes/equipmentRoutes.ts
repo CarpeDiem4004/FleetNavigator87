@@ -421,16 +421,16 @@ router.post('/', async (req, res) => {
   try {
     console.log('Dados recebidos para criação do equipamento:', req.body);
     
-    // Converter strings vazias em null para campos únicos
+    // Converter strings vazias em null para campos únicos e opcionais
     const dataToValidate = {
       ...req.body,
-      serial_number: req.body.serial_number?.trim() || null,
-      patrimony_number: req.body.patrimony_number?.trim() || null,
-      model: req.body.model?.trim() || null,
-      brand: req.body.brand?.trim() || null,
-      supplier: req.body.supplier?.trim() || null,
-      location: req.body.location?.trim() || null,
-      notes: req.body.notes?.trim() || null
+      serial_number: req.body.serial_number?.trim() === '' ? null : req.body.serial_number?.trim(),
+      patrimony_number: req.body.patrimony_number?.trim() === '' ? null : req.body.patrimony_number?.trim(),
+      model: req.body.model?.trim() === '' ? null : req.body.model?.trim(),
+      brand: req.body.brand?.trim() === '' ? null : req.body.brand?.trim(),
+      supplier: req.body.supplier?.trim() === '' ? null : req.body.supplier?.trim(),
+      location: req.body.location?.trim() === '' ? null : req.body.location?.trim(),
+      notes: req.body.notes?.trim() === '' ? null : req.body.notes?.trim()
     };
     
     const validatedData = insertEquipmentSchema.parse(dataToValidate);
@@ -446,6 +446,25 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Erro detalhado ao criar equipamento:', error);
     console.error('Stack trace:', error.stack);
+    
+    // Tratar erro de duplicata específico
+    if (error.code === '23505') { // PostgreSQL unique violation
+      let errorMessage = 'Erro: Já existe um equipamento com esses dados.';
+      
+      if (error.detail?.includes('serial_number')) {
+        errorMessage = 'Erro: Já existe um equipamento com este número de série.';
+      } else if (error.detail?.includes('patrimony_number')) {
+        errorMessage = 'Erro: Já existe um equipamento com este número de patrimônio.';
+      }
+      
+      return res.status(400).json({ 
+        success: false, 
+        error: errorMessage,
+        field: error.detail?.includes('serial_number') ? 'serial_number' : 
+               error.detail?.includes('patrimony_number') ? 'patrimony_number' : 'unknown'
+      });
+    }
+    
     if (error.name === 'ZodError') {
       console.error('Erros de validação Zod:', error.errors);
       return res.status(400).json({ 
@@ -463,16 +482,16 @@ router.put('/:id', async (req, res) => {
   try {
     const equipmentId = parseInt(req.params.id);
     
-    // Converter strings vazias em null para campos únicos
+    // Converter strings vazias em null para campos únicos e opcionais
     const dataToValidate = {
       ...req.body,
-      serial_number: req.body.serial_number?.trim() || null,
-      patrimony_number: req.body.patrimony_number?.trim() || null,
-      model: req.body.model?.trim() || null,
-      brand: req.body.brand?.trim() || null,
-      supplier: req.body.supplier?.trim() || null,
-      location: req.body.location?.trim() || null,
-      notes: req.body.notes?.trim() || null
+      serial_number: req.body.serial_number?.trim() === '' ? null : req.body.serial_number?.trim(),
+      patrimony_number: req.body.patrimony_number?.trim() === '' ? null : req.body.patrimony_number?.trim(),
+      model: req.body.model?.trim() === '' ? null : req.body.model?.trim(),
+      brand: req.body.brand?.trim() === '' ? null : req.body.brand?.trim(),
+      supplier: req.body.supplier?.trim() === '' ? null : req.body.supplier?.trim(),
+      location: req.body.location?.trim() === '' ? null : req.body.location?.trim(),
+      notes: req.body.notes?.trim() === '' ? null : req.body.notes?.trim()
     };
     
     const validatedData = insertEquipmentSchema.parse(dataToValidate);
@@ -490,6 +509,32 @@ router.put('/:id', async (req, res) => {
     res.json({ success: true, data: updatedEquipment[0] });
   } catch (error) {
     console.error('Erro ao atualizar equipamento:', error);
+    
+    // Tratar erro de duplicata específico na atualização
+    if (error.code === '23505') { // PostgreSQL unique violation
+      let errorMessage = 'Erro: Já existe um equipamento com esses dados.';
+      
+      if (error.detail?.includes('serial_number')) {
+        errorMessage = 'Erro: Já existe um equipamento com este número de série.';
+      } else if (error.detail?.includes('patrimony_number')) {
+        errorMessage = 'Erro: Já existe um equipamento com este número de patrimônio.';
+      }
+      
+      return res.status(400).json({ 
+        success: false, 
+        error: errorMessage,
+        field: error.detail?.includes('serial_number') ? 'serial_number' : 
+               error.detail?.includes('patrimony_number') ? 'patrimony_number' : 'unknown'
+      });
+    }
+    
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Dados inválidos', 
+        details: error.errors 
+      });
+    }
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 });
