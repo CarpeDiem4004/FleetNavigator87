@@ -178,7 +178,7 @@ router.get('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req,
           e.type as equipment_type,
           e.serial_number as equipment_serial
       FROM equipment_responsibility_terms ert
-      LEFT JOIN equipment e ON ert.equipment_id = e.id
+      LEFT JOIN equipments e ON ert.equipment_id = e.id
       ORDER BY ert.created_at DESC
     `);
 
@@ -253,7 +253,7 @@ router.get('/equipment-responsibility-terms/equipment/:equipmentId/active', unif
         e.model as equipment_model,
         e.serial_number as equipment_serial
       FROM equipment_responsibility_terms ert
-      LEFT JOIN equipment e ON ert.equipment_id = e.id
+      LEFT JOIN equipments e ON ert.equipment_id = e.id
       WHERE ert.equipment_id = ${equipmentId}
         AND ert.is_active = true
         AND ert.returned_at IS NULL

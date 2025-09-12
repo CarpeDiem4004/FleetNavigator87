@@ -452,11 +452,25 @@ export default function Equipment() {
   };
 
   const handleCreateTerm = (equipment: any) => {
+    // Verificar se já existe um termo ativo para este equipamento
+    const existingActiveTerm = responsibilityTerms?.find(
+      term => term.equipment_id === equipment.id && term.is_active
+    );
+    
+    if (existingActiveTerm) {
+      toast({
+        title: "Termo já existe",
+        description: `Equipamento já possui um termo ativo. Para criar um novo termo, primeiro marque o atual como devolvido.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Verificar se o equipamento está disponível para criar termo
-    if (equipment.status === 'em_uso') {
+    if (equipment.status !== 'disponivel') {
       toast({
         title: "Equipamento indisponível",
-        description: "Este equipamento já está em uso. Para criar um novo termo, primeiro marque o atual como devolvido.",
+        description: `Equipamento não está disponível (Status: ${equipment.status}). Apenas equipamentos disponíveis podem ter termos criados.`,
         variant: "destructive",
       });
       return;
