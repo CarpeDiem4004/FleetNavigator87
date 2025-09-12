@@ -232,7 +232,7 @@ export default function Equipment() {
 
   // Query para buscar termos de responsabilidade
   const { data: responsibilityTermsResponse, refetch: refetchTerms } = useQuery({
-    queryKey: ['/api/equipment-responsibility-terms'],
+    queryKey: ['/api/equipment/equipment-responsibility-terms'],
     staleTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
@@ -352,12 +352,12 @@ export default function Equipment() {
 
   // Mutation para criar termo de responsabilidade
   const createTermMutation = useMutation({
-    mutationFn: (data: ResponsibilityTermFormData) => apiRequest('POST', '/api/equipment-responsibility-terms', data),
+    mutationFn: (data: ResponsibilityTermFormData) => apiRequest('POST', '/api/equipment/equipment-responsibility-terms', data),
     onSuccess: () => {
       // Invalidar todas as queries relacionadas para refletir as mudanças
       queryClient.invalidateQueries({ queryKey: ['/api/equipment-list'] });
       queryClient.invalidateQueries({ queryKey: ['/api/equipment-dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/equipment-responsibility-terms'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/equipment/equipment-responsibility-terms'] });
       queryClient.invalidateQueries({ queryKey: ['/api/equipment-movements'] });
       
       // Forçar atualização imediata com refetch específico dos termos
@@ -396,7 +396,7 @@ export default function Equipment() {
       // Use the same token extraction method as apiRequest
       const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('emergencyToken');
       
-      const response = await fetch(`/api/equipment-responsibility-terms/${termId}/upload`, {
+      const response = await fetch(`/api/equipment/equipment-responsibility-terms/${termId}/upload`, {
         method: 'POST',
         body: formData,
         credentials: 'include',
@@ -415,8 +415,8 @@ export default function Equipment() {
     },
     onSuccess: () => {
       // Force refetch the data immediately
-      queryClient.invalidateQueries({ queryKey: ['/api/equipment-responsibility-terms'] });
-      queryClient.refetchQueries({ queryKey: ['/api/equipment-responsibility-terms'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/equipment/equipment-responsibility-terms'] });
+      queryClient.refetchQueries({ queryKey: ['/api/equipment/equipment-responsibility-terms'] });
       setIsUploadDialogOpen(false);
       setSelectedTermForUpload(null);
       setUploadFile(null);
@@ -487,7 +487,7 @@ export default function Equipment() {
 
   const handleViewTerm = async (equipment: any) => {
     try {
-      const response = await apiRequest('GET', `/api/equipment-responsibility-terms/equipment/${equipment.id}/active`);
+      const response = await apiRequest('GET', `/api/equipment/equipment-responsibility-terms/equipment/${equipment.id}/active`);
       if (response.success && response.data) {
         setSelectedTermToView(response.data);
         setIsViewTermDialogOpen(true);
@@ -510,7 +510,7 @@ export default function Equipment() {
 
   const handleReturnEquipment = async (equipment: any) => {
     try {
-      const response = await apiRequest('GET', `/api/equipment-responsibility-terms/equipment/${equipment.id}/active`);
+      const response = await apiRequest('GET', `/api/equipment/equipment-responsibility-terms/equipment/${equipment.id}/active`);
       if (response.success && response.data) {
         setSelectedEquipmentForReturn(equipment);
         setSelectedTermToView(response.data);
@@ -1874,7 +1874,7 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                   const conditionSelect = document.getElementById('condition_at_return') as HTMLSelectElement;
                   const notesTextarea = document.getElementById('return_notes') as HTMLTextAreaElement;
                   
-                  const response = await apiRequest('PUT', `/api/equipment-responsibility-terms/${selectedTermToView.id}/return`, {
+                  const response = await apiRequest('PUT', `/api/equipment/equipment-responsibility-terms/${selectedTermToView.id}/return`, {
                     condition_at_return: conditionSelect.value,
                     notes: notesTextarea.value || null,
                   });

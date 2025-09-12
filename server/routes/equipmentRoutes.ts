@@ -139,53 +139,32 @@ router.get('/dashboard', async (req, res) => {
   }
 });
 
-// GET /api/equipment-responsibility-terms - Mover para posição mais alta para evitar conflito com /:id
+// GET /api/equipment-responsibility-terms - Lista todos os termos
 router.get('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req, res) => {
   try {
-    console.log('[TERMS] Iniciando busca de termos de responsabilidade...');
+    console.log('🔍 [DEBUG TERMS] ROTA EXECUTADA EM:', new Date().toISOString());
     
-    // Primeiro buscar apenas os termos sem join para debug
-    const termsBasic = await db
-      .select()
-      .from(equipmentResponsibilityTerms)
-      .orderBy(desc(equipmentResponsibilityTerms.created_at));
-
-    console.log('[TERMS] Termos básicos encontrados:', termsBasic.length);
-
-    // Agora fazer query SQL direta para buscar com a tabela equipment correta
-    const terms = await db.execute(`
+    // Query SQL simples e direta
+    const query = `
       SELECT 
-          ert.id,
-          ert.equipment_id,
-          ert.user_id,
-          ert.full_name,
-          ert.cpf,
-          ert.phone,
-          ert.department,
-          ert.address,
-          ert.assigned_at,
-          ert.returned_at,
-          ert.assigned_by,
-          ert.returned_by,
-          ert.term_content,
-          ert.condition_at_assignment,
-          ert.condition_at_return,
-          ert.notes,
-          ert.is_active,
-          ert.created_at,
-          ert.updated_at,
+          ert.*,
           e.name as equipment_name,
           e.type as equipment_type,
           e.serial_number as equipment_serial
       FROM equipment_responsibility_terms ert
       LEFT JOIN equipments e ON ert.equipment_id = e.id
       ORDER BY ert.created_at DESC
-    `);
-
-    console.log('[TERMS] Query SQL executada, termos encontrados:', terms.rows?.length || 0);
-
+    `;
+    
+    console.log('🔍 [DEBUG TERMS] Query:', query);
+    const result = await db.execute(query);
+    const terms = result.rows || [];
+    
+    console.log('🔍 [DEBUG TERMS] Termos encontrados:', terms.length);
+    console.log('🔍 [DEBUG TERMS] Primeiro termo:', terms[0] || 'Nenhum');
+    
     // Estruturar dados para compatibilidade com frontend
-    const formattedTerms = (terms.rows || []).map((term: any) => ({
+    const formattedTerms = terms.map((term: any) => ({
       id: term.id,
       equipment_id: term.equipment_id,
       user_id: term.user_id,
