@@ -981,7 +981,22 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                           )}
                         </td>
                         <td className="p-2">
-                          <div className="flex gap-2">
+                          <div className="flex gap-1 flex-wrap">
+                            {/* Botão Visualizar/Editar Termo */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedTermToView(term);
+                                setIsViewTermDialogOpen(true);
+                              }}
+                              title="Visualizar Detalhes do Termo"
+                              data-testid={`button-view-term-${term.id}`}
+                            >
+                              <Eye className="h-4 w-4 text-blue-600" />
+                            </Button>
+
+                            {/* Botão Download PDF Original */}
                             <Button
                               variant="ghost"
                               size="sm"
@@ -1007,9 +1022,12 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                                 handleDownloadTerm(termData, equipment);
                               }}
                               title="Baixar PDF do Termo Original"
+                              data-testid={`button-download-term-${term.id}`}
                             >
-                              <Download className="h-4 w-4" />
+                              <Download className="h-4 w-4 text-gray-600" />
                             </Button>
+
+                            {/* Botão Anexar/Ver Documento Assinado */}
                             {!term.signed_document_url ? (
                               <Button
                                 variant="ghost"
@@ -1019,8 +1037,9 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                                   setIsUploadDialogOpen(true);
                                 }}
                                 title="Anexar Termo Assinado"
+                                data-testid={`button-upload-term-${term.id}`}
                               >
-                                <Paperclip className="h-4 w-4" />
+                                <Paperclip className="h-4 w-4 text-orange-600" />
                               </Button>
                             ) : (
                               <>
@@ -1029,8 +1048,9 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                                   size="sm"
                                   onClick={() => window.open(term.signed_document_url, '_blank')}
                                   title="Ver Termo Assinado"
+                                  data-testid={`button-view-signed-${term.id}`}
                                 >
-                                  <Eye className="h-4 w-4" />
+                                  <FileText className="h-4 w-4 text-green-600" />
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -1045,11 +1065,84 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                                     document.body.removeChild(link);
                                   }}
                                   title="Baixar Termo Assinado"
+                                  data-testid={`button-download-signed-${term.id}`}
                                 >
                                   <Download className="h-4 w-4 text-green-600" />
                                 </Button>
                               </>
                             )}
+
+                            {/* Botão Compartilhar */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const termUrl = `${window.location.origin}/equipment/${term.equipment_id}/term/${term.id}`;
+                                navigator.clipboard.writeText(termUrl).then(() => {
+                                  toast({
+                                    title: "Link copiado!",
+                                    description: "Link do termo copiado para a área de transferência",
+                                  });
+                                });
+                              }}
+                              title="Compartilhar Link do Termo"
+                              data-testid={`button-share-term-${term.id}`}
+                            >
+                              <Share className="h-4 w-4 text-purple-600" />
+                            </Button>
+
+                            {/* Botão Marcar como Devolvido (apenas para termos ativos) */}
+                            {term.is_active && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  // Buscar equipamento e abrir modal de devolução
+                                  const equipment = equipments.find(eq => eq.id === term.equipment_id);
+                                  if (equipment) {
+                                    handleReturnEquipment(equipment);
+                                  }
+                                }}
+                                title="Registrar Devolução"
+                                data-testid={`button-return-term-${term.id}`}
+                              >
+                                <RotateCcw className="h-4 w-4 text-red-600" />
+                              </Button>
+                            )}
+
+                            {/* Botão Duplicar Termo */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const equipment = equipments.find(eq => eq.id === term.equipment_id);
+                                if (equipment && equipment.status === 'disponivel') {
+                                  // Pré-preencher form com dados do termo anterior
+                                  termForm.reset({
+                                    equipment_id: term.equipment_id,
+                                    full_name: term.full_name,
+                                    cpf: term.cpf,
+                                    phone: term.phone,
+                                    department: term.department,
+                                    address: term.address,
+                                    condition_at_assignment: 'novo',
+                                    notes: '',
+                                  });
+                                  setSelectedEquipmentForTerm(equipment);
+                                  setIsTermDialogOpen(true);
+                                } else {
+                                  toast({
+                                    title: "Equipamento indisponível",
+                                    description: "O equipamento não está disponível para um novo termo.",
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                              title="Duplicar Termo (mesmo responsável)"
+                              data-testid={`button-copy-term-${term.id}`}
+                            >
+                              <Copy className="h-4 w-4 text-indigo-600" />
+                            </Button>
                           </div>
                         </td>
                       </tr>
