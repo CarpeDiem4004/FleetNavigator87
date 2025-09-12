@@ -52,6 +52,7 @@ import jsPDF from "jspdf";
 const equipmentSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   type: z.enum(['notebook', 'celular', 'tablet', 'desktop', 'monitor', 'impressora', 'scanner', 'roteador', 'telefone_fixo', 'camera', 'projetor', 'outros']),
+  ownership_type: z.enum(['proprio', 'alugado']).default('proprio'),
   brand: z.string().optional(),
   model: z.string().optional(),
   serial_number: z.string().optional(),
@@ -116,6 +117,11 @@ const equipmentConditionLabels = {
   defeituoso: 'Defeituoso'
 };
 
+const ownershipTypeLabels = {
+  proprio: 'Próprio',
+  alugado: 'Alugado'
+};
+
 const getEquipmentIcon = (type: string) => {
   switch (type) {
     case 'notebook':
@@ -170,6 +176,7 @@ export default function Equipment() {
     defaultValues: {
       name: '',
       type: undefined,
+      ownership_type: 'proprio',
       brand: '',
       model: '',
       serial_number: '',
@@ -598,6 +605,7 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
     form.reset({
       name: equipment.name,
       type: equipment.type,
+      ownership_type: equipment.ownership_type ?? 'proprio',
       brand: equipment.brand || '',
       model: equipment.model || '',
       serial_number: equipment.serial_number || '',
@@ -1101,6 +1109,31 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                           </FormControl>
                           <SelectContent>
                             {Object.entries(equipmentTypeLabels).map(([value, label]) => (
+                              <SelectItem key={value} value={value}>
+                                {label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="ownership_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipo de Propriedade</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione se é próprio ou alugado" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {Object.entries(ownershipTypeLabels).map(([value, label]) => (
                               <SelectItem key={value} value={value}>
                                 {label}
                               </SelectItem>

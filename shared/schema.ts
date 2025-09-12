@@ -110,6 +110,11 @@ export const equipmentConditionEnum = pgEnum('equipment_condition', [
   'defeituoso'            // Defeituoso
 ]);
 
+export const equipmentOwnershipEnum = pgEnum('equipment_ownership', [
+  'proprio',              // Equipamento próprio
+  'alugado'               // Equipamento alugado
+]);
+
 // Enums para sistema de solicitação de equipamentos
 export const equipmentRequestStatusEnum = pgEnum('equipment_request_status', [
   'pendente',             // Solicitação aguardando análise
@@ -967,6 +972,7 @@ export const equipments = pgTable("equipments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   type: equipmentTypeEnum("type").notNull(),
+  ownership_type: equipmentOwnershipEnum("ownership_type").notNull().default('proprio'),
   brand: text("brand"),
   model: text("model"),
   serial_number: text("serial_number").unique(),
