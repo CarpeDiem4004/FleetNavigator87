@@ -817,6 +817,7 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                       <th className="text-left p-2">Tipo</th>
                       <th className="text-left p-2">Marca/Modelo</th>
                       <th className="text-left p-2">Número de Série</th>
+                      <th className="text-left p-2">Patrimônio</th>
                       <th className="text-left p-2">Status</th>
                       <th className="text-left p-2">Condição</th>
                       <th className="text-left p-2">Ações</th>
@@ -834,6 +835,9 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                         <td className="p-2">{equipmentTypeLabels[equipment.type]}</td>
                         <td className="p-2">{equipment.brand} {equipment.model}</td>
                         <td className="p-2">{equipment.serial_number || 'N/A'}</td>
+                        <td className="p-2">
+                          <span className="font-mono text-sm">{equipment.patrimony_number || 'N/A'}</span>
+                        </td>
                         <td className="p-2">
                           {equipment.status === 'disponivel' ? (
                             <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
