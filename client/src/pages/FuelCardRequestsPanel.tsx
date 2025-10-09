@@ -431,8 +431,14 @@ const FuelCardRequestsPanel: React.FC = () => {
 
   const fetchProjects = async () => {
     try {
-      // Usar endpoint público para projetos
-      const response = await fetch('/api/public/projects-with-bases');
+      // Usar endpoint público para projetos com cache-busting
+      const response = await fetch(`/api/public/projects-with-bases?_t=${Date.now()}`, {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       const data = await response.json();
       
       if (data.success) {
