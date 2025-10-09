@@ -178,7 +178,8 @@ import {
   isAuthenticated as isAuthenticatedHybrid,
   isAuthenticatedWithMapping,
   isSessionAuthenticated,
-  isJwtAuthenticated
+  isJwtAuthenticated,
+  hybridAuth as hybridAuthMiddleware
 } from "./middleware/auth/index";
 
 // Função auxiliar para hash de senha (usada na criação de usuários de oficinas)
@@ -16954,9 +16955,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registra as rotas para o sistema de estoque de peças
   app.use('/api/frota', frotaEstoqueRoutes);
 
-  // Middleware para autenticação híbrida (usuário ou oficina)
-  const hybridAuth = async (req: any, res: any, next: any) => {
-    console.log('[HYBRID-AUTH-DEBUG] Requisição recebida:', {
+  // Alias para autenticação híbrida (compatibilidade com código legado)
+  const hybridAuth = hybridAuthMiddleware;
+
+  // Middleware para autenticação de oficina ou usuário
+  const workshopOrUserAuth = async (req: any, res: any, next: any) => {
+    console.log('[WORKSHOP-AUTH-DEBUG] Requisição recebida:', {
       url: req.url,
       method: req.method,
       hasAuthHeader: !!req.headers.authorization,
@@ -16969,12 +16973,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
-      console.log('[HYBRID-AUTH-DEBUG] Token encontrado:', token.substring(0, 20) + '...');
+      console.log('[WORKSHOP-AUTH-DEBUG] Token encontrado:', token.substring(0, 20) + '...');
       
       // Verificar se é token de oficina
       if (token.startsWith('auto_token_')) {
         try {
-          console.log('[HYBRID-AUTH] Verificando token de oficina:', token.substring(0, 20) + '...');
+          console.log('[WORKSHOP-AUTH] Verificando token de oficina:', token.substring(0, 20) + '...');
           
           const result = await pool.query(
             'SELECT * FROM workshops WHERE token = $1',
@@ -16982,26 +16986,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
 
           if (result.rowCount > 0) {
-            console.log('[HYBRID-AUTH] Oficina autenticada:', result.rows[0].name);
+            console.log('[WORKSHOP-AUTH] Oficina autenticada:', result.rows[0].name);
             req.oficina = result.rows[0];
             req.isWorkshop = true;
             return next();
           } else {
-            console.log('[HYBRID-AUTH] Token de oficina não encontrado no banco');
+            console.log('[WORKSHOP-AUTH] Token de oficina não encontrado no banco');
           }
         } catch (error) {
-          console.error('[HYBRID-AUTH] Erro ao verificar token de oficina:', error);
+          console.error('[WORKSHOP-AUTH] Erro ao verificar token de oficina:', error);
         }
       } else {
-        console.log('[HYBRID-AUTH-DEBUG] Token não é de oficina, tentando autenticação normal');
+        console.log('[WORKSHOP-AUTH-DEBUG] Token não é de oficina, tentando autenticação normal');
       }
     } else {
-      console.log('[HYBRID-AUTH-DEBUG] Nenhum header Authorization encontrado');
+      console.log('[WORKSHOP-AUTH-DEBUG] Nenhum header Authorization encontrado');
     }
     
-    // Se não for oficina, tentar autenticação normal
-    console.log('[HYBRID-AUTH-DEBUG] Tentando autenticação padrão...');
-    return isAuthenticated(req, res, next);
+    // Se não for oficina, tentar autenticação híbrida (sessão ou JWT)
+    console.log('[WORKSHOP-AUTH-DEBUG] Tentando autenticação padrão...');
+    return isAuthenticatedHybrid(req, res, next);
   };
 
   // API para buscar detalhes de solicitação de orçamento

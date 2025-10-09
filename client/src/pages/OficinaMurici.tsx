@@ -255,6 +255,9 @@ const OficinaMurici: React.FC = () => {
           .from('oficina_murici_manutencoes')
           .update({
             ...dadosBasicos,
+            ...(currentManutencao.data_hora_inicio && {
+              data_hora_inicio: currentManutencao.data_hora_inicio
+            }),
             ...(currentManutencao.status === 'finalizado' && {
               data_hora_fim: new Date().toISOString()
             })
@@ -389,7 +392,8 @@ const OficinaMurici: React.FC = () => {
   const handleEditManutencao = (manutencao: Manutencao) => {
     setCurrentManutencao({
       ...manutencao,
-      prazo: manutencao.prazo ? manutencao.prazo.split('T')[0] : new Date().toISOString().split('T')[0]
+      prazo: manutencao.prazo ? manutencao.prazo.split('T')[0] : new Date().toISOString().split('T')[0],
+      data_hora_inicio: manutencao.data_hora_inicio || undefined
     });
     setIsEditMode(true);
     setIsDialogOpen(true);
@@ -1062,6 +1066,20 @@ const OficinaMurici: React.FC = () => {
                   className="h-9"
                 />
               </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="data_hora_inicio" className="text-sm">Data de Início</Label>
+              <Input
+                id="data_hora_inicio"
+                name="data_hora_inicio"
+                type="datetime-local"
+                value={currentManutencao.data_hora_inicio ? 
+                  format(new Date(currentManutencao.data_hora_inicio), "yyyy-MM-dd'T'HH:mm") : 
+                  ''}
+                onChange={handleInputChange}
+                className="h-9"
+              />
             </div>
 
             {/* Seção de Oficina Parceira */}
