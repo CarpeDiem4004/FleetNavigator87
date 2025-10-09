@@ -631,14 +631,35 @@ export default function BudgetManagementPage() {
             };
           });
         } else {
-          processedBudget.parts_details = [];
+          // Se parts_json existe mas está vazio, criar entrada genérica
+          const totalValue = budget.approved_value || budget.estimated_value || 0;
+          processedBudget.parts_details = [{
+            description: budget.description || 'Serviço',
+            quantity: 1,
+            unitPrice: totalValue,
+            total: totalValue
+          }];
         }
       } catch (error) {
         console.error("Erro ao processar parts_json:", error);
-        processedBudget.parts_details = [];
+        // Em caso de erro, criar entrada genérica
+        const totalValue = budget.approved_value || budget.estimated_value || 0;
+        processedBudget.parts_details = [{
+          description: budget.description || 'Serviço',
+          quantity: 1,
+          unitPrice: totalValue,
+          total: totalValue
+        }];
       }
     } else {
-      processedBudget.parts_details = [];
+      // Se NÃO houver parts_json, criar uma entrada genérica com a descrição
+      const totalValue = budget.approved_value || budget.estimated_value || 0;
+      processedBudget.parts_details = [{
+        description: budget.description || 'Serviço',
+        quantity: 1,
+        unitPrice: totalValue,
+        total: totalValue
+      }];
     }
     
     setViewingBudget(processedBudget);
@@ -2183,16 +2204,18 @@ export default function BudgetManagementPage() {
                 </div>
               </div>
               
-              {/* Descrição do Serviço */}
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Descrição do Serviço</h3>
-                <div className="bg-white rounded-lg p-3 text-sm border border-gray-200">
-                  <p className="whitespace-pre-line">{viewingBudget.description}</p>
+              {/* Descrição do Serviço - só exibir se houver peças detalhadas */}
+              {viewingBudget.parts_json && (
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-2">Descrição do Serviço</h3>
+                  <div className="bg-white rounded-lg p-3 text-sm border border-gray-200">
+                    <p className="whitespace-pre-line">{viewingBudget.description}</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Peças e Materiais */}
-              {viewingBudget.parts_details && viewingBudget.parts_details.length > 0 && (
+              {/* Peças e Materiais - SEMPRE EXIBIR */}
+              {viewingBudget.parts_details && (
                 <div>
                   <h3 className="font-semibold text-gray-800 mb-2">Peças e Materiais</h3>
                   <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
