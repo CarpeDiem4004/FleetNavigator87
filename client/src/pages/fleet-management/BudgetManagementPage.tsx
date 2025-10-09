@@ -115,11 +115,10 @@ interface BudgetRequest {
   projeto?: string;
   parts_json?: string;
   parts_details?: Array<{
-    name: string;
     description: string;
     quantity: number;
-    unit_price: number;
-    total_price: number;
+    unitPrice: number;
+    total: number;
   }>;
 }
 
@@ -363,17 +362,16 @@ export default function BudgetManagementPage() {
               const rawParts = Array.isArray(parsed) ? parsed : [];
               
               parts_details = rawParts.map(part => {
-                // Suporte para formato antigo (value) e novo (unit_price)
-                const unitPrice = part.unit_price || part.value || 0;
+                // Suporte para diferentes formatos de dados
+                const unitPrice = part.unitPrice || part.unit_price || part.value || 0;
                 const quantity = part.quantity || 1;
-                const totalPrice = part.total_price || (quantity * unitPrice);
+                const totalPrice = part.total || part.total_price || (quantity * unitPrice);
                 
                 return {
-                  name: part.name || 'Peça sem nome',
-                  description: part.description || part.name || '',
+                  description: part.description || part.name || 'Peça sem nome',
                   quantity: quantity,
-                  unit_price: unitPrice,
-                  total_price: totalPrice
+                  unitPrice: unitPrice,
+                  total: totalPrice
                 };
               });
             } catch (error) {
@@ -619,13 +617,18 @@ export default function BudgetManagementPage() {
         const rawParts = Array.isArray(parsed) ? parsed : [];
         
         if (rawParts.length > 0) {
-          processedBudget.parts_details = rawParts.map(part => ({
-            name: part.name || 'Peça sem nome',
-            description: part.description || part.name || '',
-            quantity: part.quantity || 1,
-            unit_price: part.value || part.unit_price || 0,
-            total_price: part.total_price || part.value || (part.quantity || 1) * (part.unit_price || part.value || 0)
-          }));
+          processedBudget.parts_details = rawParts.map(part => {
+            const unitPrice = part.unitPrice || part.unit_price || part.value || 0;
+            const quantity = part.quantity || 1;
+            const totalPrice = part.total || part.total_price || (quantity * unitPrice);
+            
+            return {
+              description: part.description || part.name || 'Peça sem nome',
+              quantity: quantity,
+              unitPrice: unitPrice,
+              total: totalPrice
+            };
+          });
         } else {
           processedBudget.parts_details = [];
         }
