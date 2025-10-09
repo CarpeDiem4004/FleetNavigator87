@@ -170,14 +170,26 @@ export default function AutofreiSolicitacoes() {
 
   const handleOpenResponse = (request: BudgetRequest) => {
     setSelectedRequest(request);
+    
+    // Criar entrada genérica com a descrição do serviço
+    const totalValue = parseFloat(request.estimated_value?.toString() || request.approved_value?.toString() || '0');
+    const genericPart: Part = {
+      id: `generic_part_${Date.now()}`,
+      name: 'Serviço',
+      description: request.description || 'Serviço',
+      quantity: 1,
+      unit_price: totalValue > 0 ? totalValue.toString() : '',
+      isFromRequest: true
+    };
+    
     setResponse({
       labor_cost: '',
       parts_cost: '',
-      total_cost: '',
+      total_cost: totalValue > 0 ? totalValue.toFixed(2) : '',
       estimated_days: '',
       priority: 'normal',
       observations: '',
-      parts: []
+      parts: [genericPart]
     });
     setIsResponseOpen(true);
   };
@@ -281,11 +293,42 @@ export default function AutofreiSolicitacoes() {
                 unit_price: (part.unit_price || part.value || 0).toString(),
                 isFromRequest: true
               }));
+            } else {
+              // parts_json existe mas está vazio - criar entrada genérica
+              const totalValue = parseFloat(budgetData.estimated_value || budgetData.approved_value || '0');
+              requestParts = [{
+                id: `generic_part_${Date.now()}`,
+                name: 'Serviço',
+                description: budgetData.description || request.description || 'Serviço',
+                quantity: 1,
+                unit_price: totalValue.toString(),
+                isFromRequest: true
+              }];
             }
           } catch (e) {
             console.error('Erro ao processar parts_json da solicitação:', e);
-            requestParts = [];
+            // Em caso de erro, criar entrada genérica
+            const totalValue = parseFloat(budgetData.estimated_value || budgetData.approved_value || '0');
+            requestParts = [{
+              id: `generic_part_${Date.now()}`,
+              name: 'Serviço',
+              description: budgetData.description || request.description || 'Serviço',
+              quantity: 1,
+              unit_price: totalValue.toString(),
+              isFromRequest: true
+            }];
           }
+        } else {
+          // NÃO há parts_json - criar entrada genérica com a descrição
+          const totalValue = parseFloat(budgetData.estimated_value || budgetData.approved_value || '0');
+          requestParts = [{
+            id: `generic_part_${Date.now()}`,
+            name: 'Serviço',
+            description: budgetData.description || request.description || 'Serviço',
+            quantity: 1,
+            unit_price: totalValue.toString(),
+            isFromRequest: true
+          }];
         }
         
         // Se existe um orçamento já respondido, carregar os dados salvos
@@ -318,28 +361,44 @@ export default function AutofreiSolicitacoes() {
         }
       } else {
         console.error('Erro ao carregar dados do orçamento:', response.status);
-        // Fallback para inicialização vazia
+        // Fallback para inicialização vazia com entrada genérica
+        const totalValue = parseFloat(request.estimated_value?.toString() || request.approved_value?.toString() || '0');
         setResponse({
           labor_cost: '',
           parts_cost: '',
-          total_cost: '',
+          total_cost: totalValue.toFixed(2),
           estimated_days: '',
           priority: 'normal',
           observations: '',
-          parts: []
+          parts: [{
+            id: `generic_part_${Date.now()}`,
+            name: 'Serviço',
+            description: request.description || 'Serviço',
+            quantity: 1,
+            unit_price: totalValue.toString(),
+            isFromRequest: true
+          }]
         });
       }
     } catch (error) {
       console.error('Erro ao carregar dados existentes:', error);
-      // Fallback para inicialização vazia
+      // Fallback para inicialização vazia com entrada genérica
+      const totalValue = parseFloat(request.estimated_value?.toString() || request.approved_value?.toString() || '0');
       setResponse({
         labor_cost: '',
         parts_cost: '',
-        total_cost: '',
+        total_cost: totalValue.toFixed(2),
         estimated_days: '',
         priority: 'normal',
         observations: '',
-        parts: []
+        parts: [{
+          id: `generic_part_${Date.now()}`,
+          name: 'Serviço',
+          description: request.description || 'Serviço',
+          quantity: 1,
+          unit_price: totalValue.toString(),
+          isFromRequest: true
+        }]
       });
     }
     
