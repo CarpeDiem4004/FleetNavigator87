@@ -68,9 +68,8 @@ async function processBasesFromExcel() {
       } else {
         const projectId = projectName ? (projectMap[projectName] || projectMap[projectName.toLowerCase()] || projectMap[projectName.toUpperCase()] || null) : null;
         
-        newBases.push({
+        const baseData = {
           name: baseName,
-          project_id: projectId,
           active: true,
           basename: baseName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''),
           type: 'base',
@@ -78,7 +77,14 @@ async function processBasesFromExcel() {
           has_maintenance: false,
           has_tires: false,
           requests_enabled: true
-        });
+        };
+        
+        // Adicionar project_id apenas se encontrado
+        if (projectId) {
+          baseData.project_id = projectId;
+        }
+        
+        newBases.push(baseData);
       }
     }
     
