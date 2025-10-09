@@ -599,6 +599,10 @@ export default function BudgetManagementPage() {
 
   // Função para visualizar detalhes do orçamento
   const handleViewBudget = (budget: BudgetRequest) => {
+    console.log("🔍 Visualizando orçamento:", budget.id, "Placa:", budget.vehicle_plate);
+    console.log("📋 parts_json original:", budget.parts_json);
+    console.log("📋 parts_json tipo:", typeof budget.parts_json);
+    
     // Processar parts_json para parts_details na visualização
     let processedBudget = { ...budget };
     
@@ -608,13 +612,18 @@ export default function BudgetManagementPage() {
         // Fazer parse duplo se necessário (caso esteja como string escapada)
         let parsed = budget.parts_json;
         if (typeof parsed === 'string') {
+          console.log("🔄 Parse 1: string -> objeto");
           parsed = JSON.parse(parsed);
         }
         if (typeof parsed === 'string') {
+          console.log("🔄 Parse 2: string -> objeto");
           parsed = JSON.parse(parsed);
         }
         
+        console.log("✅ Parsed final:", parsed);
+        
         const rawParts = Array.isArray(parsed) ? parsed : [];
+        console.log("📦 Array de peças:", rawParts.length, "itens");
         
         if (rawParts.length > 0) {
           processedBudget.parts_details = rawParts.map(part => {
@@ -629,16 +638,26 @@ export default function BudgetManagementPage() {
               total: totalPrice
             };
           });
+          console.log("✨ parts_details processado:", processedBudget.parts_details);
         } else {
           processedBudget.parts_details = [];
+          console.log("⚠️ rawParts está vazio");
         }
       } catch (error) {
-        console.error("Erro ao processar parts_json:", error);
+        console.error("❌ Erro ao processar parts_json:", error);
         processedBudget.parts_details = [];
       }
     } else {
       processedBudget.parts_details = [];
+      console.log("⚠️ parts_json é null/undefined");
     }
+    
+    console.log("🎯 Budget final a ser exibido:", {
+      id: processedBudget.id,
+      plate: processedBudget.vehicle_plate,
+      parts_details_length: processedBudget.parts_details?.length,
+      parts_details: processedBudget.parts_details
+    });
     
     setViewingBudget(processedBudget);
     setViewBudgetDialogOpen(true);
