@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import pool from '../db';
+import { pool } from '../db';
 
 /**
  * Middleware para autenticar oficinas através de tokens customizados
