@@ -5,6 +5,10 @@ This is a comprehensive fleet management system designed to manage vehicle maint
 
 ## Recent Changes: Latest modifications with dates
 
+### Outubro 2025
+- **09/10/2025**: Correção crítica no sistema de autenticação de oficinas - criado middleware dedicado `workshopAuth` para validar tokens customizados (auto_token_...) sem tentar validação JWT do Supabase. Modificado `hybridAuth` para ignorar tokens de oficina. Aplicado novo middleware nas rotas de Campinas (`/api/campinas/budget-requests`). Sistema de orçamentos de oficinas 100% funcional.
+- **09/10/2025**: Padronização completa do sistema de visualização de peças - implementada tabela detalhada em TODOS os três sistemas (interno BudgetManagementPage, externo WorkshopBudgets, e AUTOFREI AutofreiSolicitacoes). Fallback robusto cria entrada genérica quando parts_json é NULL.
+
 ### Setembro 2025
 - **02/09/2025**: Atualizações gerais do sistema (v2.9.4)
 - **02/09/2025**: Sistema de versionamento automático implementado (v2.9.3) - versão dinâmica nos layouts, script de incremento automático e controle de changelog integrado

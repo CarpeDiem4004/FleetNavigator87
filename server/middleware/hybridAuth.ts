@@ -78,15 +78,20 @@ export const hybridAuth = async (req: Request, res: Response, next: NextFunction
     try {
       const token = extractToken(req);
       if (token) {
-        console.log('[HybridAuth] Token JWT encontrado, tentando validar...');
-        const user = await validateSupabaseToken(token);
-        if (user) {
-          // Adicionar informações do usuário Supabase ao request
-          req.supabaseUser = user;
-          console.log(`[HybridAuth] Usuário autenticado via token Supabase: ${user.id} (${user.email})`);
-          return next();
+        // IMPORTANTE: Ignorar tokens de oficina (auto_token_...) - eles não são JWTs do Supabase
+        if (token.startsWith('auto_token_')) {
+          console.log('[HybridAuth] Token de oficina detectado - pulando validação JWT Supabase');
         } else {
-          console.log('[HybridAuth] Token JWT inválido ou expirado');
+          console.log('[HybridAuth] Token JWT encontrado, tentando validar...');
+          const user = await validateSupabaseToken(token);
+          if (user) {
+            // Adicionar informações do usuário Supabase ao request
+            req.supabaseUser = user;
+            console.log(`[HybridAuth] Usuário autenticado via token Supabase: ${user.id} (${user.email})`);
+            return next();
+          } else {
+            console.log('[HybridAuth] Token JWT inválido ou expirado');
+          }
         }
       } else {
         console.log('[HybridAuth] Nenhum token JWT encontrado nas fontes disponíveis');

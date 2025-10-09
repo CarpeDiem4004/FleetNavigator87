@@ -182,6 +182,9 @@ import {
   hybridAuth as hybridAuthMiddleware
 } from "./middleware/auth/index";
 
+// Importação do middleware de autenticação de oficinas
+import { workshopAuth } from "./middleware/workshopAuth";
+
 // Função auxiliar para hash de senha (usada na criação de usuários de oficinas)
 const scryptAsync = promisify(scrypt);
 
@@ -17146,7 +17149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API para buscar um orçamento específico por ID
-  app.get("/api/campinas/budget-requests/:id", hybridAuth, async (req, res) => {
+  app.get("/api/campinas/budget-requests/:id", workshopAuth, async (req, res) => {
     try {
       const { id } = req.params;
       console.log(`[CampinaBudgets] Buscando orçamento específico ID: ${id}`);
@@ -17188,7 +17191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API para buscar orçamentos recebidos das oficinas (campinas_budget_requests)
-  app.get("/api/campinas/budget-requests", hybridAuth, async (req, res) => {
+  app.get("/api/campinas/budget-requests", workshopAuth, async (req, res) => {
     try {
       console.log('[CampinaBudgets] Buscando orçamentos recebidos das oficinas...');
       
