@@ -137,7 +137,77 @@ export default function WorkshopBudgets() {
       const data = await response.json();
       
       if (data.success) {
-        setBudgets(data.budgets);
+        // Processar parts_details para garantir que sempre exista
+        const processedBudgets = (data.budgets || []).map((budget: WorkshopBudget) => {
+          let parts_details: PartDetail[] = [];
+          
+          if (budget.parts_json) {
+            try {
+              let parsed = budget.parts_json;
+              if (typeof parsed === 'string') {
+                parsed = JSON.parse(parsed);
+              }
+              if (typeof parsed === 'string') {
+                parsed = JSON.parse(parsed);
+              }
+              
+              const rawParts = Array.isArray(parsed) ? parsed : [];
+              
+              if (rawParts.length > 0) {
+                parts_details = rawParts.map((part: any) => {
+                  const unitPrice = part.unitPrice || part.unit_price || part.value || 0;
+                  const quantity = part.quantity || 1;
+                  const totalPrice = part.total || part.total_price || (quantity * unitPrice);
+                  
+                  return {
+                    id: part.id || String(Math.random()),
+                    description: part.description || part.name || 'Peça sem nome',
+                    quantity: quantity,
+                    unitPrice: unitPrice,
+                    total: totalPrice
+                  };
+                });
+              } else {
+                // Se parts_json existe mas está vazio
+                const totalValue = parseFloat(budget.total_cost || '0');
+                parts_details = [{
+                  id: '1',
+                  description: budget.labor_description || budget.parts_description || 'Serviço',
+                  quantity: 1,
+                  unitPrice: totalValue,
+                  total: totalValue
+                }];
+              }
+            } catch (error) {
+              console.error("Erro ao processar parts_json:", error);
+              const totalValue = parseFloat(budget.total_cost || '0');
+              parts_details = [{
+                id: '1',
+                description: budget.labor_description || budget.parts_description || 'Serviço',
+                quantity: 1,
+                unitPrice: totalValue,
+                total: totalValue
+              }];
+            }
+          } else {
+            // Se NÃO houver parts_json, criar entrada genérica
+            const totalValue = parseFloat(budget.total_cost || '0');
+            parts_details = [{
+              id: '1',
+              description: budget.labor_description || budget.parts_description || 'Serviço',
+              quantity: 1,
+              unitPrice: totalValue,
+              total: totalValue
+            }];
+          }
+          
+          return {
+            ...budget,
+            parts_details
+          };
+        });
+        
+        setBudgets(processedBudgets);
       } else {
         toast({
           title: "Erro",
@@ -340,8 +410,8 @@ export default function WorkshopBudgets() {
       pdf.text(`Orçamento Criado em: ${formatDate(budget.created_at)}`, margin, yPosition);
       yPosition += 15;
       
-      // Detalhes das peças (se houver)
-      if (budget.parts_details && budget.parts_details.length > 0) {
+      // Detalhes das peças (SEMPRE EXIBIR)
+      if (budget.parts_details) {
         pdf.setFontSize(12);
         pdf.setFont('helvetica', 'bold');
         pdf.text('DETALHES DAS PEÇAS', margin, yPosition);
@@ -952,8 +1022,8 @@ export default function WorkshopBudgets() {
                     </div>
                   </div>
 
-                  {/* Detalhes das Peças */}
-                  {selectedBudget.parts_details && selectedBudget.parts_details.length > 0 && (
+                  {/* Detalhes das Peças - SEMPRE EXIBIR */}
+                  {selectedBudget.parts_details && (
                     <div>
                       <Label className="text-sm font-medium">Detalhamento das Peças</Label>
                       <Table>
