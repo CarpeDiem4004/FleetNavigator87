@@ -19318,7 +19318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       `;
       
       const result = await pool.query(insertQuery, [
-        workshopId, vehiclePlate, vehicleModel, vehicleType, currentKm,
+        workshopId, vehiclePlate, vehicleModel, vehicleType, currentKm ? parseInt(currentKm.toString()) : null,
         serviceDescription, priority, 'recebido', baseId, projectId
       ]);
 
