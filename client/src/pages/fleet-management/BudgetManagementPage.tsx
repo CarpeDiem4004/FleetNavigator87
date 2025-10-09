@@ -2247,14 +2247,11 @@ export default function BudgetManagementPage() {
                       {(viewingBudget.parts_details || []).map((part, index) => (
                         <div key={index} className="px-4 py-3 border-b last:border-b-0 grid grid-cols-4 gap-4 text-sm">
                           <div>
-                            <p className="font-medium">{part.name}</p>
-                            {part.description && (
-                              <p className="text-gray-600 text-xs">{part.description}</p>
-                            )}
+                            <p className="font-medium">{part.description}</p>
                           </div>
                           <div className="text-center">{part.quantity}</div>
-                          <div className="text-right">{formatCurrency(part.unit_price)}</div>
-                          <div className="text-right font-medium">{formatCurrency(part.total_price)}</div>
+                          <div className="text-right">{formatCurrency(part.unitPrice)}</div>
+                          <div className="text-right font-medium">{formatCurrency(part.total)}</div>
                         </div>
                       ))}
                       <div className="bg-gray-50 px-4 py-3 border-t-2">
@@ -2262,7 +2259,7 @@ export default function BudgetManagementPage() {
                           <div className="col-span-3 text-right">Total das Peças:</div>
                           <div className="text-right">
                             {formatCurrency(
-                              (viewingBudget.parts_details || []).reduce((sum, part) => sum + part.total_price, 0)
+                              (viewingBudget.parts_details || []).reduce((sum, part) => sum + part.total, 0)
                             )}
                           </div>
                         </div>
@@ -2284,15 +2281,12 @@ export default function BudgetManagementPage() {
                           <tr key={index}>
                             <td>
                               <div>
-                                <strong>{part.name}</strong>
-                                {part.description && (
-                                  <div style={{fontSize: '10px', color: '#666'}}>{part.description}</div>
-                                )}
+                                <strong>{part.description}</strong>
                               </div>
                             </td>
                             <td style={{textAlign: 'center'}}>{part.quantity}</td>
-                            <td style={{textAlign: 'right'}}>{formatCurrency(part.unit_price)}</td>
-                            <td style={{textAlign: 'right', fontWeight: 'bold'}}>{formatCurrency(part.total_price)}</td>
+                            <td style={{textAlign: 'right'}}>{formatCurrency(part.unitPrice)}</td>
+                            <td style={{textAlign: 'right', fontWeight: 'bold'}}>{formatCurrency(part.total)}</td>
                           </tr>
                         ))}
                         <tr style={{backgroundColor: '#f5f5f5', fontWeight: 'bold'}}>
@@ -2302,7 +2296,7 @@ export default function BudgetManagementPage() {
                           <td style={{textAlign: 'right'}}>
                             <strong>
                               {formatCurrency(
-                                (viewingBudget.parts_details || []).reduce((sum, part) => sum + part.total_price, 0)
+                                (viewingBudget.parts_details || []).reduce((sum, part) => sum + part.total, 0)
                               )}
                             </strong>
                           </td>
