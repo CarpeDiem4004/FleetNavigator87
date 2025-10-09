@@ -599,6 +599,10 @@ export default function BudgetManagementPage() {
 
   // Função para visualizar detalhes do orçamento
   const handleViewBudget = (budget: BudgetRequest) => {
+    console.log('[handleViewBudget] Budget recebido:', budget);
+    console.log('[handleViewBudget] parts_json:', budget.parts_json);
+    console.log('[handleViewBudget] parts_json type:', typeof budget.parts_json);
+    
     // Processar parts_json para parts_details na visualização
     let processedBudget = { ...budget };
     
@@ -639,6 +643,9 @@ export default function BudgetManagementPage() {
     } else {
       processedBudget.parts_details = [];
     }
+    
+    console.log('[handleViewBudget] processedBudget.parts_details:', processedBudget.parts_details);
+    console.log('[handleViewBudget] processedBudget completo:', processedBudget);
     
     setViewingBudget(processedBudget);
     setViewBudgetDialogOpen(true);
