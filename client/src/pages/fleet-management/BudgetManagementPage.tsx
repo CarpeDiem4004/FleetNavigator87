@@ -97,6 +97,7 @@ interface WorkshopBudget {
 
 interface BudgetRequest {
   id: number;
+  budget_number?: string;
   vehicle_plate: string;
   vehicle_model: string;
   description: string;
@@ -1525,6 +1526,7 @@ export default function BudgetManagementPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Nº Orçamento</TableHead>
                         <TableHead>Descrição</TableHead>
                         <TableHead>Oficina</TableHead>
                         <TableHead>Veículo</TableHead>
@@ -1546,6 +1548,11 @@ export default function BudgetManagementPage() {
                         
                         return (
                           <TableRow key={budget.id}>
+                            <TableCell>
+                              <span className="font-mono text-sm font-medium text-blue-600">
+                                {budget.budget_number || `#${budget.id}`}
+                              </span>
+                            </TableCell>
                             <TableCell>
                               <div>
                                 <p className="font-medium truncate max-w-sm">
@@ -2104,7 +2111,14 @@ export default function BudgetManagementPage() {
       <Dialog open={viewBudgetDialogOpen} onOpenChange={setViewBudgetDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-blue-50 p-6">
           <div className="mb-4">
-            <h2 className="text-xl font-semibold text-gray-800">Detalhes do Orçamento</h2>
+            <div className="flex items-center gap-3 mb-2">
+              <h2 className="text-xl font-semibold text-gray-800">Detalhes do Orçamento</h2>
+              {viewingBudget?.budget_number && (
+                <span className="font-mono text-sm font-medium text-blue-600 bg-blue-100 px-3 py-1 rounded">
+                  {viewingBudget.budget_number}
+                </span>
+              )}
+            </div>
             <p className="text-sm text-gray-600">Visualização completa do orçamento para impressão</p>
           </div>
           

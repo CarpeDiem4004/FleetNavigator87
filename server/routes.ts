@@ -15913,9 +15913,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const query = `
         INSERT INTO campinas_budget_requests 
           (vehicle_plate, km, vehicle_model, chassis, projeto, base_id, workshop_id, workshop_name, description, 
-           requested_by, requester_name, status, created_at, updated_at)
+           requested_by, requester_name, status, budget_number, created_at, updated_at)
         VALUES 
-          ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pendente', NOW(), NOW())
+          ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pendente', get_next_budget_number(), NOW(), NOW())
         RETURNING *;
       `;
       
