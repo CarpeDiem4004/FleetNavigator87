@@ -2190,7 +2190,7 @@ export default function BudgetManagementPage() {
                     <div>
                       <h3 className="text-lg font-semibold mb-3 print:text-base print:font-bold">Status e Valores</h3>
                       <div className="space-y-2 print:space-y-1">
-                        <p className="print:text-sm"><strong>Status:</strong> 
+                        <div className="print:text-sm"><strong>Status:</strong> 
                           <Badge 
                             variant={
                               viewingBudget.status === 'aprovado' ? 'default' : 
@@ -2204,7 +2204,7 @@ export default function BudgetManagementPage() {
                              viewingBudget.status === 'aprovado' ? 'Aprovado' :
                              viewingBudget.status === 'em_analise' ? 'Em Análise' : viewingBudget.status}
                           </Badge>
-                        </p>
+                        </div>
                         <p className="print:text-sm"><strong>Valor Solicitado:</strong> {formatCurrency(viewingBudget.estimated_value || 0)}</p>
                         {viewingBudget.approved_value && (
                           <p className="print:text-sm"><strong>Valor Aprovado:</strong> 
