@@ -612,6 +612,9 @@ export default function BudgetManagementPage() {
 
   // Função para visualizar detalhes do orçamento
   const handleViewBudget = (budget: BudgetRequest) => {
+    console.log('[ViewBudget] Budget original:', budget);
+    console.log('[ViewBudget] parts_json tipo:', typeof budget.parts_json, 'valor:', budget.parts_json);
+    
     // Processar parts_json para parts_details na visualização
     let processedBudget = { ...budget };
     
@@ -628,6 +631,7 @@ export default function BudgetManagementPage() {
         }
         
         const rawParts = Array.isArray(parsed) ? parsed : [];
+        console.log('[ViewBudget] rawParts processados:', rawParts);
         
         if (rawParts.length > 0) {
           processedBudget.parts_details = rawParts.map(part => {
@@ -642,6 +646,7 @@ export default function BudgetManagementPage() {
               total: totalPrice
             };
           });
+          console.log('[ViewBudget] ✅ parts_details criado do JSON:', processedBudget.parts_details);
         } else {
           // Se parts_json existe mas está vazio, criar entrada genérica
           const totalValue = budget.approved_value || budget.estimated_value || 0;
@@ -651,9 +656,10 @@ export default function BudgetManagementPage() {
             unitPrice: totalValue,
             total: totalValue
           }];
+          console.log('[ViewBudget] ⚠️ parts_json vazio, criado fallback:', processedBudget.parts_details);
         }
       } catch (error) {
-        console.error("Erro ao processar parts_json:", error);
+        console.error("[ViewBudget] ❌ Erro ao processar parts_json:", error);
         // Em caso de erro, criar entrada genérica
         const totalValue = budget.approved_value || budget.estimated_value || 0;
         processedBudget.parts_details = [{
@@ -662,6 +668,7 @@ export default function BudgetManagementPage() {
           unitPrice: totalValue,
           total: totalValue
         }];
+        console.log('[ViewBudget] Fallback criado após erro:', processedBudget.parts_details);
       }
     } else {
       // Se NÃO houver parts_json, criar uma entrada genérica com a descrição
@@ -672,8 +679,10 @@ export default function BudgetManagementPage() {
         unitPrice: totalValue,
         total: totalValue
       }];
+      console.log('[ViewBudget] 📝 Sem parts_json, criado fallback:', processedBudget.parts_details);
     }
     
+    console.log('[ViewBudget] Budget final processado:', processedBudget);
     setViewingBudget(processedBudget);
     setViewBudgetDialogOpen(true);
   };
