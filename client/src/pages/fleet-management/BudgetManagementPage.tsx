@@ -380,6 +380,18 @@ export default function BudgetManagementPage() {
               parts_details = [];
             }
           }
+          
+          // FALLBACK: Se não há parts_details válidos, criar entrada genérica com a descrição
+          if (!parts_details || parts_details.length === 0) {
+            const estimatedValue = budget.estimated_value || budget.approved_value || 0;
+            parts_details = [{
+              description: budget.description || 'Serviço de manutenção',
+              quantity: 1,
+              unitPrice: estimatedValue,
+              total: estimatedValue
+            }];
+          }
+          
           return {
             ...budget,
             parts_details
