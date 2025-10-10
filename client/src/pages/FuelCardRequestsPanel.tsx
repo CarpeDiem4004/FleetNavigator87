@@ -394,19 +394,6 @@ const FuelCardRequestsPanel: React.FC = () => {
         console.log('[FUEL-CARD-PANEL] Dados recebidos:', data.data.length, data.fromCache ? '(cache)' : '(fresh)');
         console.log('[FUEL-CARD-PANEL] Paginação:', data.pagination || 'Sem paginação');
         
-        // DEBUG TEMPORÁRIO: Verificar data_uso e turno
-        const comDataUso = data.data.filter((r: any) => r.data_uso).length;
-        console.log('[FUEL-CARD-PANEL] DEBUG:', comDataUso, 'registros com data_uso de', data.data.length, 'total');
-        const primeiroComData = data.data.find((r: any) => r.data_uso);
-        if (primeiroComData) {
-          console.log('[FUEL-CARD-PANEL] DEBUG Exemplo:', {
-            id: primeiroComData.id,
-            placa: primeiroComData.placa,
-            data_uso: primeiroComData.data_uso,
-            turno: primeiroComData.turno
-          });
-        }
-        
         setSolicitations(data.data);
         
         // Atualizar estados de paginação se disponível
