@@ -396,7 +396,7 @@ export default function FuelCardSolicitation() {
                               <RadioGroupItem value="numero" />
                             </FormControl>
                             <FormLabel className="font-normal">
-                              Cartão específico por número
+                              Cartão específico por placa
                             </FormLabel>
                           </FormItem>
                         </RadioGroup>
