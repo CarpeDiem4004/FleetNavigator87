@@ -47,7 +47,7 @@ export default function PostPaidForm() {
 
   // Buscar informações do token
   const { data: tokenInfo, isLoading: loadingToken, error: tokenError } = useQuery<TokenInfo>({
-    queryKey: ['/api/postpaid/token-info', token],
+    queryKey: [`/api/postpaid/token-info/${token}`],
     enabled: !!token,
   });
 
