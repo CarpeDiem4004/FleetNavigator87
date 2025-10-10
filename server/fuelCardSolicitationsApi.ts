@@ -310,6 +310,19 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
       whereConditions: whereConditions || 'Nenhum (admin)' 
     });
     
+    // DEBUG TEMPORÁRIO: Verificar data_uso e turno
+    const comDataUso = normalizedData.filter(r => r.data_uso).length;
+    console.log(`[FUEL-CARD-API] DEBUG: ${comDataUso} registros com data_uso de ${normalizedData.length} total`);
+    const primeiroComData = normalizedData.find(r => r.data_uso);
+    if (primeiroComData) {
+      console.log(`[FUEL-CARD-API] DEBUG Exemplo:`, {
+        id: primeiroComData.id,
+        placa: primeiroComData.placa,
+        data_uso: primeiroComData.data_uso,
+        turno: primeiroComData.turno
+      });
+    }
+    
     // Verificar se há dados para a base específica
     if (!isAdmin && !isGestorCombustivel && normalizedData.length === 0) {
       console.log(`[FUEL-CARD-API] ATENÇÃO: Nenhuma solicitação encontrada para base ${userBaseName} (ID: ${userBaseId})`);
