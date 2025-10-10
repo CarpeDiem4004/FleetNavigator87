@@ -2236,7 +2236,11 @@ export default function BudgetManagementPage() {
               )}
 
               {/* Peças e Materiais - SEMPRE EXIBIR */}
-              {viewingBudget.parts_details && (
+              {(() => {
+                console.log('[RENDER] viewingBudget.parts_details existe?', !!viewingBudget.parts_details);
+                console.log('[RENDER] viewingBudget.parts_details:', viewingBudget.parts_details);
+                return viewingBudget.parts_details && viewingBudget.parts_details.length > 0;
+              })() && (
                 <div>
                   <h3 className="font-semibold text-gray-800 mb-2">Peças e Materiais</h3>
                   <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
