@@ -1477,9 +1477,9 @@ const FuelCardRequestsPanel: React.FC = () => {
                               : 'bg-white border-gray-200'
                       }`}
                     >
-                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                      <div className="flex flex-wrap items-center gap-3">
                         {/* Placa e Indicador */}
-                        <div className="lg:col-span-2">
+                        <div className="flex-shrink-0" style={{minWidth: '120px'}}>
                           <div className="flex items-center">
                             {index < 5 && <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>}
                             <div>
@@ -1488,20 +1488,15 @@ const FuelCardRequestsPanel: React.FC = () => {
                               
                               {/* Alerta para placas com múltiplas solicitações no mesmo dia */}
                               {hasMultipleRequestsToday(solicitacao.placa, solicitacao.data_solicitacao) && (
-                                <div className="flex items-center mt-1">
-                                  <Badge variant="destructive" className="text-xs mr-1 bg-red-500 text-white">
-                                    ⚠️ REPETINDO
-                                  </Badge>
-                                  <span className="text-xs text-red-600 font-medium">
-                                    {getDailyRequestCount(solicitacao.placa, solicitacao.data_solicitacao)}x hoje
-                                  </span>
-                                </div>
+                                <Badge variant="destructive" className="text-xs bg-red-500 text-white mt-1">
+                                  ⚠️ {getDailyRequestCount(solicitacao.placa, solicitacao.data_solicitacao)}x
+                                </Badge>
                               )}
                               
                               {/* Badge de contagem total geral */}
                               {solicitudeCounts[solicitacao.placa] > 1 && !hasMultipleRequestsToday(solicitacao.placa, solicitacao.data_solicitacao) && (
                                 <Badge variant="secondary" className="text-xs mt-1">
-                                  {solicitudeCounts[solicitacao.placa]}x total
+                                  {solicitudeCounts[solicitacao.placa]}x
                                 </Badge>
                               )}
                             </div>
@@ -1509,48 +1504,21 @@ const FuelCardRequestsPanel: React.FC = () => {
                         </div>
 
                         {/* Dados do Solicitante */}
-                        <div className="lg:col-span-2 border-2 border-red-500 bg-red-50 p-2 rounded">
+                        <div className="border-2 border-red-500 bg-red-50 p-2 rounded flex-shrink-0" style={{minWidth: '180px'}}>
                           <p className="text-xs text-red-600 font-bold mb-1">👤 DADOS DO SOLICITANTE</p>
                           <p className="text-sm font-medium text-gray-900 truncate">{solicitacao.solicitante || solicitacao.requested_by || 'Nome não informado'}</p>
-                          <p className="text-xs text-gray-700 font-medium">{solicitacao.telefone_celular || (solicitacao as any).driver_phone || 'Telefone não informado'}</p>
+                          <p className="text-xs text-gray-700 font-medium truncate">{solicitacao.telefone_celular || (solicitacao as any).driver_phone || 'Telefone não informado'}</p>
                         </div>
 
                         {/* Dados do Motorista do Veículo */}
-                        <div className="lg:col-span-2 border-2 border-blue-500 bg-blue-50 p-2 rounded">
+                        <div className="border-2 border-blue-500 bg-blue-50 p-2 rounded flex-shrink-0" style={{minWidth: '200px'}}>
                           <p className="text-xs text-blue-600 font-bold mb-1">🚛 MOTORISTA DO VEÍCULO</p>
                           <p className="text-sm font-medium text-gray-900 truncate">{solicitacao.motorista || (solicitacao as any).driver_name || 'Motorista não informado'}</p>
                           <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_solicitado)} - {solicitacao.km_total || solicitacao.km_veiculo || (solicitacao as any).km || '-'} km</p>
-                          
-                          {/* Exibir informações específicas para Line Haul */}
-                          {solicitacao.origem_tipo === 'line_hall' && (() => {
-                            const lastRequest = getLastRequestForPlate(solicitacao.placa);
-                            const kmDifference = getKmDifferenceForLineHaul(solicitacao);
-                            
-                            return (
-                              <div className="mt-1 space-y-1">
-                                {lastRequest && lastRequest.id !== solicitacao.id && (
-                                  <p className="text-xs text-blue-700 font-medium">
-                                    📅 Última: {format(new Date(lastRequest.data_solicitacao), 'dd/MM HH:mm', { locale: ptBR })} 
-                                    ({lastRequest.km_total || lastRequest.km_veiculo || (lastRequest as any).km || '-'} km)
-                                  </p>
-                                )}
-                                {kmDifference !== null && kmDifference > 0 && (
-                                  <p className="text-xs text-green-700 font-medium">
-                                    🚗 Diferença: +{kmDifference} km desde última solicitação
-                                  </p>
-                                )}
-                                {kmDifference !== null && kmDifference <= 0 && (
-                                  <p className="text-xs text-orange-700 font-medium">
-                                    ⚠️ Km igual ou menor que solicitação anterior ({kmDifference} km)
-                                  </p>
-                                )}
-                              </div>
-                            );
-                          })()}
                         </div>
 
                         {/* Operação e Base */}
-                        <div className="lg:col-span-2">
+                        <div className="flex-shrink-0" style={{minWidth: '120px'}}>
                           <Badge variant="outline" className={
                             solicitacao.origem_tipo === 'line_hall' 
                               ? "bg-blue-100 text-blue-800 mb-1" 
@@ -1562,7 +1530,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                         </div>
 
                         {/* Data de Abastecimento */}
-                        <div className="lg:col-span-2 border-2 border-orange-500 bg-orange-50 p-2 rounded">
+                        <div className="border-2 border-orange-500 bg-orange-50 p-2 rounded flex-shrink-0" style={{minWidth: '140px'}}>
                           <p className="text-xs text-orange-600 font-bold mb-1">📅 DATA DE ABASTECIMENTO</p>
                           {solicitacao.data_uso ? (
                             <>
@@ -1570,8 +1538,8 @@ const FuelCardRequestsPanel: React.FC = () => {
                                 {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
                               </p>
                               {solicitacao.turno && (
-                                <p className="text-xs text-orange-700 font-medium mt-1">
-                                  Turno: {solicitacao.turno}
+                                <p className="text-xs text-orange-700 font-medium">
+                                  {solicitacao.turno}
                                 </p>
                               )}
                             </>
@@ -1580,15 +1548,15 @@ const FuelCardRequestsPanel: React.FC = () => {
                           )}
                         </div>
 
-                        {/* Status e Data */}
-                        <div className="lg:col-span-2">
+                        {/* Status */}
+                        <div className="flex-shrink-0">
                           {getStatusBadge(solicitacao.status)}
                           <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</p>
                         </div>
 
                         {/* Ações */}
-                        <div className="lg:col-span-2">
-                          <div className="flex flex-wrap gap-2">
+                        <div className="flex-shrink-0 ml-auto">
+                          <div className="flex gap-2">
                             <Button 
                               variant="outline" 
                               size="sm"
@@ -1750,55 +1718,33 @@ const FuelCardRequestsPanel: React.FC = () => {
                           : 'bg-red-50 border-red-200 border-l-4 border-l-red-500'
                       }`}
                     >
-                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
-                        {/* Repetição do solicitante */}
-                        {getDailyRequestCount(solicitacao.placa, solicitacao.data_solicitacao) > 1 && (
-                          <div className="lg:col-span-12 mb-2">
-                            <div className="flex items-center gap-2 p-2 bg-red-100 border border-red-300 rounded text-red-800 text-xs">
-                              <AlertTriangle className="h-4 w-4" />
-                              <span className="font-semibold">ATENÇÃO:</span>
-                              <span>Esta placa teve {getDailyRequestCount(solicitacao.placa, solicitacao.data_solicitacao)} solicitações no mesmo dia</span>
-                              <span className="ml-auto font-mono">{solicitudeCounts[solicitacao.placa] || 0} total</span>
-                            </div>
+                      {getDailyRequestCount(solicitacao.placa, solicitacao.data_solicitacao) > 1 && (
+                        <div className="mb-2">
+                          <div className="flex items-center gap-2 p-2 bg-red-100 border border-red-300 rounded text-red-800 text-xs">
+                            <AlertTriangle className="h-4 w-4" />
+                            <span className="font-semibold">ATENÇÃO:</span>
+                            <span>Esta placa teve {getDailyRequestCount(solicitacao.placa, solicitacao.data_solicitacao)} solicitações no mesmo dia</span>
+                            <span className="ml-auto font-mono">{solicitudeCounts[solicitacao.placa] || 0} total</span>
                           </div>
-                        )}
-                        
-                        {/* Placa e Motorista */}
-                        <div className="lg:col-span-3">
+                        </div>
+                      )}
+                      
+                      <div className="flex flex-wrap items-center gap-3">
+                        {/* Placa */}
+                        <div className="flex-shrink-0" style={{minWidth: '120px'}}>
                           <p className="font-medium text-lg">{solicitacao.placa}</p>
-                          <p className="text-sm text-gray-600">{solicitacao.motorista || (solicitacao as any).nome_motorista || 'Motorista não informado'}</p>
+                          <p className="text-xs text-gray-500">Placa</p>
+                        </div>
+
+                        {/* Motorista */}
+                        <div className="border-2 border-blue-500 bg-blue-50 p-2 rounded flex-shrink-0" style={{minWidth: '200px'}}>
+                          <p className="text-xs text-blue-600 font-bold mb-1">🚛 MOTORISTA</p>
+                          <p className="text-sm text-gray-900 truncate">{solicitacao.motorista || (solicitacao as any).nome_motorista || 'Motorista não informado'}</p>
                           <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_solicitado)} - {solicitacao.km_total || solicitacao.km_veiculo || (solicitacao as any).km || '-'} km</p>
-                          
-                          {/* Exibir informações específicas para Line Haul (seção atendidas) */}
-                          {solicitacao.origem_tipo === 'line_hall' && (() => {
-                            const lastRequest = getLastRequestForPlate(solicitacao.placa);
-                            const kmDifference = getKmDifferenceForLineHaul(solicitacao);
-                            
-                            return (
-                              <div className="mt-1 space-y-1">
-                                {lastRequest && lastRequest.id !== solicitacao.id && (
-                                  <p className="text-xs text-blue-700 font-medium">
-                                    📅 Última: {format(new Date(lastRequest.data_solicitacao), 'dd/MM HH:mm', { locale: ptBR })} 
-                                    ({lastRequest.km_total || lastRequest.km_veiculo || (lastRequest as any).km || '-'} km)
-                                  </p>
-                                )}
-                                {kmDifference !== null && kmDifference > 0 && (
-                                  <p className="text-xs text-green-700 font-medium">
-                                    🚗 Diferença: +{kmDifference} km desde última solicitação
-                                  </p>
-                                )}
-                                {kmDifference !== null && kmDifference <= 0 && (
-                                  <p className="text-xs text-orange-700 font-medium">
-                                    ⚠️ Km igual ou menor que solicitação anterior ({kmDifference} km)
-                                  </p>
-                                )}
-                              </div>
-                            );
-                          })()}
                         </div>
 
                         {/* Operação e Base */}
-                        <div className="lg:col-span-2">
+                        <div className="flex-shrink-0" style={{minWidth: '120px'}}>
                           <Badge variant="outline" className={
                             solicitacao.origem_tipo === 'line_hall' 
                               ? "bg-blue-100 text-blue-800 mb-1" 
@@ -1810,7 +1756,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                         </div>
 
                         {/* Data de Abastecimento */}
-                        <div className="lg:col-span-2 border-2 border-orange-500 bg-orange-50 p-2 rounded">
+                        <div className="border-2 border-orange-500 bg-orange-50 p-2 rounded flex-shrink-0" style={{minWidth: '140px'}}>
                           <p className="text-xs text-orange-600 font-bold mb-1">📅 DATA DE ABASTECIMENTO</p>
                           {solicitacao.data_uso ? (
                             <>
@@ -1818,8 +1764,8 @@ const FuelCardRequestsPanel: React.FC = () => {
                                 {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
                               </p>
                               {solicitacao.turno && (
-                                <p className="text-xs text-orange-700 font-medium mt-1">
-                                  Turno: {solicitacao.turno}
+                                <p className="text-xs text-orange-700 font-medium">
+                                  {solicitacao.turno}
                                 </p>
                               )}
                             </>
@@ -1829,7 +1775,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                         </div>
 
                         {/* Status e Data */}
-                        <div className="lg:col-span-2">
+                        <div className="flex-shrink-0">
                           {getStatusBadge(solicitacao.status)}
                           <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</p>
                           {solicitacao.data_atendimento && (
@@ -1838,8 +1784,8 @@ const FuelCardRequestsPanel: React.FC = () => {
                         </div>
 
                         {/* Ações */}
-                        <div className="lg:col-span-3">
-                          <div className="flex flex-wrap gap-2">
+                        <div className="flex-shrink-0 ml-auto">
+                          <div className="flex gap-2">
                             <Button 
                               variant="outline" 
                               size="sm"
