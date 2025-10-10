@@ -1530,19 +1530,13 @@ const FuelCardRequestsPanel: React.FC = () => {
                         </div>
 
                         {/* Data de Abastecimento */}
-                        <div className="border-2 border-orange-500 bg-orange-50 p-2 rounded flex-shrink-0" style={{minWidth: '140px'}}>
+                        <div className="border-2 border-orange-500 bg-orange-50 p-2 rounded flex-shrink-0" style={{minWidth: '160px'}}>
                           <p className="text-xs text-orange-600 font-bold mb-1">📅 DATA DE ABASTECIMENTO</p>
                           {solicitacao.data_uso ? (
-                            <>
-                              <p className="text-sm font-bold text-orange-900">
-                                {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
-                              </p>
-                              {solicitacao.turno && (
-                                <p className="text-xs text-orange-700 font-medium">
-                                  {solicitacao.turno}
-                                </p>
-                              )}
-                            </>
+                            <p className="text-sm font-bold text-orange-900">
+                              {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
+                              {solicitacao.turno && ` - ${solicitacao.turno}`}
+                            </p>
                           ) : (
                             <p className="text-xs text-gray-500">Não informada</p>
                           )}
@@ -1756,19 +1750,13 @@ const FuelCardRequestsPanel: React.FC = () => {
                         </div>
 
                         {/* Data de Abastecimento */}
-                        <div className="border-2 border-orange-500 bg-orange-50 p-2 rounded flex-shrink-0" style={{minWidth: '140px'}}>
+                        <div className="border-2 border-orange-500 bg-orange-50 p-2 rounded flex-shrink-0" style={{minWidth: '160px'}}>
                           <p className="text-xs text-orange-600 font-bold mb-1">📅 DATA DE ABASTECIMENTO</p>
                           {solicitacao.data_uso ? (
-                            <>
-                              <p className="text-sm font-bold text-orange-900">
-                                {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
-                              </p>
-                              {solicitacao.turno && (
-                                <p className="text-xs text-orange-700 font-medium">
-                                  {solicitacao.turno}
-                                </p>
-                              )}
-                            </>
+                            <p className="text-sm font-bold text-orange-900">
+                              {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
+                              {solicitacao.turno && ` - ${solicitacao.turno}`}
+                            </p>
                           ) : (
                             <p className="text-xs text-gray-500">Não informada</p>
                           )}
