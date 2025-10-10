@@ -1,0 +1,78 @@
+Esse erro:
+
+GET https://.../api/campinas/budget-requests 401 (Unauthorized)
+
+
+significa que a requisição não foi autorizada — ou seja, a API está protegida por autenticação e o front-end (React, por exemplo) não está enviando o token de acesso válido no cabeçalho da requisição.
+
+Vamos revisar as causas mais comuns e como corrigir 👇
+
+🚫 Causa 1: Falta do token de autenticação
+
+Se o endpoint exige autenticação (JWT, Supabase Auth, etc.), o fetch precisa incluir o header:
+
+Authorization: `Bearer ${token}`
+
+✅ Solução:
+
+No React, antes de chamar a API, garanta que você tem o token:
+
+const token = session?.access_token; // ou localStorage.getItem('token')
+
+const response = await fetch('https://.../api/campinas/budget-requests', {
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  }
+});
+
+🔐 Causa 2: Token inválido ou expirado
+
+Mesmo que o token esteja sendo enviado, se ele tiver expirado, a API responde 401.
+
+✅ Solução:
+
+Verifique se o token é atualizado (Supabase, Firebase, Auth0 etc. costumam ter métodos automáticos de refresh).
+
+Teste a rota no Postman ou Insomnia com o mesmo token para confirmar se o problema é no front ou back.
+
+⚙️ Causa 3: Rota backend exige autenticação mas o middleware bloqueia
+
+Se no backend Express.js você tem algo como:
+
+app.use('/api/campinas', verifyToken);
+
+
+...e o verifyToken não reconhece o token, ele retorna 401.
+
+✅ Solução:
+
+Cheque o middleware. Por exemplo:
+
+function verifyToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Token não fornecido' });
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Token inválido' });
+    req.user = user;
+    next();
+  });
+}
+
+🌍 Causa 4: Supabase precisa do token da sessão
+
+Se estiver usando o Supabase como backend:
+
+✅ Solução:
+
+Adicione o token da sessão atual:
+
+const { data, error } = await supabase
+  .from('budget_requests')
+  .select('*')
+  .eq('base', 'campinas');
+
+
+Ou, se for uma rota Express que usa Supabase, passe o token da sessão do usuário autenticado no frontend.
