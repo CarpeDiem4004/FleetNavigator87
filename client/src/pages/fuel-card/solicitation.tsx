@@ -60,7 +60,8 @@ const solicitacaoSchema = z.object({
     .min(1, { message: "Selecione um projeto" }),
   base_id: z.string()
     .min(1, { message: "Selecione uma base" }),
-  observacoes: z.string().optional()
+  observacoes: z.string().optional(),
+  data_uso: z.string().optional()
 });
 
 type SolicitacaoValues = z.infer<typeof solicitacaoSchema>;
@@ -88,7 +89,8 @@ export default function FuelCardSolicitation() {
       telefone_celular: "",
       projeto_id: "",
       base_id: "",
-      observacoes: ""
+      observacoes: "",
+      data_uso: ""
     }
   });
   
@@ -159,7 +161,8 @@ export default function FuelCardSolicitation() {
         id_rota: selectedBase?.base_code || "",
         observacoes: values.observacoes || "",
         projeto_id: parseInt(values.projeto_id),
-        base_id: parseInt(values.base_id)
+        base_id: parseInt(values.base_id),
+        data_uso: values.data_uso || null
       };
       
       console.log("Enviando dados da solicitação:", processedValues);
@@ -314,6 +317,27 @@ export default function FuelCardSolicitation() {
                     )}
                   />
                 </div>
+                
+                <FormField
+                  control={form.control}
+                  name="data_uso"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">📅 Data de Uso do Saldo</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="date" 
+                          className="text-base h-12" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        Data prevista para utilização do combustível
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
                 <FormField
                   control={form.control}
