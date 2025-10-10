@@ -46,15 +46,17 @@ export default function PostPaidPublicForm() {
   const [submitted, setSubmitted] = useState(false);
 
   // Buscar projetos
-  const { data: projects = [] } = useQuery<Project[]>({
+  const { data: projectsResponse } = useQuery<{ success: boolean; data: Project[] }>({
     queryKey: ['/api/projects'],
   });
+  const projects = projectsResponse?.data || [];
 
   // Buscar bases filtradas por projeto
-  const { data: bases = [] } = useQuery<Base[]>({
+  const { data: basesResponse } = useQuery<{ success: boolean; data: Base[] }>({
     queryKey: ['/api/bases', selectedProject],
     enabled: !!selectedProject,
   });
+  const bases = basesResponse?.data || [];
 
   // Calcular valor total automaticamente
   useEffect(() => {
