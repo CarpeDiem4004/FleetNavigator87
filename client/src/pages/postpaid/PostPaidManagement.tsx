@@ -105,12 +105,9 @@ export default function PostPaidManagement() {
         throw new Error('Selecione projeto e base');
       }
 
-      const response = await apiRequest('/api/postpaid/tokens', {
-        method: 'POST',
-        body: JSON.stringify({
-          project_id: parseInt(selectedProject),
-          base_id: parseInt(selectedBase),
-        }),
+      const response = await apiRequest('POST', '/api/postpaid/tokens', {
+        project_id: parseInt(selectedProject),
+        base_id: parseInt(selectedBase),
       });
 
       return response;

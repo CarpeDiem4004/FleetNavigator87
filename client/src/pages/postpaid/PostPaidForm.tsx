@@ -61,15 +61,12 @@ export default function PostPaidForm() {
   // Mutation para enviar registro
   const submitMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('/api/postpaid/records', {
-        method: 'POST',
-        body: JSON.stringify({
-          token,
-          ...formData,
-          price_per_liter: parseFloat(formData.price_per_liter),
-          liters: parseFloat(formData.liters),
-          total_amount: totalAmount,
-        }),
+      const response = await apiRequest('POST', '/api/postpaid/records', {
+        token,
+        ...formData,
+        price_per_liter: parseFloat(formData.price_per_liter),
+        liters: parseFloat(formData.liters),
+        total_amount: totalAmount,
       });
       return response;
     },
