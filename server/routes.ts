@@ -17191,7 +17191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API para buscar orçamentos recebidos das oficinas (campinas_budget_requests)
-  app.get("/api/campinas/budget-requests", isAuthenticated, async (req, res) => {
+  app.get("/api/campinas/budget-requests", hybridAuthMiddleware, async (req, res) => {
     try {
       console.log('[CampinaBudgets] Buscando orçamentos recebidos das oficinas...');
       
