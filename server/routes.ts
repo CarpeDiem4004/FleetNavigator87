@@ -23088,6 +23088,278 @@ async function createFuelRequestNotification(fuelRequest) {
 
   */ // Fechando o comentário da seção duplicada removida
 
+  // ==================== ROTAS DO SISTEMA PÓS-PAGO ====================
+  
+  // Criar novo token de acesso
+  app.post('/api/postpaid/tokens', authMiddleware, async (req, res) => {
+    try {
+      const { project_id, base_id } = req.body;
+
+      if (!project_id || !base_id) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Projeto e base são obrigatórios' 
+        });
+      }
+
+      // Gerar token único
+      const token = `postpaid_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+      // Buscar nomes do projeto e base
+      const projectQuery = await pool.query('SELECT name FROM projects WHERE id = $1', [project_id]);
+      const baseQuery = await pool.query('SELECT basename FROM bases WHERE id = $1', [base_id]);
+
+      if (!projectQuery.rows[0] || !baseQuery.rows[0]) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Projeto ou base não encontrados' 
+        });
+      }
+
+      const userId = (req as any).user?.id || (req as any).session?.user?.email;
+
+      // Inserir token
+      const result = await pool.query(
+        `INSERT INTO postpaid_fuel_tokens 
+        (token, project_id, base_id, created_by, is_active) 
+        VALUES ($1, $2, $3, $4, true) 
+        RETURNING id, token, created_at`,
+        [token, project_id, base_id, userId]
+      );
+
+      res.json({ 
+        success: true, 
+        data: result.rows[0] 
+      });
+    } catch (error) {
+      console.error('[PostPaid] Erro ao criar token:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro ao criar token' 
+      });
+    }
+  });
+
+  // Buscar informações do token (público)
+  app.get('/api/postpaid/token-info/:token', async (req, res) => {
+    try {
+      const { token } = req.params;
+
+      const result = await pool.query(
+        `SELECT 
+          t.id, 
+          t.project_id, 
+          t.base_id, 
+          t.is_active,
+          p.name as project_name,
+          b.basename as base_name
+        FROM postpaid_fuel_tokens t
+        JOIN projects p ON t.project_id = p.id
+        JOIN bases b ON t.base_id = b.id
+        WHERE t.token = $1`,
+        [token]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Token não encontrado' 
+        });
+      }
+
+      res.json({ 
+        success: true, 
+        data: result.rows[0] 
+      });
+    } catch (error) {
+      console.error('[PostPaid] Erro ao buscar token:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro ao buscar token' 
+      });
+    }
+  });
+
+  // Listar tokens
+  app.get('/api/postpaid/tokens', authMiddleware, async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT 
+          t.*, 
+          p.name as project_name,
+          b.basename as base_name
+        FROM postpaid_fuel_tokens t
+        JOIN projects p ON t.project_id = p.id
+        JOIN bases b ON t.base_id = b.id
+        WHERE t.is_active = true
+        ORDER BY t.created_at DESC`
+      );
+
+      res.json({ 
+        success: true, 
+        data: result.rows 
+      });
+    } catch (error) {
+      console.error('[PostPaid] Erro ao listar tokens:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro ao listar tokens' 
+      });
+    }
+  });
+
+  // Criar registro de abastecimento (público)
+  app.post('/api/postpaid/records', async (req, res) => {
+    try {
+      const {
+        token,
+        driver_name,
+        driver_rg,
+        driver_phone,
+        vehicle_plate,
+        fuel_type,
+        price_per_liter,
+        liters,
+        total_amount,
+        period,
+        manager_name,
+      } = req.body;
+
+      // Validar token
+      const tokenResult = await pool.query(
+        `SELECT 
+          t.id, 
+          t.project_id, 
+          t.base_id, 
+          t.is_active,
+          p.name as project_name,
+          b.basename as base_name
+        FROM postpaid_fuel_tokens t
+        JOIN projects p ON t.project_id = p.id
+        JOIN bases b ON t.base_id = b.id
+        WHERE t.token = $1 AND t.is_active = true`,
+        [token]
+      );
+
+      if (tokenResult.rows.length === 0) {
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Token inválido ou expirado' 
+        });
+      }
+
+      const tokenInfo = tokenResult.rows[0];
+
+      // Capturar IP e User Agent
+      const ip_address = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      const user_agent = req.headers['user-agent'];
+
+      // Inserir registro
+      const result = await pool.query(
+        `INSERT INTO postpaid_fuel_records (
+          token_id, driver_name, driver_rg, driver_phone, vehicle_plate,
+          fuel_type, price_per_liter, liters, total_amount, period, manager_name,
+          project_id, base_id, project_name, base_name, ip_address, user_agent, status
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'pendente')
+        RETURNING id, created_at`,
+        [
+          tokenInfo.id,
+          driver_name,
+          driver_rg,
+          driver_phone,
+          vehicle_plate,
+          fuel_type,
+          price_per_liter,
+          liters,
+          total_amount,
+          period,
+          manager_name,
+          tokenInfo.project_id,
+          tokenInfo.base_id,
+          tokenInfo.project_name,
+          tokenInfo.base_name,
+          ip_address,
+          user_agent,
+        ]
+      );
+
+      res.json({ 
+        success: true, 
+        data: result.rows[0] 
+      });
+    } catch (error) {
+      console.error('[PostPaid] Erro ao criar registro:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro ao criar registro' 
+      });
+    }
+  });
+
+  // Listar registros de abastecimento
+  app.get('/api/postpaid/records', authMiddleware, async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT * FROM postpaid_fuel_records 
+        ORDER BY created_at DESC 
+        LIMIT 100`
+      );
+
+      res.json({ 
+        success: true, 
+        data: result.rows 
+      });
+    } catch (error) {
+      console.error('[PostPaid] Erro ao listar registros:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro ao listar registros' 
+      });
+    }
+  });
+
+  // Exportar relatório
+  app.get('/api/postpaid/export', authMiddleware, async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT 
+          id,
+          driver_name,
+          driver_rg,
+          driver_phone,
+          vehicle_plate,
+          fuel_type,
+          price_per_liter,
+          liters,
+          total_amount,
+          period,
+          manager_name,
+          project_name,
+          base_name,
+          status,
+          created_at
+        FROM postpaid_fuel_records 
+        ORDER BY created_at DESC`
+      );
+
+      // Criar planilha simples (você pode usar xlsx aqui)
+      const data = result.rows;
+      
+      res.json({ 
+        success: true, 
+        data 
+      });
+    } catch (error) {
+      console.error('[PostPaid] Erro ao exportar:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro ao exportar relatório' 
+      });
+    }
+  });
+
+  // ==================== FIM ROTAS PÓS-PAGO ====================
+
   const httpServer = createServer(app);
   return httpServer;
 }

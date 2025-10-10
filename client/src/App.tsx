@@ -123,6 +123,8 @@ import FuelCardConfirmation from "@/pages/fuel-card/confirmation";
 import FuelCardDashboard from "@/pages/fuel-card/dashboard";
 import StationProfile from "@/pages/fuel-card/station-profile";
 import PostoRemediosPage from "@/pages/PostoRemediosPage";
+import PostPaidManagement from "@/pages/postpaid/PostPaidManagement";
+import PostPaidForm from "@/pages/postpaid/PostPaidForm";
 import PostoRemediosStandalone from "@/pages/PostoRemediosStandalone";
 import AbastecimentoPostoRemediosPage from "@/pages/AbastecimentoPostoRemediosPage";
 import ProfileWithSupabase from "@/pages/ProfileWithSupabase";
@@ -1276,6 +1278,18 @@ function App() {
               <StationProfile />
             </div>
           )} />
+          
+          {/* Rotas do Sistema Pós-Pago */}
+          <ProtectedRoute path="/postpaid/management" component={() => (
+            <div className="mt-16 pl-4 pr-4 md:pl-64">
+              <PostPaidManagement />
+            </div>
+          )} />
+          
+          {/* Rota pública para formulário de registro pós-pago */}
+          <Route path="/postpaid/:token">
+            {(params) => <PostPaidForm token={params.token} />}
+          </Route>
           
           {/* Rotas do Sistema de Abastecimento Terceiros - acesso externo sem proteção */}
           <Route path="/terceiros/login">
