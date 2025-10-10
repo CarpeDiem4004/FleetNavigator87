@@ -23296,6 +23296,90 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
+  // Criar registro de abastecimento público (sem token)
+  app.post('/api/postpaid/public-records', async (req, res) => {
+    try {
+      const {
+        project_id,
+        base_id,
+        driver_name,
+        driver_rg,
+        driver_phone,
+        vehicle_plate,
+        fuel_type,
+        price_per_liter,
+        liters,
+        total_amount,
+        period,
+        manager_name,
+      } = req.body;
+
+      // Buscar nomes do projeto e base
+      const projectResult = await pool.query(
+        `SELECT name FROM projects WHERE id = $1`,
+        [project_id]
+      );
+      
+      const baseResult = await pool.query(
+        `SELECT basename FROM bases WHERE id = $1`,
+        [base_id]
+      );
+
+      if (projectResult.rows.length === 0 || baseResult.rows.length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Projeto ou base não encontrados' 
+        });
+      }
+
+      const project_name = projectResult.rows[0].name;
+      const base_name = baseResult.rows[0].basename;
+
+      // Capturar IP e User Agent
+      const ip_address = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      const user_agent = req.headers['user-agent'];
+
+      // Inserir registro sem token_id (será NULL)
+      const result = await pool.query(
+        `INSERT INTO postpaid_fuel_records (
+          driver_name, driver_rg, driver_phone, vehicle_plate,
+          fuel_type, price_per_liter, liters, total_amount, period, manager_name,
+          project_id, base_id, project_name, base_name, ip_address, user_agent, status
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'pendente')
+        RETURNING id, created_at`,
+        [
+          driver_name,
+          driver_rg,
+          driver_phone,
+          vehicle_plate,
+          fuel_type,
+          price_per_liter,
+          liters,
+          total_amount,
+          period,
+          manager_name,
+          project_id,
+          base_id,
+          project_name,
+          base_name,
+          ip_address,
+          user_agent,
+        ]
+      );
+
+      res.json({ 
+        success: true, 
+        data: result.rows[0] 
+      });
+    } catch (error) {
+      console.error('[PostPaid] Erro ao criar registro público:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro ao criar registro' 
+      });
+    }
+  });
+
   // Listar registros de abastecimento
   app.get('/api/postpaid/records', authMiddleware, async (req, res) => {
     try {

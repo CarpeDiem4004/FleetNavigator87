@@ -124,7 +124,7 @@ import FuelCardDashboard from "@/pages/fuel-card/dashboard";
 import StationProfile from "@/pages/fuel-card/station-profile";
 import PostoRemediosPage from "@/pages/PostoRemediosPage";
 import PostPaidManagement from "@/pages/postpaid/PostPaidManagement";
-import PostPaidForm from "@/pages/postpaid/PostPaidForm";
+import PostPaidPublicForm from "@/pages/postpaid/PostPaidPublicForm";
 import PostoRemediosStandalone from "@/pages/PostoRemediosStandalone";
 import AbastecimentoPostoRemediosPage from "@/pages/AbastecimentoPostoRemediosPage";
 import ProfileWithSupabase from "@/pages/ProfileWithSupabase";
@@ -1287,8 +1287,8 @@ function App() {
           )} />
           
           {/* Rota pública para formulário de registro pós-pago */}
-          <Route path="/postpaid/:token">
-            {(params) => <PostPaidForm token={params.token} />}
+          <Route path="/postpaid">
+            <PostPaidPublicForm />
           </Route>
           
           {/* Rotas do Sistema de Abastecimento Terceiros - acesso externo sem proteção */}
