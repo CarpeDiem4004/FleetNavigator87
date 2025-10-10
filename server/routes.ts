@@ -5067,9 +5067,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[PUBLIC-FUEL-CARD] Página ${page}/${totalPages} - ${result.rows.length} de ${totalCount} registros`);
       
+      // Normalizar status para exibição consistente
+      const normalizeStatus = (status: string, origem: string): string => {
+        if (origem === 'line_hall') {
+          switch (status) {
+            case 'pendente':
+            case 'pending':
+              return 'Pendente';
+            case 'aprovada':
+            case 'approved':
+              return 'Recarga Efetuada';
+            case 'rejeitada':
+            case 'rejected':
+              return 'Negado';
+            default:
+              return status;
+          }
+        } else if (origem === 'base_system') {
+          switch (status) {
+            case 'pendente':
+              return 'Pendente';
+            case 'aprovado':
+            case 'approved':
+              return 'Recarga Efetuada';
+            case 'rejeitado':
+            case 'rejected':
+              return 'Negado';
+            default:
+              return status;
+          }
+        } else {
+          // Status tradicionais (solicitacoes_fuel_card)
+          switch (status) {
+            case 'pendente':
+              return 'Pendente';
+            case 'em_analise':
+              return 'Em Análise';
+            case 'atendido':
+              return 'Recarga Efetuada';
+            case 'rejeitado':
+              return 'Negado';
+            default:
+              return status;
+          }
+        }
+      };
+      
+      // Aplicar normalização nos dados
+      const normalizedData = result.rows.map(row => ({
+        ...row,
+        status: normalizeStatus(row.status, row.origem_tipo)
+      }));
+      
       return res.status(200).json({
         success: true,
-        data: result.rows,
+        data: normalizedData,
         pagination: {
           page,
           limit,
@@ -5077,10 +5129,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalPages,
           hasNextPage,
           hasPrevPage,
-          count: result.rows.length
+          count: normalizedData.length
         },
         fromCache: true, // Indica que suporta cache
-        message: `Página ${page} de ${totalPages} - ${result.rows.length} registros encontrados`
+        message: `Página ${page} de ${totalPages} - ${normalizedData.length} registros encontrados`
       });
       
     } catch (error: any) {
