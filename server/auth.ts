@@ -246,18 +246,32 @@ export function setupAuth(app: Express) {
       req.session.touch();
     }
     
-    // Substituir o método end para adicionar SameSite=None nas respostas
+    // Substituir o método end para configurar cookies corretamente
     const originalEnd = res.end;
     res.end = function(chunk?: any, encoding?: any, callback?: any) {
       if (!res.headersSent && res.getHeader('set-cookie')) {
         if (isDev) {
           let cookies = res.getHeader('set-cookie');
+          const isReplit = req.hostname.includes('replit.dev');
+          
           if (Array.isArray(cookies)) {
             cookies = cookies.map((cookie: string) => {
-              // Garantir SameSite=Lax e remover Secure em desenvolvimento
-              return cookie
-                .replace(/SameSite=None/gi, 'SameSite=Lax')
-                .replace(/Secure;/gi, '');
+              if (isReplit) {
+                // No Replit: GARANTIR SameSite=None e Secure para funcionar cross-origin
+                let updatedCookie = cookie;
+                if (!cookie.includes('SameSite=None')) {
+                  updatedCookie = updatedCookie.replace(/SameSite=Lax/gi, 'SameSite=None');
+                }
+                if (!cookie.includes('Secure')) {
+                  updatedCookie = updatedCookie + '; Secure';
+                }
+                return updatedCookie;
+              } else {
+                // Localhost: SameSite=Lax sem Secure
+                return cookie
+                  .replace(/SameSite=None/gi, 'SameSite=Lax')
+                  .replace(/Secure;/gi, '');
+              }
             });
             res.setHeader('set-cookie', cookies);
           }
