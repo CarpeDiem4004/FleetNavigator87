@@ -41,7 +41,8 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
     tipo_cartao: 'Padrão',
     provedor_cartao: 'Padrão',
     numero_cartao: '',
-    observacoes: ''
+    observacoes: '',
+    data_uso: '' // Nova data de quando o saldo será usado
   });
 
   const [projects, setProjects] = useState<Project[]>([]);
@@ -165,7 +166,8 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
         numero_cartao: formData.numero_cartao,
         observacoes: formData.observacoes,
         base: selectedBase?.base_name || selectedProject?.name || 'Base não identificada',
-        origem_tipo: 'tradicional'
+        origem_tipo: 'tradicional',
+        data_uso: formData.data_uso || null // Data de quando o saldo será usado
       };
 
       const response = await apiRequest('POST', '/api/fuel-card-solicitations', requestData);
@@ -408,18 +410,32 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
             </div>
           </div>
 
-          {/* Valor Solicitado */}
-          <div className="space-y-2">
-            <Label htmlFor="valor_solicitado">Valor Solicitado (R$) *</Label>
-            <Input
-              id="valor_solicitado"
-              type="number"
-              step="0.01"
-              value={formData.valor_solicitado}
-              onChange={(e) => setFormData(prev => ({ ...prev, valor_solicitado: e.target.value }))}
-              placeholder="0.00"
-              required
-            />
+          {/* Valor Solicitado e Data de Uso */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="valor_solicitado">Valor Solicitado (R$) *</Label>
+              <Input
+                id="valor_solicitado"
+                type="number"
+                step="0.01"
+                value={formData.valor_solicitado}
+                onChange={(e) => setFormData(prev => ({ ...prev, valor_solicitado: e.target.value }))}
+                placeholder="0.00"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="data_uso">Data de Uso do Saldo</Label>
+              <Input
+                id="data_uso"
+                type="date"
+                value={formData.data_uso}
+                onChange={(e) => setFormData(prev => ({ ...prev, data_uso: e.target.value }))}
+                placeholder="Quando o saldo será usado"
+              />
+              <p className="text-xs text-muted-foreground">Data prevista para utilização do combustível</p>
+            </div>
           </div>
 
           {/* Observações */}
