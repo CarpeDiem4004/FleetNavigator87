@@ -159,6 +159,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           COALESCE(s.origem_tipo, 'tradicional') as origem_tipo,
           s.tipo_combustivel,
           s.litros_solicitados,
+          s.data_uso,
           -- Campos específicos do Line Hall (NULL para solicitações tradicionais)
           NULL::varchar as veiculo_modelo,
           NULL::varchar as rota_origem,
@@ -202,6 +203,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           'line_hall' as origem_tipo,
           NULL as tipo_combustivel,
           NULL as litros_solicitados,
+          NULL as data_uso,
           -- Campos específicos do Line Hall
           lh.veiculo_modelo,
           lh.rota_origem,
@@ -255,6 +257,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           'base_system' as origem_tipo,
           fcr.fuel_type as tipo_combustivel,
           NULL as litros_solicitados,
+          NULL as data_uso,
           -- Campos específicos do Line Hall (NULL para solicitações das bases)
           NULL::varchar as veiculo_modelo,
           NULL::varchar as rota_origem,
