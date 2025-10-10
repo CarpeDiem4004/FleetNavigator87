@@ -45,6 +45,7 @@ interface FuelCardSolicitation {
   tipo_combustivel?: string;
   litros_solicitados?: number;
   data_uso?: string; // Data prevista de uso do saldo
+  turno?: string; // Turno AM ou PM
   // Campos do Line Hall Shopee
   veiculo_modelo?: string;
   rota_origem?: string;
@@ -1565,7 +1566,10 @@ const FuelCardRequestsPanel: React.FC = () => {
                           {getStatusBadge(solicitacao.status)}
                           <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</p>
                           {solicitacao.data_uso && (
-                            <p className="text-xs text-blue-600 font-medium mt-1">📅 Uso: {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                            <p className="text-xs text-blue-600 font-medium mt-1">
+                              📅 Uso: {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
+                              {solicitacao.turno && ` - ${solicitacao.turno}`}
+                            </p>
                           )}
                         </div>
 
@@ -1800,7 +1804,10 @@ const FuelCardRequestsPanel: React.FC = () => {
                             <p className="text-xs text-green-600 font-medium">Atendido: {formatDate(solicitacao.data_atendimento).split(',')[0]}</p>
                           )}
                           {solicitacao.data_uso && (
-                            <p className="text-xs text-blue-600 font-medium mt-1">📅 Uso: {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                            <p className="text-xs text-blue-600 font-medium mt-1">
+                              📅 Uso: {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
+                              {solicitacao.turno && ` - ${solicitacao.turno}`}
+                            </p>
                           )}
                         </div>
 

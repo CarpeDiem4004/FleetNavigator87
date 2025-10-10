@@ -61,7 +61,10 @@ const solicitacaoSchema = z.object({
   base_id: z.string()
     .min(1, { message: "Selecione uma base" }),
   observacoes: z.string().optional(),
-  data_uso: z.string().optional()
+  data_uso: z.string().optional(),
+  turno: z.enum(["AM", "PM"], {
+    required_error: "Selecione o turno"
+  }).optional()
 });
 
 type SolicitacaoValues = z.infer<typeof solicitacaoSchema>;
@@ -90,7 +93,8 @@ export default function FuelCardSolicitation() {
       projeto_id: "",
       base_id: "",
       observacoes: "",
-      data_uso: ""
+      data_uso: "",
+      turno: undefined
     }
   });
   
@@ -162,7 +166,8 @@ export default function FuelCardSolicitation() {
         observacoes: values.observacoes || "",
         projeto_id: parseInt(values.projeto_id),
         base_id: parseInt(values.base_id),
-        data_uso: values.data_uso || null
+        data_uso: values.data_uso || null,
+        turno: values.turno || null
       };
       
       console.log("Enviando dados da solicitação:", processedValues);
@@ -318,26 +323,53 @@ export default function FuelCardSolicitation() {
                   />
                 </div>
                 
-                <FormField
-                  control={form.control}
-                  name="data_uso"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">📅 Data de Uso do Saldo</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="date" 
-                          className="text-base h-12" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormDescription className="text-xs">
-                        Data prevista para utilização do combustível
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="data_uso"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">📅 Data de Uso do Saldo</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="date" 
+                            className="text-base h-12" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          Data prevista para utilização do combustível
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="turno"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">🕐 Turno</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="text-base h-12">
+                              <SelectValue placeholder="Selecione o turno" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="AM">AM - Manhã</SelectItem>
+                            <SelectItem value="PM">PM - Tarde/Noite</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription className="text-xs">
+                          Período do dia para uso
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 
                 <FormField
                   control={form.control}

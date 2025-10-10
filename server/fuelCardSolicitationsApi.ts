@@ -160,6 +160,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           s.tipo_combustivel,
           s.litros_solicitados,
           s.data_uso,
+          s.turno,
           -- Campos específicos do Line Hall (NULL para solicitações tradicionais)
           NULL::varchar as veiculo_modelo,
           NULL::varchar as rota_origem,
@@ -204,6 +205,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           NULL as tipo_combustivel,
           NULL as litros_solicitados,
           NULL as data_uso,
+          NULL as turno,
           -- Campos específicos do Line Hall
           lh.veiculo_modelo,
           lh.rota_origem,
@@ -258,6 +260,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           fcr.fuel_type as tipo_combustivel,
           NULL as litros_solicitados,
           NULL as data_uso,
+          NULL as turno,
           -- Campos específicos do Line Hall (NULL para solicitações das bases)
           NULL::varchar as veiculo_modelo,
           NULL::varchar as rota_origem,
@@ -402,7 +405,8 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       base,
       id_rota,
       origem_tipo,
-      data_uso
+      data_uso,
+      turno
     } = req.body;
     
     // Debug completo - verificando valores antes do processamento
@@ -475,9 +479,9 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
     
     const query = `
       INSERT INTO solicitacoes_fuel_card
-        (placa, km, km_veiculo, tipo_cartao, provedor_cartao, numero_cartao, motorista, solicitante, telefone_celular, observacoes, status, data_solicitacao, valor_solicitado, tipo_combustivel, base, id_rota, origem_tipo, data_uso)
+        (placa, km, km_veiculo, tipo_cartao, provedor_cartao, numero_cartao, motorista, solicitante, telefone_celular, observacoes, status, data_solicitacao, valor_solicitado, tipo_combustivel, base, id_rota, origem_tipo, data_uso, turno)
       VALUES
-        ($1, $2, $2, $3, $4, $5, $6, $7, $8, $9, 'pendente', NOW(), $10, $11, $12, $13, $14, $15)
+        ($1, $2, $2, $3, $4, $5, $6, $7, $8, $9, 'pendente', NOW(), $10, $11, $12, $13, $14, $15, $16)
       RETURNING *
     `;
     
@@ -511,7 +515,8 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       base || null,
       id_rota || null,
       origem_tipo || 'tradicional', // Padrão para 'tradicional' se não informado
-      data_uso || null // Data prevista de uso do saldo
+      data_uso || null, // Data prevista de uso do saldo
+      turno || null // Turno (AM/PM)
     ];
     
     const result = await pool.query(query, values);
