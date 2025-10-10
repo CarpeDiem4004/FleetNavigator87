@@ -1561,16 +1561,29 @@ const FuelCardRequestsPanel: React.FC = () => {
                           <p className="text-xs text-gray-500 truncate">{solicitacao.base || '-'}</p>
                         </div>
 
+                        {/* Data de Abastecimento */}
+                        <div className="lg:col-span-2 border-2 border-orange-500 bg-orange-50 p-2 rounded">
+                          <p className="text-xs text-orange-600 font-bold mb-1">📅 DATA DE ABASTECIMENTO</p>
+                          {solicitacao.data_uso ? (
+                            <>
+                              <p className="text-sm font-bold text-orange-900">
+                                {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
+                              </p>
+                              {solicitacao.turno && (
+                                <p className="text-xs text-orange-700 font-medium mt-1">
+                                  Turno: {solicitacao.turno}
+                                </p>
+                              )}
+                            </>
+                          ) : (
+                            <p className="text-xs text-gray-500">Não informada</p>
+                          )}
+                        </div>
+
                         {/* Status e Data */}
                         <div className="lg:col-span-2">
                           {getStatusBadge(solicitacao.status)}
                           <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</p>
-                          {solicitacao.data_uso && (
-                            <p className="text-xs text-blue-600 font-medium mt-1">
-                              📅 Uso: {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
-                              {solicitacao.turno && ` - ${solicitacao.turno}`}
-                            </p>
-                          )}
                         </div>
 
                         {/* Ações */}
@@ -1796,18 +1809,31 @@ const FuelCardRequestsPanel: React.FC = () => {
                           <p className="text-xs text-gray-500 truncate">{solicitacao.base || '-'}</p>
                         </div>
 
+                        {/* Data de Abastecimento */}
+                        <div className="lg:col-span-2 border-2 border-orange-500 bg-orange-50 p-2 rounded">
+                          <p className="text-xs text-orange-600 font-bold mb-1">📅 DATA DE ABASTECIMENTO</p>
+                          {solicitacao.data_uso ? (
+                            <>
+                              <p className="text-sm font-bold text-orange-900">
+                                {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
+                              </p>
+                              {solicitacao.turno && (
+                                <p className="text-xs text-orange-700 font-medium mt-1">
+                                  Turno: {solicitacao.turno}
+                                </p>
+                              )}
+                            </>
+                          ) : (
+                            <p className="text-xs text-gray-500">Não informada</p>
+                          )}
+                        </div>
+
                         {/* Status e Data */}
                         <div className="lg:col-span-2">
                           {getStatusBadge(solicitacao.status)}
                           <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</p>
                           {solicitacao.data_atendimento && (
                             <p className="text-xs text-green-600 font-medium">Atendido: {formatDate(solicitacao.data_atendimento).split(',')[0]}</p>
-                          )}
-                          {solicitacao.data_uso && (
-                            <p className="text-xs text-blue-600 font-medium mt-1">
-                              📅 Uso: {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
-                              {solicitacao.turno && ` - ${solicitacao.turno}`}
-                            </p>
                           )}
                         </div>
 
