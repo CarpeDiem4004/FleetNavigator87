@@ -502,18 +502,26 @@ const LineHaulPage = () => {
     try {
       const response = await api.post('/line-hall/routes', newRoute);
       if (response.data.success) {
+        // Atualiza a lista de rotas
+        await fetchRoutes();
+        
         toast({
           title: "Sucesso",
           description: "Rota cadastrada com sucesso!"
         });
+        
+        // Limpa o formulário e fecha o modal
         setNewRoute({
           nome_ponto_a: '',
           nome_ponto_b: '',
           km_total: 0,
           observacoes: ''
         });
-        setShowNewRoute(false);
-        await fetchRoutes();
+        
+        // Pequeno delay para garantir que a lista foi atualizada
+        setTimeout(() => {
+          setShowNewRoute(false);
+        }, 500);
       }
     } catch (error) {
       console.error('Erro ao criar rota:', error);
