@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { DriverAutocomplete } from '@/components/ui/driver-autocomplete';
 import lineHaulLayoutImage from '@assets/image_1754418722959.png';
-import { api } from '@/services/api';
+import { apiRequest } from '@/lib/queryClient';
 
 interface LineHallTrip {
   id: number;
@@ -178,16 +178,17 @@ const LineHaulPage = () => {
         setDistanceStatus('Consultando distância...');
         
         try {
-          const response = await api.post('/line-hall/calculate-distance', {
+          const res = await apiRequest('POST', '/api/line-hall/calculate-distance', {
             origem: newRoute.nome_ponto_a,
             destino: newRoute.nome_ponto_b
           });
+          const response = await res.json();
           
-          if (response.data.success) {
-            setNewRoute(prev => ({ ...prev, km_total: response.data.distancia }));
-            setDistanceStatus(`Distância calculada: ${response.data.distancia} km`);
+          if (response.success) {
+            setNewRoute(prev => ({ ...prev, km_total: response.distancia }));
+            setDistanceStatus(`Distância calculada: ${response.distancia} km`);
           } else {
-            setDistanceStatus(response.data.message || 'Não foi possível calcular a distância');
+            setDistanceStatus(response.message || 'Não foi possível calcular a distância');
           }
         } catch (error: any) {
           console.error('Erro ao calcular distância:', error);
@@ -270,9 +271,10 @@ const LineHaulPage = () => {
 
   const fetchTrips = async () => {
     try {
-      const response = await api.get('/line-hall-shopee');
-      if (response.data.success) {
-        setTrips(response.data.data || []);
+      const res = await apiRequest('GET', '/api/line-hall-shopee');
+      const response = await res.json();
+      if (response.success) {
+        setTrips(response.data || []);
       }
     } catch (error) {
       console.error('Erro ao buscar viagens:', error);
@@ -281,10 +283,11 @@ const LineHaulPage = () => {
 
   const fetchRoutes = async () => {
     try {
-      const response = await api.get('/line-hall/routes');
-      if (response.data.success) {
-        setRoutes(response.data.data || []);
-        setStats(prev => ({ ...prev, totalRoutes: response.data.data?.length || 0 }));
+      const res = await apiRequest('GET', '/api/line-hall/routes');
+      const response = await res.json();
+      if (response.success) {
+        setRoutes(response.data || []);
+        setStats(prev => ({ ...prev, totalRoutes: response.data?.length || 0 }));
       }
     } catch (error) {
       console.error('Erro ao buscar rotas:', error);
@@ -293,9 +296,10 @@ const LineHaulPage = () => {
 
   const fetchVehicles = async () => {
     try {
-      const response = await api.get('/vehicles');
-      if (response.data && Array.isArray(response.data)) {
-        const lineHaulVehicles = response.data.filter(vehicle => 
+      const res = await apiRequest('GET', '/api/vehicles');
+      const response = await res.json();
+      if (response && Array.isArray(response)) {
+        const lineHaulVehicles = response.filter(vehicle => 
           vehicle.operacao_tipo === 'line_hall_shopee' || 
           vehicle.basename === 'Line Haul Murici' ||
           vehicle.base_id === 2 ||
@@ -311,9 +315,10 @@ const LineHaulPage = () => {
 
   const fetchDrivers = async () => {
     try {
-      const response = await api.get('/drivers');
-      if (response.data && Array.isArray(response.data)) {
-        setDrivers(response.data);
+      const res = await apiRequest('GET', '/api/drivers');
+      const response = await res.json();
+      if (response && Array.isArray(response)) {
+        setDrivers(response);
       }
     } catch (error) {
       console.error('Erro ao buscar motoristas:', error);
@@ -322,9 +327,10 @@ const LineHaulPage = () => {
 
   const fetchChecklists = async () => {
     try {
-      const response = await api.get('/line-hall/checklists');
-      if (response.data.success) {
-        setChecklists(response.data.data || []);
+      const res = await apiRequest('GET', '/api/line-hall/checklists');
+      const response = await res.json();
+      if (response.success) {
+        setChecklists(response.data || []);
       }
     } catch (error) {
       console.error('Erro ao buscar checklists:', error);
@@ -430,40 +436,43 @@ const LineHaulPage = () => {
   const fetchStats = async () => {
     try {
       // Buscar estatísticas de checklist
-      const checklistResponse = await api.get('/line-hall/checklist-stats');
-      if (checklistResponse.data.success) {
+      const checklistRes = await apiRequest('GET', '/api/line-hall/checklist-stats');
+      const checklistResponse = await checklistRes.json();
+      if (checklistResponse.success) {
         setStats(prev => ({
           ...prev,
           checklistStats: {
-            pendentes: checklistResponse.data.pendentes || 0,
-            concluidos: checklistResponse.data.concluidos || 0,
-            total: checklistResponse.data.total || 0
+            pendentes: checklistResponse.pendentes || 0,
+            concluidos: checklistResponse.concluidos || 0,
+            total: checklistResponse.total || 0
           }
         }));
       }
 
       // Buscar estatísticas de manutenção
-      const maintenanceResponse = await api.get('/line-hall/maintenance-stats');
-      if (maintenanceResponse.data.success) {
+      const maintenanceRes = await apiRequest('GET', '/api/line-hall/maintenance-stats');
+      const maintenanceResponse = await maintenanceRes.json();
+      if (maintenanceResponse.success) {
         setStats(prev => ({
           ...prev,
           maintenanceStats: {
-            pendentes: maintenanceResponse.data.pendentes || 0,
-            emAndamento: maintenanceResponse.data.emAndamento || 0,
-            concluidas: maintenanceResponse.data.concluidas || 0,
-            total: maintenanceResponse.data.total || 0
+            pendentes: maintenanceResponse.pendentes || 0,
+            emAndamento: maintenanceResponse.emAndamento || 0,
+            concluidas: maintenanceResponse.concluidas || 0,
+            total: maintenanceResponse.total || 0
           }
         }));
       }
 
       // Buscar estatísticas da garagem
-      const garageResponse = await api.get('/line-hall/garage-stats');
-      if (garageResponse.data.success) {
+      const garageRes = await apiRequest('GET', '/api/line-hall/garage-stats');
+      const garageResponse = await garageRes.json();
+      if (garageResponse.success) {
         setStats(prev => ({
           ...prev,
           garageStats: {
-            total_veiculos: garageResponse.data.total_veiculos || 0,
-            media_dias: garageResponse.data.media_dias || 0
+            total_veiculos: garageResponse.total_veiculos || 0,
+            media_dias: garageResponse.media_dias || 0
           }
         }));
       }
@@ -502,8 +511,9 @@ const LineHaulPage = () => {
     }
 
     try {
-      const response = await api.post('/line-hall/routes', newRoute);
-      if (response.data.success) {
+      const res = await apiRequest('POST', '/api/line-hall/routes', newRoute);
+      const response = await res.json();
+      if (response.success) {
         // Atualiza a lista de rotas
         await fetchRoutes();
         
@@ -546,8 +556,9 @@ const LineHaulPage = () => {
     }
 
     try {
-      const response = await api.put(`/line-hall/routes/${editingRoute.id}`, newRoute);
-      if (response.data.success) {
+      const res = await apiRequest('PUT', `/api/line-hall/routes/${editingRoute.id}`, newRoute);
+      const response = await res.json();
+      if (response.success) {
         // Atualiza a lista de rotas
         await fetchRoutes();
         
@@ -642,10 +653,11 @@ const LineHaulPage = () => {
       };
 
       console.log("📤 Enviando para o backend:", operationData);
-      const response = await api.post('/line-hall/operations', operationData);
-      console.log("📥 Resposta do backend:", response.data);
+      const res = await apiRequest('POST', '/api/line-hall/operations', operationData);
+      const response = await res.json();
+      console.log("📥 Resposta do backend:", response);
       
-      if (response.data.success) {
+      if (response.success) {
         toast({
           title: "Sucesso",
           description: "Operação criada com sucesso!"
@@ -682,9 +694,10 @@ const LineHaulPage = () => {
 
   const fetchOperations = async () => {
     try {
-      const response = await api.get('/line-hall/operations');
-      if (response.data.success) {
-        setOperationsData(response.data.data || []);
+      const res = await apiRequest('GET', '/api/line-hall/operations');
+      const response = await res.json();
+      if (response.success) {
+        setOperationsData(response.data || []);
       }
     } catch (error) {
       console.error('Erro ao buscar operações:', error);
