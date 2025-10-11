@@ -46,6 +46,7 @@ interface FuelCardSolicitation {
   litros_solicitados?: number;
   data_uso?: string; // Data prevista de uso do saldo
   turno?: string; // Turno AM ou PM
+  motivo_negacao?: string | null; // Motivo da negação quando status for "Negado"
   // Campos do Line Hall Shopee
   veiculo_modelo?: string;
   rota_origem?: string;
@@ -78,6 +79,7 @@ const FuelCardRequestsPanel: React.FC = () => {
   const [baseFilter, setBaseFilter] = useState<string>('all');
   const [projects, setProjects] = useState<any[]>([]);
   const [editedStatus, setEditedStatus] = useState<string>('');
+  const [motivoNegacao, setMotivoNegacao] = useState<string>('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [isNewRequestDialogOpen, setIsNewRequestDialogOpen] = useState(false);
   const [approvingBatch, setApprovingBatch] = useState(false);
@@ -459,6 +461,8 @@ const FuelCardRequestsPanel: React.FC = () => {
   const handleOpenSolicitation = (solicitation: FuelCardSolicitation) => {
     setSelectedSolicitation(solicitation);
     setEditedStatus(solicitation.status);
+    // Pré-preencher motivo de negação se existir
+    setMotivoNegacao(solicitation.motivo_negacao || '');
     setIsSheetOpen(true);
   };
 
@@ -603,6 +607,16 @@ const FuelCardRequestsPanel: React.FC = () => {
   const handleStatusUpdate = async () => {
     if (!selectedSolicitation) return;
     
+    // Validar motivo de negação se o status for "Negado"
+    if (editedStatus === 'Negado' && !motivoNegacao.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Motivo obrigatório',
+        description: 'Por favor, informe o motivo da negação.'
+      });
+      return;
+    }
+    
     try {
       setUpdatingStatus(true);
       
@@ -611,7 +625,8 @@ const FuelCardRequestsPanel: React.FC = () => {
         status: editedStatus,
         origem_tipo: selectedSolicitation.origem_tipo,
         atendido_por: user?.name,
-        observacoes: selectedSolicitation.observacoes
+        observacoes: selectedSolicitation.observacoes,
+        motivo_negacao: editedStatus === 'Negado' ? motivoNegacao : null
       };
       
       const response = await apiRequest('PUT', `/api/fuel-card-solicitations/${selectedSolicitation.id}/status`, updateData);
@@ -620,15 +635,25 @@ const FuelCardRequestsPanel: React.FC = () => {
       if (data.success) {
         // Atualizar a lista de solicitações
         setSolicitations(solicitations.map(sol => 
-          sol.id === selectedSolicitation.id ? {...sol, status: editedStatus as FuelCardSolicitation['status'], atendido_por: user?.name, data_atendimento: new Date().toISOString()} : sol
+          sol.id === selectedSolicitation.id ? {
+            ...sol, 
+            status: editedStatus as FuelCardSolicitation['status'], 
+            atendido_por: user?.name, 
+            data_atendimento: new Date().toISOString(),
+            motivo_negacao: editedStatus === 'Negado' ? motivoNegacao : null
+          } : sol
         ));
         
         setSelectedSolicitation({
           ...selectedSolicitation,
           status: editedStatus as any,
           atendido_por: user?.name,
-          data_atendimento: new Date().toISOString()
+          data_atendimento: new Date().toISOString(),
+          motivo_negacao: editedStatus === 'Negado' ? motivoNegacao : null
         });
+        
+        // Limpar o motivo após salvar
+        setMotivoNegacao('');
         
         toast({
           title: 'Sucesso',
@@ -2235,6 +2260,31 @@ const FuelCardRequestsPanel: React.FC = () => {
                             </SelectContent>
                           </Select>
                         </div>
+                        
+                        {/* Campo de Motivo da Negação - aparece quando status for "Negado" */}
+                        {editedStatus === 'Negado' && (
+                          <div className="space-y-2">
+                            <Label htmlFor="motivo-negacao" className="text-sm font-medium text-red-700">
+                              Motivo da Negação *
+                            </Label>
+                            <textarea
+                              id="motivo-negacao"
+                              value={motivoNegacao}
+                              onChange={(e) => setMotivoNegacao(e.target.value)}
+                              className="w-full min-h-[100px] p-3 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-red-50"
+                              placeholder="Descreva o motivo da negação desta solicitação..."
+                            />
+                            <p className="text-xs text-red-600">* Campo obrigatório para negação</p>
+                          </div>
+                        )}
+                        
+                        {/* Exibir motivo de negação existente */}
+                        {selectedSolicitation.motivo_negacao && (
+                          <div className="space-y-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                            <Label className="text-sm font-medium text-red-700">Motivo da Negação Registrado</Label>
+                            <p className="text-sm text-red-900">{selectedSolicitation.motivo_negacao}</p>
+                          </div>
+                        )}
                         
                         <div className="flex gap-2">
                           <Button 

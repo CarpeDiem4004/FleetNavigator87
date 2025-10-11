@@ -542,13 +542,21 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
 export async function updateFuelCardSolicitationStatus(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { status, origem_tipo } = req.body;
+    const { status, origem_tipo, motivo_negacao } = req.body;
     const user = req.user as any;
     
     if (!id || !status) {
       return res.status(400).json({
         success: false,
         message: 'ID e status são obrigatórios'
+      });
+    }
+    
+    // Validar motivo de negação se o status for "Negado"
+    if (status === 'Negado' && !motivo_negacao?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Motivo da negação é obrigatório'
       });
     }
     
@@ -609,6 +617,11 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
         `;
         values = [lineHallStatus, user?.name || 'Sistema', id];
       } else {
+        // Para status negado, usar motivo_negacao nas observações do operador
+        const observacoes = lineHallStatus === 'rejeitada' && motivo_negacao 
+          ? motivo_negacao 
+          : (req.body.observacoes || '');
+        
         query = `
           UPDATE ${tableName} 
           SET 
@@ -619,7 +632,7 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
           WHERE id = $4
           RETURNING *
         `;
-        values = [lineHallStatus, user?.name || 'Sistema', req.body.observacoes || '', id];
+        values = [lineHallStatus, user?.name || 'Sistema', observacoes, id];
       }
     } else if (isGPBase) {
       // Lógica para solicitações GP Base (fuel_card_requests)
@@ -669,7 +682,7 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
           WHERE id = $4
           RETURNING *
         `;
-        values = [dbStatus, user?.name || 'Sistema', req.body.observacoes || 'Rejeitado pela gestão', id];
+        values = [dbStatus, user?.name || 'Sistema', motivo_negacao || req.body.observacoes || 'Rejeitado pela gestão', id];
       } else {
         query = `
           UPDATE ${tableName} 
@@ -717,6 +730,19 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
           RETURNING *
         `;
         values = [dbStatus, user?.name || 'Sistema', id];
+      } else if (dbStatus === 'rejeitado') {
+        // Para status negado, salvar motivo de negação
+        query = `
+          UPDATE ${tableName} 
+          SET 
+            status = $1,
+            atendido_por = $2,
+            motivo_negacao = $3,
+            updated_at = NOW()
+          WHERE id = $4
+          RETURNING *
+        `;
+        values = [dbStatus, user?.name || 'Sistema', motivo_negacao || 'Não informado', id];
       } else {
         query = `
           UPDATE ${tableName} 
