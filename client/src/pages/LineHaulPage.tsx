@@ -1975,9 +1975,10 @@ const LineHaulPage = () => {
               <div className="space-y-2">
                 <Label htmlFor="rota_select">Rota *</Label>
                 <Select 
-                  value={newOperation.rota_id.toString()} 
+                  value={newOperation.rota_id > 0 ? newOperation.rota_id.toString() : ""} 
                   onValueChange={(value) => {
                     const rota = routes.find(r => r.id.toString() === value);
+                    console.log("Rota selecionada:", { value, rota, rota_id: parseInt(value) });
                     setNewOperation(prev => ({ 
                       ...prev, 
                       rota_id: parseInt(value),
