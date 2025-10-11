@@ -263,9 +263,14 @@ const FuelCardRequestsPanel: React.FC = () => {
         return false;
       }
       
-      // Filtro por data
+      // Filtro por data (convertendo para timezone do Brasil)
       if (dateFilter) {
-        const solDate = new Date(sol.data_solicitacao).toISOString().split('T')[0];
+        // Converter timestamp UTC para data local do Brasil (UTC-3)
+        const solTimestamp = new Date(sol.data_solicitacao);
+        // Subtrair 3 horas para ajustar de UTC para horário do Brasil
+        const brasilDate = new Date(solTimestamp.getTime() - 3 * 60 * 60 * 1000);
+        const solDate = brasilDate.toISOString().split('T')[0];
+        
         if (solDate !== dateFilter) {
           return false;
         }
