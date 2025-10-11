@@ -229,6 +229,8 @@ const LineHaulPage = () => {
   // Estados para gestão de operações
   const [showOperationsManagement, setShowOperationsManagement] = useState(false);
   const [showNewOperation, setShowNewOperation] = useState(false);
+  const [showOperationDetails, setShowOperationDetails] = useState(false);
+  const [selectedOperation, setSelectedOperation] = useState<LineHaulOperation | null>(null);
   const [operationsData, setOperationsData] = useState<LineHaulOperation[]>([]);
   const [newOperation, setNewOperation] = useState<LineHaulOperation>({
     motorista_id: 0,
@@ -1857,7 +1859,14 @@ const LineHaulPage = () => {
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedOperation(operation);
+                              setShowOperationDetails(true);
+                            }}
+                          >
                             <Eye className="h-4 w-4 mr-1" />
                             Detalhes
                           </Button>
@@ -2125,6 +2134,201 @@ const LineHaulPage = () => {
                     Iniciar Operação
                   </>
                 )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog para Detalhes da Operação com Cálculo de Combustível */}
+        <Dialog open={showOperationDetails} onOpenChange={setShowOperationDetails}>
+          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center text-blue-700">
+                <Eye className="h-5 w-5 mr-2" />
+                Detalhes da Operação
+              </DialogTitle>
+              <DialogDescription>
+                Informações completas da operação incluindo estimativas de consumo
+              </DialogDescription>
+            </DialogHeader>
+            {selectedOperation && (() => {
+              // Buscar a rota para obter km_total
+              const rota = routes.find(r => r.id === selectedOperation.rota_id);
+              const kmTotal = rota?.km_total || 0;
+              
+              // Calcular litros estimados baseado no tipo de veículo
+              const consumoPorKm = selectedOperation.tipo_veiculo === 'truck' ? 4 : 2.5; // truck: 4km/l, carreta: 2.5km/l
+              const litrosEstimados = kmTotal > 0 ? (kmTotal / consumoPorKm).toFixed(1) : '0.0';
+              
+              // Calcular valor estimado (preço médio do diesel R$ 5,80)
+              const precoDiesel = 5.80;
+              const valorEstimado = (parseFloat(litrosEstimados) * precoDiesel).toFixed(2);
+              
+              return (
+                <div className="space-y-6 py-4">
+                  {/* Informações do Motorista */}
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-blue-900 mb-3 flex items-center">
+                      <Users className="h-4 w-4 mr-2" />
+                      Informações do Motorista
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-gray-600">Nome:</span>
+                        <p className="font-medium text-gray-900">{selectedOperation.motorista_nome}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">ID:</span>
+                        <p className="font-medium text-gray-900">#{selectedOperation.motorista_id}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Informações do Veículo */}
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-green-900 mb-3 flex items-center">
+                      <Truck className="h-4 w-4 mr-2" />
+                      Informações do Veículo
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <span className="text-gray-600">Tipo:</span>
+                          <p className="font-medium text-gray-900">
+                            {selectedOperation.tipo_veiculo === 'truck' ? 'Truck' : 'Cavalo Mecânico'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Consumo Médio:</span>
+                          <p className="font-medium text-gray-900">
+                            {consumoPorKm} km/litro
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {selectedOperation.tipo_veiculo === 'truck' && selectedOperation.placa_truck && (
+                        <div>
+                          <span className="text-gray-600">Placa Truck:</span>
+                          <p className="font-medium text-gray-900">{selectedOperation.placa_truck}</p>
+                        </div>
+                      )}
+                      
+                      {selectedOperation.tipo_veiculo === 'cavalo_mecanico' && (
+                        <>
+                          {selectedOperation.placa_cavalo && (
+                            <div>
+                              <span className="text-gray-600">Placa Cavalo:</span>
+                              <p className="font-medium text-gray-900">{selectedOperation.placa_cavalo}</p>
+                            </div>
+                          )}
+                          {selectedOperation.placa_carreta_1 && (
+                            <div>
+                              <span className="text-gray-600">Placa Carreta 1:</span>
+                              <p className="font-medium text-gray-900">{selectedOperation.placa_carreta_1}</p>
+                            </div>
+                          )}
+                          {selectedOperation.placa_carreta_2 && (
+                            <div>
+                              <span className="text-gray-600">Placa Carreta 2:</span>
+                              <p className="font-medium text-gray-900">{selectedOperation.placa_carreta_2}</p>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Informações da Rota e Cálculos */}
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-purple-900 mb-3 flex items-center">
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Rota e Estimativas de Consumo
+                    </h3>
+                    <div className="space-y-3 text-sm">
+                      <div>
+                        <span className="text-gray-600">Rota:</span>
+                        <p className="font-medium text-gray-900">{selectedOperation.rota_nome}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <span className="text-gray-600">Distância Total:</span>
+                          <p className="font-medium text-gray-900">{kmTotal} km</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Data Início:</span>
+                          <p className="font-medium text-gray-900">
+                            {new Date(selectedOperation.data_inicio).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Cálculos de Combustível */}
+                      <div className="border-t border-purple-200 pt-3 mt-3">
+                        <h4 className="font-semibold text-purple-800 mb-2">📊 Estimativa de Combustível:</h4>
+                        <div className="grid grid-cols-2 gap-3 bg-white p-3 rounded-md">
+                          <div>
+                            <span className="text-gray-600">Litros Estimados:</span>
+                            <p className="text-xl font-bold text-blue-600">{litrosEstimados} L</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Valor Estimado:</span>
+                            <p className="text-xl font-bold text-green-600">R$ {valorEstimado}</p>
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          * Baseado no consumo médio de {consumoPorKm} km/L e preço do diesel a R$ {precoDiesel.toFixed(2)}/L
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status e Observações */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-900 mb-3">Status e Observações</h3>
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="text-gray-600">Status:</span>
+                        <div className="mt-1">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            selectedOperation.status === 'finalizada' ? 'bg-green-100 text-green-800' :
+                            selectedOperation.status === 'em_andamento' ? 'bg-blue-100 text-blue-800' :
+                            selectedOperation.status === 'cancelada_cliente' ? 'bg-orange-100 text-orange-800' :
+                            selectedOperation.status === 'no_show' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {selectedOperation.status === 'finalizada' ? 'Finalizada' :
+                             selectedOperation.status === 'em_andamento' ? 'Em Andamento' :
+                             selectedOperation.status === 'cancelada_cliente' ? 'Cancelada pelo Cliente' :
+                             selectedOperation.status === 'no_show' ? 'No Show' : 'Programada'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {selectedOperation.status === 'no_show' && selectedOperation.justificativa_no_show && (
+                        <div className="bg-red-50 p-3 rounded-md mt-2">
+                          <span className="text-gray-600 font-medium">Justificativa No Show:</span>
+                          <p className="text-red-800 mt-1">{selectedOperation.justificativa_no_show}</p>
+                        </div>
+                      )}
+                      
+                      {selectedOperation.observacoes && (
+                        <div className="bg-blue-50 p-3 rounded-md mt-2">
+                          <span className="text-gray-600 font-medium">Observações:</span>
+                          <p className="text-gray-900 mt-1">{selectedOperation.observacoes}</p>
+                        </div>
+                      )}
+                      
+                      {!selectedOperation.observacoes && selectedOperation.status !== 'no_show' && (
+                        <p className="text-gray-400 italic">Nenhuma observação registrada</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowOperationDetails(false)}>
+                Fechar
               </Button>
             </DialogFooter>
           </DialogContent>
