@@ -620,22 +620,25 @@ const LineHaulPage = () => {
     setIsUpdatingStatus(true);
 
     try {
-      const response = await apiRequest(`/api/line-hall/operations/${selectedOperation.id}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({
+      const response = await apiRequest(
+        'PATCH',
+        `/api/line-hall/operations/${selectedOperation.id}/status`,
+        {
           status: newStatus,
           justificativa_no_show: newStatus === 'no_show' ? noShowJustification : null
-        })
-      });
+        }
+      );
 
-      if (response.success) {
+      const data = await response.json();
+
+      if (data.success) {
         toast({
           title: "Sucesso!",
           description: "Status atualizado com sucesso"
         });
 
         // Atualizar a operação selecionada
-        setSelectedOperation(response.data);
+        setSelectedOperation(data.data);
 
         // Atualizar a lista de operações
         await fetchOperations();
@@ -645,7 +648,7 @@ const LineHaulPage = () => {
         setNewStatus('');
         setNoShowJustification('');
       } else {
-        throw new Error(response.message || 'Erro ao atualizar status');
+        throw new Error(data.message || 'Erro ao atualizar status');
       }
     } catch (error: any) {
       console.error('Erro ao atualizar status:', error);
