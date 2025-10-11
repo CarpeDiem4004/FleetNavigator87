@@ -1581,6 +1581,14 @@ const LineHaulPage = () => {
                         <p className="text-sm text-gray-600 mt-1">
                           <span className="font-medium">Distância:</span> {route.km_total} km
                         </p>
+                        <div className="flex gap-4 mt-2">
+                          <p className="text-xs text-blue-600">
+                            <span className="font-medium">Carreta:</span> ~{Math.round(route.km_total / 2.5)} litros
+                          </p>
+                          <p className="text-xs text-green-600">
+                            <span className="font-medium">Truck:</span> ~{Math.round(route.km_total / 4)} litros
+                          </p>
+                        </div>
                       </div>
                       <div className="flex gap-2">
                         <Button
