@@ -1616,11 +1616,13 @@ const LineHaulPage = () => {
                             </h4>
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                               operation.status === 'finalizada' ? 'bg-green-100 text-green-800' :
+                              operation.status === 'em_andamento' ? 'bg-blue-100 text-blue-800' :
                               operation.status === 'cancelada_cliente' ? 'bg-orange-100 text-orange-800' :
                               operation.status === 'no_show' ? 'bg-red-100 text-red-800' :
                               'bg-yellow-100 text-yellow-800'
                             }`}>
                               {operation.status === 'finalizada' ? 'Finalizada' :
+                               operation.status === 'em_andamento' ? 'Em Andamento' :
                                operation.status === 'cancelada_cliente' ? 'Cancelada pelo Cliente' :
                                operation.status === 'no_show' ? 'No Show' : 'Programada'}
                             </span>
@@ -1812,11 +1814,17 @@ const LineHaulPage = () => {
                     <SelectValue placeholder="Selecione uma rota" />
                   </SelectTrigger>
                   <SelectContent>
-                    {routes.map((route) => (
-                      <SelectItem key={route.id} value={route.id.toString()}>
-                        {route.nome_ponto_a} → {route.nome_ponto_b} ({route.km_total} km)
-                      </SelectItem>
-                    ))}
+                    {routes.length === 0 ? (
+                      <div className="p-4 text-sm text-gray-500 text-center">
+                        Nenhuma rota disponível. Cadastre rotas primeiro.
+                      </div>
+                    ) : (
+                      routes.map((route) => (
+                        <SelectItem key={route.id} value={route.id.toString()}>
+                          {route.nome_ponto_a} → {route.nome_ponto_b} ({route.km_total} km)
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -1847,6 +1855,7 @@ const LineHaulPage = () => {
                       <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="em_andamento">Em Andamento</SelectItem>
                       <SelectItem value="finalizada">Finalizada</SelectItem>
                       <SelectItem value="cancelada_cliente">Cancelada pelo Cliente</SelectItem>
                       <SelectItem value="no_show">No Show</SelectItem>
