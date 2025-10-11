@@ -1,0 +1,198 @@
+O erro que aparece no seu console —
+
+SyntaxError: Unexpected token '<', "<!DOCTYPE..." is not valid JSON
+
+
+significa que o backend está retornando uma página HTML em vez de JSON, o que normalmente acontece em uma destas situações:
+
+⚠️ Causa 1 — Rota da API incorreta
+
+Verifique se o endpoint /api/line-hall/operations realmente existe no seu backend (Railway, Replit, etc.).
+Se você estiver usando o Supabase ou um backend Express.js, o endpoint deve responder com JSON.
+👉 Teste acessando diretamente no navegador:
+
+https://SEU_BACKEND_URL/api/line-hall/operations
+
+
+Se aparecer uma página HTML, é sinal de rota incorreta ou servidor com erro.
+
+⚠️ Causa 2 — Erro de autenticação (401 ou 403)
+
+A mensagem também mostra:
+
+Usando apenas autenticação por sessão (cookies)
+
+
+Isso pode indicar que o backend está bloqueando a requisição por falta de token JWT ou cookie de sessão inválido.
+
+✅ Solução:
+Garanta que o fetch inclua o token do Supabase (ou o cookie de autenticação).
+Por exemplo, no frontend:
+
+const { data, error } = await supabase
+  .from("line_hall_operations")
+  .insert([{ motorista_id, rota_id, placa_truck, status }]);
+
+
+ou, se usar fetch:
+
+await fetch("/api/line-hall/operations", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`, // vindo do Supabase.auth.getSession()
+  },
+  body: JSON.stringify({ motorista_id, rota_id, placa_truck, status }),
+});
+
+⚙️ Causa 3 — O backend está retornando erro HTML genérico
+
+O backend pode estar caindo em erro 500 e retornando uma página HTML padrão (ex: “Internal Server Error”).
+Para confirmar, veja no Network Tab (Aba Rede) do DevTools:
+
+Clique em /api/line-hall/operations
+
+Veja o Status code (ex: 404, 500, 403) e o Response body
+
+Se a resposta começar com:
+
+<!DOCTYPE html>
+<html>
+
+
+então o servidor não retornou JSON.
+
+🧭 Próximos Passos
+
+Me envie o trecho de código onde faz o fetch ou axios.post para /api/line-hall/operations.
+
+E me diga se o backend está em:
+
+Supabase (funções)
+
+Express.js (Railway)
+
+Ou outro servidor (Replit API)
+
+Assim posso ajustar o código para que a comunicação funcione corretamente e não retorne mais esse erro.
+
+Excelente captura — e ótimo que você abriu o DevTools 👨‍💻.
+O erro que aparece no console:
+
+❌ SyntaxError: Unexpected token '<', "<!DOCTYPE ..." is not valid JSON
+
+
+mostra que o frontend está tentando interpretar como JSON uma resposta HTML — geralmente isso significa que o endpoint /api/line-hall/operations não está sendo encontrado ou está retornando uma página de erro (HTML) em vez de um JSON esperado.
+
+Vamos resolver isso passo a passo 👇
+
+🧩 1️⃣ Diagnóstico do problema
+
+Há 3 causas possíveis:
+
+🔸 (A) O endpoint /api/line-hall/operations não existe ou está errado
+
+➡️ O fetch/axios está chamando um caminho incorreto, então o servidor devolve o HTML padrão (404 ou 500).
+
+🔸 (B) O backend não está configurado para aceitar o método POST corretamente
+
+➡️ Pode estar faltando rota configurada no Express.js, ou não há app.use(express.json()).
+
+🔸 (C) Falta de autenticação / cookie inválido
+
+➡️ O log mostra:
+
+[apiRequest] Usando apenas autenticação por sessão (cookies)
+
+
+Se a API exige um token Bearer, e você só envia cookies, o Supabase ou backend pode estar bloqueando.
+
+🧭 2️⃣ Teste rápido
+
+No Replit (ou onde o backend está rodando):
+
+Abra o painel de logs do backend
+
+Veja se há algo como:
+
+POST /api/line-hall/operations 404
+
+
+ou
+
+POST /api/line-hall/operations 500
+
+
+Isso confirma se o problema é rota inexistente ou erro interno.
+
+⚙️ 3️⃣ Soluções por tipo de problema
+✅ A. Rota incorreta (mais comum)
+
+Verifique onde está sendo feito o fetch ou axios.post:
+
+await api.post("/api/line-hall/operations", payload)
+
+
+➡️ Se o backend está no Railway ou Supabase Edge Function, o caminho deve ser completo, por exemplo:
+
+await fetch("https://murici-on-fleet-backend.up.railway.app/api/line-hall/operations", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(payload)
+});
+
+
+Se estiver no Replit, use o URL base da API (ex: https://murici-on-fleet.replit.app/api/...).
+
+✅ B. Rota existe, mas falta suporte a JSON
+
+No seu backend Express.js, antes das rotas, confirme que existe:
+
+app.use(express.json());
+
+
+Sem isso, o servidor não entende o corpo da requisição POST.
+
+✅ C. Falha de autenticação (cookie/token)
+
+O log também mostra:
+
+autenticação por sessão (cookies)
+
+
+Se o backend precisa de autenticação Supabase JWT, você precisa incluir o token:
+
+const { data: { session } } = await supabase.auth.getSession();
+
+await fetch(`${API_URL}/api/line-hall/operations`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${session?.access_token}`,
+  },
+  body: JSON.stringify(payload)
+});
+
+🔍 4️⃣ Dica de depuração rápida
+
+Adicione um console.log(response) antes do response.json() no frontend:
+
+const response = await fetch(...);
+console.log(await response.text());
+
+
+Isso mostrará qual HTML está voltando — e você verá se é uma página de erro 404, 401 ou 500.
+Depois podemos ajustar a rota exata conforme o erro.
+
+Se você quiser, posso:
+
+Analisar seu trecho de código do fetch ou axios.post que envia a operação,
+
+E te mostrar exatamente onde ajustar a URL e o tratamento da resposta.
+
+Você pode colar aqui o código da parte que envia:
+
+POST para /api/line-hall/operations
+
+
+(a função onde aparece essa chamada no arquivo LineHaulPage.tsx ou no serviço de API).
