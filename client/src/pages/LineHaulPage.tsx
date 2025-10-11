@@ -1358,20 +1358,30 @@ const LineHaulPage = () => {
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Total de rotas</span>
-                  <span className="text-2xl font-bold text-green-600">83</span>
+                  <span className="text-2xl font-bold text-green-600">{routes.length}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Menor distância</span>
-                  <span className="text-sm font-medium">103 km</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Maior distância</span>
-                  <span className="text-sm font-medium">980 km</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Distância média</span>
-                  <span className="text-sm font-medium">519 km</span>
-                </div>
+                {routes.length > 0 && (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Menor distância</span>
+                      <span className="text-sm font-medium">
+                        {Math.min(...routes.map(r => r.km_total))} km
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Maior distância</span>
+                      <span className="text-sm font-medium">
+                        {Math.max(...routes.map(r => r.km_total))} km
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Distância média</span>
+                      <span className="text-sm font-medium">
+                        {Math.round(routes.reduce((acc, r) => acc + r.km_total, 0) / routes.length)} km
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="flex gap-2">
                 <Button 
