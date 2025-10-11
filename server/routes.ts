@@ -4311,6 +4311,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PATCH: Atualizar status de uma operação do Line Hall
+  app.patch('/api/line-hall/operations/:id/status', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, justificativa_no_show } = req.body;
+
+      if (!status) {
+        return res.status(400).json({
+          success: false,
+          message: 'Status é obrigatório'
+        });
+      }
+
+      // Validar status permitidos
+      const validStatuses = ['programada', 'em_andamento', 'finalizada', 'cancelada_cliente', 'no_show'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Status inválido'
+        });
+      }
+
+      // Se status for "no_show", justificativa é obrigatória
+      if (status === 'no_show' && !justificativa_no_show?.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Justificativa é obrigatória para status No Show'
+        });
+      }
+
+      const query = `
+        UPDATE line_hall_operations
+        SET status = $1, 
+            justificativa_no_show = $2,
+            data_atualizacao = NOW()
+        WHERE id = $3
+        RETURNING *
+      `;
+
+      const result = await pool.query(query, [
+        status,
+        status === 'no_show' ? justificativa_no_show : null,
+        id
+      ]);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Operação não encontrada'
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Status atualizado com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao atualizar status da operação:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar status',
+        error: error.message
+      });
+    }
+  });
+
   // Listar todas as solicitações de manutenção do Line Hall
   app.get('/api/line-hall/maintenance-requests', isAuthenticated, async (req, res) => {
     try {

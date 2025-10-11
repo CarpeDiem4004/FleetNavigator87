@@ -232,6 +232,10 @@ const LineHaulPage = () => {
   const [showOperationDetails, setShowOperationDetails] = useState(false);
   const [selectedOperation, setSelectedOperation] = useState<LineHaulOperation | null>(null);
   const [operationsData, setOperationsData] = useState<LineHaulOperation[]>([]);
+  const [isEditingStatus, setIsEditingStatus] = useState(false);
+  const [newStatus, setNewStatus] = useState('');
+  const [noShowJustification, setNoShowJustification] = useState('');
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [newOperation, setNewOperation] = useState<LineHaulOperation>({
     motorista_id: 0,
     motorista_nome: '',
@@ -590,6 +594,68 @@ const LineHaulPage = () => {
         description: "Erro ao atualizar rota",
         variant: "destructive"
       });
+    }
+  };
+
+  // Função para atualizar status da operação
+  const handleUpdateOperationStatus = async () => {
+    if (!selectedOperation || !newStatus) {
+      toast({
+        title: "Erro",
+        description: "Selecione um novo status",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newStatus === 'no_show' && !noShowJustification.trim()) {
+      toast({
+        title: "Erro",
+        description: "Justificativa é obrigatória para status No Show",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUpdatingStatus(true);
+
+    try {
+      const response = await apiRequest(`/api/line-hall/operations/${selectedOperation.id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          status: newStatus,
+          justificativa_no_show: newStatus === 'no_show' ? noShowJustification : null
+        })
+      });
+
+      if (response.success) {
+        toast({
+          title: "Sucesso!",
+          description: "Status atualizado com sucesso"
+        });
+
+        // Atualizar a operação selecionada
+        setSelectedOperation(response.data);
+
+        // Atualizar a lista de operações
+        await fetchOperations();
+
+        // Resetar estados de edição
+        setIsEditingStatus(false);
+        setNewStatus('');
+        setNoShowJustification('');
+      } else {
+        throw new Error(response.message || 'Erro ao atualizar status');
+      }
+    } catch (error: any) {
+      console.error('Erro ao atualizar status:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao atualizar status da operação",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -2284,25 +2350,109 @@ const LineHaulPage = () => {
 
                   {/* Status e Observações */}
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-3">Status e Observações</h3>
-                    <div className="space-y-2 text-sm">
-                      <div>
-                        <span className="text-gray-600">Status:</span>
-                        <div className="mt-1">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            selectedOperation.status === 'finalizada' ? 'bg-green-100 text-green-800' :
-                            selectedOperation.status === 'em_andamento' ? 'bg-blue-100 text-blue-800' :
-                            selectedOperation.status === 'cancelada_cliente' ? 'bg-orange-100 text-orange-800' :
-                            selectedOperation.status === 'no_show' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {selectedOperation.status === 'finalizada' ? 'Finalizada' :
-                             selectedOperation.status === 'em_andamento' ? 'Em Andamento' :
-                             selectedOperation.status === 'cancelada_cliente' ? 'Cancelada pelo Cliente' :
-                             selectedOperation.status === 'no_show' ? 'No Show' : 'Programada'}
-                          </span>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-gray-900">Status e Observações</h3>
+                      {!isEditingStatus && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setIsEditingStatus(true);
+                            setNewStatus(selectedOperation.status);
+                            setNoShowJustification(selectedOperation.justificativa_no_show || '');
+                          }}
+                        >
+                          <Edit className="h-3 w-3 mr-1" />
+                          Alterar Status
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-3 text-sm">
+                      {!isEditingStatus ? (
+                        <div>
+                          <span className="text-gray-600">Status Atual:</span>
+                          <div className="mt-1">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              selectedOperation.status === 'finalizada' ? 'bg-green-100 text-green-800' :
+                              selectedOperation.status === 'em_andamento' ? 'bg-blue-100 text-blue-800' :
+                              selectedOperation.status === 'cancelada_cliente' ? 'bg-orange-100 text-orange-800' :
+                              selectedOperation.status === 'no_show' ? 'bg-red-100 text-red-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {selectedOperation.status === 'finalizada' ? 'Finalizada' :
+                               selectedOperation.status === 'em_andamento' ? 'Em Andamento' :
+                               selectedOperation.status === 'cancelada_cliente' ? 'Cancelada pelo Cliente' :
+                               selectedOperation.status === 'no_show' ? 'No Show' : 'Programada'}
+                            </span>
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="space-y-3 bg-white p-3 rounded-md border border-gray-200">
+                          <div className="space-y-2">
+                            <Label htmlFor="new_status">Novo Status *</Label>
+                            <Select value={newStatus} onValueChange={setNewStatus}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione o novo status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="programada">Programada</SelectItem>
+                                <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                                <SelectItem value="finalizada">Finalizada</SelectItem>
+                                <SelectItem value="cancelada_cliente">Cancelada pelo Cliente</SelectItem>
+                                <SelectItem value="no_show">No Show</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {newStatus === 'no_show' && (
+                            <div className="space-y-2">
+                              <Label htmlFor="no_show_justification">Justificativa No Show *</Label>
+                              <textarea
+                                id="no_show_justification"
+                                className="w-full p-2 border border-gray-300 rounded-md resize-none"
+                                rows={3}
+                                placeholder="Explique o motivo do No Show..."
+                                value={noShowJustification}
+                                onChange={(e) => setNoShowJustification(e.target.value)}
+                              />
+                            </div>
+                          )}
+
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setIsEditingStatus(false);
+                                setNewStatus('');
+                                setNoShowJustification('');
+                              }}
+                              disabled={isUpdatingStatus}
+                            >
+                              Cancelar
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="bg-blue-500 hover:bg-blue-600"
+                              onClick={handleUpdateOperationStatus}
+                              disabled={isUpdatingStatus || !newStatus || (newStatus === 'no_show' && !noShowJustification.trim())}
+                            >
+                              {isUpdatingStatus ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  Salvando...
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Salvar Status
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                       
                       {selectedOperation.status === 'no_show' && selectedOperation.justificativa_no_show && (
                         <div className="bg-red-50 p-3 rounded-md mt-2">
