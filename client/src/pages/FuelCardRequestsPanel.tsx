@@ -1205,6 +1205,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                     <SelectItem value="100">100 registros</SelectItem>
                     <SelectItem value="200">200 registros</SelectItem>
                     <SelectItem value="500">500 registros</SelectItem>
+                    <SelectItem value="1000">1000 registros</SelectItem>
                   </SelectContent>
                 </Select>
                 <div className="text-xs text-gray-500">

@@ -4954,7 +4954,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[PUBLIC-FUEL-CARD] Processando requisição pública para todas as solicitações - OTIMIZADO');
       
       const page = parseInt(req.query.page as string) || 1;
-      const limit = Math.min(parseInt(req.query.limit as string) || 100, 500); // Máximo 500 registros
+      const limit = Math.min(parseInt(req.query.limit as string) || 100, 1000); // Máximo 1000 registros
       const offset = (page - 1) * limit;
       
       // Cache HTTP para 5 minutos (300 segundos)
