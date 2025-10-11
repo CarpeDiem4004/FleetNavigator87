@@ -4111,6 +4111,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Calcular distância entre dois pontos usando Google Maps Distance Matrix API
+  app.post('/api/line-hall/calculate-distance', isAuthenticated, async (req, res) => {
+    try {
+      const { origem, destino } = req.body;
+      
+      if (!origem || !destino) {
+        return res.status(400).json({
+          success: false,
+          message: 'Origem e destino são obrigatórios'
+        });
+      }
+
+      const GOOGLE_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+      
+      if (!GOOGLE_API_KEY) {
+        return res.status(500).json({
+          success: false,
+          message: 'API Key do Google Maps não configurada'
+        });
+      }
+
+      const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origem)}&destinations=${encodeURIComponent(destino)}&units=metric&key=${GOOGLE_API_KEY}`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.rows?.[0]?.elements?.[0]?.status === 'OK') {
+        const distanciaMetros = data.rows[0].elements[0].distance.value;
+        const distanciaKm = Math.round(distanciaMetros / 1000);
+        
+        return res.status(200).json({
+          success: true,
+          distancia: distanciaKm,
+          message: `Distância calculada: ${distanciaKm} km`
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'Não foi possível calcular a distância. Verifique os endereços informados.'
+        });
+      }
+    } catch (error: any) {
+      console.error('Erro ao calcular distância:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao calcular distância',
+        error: error.message
+      });
+    }
+  });
+
   // Atualizar rota do Line Hall Shopee
   app.put('/api/line-hall/routes/:id', isAuthenticated, async (req, res) => {
     try {
