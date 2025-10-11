@@ -4224,6 +4224,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET: Listar todas as operações do Line Hall
+  app.get('/api/line-hall/operations', isAuthenticated, async (req, res) => {
+    try {
+      const query = `
+        SELECT *
+        FROM line_hall_operations
+        ORDER BY data_criacao DESC
+      `;
+      
+      const result = await pool.query(query);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar operações:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar operações',
+        error: error.message
+      });
+    }
+  });
+
+  // POST: Criar nova operação do Line Hall
+  app.post('/api/line-hall/operations', isAuthenticated, async (req, res) => {
+    try {
+      const {
+        motorista_id,
+        motorista_nome,
+        tipo_veiculo,
+        placa_truck,
+        placa_cavalo,
+        placa_carreta_1,
+        placa_carreta_2,
+        rota_id,
+        rota_nome,
+        data_inicio,
+        observacoes,
+        status,
+        justificativa_no_show,
+        created_by
+      } = req.body;
+
+      const query = `
+        INSERT INTO line_hall_operations (
+          motorista_id, motorista_nome, tipo_veiculo, placa_truck, placa_cavalo,
+          placa_carreta_1, placa_carreta_2, rota_id, rota_nome, data_inicio,
+          observacoes, status, justificativa_no_show, created_by
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        RETURNING *
+      `;
+
+      const result = await pool.query(query, [
+        motorista_id,
+        motorista_nome,
+        tipo_veiculo,
+        placa_truck || null,
+        placa_cavalo || null,
+        placa_carreta_1 || null,
+        placa_carreta_2 || null,
+        rota_id,
+        rota_nome,
+        data_inicio,
+        observacoes || null,
+        status || 'programada',
+        justificativa_no_show || null,
+        created_by || 'Sistema'
+      ]);
+
+      return res.status(200).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Operação criada com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao criar operação:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao criar operação',
+        error: error.message
+      });
+    }
+  });
+
   // Listar todas as solicitações de manutenção do Line Hall
   app.get('/api/line-hall/maintenance-requests', isAuthenticated, async (req, res) => {
     try {
