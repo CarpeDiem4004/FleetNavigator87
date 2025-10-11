@@ -24,7 +24,8 @@ import {
   Users,
   Loader2,
   RefreshCcw,
-  ArrowLeft
+  ArrowLeft,
+  Edit
 } from 'lucide-react';
 import { DriverAutocomplete } from '@/components/ui/driver-autocomplete';
 import lineHaulLayoutImage from '@assets/image_1754418722959.png';
@@ -139,6 +140,7 @@ const LineHaulPage = () => {
   const [showRoutes, setShowRoutes] = useState(false);
   const [showRoutesList, setShowRoutesList] = useState(false);
   const [showNewRoute, setShowNewRoute] = useState(false);
+  const [editingRoute, setEditingRoute] = useState<any>(null);
   const [showChecklists, setShowChecklists] = useState(false);
   const [checklistFilter, setChecklistFilter] = useState<'todos' | 'concluidos' | 'pendentes'>('todos');
   const [showMaintenance, setShowMaintenance] = useState(false);
@@ -528,6 +530,51 @@ const LineHaulPage = () => {
       toast({
         title: "Erro",
         description: "Erro ao cadastrar rota",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateRoute = async () => {
+    if (!editingRoute || !newRoute.nome_ponto_a || !newRoute.nome_ponto_b || !newRoute.km_total) {
+      toast({
+        title: "Erro",
+        description: "Preencha todos os campos obrigatórios",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await api.put(`/line-hall/routes/${editingRoute.id}`, newRoute);
+      if (response.data.success) {
+        // Atualiza a lista de rotas
+        await fetchRoutes();
+        
+        toast({
+          title: "Sucesso",
+          description: "Rota atualizada com sucesso!"
+        });
+        
+        // Limpa o formulário e fecha o modal
+        setNewRoute({
+          nome_ponto_a: '',
+          nome_ponto_b: '',
+          km_total: 0,
+          observacoes: ''
+        });
+        setEditingRoute(null);
+        
+        // Pequeno delay para garantir que a lista foi atualizada
+        setTimeout(() => {
+          setShowNewRoute(false);
+        }, 500);
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar rota:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar rota",
         variant: "destructive"
       });
     }
@@ -1539,6 +1586,25 @@ const LineHaulPage = () => {
                         <Button
                           size="sm"
                           variant="outline"
+                          className="bg-yellow-50 hover:bg-yellow-100 border-yellow-300"
+                          onClick={() => {
+                            setEditingRoute(route);
+                            setNewRoute({
+                              nome_ponto_a: route.nome_ponto_a,
+                              nome_ponto_b: route.nome_ponto_b,
+                              km_total: route.km_total,
+                              observacoes: route.observacoes || ''
+                            });
+                            setShowRoutesList(false);
+                            setShowNewRoute(true);
+                          }}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Editar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => {
                             const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(route.nome_ponto_a)}/${encodeURIComponent(route.nome_ponto_b)}`;
                             window.open(mapsUrl, '_blank');
@@ -1582,8 +1648,17 @@ const LineHaulPage = () => {
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle className="flex items-center text-green-700">
-                <Plus className="h-5 w-5 mr-2" />
-                Cadastrar Nova Rota
+                {editingRoute ? (
+                  <>
+                    <Edit className="h-5 w-5 mr-2" />
+                    Editar Rota
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-5 w-5 mr-2" />
+                    Cadastrar Nova Rota
+                  </>
+                )}
               </DialogTitle>
               <DialogDescription>
                 Preencha origem e destino - a distância será calculada automaticamente via Google Maps
@@ -1650,16 +1725,34 @@ const LineHaulPage = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowNewRoute(false)}>
+              <Button variant="outline" onClick={() => {
+                setShowNewRoute(false);
+                setEditingRoute(null);
+                setNewRoute({
+                  nome_ponto_a: '',
+                  nome_ponto_b: '',
+                  km_total: 0,
+                  observacoes: ''
+                });
+              }}>
                 Cancelar
               </Button>
               <Button 
-                onClick={handleCreateRoute}
+                onClick={editingRoute ? handleUpdateRoute : handleCreateRoute}
                 className="bg-green-500 hover:bg-green-600"
                 disabled={!newRoute.nome_ponto_a || !newRoute.nome_ponto_b || !newRoute.km_total}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Cadastrar Rota
+                {editingRoute ? (
+                  <>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Salvar Alterações
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Cadastrar Rota
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>

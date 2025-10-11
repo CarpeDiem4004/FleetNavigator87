@@ -4166,7 +4166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/line-hall/routes/:id', isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
-      const { nome_ponto_a, nome_ponto_b, km_total } = req.body;
+      const { nome_ponto_a, nome_ponto_b, km_total, observacoes } = req.body;
       
       if (!nome_ponto_a || !nome_ponto_b || !km_total) {
         return res.status(400).json({
@@ -4202,12 +4202,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const query = `
         UPDATE line_hall_routes
-        SET nome_ponto_a = $1, nome_ponto_b = $2, km_total = $3, updated_at = NOW()
-        WHERE id = $4
+        SET nome_ponto_a = $1, nome_ponto_b = $2, km_total = $3, observacoes = $4, updated_at = NOW()
+        WHERE id = $5
         RETURNING *
       `;
       
-      const result = await pool.query(query, [nome_ponto_a, nome_ponto_b, km_total, id]);
+      const result = await pool.query(query, [nome_ponto_a, nome_ponto_b, km_total, observacoes || null, id]);
       
       return res.status(200).json({
         success: true,
