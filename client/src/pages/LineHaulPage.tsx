@@ -163,6 +163,45 @@ const LineHaulPage = () => {
     km_total: 0,
     observacoes: ''
   });
+  
+  // Estado para controlar o cálculo automático de distância
+  const [distanceStatus, setDistanceStatus] = useState<string>('');
+  const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
+
+  // useEffect para calcular automaticamente a distância quando origem e destino mudam
+  useEffect(() => {
+    const calculateDistance = async () => {
+      if (newRoute.nome_ponto_a.trim() && newRoute.nome_ponto_b.trim()) {
+        setIsCalculatingDistance(true);
+        setDistanceStatus('Consultando distância...');
+        
+        try {
+          const response = await api.post('/line-hall/calculate-distance', {
+            origem: newRoute.nome_ponto_a,
+            destino: newRoute.nome_ponto_b
+          });
+          
+          if (response.data.success) {
+            setNewRoute(prev => ({ ...prev, km_total: response.data.distancia }));
+            setDistanceStatus(`Distância calculada: ${response.data.distancia} km`);
+          } else {
+            setDistanceStatus(response.data.message || 'Não foi possível calcular a distância');
+          }
+        } catch (error: any) {
+          console.error('Erro ao calcular distância:', error);
+          setDistanceStatus('Erro ao calcular distância. Verifique os endereços informados.');
+        } finally {
+          setIsCalculatingDistance(false);
+        }
+      } else {
+        setDistanceStatus('');
+        setNewRoute(prev => ({ ...prev, km_total: 0 }));
+      }
+    };
+
+    const timeoutId = setTimeout(calculateDistance, 1000); // Debounce de 1 segundo
+    return () => clearTimeout(timeoutId);
+  }, [newRoute.nome_ponto_a, newRoute.nome_ponto_b]);
 
   // Tipo para operações Line Haul
   interface LineHaulOperation {
@@ -1529,7 +1568,7 @@ const LineHaulPage = () => {
                 Cadastrar Nova Rota
               </DialogTitle>
               <DialogDescription>
-                Preencha os dados da nova rota Line Haul
+                Preencha origem e destino - a distância será calculada automaticamente via Google Maps
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -1555,13 +1594,30 @@ const LineHaulPage = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="km_total">Distância Total (km) *</Label>
-                <Input
-                  id="km_total"
-                  type="number"
-                  placeholder="Ex: 450"
-                  value={newRoute.km_total || ''}
-                  onChange={(e) => setNewRoute(prev => ({ ...prev, km_total: parseInt(e.target.value) || 0 }))}
-                />
+                <div className="relative">
+                  <Input
+                    id="km_total"
+                    type="number"
+                    placeholder="Será calculado automaticamente"
+                    value={newRoute.km_total || ''}
+                    readOnly
+                    className="bg-gray-50"
+                  />
+                  {isCalculatingDistance && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-blue-500" />
+                  )}
+                </div>
+                {distanceStatus && (
+                  <p className={`text-xs mt-1 ${
+                    distanceStatus.includes('Erro') || distanceStatus.includes('Não foi possível') 
+                      ? 'text-red-600' 
+                      : distanceStatus.includes('Consultando') 
+                        ? 'text-blue-600' 
+                        : 'text-green-600'
+                  }`}>
+                    {distanceStatus}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="observacoes">Observações</Label>
