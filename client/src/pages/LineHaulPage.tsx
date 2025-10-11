@@ -581,20 +581,17 @@ const LineHaulPage = () => {
   };
 
   const handleCreateOperation = async () => {
+    if (isLoading) return; // Previne cliques duplos
+    
     console.log("=== CRIAR OPERAÇÃO ===");
     console.log("Estado do formulário:", newOperation);
     console.log("Motorista ID:", newOperation.motorista_id);
     console.log("Rota ID:", newOperation.rota_id);
     console.log("Placa Truck:", newOperation.placa_truck);
-    console.log("Validações:");
-    console.log("- Tem motorista?", !!newOperation.motorista_id);
-    console.log("- Tem rota?", !!newOperation.rota_id);
-    console.log("- É truck?", newOperation.tipo_veiculo === 'truck');
-    console.log("- Tem placa truck?", !!newOperation.placa_truck);
     
     // Validação básica
     if (!newOperation.motorista_id || !newOperation.rota_id) {
-      console.log("❌ FALHA NA VALIDAÇÃO BÁSICA");
+      console.log("❌ FALHA: Motorista ou Rota não selecionados");
       toast({
         title: "Erro",
         description: "Selecione motorista e rota",
@@ -602,9 +599,12 @@ const LineHaulPage = () => {
       });
       return;
     }
+    
+    setIsLoading(true);
 
     // Validação específica para tipo de veículo
     if (newOperation.tipo_veiculo === 'truck' && !newOperation.placa_truck) {
+      setIsLoading(false);
       toast({
         title: "Erro",
         description: "Informe a placa do truck",
@@ -614,6 +614,7 @@ const LineHaulPage = () => {
     }
 
     if (newOperation.tipo_veiculo === 'cavalo_mecanico' && (!newOperation.placa_cavalo || !newOperation.placa_carreta_1)) {
+      setIsLoading(false);
       toast({
         title: "Erro",
         description: "Informe a placa do cavalo mecânico e primeira carreta",
@@ -624,6 +625,7 @@ const LineHaulPage = () => {
 
     // Validação para justificativa no show
     if (newOperation.status === 'no_show' && !newOperation.justificativa_no_show.trim()) {
+      setIsLoading(false);
       toast({
         title: "Erro",
         description: "Informe a justificativa para No Show",
@@ -639,7 +641,10 @@ const LineHaulPage = () => {
         created_by: user?.name || 'Sistema'
       };
 
+      console.log("📤 Enviando para o backend:", operationData);
       const response = await api.post('/line-hall/operations', operationData);
+      console.log("📥 Resposta do backend:", response.data);
+      
       if (response.data.success) {
         toast({
           title: "Sucesso",
@@ -663,8 +668,10 @@ const LineHaulPage = () => {
         setShowNewOperation(false);
         await fetchOperations();
       }
+      setIsLoading(false);
     } catch (error) {
-      console.error('Erro ao criar operação:', error);
+      console.error('❌ Erro ao criar operação:', error);
+      setIsLoading(false);
       toast({
         title: "Erro",
         description: "Erro ao criar operação",
@@ -2086,6 +2093,7 @@ const LineHaulPage = () => {
                 onClick={handleCreateOperation}
                 className="bg-green-500 hover:bg-green-600"
                 disabled={
+                  isLoading ||
                   !newOperation.motorista_id || 
                   !newOperation.rota_id || 
                   (newOperation.tipo_veiculo === 'truck' && !newOperation.placa_truck) ||
@@ -2093,8 +2101,17 @@ const LineHaulPage = () => {
                   (newOperation.status === 'no_show' && !newOperation.justificativa_no_show.trim())
                 }
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Iniciar Operação
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Criando...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Iniciar Operação
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
