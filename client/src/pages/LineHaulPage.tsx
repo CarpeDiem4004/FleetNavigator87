@@ -581,8 +581,20 @@ const LineHaulPage = () => {
   };
 
   const handleCreateOperation = async () => {
+    console.log("=== CRIAR OPERAÇÃO ===");
+    console.log("Estado do formulário:", newOperation);
+    console.log("Motorista ID:", newOperation.motorista_id);
+    console.log("Rota ID:", newOperation.rota_id);
+    console.log("Placa Truck:", newOperation.placa_truck);
+    console.log("Validações:");
+    console.log("- Tem motorista?", !!newOperation.motorista_id);
+    console.log("- Tem rota?", !!newOperation.rota_id);
+    console.log("- É truck?", newOperation.tipo_veiculo === 'truck');
+    console.log("- Tem placa truck?", !!newOperation.placa_truck);
+    
     // Validação básica
     if (!newOperation.motorista_id || !newOperation.rota_id) {
+      console.log("❌ FALHA NA VALIDAÇÃO BÁSICA");
       toast({
         title: "Erro",
         description: "Selecione motorista e rota",
