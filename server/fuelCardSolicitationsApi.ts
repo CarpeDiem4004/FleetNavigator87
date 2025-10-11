@@ -1592,8 +1592,8 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
           '' as horario_abastecimento,
           COALESCE(base, 'Base Principal') as base
         FROM solicitacoes_fuel_card
-        WHERE data_solicitacao::date >= $1::date 
-          AND data_solicitacao::date <= $2::date
+        WHERE (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date >= $1::date 
+          AND (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date <= $2::date
           ${statusFilter}
           ${baseFilter}
         ORDER BY data_solicitacao DESC
@@ -1631,8 +1631,8 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
           COALESCE(horario_abastecimento, '') as horario_abastecimento,
           'Line Hall Shopee' as base
         FROM linehall_fuel_card_requests
-        WHERE created_at::date >= $1::date 
-          AND created_at::date <= $2::date
+        WHERE (created_at AT TIME ZONE 'America/Sao_Paulo')::date >= $1::date 
+          AND (created_at AT TIME ZONE 'America/Sao_Paulo')::date <= $2::date
           ${statusFilter}
         ORDER BY created_at DESC
       `;
@@ -1670,8 +1670,8 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
           COALESCE(b.location, fcr.base_name, 'Base Principal') as base
         FROM fuel_card_requests fcr
         LEFT JOIN bases b ON fcr.base_id = b.id
-        WHERE fcr.requested_at::date >= $1::date 
-          AND fcr.requested_at::date <= $2::date
+        WHERE (fcr.requested_at AT TIME ZONE 'America/Sao_Paulo')::date >= $1::date 
+          AND (fcr.requested_at AT TIME ZONE 'America/Sao_Paulo')::date <= $2::date
       `;
 
       // Adicionar filtro de projeto se especificado
