@@ -323,10 +323,11 @@ router.post('/fuel-card-request', upload.fields([
         horario_abastecimento,
         foto_painel_path,
         foto_cartao_path,
+        origem_tipo,
         status,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW())
       RETURNING *
     `;
 
@@ -345,6 +346,7 @@ router.post('/fuel-card-request', upload.fields([
       horario_abastecimento || null,
       fotoPainelPath,
       fotoCartaoPath,
+      'line_hall',
       status
     ];
 
