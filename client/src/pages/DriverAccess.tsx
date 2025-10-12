@@ -965,6 +965,7 @@ const DriverAccess: React.FC = () => {
         {showFuelRequest && (
           <FuelRequestModal 
             driver={driver}
+            operations={operations}
             onClose={() => setShowFuelRequest(false)}
           />
         )}
@@ -974,11 +975,14 @@ const DriverAccess: React.FC = () => {
 };
 
 // Componente do Modal de Solicitação de Recarga
-const FuelRequestModal = ({ driver, onClose }: { driver: any; onClose: () => void }) => {
+const FuelRequestModal = ({ driver, operations, onClose }: { driver: any; operations: any[]; onClose: () => void }) => {
   const [phone, setPhone] = useState('');
   const [fuelTime, setFuelTime] = useState<'antes_17h' | 'apos_18h'>('antes_17h');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  // Pegar a primeira operação ativa do motorista
+  const activeOperation = operations.find(op => op.status === 'em_andamento' || op.status === 'programada') || operations[0];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1002,11 +1006,11 @@ const FuelRequestModal = ({ driver, onClose }: { driver: any; onClose: () => voi
         motorista_cpf: driver.cpf,
         veiculo_placa: driver.placa_veiculo,
         veiculo_modelo: driver.tipo_veiculo,
-        rota_origem: 'Rota Line Haul',
-        rota_destino: 'Destino Line Haul',
+        rota_origem: activeOperation?.origem || 'Rota Line Haul',
+        rota_destino: activeOperation?.destino || 'Destino Line Haul',
         data_solicitacao: now.toISOString().split('T')[0],
         horario_solicitacao: now.toTimeString().split(' ')[0],
-        km_total: 150, // Valor padrão para Line Haul
+        km_total: activeOperation?.distancia_km ? parseFloat(activeOperation.distancia_km) : 150,
         horario_abastecimento: fuelTime,
         telefone_motorista: phone,
         status: 'pendente'
@@ -1092,7 +1096,7 @@ const FuelRequestModal = ({ driver, onClose }: { driver: any; onClose: () => voi
               <div>
                 <Label className="text-sm font-medium text-gray-700">Rota</Label>
                 <div className="p-2 bg-gray-50 rounded border">
-                  Rota Line Haul → Destino conforme programação
+                  {activeOperation ? `${activeOperation.origem} → ${activeOperation.destino}` : 'Rota Line Haul → Destino conforme programação'}
                 </div>
               </div>
 
@@ -1116,7 +1120,7 @@ const FuelRequestModal = ({ driver, onClose }: { driver: any; onClose: () => voi
               <div>
                 <Label className="text-sm font-medium text-gray-700">KM Total Estimado</Label>
                 <div className="p-2 bg-gray-50 rounded border">
-                  150 km (estimativa Line Haul)
+                  {activeOperation?.distancia_km ? `${activeOperation.distancia_km} km` : '150 km (estimativa Line Haul)'}
                 </div>
               </div>
 
