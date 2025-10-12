@@ -241,4 +241,89 @@ router.get('/operations', async (req, res) => {
   }
 });
 
+// POST - Criar solicitação de fuel card do Line Hall
+router.post('/fuel-card-request', async (req, res) => {
+  console.log('[LINE-HALL-FUEL-REQUEST] Criando solicitação de fuel card:', req.body);
+  
+  try {
+    const {
+      motorista_id,
+      motorista_nome,
+      motorista_cpf,
+      veiculo_placa,
+      veiculo_modelo,
+      rota_origem,
+      rota_destino,
+      data_solicitacao,
+      horario_solicitacao,
+      km_total,
+      horario_abastecimento,
+      telefone_motorista,
+      status = 'pendente'
+    } = req.body;
+
+    // Validação
+    if (!motorista_id || !motorista_nome || !veiculo_placa || !rota_origem || !rota_destino) {
+      return res.status(400).json({
+        success: false,
+        message: 'Dados obrigatórios ausentes: motorista_id, motorista_nome, veiculo_placa, rota_origem, rota_destino'
+      });
+    }
+
+    // Inserir na tabela linehall_fuel_card_requests
+    const query = `
+      INSERT INTO linehall_fuel_card_requests (
+        motorista_id,
+        motorista_nome,
+        motorista_cpf,
+        veiculo_placa,
+        veiculo_modelo,
+        rota_origem,
+        rota_destino,
+        data_viagem,
+        telefone_motorista,
+        km_total,
+        horario_abastecimento,
+        status,
+        created_at,
+        updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+      RETURNING *
+    `;
+
+    const values = [
+      motorista_id,
+      motorista_nome,
+      motorista_cpf || null,
+      veiculo_placa,
+      veiculo_modelo || null,
+      rota_origem,
+      rota_destino,
+      data_solicitacao || null,
+      telefone_motorista || null,
+      km_total || null,
+      horario_abastecimento || null,
+      status
+    ];
+
+    const result = await pool.query(query, values);
+
+    console.log('[LINE-HALL-FUEL-REQUEST] Solicitação criada com sucesso:', result.rows[0]);
+
+    res.json({
+      success: true,
+      data: result.rows[0],
+      message: 'Solicitação de fuel card criada com sucesso'
+    });
+
+  } catch (error) {
+    console.error('[LINE-HALL-FUEL-REQUEST] Erro ao criar solicitação:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao criar solicitação de fuel card',
+      error: String(error)
+    });
+  }
+});
+
 export default router;

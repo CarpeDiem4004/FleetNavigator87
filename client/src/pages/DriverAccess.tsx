@@ -1016,7 +1016,7 @@ const FuelRequestModal = ({ driver, operations, onClose }: { driver: any; operat
         status: 'pendente'
       };
 
-      const response = await apiRequest('POST', '/api/line-hall/fuel-request', requestData);
+      const response = await apiRequest('POST', '/api/line-hall/fuel-card-request', requestData);
       const data = await response.json();
 
       if (data.success) {
