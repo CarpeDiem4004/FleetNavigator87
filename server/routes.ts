@@ -4224,16 +4224,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // GET: Listar todas as operações do Line Hall
+  // GET: Listar todas as operações do Line Hall (com filtro opcional por motorista)
   app.get('/api/line-hall/operations', isAuthenticated, async (req, res) => {
     try {
-      const query = `
-        SELECT *
-        FROM line_hall_operations
-        ORDER BY data_criacao DESC
+      const { motorista_id } = req.query;
+      
+      let query = `
+        SELECT 
+          lho.*,
+          lhr.nome as rota_nome_completo,
+          lhr.origem,
+          lhr.destino,
+          lhr.distancia_km
+        FROM line_hall_operations lho
+        LEFT JOIN line_hall_routes lhr ON lho.rota_id = lhr.id
       `;
       
-      const result = await pool.query(query);
+      const params: any[] = [];
+      
+      if (motorista_id) {
+        query += ` WHERE lho.motorista_id = $1`;
+        params.push(parseInt(motorista_id as string));
+      }
+      
+      query += ` ORDER BY lho.data_criacao DESC`;
+      
+      const result = params.length > 0 
+        ? await pool.query(query, params)
+        : await pool.query(query);
       
       return res.status(200).json({
         success: true,

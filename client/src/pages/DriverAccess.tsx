@@ -37,6 +37,7 @@ const DriverAccess: React.FC = () => {
   const [maintenanceRequests, setMaintenanceRequests] = useState<any[]>([]);
   const [showFuelRequest, setShowFuelRequest] = useState(false);
   const [fuelRequests, setFuelRequests] = useState<any[]>([]);
+  const [operations, setOperations] = useState<any[]>([]);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { toast } = useToast();
@@ -178,6 +179,20 @@ const DriverAccess: React.FC = () => {
     }
   };
 
+  // Função para buscar operações do motorista
+  const fetchOperations = async (motoristaId: number) => {
+    try {
+      const response = await apiRequest('GET', `/api/line-hall/operations?motorista_id=${motoristaId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setOperations(data.data || []);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar operações:', error);
+    }
+  };
+
   const formatCPF = (value: string) => {
     // Remove tudo que não é dígito
     const numbers = value.replace(/\D/g, '');
@@ -232,10 +247,13 @@ const DriverAccess: React.FC = () => {
           await fetchMaintenanceRequests(data.motorista.id);
           // Buscar solicitações de recarga
           await fetchFuelRequests(data.motorista.id);
+          // Buscar operações do motorista
+          await fetchOperations(data.motorista.id);
           
           // Iniciar polling para atualizações em tempo real
           const interval = setInterval(() => {
             fetchFuelRequests(data.motorista.id);
+            fetchOperations(data.motorista.id);
           }, 10000); // Atualizar a cada 10 segundos
           
           setPollingInterval(interval);
@@ -663,6 +681,67 @@ const DriverAccess: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Seção de Minhas Rotas/Operações */}
+        <Card className="border-2 border-blue-200">
+          <CardHeader className="bg-blue-50">
+            <CardTitle className="text-lg flex items-center">
+              <MapPin className="h-5 w-5 mr-2 text-blue-600" />
+              Minhas Rotas Ativas
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            {operations.length === 0 ? (
+              <div className="text-center py-8">
+                <MapPin className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">Nenhuma rota ativa no momento</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {operations.map((operation: any) => (
+                  <div key={operation.id} className="border rounded-lg p-4 bg-white shadow-sm">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 text-lg mb-1">
+                          {operation.origem} → {operation.destino}
+                        </h3>
+                        <div className="space-y-1 text-sm text-gray-600">
+                          <p><strong>Tipo:</strong> {operation.tipo_veiculo === 'truck' ? 'Truck' : 'Cavalo Mecânico'}</p>
+                          {operation.placa_truck && <p><strong>Placa Truck:</strong> {operation.placa_truck}</p>}
+                          {operation.placa_cavalo && <p><strong>Placa Cavalo:</strong> {operation.placa_cavalo}</p>}
+                          {operation.placa_carreta_1 && <p><strong>Carreta 1:</strong> {operation.placa_carreta_1}</p>}
+                          {operation.distancia_km && <p><strong>Distância:</strong> {operation.distancia_km} km</p>}
+                          {operation.data_inicio && (
+                            <p><strong>Data Início:</strong> {new Date(operation.data_inicio).toLocaleDateString('pt-BR')}</p>
+                          )}
+                        </div>
+                      </div>
+                      <Badge 
+                        className={
+                          operation.status === 'finalizada' ? 'bg-green-100 text-green-800' :
+                          operation.status === 'em_andamento' ? 'bg-blue-100 text-blue-800' :
+                          operation.status === 'cancelada_cliente' ? 'bg-orange-100 text-orange-800' :
+                          operation.status === 'no_show' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }
+                      >
+                        {operation.status === 'finalizada' ? 'Finalizada' :
+                         operation.status === 'em_andamento' ? 'Em Andamento' :
+                         operation.status === 'cancelada_cliente' ? 'Cancelada' :
+                         operation.status === 'no_show' ? 'No Show' : 'Programada'}
+                      </Badge>
+                    </div>
+                    {operation.observacoes && (
+                      <div className="mt-2 p-2 bg-gray-50 rounded text-sm text-gray-700">
+                        <strong>Observações:</strong> {operation.observacoes}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Seção de Solicitações de Recarga de Cartão */}
         <Card>
