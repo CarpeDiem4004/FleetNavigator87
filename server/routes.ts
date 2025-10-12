@@ -156,6 +156,8 @@ import { resyncSession } from './routes/sessionResyncRoute.js';
 import partnerAuthRouter from './routes/partnerAuth';
 // Importação das novas rotas de JWT
 import jwtAuthRoutes from './jwtAuthRoutes.js';
+// Importação das rotas do Line Hall (motoristas)
+import lineHallRoutes from './routes/lineHallRoutes';
 // Importação das rotas de equipamentos
 import equipmentRoutes from './routes/equipmentRoutes';
 // Importação das rotas de recebimento de combustível
@@ -1873,6 +1875,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rota direta para o posto Osasco V2 (nova versão)
   app.use('/api/osasco-direto', osascoDiretoRoutes);
+  
+  // Registrar rotas do Line Hall (motoristas)
+  app.use('/api/line-hall', lineHallRoutes);
   
   // Redirecionar requisições de recebimentos do Guarulhos V2 para a rota especializada
   app.get('/api/recebimentos/guarulhos_v2', async (req, res) => {
