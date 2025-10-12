@@ -306,6 +306,38 @@ router.post('/fuel-card-request', upload.fields([
     const fotoPainelPath = files?.foto_painel?.[0]?.path || null;
     const fotoCartaoPath = files?.foto_cartao?.[0]?.path || null;
 
+    // CÁLCULO AUTOMÁTICO DO VALOR
+    let valor_calculado = 0;
+    
+    if (km_total && veiculo_modelo) {
+      const km = parseFloat(km_total);
+      const modelo = veiculo_modelo.toLowerCase();
+      
+      // Consumo médio por tipo de veículo
+      let consumo_km_por_litro = 4; // Padrão: truck
+      if (modelo.includes('carreta') || modelo.includes('carretao')) {
+        consumo_km_por_litro = 2.5;
+      }
+      
+      // Calcular litros necessários
+      const litros_necessarios = km / consumo_km_por_litro;
+      
+      // Preço médio do diesel (pode vir de configuração futura)
+      const preco_diesel = 6.50;
+      
+      // Valor total
+      valor_calculado = litros_necessarios * preco_diesel;
+      
+      console.log('[LINE-HALL-FUEL-REQUEST] Cálculo automático:', {
+        km_total: km,
+        modelo: veiculo_modelo,
+        consumo_km_por_litro,
+        litros_necessarios: litros_necessarios.toFixed(2),
+        preco_diesel,
+        valor_calculado: valor_calculado.toFixed(2)
+      });
+    }
+
     // Inserir na tabela linehall_fuel_card_requests
     const query = `
       INSERT INTO linehall_fuel_card_requests (
@@ -324,10 +356,11 @@ router.post('/fuel-card-request', upload.fields([
         foto_painel_path,
         foto_cartao_path,
         origem_tipo,
+        valor_calculado,
         status,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW(), NOW())
       RETURNING *
     `;
 
@@ -347,6 +380,7 @@ router.post('/fuel-card-request', upload.fields([
       fotoPainelPath,
       fotoCartaoPath,
       'line_hall',
+      valor_calculado.toFixed(2),
       status
     ];
 
