@@ -184,4 +184,49 @@ router.post('/viagem', async (req, res) => {
   }
 });
 
+// Obter operações do motorista
+router.get('/operations', async (req, res) => {
+  try {
+    const { motorista_id } = req.query;
+    
+    console.log('[LINE-HALL] Buscando operações para motorista_id:', motorista_id);
+    
+    if (!motorista_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'motorista_id é obrigatório'
+      });
+    }
+
+    const query = `
+      SELECT 
+        lho.*,
+        lhr.nome_ponto_a as origem,
+        lhr.nome_ponto_b as destino,
+        lhr.km_total as distancia_km
+      FROM line_hall_operations lho
+      LEFT JOIN line_hall_routes lhr ON lho.rota_id = lhr.id
+      WHERE lho.motorista_id = $1
+      ORDER BY lho.data_criacao DESC
+    `;
+    
+    const result = await pool.query(query, [parseInt(motorista_id as string)]);
+    
+    console.log('[LINE-HALL] Operações encontradas:', result.rows.length);
+    
+    res.json({
+      success: true,
+      data: result.rows
+    });
+
+  } catch (error) {
+    console.error('[LINE-HALL] Erro ao buscar operações:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor',
+      error: String(error)
+    });
+  }
+});
+
 export default router;
