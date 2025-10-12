@@ -5193,7 +5193,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const countQuery = `
         SELECT 
           (SELECT COUNT(*) FROM solicitacoes_fuel_card) as total_solicitacoes,
-          (SELECT COUNT(*) FROM fuel_card_requests) as total_requests
+          (SELECT COUNT(*) FROM fuel_card_requests) as total_requests,
+          (SELECT COUNT(*) FROM linehall_fuel_card_requests) as total_line_hall
       `;
       
       // Query principal com paginação otimizada
@@ -5276,6 +5277,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
           LEFT JOIN bases b ON fcr.base_id = b.id
           LEFT JOIN veiculos v ON fcr.plate = v.placa
 
+          UNION ALL
+
+          SELECT 
+            lh.id::text as id,
+            COALESCE(lh.veiculo_placa, 'SEM-PLACA') as placa,
+            COALESCE(lh.km_total, 0) as km,
+            'vinculado' as tipo_cartao,
+            'Line Haul' as provedor_cartao,
+            COALESCE(lh.numero_cartao, '') as numero_cartao,
+            COALESCE(lh.motorista_nome, 'Motorista não informado') as motorista,
+            COALESCE(lh.motorista_nome, 'Nome não informado') as solicitante,
+            COALESCE(lh.telefone_motorista, '') as telefone_celular,
+            COALESCE(lh.observacoes_operador, 'Sem observações') as observacoes,
+            lh.status,
+            lh.data_viagem as data_solicitacao,
+            lh.operador_aprovacao as atendido_por,
+            lh.updated_at as data_atendimento,
+            lh.created_at,
+            lh.updated_at,
+            COALESCE(lh.valor_calculado::numeric, 0) as valor_solicitado,
+            CONCAT(lh.rota_origem, ' → ', lh.rota_destino) as base,
+            '' as id_rota,
+            COALESCE(lh.origem_tipo, 'line_hall') as origem_tipo,
+            NULL as tipo_combustivel,
+            NULL as litros_solicitados,
+            lh.data_viagem as data_uso,
+            lh.horario_abastecimento as turno,
+            lh.veiculo_modelo,
+            lh.rota_origem,
+            lh.rota_destino,
+            COALESCE(lh.km_total, 0) as km_total,
+            COALESCE(lh.telefone_motorista, '') as telefone_motorista,
+            lh.horario_abastecimento,
+            COALESCE(lh.valor_calculado::numeric, 0) as valor_calculado,
+            NULL::json as calculo_detalhes,
+            COALESCE(v.cartao_abastecimento, lh.numero_cartao, '') as cartao_combustivel
+          FROM linehall_fuel_card_requests lh
+          LEFT JOIN veiculos v ON lh.veiculo_placa = v.placa
+
         ) unified_data
         ORDER BY data_solicitacao DESC
         LIMIT $1 OFFSET $2
@@ -5287,7 +5327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pool.query(query, [limit, offset])
       ]);
       
-      const totalCount = parseInt(countResult.rows[0].total_solicitacoes) + parseInt(countResult.rows[0].total_requests);
+      const totalCount = parseInt(countResult.rows[0].total_solicitacoes) + parseInt(countResult.rows[0].total_requests) + parseInt(countResult.rows[0].total_line_hall);
       const totalPages = Math.ceil(totalCount / limit);
       const hasNextPage = page < totalPages;
       const hasPrevPage = page > 1;
