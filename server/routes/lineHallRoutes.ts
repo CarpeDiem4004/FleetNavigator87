@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { Pool } from 'pg';
 import jsonwebtoken from 'jsonwebtoken';
+import multer from 'multer';
+import path from 'path';
 
 // Configurar conexão PostgreSQL direta
 const pool = new Pool({
@@ -8,6 +10,30 @@ const pool = new Pool({
 });
 
 console.log('[LINE-HALL] Usando conexão PostgreSQL direta para acesso aos dados locais');
+
+// Configurar multer para upload de fotos
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/fuel-photos/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Tipo de arquivo não permitido. Use apenas imagens.'));
+    }
+  }
+});
 
 const router = Router();
 
@@ -242,8 +268,12 @@ router.get('/operations', async (req, res) => {
 });
 
 // POST - Criar solicitação de fuel card do Line Hall
-router.post('/fuel-card-request', async (req, res) => {
+router.post('/fuel-card-request', upload.fields([
+  { name: 'foto_painel', maxCount: 1 },
+  { name: 'foto_cartao', maxCount: 1 }
+]), async (req, res) => {
   console.log('[LINE-HALL-FUEL-REQUEST] Criando solicitação de fuel card:', req.body);
+  console.log('[LINE-HALL-FUEL-REQUEST] Arquivos recebidos:', req.files);
   
   try {
     const {
@@ -252,6 +282,7 @@ router.post('/fuel-card-request', async (req, res) => {
       motorista_cpf,
       veiculo_placa,
       veiculo_modelo,
+      numero_cartao,
       rota_origem,
       rota_destino,
       data_solicitacao,
@@ -270,6 +301,11 @@ router.post('/fuel-card-request', async (req, res) => {
       });
     }
 
+    // Pegar caminhos das fotos, se existirem
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    const fotoPainelPath = files?.foto_painel?.[0]?.path || null;
+    const fotoCartaoPath = files?.foto_cartao?.[0]?.path || null;
+
     // Inserir na tabela linehall_fuel_card_requests
     const query = `
       INSERT INTO linehall_fuel_card_requests (
@@ -278,16 +314,19 @@ router.post('/fuel-card-request', async (req, res) => {
         motorista_cpf,
         veiculo_placa,
         veiculo_modelo,
+        numero_cartao,
         rota_origem,
         rota_destino,
         data_viagem,
         telefone_motorista,
         km_total,
         horario_abastecimento,
+        foto_painel_path,
+        foto_cartao_path,
         status,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW())
       RETURNING *
     `;
 
@@ -297,12 +336,15 @@ router.post('/fuel-card-request', async (req, res) => {
       motorista_cpf || null,
       veiculo_placa,
       veiculo_modelo || null,
+      numero_cartao || null,
       rota_origem,
       rota_destino,
       data_solicitacao || null,
       telefone_motorista || null,
       km_total || null,
       horario_abastecimento || null,
+      fotoPainelPath,
+      fotoCartaoPath,
       status
     ];
 

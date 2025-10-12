@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, Truck, FileText, Wrench, MapPin, Clock, Calendar, LogOut, CreditCard, CheckCircle, XCircle, RefreshCw, Smartphone, Download, Wifi, WifiOff } from 'lucide-react';
+import { Loader2, User, Truck, FileText, Wrench, MapPin, Clock, Calendar, LogOut, CreditCard, CheckCircle, XCircle, RefreshCw, Smartphone, Download, Wifi, WifiOff, Camera } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { pwaManager } from '@/utils/pwa-utils';
 import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
@@ -977,12 +977,18 @@ const DriverAccess: React.FC = () => {
 // Componente do Modal de Solicitação de Recarga
 const FuelRequestModal = ({ driver, operations, onClose }: { driver: any; operations: any[]; onClose: () => void }) => {
   const [phone, setPhone] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
   const [fuelTime, setFuelTime] = useState<'antes_17h' | 'apos_18h'>('antes_17h');
+  const [painelPhoto, setPainelPhoto] = useState<File | null>(null);
+  const [cartaoPhoto, setCartaoPhoto] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   // Pegar a primeira operação ativa do motorista
   const activeOperation = operations.find(op => op.status === 'em_andamento' || op.status === 'programada') || operations[0];
+
+  // Pegar a placa do veículo da operação
+  const placaVeiculo = activeOperation?.placa_truck || activeOperation?.placa_cavalo || driver?.placa_veiculo || 'N/A';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -996,27 +1002,51 @@ const FuelRequestModal = ({ driver, operations, onClose }: { driver: any; operat
       return;
     }
 
+    if (!cardNumber.trim()) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Por favor, informe o número do cartão",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const now = new Date();
-      const requestData = {
-        motorista_id: driver.id,
-        motorista_nome: driver.nome,
-        motorista_cpf: driver.cpf,
-        veiculo_placa: driver.placa_veiculo,
-        veiculo_modelo: driver.tipo_veiculo,
-        rota_origem: activeOperation?.origem || 'Rota Line Haul',
-        rota_destino: activeOperation?.destino || 'Destino Line Haul',
-        data_solicitacao: now.toISOString().split('T')[0],
-        horario_solicitacao: now.toTimeString().split(' ')[0],
-        km_total: activeOperation?.distancia_km ? parseFloat(activeOperation.distancia_km) : 150,
-        horario_abastecimento: fuelTime,
-        telefone_motorista: phone,
-        status: 'pendente'
-      };
+      
+      // Preparar FormData para enviar fotos
+      const formData = new FormData();
+      formData.append('motorista_id', driver.id.toString());
+      formData.append('motorista_nome', driver.nome);
+      formData.append('motorista_cpf', driver.cpf);
+      formData.append('veiculo_placa', placaVeiculo);
+      formData.append('veiculo_modelo', driver.tipo_veiculo);
+      formData.append('numero_cartao', cardNumber);
+      formData.append('rota_origem', activeOperation?.origem || 'Rota Line Haul');
+      formData.append('rota_destino', activeOperation?.destino || 'Destino Line Haul');
+      formData.append('data_solicitacao', now.toISOString().split('T')[0]);
+      formData.append('horario_solicitacao', now.toTimeString().split(' ')[0]);
+      formData.append('km_total', activeOperation?.distancia_km ? parseFloat(activeOperation.distancia_km).toString() : '150');
+      formData.append('horario_abastecimento', fuelTime);
+      formData.append('telefone_motorista', phone);
+      formData.append('status', 'pendente');
+      
+      if (painelPhoto) {
+        formData.append('foto_painel', painelPhoto);
+      }
+      
+      if (cartaoPhoto) {
+        formData.append('foto_cartao', cartaoPhoto);
+      }
 
-      const response = await apiRequest('POST', '/api/line-hall/fuel-card-request', requestData);
+      // Enviar com FormData
+      const response = await fetch('/api/line-hall/fuel-card-request', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -1071,25 +1101,33 @@ const FuelRequestModal = ({ driver, operations, onClose }: { driver: any; operat
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Placa</Label>
-                  <div className="p-2 bg-gray-50 rounded border">
-                    {driver?.placa_veiculo || 'N/A'}
+                  <div className="p-2 bg-gray-50 rounded border font-mono">
+                    {placaVeiculo}
                   </div>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Modelo</Label>
                   <div className="p-2 bg-gray-50 rounded border">
-                    {driver?.tipo_veiculo || 'N/A'}
+                    {driver?.tipo_veiculo || activeOperation?.tipo_veiculo || 'N/A'}
                   </div>
                 </div>
               </div>
 
-              {/* Cartão de Combustível Vinculado */}
-              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                <Label className="text-sm font-medium text-blue-700">Cartão de Combustível Vinculado</Label>
-                <div className="text-lg font-mono font-semibold text-blue-800 mt-1">
-                  SQ3365
-                </div>
-                <div className="text-xs text-blue-600 mt-1">Este cartão está associado ao veículo {driver?.placa_veiculo || 'SYH4260'}</div>
+              {/* Número do Cartão (campo editável) */}
+              <div>
+                <Label htmlFor="cardNumber" className="text-sm font-medium text-gray-700">
+                  Número do Cartão *
+                </Label>
+                <Input
+                  id="cardNumber"
+                  type="text"
+                  value={cardNumber}
+                  onChange={(e) => setCardNumber(e.target.value)}
+                  placeholder="Ex: SQ3365"
+                  className="mt-1"
+                  data-testid="input-card-number"
+                  required
+                />
               </div>
 
               {/* Rota */}
@@ -1153,6 +1191,50 @@ const FuelRequestModal = ({ driver, operations, onClose }: { driver: any; operat
                   onChange={(e) => setPhone(e.target.value)}
                   required
                 />
+              </div>
+
+              {/* Foto do Painel do Carro */}
+              <div>
+                <Label htmlFor="painelPhoto" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <Camera className="w-4 h-4" />
+                  Foto do Painel do Carro
+                </Label>
+                <div className="mt-1">
+                  <Input
+                    id="painelPhoto"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={(e) => setPainelPhoto(e.target.files?.[0] || null)}
+                    className="cursor-pointer"
+                    data-testid="input-photo-painel"
+                  />
+                  {painelPhoto && (
+                    <p className="text-xs text-green-600 mt-1">✓ Foto selecionada: {painelPhoto.name}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Foto do Cartão */}
+              <div>
+                <Label htmlFor="cartaoPhoto" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <Camera className="w-4 h-4" />
+                  Foto do Cartão de Combustível
+                </Label>
+                <div className="mt-1">
+                  <Input
+                    id="cartaoPhoto"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={(e) => setCartaoPhoto(e.target.files?.[0] || null)}
+                    className="cursor-pointer"
+                    data-testid="input-photo-cartao"
+                  />
+                  {cartaoPhoto && (
+                    <p className="text-xs text-green-600 mt-1">✓ Foto selecionada: {cartaoPhoto.name}</p>
+                  )}
+                </div>
               </div>
             </div>
 
