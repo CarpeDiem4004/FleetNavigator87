@@ -184,33 +184,45 @@ router.post('/viagem', async (req, res) => {
   }
 });
 
-// Obter operações do motorista
+// Obter operações do motorista (ou todas se admin)
 router.get('/operations', async (req, res) => {
   try {
     const { motorista_id } = req.query;
     
-    console.log('[LINE-HALL] Buscando operações para motorista_id:', motorista_id);
-    
-    if (!motorista_id) {
-      return res.status(400).json({
-        success: false,
-        message: 'motorista_id é obrigatório'
-      });
-    }
+    console.log('[LINE-HALL] Buscando operações. motorista_id:', motorista_id || 'TODAS');
 
-    const query = `
-      SELECT 
-        lho.*,
-        lhr.nome_ponto_a as origem,
-        lhr.nome_ponto_b as destino,
-        lhr.km_total as distancia_km
-      FROM line_hall_operations lho
-      LEFT JOIN line_hall_routes lhr ON lho.rota_id = lhr.id
-      WHERE lho.motorista_id = $1
-      ORDER BY lho.data_criacao DESC
-    `;
+    let query: string;
+    let params: any[] = [];
+
+    if (motorista_id) {
+      // Buscar operações de um motorista específico
+      query = `
+        SELECT 
+          lho.*,
+          lhr.nome_ponto_a as origem,
+          lhr.nome_ponto_b as destino,
+          lhr.km_total as distancia_km
+        FROM line_hall_operations lho
+        LEFT JOIN line_hall_routes lhr ON lho.rota_id = lhr.id
+        WHERE lho.motorista_id = $1
+        ORDER BY lho.data_criacao DESC
+      `;
+      params = [parseInt(motorista_id as string)];
+    } else {
+      // Buscar TODAS as operações (para admin)
+      query = `
+        SELECT 
+          lho.*,
+          lhr.nome_ponto_a as origem,
+          lhr.nome_ponto_b as destino,
+          lhr.km_total as distancia_km
+        FROM line_hall_operations lho
+        LEFT JOIN line_hall_routes lhr ON lho.rota_id = lhr.id
+        ORDER BY lho.data_criacao DESC
+      `;
+    }
     
-    const result = await pool.query(query, [parseInt(motorista_id as string)]);
+    const result = await pool.query(query, params);
     
     console.log('[LINE-HALL] Operações encontradas:', result.rows.length);
     
