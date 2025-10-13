@@ -80,7 +80,8 @@ export const hybridAuth = async (req: Request, res: Response, next: NextFunction
       if (token) {
         // IMPORTANTE: Ignorar tokens de oficina (auto_token_...) - eles não são JWTs do Supabase
         if (token.startsWith('auto_token_')) {
-          console.log('[HybridAuth] Token de oficina detectado - pulando validação JWT Supabase');
+          console.log('[HybridAuth] Token de oficina detectado - pulando validação híbrida (deve usar workshopAuth)');
+          // NÃO retornar next() aqui - deixar a rota usar workshopAuth específico
         } else {
           console.log('[HybridAuth] Token JWT encontrado, tentando validar...');
           const user = await validateSupabaseToken(token);

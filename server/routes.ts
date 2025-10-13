@@ -17388,7 +17388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API para responder solicitações de orçamento (oficinas)
-  app.post("/api/budget-requests/respond", hybridAuth, async (req, res) => {
+  app.post("/api/budget-requests/respond", workshopAuth, async (req, res) => {
     try {
       console.log('[BudgetResponse] Recebendo resposta de orçamento...');
       
