@@ -22,6 +22,17 @@ import FuelCardRequestForm from '@/components/FuelCardRequestForm';
 import WhatsAppResponseButton from '@/components/WhatsAppResponseButton';
 import { useLocation } from 'wouter';
 
+// Função auxiliar para converter data corretamente (evita bug de timezone UTC)
+const parseLocalDate = (dateString: string): Date => {
+  if (!dateString) return new Date();
+  // Se a data vier no formato YYYY-MM-DD, forçar interpretação como local
+  if (dateString.includes('-') && !dateString.includes('T')) {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+  return new Date(dateString);
+};
+
 interface FuelCardSolicitation {
   id: number;
   placa: string;
@@ -1575,7 +1586,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                           <p className="text-xs text-orange-600 font-bold mb-1">📅 DATA DE ABASTECIMENTO</p>
                           {solicitacao.data_uso ? (
                             <p className="text-sm font-bold text-orange-900">
-                              {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
+                              {format(parseLocalDate(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
                               {solicitacao.turno && ` - ${solicitacao.turno}`}
                             </p>
                           ) : (
@@ -1795,7 +1806,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                           <p className="text-xs text-orange-600 font-bold mb-1">📅 DATA DE ABASTECIMENTO</p>
                           {solicitacao.data_uso ? (
                             <p className="text-sm font-bold text-orange-900">
-                              {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
+                              {format(parseLocalDate(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
                               {solicitacao.turno && ` - ${solicitacao.turno}`}
                             </p>
                           ) : (
@@ -1988,7 +1999,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                           <p className="text-xs text-orange-600 font-bold mb-1">📅 DATA DE ABASTECIMENTO</p>
                           {solicitacao.data_uso ? (
                             <p className="text-sm font-bold text-orange-900">
-                              {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
+                              {format(parseLocalDate(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
                               {solicitacao.turno && ` - ${solicitacao.turno}`}
                             </p>
                           ) : (
