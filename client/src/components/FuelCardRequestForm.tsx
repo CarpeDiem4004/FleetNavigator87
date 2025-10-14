@@ -28,6 +28,15 @@ interface FuelCardRequestFormProps {
   onClose: () => void;
 }
 
+// Função auxiliar para converter Date para string YYYY-MM-DD (evita bug de timezone UTC)
+const localDateToDateOnlyString = (d: Date): string => {
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const pad = (n: number) => n < 10 ? `0${n}` : `${n}`;
+  return `${y}-${pad(m)}-${pad(day)}`;
+};
+
 export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelCardRequestFormProps) {
   const [formData, setFormData] = useState({
     placa: '',
@@ -154,6 +163,20 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
       // Buscar dados da base selecionada
       const selectedBase = selectedProject?.bases.find(b => b.id.toString() === formData.base_id);
       
+      // CORREÇÃO DE TIMEZONE: Garantir que data_uso seja enviada como string YYYY-MM-DD
+      let dataUsoFormatted = null;
+      if (formData.data_uso) {
+        // O input type="date" já retorna YYYY-MM-DD, mas vamos garantir
+        if (formData.data_uso.includes('-')) {
+          dataUsoFormatted = formData.data_uso; // Já está no formato correto
+        } else {
+          // Se por algum motivo vier em outro formato, converter
+          const date = new Date(formData.data_uso);
+          dataUsoFormatted = localDateToDateOnlyString(date);
+        }
+        console.log('[FUEL-CARD-FORM] Data selecionada:', formData.data_uso, '→ Enviando:', dataUsoFormatted);
+      }
+      
       const requestData = {
         placa: formData.placa.toUpperCase(),
         motorista: formData.motorista,
@@ -167,7 +190,7 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
         observacoes: formData.observacoes,
         base: selectedBase?.base_name || selectedProject?.name || 'Base não identificada',
         origem_tipo: 'tradicional',
-        data_uso: formData.data_uso || null // Data de quando o saldo será usado
+        data_uso: dataUsoFormatted // Data corrigida para timezone local
       };
 
       const response = await apiRequest('POST', '/api/fuel-card-solicitations', requestData);

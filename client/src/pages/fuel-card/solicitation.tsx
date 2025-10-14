@@ -69,6 +69,15 @@ const solicitacaoSchema = z.object({
 
 type SolicitacaoValues = z.infer<typeof solicitacaoSchema>;
 
+// Função auxiliar para converter Date para string YYYY-MM-DD (evita bug de timezone UTC)
+const localDateToDateOnlyString = (d: Date): string => {
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const pad = (n: number) => n < 10 ? `0${n}` : `${n}`;
+  return `${y}-${pad(m)}-${pad(day)}`;
+};
+
 export default function FuelCardSolicitation() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -153,8 +162,14 @@ export default function FuelCardSolicitation() {
       // CORREÇÃO DE TIMEZONE: Garantir que a data seja enviada no formato brasileiro sem conversão UTC
       let data_uso_corrigida = null;
       if (values.data_uso) {
-        // Se a data vier como YYYY-MM-DD (formato do input date), manter apenas a data sem hora
-        data_uso_corrigida = values.data_uso;
+        // O input type="date" já retorna YYYY-MM-DD, mas vamos garantir o formato correto
+        if (values.data_uso.includes('-')) {
+          data_uso_corrigida = values.data_uso; // Já está no formato correto YYYY-MM-DD
+        } else {
+          // Se por algum motivo vier em outro formato, converter usando função local
+          const date = new Date(values.data_uso);
+          data_uso_corrigida = localDateToDateOnlyString(date);
+        }
         console.log('[FUEL-CARD-FRONTEND] Data original:', values.data_uso, '→ Data para envio:', data_uso_corrigida);
       }
       
