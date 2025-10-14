@@ -25,14 +25,27 @@ import { useLocation } from 'wouter';
 // Função auxiliar para converter data corretamente (evita bug de timezone UTC)
 const parseLocalDate = (dateString: string): Date => {
   if (!dateString) return new Date();
+  
   // Se a data vier no formato YYYY-MM-DD, forçar interpretação como local
   if (dateString.includes('-') && !dateString.includes('T')) {
     const [year, month, day] = dateString.split('-').map(Number);
     const parsedDate = new Date(year, month - 1, day);
-    console.log('[parseLocalDate] Input:', dateString, '→ Output:', parsedDate, 'Formatted:', format(parsedDate, 'dd/MM/yyyy'));
+    
+    // DEBUG: Log detalhado
+    console.log('🔍 [parseLocalDate] DEBUG:', {
+      input: dateString,
+      year, month, day,
+      parsedDate: parsedDate.toString(),
+      formatted: format(parsedDate, 'dd/MM/yyyy')
+    });
+    
     return parsedDate;
   }
-  return new Date(dateString);
+  
+  // Fallback para outras strings de data
+  const fallbackDate = new Date(dateString);
+  console.log('⚠️ [parseLocalDate] FALLBACK usado:', dateString, '→', fallbackDate.toString());
+  return fallbackDate;
 };
 
 interface FuelCardSolicitation {
