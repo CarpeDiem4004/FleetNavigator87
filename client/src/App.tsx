@@ -119,6 +119,7 @@ import FuelCardPage from "@/pages/FuelCardPage";
 import FuelCard from "@/pages/FuelCard";
 import FuelCardRequestsPanel from "@/pages/FuelCardRequestsPanel";
 import FuelCardSolicitation from "@/pages/fuel-card/solicitation";
+import FuelCardDraft from "@/pages/fuel-card/draft";
 import FuelCardConfirmation from "@/pages/fuel-card/confirmation";
 import FuelCardDashboard from "@/pages/fuel-card/dashboard";
 import StationProfile from "@/pages/fuel-card/station-profile";
@@ -1262,6 +1263,13 @@ function App() {
           <Route path="/fuel-card/solicitation">
             <div className="mt-16 pl-4 pr-4 md:pl-16">
               <FuelCardSolicitation />
+            </div>
+          </Route>
+          
+          {/* Rota pública para revisão de bolsão de solicitações */}
+          <Route path="/fuel-card/draft">
+            <div className="mt-16 pl-4 pr-4 md:pl-16">
+              <FuelCardDraft />
             </div>
           </Route>
           
