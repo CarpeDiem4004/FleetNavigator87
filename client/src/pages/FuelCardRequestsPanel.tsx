@@ -28,7 +28,9 @@ const parseLocalDate = (dateString: string): Date => {
   // Se a data vier no formato YYYY-MM-DD, forçar interpretação como local
   if (dateString.includes('-') && !dateString.includes('T')) {
     const [year, month, day] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day);
+    const parsedDate = new Date(year, month - 1, day);
+    console.log('[parseLocalDate] Input:', dateString, '→ Output:', parsedDate, 'Formatted:', format(parsedDate, 'dd/MM/yyyy'));
+    return parsedDate;
   }
   return new Date(dateString);
 };
