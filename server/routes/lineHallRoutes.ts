@@ -301,6 +301,15 @@ router.post('/fuel-card-request', upload.fields([
       });
     }
 
+    // CORREÇÃO DE TIMEZONE: Converter data para formato brasileiro
+    let data_viagem_corrigida = null;
+    if (data_solicitacao) {
+      // Se a data vier como string YYYY-MM-DD, garantir que seja interpretada no timezone do Brasil
+      const dataStr = data_solicitacao.includes('T') ? data_solicitacao.split('T')[0] : data_solicitacao;
+      data_viagem_corrigida = dataStr; // Salvar apenas a data, sem hora
+      console.log('[LINE-HALL-FUEL-REQUEST] Data original:', data_solicitacao, '→ Data corrigida:', data_viagem_corrigida);
+    }
+
     // Pegar caminhos das fotos, se existirem
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
     const fotoPainelPath = files?.foto_painel?.[0]?.path || null;
@@ -373,7 +382,7 @@ router.post('/fuel-card-request', upload.fields([
       numero_cartao || null,
       rota_origem,
       rota_destino,
-      data_solicitacao || null,
+      data_viagem_corrigida,
       telefone_motorista || null,
       km_total || null,
       horario_abastecimento || null,
