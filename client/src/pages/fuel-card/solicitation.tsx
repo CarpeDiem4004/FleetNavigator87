@@ -14,7 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Loader2, CreditCard, AlertCircle, ShoppingCart, Send } from "lucide-react";
-import { useFuelCardDraft } from "@/hooks/useFuelCardDraft";
+import { useFuelCardDraft } from "@/contexts/FuelCardDraftContext";
 
 interface Project {
   id: number;

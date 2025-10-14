@@ -51,6 +51,7 @@ import ProtectedBaseRoute from "@/components/ProtectedBaseRoute";
 import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
 import { AuthProvider } from "@/context/AuthContext";
 import { SupabaseAuthProvider } from "@/context/SupabaseAuthContext";
+import { FuelCardDraftProvider } from "@/contexts/FuelCardDraftContext";
 
 // Importação do hook para injetar token JWT em todas as requisições
 import { useFetchWithAuth } from "@/hooks/useFetchWithAuth";
@@ -424,7 +425,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <SupabaseAuthProvider>
         <AuthProvider>
-          <Switch>
+          <FuelCardDraftProvider>
+            <Switch>
             {/* Formulário público de abastecimento pós-pago - ALTA PRIORIDADE */}
             <Route path="/abastecimento-pos-pago">
               <FormularioPublicoAbastecimento />
@@ -1315,8 +1317,9 @@ function App() {
           <Route>
             <NotFound />
           </Route>
-        </Switch>
-        <Toaster />
+            </Switch>
+            <Toaster />
+          </FuelCardDraftProvider>
         </AuthProvider>
       </SupabaseAuthProvider>
     </QueryClientProvider>

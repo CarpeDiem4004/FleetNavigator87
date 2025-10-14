@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { useFuelCardDraft } from "@/hooks/useFuelCardDraft";
+import { useFuelCardDraft } from "@/contexts/FuelCardDraftContext";
 import { 
   ShoppingCart, 
   Trash2, 
