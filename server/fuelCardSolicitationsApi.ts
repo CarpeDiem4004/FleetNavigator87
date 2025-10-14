@@ -409,6 +409,15 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       turno
     } = req.body;
     
+    // CORREÇÃO DE TIMEZONE: Converter data_uso para formato brasileiro
+    let data_uso_corrigida = null;
+    if (data_uso) {
+      // Se a data vier como string YYYY-MM-DD, garantir que seja interpretada no timezone do Brasil
+      const dataStr = data_uso.includes('T') ? data_uso.split('T')[0] : data_uso;
+      data_uso_corrigida = dataStr; // Salvar apenas a data, sem hora
+      console.log('[FUEL-CARD] Data original:', data_uso, '→ Data corrigida:', data_uso_corrigida);
+    }
+    
     // Debug completo - verificando valores antes do processamento
     console.log("Valor solicitado antes do processamento:", {
       valor: valor_solicitado,
@@ -515,7 +524,7 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       base || null,
       id_rota || null,
       origem_tipo || 'tradicional', // Padrão para 'tradicional' se não informado
-      data_uso || null, // Data prevista de uso do saldo
+      data_uso_corrigida, // Data prevista de uso do saldo (corrigida para timezone BR)
       turno || null // Turno (AM/PM)
     ];
     
