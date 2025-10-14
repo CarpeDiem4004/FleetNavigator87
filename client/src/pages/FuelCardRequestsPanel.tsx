@@ -321,7 +321,13 @@ const FuelCardRequestsPanel: React.FC = () => {
 
   const completedSolicitations = useMemo(() => {
     return filteredSolicitations.filter(s => 
-      s.status === 'Recarga Efetuada' || s.status === 'atendido' || s.status === 'Negado'
+      s.status === 'Recarga Efetuada' || s.status === 'atendido'
+    );
+  }, [filteredSolicitations]);
+
+  const deniedSolicitations = useMemo(() => {
+    return filteredSolicitations.filter(s => 
+      s.status === 'Negado'
     );
   }, [filteredSolicitations]);
 
@@ -1366,7 +1372,7 @@ const FuelCardRequestsPanel: React.FC = () => {
         {/* Sistema de Abas com Cards de Resumo */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="flex items-center justify-between">
-            <TabsList className="grid w-auto grid-cols-3">
+            <TabsList className="grid w-auto grid-cols-4">
               <TabsTrigger value="pendentes" className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
                 Pendentes ({getPendingSolicitations().length})
@@ -1374,6 +1380,10 @@ const FuelCardRequestsPanel: React.FC = () => {
               <TabsTrigger value="atendidas" className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4" />
                 Atendidas ({getCompletedSolicitations().length})
+              </TabsTrigger>
+              <TabsTrigger value="negadas" className="flex items-center gap-2">
+                <XCircle className="h-4 w-4 text-red-600" />
+                Negadas ({deniedSolicitations.length})
               </TabsTrigger>
               <TabsTrigger value="linehaul" className={`flex items-center gap-2 ${
                 hasNewLineHallRequests ? 'animate-pulse bg-blue-100 border-blue-300' : ''
@@ -1830,6 +1840,214 @@ const FuelCardRequestsPanel: React.FC = () => {
                               variant="outline"
                               size="sm"
                             />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      {/* Aba de Solicitações Negadas */}
+      <TabsContent value="negadas" className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Negadas</CardTitle>
+              <XCircle className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{deniedSolicitations.length}</div>
+              <p className="text-xs text-muted-foreground">Solicitações negadas</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Valor Total Negado</CardTitle>
+              <DollarSign className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">
+                {formatCurrency(getTotalValue(deniedSolicitations))}
+              </div>
+              <p className="text-xs text-muted-foreground">Valor das solicitações negadas</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Taxa de Rejeição</CardTitle>
+              <AlertCircle className="h-4 w-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">
+                {(deniedSolicitations.length + getCompletedSolicitations().length) > 0 
+                  ? Math.round((deniedSolicitations.length / (deniedSolicitations.length + getCompletedSolicitations().length)) * 100)
+                  : 0}%
+              </div>
+              <p className="text-xs text-muted-foreground">Percentual de negações</p>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex justify-between">
+              <div>
+                <CardTitle>Solicitações Negadas</CardTitle>
+                <CardDescription>
+                  Mostrando {deniedSolicitations.length} solicitações negadas
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                {(user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
+                  <Button onClick={fetchSolicitations} variant="outline" size="sm">
+                    Atualizar
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center space-x-4">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-[250px]" />
+                      <Skeleton className="h-4 w-[200px]" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="text-center py-6 text-red-500">
+                <AlertCircle className="w-10 h-10 mx-auto mb-2" />
+                <p>{error}</p>
+                <Button onClick={fetchSolicitations} className="mt-4">
+                  Tentar novamente
+                </Button>
+              </div>
+            ) : deniedSolicitations.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">
+                Nenhuma solicitação negada encontrada.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="max-h-[600px] overflow-y-auto">
+                  {deniedSolicitations.map((solicitacao, index) => (
+                    <div 
+                      key={`${solicitacao.id}-${solicitacao.origem_tipo}-${index}`} 
+                      className="p-4 rounded-lg border bg-red-50 border-red-200 border-l-4 border-l-red-500 transition-all duration-200 hover:shadow-md"
+                    >
+                      {getDailyRequestCount(solicitacao.placa, solicitacao.data_solicitacao) > 1 && (
+                        <div className="mb-2">
+                          <div className="flex items-center gap-2 p-2 bg-red-100 border border-red-300 rounded text-red-800 text-xs">
+                            <AlertTriangle className="h-4 w-4" />
+                            <span className="font-semibold">ATENÇÃO:</span>
+                            <span>Esta placa teve {getDailyRequestCount(solicitacao.placa, solicitacao.data_solicitacao)} solicitações no mesmo dia</span>
+                            <span className="ml-auto font-mono">{solicitudeCounts[solicitacao.placa] || 0} total</span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex flex-wrap items-center gap-3">
+                        {/* Placa */}
+                        <div className="flex-shrink-0" style={{minWidth: '120px'}}>
+                          <p className="font-medium text-lg">{solicitacao.placa}</p>
+                          <p className="text-xs text-gray-500">Placa</p>
+                        </div>
+
+                        {/* Motorista */}
+                        <div className="border-2 border-blue-500 bg-blue-50 p-2 rounded flex-shrink-0" style={{minWidth: '200px'}}>
+                          <p className="text-xs text-blue-600 font-bold mb-1">🚛 MOTORISTA</p>
+                          <p className="text-sm text-gray-900 truncate">{solicitacao.motorista || (solicitacao as any).nome_motorista || 'Motorista não informado'}</p>
+                          <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_solicitado)} - {solicitacao.km_total || solicitacao.km_veiculo || (solicitacao as any).km || '-'} km</p>
+                        </div>
+
+                        {/* Operação e Base */}
+                        <div className="flex-shrink-0" style={{minWidth: '120px'}}>
+                          <Badge variant="outline" className={
+                            solicitacao.origem_tipo === 'line_hall' 
+                              ? "bg-blue-100 text-blue-800 mb-1" 
+                              : "bg-green-100 text-green-800 mb-1"
+                          }>
+                            {solicitacao.origem_tipo === 'line_hall' ? 'Line Hall' : 'Tradicional'}
+                          </Badge>
+                          <p className="text-xs text-gray-500 truncate">{solicitacao.base || '-'}</p>
+                        </div>
+
+                        {/* Data de Abastecimento */}
+                        <div className="border-2 border-orange-500 bg-orange-50 p-2 rounded flex-shrink-0" style={{minWidth: '160px'}}>
+                          <p className="text-xs text-orange-600 font-bold mb-1">📅 DATA DE ABASTECIMENTO</p>
+                          {solicitacao.data_uso ? (
+                            <p className="text-sm font-bold text-orange-900">
+                              {format(new Date(solicitacao.data_uso), 'dd/MM/yyyy', { locale: ptBR })}
+                              {solicitacao.turno && ` - ${solicitacao.turno}`}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-gray-500">Não informada</p>
+                          )}
+                        </div>
+
+                        {/* Status e Data */}
+                        <div className="flex-shrink-0">
+                          {getStatusBadge(solicitacao.status)}
+                          <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</p>
+                          {solicitacao.data_atendimento && (
+                            <p className="text-xs text-red-600 font-medium">Negado: {formatDate(solicitacao.data_atendimento).split(',')[0]}</p>
+                          )}
+                        </div>
+
+                        {/* Motivo de Negação */}
+                        {solicitacao.motivo_negacao && (
+                          <div className="flex-1 min-w-[200px]">
+                            <div className="p-2 bg-red-100 border border-red-300 rounded">
+                              <p className="text-xs text-red-700 font-bold mb-1">MOTIVO DA NEGAÇÃO:</p>
+                              <p className="text-sm text-red-900">{solicitacao.motivo_negacao}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Ações */}
+                        <div className="flex-shrink-0 ml-auto">
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleOpenSolicitation(solicitacao)}
+                              className="text-xs"
+                            >
+                              Visualizar
+                            </Button>
+                            
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewFuelHistory(solicitacao.placa)}
+                              className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              title={`Ver histórico de abastecimentos da placa ${solicitacao.placa}`}
+                            >
+                              <History className="h-3 w-3" />
+                            </Button>
+                            
+                            {(user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleDeleteSolicitation(solicitacao)}
+                                className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                                title="Excluir solicitação"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
