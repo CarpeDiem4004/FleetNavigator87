@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Loader2, CreditCard, AlertCircle } from "lucide-react";
+import { Loader2, CreditCard, AlertCircle, ShoppingCart, Send } from "lucide-react";
+import { useFuelCardDraft } from "@/hooks/useFuelCardDraft";
 
 interface Project {
   id: number;
@@ -85,6 +86,7 @@ export default function FuelCardSolicitation() {
   const [error, setError] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
+  const { addToDraft, draftCount } = useFuelCardDraft();
   
   const form = useForm<SolicitacaoValues>({
     resolver: zodResolver(solicitacaoSchema),
@@ -228,6 +230,62 @@ export default function FuelCardSolicitation() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  }
+  
+  function handleAddToDraft(values: SolicitacaoValues) {
+    try {
+      // Get selected base info
+      const selectedBase = selectedProject?.bases.find(b => b.id.toString() === values.base_id);
+      
+      // Prepare data for draft
+      let data_uso_corrigida = null;
+      if (values.data_uso) {
+        if (values.data_uso.includes('-')) {
+          data_uso_corrigida = values.data_uso;
+        } else {
+          const date = new Date(values.data_uso);
+          data_uso_corrigida = localDateToDateOnlyString(date);
+        }
+      }
+      
+      addToDraft({
+        placa: values.placa,
+        km: parseInt(values.km.toString()),
+        valor_solicitado: parseFloat(values.valor_solicitado.toString()),
+        tipo_cartao: values.tipo_cartao,
+        provedor_cartao: values.provedor_cartao,
+        numero_cartao: values.numero_cartao || "",
+        tipo_combustivel: values.tipo_combustivel,
+        motorista: values.nomeMotorista,
+        solicitante: values.motorista,
+        telefone_celular: values.telefone_celular,
+        base: selectedBase?.base_name || "",
+        id_rota: selectedBase?.base_code || "",
+        observacoes: values.observacoes || "",
+        projeto_id: parseInt(values.projeto_id),
+        base_id: parseInt(values.base_id),
+        data_uso: data_uso_corrigida,
+        turno: values.turno || null,
+        projeto_nome: selectedProject?.name,
+        base_nome: selectedBase?.base_name
+      });
+      
+      toast({
+        title: "Adicionado ao bolsão",
+        description: `Solicitação adicionada. Total no bolsão: ${draftCount + 1}`,
+      });
+      
+      // Limpar formulário para próxima solicitação
+      form.reset();
+      
+    } catch (error) {
+      console.error("Erro ao adicionar ao bolsão:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar ao bolsão",
+        variant: "destructive",
+      });
     }
   }
   
@@ -639,6 +697,39 @@ export default function FuelCardSolicitation() {
                 />
                 
                 <div className="pt-6 space-y-3">
+                  {/* Indicador de bolsão */}
+                  {draftCount > 0 && (
+                    <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <ShoppingCart className="h-5 w-5 text-green-600" />
+                        <span className="text-sm font-medium text-green-700">
+                          {draftCount} {draftCount === 1 ? 'solicitação' : 'solicitações'} no bolsão
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLocation("/fuel-card/draft")}
+                        className="text-green-700 border-green-300 hover:bg-green-100"
+                      >
+                        Ver Bolsão
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {/* Botão: Adicionar ao Bolsão */}
+                  <Button 
+                    type="button"
+                    onClick={form.handleSubmit(handleAddToDraft)}
+                    className="w-full h-12 text-base font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700" 
+                    disabled={isSubmitting}
+                  >
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    Adicionar ao Bolsão
+                  </Button>
+                  
+                  {/* Botão: Enviar Direto */}
                   <Button 
                     type="submit" 
                     className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700" 
@@ -651,8 +742,8 @@ export default function FuelCardSolicitation() {
                       </>
                     ) : (
                       <>
-                        <CreditCard className="mr-2 h-5 w-5" />
-                        Solicitar Recarga
+                        <Send className="mr-2 h-5 w-5" />
+                        Enviar Agora
                       </>
                     )}
                   </Button>
