@@ -293,8 +293,24 @@ export default function FuelCardSolicitation() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-6">
       <div className="max-w-md mx-auto sm:max-w-2xl lg:max-w-3xl">
         <div className="text-center mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800">💳 Solicitação de Cartão</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Preencha os dados para solicitar recarga de combustível</p>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex-1">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800">💳 Solicitação de Cartão</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">Preencha os dados para solicitar recarga de combustível</p>
+            </div>
+            {/* Botão de acesso ao bolsão sempre visível */}
+            <Button
+              type="button"
+              onClick={() => setLocation("/fuel-card/draft")}
+              className="ml-4 h-16 px-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg"
+              data-testid="button-view-draft"
+            >
+              <div className="flex flex-col items-center">
+                <ShoppingCart className="h-6 w-6 mb-1" />
+                <span className="text-xs font-semibold">Bolsão {draftCount > 0 && `(${draftCount})`}</span>
+              </div>
+            </Button>
+          </div>
         </div>
         
         {error && (
