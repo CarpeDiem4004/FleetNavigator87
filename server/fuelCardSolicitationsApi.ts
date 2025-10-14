@@ -159,7 +159,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           COALESCE(s.origem_tipo, 'tradicional') as origem_tipo,
           s.tipo_combustivel,
           s.litros_solicitados,
-          s.data_uso,
+          TO_CHAR(s.data_uso, 'YYYY-MM-DD') as data_uso,
           s.turno,
           -- Campos específicos do Line Hall (NULL para solicitações tradicionais)
           NULL::varchar as veiculo_modelo,
