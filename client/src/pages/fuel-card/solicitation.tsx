@@ -150,6 +150,14 @@ export default function FuelCardSolicitation() {
       const selectedBase = selectedProject?.bases.find(b => b.id.toString() === values.base_id);
       
       // Prepare data with project/base info
+      // CORREÇÃO DE TIMEZONE: Garantir que a data seja enviada no formato brasileiro sem conversão UTC
+      let data_uso_corrigida = null;
+      if (values.data_uso) {
+        // Se a data vier como YYYY-MM-DD (formato do input date), manter apenas a data sem hora
+        data_uso_corrigida = values.data_uso;
+        console.log('[FUEL-CARD-FRONTEND] Data original:', values.data_uso, '→ Data para envio:', data_uso_corrigida);
+      }
+      
       const processedValues = {
         placa: values.placa,
         km: parseInt(values.km.toString()),
@@ -166,7 +174,7 @@ export default function FuelCardSolicitation() {
         observacoes: values.observacoes || "",
         projeto_id: parseInt(values.projeto_id),
         base_id: parseInt(values.base_id),
-        data_uso: values.data_uso || null,
+        data_uso: data_uso_corrigida,
         turno: values.turno || null
       };
       
