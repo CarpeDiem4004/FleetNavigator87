@@ -497,6 +497,16 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
     // Log do corpo completo da requisição para fins de depuração
     console.log("Corpo da requisição:", JSON.stringify(req.body, null, 2));
     
+    // VERIFICAÇÃO CRÍTICA DE OBSERVAÇÕES
+    console.log("🔍 [DEBUG-OBSERVAÇÕES] Valor recebido:", {
+      observacoes,
+      tipo: typeof observacoes,
+      comprimento: observacoes?.length,
+      vazio: observacoes === '',
+      null: observacoes === null,
+      undefined: observacoes === undefined
+    });
+    
     // Usar o nome do usuário logado quando não há solicitante informado
     const user = req.user as any;
     const solicitanteName = req.body.solicitante || req.body.nomeSolicitante || req.body.requesterName || 
