@@ -248,22 +248,22 @@ export default function ExecutiveDashboard() {
     }
 
     const columns = [
-      { header: 'Placa', accessor: 'plate' },
-      { header: 'Modelo', accessor: 'model' },
+      { header: 'Placa', accessor: 'placa' },
+      { header: 'Modelo', accessor: 'modelo' },
+      { 
+        header: 'Combustível', 
+        accessor: 'fuelCost',
+        cell: (value: number) => formatCurrency(value)
+      },
+      { 
+        header: 'Manutenção', 
+        accessor: 'maintenanceCost',
+        cell: (value: number) => formatCurrency(value)
+      },
       { 
         header: 'Custo Total', 
         accessor: 'totalCost',
         cell: (value: number) => formatCurrency(value)
-      },
-      { 
-        header: 'Custo por KM', 
-        accessor: 'avgCostPerKm',
-        cell: (value: number) => `R$ ${value.toFixed(2)}/km`
-      },
-      { 
-        header: 'Km Total', 
-        accessor: 'totalKm',
-        cell: (value: number) => `${value.toLocaleString('pt-BR')} km`
       }
     ];
 
@@ -271,7 +271,7 @@ export default function ExecutiveDashboard() {
       <DashboardTable
         title="Veículos com Maior Custo Operacional"
         columns={columns}
-        data={dashboardData.topVehiclesCost || []}
+        data={dashboardData.topCostVehicles || []}
         emptyMessage="Nenhum dado de custo disponível para o período selecionado."
       />
     );
@@ -308,10 +308,14 @@ export default function ExecutiveDashboard() {
     };
 
     const columns = [
-      { header: 'Data', accessor: 'date' },
-      { header: 'Placa', accessor: 'vehiclePlate' },
-      { header: 'Modelo', accessor: 'vehicleModel' },
-      { header: 'Base', accessor: 'base' },
+      { 
+        header: 'Data', 
+        accessor: 'date',
+        cell: (value: string) => new Date(value).toLocaleDateString('pt-BR')
+      },
+      { header: 'Placa', accessor: 'placa' },
+      { header: 'Veículo', accessor: 'vehicle' },
+      { header: 'Tipo Serviço', accessor: 'serviceType' },
       { 
         header: 'Status', 
         accessor: 'status',
@@ -327,7 +331,7 @@ export default function ExecutiveDashboard() {
       { 
         header: 'Custo', 
         accessor: 'cost',
-        cell: (value: number) => formatCurrency(value)
+        cell: (value: number) => formatCurrency(value || 0)
       }
     ];
 
@@ -335,7 +339,7 @@ export default function ExecutiveDashboard() {
       <DashboardTable
         title="Manutenções Recentes"
         columns={columns}
-        data={dashboardData.recentMaintenances || []}
+        data={dashboardData.maintenanceRecords || []}
         emptyMessage="Nenhuma manutenção registrada para o período selecionado."
       />
     );
