@@ -37,6 +37,30 @@ const localDateToDateOnlyString = (d: Date): string => {
   return `${y}-${pad(m)}-${pad(day)}`;
 };
 
+// Função para formatar valor para moeda brasileira (R$ 1.234,56)
+const formatCurrency = (value: string): string => {
+  // Remove tudo que não é número
+  const numbers = value.replace(/\D/g, '');
+  
+  if (!numbers) return '';
+  
+  // Converte para número e divide por 100 para ter centavos
+  const amount = parseFloat(numbers) / 100;
+  
+  // Formata para moeda brasileira
+  return amount.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+
+// Função para desformatar moeda brasileira para número
+const unformatCurrency = (value: string): number => {
+  const numbers = value.replace(/\D/g, '');
+  if (!numbers) return 0;
+  return parseFloat(numbers) / 100;
+};
+
 export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelCardRequestFormProps) {
   const [formData, setFormData] = useState({
     placa: '',
@@ -135,6 +159,11 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
     }));
   };
 
+  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCurrency(e.target.value);
+    setFormData(prev => ({ ...prev, valor_solicitado: formatted }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -182,7 +211,7 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
         motorista: formData.motorista,
         solicitante: formData.solicitante,
         telefone_celular: formData.telefone_celular,
-        valor_solicitado: parseFloat(formData.valor_solicitado),
+        valor_solicitado: unformatCurrency(formData.valor_solicitado), // Desformatar moeda brasileira
         km: formData.km ? parseInt(formData.km) : null,
         tipo_cartao: formData.tipo_cartao,
         provedor_cartao: formData.provedor_cartao,
@@ -439,13 +468,14 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
               <Label htmlFor="valor_solicitado">Valor Solicitado (R$) *</Label>
               <Input
                 id="valor_solicitado"
-                type="number"
-                step="0.01"
+                type="text"
                 value={formData.valor_solicitado}
-                onChange={(e) => setFormData(prev => ({ ...prev, valor_solicitado: e.target.value }))}
-                placeholder="0.00"
+                onChange={handleValorChange}
+                placeholder="0,00"
                 required
+                data-testid="input-valor-solicitado"
               />
+              <p className="text-xs text-muted-foreground">Digite apenas números - formatação automática</p>
             </div>
             
             <div className="space-y-2">

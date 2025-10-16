@@ -80,6 +80,24 @@ const localDateToDateOnlyString = (d: Date): string => {
   return `${y}-${pad(m)}-${pad(day)}`;
 };
 
+// Função para formatar valor para moeda brasileira (R$ 1.234,56)
+const formatCurrency = (value: string): string => {
+  const numbers = value.replace(/\D/g, '');
+  if (!numbers) return '';
+  const amount = parseFloat(numbers) / 100;
+  return amount.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+
+// Função para desformatar moeda brasileira para número
+const unformatCurrency = (value: string): number => {
+  const numbers = value.replace(/\D/g, '');
+  if (!numbers) return 0;
+  return parseFloat(numbers) / 100;
+};
+
 export default function FuelCardSolicitation() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -173,7 +191,7 @@ export default function FuelCardSolicitation() {
       const processedValues = {
         placa: values.placa,
         km: parseInt(values.km.toString()),
-        valor_solicitado: parseFloat(values.valor_solicitado.toString()),
+        valor_solicitado: unformatCurrency(values.valor_solicitado.toString()), // Desformatar moeda brasileira
         tipo_cartao: values.tipo_cartao,
         provedor_cartao: values.provedor_cartao,
         numero_cartao: values.numero_cartao || "",
@@ -242,7 +260,7 @@ export default function FuelCardSolicitation() {
       addToDraft({
         placa: values.placa,
         km: parseInt(values.km.toString()),
-        valor_solicitado: parseFloat(values.valor_solicitado.toString()),
+        valor_solicitado: unformatCurrency(values.valor_solicitado.toString()), // Desformatar moeda brasileira
         tipo_cartao: values.tipo_cartao,
         provedor_cartao: values.provedor_cartao,
         numero_cartao: values.numero_cartao || "",
@@ -394,15 +412,16 @@ export default function FuelCardSolicitation() {
                         <FormLabel className="text-sm font-medium">💰 Valor (R$)</FormLabel>
                         <FormControl>
                           <Input 
-                            type="number" 
-                            step="0.01" 
-                            placeholder="150.00" 
+                            type="text"
+                            placeholder="0,00" 
                             className="text-base h-12" 
-                            {...field} 
+                            value={field.value ? formatCurrency(field.value) : ''}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            data-testid="input-valor-solicitado"
                           />
                         </FormControl>
                         <FormDescription className="text-xs">
-                          Valor em reais para carregar
+                          Digite apenas números - formatação automática
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
