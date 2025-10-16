@@ -544,6 +544,151 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// POST /api/equipment-responsibility-terms/create-with-pdf - Criar termo de responsabilidade COM PDF automático
+router.post('/equipment-responsibility-terms/create-with-pdf', (req, res, next) => {
+  unifiedAuthMiddleware(req, res, (err) => {
+    if (err) {
+      console.error('Auth error in create-with-pdf:', err);
+      return res.status(401).json({ success: false, error: 'Não autorizado' });
+    }
+    next();
+  });
+}, upload.single('signed_document'), async (req, res) => {
+  try {
+    console.log('[CREATE-WITH-PDF] Iniciando criação de termo com PDF');
+    console.log('[CREATE-WITH-PDF] Body:', req.body);
+    console.log('[CREATE-WITH-PDF] File:', req.file ? req.file.filename : 'Nenhum arquivo');
+
+    // Validar dados recebidos
+    const equipmentId = parseInt(req.body.equipment_id);
+    if (isNaN(equipmentId)) {
+      if (req.file) fs.unlinkSync(req.file.path); // Limpar arquivo se houver erro
+      return res.status(400).json({ success: false, error: 'ID do equipamento inválido' });
+    }
+
+    // Preparar dados para validação
+    const dataToValidate = {
+      equipment_id: equipmentId,
+      full_name: req.body.full_name,
+      cpf: req.body.cpf,
+      phone: req.body.phone,
+      department: req.body.department,
+      address: req.body.address,
+      condition_at_assignment: req.body.condition_at_assignment,
+      notes: req.body.notes || '',
+      term_content: req.body.term_content || `Termo de Responsabilidade`
+    };
+
+    const validatedData = insertEquipmentResponsibilityTermSchema.parse(dataToValidate);
+    
+    // Verificar se o equipamento existe e está disponível
+    const equipment = await db
+      .select()
+      .from(equipments)
+      .where(eq(equipments.id, validatedData.equipment_id))
+      .limit(1);
+
+    if (equipment.length === 0) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(404).json({ success: false, error: 'Equipamento não encontrado' });
+    }
+
+    if (equipment[0].status !== 'disponivel') {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ 
+        success: false, 
+        error: `Equipamento não está disponível. Status atual: ${equipment[0].status}` 
+      });
+    }
+
+    // Verificar se já existe um termo ativo
+    const existingTerm = await db
+      .select()
+      .from(equipmentResponsibilityTerms)
+      .where(
+        and(
+          eq(equipmentResponsibilityTerms.equipment_id, validatedData.equipment_id),
+          eq(equipmentResponsibilityTerms.is_active, true),
+          isNull(equipmentResponsibilityTerms.returned_at)
+        )
+      )
+      .limit(1);
+
+    if (existingTerm.length > 0) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Equipamento já possui um termo de responsabilidade ativo' 
+      });
+    }
+
+    // Preparar URL do arquivo (se foi enviado)
+    const fileUrl = req.file ? `/uploads/equipment-documents/${req.file.filename}` : null;
+
+    // Criar termo com PDF já salvo
+    const termData = {
+      ...validatedData,
+      is_active: true,
+      assigned_at: new Date(),
+      returned_at: null,
+      signed_document_url: fileUrl // PDF já salvo automaticamente!
+    };
+
+    const newTerm = await db
+      .insert(equipmentResponsibilityTerms)
+      .values(termData)
+      .returning();
+
+    console.log('[CREATE-WITH-PDF] Termo criado com sucesso! ID:', newTerm[0]?.id);
+    console.log('[CREATE-WITH-PDF] PDF salvo em:', fileUrl);
+
+    // Atualizar status do equipamento
+    await db
+      .update(equipments)
+      .set({ status: 'em_uso', updated_at: new Date() })
+      .where(eq(equipments.id, validatedData.equipment_id));
+
+    // Registrar movimentação no histórico
+    await db
+      .insert(equipmentMovements)
+      .values({
+        equipment_id: validatedData.equipment_id,
+        to_user_id: req.user?.id || null,
+        to_location: validatedData.department || null,
+        movement_type: 'assignment',
+        moved_by: req.user?.id || 1,
+        moved_at: new Date(),
+        notes: `Termo criado automaticamente com PDF para ${validatedData.full_name}`
+      });
+
+    res.status(201).json({ 
+      success: true, 
+      data: newTerm[0],
+      message: 'Termo criado e PDF salvo com sucesso!'
+    });
+
+  } catch (error) {
+    // Limpar arquivo em caso de erro
+    if (req.file) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkError) {
+        console.error('Erro ao deletar arquivo:', unlinkError);
+      }
+    }
+
+    console.error('[CREATE-WITH-PDF] Erro:', error);
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Dados inválidos', 
+        details: error.errors 
+      });
+    }
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
+});
+
 // POST /api/equipment-responsibility-terms - Criar novo termo de responsabilidade
 router.post('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req, res) => {
   try {

@@ -442,17 +442,67 @@ export default function Equipment() {
     }
   };
 
-  const onTermSubmit = (data: ResponsibilityTermFormData) => {
+  const onTermSubmit = async (data: ResponsibilityTermFormData) => {
     if (selectedEquipmentForTerm) {
-      // Gerar e baixar o PDF automaticamente
-      handleDownloadTerm(data, selectedEquipmentForTerm);
-      
-      // Criar o termo no banco de dados
-      createTermMutation.mutate({
-        ...data,
-        equipment_id: selectedEquipmentForTerm.id,
-        term_content: `Termo de Responsabilidade para ${selectedEquipmentForTerm.name}`,
-      });
+      try {
+        // Gerar o PDF
+        const doc = generateTermPDF(data, selectedEquipmentForTerm);
+        const pdfBlob = doc.output('blob');
+        
+        // Criar FormData com os dados do termo + PDF
+        const formData = new FormData();
+        formData.append('equipment_id', selectedEquipmentForTerm.id.toString());
+        formData.append('full_name', data.full_name);
+        formData.append('cpf', data.cpf);
+        formData.append('phone', data.phone);
+        formData.append('department', data.department);
+        formData.append('address', data.address);
+        formData.append('condition_at_assignment', data.condition_at_assignment);
+        formData.append('notes', data.notes || '');
+        formData.append('term_content', `Termo de Responsabilidade para ${selectedEquipmentForTerm.name}`);
+        
+        // Anexar o PDF
+        const filename = `termo_${selectedEquipmentForTerm.id}_${Date.now()}.pdf`;
+        formData.append('signed_document', pdfBlob, filename);
+        
+        // Enviar para o backend
+        const response = await fetch('/api/equipment/equipment-responsibility-terms/create-with-pdf', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+        });
+        
+        if (!response.ok) {
+          throw new Error('Erro ao criar termo com PDF');
+        }
+        
+        const result = await response.json();
+        
+        // Atualizar cache e fechar diálogo
+        queryClient.invalidateQueries({ queryKey: ['/api/equipment-list'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/equipment-dashboard'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/equipment/equipment-responsibility-terms'] });
+        
+        setIsTermDialogOpen(false);
+        setSelectedEquipmentForTerm(null);
+        termForm.reset();
+        
+        toast({
+          title: "Sucesso",
+          description: "Termo criado e PDF salvo automaticamente!",
+        });
+        
+        // Também baixar o PDF para o usuário
+        handleDownloadTerm(data, selectedEquipmentForTerm);
+        
+      } catch (error) {
+        console.error('Erro ao criar termo:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao criar termo de responsabilidade.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
