@@ -55,6 +55,29 @@ export interface BaseKm {
   previousMonth: number;
 }
 
+export interface RealFuelConsumption {
+  periodo: {
+    inicio: string;
+    fim: string;
+  };
+  resumo: {
+    valor_total: number;
+    litros_total: number;
+    custo_medio_por_litro: number;
+  };
+  consumo_por_tipo: Array<{
+    tipo: string;
+    origem: string;
+    valor_total: number;
+    litros_calculados?: number;
+    litros_reais?: number;
+    litros_registrados?: number;
+    preco_litro: number;
+    quantidade_registros: number;
+  }>;
+  precos_referencia: { [key: string]: number };
+}
+
 export interface DashboardData {
   kpis: KPIGroup[];
   timeSeriesData: TimeSeriesData[];
@@ -68,6 +91,7 @@ export interface DashboardData {
   recentMaintenances?: Array<{date: string; vehiclePlate: string; vehicleModel: string; base: string; status: string; cost: number}>;
   referenceDate?: string;
   updateTime?: string;
+  realFuelConsumption?: RealFuelConsumption;
 }
 
 // Obter total de veículos cadastrados
@@ -135,6 +159,24 @@ export async function getKmPerBase(): Promise<BaseKm[]> {
   }
 }
 
+// Função para buscar consumo real de combustível com base nos preços
+export async function getRealFuelConsumption(dateParam?: string): Promise<RealFuelConsumption | null> {
+  try {
+    const url = dateParam ? `/api/dashboard/fuel-consumption-real?date=${dateParam}` : '/api/dashboard/fuel-consumption-real';
+    const response = await apiRequest('GET', url);
+    
+    if (!response.ok) {
+      throw new Error('Erro ao obter consumo real de combustível');
+    }
+    
+    const result = await response.json();
+    return result.success ? result.data : null;
+  } catch (error) {
+    console.error('Erro ao carregar consumo real de combustível:', error);
+    return null;
+  }
+}
+
 // Função para buscar dados para o dashboard executivo
 export async function fetchDashboardData(dateParam?: string): Promise<DashboardData> {
   try {
@@ -155,6 +197,14 @@ export async function fetchDashboardData(dateParam?: string): Promise<DashboardD
     if (kmPerBaseData.length > 0) {
       console.log('Dados reais de quilometragem por base integrados:', kmPerBaseData);
       data.data.kmPerBase = kmPerBaseData;
+    }
+    
+    // Tentar buscar dados reais de consumo de combustível
+    const realFuelData = await getRealFuelConsumption(dateParam);
+    
+    if (realFuelData) {
+      console.log('Dados reais de consumo de combustível integrados:', realFuelData);
+      data.data.realFuelConsumption = realFuelData;
     }
     
     return data.data;

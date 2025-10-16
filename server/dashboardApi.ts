@@ -127,14 +127,14 @@ export async function getDashboardKPIs(req: Request, res: Response) {
         GROUP BY placa
       )
       SELECT 
-        v.placa,
-        v.modelo,
+        v.plate as placa,
+        v.model as modelo,
         COALESCE(fc.custo_combustivel, 0) as custo_combustivel,
         COALESCE(mc.custo_manutencao, 0) as custo_manutencao,
         (COALESCE(fc.custo_combustivel, 0) + COALESCE(mc.custo_manutencao, 0)) as custo_total
       FROM vehicles v
-      LEFT JOIN fuel_costs fc ON v.placa = fc.placa
-      LEFT JOIN maintenance_costs mc ON v.placa = mc.placa
+      LEFT JOIN fuel_costs fc ON v.plate = fc.placa
+      LEFT JOIN maintenance_costs mc ON v.plate = mc.placa
       WHERE (COALESCE(fc.custo_combustivel, 0) + COALESCE(mc.custo_manutencao, 0)) > 0
       ORDER BY custo_total DESC
       LIMIT 10`,

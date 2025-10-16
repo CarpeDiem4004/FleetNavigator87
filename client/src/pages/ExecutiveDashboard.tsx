@@ -232,6 +232,103 @@ export default function ExecutiveDashboard() {
     );
   };
 
+  // Renderizando dados reais de consumo de combustível
+  const renderRealFuelConsumption = () => {
+    if (loading || !dashboardData || !dashboardData.realFuelConsumption) {
+      return (
+        <div className="text-center p-6 bg-gray-50 rounded-lg border border-gray-200">
+          <p className="text-gray-500">Carregando dados reais de consumo...</p>
+        </div>
+      );
+    }
+
+    const fuelData = dashboardData.realFuelConsumption;
+
+    return (
+      <div className="space-y-4">
+        {/* Resumo geral */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-gray-600 mb-1">Valor Total</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {formatCurrency(fuelData.resumo.valor_total)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-gray-600 mb-1">Litros Total</p>
+              <p className="text-2xl font-bold text-green-600">
+                {fuelData.resumo.litros_total.toLocaleString('pt-BR')} L
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-gray-600 mb-1">Custo Médio/Litro</p>
+              <p className="text-2xl font-bold text-orange-600">
+                {formatCurrency(fuelData.resumo.custo_medio_por_litro)}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Detalhamento por tipo */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Detalhamento por Tipo de Combustível</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {fuelData.consumo_por_tipo.map((item, index) => (
+                <div key={index} className="border-b last:border-0 pb-3 last:pb-0">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <p className="font-semibold text-gray-800 capitalize">{item.tipo}</p>
+                      <p className="text-sm text-gray-500">
+                        {item.origem === 'fuel_card' ? 'Fuel Card' : 'Posto Interno'} • {item.quantidade_registros} registros
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-blue-600">{formatCurrency(item.valor_total)}</p>
+                      <p className="text-sm text-gray-600">
+                        {(item.litros_calculados || item.litros_reais || 0).toLocaleString('pt-BR')} L
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-sm text-gray-500">
+                    <span>Preço/Litro: {formatCurrency(item.preco_litro)}</span>
+                    {item.litros_registrados && item.litros_registrados > 0 && (
+                      <span>Litros Registrados: {item.litros_registrados.toLocaleString('pt-BR')} L</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Preços de Referência */}
+        <Card className="bg-blue-50">
+          <CardHeader>
+            <CardTitle className="text-sm text-blue-900">Preços de Referência (Postos Internos)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4">
+              {Object.entries(fuelData.precos_referencia).map(([tipo, preco]) => (
+                <div key={tipo} className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-blue-800 capitalize">{tipo}:</span>
+                  <span className="text-sm font-bold text-blue-900">{formatCurrency(preco as number)}/L</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   // Renderizando tabela de veículos com maior custo
   const renderTopVehiclesCost = () => {
     if (loading || !dashboardData) {
@@ -491,6 +588,19 @@ export default function ExecutiveDashboard() {
             >
               {renderExpenseDistribution()}
             </ChartCard>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Droplets className="h-5 w-5 text-blue-500" />
+                  Consumo Real de Combustível
+                </CardTitle>
+                <p className="text-sm text-gray-500">Litros e valores calculados com base nos preços dos postos internos e fuel cards atendidos</p>
+              </CardHeader>
+              <CardContent>
+                {renderRealFuelConsumption()}
+              </CardContent>
+            </Card>
             
             {renderTopVehiclesCost()}
           </TabsContent>
