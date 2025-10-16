@@ -150,6 +150,40 @@ export async function getDashboardKPIs(req: Request, res: Response) {
       [startOfTargetMonth.toISOString(), endOfTargetMonth.toISOString()]
     );
 
+    // 8. Distribuição de Despesas por Categoria
+    const expenseDistributionResult = await pool.query(
+      `SELECT 
+        'Combustível' as category,
+        COALESCE(SUM(valor_total), 0) as value,
+        '#3b82f6' as color
+       FROM historico_consolidado_abastecimentos
+       WHERE created_at >= $1 AND created_at <= $2
+       UNION ALL
+       SELECT 
+        'Manutenção' as category,
+        COALESCE(SUM(labor_cost::numeric + parts_cost::numeric), 0) as value,
+        '#10b981' as color
+       FROM car_receptions
+       WHERE created_at >= $1 AND created_at <= $2
+       ORDER BY value DESC`,
+      [startOfTargetMonth.toISOString(), endOfTargetMonth.toISOString()]
+    );
+
+    // 9. KM por Base/Projeto
+    const kmPerBaseResult = await pool.query(
+      `SELECT 
+        COALESCE(p.nome, 'Sem Projeto') as name,
+        COALESCE(SUM(hca.km), 0) as km,
+        COUNT(DISTINCT hca.placa) as vehicles
+       FROM historico_consolidado_abastecimentos hca
+       LEFT JOIN projetos p ON hca.projeto = p.nome
+       WHERE hca.created_at >= $1 AND hca.created_at <= $2
+       GROUP BY p.nome
+       ORDER BY km DESC
+       LIMIT 10`,
+      [startOfTargetMonth.toISOString(), endOfTargetMonth.toISOString()]
+    );
+
     // Processar resultados
     const vehicles = vehiclesResult.rows[0];
     const fuelCurrent = fuelCurrentResult.rows[0];
@@ -158,6 +192,8 @@ export async function getDashboardKPIs(req: Request, res: Response) {
     const maintenancePrevious = maintenancePreviousResult.rows[0];
     const topCostVehicles = topCostVehiclesResult.rows;
     const maintenanceRecords = maintenanceRecordsResult.rows;
+    const expenseDistribution = expenseDistributionResult.rows;
+    const kmPerBase = kmPerBaseResult.rows;
 
     // Calcular mudanças percentuais
     const calcChange = (current: number, previous: number) => {
@@ -273,8 +309,16 @@ export async function getDashboardKPIs(req: Request, res: Response) {
         date: m.date,
         cost: parseFloat(m.cost) || 0
       })),
-      kmPerBase: [],
-      expenseDistribution: [],
+      kmPerBase: kmPerBase.map(k => ({
+        name: k.name,
+        km: parseFloat(k.km) || 0,
+        vehicles: parseInt(k.vehicles) || 0
+      })),
+      expenseDistribution: expenseDistribution.map(e => ({
+        category: e.category,
+        value: parseFloat(e.value) || 0,
+        color: e.color
+      })),
       updateTime: new Date().toLocaleString('pt-BR'),
       period: formattedMonth
     };
