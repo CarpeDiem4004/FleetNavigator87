@@ -130,7 +130,7 @@ export default function ExecutiveDashboard() {
     }
 
     // Tratar kpis como array se for necessário
-    let kpisToRender = [];
+    let kpisToRender: any[] = [];
     if (Array.isArray(dashboardData.kpis)) {
       kpisToRender = dashboardData.kpis;
     } else if (typeof dashboardData.kpis === 'object') {
@@ -139,7 +139,7 @@ export default function ExecutiveDashboard() {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {kpisToRender.map((item: any, index: number) => {
+        {kpisToRender.map((item, index: number) => {
           const kpi = Array.isArray(dashboardData.kpis) ? item : item[1];
           const key = Array.isArray(dashboardData.kpis) ? `kpi-${index}` : item[0];
           
@@ -445,7 +445,7 @@ export default function ExecutiveDashboard() {
                 unit="R$"
                 previousValue={0}
                 changePercentage={0}
-                trend="stable"
+                trend="neutral"
                 isPositive={false}
                 icon={<DollarSign className="h-5 w-5" />}
                 loading={loading}
@@ -458,7 +458,7 @@ export default function ExecutiveDashboard() {
                 unit="R$"
                 previousValue={0}
                 changePercentage={0}
-                trend="stable"
+                trend="neutral"
                 isPositive={false}
                 icon={<Wrench className="h-5 w-5" />}
                 loading={loading}
@@ -471,7 +471,7 @@ export default function ExecutiveDashboard() {
                 unit="R$"
                 previousValue={0}
                 changePercentage={0}
-                trend="stable"
+                trend="neutral"
                 isPositive={false}
                 icon={<BarChart2 className="h-5 w-5" />}
                 loading={loading}
@@ -574,8 +574,7 @@ export default function ExecutiveDashboard() {
               
               <KpiCard
                 title="Solicitações Abertas/Concluídas"
-                value={"12/34"}
-                previousValue={"18/28"}
+                value="12/34"
                 icon={<TrendingUp className="h-5 w-5" />}
                 loading={loading}
                 color="primary"

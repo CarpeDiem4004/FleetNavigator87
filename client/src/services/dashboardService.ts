@@ -63,6 +63,11 @@ export interface DashboardData {
   maintenanceTime: TimeSeriesData[];
   fuelEfficiency: TimeSeriesData[];
   kmPerBase: BaseKm[];
+  expenseDistribution?: Array<{category: string; value: number; color: string}>;
+  topVehiclesCost?: Array<{plate: string; model: string; totalCost: number; avgCostPerKm: number; totalKm: number}>;
+  recentMaintenances?: Array<{date: string; vehiclePlate: string; vehicleModel: string; base: string; status: string; cost: number}>;
+  referenceDate?: string;
+  updateTime?: string;
 }
 
 // Obter total de veículos cadastrados
