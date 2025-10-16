@@ -23,7 +23,7 @@ interface PainelPrincipalData {
 }
 
 /**
- * Retorna os KPIs do dashboard
+ * Retorna os KPIs do dashboard no formato esperado pelo frontend
  */
 export async function getDashboardKPIs(req: Request, res: Response) {
   try {
@@ -34,42 +34,18 @@ export async function getDashboardKPIs(req: Request, res: Response) {
       targetDate = new Date(req.query.date as string);
     }
     
-    // Datas do mês atual
+    // Datas do mês atual e anterior
     const startOfTargetMonth = startOfMonth(targetDate);
     const endOfTargetMonth = endOfMonth(targetDate);
+    const startOfPreviousMonth = startOfMonth(subMonths(targetDate, 1));
+    const endOfPreviousMonth = endOfMonth(subMonths(targetDate, 1));
     
     // Formatar o mês atual para exibição (ex: "abril 2025")
     const formattedMonth = format(targetDate, 'MMMM yyyy', { locale: ptBR });
 
-    // Calcular dados reais do banco de dados
-    // 1. Buscar dados de manutenção (car_receptions + maintenance_orders)
-    const carReceptionsResult = await pool.query(
-      `SELECT 
-        COUNT(*) as total_car_receptions,
-        COUNT(CASE WHEN status IN ('recebido', 'em_analise', 'aguardando_pecas', 'em_reparo') THEN 1 END) as veiculos_em_manutencao,
-        COUNT(CASE WHEN status = 'pronto' THEN 1 END) as veiculos_prontos,
-        COUNT(CASE WHEN status = 'entregue' THEN 1 END) as veiculos_entregues,
-        SUM(CASE WHEN labor_cost IS NOT NULL THEN labor_cost::numeric ELSE 0 END + CASE WHEN parts_cost IS NOT NULL THEN parts_cost::numeric ELSE 0 END) as custo_total_car_receptions,
-        AVG(CASE WHEN created_at IS NOT NULL AND (delivered_date IS NOT NULL OR completed_date IS NOT NULL) 
-                 THEN EXTRACT(days FROM COALESCE(delivered_date, completed_date) - created_at) 
-                 END) as tempo_medio_manutencao
-       FROM car_receptions 
-       WHERE created_at >= $1 AND created_at <= $2`,
-      [startOfTargetMonth.toISOString(), endOfTargetMonth.toISOString()]
-    );
-
-    // 2. Buscar dados da tabela maintenance_orders (se existir)
-    const maintenanceOrdersResult = await pool.query(
-      `SELECT 
-        COUNT(*) as total_maintenance_orders,
-        COUNT(CASE WHEN status IN ('pendente', 'em_andamento', 'aguardando_pecas', 'aguardando_orcamento') THEN 1 END) as manutencoes_pendentes,
-        SUM(CASE WHEN actual_cost IS NOT NULL THEN actual_cost::numeric ELSE 0 END) as custo_total_maintenance
-       FROM maintenance_orders 
-       WHERE created_at >= $1 AND created_at <= $2`,
-      [startOfTargetMonth.toISOString(), endOfTargetMonth.toISOString()]
-    );
-
-    // 3. Buscar dados de veículos ativos
+    // === CONSULTAS PARALELAS ===
+    
+    // 1. Veículos
     const vehiclesResult = await pool.query(
       `SELECT 
         COUNT(*) as total_vehicles,
@@ -79,87 +55,177 @@ export async function getDashboardKPIs(req: Request, res: Response) {
        FROM vehicles`
     );
 
-    // 4. Buscar dados de combustível do mês atual
-    const fuelResult = await pool.query(
+    // 2. Combustível mês atual
+    const fuelCurrentResult = await pool.query(
       `SELECT 
-        COALESCE(SUM(quantidade_litros), 0) as total_litros_diesel,
-        COALESCE(SUM(km), 0) as total_km_frota,
+        COALESCE(SUM(quantidade_litros), 0) as total_litros,
+        COALESCE(SUM(km), 0) as total_km,
+        COALESCE(SUM(valor_total), 0) as custo_total,
         CASE 
           WHEN SUM(quantidade_litros) > 0 THEN ROUND(SUM(km)::numeric / SUM(quantidade_litros)::numeric, 2) 
           ELSE 0 
-        END as media_diesel_km
+        END as media_km_litro
        FROM historico_consolidado_abastecimentos 
        WHERE created_at >= $1 AND created_at <= $2`,
       [startOfTargetMonth.toISOString(), endOfTargetMonth.toISOString()]
     );
 
-    // Processar os resultados
-    const carReceptions = carReceptionsResult.rows[0];
-    const maintenanceOrders = maintenanceOrdersResult.rows[0];
-    const vehicles = vehiclesResult.rows[0];
-    const fuel = fuelResult.rows[0];
-
-    // Calcular métricas consolidadas
-    const totalManutencoes = parseInt(carReceptions.total_car_receptions) + parseInt(maintenanceOrders.total_maintenance_orders);
-    const custoManutencoes = parseFloat(carReceptions.custo_total_car_receptions || 0) + parseFloat(maintenanceOrders.custo_total_maintenance || 0);
-    const veiculosEmManutencao = parseInt(carReceptions.veiculos_em_manutencao) + parseInt(maintenanceOrders.manutencoes_pendentes);
-    const tempoMedioManutencao = parseFloat(carReceptions.tempo_medio_manutencao || 0);
-
-    // Tentativa de usar a tabela painel_principal para dados atualizados pelo cron
-    const painelResult = await pool.query(
-      `SELECT * FROM painel_principal 
-       WHERE data >= $1
-       ORDER BY data DESC
-       LIMIT 1`,
-      [startOfTargetMonth.toISOString()]
+    // 3. Combustível mês anterior
+    const fuelPreviousResult = await pool.query(
+      `SELECT 
+        COALESCE(SUM(quantidade_litros), 0) as total_litros,
+        COALESCE(SUM(km), 0) as total_km,
+        COALESCE(SUM(valor_total), 0) as custo_total,
+        CASE 
+          WHEN SUM(quantidade_litros) > 0 THEN ROUND(SUM(km)::numeric / SUM(quantidade_litros)::numeric, 2) 
+          ELSE 0 
+        END as media_km_litro
+       FROM historico_consolidado_abastecimentos 
+       WHERE created_at >= $1 AND created_at <= $2`,
+      [startOfPreviousMonth.toISOString(), endOfPreviousMonth.toISOString()]
     );
 
-    if (painelResult.rows && painelResult.rows.length > 0) {
-      // Se temos dados do painel principal, combinamos com os dados reais
-      const painelInfo = painelResult.rows[0];
-      
-      // Atualizar com dados reais quando disponíveis
-      const updatedPainelInfo = {
-        ...painelInfo,
-        total_manutencoes: totalManutencoes || painelInfo.total_manutencoes,
-        custo_manutencoes: custoManutencoes || painelInfo.custo_manutencoes,
-        tempo_medio_manutencao: tempoMedioManutencao || painelInfo.tempo_medio_manutencao,
-        veiculos_ativos: parseInt(vehicles.veiculos_ativos) || painelInfo.veiculos_ativos,
-        veiculos_manutencao: veiculosEmManutencao || painelInfo.veiculos_manutencao,
-        total_km_frota: parseInt(fuel.total_km_frota) || painelInfo.total_km_frota,
-        total_litros_diesel: parseInt(fuel.total_litros_diesel) || painelInfo.total_litros_diesel,
-        media_diesel_km: parseFloat(fuel.media_diesel_km) || painelInfo.media_diesel_km,
-        mes_referencia: formattedMonth,
-        fonte: "dados_reais_combinados"
-      };
-      
-      return res.status(200).json(updatedPainelInfo);
-    } else {
-      // Usar dados calculados dos bancos reais
-      const dashboardData: PainelPrincipalData = {
-        id: 0,
-        data: format(targetDate, 'yyyy-MM-dd'),
-        total_km_frota: parseInt(fuel.total_km_frota) || 0,
-        total_litros_diesel: parseInt(fuel.total_litros_diesel) || 0,
-        media_diesel_km: parseFloat(fuel.media_diesel_km) || 0,
-        total_manutencoes: totalManutencoes || 0,
-        custo_manutencoes: custoManutencoes || 0,
-        tempo_medio_manutencao: tempoMedioManutencao || 0,
-        veiculos_ativos: parseInt(vehicles.veiculos_ativos) || 0,
-        veiculos_manutencao: veiculosEmManutencao || 0,
-        economia_combustivel: 0, // Calcular se necessário
-        tendencia_consumo: 'estável',
-        alertas_criticos: 0, // Calcular se necessário
-        pneus_substituidos: 0, // Calcular se necessário
-        base_id: 1
-      };
-      
-      return res.status(200).json({
-        ...dashboardData,
-        mes_referencia: formattedMonth,
-        fonte: "dados_reais_calculados"
-      });
-    }
+    // 4. Manutenção mês atual (car_receptions)
+    const maintenanceCurrentResult = await pool.query(
+      `SELECT 
+        COUNT(*) as total_manutencoes,
+        COUNT(CASE WHEN status IN ('recebido', 'em_analise', 'aguardando_pecas', 'em_reparo') THEN 1 END) as em_andamento,
+        SUM(COALESCE(labor_cost::numeric, 0) + COALESCE(parts_cost::numeric, 0)) as custo_total,
+        AVG(CASE WHEN created_at IS NOT NULL AND (delivered_date IS NOT NULL OR completed_date IS NOT NULL) 
+                 THEN EXTRACT(days FROM COALESCE(delivered_date, completed_date) - created_at) 
+                 END) as tempo_medio_dias
+       FROM car_receptions 
+       WHERE created_at >= $1 AND created_at <= $2`,
+      [startOfTargetMonth.toISOString(), endOfTargetMonth.toISOString()]
+    );
+
+    // 5. Manutenção mês anterior
+    const maintenancePreviousResult = await pool.query(
+      `SELECT 
+        COUNT(*) as total_manutencoes,
+        SUM(COALESCE(labor_cost::numeric, 0) + COALESCE(parts_cost::numeric, 0)) as custo_total,
+        AVG(CASE WHEN created_at IS NOT NULL AND (delivered_date IS NOT NULL OR completed_date IS NOT NULL) 
+                 THEN EXTRACT(days FROM COALESCE(delivered_date, completed_date) - created_at) 
+                 END) as tempo_medio_dias
+       FROM car_receptions 
+       WHERE created_at >= $1 AND created_at <= $2`,
+      [startOfPreviousMonth.toISOString(), endOfPreviousMonth.toISOString()]
+    );
+
+    // Processar resultados
+    const vehicles = vehiclesResult.rows[0];
+    const fuelCurrent = fuelCurrentResult.rows[0];
+    const fuelPrevious = fuelPreviousResult.rows[0];
+    const maintenanceCurrent = maintenanceCurrentResult.rows[0];
+    const maintenancePrevious = maintenancePreviousResult.rows[0];
+
+    // Calcular mudanças percentuais
+    const calcChange = (current: number, previous: number) => {
+      if (previous === 0) return 0;
+      return ((current - previous) / previous) * 100;
+    };
+
+    const totalKmCurrent = parseFloat(fuelCurrent.total_km) || 0;
+    const totalKmPrevious = parseFloat(fuelPrevious.total_km) || 0;
+    const totalLitrosCurrent = parseFloat(fuelCurrent.total_litros) || 0;
+    const totalLitrosPrevious = parseFloat(fuelPrevious.total_litros) || 0;
+    const custoFuelCurrent = parseFloat(fuelCurrent.custo_total) || 0;
+    const custoFuelPrevious = parseFloat(fuelPrevious.custo_total) || 0;
+    const mediaKmLitroCurrent = parseFloat(fuelCurrent.media_km_litro) || 0;
+    const mediaKmLitroPrevious = parseFloat(fuelPrevious.media_km_litro) || 0;
+
+    const totalManutencoesCurrent = parseInt(maintenanceCurrent.total_manutencoes) || 0;
+    const totalManutencoesPrevious = parseInt(maintenancePrevious.total_manutencoes) || 0;
+    const custoManutCurrent = parseFloat(maintenanceCurrent.custo_total) || 0;
+    const custoManutPrevious = parseFloat(maintenancePrevious.custo_total) || 0;
+    const tempoMedioCurrent = parseFloat(maintenanceCurrent.tempo_medio_dias) || 0;
+    const tempoMedioPrevious = parseFloat(maintenancePrevious.tempo_medio_dias) || 0;
+
+    // Montar resposta no formato esperado
+    const response = {
+      kpis: [
+        {
+          title: 'Veículos Ativos',
+          value: parseInt(vehicles.veiculos_ativos) || 0,
+          previousValue: parseInt(vehicles.veiculos_ativos) || 0,
+          changePercentage: 0,
+          trend: 'neutral' as const,
+          isPositive: true,
+          unit: 'veículos'
+        },
+        {
+          title: 'KM Percorridos',
+          value: totalKmCurrent,
+          previousValue: totalKmPrevious,
+          changePercentage: calcChange(totalKmCurrent, totalKmPrevious),
+          trend: totalKmCurrent > totalKmPrevious ? 'up' as const : totalKmCurrent < totalKmPrevious ? 'down' as const : 'neutral' as const,
+          isPositive: totalKmCurrent > totalKmPrevious,
+          unit: 'km'
+        },
+        {
+          title: 'Consumo Diesel',
+          value: totalLitrosCurrent,
+          previousValue: totalLitrosPrevious,
+          changePercentage: calcChange(totalLitrosCurrent, totalLitrosPrevious),
+          trend: totalLitrosCurrent > totalLitrosPrevious ? 'up' as const : totalLitrosCurrent < totalLitrosPrevious ? 'down' as const : 'neutral' as const,
+          isPositive: false,
+          unit: 'L'
+        },
+        {
+          title: 'Média km/L',
+          value: mediaKmLitroCurrent,
+          previousValue: mediaKmLitroPrevious,
+          changePercentage: calcChange(mediaKmLitroCurrent, mediaKmLitroPrevious),
+          trend: mediaKmLitroCurrent > mediaKmLitroPrevious ? 'up' as const : mediaKmLitroCurrent < mediaKmLitroPrevious ? 'down' as const : 'neutral' as const,
+          isPositive: mediaKmLitroCurrent > mediaKmLitroPrevious,
+          unit: 'km/L'
+        },
+        {
+          title: 'Custo Combustível',
+          value: custoFuelCurrent,
+          previousValue: custoFuelPrevious,
+          changePercentage: calcChange(custoFuelCurrent, custoFuelPrevious),
+          trend: custoFuelCurrent > custoFuelPrevious ? 'up' as const : custoFuelCurrent < custoFuelPrevious ? 'down' as const : 'neutral' as const,
+          isPositive: custoFuelCurrent < custoFuelPrevious,
+          unit: 'R$'
+        },
+        {
+          title: 'Manutenções',
+          value: totalManutencoesCurrent,
+          previousValue: totalManutencoesPrevious,
+          changePercentage: calcChange(totalManutencoesCurrent, totalManutencoesPrevious),
+          trend: totalManutencoesCurrent > totalManutencoesPrevious ? 'up' as const : totalManutencoesCurrent < totalManutencoesPrevious ? 'down' as const : 'neutral' as const,
+          isPositive: totalManutencoesCurrent < totalManutencoesPrevious,
+          unit: 'ordens'
+        },
+        {
+          title: 'Custo Manutenção',
+          value: custoManutCurrent,
+          previousValue: custoManutPrevious,
+          changePercentage: calcChange(custoManutCurrent, custoManutPrevious),
+          trend: custoManutCurrent > custoManutPrevious ? 'up' as const : custoManutCurrent < custoManutPrevious ? 'down' as const : 'neutral' as const,
+          isPositive: custoManutCurrent < custoManutPrevious,
+          unit: 'R$'
+        },
+        {
+          title: 'Tempo Médio Manutenção',
+          value: tempoMedioCurrent,
+          previousValue: tempoMedioPrevious,
+          changePercentage: calcChange(tempoMedioCurrent, tempoMedioPrevious),
+          trend: tempoMedioCurrent > tempoMedioPrevious ? 'up' as const : tempoMedioCurrent < tempoMedioPrevious ? 'down' as const : 'neutral' as const,
+          isPositive: tempoMedioCurrent < tempoMedioPrevious,
+          unit: 'dias'
+        }
+      ],
+      topCostVehicles: [],
+      maintenanceRecords: [],
+      kmPerBase: [],
+      expenseDistribution: [],
+      updateTime: new Date().toLocaleString('pt-BR'),
+      period: formattedMonth
+    };
+
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Erro ao obter dados do dashboard:', error);
     return res.status(500).json({ 
