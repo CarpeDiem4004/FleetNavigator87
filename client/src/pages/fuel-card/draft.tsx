@@ -130,23 +130,26 @@ export default function FuelCardDraft() {
       
       if (errorCount > 0) {
         toast({
-          title: "Envio parcial",
-          description: `✅ ${successCount} enviadas | ❌ ${errorCount} com erro. Verifique o console do navegador (F12) para detalhes.`,
+          title: `✅ ${successCount} de ${total} solicitações enviadas com sucesso`,
+          description: `⚠️ ${errorCount} solicitação(ões) apresentou erro. Verifique o console (F12) para detalhes dos erros.`,
           variant: "default",
+          duration: 5000,
         });
       } else {
         toast({
-          title: "Envio concluído",
-          description: `${successCount} solicitações enviadas com sucesso!`,
+          title: `🎉 Envio 100% concluído com sucesso!`,
+          description: `✅ Todas as ${successCount} solicitações foram enviadas e registradas no sistema.`,
+          duration: 4000,
         });
       }
       
       setTimeout(() => setLocation("/fuel-card/confirmation"), 1500);
     } else {
       toast({
-        title: "Erro no envio",
-        description: `Nenhuma solicitação foi enviada. Verifique o console (F12) para detalhes: ${errorDetails.join('; ')}`,
+        title: "❌ Erro total no envio",
+        description: `Nenhuma das ${total} solicitação(ões) foi enviada. Detalhes: ${errorDetails.slice(0, 2).join('; ')}${errorDetails.length > 2 ? '...' : ''}`,
         variant: "destructive",
+        duration: 6000,
       });
     }
   };
@@ -266,10 +269,10 @@ export default function FuelCardDraft() {
                   </div>
 
                   {isSending && (
-                    <Alert>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <AlertDescription>
-                        Enviando solicitações... {sendingProgress}%
+                    <Alert className="bg-blue-50 border-blue-200">
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                      <AlertDescription className="text-blue-800 font-medium">
+                        📤 Enviando {Math.round((sendingProgress / 100) * draftRequests.length)} de {draftRequests.length} solicitações... ({sendingProgress}%)
                       </AlertDescription>
                     </Alert>
                   )}
