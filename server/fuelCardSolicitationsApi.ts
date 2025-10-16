@@ -489,6 +489,20 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       });
     }
     
+    if (!data_uso) {
+      return res.status(400).json({
+        success: false,
+        message: 'A data de uso é obrigatória'
+      });
+    }
+    
+    if (!turno || (turno !== 'AM' && turno !== 'PM')) {
+      return res.status(400).json({
+        success: false,
+        message: 'O turno (AM ou PM) é obrigatório'
+      });
+    }
+    
     const query = `
       INSERT INTO solicitacoes_fuel_card
         (placa, km, km_veiculo, tipo_cartao, provedor_cartao, numero_cartao, motorista, solicitante, telefone_celular, observacoes, status, data_solicitacao, valor_solicitado, tipo_combustivel, base, id_rota, origem_tipo, data_uso, turno)

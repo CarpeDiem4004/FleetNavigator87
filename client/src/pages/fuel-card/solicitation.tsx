@@ -62,10 +62,11 @@ const solicitacaoSchema = z.object({
   base_id: z.string()
     .min(1, { message: "Selecione uma base" }),
   observacoes: z.string().optional(),
-  data_uso: z.string().optional(),
+  data_uso: z.string()
+    .min(1, { message: "A data de uso é obrigatória" }),
   turno: z.enum(["AM", "PM"], {
     required_error: "Selecione o turno"
-  }).optional()
+  })
 });
 
 type SolicitacaoValues = z.infer<typeof solicitacaoSchema>;
@@ -162,18 +163,12 @@ export default function FuelCardSolicitation() {
       
       // Prepare data with project/base info
       // CORREÇÃO DE TIMEZONE: Garantir que a data seja enviada no formato brasileiro sem conversão UTC
-      let data_uso_corrigida = null;
-      if (values.data_uso) {
-        // O input type="date" já retorna YYYY-MM-DD, mas vamos garantir o formato correto
-        if (values.data_uso.includes('-')) {
-          data_uso_corrigida = values.data_uso; // Já está no formato correto YYYY-MM-DD
-        } else {
-          // Se por algum motivo vier em outro formato, converter usando função local
-          const date = new Date(values.data_uso);
-          data_uso_corrigida = localDateToDateOnlyString(date);
-        }
-        console.log('[FUEL-CARD-FRONTEND] Data original:', values.data_uso, '→ Data para envio:', data_uso_corrigida);
-      }
+      // Data agora é obrigatória
+      const data_uso_corrigida = values.data_uso.includes('-') 
+        ? values.data_uso 
+        : localDateToDateOnlyString(new Date(values.data_uso));
+      
+      console.log('[FUEL-CARD-FRONTEND] Data original:', values.data_uso, '→ Data para envio:', data_uso_corrigida);
       
       const processedValues = {
         placa: values.placa,
@@ -192,7 +187,7 @@ export default function FuelCardSolicitation() {
         projeto_id: parseInt(values.projeto_id),
         base_id: parseInt(values.base_id),
         data_uso: data_uso_corrigida,
-        turno: values.turno || null
+        turno: values.turno
       };
       
       console.log("Enviando dados da solicitação:", processedValues);
@@ -239,15 +234,10 @@ export default function FuelCardSolicitation() {
       const selectedBase = selectedProject?.bases.find(b => b.id.toString() === values.base_id);
       
       // Prepare data for draft
-      let data_uso_corrigida = null;
-      if (values.data_uso) {
-        if (values.data_uso.includes('-')) {
-          data_uso_corrigida = values.data_uso;
-        } else {
-          const date = new Date(values.data_uso);
-          data_uso_corrigida = localDateToDateOnlyString(date);
-        }
-      }
+      // Garantir formato correto da data (já obrigatória)
+      const data_uso_corrigida = values.data_uso.includes('-') 
+        ? values.data_uso 
+        : localDateToDateOnlyString(new Date(values.data_uso));
       
       addToDraft({
         placa: values.placa,
@@ -266,7 +256,7 @@ export default function FuelCardSolicitation() {
         projeto_id: parseInt(values.projeto_id),
         base_id: parseInt(values.base_id),
         data_uso: data_uso_corrigida,
-        turno: values.turno || null,
+        turno: values.turno,
         projeto_nome: selectedProject?.name,
         base_nome: selectedBase?.base_name
       });
