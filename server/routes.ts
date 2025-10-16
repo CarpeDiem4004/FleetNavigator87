@@ -75,7 +75,7 @@ async function sendWhatsAppNotification(phone: string, message: string) {
     throw error;
   }
 }
-import { getDashboardKPIs, getPainelPrincipal } from "./dashboardApi";
+import { getDashboardKPIs, getPainelPrincipal, getRealFuelConsumption } from "./dashboardApi";
 // middleware de autenticação híbrida já importado abaixo como alias
 import { registerDashboardKpiRoutes } from "./dashboardKpiApi";
 import { getPostosResumo, getPostoDetalhes, registrarEntradaCombustivel, excluirPostoSaoPaulo } from "./postosApi";
@@ -12134,6 +12134,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Novo endpoint para o dashboard executivo - usando getDashboardKPIs
   app.get("/api/dashboard", isAuthenticatedHybrid, getDashboardKPIs);
+  
+  // Endpoint para consumo real de combustível com cálculo baseado em preços
+  app.get("/api/dashboard/fuel-consumption-real", isAuthenticatedHybrid, getRealFuelConsumption);
   
   // Rotas para solicitações de cartão de combustível
   app.get('/api/fuel-card-solicitations', unifiedAuthMiddleware, getFuelCardSolicitations);

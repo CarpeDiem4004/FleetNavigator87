@@ -431,3 +431,152 @@ export async function getPainelPrincipal(req: Request, res: Response) {
     });
   }
 }
+
+/**
+ * Retorna consumo real de combustível calculado com base nos preços por litro
+ */
+export async function getRealFuelConsumption(req: Request, res: Response) {
+  try {
+    // Buscar dados do mês atual ou do mês especificado na query
+    let targetDate = new Date();
+    
+    if (req.query.date) {
+      targetDate = new Date(req.query.date as string);
+    }
+    
+    // Datas do mês atual
+    const startOfTargetMonth = startOfMonth(targetDate);
+    const endOfTargetMonth = endOfMonth(targetDate);
+    
+    // Buscar preços atuais de combustível
+    const precosResult = await pool.query(
+      `SELECT tipo, valor_litro FROM preco_combustivel`
+    );
+    
+    // Criar mapa de preços
+    const precosPorTipo: { [key: string]: number } = {};
+    precosResult.rows.forEach(row => {
+      precosPorTipo[row.tipo.toLowerCase()] = parseFloat(row.valor_litro);
+    });
+    
+    // Buscar solicitações de fuel card atendidas no período
+    const fuelCardQuery = `
+      SELECT 
+        tipo_combustivel,
+        SUM(valor_solicitado::numeric) as valor_total,
+        COUNT(*) as quantidade_registros
+      FROM solicitacoes_fuel_card
+      WHERE status IN ('atendido', 'Recarga Efetuada')
+        AND data_solicitacao >= $1 
+        AND data_solicitacao <= $2
+        AND tipo_combustivel IS NOT NULL
+        AND valor_solicitado > 0
+      GROUP BY tipo_combustivel
+    `;
+    
+    const fuelCardResult = await pool.query(fuelCardQuery, [
+      startOfTargetMonth.toISOString(),
+      endOfTargetMonth.toISOString()
+    ]);
+    
+    // Buscar abastecimentos de postos internos no período
+    const postosQuery = `
+      SELECT 
+        tipo_combustivel,
+        SUM(valor_total) as valor_total,
+        SUM(quantidade_litros) as litros_registrados,
+        COUNT(*) as quantidade_registros
+      FROM historico_consolidado_abastecimentos
+      WHERE created_at >= $1 
+        AND created_at <= $2
+        AND tipo_combustivel IS NOT NULL
+      GROUP BY tipo_combustivel
+    `;
+    
+    const postosResult = await pool.query(postosQuery, [
+      startOfTargetMonth.toISOString(),
+      endOfTargetMonth.toISOString()
+    ]);
+    
+    // Calcular totais e litros reais
+    const consumoPorTipo: any[] = [];
+    let valorTotalGeral = 0;
+    let litrosTotalGeral = 0;
+    
+    // Processar fuel cards (calcular litros baseado no preço)
+    fuelCardResult.rows.forEach(row => {
+      const tipo = row.tipo_combustivel.toLowerCase();
+      const valorTotal = parseFloat(row.valor_total);
+      const preco = precosPorTipo[tipo] || precosPorTipo['diesel'] || 6.39;
+      const litrosCalculados = valorTotal / preco;
+      
+      consumoPorTipo.push({
+        tipo: row.tipo_combustivel,
+        origem: 'fuel_card',
+        valor_total: valorTotal,
+        litros_calculados: Math.round(litrosCalculados * 100) / 100,
+        preco_litro: preco,
+        quantidade_registros: parseInt(row.quantidade_registros)
+      });
+      
+      valorTotalGeral += valorTotal;
+      litrosTotalGeral += litrosCalculados;
+    });
+    
+    // Processar postos internos (usar litros registrados + calcular se faltarem)
+    postosResult.rows.forEach(row => {
+      const tipo = row.tipo_combustivel.toLowerCase();
+      const valorTotal = parseFloat(row.valor_total) || 0;
+      const litrosRegistrados = parseFloat(row.litros_registrados) || 0;
+      const preco = precosPorTipo[tipo] || precosPorTipo['diesel'] || 6.39;
+      
+      // Se não houver litros registrados, calcular baseado no valor
+      const litros = litrosRegistrados > 0 
+        ? litrosRegistrados 
+        : valorTotal / preco;
+      
+      consumoPorTipo.push({
+        tipo: row.tipo_combustivel,
+        origem: 'posto_interno',
+        valor_total: valorTotal,
+        litros_reais: Math.round(litros * 100) / 100,
+        litros_registrados: litrosRegistrados,
+        preco_litro: preco,
+        quantidade_registros: parseInt(row.quantidade_registros)
+      });
+      
+      valorTotalGeral += valorTotal;
+      litrosTotalGeral += litros;
+    });
+    
+    // Calcular custo médio por litro
+    const custoMedioPorLitro = litrosTotalGeral > 0 
+      ? Math.round((valorTotalGeral / litrosTotalGeral) * 100) / 100
+      : 0;
+    
+    return res.status(200).json({
+      success: true,
+      data: {
+        periodo: {
+          inicio: startOfTargetMonth.toISOString().split('T')[0],
+          fim: endOfTargetMonth.toISOString().split('T')[0]
+        },
+        resumo: {
+          valor_total: Math.round(valorTotalGeral * 100) / 100,
+          litros_total: Math.round(litrosTotalGeral * 100) / 100,
+          custo_medio_por_litro: custoMedioPorLitro
+        },
+        consumo_por_tipo: consumoPorTipo,
+        precos_referencia: precosPorTipo
+      }
+    });
+    
+  } catch (error) {
+    console.error("Erro ao buscar consumo real de combustível:", error);
+    return res.status(500).json({ 
+      success: false,
+      message: "Erro ao buscar consumo real de combustível", 
+      error: String(error) 
+    });
+  }
+}
