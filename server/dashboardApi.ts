@@ -112,23 +112,32 @@ export async function getDashboardKPIs(req: Request, res: Response) {
       [startOfPreviousMonth.toISOString(), endOfPreviousMonth.toISOString()]
     );
 
-    // 6. Top Veículos por Custo Operacional (combustível + manutenção)
+    // 6. Top Veículos por Custo Operacional (combustível + manutenção) - com CTEs para evitar duplicação
     const topCostVehiclesResult = await pool.query(
-      `SELECT 
+      `WITH fuel_costs AS (
+        SELECT placa, SUM(valor_total) as custo_combustivel
+        FROM historico_consolidado_abastecimentos
+        WHERE created_at >= $1 AND created_at <= $2
+        GROUP BY placa
+      ),
+      maintenance_costs AS (
+        SELECT placa, SUM(COALESCE(labor_cost::numeric, 0) + COALESCE(parts_cost::numeric, 0)) as custo_manutencao
+        FROM car_receptions
+        WHERE created_at >= $1 AND created_at <= $2
+        GROUP BY placa
+      )
+      SELECT 
         v.placa,
         v.modelo,
-        COALESCE(SUM(hca.valor_total), 0) as custo_combustivel,
-        COALESCE(SUM(cr.labor_cost::numeric + cr.parts_cost::numeric), 0) as custo_manutencao,
-        (COALESCE(SUM(hca.valor_total), 0) + COALESCE(SUM(cr.labor_cost::numeric + cr.parts_cost::numeric), 0)) as custo_total
-       FROM vehicles v
-       LEFT JOIN historico_consolidado_abastecimentos hca ON v.placa = hca.placa
-         AND hca.created_at >= $1 AND hca.created_at <= $2
-       LEFT JOIN car_receptions cr ON v.placa = cr.placa
-         AND cr.created_at >= $1 AND cr.created_at <= $2
-       GROUP BY v.placa, v.modelo
-       HAVING (COALESCE(SUM(hca.valor_total), 0) + COALESCE(SUM(cr.labor_cost::numeric + cr.parts_cost::numeric), 0)) > 0
-       ORDER BY custo_total DESC
-       LIMIT 10`,
+        COALESCE(fc.custo_combustivel, 0) as custo_combustivel,
+        COALESCE(mc.custo_manutencao, 0) as custo_manutencao,
+        (COALESCE(fc.custo_combustivel, 0) + COALESCE(mc.custo_manutencao, 0)) as custo_total
+      FROM vehicles v
+      LEFT JOIN fuel_costs fc ON v.placa = fc.placa
+      LEFT JOIN maintenance_costs mc ON v.placa = mc.placa
+      WHERE (COALESCE(fc.custo_combustivel, 0) + COALESCE(mc.custo_manutencao, 0)) > 0
+      ORDER BY custo_total DESC
+      LIMIT 10`,
       [startOfTargetMonth.toISOString(), endOfTargetMonth.toISOString()]
     );
 
@@ -169,12 +178,11 @@ export async function getDashboardKPIs(req: Request, res: Response) {
       [startOfTargetMonth.toISOString(), endOfTargetMonth.toISOString()]
     );
 
-    // 9. KM por Base/Projeto
-    const kmPerBaseResult = await pool.query(
+    // 9. KM por Base/Projeto (mês atual)
+    const kmPerBaseCurrentResult = await pool.query(
       `SELECT 
-        COALESCE(p.nome, 'Sem Projeto') as name,
-        COALESCE(SUM(hca.km), 0) as km,
-        COUNT(DISTINCT hca.placa) as vehicles
+        COALESCE(p.nome, 'Sem Projeto') as base,
+        COALESCE(SUM(hca.km), 0) as km
        FROM historico_consolidado_abastecimentos hca
        LEFT JOIN projetos p ON hca.projeto = p.nome
        WHERE hca.created_at >= $1 AND hca.created_at <= $2
@@ -182,6 +190,18 @@ export async function getDashboardKPIs(req: Request, res: Response) {
        ORDER BY km DESC
        LIMIT 10`,
       [startOfTargetMonth.toISOString(), endOfTargetMonth.toISOString()]
+    );
+
+    // 10. KM por Base/Projeto (mês anterior)
+    const kmPerBasePreviousResult = await pool.query(
+      `SELECT 
+        COALESCE(p.nome, 'Sem Projeto') as base,
+        COALESCE(SUM(hca.km), 0) as km
+       FROM historico_consolidado_abastecimentos hca
+       LEFT JOIN projetos p ON hca.projeto = p.nome
+       WHERE hca.created_at >= $1 AND hca.created_at <= $2
+       GROUP BY p.nome`,
+      [startOfPreviousMonth.toISOString(), endOfPreviousMonth.toISOString()]
     );
 
     // Processar resultados
@@ -193,7 +213,8 @@ export async function getDashboardKPIs(req: Request, res: Response) {
     const topCostVehicles = topCostVehiclesResult.rows;
     const maintenanceRecords = maintenanceRecordsResult.rows;
     const expenseDistribution = expenseDistributionResult.rows;
-    const kmPerBase = kmPerBaseResult.rows;
+    const kmPerBaseCurrent = kmPerBaseCurrentResult.rows;
+    const kmPerBasePrevious = kmPerBasePreviousResult.rows;
 
     // Calcular mudanças percentuais
     const calcChange = (current: number, previous: number) => {
@@ -309,11 +330,14 @@ export async function getDashboardKPIs(req: Request, res: Response) {
         date: m.date,
         cost: parseFloat(m.cost) || 0
       })),
-      kmPerBase: kmPerBase.map(k => ({
-        name: k.name,
-        km: parseFloat(k.km) || 0,
-        vehicles: parseInt(k.vehicles) || 0
-      })),
+      kmPerBase: kmPerBaseCurrent.map(current => {
+        const previous = kmPerBasePrevious.find(p => p.base === current.base);
+        return {
+          base: current.base,
+          currentMonth: parseFloat(current.km) || 0,
+          previousMonth: previous ? parseFloat(previous.km) || 0 : 0
+        };
+      }),
       expenseDistribution: expenseDistribution.map(e => ({
         category: e.category,
         value: parseFloat(e.value) || 0,

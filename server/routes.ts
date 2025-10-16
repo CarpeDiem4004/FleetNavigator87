@@ -77,7 +77,6 @@ async function sendWhatsAppNotification(phone: string, message: string) {
 }
 import { getDashboardKPIs, getPainelPrincipal } from "./dashboardApi";
 // middleware de autenticação híbrida já importado abaixo como alias
-import { getExecutiveDashboard } from "./executiveDashboard";
 import { registerDashboardKpiRoutes } from "./dashboardKpiApi";
 import { getPostosResumo, getPostoDetalhes, registrarEntradaCombustivel, excluirPostoSaoPaulo } from "./postosApi";
 import { 
@@ -12130,8 +12129,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint legado para KPIs do dashboard - manter por compatibilidade
   app.get("/api/dashboard/kpis", isAuthenticatedHybrid, getDashboardKPIs);
   
-  // Novo endpoint para o dashboard executivo
-  app.get("/api/dashboard", isAuthenticatedHybrid, getExecutiveDashboard);
+  // Novo endpoint para o dashboard executivo - usando getDashboardKPIs
+  app.get("/api/dashboard", isAuthenticatedHybrid, getDashboardKPIs);
   
   // Rotas para solicitações de cartão de combustível
   app.get('/api/fuel-card-solicitations', unifiedAuthMiddleware, getFuelCardSolicitations);
