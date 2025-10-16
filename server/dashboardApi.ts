@@ -112,12 +112,52 @@ export async function getDashboardKPIs(req: Request, res: Response) {
       [startOfPreviousMonth.toISOString(), endOfPreviousMonth.toISOString()]
     );
 
+    // 6. Top Veículos por Custo Operacional (combustível + manutenção)
+    const topCostVehiclesResult = await pool.query(
+      `SELECT 
+        v.placa,
+        v.modelo,
+        COALESCE(SUM(hca.valor_total), 0) as custo_combustivel,
+        COALESCE(SUM(cr.labor_cost::numeric + cr.parts_cost::numeric), 0) as custo_manutencao,
+        (COALESCE(SUM(hca.valor_total), 0) + COALESCE(SUM(cr.labor_cost::numeric + cr.parts_cost::numeric), 0)) as custo_total
+       FROM vehicles v
+       LEFT JOIN historico_consolidado_abastecimentos hca ON v.placa = hca.placa
+         AND hca.created_at >= $1 AND hca.created_at <= $2
+       LEFT JOIN car_receptions cr ON v.placa = cr.placa
+         AND cr.created_at >= $1 AND cr.created_at <= $2
+       GROUP BY v.placa, v.modelo
+       HAVING (COALESCE(SUM(hca.valor_total), 0) + COALESCE(SUM(cr.labor_cost::numeric + cr.parts_cost::numeric), 0)) > 0
+       ORDER BY custo_total DESC
+       LIMIT 10`,
+      [startOfTargetMonth.toISOString(), endOfTargetMonth.toISOString()]
+    );
+
+    // 7. Manutenções Recentes
+    const maintenanceRecordsResult = await pool.query(
+      `SELECT 
+        cr.id,
+        cr.placa,
+        v.modelo,
+        cr.tipo_servico as service_type,
+        cr.status,
+        cr.created_at as date,
+        (COALESCE(cr.labor_cost::numeric, 0) + COALESCE(cr.parts_cost::numeric, 0)) as cost
+       FROM car_receptions cr
+       LEFT JOIN vehicles v ON cr.placa = v.placa
+       WHERE cr.created_at >= $1 AND cr.created_at <= $2
+       ORDER BY cr.created_at DESC
+       LIMIT 10`,
+      [startOfTargetMonth.toISOString(), endOfTargetMonth.toISOString()]
+    );
+
     // Processar resultados
     const vehicles = vehiclesResult.rows[0];
     const fuelCurrent = fuelCurrentResult.rows[0];
     const fuelPrevious = fuelPreviousResult.rows[0];
     const maintenanceCurrent = maintenanceCurrentResult.rows[0];
     const maintenancePrevious = maintenancePreviousResult.rows[0];
+    const topCostVehicles = topCostVehiclesResult.rows;
+    const maintenanceRecords = maintenanceRecordsResult.rows;
 
     // Calcular mudanças percentuais
     const calcChange = (current: number, previous: number) => {
@@ -217,8 +257,22 @@ export async function getDashboardKPIs(req: Request, res: Response) {
           unit: 'dias'
         }
       ],
-      topCostVehicles: [],
-      maintenanceRecords: [],
+      topCostVehicles: topCostVehicles.map(v => ({
+        placa: v.placa,
+        modelo: v.modelo,
+        fuelCost: parseFloat(v.custo_combustivel) || 0,
+        maintenanceCost: parseFloat(v.custo_manutencao) || 0,
+        totalCost: parseFloat(v.custo_total) || 0
+      })),
+      maintenanceRecords: maintenanceRecords.map(m => ({
+        id: m.id,
+        placa: m.placa,
+        vehicle: m.modelo || m.placa,
+        serviceType: m.service_type || 'N/A',
+        status: m.status,
+        date: m.date,
+        cost: parseFloat(m.cost) || 0
+      })),
       kmPerBase: [],
       expenseDistribution: [],
       updateTime: new Date().toLocaleString('pt-BR'),
