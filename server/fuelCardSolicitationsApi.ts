@@ -388,8 +388,11 @@ function normalizeStatus(status: string, origem: string): string {
  * Cria uma nova solicitação de cartão de combustível
  */
 export async function createFuelCardSolicitation(req: Request, res: Response) {
+  const requestId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+  console.log(`🚀 [BOLSÃO-BACKEND-${requestId}] Nova solicitação recebida`);
+  
   try {
-    console.log("Corpo da requisição completo:", req.body);
+    console.log(`📦 [BOLSÃO-BACKEND-${requestId}] Corpo da requisição:`, JSON.stringify(req.body, null, 2));
     
     let { 
       placa, 
@@ -538,15 +541,26 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       turno || null // Turno (AM/PM)
     ];
     
+    console.log(`🔄 [BOLSÃO-BACKEND-${requestId}] Executando INSERT no banco de dados...`);
     const result = await pool.query(query, values);
+    
+    const createdId = result.rows[0]?.id;
+    console.log(`✅ [BOLSÃO-BACKEND-${requestId}] Solicitação inserida com SUCESSO! ID: ${createdId}, Placa: ${placa}, Valor: ${valorFinal}`);
+    console.log(`📊 [BOLSÃO-BACKEND-${requestId}] Registro completo:`, result.rows[0]);
     
     return res.status(201).json({
       success: true,
       message: 'Solicitação criada com sucesso',
-      data: result.rows[0]
+      data: result.rows[0],
+      id: createdId
     });
   } catch (error: any) {
-    console.error('Erro ao criar solicitação de cartão:', error);
+    console.error(`❌ [BOLSÃO-BACKEND-${requestId}] ERRO ao criar solicitação:`, {
+      mensagem: error.message,
+      stack: error.stack,
+      placa: req.body.placa,
+      valor: req.body.valor_solicitado
+    });
     return res.status(500).json({
       success: false,
       message: 'Erro ao criar solicitação',

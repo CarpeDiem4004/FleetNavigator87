@@ -49,64 +49,103 @@ export default function FuelCardDraft() {
     let successCount = 0;
     let errorCount = 0;
     const total = draftRequests.length;
+    const errorDetails: string[] = [];
+
+    console.log(`🚀 [BOLSÃO] Iniciando envio em lote de ${total} solicitações`);
 
     for (let i = 0; i < draftRequests.length; i++) {
       const request = draftRequests[i];
       
+      console.log(`📤 [BOLSÃO] Enviando ${i + 1}/${total} - Placa: ${request.placa}, Valor: ${request.valor_solicitado}`);
+      
       try {
+        const payload = {
+          placa: request.placa,
+          km: request.km,
+          valor_solicitado: request.valor_solicitado,
+          tipo_cartao: request.tipo_cartao,
+          provedor_cartao: request.provedor_cartao,
+          numero_cartao: request.numero_cartao,
+          tipo_combustivel: request.tipo_combustivel,
+          motorista: request.motorista,
+          solicitante: request.solicitante,
+          telefone_celular: request.telefone_celular,
+          base: request.base,
+          id_rota: request.id_rota,
+          observacoes: request.observacoes,
+          projeto_id: request.projeto_id,
+          base_id: request.base_id,
+          data_uso: request.data_uso,
+          turno: request.turno
+        };
+
+        console.log(`📦 [BOLSÃO] Payload da solicitação ${i + 1}:`, payload);
+
         const response = await fetch("/api/fuel-card-solicitations", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({
-            placa: request.placa,
-            km: request.km,
-            valor_solicitado: request.valor_solicitado,
-            tipo_cartao: request.tipo_cartao,
-            provedor_cartao: request.provedor_cartao,
-            numero_cartao: request.numero_cartao,
-            tipo_combustivel: request.tipo_combustivel,
-            motorista: request.motorista,
-            solicitante: request.solicitante,
-            telefone_celular: request.telefone_celular,
-            base: request.base,
-            id_rota: request.id_rota,
-            observacoes: request.observacoes,
-            projeto_id: request.projeto_id,
-            base_id: request.base_id,
-            data_uso: request.data_uso,
-            turno: request.turno
-          })
+          body: JSON.stringify(payload)
         });
+
+        const responseData = await response.json();
 
         if (response.ok) {
           successCount++;
+          console.log(`✅ [BOLSÃO] Solicitação ${i + 1} enviada com sucesso! ID: ${responseData.id || 'N/A'}`);
         } else {
           errorCount++;
+          const errorMsg = `Placa ${request.placa}: ${responseData.message || 'Erro desconhecido'}`;
+          errorDetails.push(errorMsg);
+          console.error(`❌ [BOLSÃO] Erro na solicitação ${i + 1}:`, {
+            placa: request.placa,
+            status: response.status,
+            erro: responseData.message,
+            resposta_completa: responseData
+          });
         }
       } catch (error) {
-        console.error("Erro ao enviar solicitação:", error);
         errorCount++;
+        const errorMsg = `Placa ${request.placa}: ${error instanceof Error ? error.message : 'Erro de rede'}`;
+        errorDetails.push(errorMsg);
+        console.error(`💥 [BOLSÃO] Exceção ao enviar solicitação ${i + 1}:`, {
+          placa: request.placa,
+          erro: error
+        });
       }
       
       setSendingProgress(Math.round(((i + 1) / total) * 100));
+    }
+
+    console.log(`🏁 [BOLSÃO] Envio concluído - Sucesso: ${successCount}, Erros: ${errorCount}`);
+    if (errorDetails.length > 0) {
+      console.error(`📋 [BOLSÃO] Detalhes dos erros:`, errorDetails);
     }
 
     setIsSending(false);
     
     if (successCount > 0) {
       clearDraft();
-      toast({
-        title: "Envio concluído",
-        description: `${successCount} solicitações enviadas com sucesso${errorCount > 0 ? ` (${errorCount} com erro)` : ''}`,
-      });
+      
+      if (errorCount > 0) {
+        toast({
+          title: "Envio parcial",
+          description: `✅ ${successCount} enviadas | ❌ ${errorCount} com erro. Verifique o console do navegador (F12) para detalhes.`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Envio concluído",
+          description: `${successCount} solicitações enviadas com sucesso!`,
+        });
+      }
       
       setTimeout(() => setLocation("/fuel-card/confirmation"), 1500);
     } else {
       toast({
         title: "Erro no envio",
-        description: "Não foi possível enviar as solicitações",
+        description: `Nenhuma solicitação foi enviada. Verifique o console (F12) para detalhes: ${errorDetails.join('; ')}`,
         variant: "destructive",
       });
     }
