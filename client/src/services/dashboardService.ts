@@ -134,7 +134,7 @@ export async function getKmPerBase(): Promise<BaseKm[]> {
 export async function fetchDashboardData(dateParam?: string): Promise<DashboardData> {
   try {
     // Adiciona parâmetro de data se fornecido
-    const url = dateParam ? `/api/dashboard/executive?date=${dateParam}` : '/api/dashboard/executive';
+    const url = dateParam ? `/api/dashboard?date=${dateParam}` : '/api/dashboard';
     
     const response = await apiRequest('GET', url);
     
