@@ -5232,7 +5232,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             NULL::varchar as horario_abastecimento,
             COALESCE(s.valor_solicitado, 0) as valor_calculado,
             NULL::json as calculo_detalhes,
-            COALESCE(v.cartao_abastecimento, s.numero_cartao, '') as cartao_combustivel
+            COALESCE(v.cartao_abastecimento, s.numero_cartao, '') as cartao_combustivel,
+            s.motivo_negacao
           FROM solicitacoes_fuel_card s
           LEFT JOIN veiculos v ON s.placa = v.placa
 
@@ -5271,7 +5272,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             NULL::varchar as horario_abastecimento,
             COALESCE(fcr.amount, 0) as valor_calculado,
             NULL::json as calculo_detalhes,
-            COALESCE(v.cartao_abastecimento, fcr.card_number, '') as cartao_combustivel
+            COALESCE(v.cartao_abastecimento, fcr.card_number, '') as cartao_combustivel,
+            fcr.rejection_reason as motivo_negacao
           FROM fuel_card_requests fcr
           LEFT JOIN bases b ON fcr.base_id = b.id
           LEFT JOIN veiculos v ON fcr.plate = v.placa
@@ -5311,7 +5313,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             lh.horario_abastecimento,
             COALESCE(lh.valor_calculado::numeric, 0) as valor_calculado,
             NULL::json as calculo_detalhes,
-            COALESCE(v.cartao_abastecimento, lh.numero_cartao, '') as cartao_combustivel
+            COALESCE(v.cartao_abastecimento, lh.numero_cartao, '') as cartao_combustivel,
+            CASE WHEN lh.status = 'rejeitada' THEN lh.observacoes_operador ELSE NULL END as motivo_negacao
           FROM linehall_fuel_card_requests lh
           LEFT JOIN veiculos v ON lh.veiculo_placa = v.placa
 
