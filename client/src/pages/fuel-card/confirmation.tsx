@@ -1,28 +1,112 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Home, CreditCard } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle2, Home, CreditCard, AlertTriangle, XCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+
+interface LocationState {
+  successCount?: number;
+  errorCount?: number;
+  total?: number;
+  errorDetails?: string[];
+}
 
 export default function FuelCardConfirmation() {
+  const [location] = useLocation();
+  const [confirmationData, setConfirmationData] = useState<LocationState>({});
+
+  useEffect(() => {
+    // Recuperar dados do sessionStorage (passados pelo draft.tsx)
+    const storedData = sessionStorage.getItem('fuelCardConfirmation');
+    if (storedData) {
+      try {
+        const parsed = JSON.parse(storedData);
+        setConfirmationData(parsed);
+        // Limpar dados após leitura
+        sessionStorage.removeItem('fuelCardConfirmation');
+      } catch (error) {
+        console.error('Erro ao parsear dados de confirmação:', error);
+      }
+    }
+  }, []);
+
+  const { successCount, errorCount, total, errorDetails } = confirmationData;
+
+  // Determinar se é envio em lote ou individual
+  const isBatchSend = total !== undefined && total > 1;
+  const hasErrors = errorCount !== undefined && errorCount > 0;
+
   return (
     <div className="container mx-auto py-12">
       <div className="max-w-md mx-auto">
-        <Card className="border-green-100 shadow-md">
+        <Card className={hasErrors ? "border-yellow-100 shadow-md" : "border-green-100 shadow-md"}>
           <CardHeader className="text-center pb-4">
             <div className="flex justify-center mb-4">
-              <div className="rounded-full bg-green-100 p-3">
-                <CheckCircle2 className="h-12 w-12 text-green-600" />
+              <div className={`rounded-full ${hasErrors ? 'bg-yellow-100' : 'bg-green-100'} p-3`}>
+                {hasErrors ? (
+                  <AlertTriangle className="h-12 w-12 text-yellow-600" />
+                ) : (
+                  <CheckCircle2 className="h-12 w-12 text-green-600" />
+                )}
               </div>
             </div>
-            <CardTitle className="text-2xl">Solicitação Enviada</CardTitle>
+            <CardTitle className="text-2xl">
+              {isBatchSend ? "Envio em Lote Concluído" : "Solicitação Enviada"}
+            </CardTitle>
             <CardDescription>
-              Sua solicitação de cartão combustível foi registrada com sucesso
+              {isBatchSend ? (
+                hasErrors ? (
+                  `${successCount} de ${total} solicitações enviadas com sucesso`
+                ) : (
+                  `Todas as ${successCount} solicitações foram registradas com sucesso`
+                )
+              ) : (
+                "Sua solicitação de cartão combustível foi registrada com sucesso"
+              )}
             </CardDescription>
           </CardHeader>
           
           <CardContent className="text-center">
+            {/* Estatísticas de envio em lote */}
+            {isBatchSend && (
+              <div className="mb-4 space-y-2">
+                <div className="flex justify-center gap-4">
+                  <Badge variant="default" className="bg-green-600 text-white">
+                    ✓ {successCount} Enviadas
+                  </Badge>
+                  {hasErrors && (
+                    <Badge variant="destructive">
+                      ✗ {errorCount} Erros
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Lista de erros (se houver) */}
+            {hasErrors && errorDetails && errorDetails.length > 0 && (
+              <Alert variant="destructive" className="mb-4 text-left">
+                <XCircle className="h-4 w-4" />
+                <AlertTitle>Placas com erro no envio:</AlertTitle>
+                <AlertDescription>
+                  <ul className="list-disc list-inside mt-2 text-sm space-y-1">
+                    {errorDetails.map((error, index) => (
+                      <li key={index} className="text-red-700">{error}</li>
+                    ))}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
+
             <p className="text-muted-foreground mb-4">
-              Sua solicitação foi encaminhada para análise. Você será notificado quando ela for processada.
+              {isBatchSend && successCount && successCount > 0 ? (
+                `Suas ${successCount} solicitação(ões) foram encaminhadas para análise.`
+              ) : (
+                "Sua solicitação foi encaminhada para análise."
+              )}
+              {" "}Você será notificado quando ela{successCount && successCount > 1 ? 's' : ''} for{successCount && successCount > 1 ? 'em' : ''} processada{successCount && successCount > 1 ? 's' : ''}.
             </p>
             
             <div className="bg-muted p-4 rounded-md mb-4">
@@ -30,15 +114,15 @@ export default function FuelCardConfirmation() {
               <ul className="text-sm text-left space-y-2">
                 <li className="flex items-start">
                   <span className="bg-primary/10 text-primary rounded-full h-5 w-5 flex items-center justify-center text-xs mr-2 mt-0.5">1</span>
-                  <span>Um operador irá analisar sua solicitação</span>
+                  <span>Um operador irá analisar sua{successCount && successCount > 1 ? 's' : ''} solicitação{successCount && successCount > 1 ? 'ões' : ''}</span>
                 </li>
                 <li className="flex items-start">
                   <span className="bg-primary/10 text-primary rounded-full h-5 w-5 flex items-center justify-center text-xs mr-2 mt-0.5">2</span>
-                  <span>Após aprovada, o cartão será atribuído ao veículo</span>
+                  <span>Após aprovada{successCount && successCount > 1 ? 's' : ''}, o{successCount && successCount > 1 ? 's' : ''} cartão{successCount && successCount > 1 ? 'ões' : ''} será{successCount && successCount > 1 ? 'ão' : ''} atribuído{successCount && successCount > 1 ? 's' : ''} ao{successCount && successCount > 1 ? 's' : ''} veículo{successCount && successCount > 1 ? 's' : ''}</span>
                 </li>
                 <li className="flex items-start">
                   <span className="bg-primary/10 text-primary rounded-full h-5 w-5 flex items-center justify-center text-xs mr-2 mt-0.5">3</span>
-                  <span>Você será notificado quando o cartão estiver disponível</span>
+                  <span>Você será notificado quando o{successCount && successCount > 1 ? 's' : ''} cartão{successCount && successCount > 1 ? 'ões' : ''} estiver{successCount && successCount > 1 ? 'em' : ''} disponível{successCount && successCount > 1 ? 'is' : ''}</span>
                 </li>
               </ul>
             </div>

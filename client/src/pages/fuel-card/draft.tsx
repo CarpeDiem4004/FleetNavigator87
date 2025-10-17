@@ -143,7 +143,17 @@ export default function FuelCardDraft() {
         });
       }
       
-      setTimeout(() => setLocation("/fuel-card/confirmation"), 1500);
+      // Passar dados de resultado para a página de confirmação via sessionStorage
+      sessionStorage.setItem('fuelCardConfirmation', JSON.stringify({
+        successCount,
+        errorCount,
+        total,
+        errorDetails: errorDetails.length > 0 ? errorDetails : undefined
+      }));
+      
+      setTimeout(() => {
+        setLocation("/fuel-card/confirmation");
+      }, 1500);
     } else {
       toast({
         title: "❌ Erro total no envio",
