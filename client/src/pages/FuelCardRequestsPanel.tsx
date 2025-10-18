@@ -58,6 +58,7 @@ interface FuelCardSolicitation {
   valor_solicitado: number;
   km_veiculo?: number;
   tipo_cartao?: string;
+  provedor_cartao?: string; // Provedor do cartão (Ticket, Alelo, etc)
   observacoes?: string;
   status: 'Pendente' | 'pendente' | 'Em Análise' | 'em_analise' | 'Recarga Efetuada' | 'atendido' | 'Negado';
   data_solicitacao: string;
@@ -358,21 +359,10 @@ const FuelCardRequestsPanel: React.FC = () => {
   }, [solicitations, searchQuery, statusFilter, projectFilter, baseFilter, dateFilter, fuelDateFilter, projects]);
 
   const pendingSolicitations = useMemo(() => {
-    const pending = filteredSolicitations.filter(s => 
+    return filteredSolicitations.filter(s => 
       s.status === 'Pendente' || s.status === 'pendente' || 
       s.status === 'Em Análise' || s.status === 'em_analise'
     );
-    console.log('📊 [pendingSolicitations] Total:', pending.length);
-    console.log('📊 [pendingSolicitations] Com tipo_cartao:', 
-      pending.filter(s => s.tipo_cartao).length,
-      'detalhes:',
-      pending.filter(s => s.tipo_cartao).map(s => ({ 
-        placa: s.placa, 
-        tipo: s.tipo_cartao, 
-        valor: s.valor_solicitado || s.valor_calculado 
-      }))
-    );
-    return pending;
   }, [filteredSolicitations]);
 
   const completedSolicitations = useMemo(() => {
@@ -414,26 +404,15 @@ const FuelCardRequestsPanel: React.FC = () => {
     }, 0);
   }, []);
 
-  // Função para calcular valores por tipo de cartão
+  // Função para calcular valores por tipo de cartão (provedor)
   const getValuesByCardType = useCallback((solicitations: FuelCardSolicitation[]) => {
-    console.log('🔍 [getValuesByCardType] Total de solicitações:', solicitations.length);
-    console.log('🔍 [getValuesByCardType] Solicitações com tipo_cartao:', 
-      solicitations.filter(s => s.tipo_cartao).map(s => ({ 
-        placa: s.placa, 
-        tipo_cartao: s.tipo_cartao, 
-        valor: s.valor_solicitado || s.valor_calculado 
-      }))
-    );
-    
     const ticket = solicitations
-      .filter(s => s.tipo_cartao?.toLowerCase() === 'ticket')
+      .filter(s => s.provedor_cartao?.toLowerCase() === 'ticket')
       .reduce((total, s) => total + Number(s.valor_solicitado || s.valor_calculado || 0), 0);
     
     const alelo = solicitations
-      .filter(s => s.tipo_cartao?.toLowerCase() === 'alelo')
+      .filter(s => s.provedor_cartao?.toLowerCase() === 'alelo')
       .reduce((total, s) => total + Number(s.valor_solicitado || s.valor_calculado || 0), 0);
-    
-    console.log('💰 [getValuesByCardType] Resultado:', { ticket, alelo, total: ticket + alelo });
     
     return { ticket, alelo, total: ticket + alelo };
   }, []);
@@ -1523,11 +1502,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   {(() => {
-                    const pending = getPendingSolicitations();
-                    const values = getValuesByCardType(pending);
-                    
-                    // DEBUG: Mostrar informações visualmente
-                    const debugInfo = `Total: ${pending.length} sol. | Com tipo: ${pending.filter(s => s.tipo_cartao).length}`;
+                    const values = getValuesByCardType(getPendingSolicitations());
                     
                     return (
                       <div className="space-y-2">
@@ -1544,8 +1519,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                             <span className="font-bold text-purple-700">{formatCurrency(values.alelo)}</span>
                           </div>
                         </div>
-                        <p className="text-xs text-gray-500 mt-2">{debugInfo}</p>
-                        <p className="text-xs text-muted-foreground">Valor pendente de aprovação</p>
+                        <p className="text-xs text-muted-foreground mt-2">Valor pendente de aprovação</p>
                       </div>
                     );
                   })()}
