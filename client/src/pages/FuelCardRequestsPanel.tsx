@@ -1777,10 +1777,28 @@ const FuelCardRequestsPanel: React.FC = () => {
               <DollarSign className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(getApprovedValue(getCompletedSolicitations()))}
-              </div>
-              <p className="text-xs text-muted-foreground">Valor total das recargas aprovadas</p>
+              {(() => {
+                const values = getValuesByCardType(getCompletedSolicitations());
+                
+                return (
+                  <div className="space-y-2">
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatCurrency(values.total)}
+                    </div>
+                    <div className="flex flex-col gap-1 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-blue-600 font-medium">💳 Ticket:</span>
+                        <span className="font-bold text-blue-700">{formatCurrency(values.ticket)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-purple-600 font-medium">💳 Alelo:</span>
+                        <span className="font-bold text-purple-700">{formatCurrency(values.alelo)}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">Valor total das recargas aprovadas</p>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
           
@@ -1974,10 +1992,28 @@ const FuelCardRequestsPanel: React.FC = () => {
               <DollarSign className="h-4 w-4 text-red-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">
-                {formatCurrency(getTotalValue(deniedSolicitations))}
-              </div>
-              <p className="text-xs text-muted-foreground">Valor das solicitações negadas</p>
+              {(() => {
+                const values = getValuesByCardType(deniedSolicitations);
+                
+                return (
+                  <div className="space-y-2">
+                    <div className="text-2xl font-bold text-red-600">
+                      {formatCurrency(values.total)}
+                    </div>
+                    <div className="flex flex-col gap-1 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-blue-600 font-medium">💳 Ticket:</span>
+                        <span className="font-bold text-blue-700">{formatCurrency(values.ticket)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-purple-600 font-medium">💳 Alelo:</span>
+                        <span className="font-bold text-purple-700">{formatCurrency(values.alelo)}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">Valor das solicitações negadas</p>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
           
