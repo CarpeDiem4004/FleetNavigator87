@@ -58,7 +58,7 @@ interface FuelCardSolicitation {
   valor_solicitado: number;
   km_veiculo?: number;
   tipo_cartao?: string;
-  provedor_cartao?: string; // Provedor do cartão (Ticket, Alelo, etc)
+  provedor_cartao?: string; // Provedor do cartão (Ticket, Veloe Go, etc)
   observacoes?: string;
   status: 'Pendente' | 'pendente' | 'Em Análise' | 'em_analise' | 'Recarga Efetuada' | 'atendido' | 'Negado';
   data_solicitacao: string;
@@ -1515,7 +1515,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                             <span className="font-bold text-green-700">{formatCurrency(values.ticket)}</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-purple-600 font-medium">💳 Alelo:</span>
+                            <span className="text-purple-600 font-medium">💳 Veloe Go:</span>
                             <span className="font-bold text-purple-700">{formatCurrency(values.alelo)}</span>
                           </div>
                         </div>
@@ -1791,7 +1791,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                         <span className="font-bold text-green-700">{formatCurrency(values.ticket)}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-purple-600 font-medium">💳 Alelo:</span>
+                        <span className="text-purple-600 font-medium">💳 Veloe Go:</span>
                         <span className="font-bold text-purple-700">{formatCurrency(values.alelo)}</span>
                       </div>
                     </div>
@@ -2006,7 +2006,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                         <span className="font-bold text-green-700">{formatCurrency(values.ticket)}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-purple-600 font-medium">💳 Alelo:</span>
+                        <span className="text-purple-600 font-medium">💳 Veloe Go:</span>
                         <span className="font-bold text-purple-700">{formatCurrency(values.alelo)}</span>
                       </div>
                     </div>
@@ -2468,7 +2468,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Provedor de Cartão (Ticket ou Alelo) */}
+                  {/* Provedor de Cartão (Ticket ou Veloe Go) */}
                   {selectedSolicitation.provedor_cartao && (
                     <div>
                       <Label>Provedor de Cartão</Label>
@@ -2477,7 +2477,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                           ? 'bg-green-100 text-green-800 border-green-300' 
                           : 'bg-purple-100 text-purple-800 border-purple-300'
                       }`}>
-                        {selectedSolicitation.provedor_cartao?.toLowerCase() === 'ticket' ? '💳 TICKET' : '💳 ALELO'}
+                        {selectedSolicitation.provedor_cartao?.toLowerCase() === 'ticket' ? '💳 TICKET' : '💳 VELOE GO'}
                       </div>
                     </div>
                   )}

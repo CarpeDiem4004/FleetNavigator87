@@ -479,7 +479,7 @@ const CartaoCombustivelAluminio: React.FC = () => {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="Ticket">Ticket</SelectItem>
-                                  <SelectItem value="Alelo">Alelo</SelectItem>
+                                  <SelectItem value="Veloe Go">Veloe Go</SelectItem>
                                   <SelectItem value="VR">VR</SelectItem>
                                 </SelectContent>
                               </Select>

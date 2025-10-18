@@ -628,7 +628,7 @@ const CartaoCombustivelSC: React.FC = () => {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="Ticket">Ticket</SelectItem>
-                                  <SelectItem value="Alelo">Alelo</SelectItem>
+                                  <SelectItem value="Veloe Go">Veloe Go</SelectItem>
                                 </SelectContent>
                               </Select>
                               <p className="text-xs text-gray-500">Escolha o provedor do cartão</p>
@@ -714,7 +714,7 @@ const CartaoCombustivelSC: React.FC = () => {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="Ticket">Ticket</SelectItem>
-                                  <SelectItem value="Alelo">Alelo</SelectItem>
+                                  <SelectItem value="Veloe Go">Veloe Go</SelectItem>
                                   <SelectItem value="VR">VR</SelectItem>
                                 </SelectContent>
                               </Select>

@@ -60,7 +60,7 @@ const CartaoCombustivelGoianiaExterno: React.FC = () => {
   const providers = [
     { value: 'Shell', label: 'Shell' },
     { value: 'Ticket', label: 'Ticket Car' },
-    { value: 'Alelo', label: 'Alelo Frotas' },
+    { value: 'Veloe Go', label: 'Veloe Go' },
     { value: 'Visa', label: 'Visa Fleet' }
   ];
 

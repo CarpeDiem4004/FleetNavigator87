@@ -216,7 +216,7 @@ export default function FuelCardDashboard() {
             <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Filtrar por cartão:</span>
             <Button variant="ghost" size="sm">Ticket</Button>
-            <Button variant="ghost" size="sm">Alelo</Button>
+            <Button variant="ghost" size="sm">Veloe Go</Button>
           </div>
         </div>
         

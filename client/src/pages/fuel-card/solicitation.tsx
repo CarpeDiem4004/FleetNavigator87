@@ -44,7 +44,7 @@ const solicitacaoSchema = z.object({
   tipo_cartao: z.enum(["placa", "numero"], { 
     required_error: "Selecione o tipo de cartão"
   }),
-  provedor_cartao: z.enum(["Ticket", "Alelo"], { 
+  provedor_cartao: z.enum(["Ticket", "Veloe Go"], { 
     required_error: "Selecione o provedor do cartão"
   }),
   numero_cartao: z.string().optional(),
@@ -526,7 +526,7 @@ export default function FuelCardSolicitation() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="Ticket">Ticket</SelectItem>
-                          <SelectItem value="Alelo">Alelo</SelectItem>
+                          <SelectItem value="Veloe Go">Veloe Go</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormDescription>

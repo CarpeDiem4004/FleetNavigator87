@@ -748,7 +748,7 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                                 </FormControl>
                                 <SelectContent>
                                   <SelectItem value="Ticket">Ticket</SelectItem>
-                                  <SelectItem value="Alelo">Alelo</SelectItem>
+                                  <SelectItem value="Veloe Go">Veloe Go</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormDescription className="text-xs text-gray-500">
