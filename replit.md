@@ -6,6 +6,7 @@ This is a comprehensive fleet management system designed to manage vehicle maint
 ## Recent Changes: Latest modifications with dates
 
 ### Outubro 2025
+- **18/10/2025**: Melhorias no painel de solicitações de fuel card - (1) Adicionado filtro por data de abastecimento (`data_uso`) com conversão correta de timezone usando `parseLocalDate()`, garantindo que registros sejam filtrados pela data correta no horário brasileiro. (2) Card "Valor Total Pendente" agora mostra valores separados por tipo de cartão: valor total, valor Ticket (💳 azul) e valor Alelo (💳 roxo), facilitando análise financeira. Implementação em `FuelCardRequestsPanel.tsx` com função `getValuesByCardType()` para cálculo eficiente. **Arquitetura**: Filtro usa conversão de timezone brasileiro, exibição com breakdown visual por tipo de cartão.
 - **14/10/2025**: ✅ SOLUÇÃO DEFINITIVA DE TIMEZONE - REGRA DE OURO IMPLEMENTADA: "A data digitada no formulário DEVE aparecer EXATAMENTE igual no sistema, sem nenhuma conversão ou alteração". **Problema Original**: Data selecionada (14/10) aparecia como dia anterior (13/10) devido conversão UTC. **Solução Completa em 3 Camadas**: 
   1. **Frontend de Envio** (`FuelCardRequestForm.tsx` + `solicitation.tsx`): Função `localDateToDateOnlyString()` garante envio no formato YYYY-MM-DD puro, sem timestamp ou conversão UTC
   2. **Backend de Recebimento** (`fuelCardSolicitationsApi.ts` linhas 412-418): Extrai apenas YYYY-MM-DD da string recebida, descartando qualquer hora/timezone
