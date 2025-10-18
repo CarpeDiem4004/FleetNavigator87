@@ -410,11 +410,11 @@ const FuelCardRequestsPanel: React.FC = () => {
       .filter(s => s.provedor_cartao?.toLowerCase() === 'ticket')
       .reduce((total, s) => total + Number(s.valor_solicitado || s.valor_calculado || 0), 0);
     
-    const alelo = solicitations
-      .filter(s => s.provedor_cartao?.toLowerCase() === 'alelo')
+    const veloeGo = solicitations
+      .filter(s => s.provedor_cartao?.toLowerCase() === 'veloe go')
       .reduce((total, s) => total + Number(s.valor_solicitado || s.valor_calculado || 0), 0);
     
-    return { ticket, alelo, total: ticket + alelo };
+    return { ticket, veloeGo, alelo: veloeGo, total: ticket + veloeGo };
   }, []);
 
   const getApprovedValue = useCallback((solicitations: FuelCardSolicitation[]) => {
