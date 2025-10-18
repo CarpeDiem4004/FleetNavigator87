@@ -100,6 +100,7 @@ const FuelCardRequestsPanel: React.FC = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('');
+  const [fuelDateFilter, setFuelDateFilter] = useState<string>(''); // Filtro por data de abastecimento
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [projectFilter, setProjectFilter] = useState<string>('all');
   const [baseFilter, setBaseFilter] = useState<string>('all');
@@ -291,7 +292,7 @@ const FuelCardRequestsPanel: React.FC = () => {
         return false;
       }
       
-      // Filtro por data (convertendo para timezone do Brasil)
+      // Filtro por data de solicitação (convertendo para timezone do Brasil)
       if (dateFilter) {
         // Converter timestamp UTC para data local do Brasil (UTC-3)
         const solTimestamp = new Date(sol.data_solicitacao);
@@ -300,6 +301,21 @@ const FuelCardRequestsPanel: React.FC = () => {
         const solDate = brasilDate.toISOString().split('T')[0];
         
         if (solDate !== dateFilter) {
+          return false;
+        }
+      }
+      
+      // Filtro por data de abastecimento (data_uso)
+      if (fuelDateFilter) {
+        if (!sol.data_uso) {
+          return false; // Se não tem data de abastecimento, não passa no filtro
+        }
+        // Converter timestamp UTC para data local do Brasil (UTC-3)
+        const fuelTimestamp = new Date(sol.data_uso);
+        const brasilFuelDate = new Date(fuelTimestamp.getTime() - 3 * 60 * 60 * 1000);
+        const fuelDate = brasilFuelDate.toISOString().split('T')[0];
+        
+        if (fuelDate !== fuelDateFilter) {
           return false;
         }
       }
@@ -336,7 +352,7 @@ const FuelCardRequestsPanel: React.FC = () => {
       
       return true;
     });
-  }, [solicitations, searchQuery, statusFilter, projectFilter, baseFilter, dateFilter, projects]);
+  }, [solicitations, searchQuery, statusFilter, projectFilter, baseFilter, dateFilter, fuelDateFilter, projects]);
 
   const pendingSolicitations = useMemo(() => {
     return filteredSolicitations.filter(s => 
@@ -1304,7 +1320,7 @@ const FuelCardRequestsPanel: React.FC = () => {
             <CardTitle className="text-lg">Filtros</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="status-filter">Status</Label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -1322,7 +1338,7 @@ const FuelCardRequestsPanel: React.FC = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="date-filter">Data</Label>
+                <Label htmlFor="date-filter">Data Solicitação</Label>
                 <div className="flex items-center">
                   <Input 
                     id="date-filter" 
@@ -1337,6 +1353,31 @@ const FuelCardRequestsPanel: React.FC = () => {
                       size="sm" 
                       onClick={() => setDateFilter('')}
                       className="ml-2"
+                    >
+                      Limpar
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="fuel-date-filter">Data Abastecimento</Label>
+                <div className="flex items-center">
+                  <Input 
+                    id="fuel-date-filter" 
+                    type="date"
+                    value={fuelDateFilter}
+                    onChange={(e) => setFuelDateFilter(e.target.value)}
+                    placeholder="dd/mm/aaaa"
+                    data-testid="input-fuel-date-filter"
+                  />
+                  {fuelDateFilter && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setFuelDateFilter('')}
+                      className="ml-2"
+                      data-testid="button-clear-fuel-date"
                     >
                       Limpar
                     </Button>
