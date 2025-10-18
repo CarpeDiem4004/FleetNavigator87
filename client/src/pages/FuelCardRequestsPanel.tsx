@@ -328,6 +328,15 @@ const FuelCardRequestsPanel: React.FC = () => {
           fuelDate = `${year}-${month}-${day}`;
         }
         
+        // DEBUG: Log para verificar o que está sendo comparado
+        console.log('🔍 [FILTRO DEBUG]', {
+          placa: sol.placa,
+          data_uso_original: sol.data_uso,
+          fuelDate_extraida: fuelDate,
+          fuelDateFilter_selecionado: fuelDateFilter,
+          passa_filtro: fuelDate === fuelDateFilter
+        });
+        
         if (fuelDate !== fuelDateFilter) {
           return false;
         }
