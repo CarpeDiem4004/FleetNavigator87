@@ -2468,6 +2468,20 @@ const FuelCardRequestsPanel: React.FC = () => {
                     </div>
                   </div>
                   
+                  {/* Provedor de Cartão (Ticket ou Alelo) */}
+                  {selectedSolicitation.provedor_cartao && (
+                    <div>
+                      <Label>Provedor de Cartão</Label>
+                      <div className={`text-lg font-bold p-3 rounded border-2 ${
+                        selectedSolicitation.provedor_cartao?.toLowerCase() === 'ticket' 
+                          ? 'bg-blue-100 text-blue-800 border-blue-300' 
+                          : 'bg-purple-100 text-purple-800 border-purple-300'
+                      }`}>
+                        {selectedSolicitation.provedor_cartao?.toLowerCase() === 'ticket' ? '💳 TICKET' : '💳 ALELO'}
+                      </div>
+                    </div>
+                  )}
+                  
                   {(selectedSolicitation.numero_cartao || selectedSolicitation.cartao_combustivel) && (
                     <div>
                       <Label>Cartão de Combustível Vinculado</Label>
