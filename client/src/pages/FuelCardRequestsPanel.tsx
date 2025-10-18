@@ -305,15 +305,28 @@ const FuelCardRequestsPanel: React.FC = () => {
         }
       }
       
-      // Filtro por data de abastecimento (data_uso)
+      // Filtro por data de abastecimento (data_uso) - comparação apenas de data, sem horário
       if (fuelDateFilter) {
         if (!sol.data_uso) {
           return false; // Se não tem data de abastecimento, não passa no filtro
         }
-        // Converter timestamp UTC para data local do Brasil (UTC-3)
-        const fuelTimestamp = new Date(sol.data_uso);
-        const brasilFuelDate = new Date(fuelTimestamp.getTime() - 3 * 60 * 60 * 1000);
-        const fuelDate = brasilFuelDate.toISOString().split('T')[0];
+        
+        // Extrair apenas a parte YYYY-MM-DD da data armazenada (ignorar horário e timezone)
+        let fuelDate: string;
+        if (sol.data_uso.includes('-') && !sol.data_uso.includes('T')) {
+          // Já está no formato YYYY-MM-DD
+          fuelDate = sol.data_uso;
+        } else if (sol.data_uso.includes('T')) {
+          // Formato ISO com timestamp - extrair apenas a data
+          fuelDate = sol.data_uso.split('T')[0];
+        } else {
+          // Fallback: tentar converter
+          const date = new Date(sol.data_uso);
+          const year = date.getUTCFullYear();
+          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(date.getUTCDate()).padStart(2, '0');
+          fuelDate = `${year}-${month}-${day}`;
+        }
         
         if (fuelDate !== fuelDateFilter) {
           return false;
