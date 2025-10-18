@@ -1511,8 +1511,8 @@ const FuelCardRequestsPanel: React.FC = () => {
                         </div>
                         <div className="flex flex-col gap-1 text-xs">
                           <div className="flex items-center justify-between">
-                            <span className="text-blue-600 font-medium">💳 Ticket:</span>
-                            <span className="font-bold text-blue-700">{formatCurrency(values.ticket)}</span>
+                            <span className="text-green-600 font-medium">💳 Ticket:</span>
+                            <span className="font-bold text-green-700">{formatCurrency(values.ticket)}</span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-purple-600 font-medium">💳 Alelo:</span>
@@ -1787,8 +1787,8 @@ const FuelCardRequestsPanel: React.FC = () => {
                     </div>
                     <div className="flex flex-col gap-1 text-xs">
                       <div className="flex items-center justify-between">
-                        <span className="text-blue-600 font-medium">💳 Ticket:</span>
-                        <span className="font-bold text-blue-700">{formatCurrency(values.ticket)}</span>
+                        <span className="text-green-600 font-medium">💳 Ticket:</span>
+                        <span className="font-bold text-green-700">{formatCurrency(values.ticket)}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-purple-600 font-medium">💳 Alelo:</span>
@@ -2002,8 +2002,8 @@ const FuelCardRequestsPanel: React.FC = () => {
                     </div>
                     <div className="flex flex-col gap-1 text-xs">
                       <div className="flex items-center justify-between">
-                        <span className="text-blue-600 font-medium">💳 Ticket:</span>
-                        <span className="font-bold text-blue-700">{formatCurrency(values.ticket)}</span>
+                        <span className="text-green-600 font-medium">💳 Ticket:</span>
+                        <span className="font-bold text-green-700">{formatCurrency(values.ticket)}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-purple-600 font-medium">💳 Alelo:</span>
@@ -2474,7 +2474,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                       <Label>Provedor de Cartão</Label>
                       <div className={`text-lg font-bold p-3 rounded border-2 ${
                         selectedSolicitation.provedor_cartao?.toLowerCase() === 'ticket' 
-                          ? 'bg-blue-100 text-blue-800 border-blue-300' 
+                          ? 'bg-green-100 text-green-800 border-green-300' 
                           : 'bg-purple-100 text-purple-800 border-purple-300'
                       }`}>
                         {selectedSolicitation.provedor_cartao?.toLowerCase() === 'ticket' ? '💳 TICKET' : '💳 ALELO'}
