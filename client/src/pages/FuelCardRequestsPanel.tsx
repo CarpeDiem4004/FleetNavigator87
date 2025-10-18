@@ -305,37 +305,18 @@ const FuelCardRequestsPanel: React.FC = () => {
         }
       }
       
-      // Filtro por data de abastecimento (data_uso) - comparação apenas de data, sem horário
+      // Filtro por data de abastecimento (data_uso) - com conversão para timezone brasileiro
       if (fuelDateFilter) {
         if (!sol.data_uso) {
           return false; // Se não tem data de abastecimento, não passa no filtro
         }
         
-        // Extrair apenas a parte YYYY-MM-DD da data armazenada (ignorar horário e timezone)
-        let fuelDate: string;
-        if (sol.data_uso.includes('-') && !sol.data_uso.includes('T')) {
-          // Já está no formato YYYY-MM-DD
-          fuelDate = sol.data_uso;
-        } else if (sol.data_uso.includes('T')) {
-          // Formato ISO com timestamp - extrair apenas a data
-          fuelDate = sol.data_uso.split('T')[0];
-        } else {
-          // Fallback: tentar converter
-          const date = new Date(sol.data_uso);
-          const year = date.getUTCFullYear();
-          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-          const day = String(date.getUTCDate()).padStart(2, '0');
-          fuelDate = `${year}-${month}-${day}`;
-        }
-        
-        // DEBUG: Log para verificar o que está sendo comparado
-        console.log('🔍 [FILTRO DEBUG]', {
-          placa: sol.placa,
-          data_uso_original: sol.data_uso,
-          fuelDate_extraida: fuelDate,
-          fuelDateFilter_selecionado: fuelDateFilter,
-          passa_filtro: fuelDate === fuelDateFilter
-        });
+        // Converter para data local do Brasil usando parseLocalDate
+        const localDate = parseLocalDate(sol.data_uso);
+        const year = localDate.getFullYear();
+        const month = String(localDate.getMonth() + 1).padStart(2, '0');
+        const day = String(localDate.getDate()).padStart(2, '0');
+        const fuelDate = `${year}-${month}-${day}`;
         
         if (fuelDate !== fuelDateFilter) {
           return false;
@@ -420,6 +401,19 @@ const FuelCardRequestsPanel: React.FC = () => {
       const valor = s.valor_solicitado || s.valor_calculado || 0;
       return total + Number(valor);
     }, 0);
+  }, []);
+
+  // Função para calcular valores por tipo de cartão
+  const getValuesByCardType = useCallback((solicitations: FuelCardSolicitation[]) => {
+    const ticket = solicitations
+      .filter(s => s.tipo_cartao?.toLowerCase() === 'ticket')
+      .reduce((total, s) => total + Number(s.valor_solicitado || s.valor_calculado || 0), 0);
+    
+    const alelo = solicitations
+      .filter(s => s.tipo_cartao?.toLowerCase() === 'alelo')
+      .reduce((total, s) => total + Number(s.valor_solicitado || s.valor_calculado || 0), 0);
+    
+    return { ticket, alelo, total: ticket + alelo };
   }, []);
 
   const getApprovedValue = useCallback((solicitations: FuelCardSolicitation[]) => {
@@ -1506,10 +1500,27 @@ const FuelCardRequestsPanel: React.FC = () => {
                   <DollarSign className="h-4 w-4 text-orange-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-orange-600">
-                    {formatCurrency(getTotalValue(getPendingSolicitations()))}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Valor pendente de aprovação</p>
+                  {(() => {
+                    const values = getValuesByCardType(getPendingSolicitations());
+                    return (
+                      <div className="space-y-2">
+                        <div className="text-2xl font-bold text-orange-600">
+                          {formatCurrency(values.total)}
+                        </div>
+                        <div className="flex flex-col gap-1 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="text-blue-600 font-medium">💳 Ticket:</span>
+                            <span className="font-bold text-blue-700">{formatCurrency(values.ticket)}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-purple-600 font-medium">💳 Alelo:</span>
+                            <span className="font-bold text-purple-700">{formatCurrency(values.alelo)}</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">Valor pendente de aprovação</p>
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
               
