@@ -1949,7 +1949,7 @@ export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: R
           observacoes
         FROM solicitacoes_fuel_card
         WHERE data_uso IS NOT NULL
-          AND (data_uso AT TIME ZONE 'America/Sao_Paulo')::date = $1::date
+          AND data_uso = $1::date
           ${statusFilter}
           ${baseFilter}
         ORDER BY data_solicitacao DESC
