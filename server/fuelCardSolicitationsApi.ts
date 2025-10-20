@@ -1885,3 +1885,205 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
     });
   }
 }
+
+/**
+ * Exporta solicitações de cartão de combustível filtradas por data de abastecimento (data_uso) para Excel
+ */
+export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: Response) {
+  try {
+    const { fuelDate, status, projectId, base } = req.query;
+
+    console.log('[EXPORT-BY-FUEL-DATE] Parâmetros recebidos:', { fuelDate, status, projectId, base });
+
+    // Validação do parâmetro obrigatório
+    if (!fuelDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Data de abastecimento é obrigatória'
+      });
+    }
+
+    // Validar formato da data
+    const targetDate = new Date(fuelDate as string);
+    
+    if (isNaN(targetDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Formato de data inválido'
+      });
+    }
+
+    // Buscar dados de cada tabela separadamente com filtros de data_uso
+    const allSolicitations = [];
+    
+    // Construir filtros adicionais
+    let statusFilter = '';
+    let baseFilter = '';
+
+    if (status && status !== 'all') {
+      statusFilter = ` AND status = '${status}'`;
+    }
+
+    if (base && base !== 'all') {
+      baseFilter = ` AND base = '${base}'`;
+    }
+
+    // 1. Tabela tradicional (solicitacoes_fuel_card)
+    try {
+      const traditionalQuery = `
+        SELECT 
+          id::text as id,
+          placa,
+          motorista,
+          COALESCE(motorista, '') as nome_solicitante,
+          COALESCE(valor_solicitado::text, '0') as valor_solicitado,
+          COALESCE(km, 0) as km,
+          tipo_cartao,
+          numero_cartao,
+          provedor_cartao,
+          status,
+          data_solicitacao,
+          data_uso,
+          atendido_por,
+          data_atendimento,
+          observacoes,
+          'sistema_principal' as origem_tipo,
+          '' as veiculo_modelo,
+          '' as rota_origem,
+          '' as rota_destino,
+          '' as telefone_motorista,
+          '' as horario_abastecimento,
+          COALESCE(base, 'Base Principal') as base
+        FROM solicitacoes_fuel_card
+        WHERE data_uso IS NOT NULL
+          AND (data_uso AT TIME ZONE 'America/Sao_Paulo')::date = $1::date
+          ${statusFilter}
+          ${baseFilter}
+        ORDER BY data_solicitacao DESC
+      `;
+      
+      const traditionalResult = await pool.query(traditionalQuery, [fuelDate]);
+      console.log('[EXPORT-BY-FUEL-DATE] Registros tabela tradicional:', traditionalResult.rows.length);
+      allSolicitations.push(...traditionalResult.rows);
+    } catch (err) {
+      console.log('[EXPORT-BY-FUEL-DATE] Erro tabela tradicional:', err);
+    }
+    
+    // 2. Tabela base system (fuel_card_requests) - se tiver campo data_uso
+    try {
+      const baseSystemQuery = `
+        SELECT 
+          id::text as id,
+          plate as placa,
+          driver_name as motorista,
+          COALESCE(driver_name, '') as nome_solicitante,
+          COALESCE(amount::text, '0') as valor_solicitado,
+          COALESCE(odometer, 0) as km,
+          card_type as tipo_cartao,
+          card_number as numero_cartao,
+          provider as provedor_cartao,
+          status,
+          created_at as data_solicitacao,
+          fuel_date as data_uso,
+          '' as atendido_por,
+          updated_at as data_atendimento,
+          reason as observacoes,
+          'base_externa' as origem_tipo,
+          '' as veiculo_modelo,
+          '' as rota_origem,
+          '' as rota_destino,
+          COALESCE(driver_phone, '') as telefone_motorista,
+          '' as horario_abastecimento,
+          COALESCE(b.name, 'Base Externa') as base
+        FROM fuel_card_requests f
+        LEFT JOIN bases b ON f.base_id = b.id
+        WHERE fuel_date IS NOT NULL
+          AND (fuel_date AT TIME ZONE 'America/Sao_Paulo')::date = $1::date
+          ${statusFilter}
+        ORDER BY created_at DESC
+      `;
+      
+      const baseSystemResult = await pool.query(baseSystemQuery, [fuelDate]);
+      console.log('[EXPORT-BY-FUEL-DATE] Registros base system:', baseSystemResult.rows.length);
+      allSolicitations.push(...baseSystemResult.rows);
+    } catch (err) {
+      console.log('[EXPORT-BY-FUEL-DATE] Erro base system:', err);
+    }
+
+    console.log('[EXPORT-BY-FUEL-DATE] Total de registros encontrados:', allSolicitations.length);
+
+    if (allSolicitations.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Nenhuma solicitação encontrada para a data de abastecimento selecionada'
+      });
+    }
+
+    // Criar planilha Excel
+    const XLSX = require('xlsx');
+    const workbook = XLSX.utils.book_new();
+    
+    // Formatar dados para a planilha
+    const formattedData = allSolicitations.map((sol: any) => ({
+      'ID': sol.id,
+      'Placa': sol.placa || '',
+      'Motorista': sol.motorista || sol.nome_solicitante || '',
+      'Valor Solicitado': Number(sol.valor_solicitado || 0).toFixed(2),
+      'KM': sol.km || 0,
+      'Tipo Cartão': sol.tipo_cartao || '',
+      'Número Cartão': sol.numero_cartao || '',
+      'Provedor': sol.provedor_cartao || '',
+      'Status': sol.status || '',
+      'Data Solicitação': sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleString('pt-BR') : '',
+      'Data Abastecimento': sol.data_uso ? new Date(sol.data_uso).toLocaleDateString('pt-BR') : '',
+      'Atendido Por': sol.atendido_por || '',
+      'Data Atendimento': sol.data_atendimento ? new Date(sol.data_atendimento).toLocaleString('pt-BR') : '',
+      'Base': sol.base || '',
+      'Origem': sol.origem_tipo || '',
+      'Observações': sol.observacoes || ''
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    
+    // Ajustar largura das colunas
+    const colWidths = [
+      { wch: 8 },  // ID
+      { wch: 10 }, // Placa
+      { wch: 25 }, // Motorista
+      { wch: 15 }, // Valor
+      { wch: 10 }, // KM
+      { wch: 15 }, // Tipo Cartão
+      { wch: 15 }, // Número Cartão
+      { wch: 15 }, // Provedor
+      { wch: 15 }, // Status
+      { wch: 18 }, // Data Solicitação
+      { wch: 18 }, // Data Abastecimento
+      { wch: 20 }, // Atendido Por
+      { wch: 18 }, // Data Atendimento
+      { wch: 20 }, // Base
+      { wch: 15 }, // Origem
+      { wch: 30 }  // Observações
+    ];
+    worksheet['!cols'] = colWidths;
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Solicitações');
+
+    // Gerar buffer do Excel
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Configurar headers para download
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=solicitacoes-abastecimento-${fuelDate}.xlsx`);
+    
+    console.log('[EXPORT-BY-FUEL-DATE] Exportação concluída com sucesso');
+    res.send(excelBuffer);
+
+  } catch (error: any) {
+    console.error('[EXPORT-BY-FUEL-DATE] Erro ao exportar:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao exportar solicitações por data de abastecimento',
+      error: error.message
+    });
+  }
+}

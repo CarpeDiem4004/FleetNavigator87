@@ -869,6 +869,60 @@ const FuelCardRequestsPanel: React.FC = () => {
     }
   };
 
+  const handleDownloadByFuelDate = async () => {
+    if (!fuelDateFilter) {
+      toast({
+        title: 'Erro de validação',
+        description: 'Selecione uma data de abastecimento para exportar',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setDownloadingReport(true);
+    try {
+      const queryParams = new URLSearchParams({
+        fuelDate: fuelDateFilter,
+        ...(statusFilter !== 'all' && { status: statusFilter }),
+        ...(projectFilter !== 'all' && { projectId: projectFilter }),
+        ...(baseFilter !== 'all' && { base: baseFilter })
+      });
+
+      const response = await apiRequest('GET', `/api/fuel-card-solicitations/export-by-fuel-date?${queryParams}`);
+      
+      if (response.ok) {
+        // Criar URL para download
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `solicitacoes-abastecimento-${fuelDateFilter}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        toast({
+          title: 'Exportação concluída',
+          description: `Solicitações de ${format(new Date(fuelDateFilter), 'dd/MM/yyyy')} exportadas com sucesso`,
+        });
+      } else {
+        const errorText = await response.text();
+        console.error('[EXPORT-FUEL-DATE] Erro na resposta:', errorText);
+        throw new Error('Erro ao gerar relatório por data de abastecimento');
+      }
+    } catch (error) {
+      console.error('[EXPORT-FUEL-DATE] Erro:', error);
+      toast({
+        title: 'Erro ao exportar',
+        description: 'Não foi possível exportar as solicitações para a data selecionada',
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadingReport(false);
+    }
+  };
+
   const handleBatchApproval = async () => {
     if (baseFilter === 'all') {
       toast({
@@ -1379,7 +1433,7 @@ const FuelCardRequestsPanel: React.FC = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="fuel-date-filter">Data Abastecimento</Label>
-                <div className="flex items-center">
+                <div className="flex items-center gap-2">
                   <Input 
                     id="fuel-date-filter" 
                     type="date"
@@ -1387,17 +1441,29 @@ const FuelCardRequestsPanel: React.FC = () => {
                     onChange={(e) => setFuelDateFilter(e.target.value)}
                     placeholder="dd/mm/aaaa"
                     data-testid="input-fuel-date-filter"
+                    className="flex-1"
                   />
                   {fuelDateFilter && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setFuelDateFilter('')}
-                      className="ml-2"
-                      data-testid="button-clear-fuel-date"
-                    >
-                      Limpar
-                    </Button>
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleDownloadByFuelDate}
+                        className="whitespace-nowrap"
+                        data-testid="button-download-fuel-date"
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Baixar
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setFuelDateFilter('')}
+                        data-testid="button-clear-fuel-date"
+                      >
+                        Limpar
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
