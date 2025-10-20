@@ -1975,14 +1975,7 @@ export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: R
 
     console.log('[EXPORT-BY-FUEL-DATE] Total de registros encontrados:', allSolicitations.length);
 
-    if (allSolicitations.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Nenhuma solicitação encontrada para a data de abastecimento selecionada'
-      });
-    }
-
-    // Criar planilha Excel
+    // Criar planilha Excel (mesmo se estiver vazia)
     const workbook = XLSX.utils.book_new();
     
     // Formatar dados para a planilha
