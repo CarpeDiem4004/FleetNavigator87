@@ -1933,27 +1933,20 @@ export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: R
       const traditionalQuery = `
         SELECT 
           id::text as id,
-          placa,
-          motorista,
-          COALESCE(motorista, '') as nome_solicitante,
-          COALESCE(valor_solicitado::text, '0') as valor_solicitado,
-          COALESCE(km, 0) as km,
-          tipo_cartao,
-          numero_cartao,
-          provedor_cartao,
-          status,
           data_solicitacao,
+          COALESCE(solicitante, motorista, '') as nome_solicitante,
+          COALESCE(telefone_celular, '') as telefone,
+          COALESCE(placa, veiculo_placa, '') as placa,
+          COALESCE(motorista, '') as motorista,
+          COALESCE(provedor_cartao, '') as provedor_cartao,
+          COALESCE(tipo_cartao, '') as tipo_cartao,
+          COALESCE(numero_cartao, '') as numero_cartao,
+          COALESCE(valor_solicitado::text, '0') as valor_solicitado,
           data_uso,
-          atendido_por,
-          data_atendimento,
-          observacoes,
-          'sistema_principal' as origem_tipo,
-          '' as veiculo_modelo,
-          '' as rota_origem,
-          '' as rota_destino,
-          '' as telefone_motorista,
-          '' as horario_abastecimento,
-          COALESCE(base, 'Base Principal') as base
+          COALESCE(base, 'Base Principal') as base,
+          COALESCE(turno, '') as turno,
+          status,
+          observacoes
         FROM solicitacoes_fuel_card
         WHERE data_uso IS NOT NULL
           AND (data_uso AT TIME ZONE 'America/Sao_Paulo')::date = $1::date
@@ -1980,44 +1973,36 @@ export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: R
     
     // Formatar dados para a planilha
     const formattedData = allSolicitations.map((sol: any) => ({
-      'ID': sol.id,
-      'Placa': sol.placa || '',
-      'Motorista': sol.motorista || sol.nome_solicitante || '',
-      'Valor Solicitado': Number(sol.valor_solicitado || 0).toFixed(2),
-      'KM': sol.km || 0,
-      'Tipo Cartão': sol.tipo_cartao || '',
-      'Número Cartão': sol.numero_cartao || '',
-      'Provedor': sol.provedor_cartao || '',
-      'Status': sol.status || '',
-      'Data Solicitação': sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleString('pt-BR') : '',
-      'Data Abastecimento': sol.data_uso ? new Date(sol.data_uso).toLocaleDateString('pt-BR') : '',
-      'Atendido Por': sol.atendido_por || '',
-      'Data Atendimento': sol.data_atendimento ? new Date(sol.data_atendimento).toLocaleString('pt-BR') : '',
-      'Base': sol.base || '',
-      'Origem': sol.origem_tipo || '',
-      'Observações': sol.observacoes || ''
+      'Data da Solicitação': sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleString('pt-BR') : '',
+      'Nome do Solicitante': sol.nome_solicitante || '',
+      'Telefone': sol.telefone || '',
+      'Placa do Carro': sol.placa || '',
+      'Nome do Motorista': sol.motorista || '',
+      'Provedor do Cartão': sol.provedor_cartao || '',
+      'Vinculado/Não Vinculado': sol.tipo_cartao || '',
+      'Placa do Cartão': sol.numero_cartao || '',
+      'Valor': `R$ ${Number(sol.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      'Data de Uso': sol.data_uso ? new Date(sol.data_uso).toLocaleDateString('pt-BR') : '',
+      'Nome da Base': sol.base || '',
+      'AM/PM': sol.turno || ''
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(formattedData);
     
     // Ajustar largura das colunas
     const colWidths = [
-      { wch: 8 },  // ID
-      { wch: 10 }, // Placa
-      { wch: 25 }, // Motorista
+      { wch: 18 }, // Data da Solicitação
+      { wch: 25 }, // Nome do Solicitante
+      { wch: 15 }, // Telefone
+      { wch: 12 }, // Placa do Carro
+      { wch: 25 }, // Nome do Motorista
+      { wch: 18 }, // Provedor do Cartão
+      { wch: 22 }, // Vinculado/Não Vinculado
+      { wch: 18 }, // Placa do Cartão
       { wch: 15 }, // Valor
-      { wch: 10 }, // KM
-      { wch: 15 }, // Tipo Cartão
-      { wch: 15 }, // Número Cartão
-      { wch: 15 }, // Provedor
-      { wch: 15 }, // Status
-      { wch: 18 }, // Data Solicitação
-      { wch: 18 }, // Data Abastecimento
-      { wch: 20 }, // Atendido Por
-      { wch: 18 }, // Data Atendimento
-      { wch: 20 }, // Base
-      { wch: 15 }, // Origem
-      { wch: 30 }  // Observações
+      { wch: 15 }, // Data de Uso
+      { wch: 20 }, // Nome da Base
+      { wch: 10 }  // AM/PM
     ];
     worksheet['!cols'] = colWidths;
 
