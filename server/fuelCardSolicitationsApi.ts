@@ -1969,46 +1969,9 @@ export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: R
       console.log('[EXPORT-BY-FUEL-DATE] Erro tabela tradicional:', err);
     }
     
-    // 2. Tabela base system (fuel_card_requests) - se tiver campo data_uso
-    try {
-      const baseSystemQuery = `
-        SELECT 
-          f.id::text as id,
-          f.plate as placa,
-          f.driver_name as motorista,
-          COALESCE(f.driver_name, '') as nome_solicitante,
-          COALESCE(f.amount::text, '0') as valor_solicitado,
-          COALESCE(f.odometer, 0) as km,
-          f.card_type as tipo_cartao,
-          f.card_number as numero_cartao,
-          f.provider as provedor_cartao,
-          f.status,
-          f.created_at as data_solicitacao,
-          f.fuel_date as data_uso,
-          '' as atendido_por,
-          f.updated_at as data_atendimento,
-          f.reason as observacoes,
-          'base_externa' as origem_tipo,
-          '' as veiculo_modelo,
-          '' as rota_origem,
-          '' as rota_destino,
-          COALESCE(f.driver_phone, '') as telefone_motorista,
-          '' as horario_abastecimento,
-          COALESCE(b.name, 'Base Externa') as base
-        FROM fuel_card_requests f
-        LEFT JOIN bases b ON f.base_id = b.id
-        WHERE f.fuel_date IS NOT NULL
-          AND (f.fuel_date AT TIME ZONE 'America/Sao_Paulo')::date = $1::date
-          ${statusFilter}
-        ORDER BY f.created_at DESC
-      `;
-      
-      const baseSystemResult = await pool.query(baseSystemQuery, [fuelDate]);
-      console.log('[EXPORT-BY-FUEL-DATE] Registros base system:', baseSystemResult.rows.length);
-      allSolicitations.push(...baseSystemResult.rows);
-    } catch (err) {
-      console.log('[EXPORT-BY-FUEL-DATE] Erro base system:', err);
-    }
+    // Nota: A tabela fuel_card_requests não possui o campo data_uso/fuel_date
+    // Por isso, não é possível filtrar por data de abastecimento nessa tabela
+    // Apenas a tabela solicitacoes_fuel_card possui esse campo
 
     console.log('[EXPORT-BY-FUEL-DATE] Total de registros encontrados:', allSolicitations.length);
 
