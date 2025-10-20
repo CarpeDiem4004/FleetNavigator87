@@ -1973,34 +1973,34 @@ export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: R
     try {
       const baseSystemQuery = `
         SELECT 
-          id::text as id,
-          plate as placa,
-          driver_name as motorista,
-          COALESCE(driver_name, '') as nome_solicitante,
-          COALESCE(amount::text, '0') as valor_solicitado,
-          COALESCE(odometer, 0) as km,
-          card_type as tipo_cartao,
-          card_number as numero_cartao,
-          provider as provedor_cartao,
-          status,
-          created_at as data_solicitacao,
-          fuel_date as data_uso,
+          f.id::text as id,
+          f.plate as placa,
+          f.driver_name as motorista,
+          COALESCE(f.driver_name, '') as nome_solicitante,
+          COALESCE(f.amount::text, '0') as valor_solicitado,
+          COALESCE(f.odometer, 0) as km,
+          f.card_type as tipo_cartao,
+          f.card_number as numero_cartao,
+          f.provider as provedor_cartao,
+          f.status,
+          f.created_at as data_solicitacao,
+          f.fuel_date as data_uso,
           '' as atendido_por,
-          updated_at as data_atendimento,
-          reason as observacoes,
+          f.updated_at as data_atendimento,
+          f.reason as observacoes,
           'base_externa' as origem_tipo,
           '' as veiculo_modelo,
           '' as rota_origem,
           '' as rota_destino,
-          COALESCE(driver_phone, '') as telefone_motorista,
+          COALESCE(f.driver_phone, '') as telefone_motorista,
           '' as horario_abastecimento,
           COALESCE(b.name, 'Base Externa') as base
         FROM fuel_card_requests f
         LEFT JOIN bases b ON f.base_id = b.id
-        WHERE fuel_date IS NOT NULL
-          AND (fuel_date AT TIME ZONE 'America/Sao_Paulo')::date = $1::date
+        WHERE f.fuel_date IS NOT NULL
+          AND (f.fuel_date AT TIME ZONE 'America/Sao_Paulo')::date = $1::date
           ${statusFilter}
-        ORDER BY created_at DESC
+        ORDER BY f.created_at DESC
       `;
       
       const baseSystemResult = await pool.query(baseSystemQuery, [fuelDate]);
@@ -2020,7 +2020,6 @@ export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: R
     }
 
     // Criar planilha Excel
-    const XLSX = require('xlsx');
     const workbook = XLSX.utils.book_new();
     
     // Formatar dados para a planilha
