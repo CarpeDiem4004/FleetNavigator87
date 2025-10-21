@@ -57,6 +57,14 @@ export default function PostPaidPublicForm() {
   // Buscar bases filtradas por projeto
   const { data: basesResponse } = useQuery<{ success: boolean; data: Base[] }>({
     queryKey: ['/api/bases', selectedProject],
+    queryFn: async () => {
+      const url = selectedProject 
+        ? `/api/bases?project_id=${selectedProject}`
+        : '/api/bases';
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Erro ao buscar bases');
+      return response.json();
+    },
     enabled: !!selectedProject,
   });
   const bases = Array.isArray(basesResponse?.data) ? basesResponse.data : [];

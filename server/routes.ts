@@ -5570,14 +5570,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // GET - Obter bases para o fuel card system
+  // GET - Obter bases para o fuel card system (com filtro por projeto)
   app.get('/api/bases', async (req, res) => {
     try {
-      console.log('=== BASES API SIMPLES ===');
+      const projectId = req.query.project_id || req.query.projectId;
       
-      // Query SQL direta e simples
-      const query = 'SELECT id, name, project_id FROM bases WHERE active = true AND name IS NOT NULL ORDER BY name';
-      const result = await pool.query(query);
+      console.log('=== BASES API SIMPLES ===');
+      console.log('Project ID recebido:', projectId);
+      
+      // Query SQL com filtro opcional por projeto
+      let query = 'SELECT id, name, project_id FROM bases WHERE active = true AND name IS NOT NULL';
+      const params: any[] = [];
+      
+      if (projectId) {
+        query += ' AND project_id = $1';
+        params.push(projectId);
+      }
+      
+      query += ' ORDER BY name';
+      
+      const result = await pool.query(query, params);
       
       console.log('Total bases encontradas:', result.rows.length);
       
@@ -5590,10 +5602,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         projectId: base.project_id  // Para frontend (camelCase)
       }));
       
-      console.log('Primeira base mapeada:', JSON.stringify(mappedBases[0], null, 2));
-      const gp01 = mappedBases.find(b => b.name?.includes('GP01'));
-      if (gp01) {
-        console.log('GP01 encontrada:', JSON.stringify(gp01, null, 2));
+      if (mappedBases.length > 0) {
+        console.log('Primeira base mapeada:', JSON.stringify(mappedBases[0], null, 2));
       }
       
       return res.status(200).json({
