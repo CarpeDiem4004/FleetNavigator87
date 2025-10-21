@@ -1,0 +1,155 @@
+Checklist rápido (verifique já)
+
+Na aba Network identifique a request que falha. Copie a Request URL e o Status.
+
+Se a URL NÃO aponta para um endpoint API (ex: /api/postpaid ou https://api.meudominio.com/postpaid) e sim para uma rota de página (/postpaid), corrija a URL.
+
+Verifique se há redirect (302) para login — isso gera HTML.
+
+Se está enviando arquivo com FormData, não defina Content-Type manualmente.
+
+Confirme se o backend espera multipart/form-data (aceita arquivo) ou application/json com photo_url.
+
+1) Fix rápido para detectar resposta não-JSON (substitui res.json() direto)
+
+Use este trecho para inspecionar antes de parsear — evita o Unexpected token '<' e loga o HTML retornado:
+
+// Exemplo genérico (fetch)
+async function safeFetchJson(url: string, options: RequestInit = {}) {
+  const res = await fetch(url, options);
+  const text = await res.text();
+  const ct = res.headers.get('content-type') ?? '';
+
+  console.log('Request URL:', url, 'Status:', res.status, 'Content-Type:', ct);
+  if (!ct.includes('application/json')) {
+    console.error('Resposta NÃO é JSON — corpo (trecho):', text.slice(0, 1000));
+    // opcional: lançar um erro com o texto para o seu toast
+    throw new Error(`Servidor retornou ${res.status} e não JSON. Veja console.`);
+  }
+  return JSON.parse(text);
+}
+
+
+Troque onde você faz fetch(...).then(r => r.json()) para await safeFetchJson(...).
+
+2) Exemplo: Envio com FormData para API que aceita multipart/form-data
+// em PostPaidPublicForm.tsx (ou onde faz submit)
+async function submitForm({ file, placa, litros, valor, baseId }) {
+  const formData = new FormData();
+  if (file) formData.append('photo', file);
+  formData.append('placa', placa);
+  formData.append('litros', String(litros));
+  formData.append('valor', String(valor));
+  formData.append('base_id', String(baseId));
+
+  const res = await fetch('/api/postpaid', {
+    method: 'POST',
+    body: formData,
+    credentials: 'include' // só se usar cookies
+  });
+
+  const text = await res.text();
+  const ct = res.headers.get('content-type') ?? '';
+  if (!ct.includes('application/json')) {
+    console.error('Resposta não-JSON:', text.slice(0, 1000));
+    throw new Error('Servidor retornou HTML — verifique a URL/rota no backend ou autenticação.');
+  }
+  return JSON.parse(text);
+}
+
+
+Importante: NÃO usar headers: { 'Content-Type': 'multipart/form-data' } — o browser precisa setar o boundary.
+
+3) Fluxo recomendando Supabase Storage + insert em tabela (melhor prática)
+
+Se você usa Supabase, fazer upload ao Storage e depois salvar o metadado evita enviar arquivos à API que só aceita JSON.
+
+// import supabase client único (crie um arquivo supabaseClient.ts e use ele em todo app)
+import { createClient } from '@supabase/supabase-js';
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+// função de envio
+async function submitWithSupabase({ file, placa, litros, valor, base_id, projeto }) {
+  let photoPath = null;
+
+  if (file) {
+    const fileName = `${Date.now()}_${file.name}`;
+    const { data: uploadData, error: uploadError } = await supabase
+      .storage
+      .from('nf-photos')   // bucket que você criou
+      .upload(`photos/${fileName}`, file);
+
+    if (uploadError) {
+      console.error('Erro upload storage', uploadError);
+      throw uploadError;
+    }
+    // opcional: URL pública
+    const { publicURL } = supabase.storage.from('nf-photos').getPublicUrl(uploadData.path);
+    photoPath = publicURL; // ou uploadData.path (se quiser ser privado)
+  }
+
+  // inserir registro na tabela postpaids (ajuste nomes de campos conforme seu schema)
+  const { data, error } = await supabase
+    .from('postpaids')
+    .insert([{
+      placa,
+      litros: Number(litros),
+      valor: Number(valor),
+      base_id,
+      projeto,
+      photo_url: photoPath
+    }]);
+
+  if (error) {
+    console.error('Erro insert postpaid', error);
+    throw error;
+  }
+  return data;
+}
+
+
+Dicas:
+
+Centralize supabase em um arquivo e exporte um único cliente. Isso evita mensagens “Multiple GoTrueClient instances”.
+
+Se o bucket é privado, gere URL temporária (createSignedUrl) ao invés de getPublicUrl.
+
+4) Exemplo integrando com React Query (useMutation)
+import { useMutation } from '@tanstack/react-query';
+
+function useSubmitPostPaid() {
+  return useMutation(async (formValues) => {
+    // escolher: submitWithSupabase(formValues) ou submitForm(formValues)
+    return await submitWithSupabase(formValues);
+  }, {
+    onError: (err) => {
+      console.error('Erro mutation', err);
+      // exibir toast com err.message
+    },
+    onSuccess: (data) => {
+      // invalidar queries, mostrar sucesso, etc.
+    }
+  });
+}
+
+
+No seu mutationFn não chame res.json() sem checar content-type — use safeFetchJson do passo 1.
+
+5) Se o backend está em outra rota (Vite/Replit) — atenção ao proxy
+
+Em dev com Vite, se a chamada for para /api/postpaid e você não configurou proxy no vite.config, o navegador requisitará o mesmo host (frontend) e vai devolver HTML. Configure server.proxy apontando para seu backend, ou use a URL completa (https://meu-backend.local/api/postpaid).
+
+6) Mensagem de erro amigável pra o usuário
+
+No catch, trate e mostre mensagem clara:
+
+try {
+  await mutation.mutateAsync(values);
+  toast.success('Solicitação enviada');
+} catch (e) {
+  // se e for Error com mensagem do servidor
+  toast.error(e.message || 'Erro ao enviar. Verifique console.');
+}

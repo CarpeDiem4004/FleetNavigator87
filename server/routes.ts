@@ -23785,10 +23785,10 @@ async function createFuelRequestNotification(fuelRequest) {
         data: result.rows[0] 
       };
       console.log('[PostPaid] ✅ Enviando resposta JSON:', JSON.stringify(responseData));
-      res.status(200).json(responseData);
+      return res.status(200).json(responseData);
     } catch (error) {
       console.error('[PostPaid] Erro ao criar registro público:', error);
-      res.status(500).json({ 
+      return res.status(500).json({ 
         success: false, 
         message: 'Erro ao criar registro' 
       });
