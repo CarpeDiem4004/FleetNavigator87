@@ -2427,8 +2427,17 @@ app.use((req, res, next) => {
   // Registrar rotas de cartões de combustível
   app.use('/api/fuel-cards', fuelCardRoutes);
 
+  // importantly only setup vite in development and after
+  // setting up all the other routes so the catch-all route
+  // doesn't interfere with the other routes
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
+  
   // CRITICAL: Catch-all para rotas de API não encontradas
-  // Isso DEVE vir ANTES do Vite para prevenir que o Vite sirva HTML para APIs
+  // DEVE vir DEPOIS do Vite para capturar apenas APIs que realmente não existem
   app.use('/api/*', (req, res, next) => {
     // Se chegamos aqui, nenhuma rota de API correspondeu
     // Retornar 404 JSON ao invés de deixar o Vite servir HTML
@@ -2441,15 +2450,6 @@ app.use((req, res, next) => {
     }
     next();
   });
-
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
