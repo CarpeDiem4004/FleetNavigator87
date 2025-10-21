@@ -1,0 +1,126 @@
+Perfeito — esse HTML que você colou confirma o diagnóstico: o backend retornou a página HTML da sua aplicação (index.html) em vez de um JSON. Ou seja, a requisição não caiu na rota/API que retorna JSON, caiu num fallback (SPA) ou numa página de erro/redirect. Aqui estão o que isso significa e o que precisa checar / corrigir, com passos e exemplos práticos para você aplicar agora.
+
+O que esse HTML prova
+
+O servidor respondeu com a página do front-end (index.html).
+
+Portanto a URL chamada não está entregando JSON — ou porque a rota da API está errada, ou porque houve redirecionamento (login/timeout), erro do servidor que voltou como HTML, ou você chamou a rota do frontend por engano.
+
+Checklist prático (faça nessa ordem)
+
+Abra DevTools → Network → localize a requisição que falhou. copie:
+
+URL chamada
+
+Status code (200 / 302 / 404 / 500 / 401)
+
+Response (você já colou: é index.html)
+
+Request payload e Request headers (especialmente Content-Type, Authorization, Cookie)
+
+Verifique a URL:
+
+Está apontando para /api/... ou para o domínio do backend (ex: https://api.seudominio.com/...)?
+
+Em desenvolvimento pode estar apontando para https://<app>.replit.dev/postpaid (isso pode servir html se rota não existir).
+
+Se usar proxy (Vite), confirme vite.config / proxy ou base estão corretos.
+
+Verifique status code:
+
+302/301 → redirecionamento (provavelmente para login) — cheque autenticação.
+
+404 → rota inexistente → corrija a URL ou implemente a rota.
+
+500 → erro interno → ver logs do backend.
+
+200 mas body HTML → rota existe mas retorna index.html (fallback).
+
+Verifique Content-Type do Response:
+
+Se text/html → resposta HTML (index) — servidor não retornou JSON.
+
+Se application/json com body HTML seria estranho; tipicamente é text/html.
+
+Autenticação:
+
+Sessão expirada? Backend pode redirecionar para login (HTML).
+
+Se usa cookies, envie credentials: 'include'.
+
+Se usa token, verifique header Authorization: Bearer <token>.
+
+Upload de arquivo x JSON:
+
+Se você enviou FormData (arquivo + campos) NÃO defina Content-Type manualmente — isso quebra o boundary.
+
+Se o backend espera JSON, suba o arquivo primeiro no Storage (Supabase Storage) e depois envie JSON com photo_url.
+
+Supabase específico:
+
+Se tentou enviar o arquivo direto para a tabela via POST JSON, não vai funcionar — precisa subir no storage e gravar metadado na tabela.
+
+Verifique endpoints: supabase.storage.from('bucket').upload(...) e depois supabase.from('table').insert({ photo_path }).
+
+Código para detectar / logar quando a resposta não for JSON
+
+Adicione isso onde tratar a resposta — vai imprimir claramente o que o servidor retornou.
+
+const res = await fetch(url, options);
+const text = await res.text();
+const contentType = res.headers.get('content-type') ?? '';
+console.log('Status:', res.status, 'Content-Type:', contentType);
+if (!contentType.includes('application/json')) {
+  console.error('Resposta NÃO é JSON:', text.slice(0, 1000)); // mostre parte do HTML
+  throw new Error(`Servidor retornou ${res.status} e não JSON`);
+}
+const json = JSON.parse(text);
+
+Exemplos de envio corretos
+1) Enviar FormData (arquivo + campos) → servidor aceita FormData
+const formData = new FormData();
+formData.append('photo', fileInput.files[0]);
+formData.append('placa', placa);
+formData.append('litros', litros);
+
+const res = await fetch('/api/postpaid', {
+  method: 'POST',
+  body: formData,
+  credentials: 'include' // se usa cookie de sessão
+});
+
+
+Nunca faça headers: { 'Content-Type': 'multipart/form-data' } — o browser define o boundary.
+
+2) Upload para Supabase Storage + enviar JSON com metadado
+// 1) upload no storage
+const { data: uploadData, error: uploadError } = await supabase
+  .storage.from('nf-photos')
+  .upload(`photos/${file.name}`, file);
+
+if (uploadError) throw uploadError;
+const publicUrl = supabase.storage.from('nf-photos').getPublicUrl(uploadData.path).publicUrl;
+
+// 2) enviar registro com URL
+const res = await fetch('/api/postpaid', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    placa,
+    litros,
+    photo_url: publicUrl
+  })
+});
+
+Possíveis causas específicas no seu caso (pela tela e logs)
+
+O console mostrou 200 true mas o toast indicou erro de JSON — provavelmente o endpoint retornou 200 mas com a página HTML (index), por isso response.json() falha. Verifique qual URL a chamada usou: provavelmente está apontando para .../postpaid no frontend (rota de página) ao invés de .../api/postpaid do backend.
+
+Também vi mensagens sobre múltiplas instâncias do Supabase client — cuidado com inicializações duplicadas: mantenha um único cliente compartilhado.
+
+Solução rápida para testar agora
+
+No DevTools → Network → clique na requisição → copie a Request URL e cole aqui.
+(Se preferir, só verifique você mesmo: se a URL termina em /postpaid sem /api, corrija para o endpoint da API.)
+
+Aplique o snippet acima que checa content-type e loga text — isso mostra a resposta inteira (onde você já tem o HTML).

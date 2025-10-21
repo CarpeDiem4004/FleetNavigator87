@@ -23674,11 +23674,11 @@ async function createFuelRequestNotification(fuelRequest) {
 
   // Criar registro de abastecimento público (sem token) com upload de foto
   app.post('/api/postpaid/public-records', (req, res, next) => {
-    // Forçar headers JSON ANTES de qualquer processamento
-    res.setHeader('Content-Type', 'application/json');
-    
     uploadPostpaidReceipt.single('receipt_photo')(req, res, (err: any) => {
       if (err) {
+        // Forçar Content-Type JSON para erros
+        res.setHeader('Content-Type', 'application/json');
+        
         // Tratar erros do multer (arquivo muito grande, tipo inválido, etc)
         if (err.code === 'LIMIT_FILE_SIZE') {
           return res.status(400).json({
@@ -23700,6 +23700,9 @@ async function createFuelRequestNotification(fuelRequest) {
       next();
     });
   }, async (req, res) => {
+    // Forçar Content-Type JSON para todas as respostas
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
     try {
       const {
         project_id,
