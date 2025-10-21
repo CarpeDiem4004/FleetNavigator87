@@ -1972,22 +1972,29 @@ export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: R
     const workbook = XLSX.utils.book_new();
     
     // Formatar dados para a planilha
-    const formattedData = allSolicitations.map((sol: any) => ({
-      'Data da Solicitação': sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleString('pt-BR') : '',
-      'Nome do Solicitante': sol.nome_solicitante || '',
-      'Telefone': sol.telefone || '',
-      'Placa do Carro': sol.placa || '',
-      'Nome do Motorista': sol.motorista || '',
-      'Provedor do Cartão': sol.provedor_cartao || '',
-      'Vinculado/Não Vinculado': sol.tipo_cartao || '',
-      'Placa do Cartão': sol.numero_cartao || '',
-      'Valor': Number(sol.valor_solicitado || 0),
-      'Data de Uso': sol.data_uso ? new Date(sol.data_uso).toLocaleDateString('pt-BR') : '',
-      'Nome da Base': sol.base || '',
-      'AM/PM': sol.turno || '',
-      'Status': sol.status || '',
-      'Observação': sol.observacoes || ''
-    }));
+    const formattedData = allSolicitations.map((sol: any) => {
+      // Se tipo_cartao for "placa", usar a placa do carro na coluna "Placa do Cartão"
+      const placaCartao = sol.tipo_cartao?.toLowerCase() === 'placa' 
+        ? (sol.placa || '') 
+        : (sol.numero_cartao || '');
+      
+      return {
+        'Data da Solicitação': sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleString('pt-BR') : '',
+        'Nome do Solicitante': sol.nome_solicitante || '',
+        'Telefone': sol.telefone || '',
+        'Placa do Carro': sol.placa || '',
+        'Nome do Motorista': sol.motorista || '',
+        'Provedor do Cartão': sol.provedor_cartao || '',
+        'Vinculado/Não Vinculado': sol.tipo_cartao || '',
+        'Placa do Cartão': placaCartao,
+        'Valor': Number(sol.valor_solicitado || 0),
+        'Data de Uso': sol.data_uso ? new Date(sol.data_uso).toLocaleDateString('pt-BR') : '',
+        'Nome da Base': sol.base || '',
+        'AM/PM': sol.turno || '',
+        'Status': sol.status || '',
+        'Observação': sol.observacoes || ''
+      };
+    });
 
     const worksheet = XLSX.utils.json_to_sheet(formattedData);
     
