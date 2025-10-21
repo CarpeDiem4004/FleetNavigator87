@@ -163,6 +163,8 @@ import lineHallRoutes from './routes/lineHallRoutes';
 import equipmentRoutes from './routes/equipmentRoutes';
 // Importação das rotas de recebimento de combustível
 import fuelReceiptRoutes from './routes/fuelReceiptRoutes.js';
+// Importação das rotas pós-pago (isoladas em arquivo separado)
+import { setupPostPaidRoutes } from './routes/postpaid.js';
 // Importação do cliente Supabase para armazenamento de arquivos
 import { createClient } from '@supabase/supabase-js';
 // Importação das rotas de diagnóstico já feita acima
@@ -23432,11 +23434,10 @@ async function createFuelRequestNotification(fuelRequest) {
       });
     }
   });
-
-
-  */ // Fechando o comentário da seção duplicada removida
+  */ // ✅ Fechando o comentário da seção duplicada removida (até linha 23434)
 
   // ==================== ROTAS DO SISTEMA PÓS-PAGO ====================
+  console.log('🔵 [ROUTES] Iniciando seção de rotas pós-pago (linha 23439)');
   
   // Criar novo token de acesso
   app.post('/api/postpaid/tokens', authMiddleware, async (req, res) => {
@@ -23672,6 +23673,8 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
+  console.log('🟢 [ROUTES] Registrando rota POST /api/postpaid/public-records com Multer');
+
   // Criar registro de abastecimento público (sem token) com upload de foto
   app.post('/api/postpaid/public-records', (req, res, next) => {
     console.log('[PostPaid] 🔵 ROTA CHAMADA - Iniciando processamento');
@@ -23861,7 +23864,6 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
-  // ==================== FIM ROTAS PÓS-PAGO ====================
 
   const httpServer = createServer(app);
   return httpServer;
