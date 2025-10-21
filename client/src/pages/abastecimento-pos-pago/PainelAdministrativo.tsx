@@ -735,6 +735,50 @@ export default function PainelAdministrativoAbastecimento() {
 
         {/* Aba de Abastecimentos */}
         <TabsContent value="abastecimentos" className="space-y-4">
+          {/* Card com Link Público */}
+          <Card className="bg-blue-50 border-blue-200" data-testid="card-link-publico">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-blue-900">
+                <ExternalLink className="h-5 w-5" />
+                Link Público para Motoristas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-blue-800 mb-3">
+                Compartilhe este link com os motoristas para que eles possam registrar abastecimentos diretamente:
+              </p>
+              <div className="flex gap-2">
+                <Input 
+                  value={`${window.location.origin}/postpaid`}
+                  readOnly
+                  className="bg-white font-mono text-sm"
+                  data-testid="input-link-publico"
+                />
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/postpaid`);
+                    toast({ title: "Link copiado com sucesso!" });
+                  }}
+                  data-testid="button-copiar-link"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copiar
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.open('/postpaid', '_blank')}
+                  data-testid="button-abrir-link"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Abrir
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card data-testid="card-lista-abastecimentos">
             <CardHeader>
               <CardTitle>Lista de Abastecimentos ({getAbastecimentos().length})</CardTitle>
