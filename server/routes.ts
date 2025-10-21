@@ -23674,7 +23674,12 @@ async function createFuelRequestNotification(fuelRequest) {
 
   // Criar registro de abastecimento público (sem token) com upload de foto
   app.post('/api/postpaid/public-records', (req, res, next) => {
+    console.log('[PostPaid] 🔵 ROTA CHAMADA - Iniciando processamento');
+    console.log('[PostPaid] Headers:', req.headers);
+    console.log('[PostPaid] Content-Type:', req.headers['content-type']);
+    
     uploadPostpaidReceipt.single('receipt_photo')(req, res, (err: any) => {
+      console.log('[PostPaid] 🟡 Multer processado - Erro?', !!err);
       if (err) {
         // Forçar Content-Type JSON para erros
         res.setHeader('Content-Type', 'application/json');

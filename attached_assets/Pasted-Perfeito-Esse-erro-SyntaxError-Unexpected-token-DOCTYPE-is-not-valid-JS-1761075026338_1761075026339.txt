@@ -1,0 +1,88 @@
+Perfeito 👍
+
+Esse erro:
+
+```
+SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+```
+
+significa **quase sempre** que o backend **não está retornando JSON**, e sim **uma página HTML de erro** — mesmo que o código HTTP seja `200`.
+No seu caso, a mensagem indica que a função `mutationFn` (provavelmente um `fetch` ou `axios.post`) esperava JSON, mas recebeu algo como:
+
+```html
+<!DOCTYPE html>
+<html>
+  <head><title>404 Not Found</title></head>
+  ...
+</html>
+```
+
+---
+
+### 🧭 Causas comuns:
+
+1. **A rota do backend está incorreta** (ex: `/api/postpaid` em vez de `/api/post-paid`).
+2. **O backend caiu** ou **retornou uma página padrão do Railway/Vercel**.
+3. **O endpoint foi movido** e o frontend ainda usa o antigo.
+4. **O backend responde em HTML para erros**, e o frontend não trata isso antes de chamar `res.json()`.
+
+---
+
+### ✅ Como resolver:
+
+#### 1. Verifique a rota
+
+No seu `fetch` ou `axios`, confirme se o endpoint está correto:
+
+```ts
+const res = await fetch(`${API_URL}/postpaid`, { ... })
+```
+
+Acesse esse endereço direto no navegador ou via curl — ele deve **mostrar JSON** (ex: `{ "success": true }`) e não HTML.
+
+---
+
+#### 2. Adicione tratamento de erro antes do `res.json()`
+
+Em vez de fazer direto:
+
+```ts
+const data = await res.json()
+```
+
+use:
+
+```ts
+const text = await res.text()
+try {
+  const json = JSON.parse(text)
+  return json
+} catch {
+  console.error("Resposta não era JSON:", text)
+  throw new Error("Erro ao parsear JSON do servidor")
+}
+```
+
+➡️ Assim você verá **exatamente o HTML retornado**, o que ajuda a identificar se é uma página de erro 404, 500 ou de permissão negada.
+
+---
+
+#### 3. Verifique o backend
+
+No seu backend (provavelmente Express ou Fastify), confirme que o endpoint realmente responde JSON:
+
+```js
+app.post('/postpaid', async (req, res) => {
+  try {
+    // lógica
+    res.status(200).json({ success: true, data: ... })
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+```
+
+---
+
+Se quiser, posso olhar o trecho exato do seu código que está gerando esse erro (`mutationFn`) e te mostrar onde ajustar para identificar a resposta incorreta.
+👉 Pode colar aqui o trecho onde você faz o `fetch` ou o `axios.post` que retorna esse erro.
