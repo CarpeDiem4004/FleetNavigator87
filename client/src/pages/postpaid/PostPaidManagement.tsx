@@ -25,10 +25,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { FileText, Link2, Plus, ExternalLink, Copy, Download } from 'lucide-react';
+import { FileText, Link2, Plus, ExternalLink, Copy, Download, Eye, Image as ImageIcon } from 'lucide-react';
 
 interface Project {
   id: number;
@@ -57,15 +65,14 @@ interface PostPaidToken {
 interface PostPaidRecord {
   id: number;
   driver_name: string;
-  driver_rg: string;
   driver_phone: string;
   vehicle_plate: string;
+  odometer_km: number;
   fuel_type: string;
-  price_per_liter: number;
   liters: number;
   total_amount: number;
-  period: string;
   manager_name: string;
+  receipt_photo_url: string;
   project_name: string;
   base_name: string;
   created_at: string;
@@ -76,6 +83,7 @@ export default function PostPaidManagement() {
   const { toast } = useToast();
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [selectedBase, setSelectedBase] = useState<string>('');
+  const [viewingRecord, setViewingRecord] = useState<PostPaidRecord | null>(null);
 
   // Buscar projetos
   const { data: projects = [] } = useQuery<Project[]>({
@@ -244,12 +252,16 @@ export default function PostPaidManagement() {
                     <TableRow>
                       <TableHead>Data/Hora</TableHead>
                       <TableHead>Motorista</TableHead>
+                      <TableHead>Telefone</TableHead>
                       <TableHead>Placa</TableHead>
+                      <TableHead>KM</TableHead>
                       <TableHead>Combustível</TableHead>
                       <TableHead>Litros</TableHead>
                       <TableHead>Valor Total</TableHead>
+                      <TableHead>Gestor</TableHead>
                       <TableHead>Projeto/Base</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -259,12 +271,15 @@ export default function PostPaidManagement() {
                           {new Date(record.created_at).toLocaleString('pt-BR')}
                         </TableCell>
                         <TableCell>{record.driver_name}</TableCell>
+                        <TableCell>{record.driver_phone}</TableCell>
                         <TableCell className="font-mono">{record.vehicle_plate}</TableCell>
+                        <TableCell>{record.odometer_km?.toLocaleString() || '-'} km</TableCell>
                         <TableCell>{record.fuel_type}</TableCell>
                         <TableCell>{record.liters.toFixed(2)}L</TableCell>
                         <TableCell className="font-semibold">
                           R$ {record.total_amount.toFixed(2)}
                         </TableCell>
+                        <TableCell>{record.manager_name}</TableCell>
                         <TableCell>
                           <div className="text-sm">
                             <div className="font-medium">{record.project_name}</div>
@@ -283,6 +298,93 @@ export default function PostPaidManagement() {
                           >
                             {record.status}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setViewingRecord(record)}
+                                data-testid={`button-view-${record.id}`}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl">
+                              <DialogHeader>
+                                <DialogTitle>Detalhes do Abastecimento #{record.id}</DialogTitle>
+                                <DialogDescription>
+                                  Registrado em {new Date(record.created_at).toLocaleString('pt-BR')}
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="grid grid-cols-2 gap-4 mt-4">
+                                <div>
+                                  <Label className="text-xs text-gray-500">Motorista</Label>
+                                  <p className="font-medium">{record.driver_name}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-xs text-gray-500">Telefone</Label>
+                                  <p className="font-medium">{record.driver_phone}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-xs text-gray-500">Placa do Veículo</Label>
+                                  <p className="font-mono font-medium">{record.vehicle_plate}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-xs text-gray-500">Quilometragem</Label>
+                                  <p className="font-medium">{record.odometer_km?.toLocaleString() || '-'} km</p>
+                                </div>
+                                <div>
+                                  <Label className="text-xs text-gray-500">Tipo de Combustível</Label>
+                                  <p className="font-medium">{record.fuel_type}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-xs text-gray-500">Litros Abastecidos</Label>
+                                  <p className="font-medium">{record.liters.toFixed(2)} L</p>
+                                </div>
+                                <div>
+                                  <Label className="text-xs text-gray-500">Valor Total</Label>
+                                  <p className="font-semibold text-lg text-green-600">
+                                    R$ {record.total_amount.toFixed(2)}
+                                  </p>
+                                </div>
+                                <div>
+                                  <Label className="text-xs text-gray-500">Gestor/Coordenador</Label>
+                                  <p className="font-medium">{record.manager_name}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-xs text-gray-500">Projeto</Label>
+                                  <p className="font-medium">{record.project_name}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-xs text-gray-500">Base</Label>
+                                  <p className="font-medium">{record.base_name}</p>
+                                </div>
+                              </div>
+                              
+                              {record.receipt_photo_url && (
+                                <div className="mt-6">
+                                  <Label className="text-sm font-medium mb-2 block">Foto da Nota Fiscal</Label>
+                                  <div className="border rounded-lg p-2 bg-gray-50">
+                                    <img
+                                      src={record.receipt_photo_url}
+                                      alt="Nota Fiscal"
+                                      className="w-full h-auto rounded max-h-96 object-contain"
+                                    />
+                                  </div>
+                                  <a
+                                    href={record.receipt_photo_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-blue-600 hover:underline mt-2 inline-block"
+                                  >
+                                    Abrir foto em nova aba
+                                  </a>
+                                </div>
+                              )}
+                            </DialogContent>
+                          </Dialog>
                         </TableCell>
                       </TableRow>
                     ))}
