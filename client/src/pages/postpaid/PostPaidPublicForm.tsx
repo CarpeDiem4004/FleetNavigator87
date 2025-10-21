@@ -22,7 +22,8 @@ interface Project {
 
 interface Base {
   id: number;
-  basename: string;
+  name: string;
+  basename?: string;
 }
 
 export default function PostPaidPublicForm() {
@@ -305,7 +306,7 @@ export default function PostPaidPublicForm() {
                     <SelectContent>
                       {bases.map((base) => (
                         <SelectItem key={base.id} value={base.id.toString()}>
-                          {base.basename}
+                          {base.name || base.basename || 'Base sem nome'}
                         </SelectItem>
                       ))}
                     </SelectContent>
