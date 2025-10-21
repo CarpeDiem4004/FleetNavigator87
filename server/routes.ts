@@ -23670,6 +23670,7 @@ async function createFuelRequestNotification(fuelRequest) {
         fuel_type,
         liters,
         total_amount,
+        manager_name,
       } = req.body;
 
       // Verificar se a foto foi enviada
@@ -23712,9 +23713,9 @@ async function createFuelRequestNotification(fuelRequest) {
       const result = await pool.query(
         `INSERT INTO postpaid_fuel_records (
           driver_name, driver_phone, vehicle_plate, odometer_km,
-          fuel_type, liters, total_amount, receipt_photo_url,
+          fuel_type, liters, total_amount, receipt_photo_url, manager_name,
           project_id, base_id, project_name, base_name, ip_address, user_agent, status
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pendente')
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'pendente')
         RETURNING id, created_at`,
         [
           driver_name,
@@ -23725,6 +23726,7 @@ async function createFuelRequestNotification(fuelRequest) {
           parseFloat(liters),
           parseFloat(total_amount),
           receipt_photo_url,
+          manager_name,
           project_id,
           base_id,
           project_name,

@@ -38,6 +38,7 @@ export default function PostPaidPublicForm() {
     fuel_type: '',
     liters: '',
     total_amount: '',
+    manager_name: '',
   });
   
   const [receiptPhoto, setReceiptPhoto] = useState<File | null>(null);
@@ -112,6 +113,7 @@ export default function PostPaidPublicForm() {
       formDataToSend.append('fuel_type', formData.fuel_type);
       formDataToSend.append('liters', formData.liters);
       formDataToSend.append('total_amount', formData.total_amount);
+      formDataToSend.append('manager_name', formData.manager_name);
       
       if (receiptPhoto) {
         formDataToSend.append('receipt_photo', receiptPhoto);
@@ -186,6 +188,15 @@ export default function PostPaidPublicForm() {
       return;
     }
 
+    if (!formData.manager_name) {
+      toast({
+        title: 'Campo obrigatório',
+        description: 'Preencha o nome do gestor/coordenador/líder.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!receiptPhoto) {
       toast({
         title: 'Foto obrigatória',
@@ -223,6 +234,7 @@ export default function PostPaidPublicForm() {
                   fuel_type: '',
                   liters: '',
                   total_amount: '',
+                  manager_name: '',
                 });
                 setSelectedProject('');
                 setSelectedBase('');
@@ -398,6 +410,20 @@ export default function PostPaidPublicForm() {
                       placeholder="Ex: 685.00"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Informações do Gestor */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Informações do Gestor</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="manager_name">Nome do Gestor/Coordenador/Líder *</Label>
+                  <Input
+                    id="manager_name"
+                    value={formData.manager_name}
+                    onChange={(e) => setFormData({ ...formData, manager_name: e.target.value })}
+                    placeholder="Nome completo do responsável"
+                  />
                 </div>
               </div>
 
