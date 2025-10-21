@@ -145,18 +145,37 @@ export default function PostPaidPublicForm() {
         formDataToSend.append('receipt_photo', receiptPhoto);
       }
 
+      console.log('[PostPaid] Enviando dados:', {
+        project_id: selectedProject,
+        base_id: selectedBase,
+        has_photo: !!receiptPhoto,
+        photo_size: receiptPhoto?.size,
+      });
+
       // Fazer requisição com fetch direto (não usar apiRequest para FormData)
       const response = await fetch('/api/postpaid/public-records', {
         method: 'POST',
         body: formDataToSend,
       });
 
+      console.log('[PostPaid] Status da resposta:', response.status, response.ok);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao enviar registro');
+        let errorMessage = 'Erro ao enviar registro';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          const textError = await response.text();
+          console.error('[PostPaid] Erro ao parsear JSON:', textError);
+          errorMessage = textError || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
-      return await response.json();
+      const result = await response.json();
+      console.log('[PostPaid] Resultado:', result);
+      return result;
     },
     onSuccess: () => {
       setSubmitted(true);
