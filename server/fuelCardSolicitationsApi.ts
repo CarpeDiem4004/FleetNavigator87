@@ -1981,7 +1981,7 @@ export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: R
       'Provedor do Cartão': sol.provedor_cartao || '',
       'Vinculado/Não Vinculado': sol.tipo_cartao || '',
       'Placa do Cartão': sol.numero_cartao || '',
-      'Valor': Number(sol.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      'Valor': Number(sol.valor_solicitado || 0),
       'Data de Uso': sol.data_uso ? new Date(sol.data_uso).toLocaleDateString('pt-BR') : '',
       'Nome da Base': sol.base || '',
       'AM/PM': sol.turno || '',
