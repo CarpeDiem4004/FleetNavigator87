@@ -1981,10 +1981,12 @@ export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: R
       'Provedor do Cartão': sol.provedor_cartao || '',
       'Vinculado/Não Vinculado': sol.tipo_cartao || '',
       'Placa do Cartão': sol.numero_cartao || '',
-      'Valor': `R$ ${Number(sol.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      'Valor': Number(sol.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
       'Data de Uso': sol.data_uso ? new Date(sol.data_uso).toLocaleDateString('pt-BR') : '',
       'Nome da Base': sol.base || '',
-      'AM/PM': sol.turno || ''
+      'AM/PM': sol.turno || '',
+      'Status': sol.status || '',
+      'Observação': sol.observacoes || ''
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(formattedData);
@@ -2002,7 +2004,9 @@ export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: R
       { wch: 15 }, // Valor
       { wch: 15 }, // Data de Uso
       { wch: 20 }, // Nome da Base
-      { wch: 10 }  // AM/PM
+      { wch: 10 }, // AM/PM
+      { wch: 18 }, // Status
+      { wch: 40 }  // Observação
     ];
     worksheet['!cols'] = colWidths;
 
