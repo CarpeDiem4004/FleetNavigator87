@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { Fuel, CheckCircle2 } from 'lucide-react';
+import { Fuel, CheckCircle2, Share2 } from 'lucide-react';
 
 interface Project {
   id: number;
@@ -47,6 +47,23 @@ export default function PostPaidPublicForm() {
 
   const [totalAmount, setTotalAmount] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+
+  // Função para copiar link
+  const copyFormLink = () => {
+    const formUrl = window.location.href;
+    navigator.clipboard.writeText(formUrl).then(() => {
+      toast({
+        title: 'Link copiado!',
+        description: 'O link do formulário foi copiado para a área de transferência.',
+      });
+    }).catch(() => {
+      toast({
+        title: 'Erro ao copiar',
+        description: 'Não foi possível copiar o link. Por favor, copie manualmente da barra de endereço.',
+        variant: 'destructive',
+      });
+    });
+  };
 
   // Buscar projetos
   const { data: projectsResponse } = useQuery<{ success: boolean; data: Project[] }>({
@@ -265,14 +282,27 @@ export default function PostPaidPublicForm() {
       <div className="max-w-4xl mx-auto">
         <Card>
           <CardHeader>
-            <div className="flex items-center gap-3">
-              <Fuel className="h-8 w-8 text-blue-600" />
-              <div>
-                <CardTitle className="text-2xl">Registro de Abastecimento Pós-Pago</CardTitle>
-                <CardDescription>
-                  Preencha todos os campos abaixo para registrar o abastecimento
-                </CardDescription>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Fuel className="h-8 w-8 text-blue-600" />
+                <div>
+                  <CardTitle className="text-2xl">Registro de Abastecimento Pós-Pago</CardTitle>
+                  <CardDescription>
+                    Preencha todos os campos abaixo para registrar o abastecimento
+                  </CardDescription>
+                </div>
               </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={copyFormLink}
+                className="flex items-center gap-2"
+                data-testid="button-copy-link"
+              >
+                <Share2 className="h-4 w-4" />
+                Copiar Link
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
