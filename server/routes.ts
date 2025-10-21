@@ -1152,17 +1152,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let params = [];
       
       if (status) {
-        whereConditions.push(`a.status = $${params.length + 1}`);
+        whereConditions.push(`status = $${params.length + 1}`);
         params.push(status);
       }
       
       if (base_id) {
-        whereConditions.push(`a.base_id = $${params.length + 1}`);
+        whereConditions.push(`base_id = $${params.length + 1}`);
         params.push(parseInt(base_id as string));
       }
       
       if (projeto_id) {
-        whereConditions.push(`a.projeto_id = $${params.length + 1}`);
+        whereConditions.push(`project_id = $${params.length + 1}`);
         params.push(parseInt(projeto_id as string));
       }
 
@@ -1170,16 +1170,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const query = `
         SELECT 
-          a.*,
-          b.name as base_name,
-          p.name as projeto_name,
-          pe.nome as posto_name
-        FROM abastecimentos_pos_pago a
-        LEFT JOIN bases b ON b.id = a.base_id
-        LEFT JOIN projects p ON p.id = a.projeto_id
-        LEFT JOIN postos_external pe ON pe.id = a.posto_id
+          id,
+          driver_name as nome,
+          driver_phone as telefone,
+          vehicle_plate as placa,
+          odometer_km as km,
+          fuel_type as tipo_combustivel,
+          liters as litros,
+          total_amount as valor_total,
+          manager_name as nome_gestor,
+          receipt_photo_url as foto_nota,
+          project_name as projeto_name,
+          base_name,
+          status,
+          created_at
+        FROM postpaid_fuel_records
         ${whereClause}
-        ORDER BY a.created_at DESC
+        ORDER BY created_at DESC
         LIMIT $${params.length + 1} OFFSET $${params.length + 2}
       `;
       
@@ -1212,27 +1219,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const statsQuery = `
         SELECT 
           COUNT(*) as total_registros,
-          SUM(valor_total) as valor_total,
-          SUM(litros) as litros_total,
+          SUM(total_amount) as valor_total,
+          SUM(liters) as litros_total,
           COUNT(CASE WHEN status = 'pendente' THEN 1 END) as pendentes,
           COUNT(CASE WHEN status = 'faturado' THEN 1 END) as faturados,
           COUNT(CASE WHEN status = 'pago' THEN 1 END) as pagos
-        FROM abastecimentos_pos_pago
+        FROM postpaid_fuel_records
         WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
       `;
       
       // Consumo por base (últimos 30 dias)
       const baseQuery = `
         SELECT 
-          a.base_id,
-          b.name as base_name,
+          base_id,
+          base_name,
           COUNT(*) as total_abastecimentos,
-          SUM(a.valor_total) as total_valor,
-          SUM(a.litros) as total_litros
-        FROM abastecimentos_pos_pago a
-        LEFT JOIN bases b ON b.id = a.base_id
-        WHERE a.created_at >= CURRENT_DATE - INTERVAL '30 days'
-        GROUP BY a.base_id, b.name
+          SUM(total_amount) as total_valor,
+          SUM(liters) as total_litros
+        FROM postpaid_fuel_records
+        WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
+        GROUP BY base_id, base_name
         ORDER BY total_valor DESC
         LIMIT 10
       `;
@@ -1240,14 +1246,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Pendências
       const pendenciasQuery = `
         SELECT 
-          a.base_id,
-          b.name as base_name,
+          base_id,
+          base_name,
           COUNT(*) as pendentes,
-          SUM(a.valor_total) as valor_total_pendente
-        FROM abastecimentos_pos_pago a
-        LEFT JOIN bases b ON b.id = a.base_id
-        WHERE a.status = 'pendente'
-        GROUP BY a.base_id, b.name
+          SUM(total_amount) as valor_total_pendente
+        FROM postpaid_fuel_records
+        WHERE status = 'pendente'
+        GROUP BY base_id, base_name
         ORDER BY valor_total_pendente DESC
         LIMIT 10
       `;

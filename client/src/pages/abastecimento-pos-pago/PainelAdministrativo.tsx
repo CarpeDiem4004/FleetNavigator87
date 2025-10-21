@@ -31,18 +31,17 @@ import { useAuth } from '@/context/AuthContext';
 interface Abastecimento {
   id: number;
   nome: string;
-  cpf: string;
+  telefone: string;
   placa: string;
   km: number;
-  tipo_motorista: string;
   tipo_combustivel: string;
-  valor_unit: number;
   valor_total: number;
   litros: number;
+  nome_gestor: string;
+  foto_nota: string;
   status: 'pendente' | 'faturado' | 'pago';
   base_name: string;
   projeto_name: string;
-  posto_name?: string;
   created_at: string;
 }
 
@@ -483,7 +482,15 @@ export default function PainelAdministrativoAbastecimento() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-500">Telefone:</span>
+                          <div className="font-medium">{item.telefone}</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">KM:</span>
+                          <div className="font-medium">{item.km?.toLocaleString() || '-'} km</div>
+                        </div>
                         <div>
                           <span className="text-gray-500">Base:</span>
                           <div className="font-medium">{item.base_name}</div>
@@ -496,43 +503,130 @@ export default function PainelAdministrativoAbastecimento() {
                           <span className="text-gray-500">Combustível:</span>
                           <div className="font-medium capitalize">{item.tipo_combustivel}</div>
                         </div>
-                        <div>
-                          <span className="text-gray-500">Data:</span>
-                          <div className="font-medium">{formatDate(item.created_at)}</div>
-                        </div>
                       </div>
 
-                      {item.status === 'pendente' && (
-                        <div className="flex gap-2 pt-2">
-                          <Button
-                            size="sm"
-                            onClick={() => updateStatusMutation.mutate({ id: item.id, status: 'faturado' })}
-                            disabled={updateStatusMutation.isPending}
-                          >
-                            Marcar como Faturado
-                          </Button>
+                      <div className="flex items-center justify-between pt-2 border-t">
+                        <div className="flex gap-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button size="sm" variant="outline">
+                                <Eye className="w-4 h-4 mr-2" />
+                                Ver Detalhes
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle>Detalhes do Abastecimento #{item.id}</DialogTitle>
+                              </DialogHeader>
+                              <div className="grid grid-cols-2 gap-4 mt-4">
+                                <div>
+                                  <span className="text-xs text-gray-500">Motorista</span>
+                                  <p className="font-medium">{item.nome}</p>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-gray-500">Telefone</span>
+                                  <p className="font-medium">{item.telefone}</p>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-gray-500">Placa</span>
+                                  <p className="font-medium font-mono">{item.placa}</p>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-gray-500">Quilometragem</span>
+                                  <p className="font-medium">{item.km?.toLocaleString() || '-'} km</p>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-gray-500">Combustível</span>
+                                  <p className="font-medium">{item.tipo_combustivel}</p>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-gray-500">Litros</span>
+                                  <p className="font-medium">{parseFloat(item.litros || '0').toFixed(2)} L</p>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-gray-500">Valor Total</span>
+                                  <p className="font-semibold text-lg text-green-600">{formatCurrency(item.valor_total)}</p>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-gray-500">Gestor/Coordenador</span>
+                                  <p className="font-medium">{item.nome_gestor}</p>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-gray-500">Projeto</span>
+                                  <p className="font-medium">{item.projeto_name}</p>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-gray-500">Base</span>
+                                  <p className="font-medium">{item.base_name}</p>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-gray-500">Data</span>
+                                  <p className="font-medium">{formatDate(item.created_at)}</p>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-gray-500">Status</span>
+                                  <Badge className={getStatusColor(item.status)}>
+                                    {item.status}
+                                  </Badge>
+                                </div>
+                              </div>
+                              
+                              {item.foto_nota && (
+                                <div className="mt-6">
+                                  <span className="text-sm font-medium mb-2 block">Foto da Nota Fiscal</span>
+                                  <div className="border rounded-lg p-2 bg-gray-50">
+                                    <img
+                                      src={item.foto_nota}
+                                      alt="Nota Fiscal"
+                                      className="w-full h-auto rounded max-h-96 object-contain"
+                                    />
+                                  </div>
+                                  <a
+                                    href={item.foto_nota}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-blue-600 hover:underline mt-2 inline-block"
+                                  >
+                                    Abrir foto em nova aba
+                                  </a>
+                                </div>
+                              )}
+                            </DialogContent>
+                          </Dialog>
                         </div>
-                      )}
 
-                      {item.status === 'faturado' && (
-                        <div className="flex gap-2 pt-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateStatusMutation.mutate({ id: item.id, status: 'pendente' })}
-                            disabled={updateStatusMutation.isPending}
-                          >
-                            Voltar para Pendente
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => updateStatusMutation.mutate({ id: item.id, status: 'pago' })}
-                            disabled={updateStatusMutation.isPending}
-                          >
-                            Marcar como Pago
-                          </Button>
+                        <div className="flex gap-2">
+                          {item.status === 'pendente' && (
+                            <Button
+                              size="sm"
+                              onClick={() => updateStatusMutation.mutate({ id: item.id, status: 'faturado' })}
+                              disabled={updateStatusMutation.isPending}
+                            >
+                              Marcar como Faturado
+                            </Button>
+                          )}
+
+                          {item.status === 'faturado' && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateStatusMutation.mutate({ id: item.id, status: 'pendente' })}
+                                disabled={updateStatusMutation.isPending}
+                              >
+                                Voltar para Pendente
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => updateStatusMutation.mutate({ id: item.id, status: 'pago' })}
+                                disabled={updateStatusMutation.isPending}
+                              >
+                                Marcar como Pago
+                              </Button>
+                            </>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
                   ))}
                 </div>
