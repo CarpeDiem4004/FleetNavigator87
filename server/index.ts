@@ -2427,6 +2427,21 @@ app.use((req, res, next) => {
   // Registrar rotas de cartões de combustível
   app.use('/api/fuel-cards', fuelCardRoutes);
 
+  // CRITICAL: Catch-all para rotas de API não encontradas
+  // Isso DEVE vir ANTES do Vite para prevenir que o Vite sirva HTML para APIs
+  app.use('/api/*', (req, res, next) => {
+    // Se chegamos aqui, nenhuma rota de API correspondeu
+    // Retornar 404 JSON ao invés de deixar o Vite servir HTML
+    if (!res.headersSent) {
+      console.log(`[API-404] Rota de API não encontrada: ${req.method} ${req.path}`);
+      return res.status(404).json({
+        success: false,
+        message: `Rota de API não encontrada: ${req.method} ${req.path}`
+      });
+    }
+    next();
+  });
+
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
