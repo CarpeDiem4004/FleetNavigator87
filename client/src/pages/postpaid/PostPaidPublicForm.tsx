@@ -160,23 +160,34 @@ export default function PostPaidPublicForm() {
       });
 
       console.log('[PostPaid] Status da resposta:', response.status, response.ok);
+      console.log('[PostPaid] Content-Type:', response.headers.get('content-type'));
+
+      // Ler resposta como texto primeiro para debugar
+      const responseText = await response.text();
+      console.log('[PostPaid] Resposta (primeiros 200 chars):', responseText.substring(0, 200));
 
       if (!response.ok) {
         let errorMessage = 'Erro ao enviar registro';
         try {
-          const errorData = await response.json();
+          const errorData = JSON.parse(responseText);
           errorMessage = errorData.message || errorMessage;
         } catch (e) {
-          const textError = await response.text();
-          console.error('[PostPaid] Erro ao parsear JSON:', textError);
-          errorMessage = textError || errorMessage;
+          console.error('[PostPaid] Resposta não é JSON:', responseText);
+          errorMessage = 'Erro no servidor: ' + responseText.substring(0, 100);
         }
         throw new Error(errorMessage);
       }
 
-      const result = await response.json();
-      console.log('[PostPaid] Resultado:', result);
-      return result;
+      // Tentar parsear JSON
+      try {
+        const result = JSON.parse(responseText);
+        console.log('[PostPaid] Resultado parseado:', result);
+        return result;
+      } catch (e) {
+        console.error('[PostPaid] ERRO ao parsear JSON da resposta 200:', e);
+        console.error('[PostPaid] Texto recebido:', responseText);
+        throw new Error('Servidor retornou resposta inválida. Ver console para detalhes.');
+      }
     },
     onSuccess: () => {
       setSubmitted(true);

@@ -49,15 +49,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // VERIFICAÇÃO SIMPLES: Apenas autenticação por sessão
   useEffect(() => {
     const checkAuth = async () => {
-      // Pular verificação de autenticação em rotas públicas
-      const publicRoutes = ['/postpaid', '/postpaid/'];
-      const currentPath = window.location.pathname;
-      if (publicRoutes.some(route => currentPath.includes(route))) {
-        console.log('[AuthContext] Rota pública detectada, pulando verificação de autenticação');
-        setIsLoading(false);
-        return;
-      }
-
       console.log("Verificando autenticação tradicional...");
       
       try {
