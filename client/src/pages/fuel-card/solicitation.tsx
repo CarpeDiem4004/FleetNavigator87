@@ -502,7 +502,7 @@ export default function FuelCardSolicitation() {
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex flex-col space-y-1"
                         >
                           <FormItem className="flex items-center space-x-3 space-y-0">
@@ -534,7 +534,7 @@ export default function FuelCardSolicitation() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Provedor do Cartão</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o provedor do cartão" />
@@ -559,7 +559,7 @@ export default function FuelCardSolicitation() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo de Combustível</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o tipo de combustível" />
