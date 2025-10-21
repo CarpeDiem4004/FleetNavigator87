@@ -23674,6 +23674,9 @@ async function createFuelRequestNotification(fuelRequest) {
 
   // Criar registro de abastecimento público (sem token) com upload de foto
   app.post('/api/postpaid/public-records', (req, res, next) => {
+    // Forçar headers JSON ANTES de qualquer processamento
+    res.setHeader('Content-Type', 'application/json');
+    
     uploadPostpaidReceipt.single('receipt_photo')(req, res, (err: any) => {
       if (err) {
         // Tratar erros do multer (arquivo muito grande, tipo inválido, etc)
@@ -23774,10 +23777,12 @@ async function createFuelRequestNotification(fuelRequest) {
         ]
       );
 
-      res.json({ 
+      const responseData = { 
         success: true, 
         data: result.rows[0] 
-      });
+      };
+      console.log('[PostPaid] ✅ Enviando resposta JSON:', JSON.stringify(responseData));
+      res.status(200).json(responseData);
     } catch (error) {
       console.error('[PostPaid] Erro ao criar registro público:', error);
       res.status(500).json({ 
