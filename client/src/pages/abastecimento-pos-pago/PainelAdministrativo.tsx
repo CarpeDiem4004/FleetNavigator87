@@ -1,32 +1,41 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { 
   Fuel, 
-  Plus, 
-  ExternalLink, 
-  Copy, 
   DollarSign, 
   TrendingUp, 
   AlertCircle,
   Eye,
-  Search,
-  Calendar,
   FileText,
-  Settings,
   CheckCircle,
   Clock,
-  CreditCard
+  Droplet,
+  Car,
+  Leaf,
+  Download,
+  Filter,
+  Calendar,
+  BarChart3,
+  PieChart,
+  LineChart,
+  Lightbulb
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useAuth } from '@/context/AuthContext';
+import { BarChart, Bar, PieChart as RePieChart, Pie, Cell, LineChart as ReLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useToast } from '@/hooks/use-toast';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 interface Abastecimento {
   id: number;
@@ -45,43 +54,81 @@ interface Abastecimento {
   created_at: string;
 }
 
-interface Token {
-  id: number;
-  token: string;
-  base_name: string;
-  projeto_name: string;
-  ativo: boolean;
-  expires_at: string;
-  created_at: string;
+interface DashboardData {
+  estatisticas: {
+    total_registros: number;
+    valor_total: number;
+    litros_total: number;
+    pendentes: number;
+    faturados: number;
+    pagos: number;
+  };
+  consumo_por_base: Array<{
+    base_name: string;
+    total_abastecimentos: number;
+    total_valor: number;
+    total_litros: number;
+  }>;
+  pendencias: Array<{
+    base_name: string;
+    pendentes: number;
+    valor_total_pendente: number;
+  }>;
 }
 
-interface Posto {
-  id: number;
-  nome: string;
-  cnpj: string;
-  ativo: boolean;
-}
+const FUEL_COLORS = {
+  'diesel': '#FF8C00',
+  'diesel s10': '#FF8C00',
+  'gasolina': '#DC143C',
+  'gasolina aditivada': '#DC143C',
+  'etanol': '#32CD32',
+  'arla': '#4169E1',
+  'arla 32': '#4169E1'
+};
 
-interface DashboardStats {
-  total_registros: number;
-  valor_total: number;
-  litros_total: number;
-  pendentes: number;
-  faturados: number;
-  pagos: number;
-}
+const CHART_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
 export default function PainelAdministrativoAbastecimento() {
   const { user, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('dashboard');
+  
   const [filters, setFilters] = useState({
+    base_name: '',
+    tipo_combustivel: '',
     status: '',
-    base_id: '',
-    projeto_id: ''
+    data_inicio: '',
+    data_fim: ''
   });
-  const [newToken, setNewToken] = useState({ base_id: '', projeto_id: '', expires_days: 90 });
 
-  // Só renderizar e fazer chamadas se o usuário estiver autenticado
+  const { data: dashboardData, isLoading: dashboardLoading } = useQuery<{ success: boolean; data: DashboardData }>({
+    queryKey: ['/api/admin/abastecimento-pos-pago/dashboard'],
+    enabled: !!user
+  });
+
+  const { data: abastecimentosData, isLoading: abastecimentosLoading } = useQuery<{ success: boolean; data: Abastecimento[]; pagination: any }>({
+    queryKey: ['/api/admin/abastecimento-pos-pago'],
+    enabled: !!user
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      const res = await fetch(`/api/admin/abastecimento-pos-pago/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      if (!res.ok) throw new Error('Erro ao atualizar status');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/abastecimento-pos-pago'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/abastecimento-pos-pago/dashboard'] });
+      toast({ title: "Status atualizado com sucesso!" });
+    }
+  });
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -108,101 +155,11 @@ export default function PainelAdministrativoAbastecimento() {
     );
   }
 
-  // Função para lidar com mudança de projeto (limpar base quando trocar projeto)
-  const handleProjectChange = (projetoId: string, isFilter: boolean = false) => {
-    if (isFilter) {
-      setFilters({
-        ...filters,
-        projeto_id: projetoId,
-        base_id: '' // Limpar seleção de base
-      });
-    } else {
-      setNewToken({
-        ...newToken,
-        projeto_id: projetoId,
-        base_id: '' // Limpar seleção de base
-      });
-    }
-  };
-
-  // Obter bases filtradas pelo projeto selecionado
-  const getFilteredBases = (selectedProjectId: string) => {
-    if (!projectsWithBasesData || !selectedProjectId) return [];
-    const projects = (projectsWithBasesData as any)?.data || [];
-    const project = projects.find((p: any) => p.id.toString() === selectedProjectId);
-    return project?.bases || [];
-  };
-  const [newPosto, setNewPosto] = useState({ nome: '', cnpj: '' });
-
-  const queryClient = useQueryClient();
-
-  // Queries - só executar se usuário estiver autenticado
-  const { data: dashboardData } = useQuery({
-    queryKey: ['/api/admin/abastecimento-pos-pago/dashboard'],
-    enabled: activeTab === 'dashboard' && !!user && !authLoading
-  });
-
-  const { data: abastecimentosData } = useQuery({
-    queryKey: ['/api/admin/abastecimento-pos-pago', filters],
-    enabled: activeTab === 'abastecimentos' && !!user && !authLoading
-  });
-
-  const { data: tokensData } = useQuery({
-    queryKey: ['/api/admin/form-tokens'],
-    enabled: activeTab === 'tokens' && !!user && !authLoading
-  });
-
-  const { data: postosData } = useQuery({
-    queryKey: ['/api/admin/postos-external'],
-    enabled: activeTab === 'postos' && !!user && !authLoading
-  });
-
-  const { data: projectsWithBasesData } = useQuery({
-    queryKey: ['/api/projects-with-bases'],
-    enabled: !!user && !authLoading
-  });
-
-  // Mutations
-  const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: number; status: string }) =>
-      apiRequest(`/api/admin/abastecimento-pos-pago/${id}/status`, 'PATCH', { status }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/abastecimento-pos-pago'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/abastecimento-pos-pago/dashboard'] });
-    }
-  });
-
-  const createTokenMutation = useMutation({
-    mutationFn: (data: any) =>
-      apiRequest('/api/admin/form-tokens', 'POST', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/form-tokens'] });
-      setNewToken({ base_id: '', projeto_id: '', expires_days: 90 });
-    }
-  });
-
-  const createPostoMutation = useMutation({
-    mutationFn: (data: any) =>
-      apiRequest('/api/admin/postos-external', 'POST', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/postos-external'] });
-      setNewPosto({ nome: '', cnpj: '' });
-    }
-  });
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
-
-  const generatePublicLink = (token: string) => {
-    return `${window.location.origin}/abastecimento-pos-pago?t=${token}`;
-  };
-
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
-    }).format(value);
+    }).format(value || 0);
   };
 
   const formatDate = (dateString: string) => {
@@ -233,179 +190,324 @@ export default function PainelAdministrativoAbastecimento() {
     }
   };
 
+  const getAbastecimentos = () => {
+    if (!abastecimentosData?.data) return [];
+    let filtered = [...abastecimentosData.data];
+
+    if (filters.base_name) {
+      filtered = filtered.filter(a => a.base_name === filters.base_name);
+    }
+    if (filters.tipo_combustivel) {
+      filtered = filtered.filter(a => a.tipo_combustivel.toLowerCase().includes(filters.tipo_combustivel.toLowerCase()));
+    }
+    if (filters.status) {
+      filtered = filtered.filter(a => a.status === filters.status);
+    }
+    if (filters.data_inicio) {
+      filtered = filtered.filter(a => new Date(a.created_at) >= new Date(filters.data_inicio));
+    }
+    if (filters.data_fim) {
+      filtered = filtered.filter(a => new Date(a.created_at) <= new Date(filters.data_fim));
+    }
+
+    return filtered;
+  };
+
+  const getAnalytics = () => {
+    const abastecimentos = getAbastecimentos();
+
+    const porCombustivel = abastecimentos.reduce((acc, item) => {
+      const tipo = item.tipo_combustivel.toLowerCase();
+      if (!acc[tipo]) {
+        acc[tipo] = { litros: 0, valor: 0, count: 0 };
+      }
+      acc[tipo].litros += parseFloat(String(item.litros || 0));
+      acc[tipo].valor += item.valor_total || 0;
+      acc[tipo].count += 1;
+      return acc;
+    }, {} as Record<string, { litros: number; valor: number; count: number }>);
+
+    const totalLitros = Object.values(porCombustivel).reduce((sum, v) => sum + v.litros, 0);
+    const totalValor = Object.values(porCombustivel).reduce((sum, v) => sum + v.valor, 0);
+
+    return {
+      porCombustivel,
+      totalLitros,
+      totalValor,
+      precoMedio: totalLitros > 0 ? totalValor / totalLitros : 0,
+      totalRegistros: abastecimentos.length
+    };
+  };
+
+  const getChartData = () => {
+    const abastecimentos = getAbastecimentos();
+
+    const porBase = abastecimentos.reduce((acc, item) => {
+      if (!acc[item.base_name]) {
+        acc[item.base_name] = {};
+      }
+      const tipo = item.tipo_combustivel;
+      if (!acc[item.base_name][tipo]) {
+        acc[item.base_name][tipo] = 0;
+      }
+      acc[item.base_name][tipo] += parseFloat(String(item.litros || 0));
+      return acc;
+    }, {} as Record<string, Record<string, number>>);
+
+    const chartData = Object.entries(porBase).map(([base, tipos]) => ({
+      base,
+      ...tipos
+    }));
+
+    const pieData = Object.entries(getAnalytics().porCombustivel).map(([tipo, data]) => ({
+      name: tipo.toUpperCase(),
+      value: data.litros
+    }));
+
+    const porMes = abastecimentos.reduce((acc, item) => {
+      const mes = new Date(item.created_at).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' });
+      if (!acc[mes]) {
+        acc[mes] = { litros: 0, valor: 0 };
+      }
+      acc[mes].litros += parseFloat(String(item.litros || 0));
+      acc[mes].valor += item.valor_total || 0;
+      return acc;
+    }, {} as Record<string, { litros: number; valor: number }>);
+
+    const lineData = Object.entries(porMes).map(([mes, data]) => ({
+      mes,
+      litros: data.litros,
+      valor: data.valor
+    }));
+
+    const porStatus = abastecimentos.reduce((acc, item) => {
+      if (!acc[item.status]) {
+        acc[item.status] = { count: 0, valor: 0 };
+      }
+      acc[item.status].count += 1;
+      acc[item.status].valor += item.valor_total || 0;
+      return acc;
+    }, {} as Record<string, { count: number; valor: number }>);
+
+    const statusData = Object.entries(porStatus).map(([status, data]) => ({
+      status: status.charAt(0).toUpperCase() + status.slice(1),
+      quantidade: data.count,
+      valor: data.valor
+    }));
+
+    return { chartData, pieData, lineData, statusData };
+  };
+
+  const getInsights = () => {
+    const abastecimentos = getAbastecimentos();
+    const insights: string[] = [];
+
+    const porBase = abastecimentos.reduce((acc, item) => {
+      if (!acc[item.base_name]) acc[item.base_name] = 0;
+      acc[item.base_name] += parseFloat(String(item.litros || 0));
+      return acc;
+    }, {} as Record<string, number>);
+
+    const baseMaisConsumo = Object.entries(porBase).sort((a, b) => b[1] - a[1])[0];
+    if (baseMaisConsumo) {
+      insights.push(`🏆 ${baseMaisConsumo[0]} teve o maior consumo (${baseMaisConsumo[1].toFixed(2)}L)`);
+    }
+
+    const pendentesAntigos = abastecimentos.filter(a => {
+      const dias = (new Date().getTime() - new Date(a.created_at).getTime()) / (1000 * 60 * 60 * 24);
+      return a.status === 'pendente' && dias > 7;
+    });
+
+    if (pendentesAntigos.length > 0) {
+      insights.push(`⚠️ ${pendentesAntigos.length} abastecimentos pendentes há mais de 7 dias`);
+    }
+
+    const analytics = getAnalytics();
+    insights.push(`💰 Preço médio por litro: ${formatCurrency(analytics.precoMedio)}`);
+
+    const combustivelMaisUsado = Object.entries(analytics.porCombustivel).sort((a, b) => b[1].litros - a[1].litros)[0];
+    if (combustivelMaisUsado) {
+      insights.push(`⛽ Combustível mais usado: ${combustivelMaisUsado[0].toUpperCase()} (${combustivelMaisUsado[1].litros.toFixed(2)}L)`);
+    }
+
+    return insights;
+  };
+
+  const exportToCSV = () => {
+    const abastecimentos = getAbastecimentos();
+    const headers = ['Data', 'Motorista', 'Placa', 'KM', 'Combustível', 'Litros', 'Valor Total', 'Gestor', 'Base', 'Status'];
+    const rows = abastecimentos.map(a => [
+      formatDate(a.created_at),
+      a.nome,
+      a.placa,
+      a.km,
+      a.tipo_combustivel,
+      a.litros,
+      a.valor_total,
+      a.nome_gestor,
+      a.base_name,
+      a.status
+    ]);
+
+    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `abastecimentos_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    toast({ title: "CSV exportado com sucesso!" });
+  };
+
+  const exportToExcel = () => {
+    const abastecimentos = getAbastecimentos();
+    const data = abastecimentos.map(a => ({
+      'Data': formatDate(a.created_at),
+      'Motorista': a.nome,
+      'Telefone': a.telefone,
+      'Placa': a.placa,
+      'KM': a.km,
+      'Combustível': a.tipo_combustivel,
+      'Litros': parseFloat(String(a.litros || 0)).toFixed(2),
+      'Valor Total': formatCurrency(a.valor_total),
+      'Gestor': a.nome_gestor,
+      'Projeto': a.projeto_name,
+      'Base': a.base_name,
+      'Status': a.status
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Abastecimentos');
+
+    XLSX.writeFile(workbook, `abastecimentos_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast({ title: "Excel exportado com sucesso!" });
+  };
+
+  const exportToPDF = () => {
+    const abastecimentos = getAbastecimentos();
+    const doc = new jsPDF();
+
+    doc.setFontSize(16);
+    doc.text('Relatório de Abastecimentos Pós-Pago', 14, 15);
+    
+    doc.setFontSize(10);
+    doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 14, 25);
+    doc.text(`Total de registros: ${abastecimentos.length}`, 14, 30);
+
+    const tableData = abastecimentos.map(a => [
+      formatDate(a.created_at),
+      a.nome,
+      a.placa,
+      a.km?.toString() || '-',
+      a.tipo_combustivel,
+      parseFloat(String(a.litros || 0)).toFixed(2),
+      formatCurrency(a.valor_total),
+      a.base_name,
+      a.status
+    ]);
+
+    (doc as any).autoTable({
+      startY: 35,
+      head: [['Data', 'Motorista', 'Placa', 'KM', 'Combustível', 'Litros', 'Valor', 'Base', 'Status']],
+      body: tableData,
+      theme: 'grid',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [41, 128, 185] },
+      margin: { top: 35 }
+    });
+
+    doc.save(`abastecimentos_${new Date().toISOString().split('T')[0]}.pdf`);
+    toast({ title: "PDF exportado com sucesso!" });
+  };
+
+  const analytics = getAnalytics();
+  const { chartData, pieData, lineData, statusData } = getChartData();
+  const insights = getInsights();
+  const bases = Array.from(new Set(abastecimentosData?.data?.map(a => a.base_name) || []));
+  const tiposCombustivel = Array.from(new Set(abastecimentosData?.data?.map(a => a.tipo_combustivel) || []));
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="painel-administrativo-container">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Sistema Pós-Pago</h1>
           <p className="text-gray-600">Gestão de abastecimentos e faturamento</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <FileText className="h-4 w-4 mr-2" />
-            Exportar Relatório
-          </Button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" data-testid="button-export">
+              <Download className="h-4 w-4 mr-2" />
+              Exportar Relatório
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={exportToCSV} data-testid="export-csv">
+              <FileText className="h-4 w-4 mr-2" />
+              Exportar CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={exportToExcel} data-testid="export-excel">
+              <FileText className="h-4 w-4 mr-2" />
+              Exportar Excel
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={exportToPDF} data-testid="export-pdf">
+              <FileText className="h-4 w-4 mr-2" />
+              Exportar PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="dashboard">
+          <TabsTrigger value="dashboard" data-testid="tab-dashboard">
             <TrendingUp className="h-4 w-4 mr-2" />
             Dashboard
           </TabsTrigger>
-          <TabsTrigger value="abastecimentos">
+          <TabsTrigger value="abastecimentos" data-testid="tab-abastecimentos">
             <Fuel className="h-4 w-4 mr-2" />
             Abastecimentos
           </TabsTrigger>
         </TabsList>
 
-        {/* Dashboard Tab */}
         <TabsContent value="dashboard" className="space-y-6">
-          {(dashboardData as any)?.data && (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Total Registros</p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {(dashboardData as any).data.estatisticas.total_registros}
-                        </p>
-                      </div>
-                      <Fuel className="h-8 w-8 text-blue-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Valor Total</p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {formatCurrency((dashboardData as any).data.estatisticas.valor_total)}
-                        </p>
-                      </div>
-                      <DollarSign className="h-8 w-8 text-green-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Litros Total</p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {parseFloat((dashboardData as any).data.estatisticas.litros_total).toFixed(2)}L
-                        </p>
-                      </div>
-                      <Fuel className="h-8 w-8 text-orange-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Pendentes</p>
-                        <p className="text-2xl font-bold text-yellow-600">
-                          {dashboardData.data.estatisticas.pendentes}
-                        </p>
-                      </div>
-                      <Clock className="h-8 w-8 text-yellow-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Status dos Pagamentos</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-yellow-600" />
-                          <span>Pendentes</span>
-                        </div>
-                        <Badge className="bg-yellow-100 text-yellow-800">
-                          {dashboardData.data.estatisticas.pendentes}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-blue-600" />
-                          <span>Faturados</span>
-                        </div>
-                        <Badge className="bg-blue-100 text-blue-800">
-                          {dashboardData.data.estatisticas.faturados}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                          <span>Pagos</span>
-                        </div>
-                        <Badge className="bg-green-100 text-green-800">
-                          {dashboardData.data.estatisticas.pagos}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Pendências de Faturamento</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {dashboardData.data.pendencias?.length > 0 ? (
-                      <div className="space-y-2">
-                        {dashboardData.data.pendencias.slice(0, 5).map((pendencia: any, index: number) => (
-                          <div key={index} className="flex items-center justify-between text-sm">
-                            <span className="truncate">{pendencia.base_name || 'Base'}</span>
-                            <span className="font-medium text-red-600">
-                              {formatCurrency(pendencia.valor_total_pendente)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-gray-500 text-sm">Nenhuma pendência encontrada</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </>
-          )}
-        </TabsContent>
-
-        {/* Abastecimentos Tab */}
-        <TabsContent value="abastecimentos" className="space-y-4">
-          <Card>
+          {/* Filtros */}
+          <Card data-testid="card-filters">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Filtros</CardTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setFilters({ status: '', base_id: '', projeto_id: '' })}
-                >
-                  Limpar Filtros
-                </Button>
-              </div>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filtros
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Status" />
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <Select value={filters.base_name} onValueChange={(v) => setFilters(prev => ({ ...prev, base_name: v }))}>
+                  <SelectTrigger data-testid="select-base">
+                    <SelectValue placeholder="Todas as bases" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todas as bases</SelectItem>
+                    {bases.map(base => (
+                      <SelectItem key={base} value={base}>{base}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={filters.tipo_combustivel} onValueChange={(v) => setFilters(prev => ({ ...prev, tipo_combustivel: v }))}>
+                  <SelectTrigger data-testid="select-combustivel">
+                    <SelectValue placeholder="Todos combustíveis" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todos</SelectItem>
+                    {tiposCombustivel.map(tipo => (
+                      <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={filters.status} onValueChange={(v) => setFilters(prev => ({ ...prev, status: v }))}>
+                  <SelectTrigger data-testid="select-status">
+                    <SelectValue placeholder="Todos status" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Todos</SelectItem>
@@ -415,62 +517,245 @@ export default function PainelAdministrativoAbastecimento() {
                   </SelectContent>
                 </Select>
 
-                <Select 
-                  value={filters.base_id} 
-                  onValueChange={(value) => setFilters(prev => ({ ...prev, base_id: value }))}
-                  disabled={!filters.projeto_id}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={filters.projeto_id ? "Selecione uma base" : "Selecione um projeto primeiro"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Todas as bases</SelectItem>
-                    {getFilteredBases(filters.projeto_id).map((base: any) => (
-                      <SelectItem key={base.id} value={base.id.toString()}>
-                        {base.base_name || base.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input 
+                  type="date" 
+                  value={filters.data_inicio} 
+                  onChange={(e) => setFilters(prev => ({ ...prev, data_inicio: e.target.value }))}
+                  placeholder="Data início"
+                  data-testid="input-data-inicio"
+                />
 
-                <Select value={filters.projeto_id} onValueChange={(value) => handleProjectChange(value, true)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Projeto" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Todos os projetos</SelectItem>
-                    {(((projectsWithBasesData as any)?.data) || []).map((projeto: any) => (
-                      <SelectItem key={projeto.id} value={projeto.id.toString()}>
-                        {projeto.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input 
+                  type="date" 
+                  value={filters.data_fim} 
+                  onChange={(e) => setFilters(prev => ({ ...prev, data_fim: e.target.value }))}
+                  placeholder="Data fim"
+                  data-testid="input-data-fim"
+                />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          {/* Cards de Indicadores */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card data-testid="card-total-registros">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Registros</p>
+                    <p className="text-2xl font-bold text-gray-900">{analytics.totalRegistros}</p>
+                  </div>
+                  <FileText className="h-8 w-8 text-blue-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card data-testid="card-valor-total">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Valor Total</p>
+                    <p className="text-2xl font-bold text-green-600">{formatCurrency(analytics.totalValor)}</p>
+                  </div>
+                  <DollarSign className="h-8 w-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card data-testid="card-litros-total">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Litros Total</p>
+                    <p className="text-2xl font-bold text-orange-600">{analytics.totalLitros.toFixed(2)}L</p>
+                  </div>
+                  <Fuel className="h-8 w-8 text-orange-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card data-testid="card-preco-medio">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Preço Médio/L</p>
+                    <p className="text-2xl font-bold text-purple-600">{formatCurrency(analytics.precoMedio)}</p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-purple-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Cards por Tipo de Combustível */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Object.entries(analytics.porCombustivel).map(([tipo, data]) => {
+              const Icon = tipo.includes('diesel') ? Fuel : tipo.includes('gasolina') ? Car : tipo.includes('etanol') ? Leaf : Droplet;
+              return (
+                <Card key={tipo} data-testid={`card-combustivel-${tipo}`}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">{tipo.toUpperCase()}</p>
+                        <p className="text-xl font-bold">{data.litros.toFixed(2)}L</p>
+                        <p className="text-sm text-gray-500">{formatCurrency(data.valor)}</p>
+                      </div>
+                      <Icon className="h-8 w-8" style={{ color: FUEL_COLORS[tipo as keyof typeof FUEL_COLORS] || '#666' }} />
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Insights */}
+          <Card data-testid="card-insights">
             <CardHeader>
-              <CardTitle>Lista de Abastecimentos</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-yellow-500" />
+                Insights Automáticos
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {abastecimentosData?.data?.length > 0 ? (
+              <div className="space-y-2">
+                {insights.map((insight, i) => (
+                  <Alert key={i} data-testid={`insight-${i}`}>
+                    <AlertDescription>{insight}</AlertDescription>
+                  </Alert>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Gráficos */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Gráfico de Barras - Consumo por Base */}
+            <Card data-testid="card-chart-barras">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Consumo por Base
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="base" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    {tiposCombustivel.map((tipo, i) => (
+                      <Bar key={tipo} dataKey={tipo} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Gráfico de Pizza - Distribuição por Combustível */}
+            <Card data-testid="card-chart-pizza">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PieChart className="h-5 w-5" />
+                  Distribuição por Combustível
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <RePieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={(entry) => `${entry.name}: ${entry.value.toFixed(0)}L`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </RePieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Gráfico de Linha - Evolução Mensal */}
+            <Card data-testid="card-chart-linha">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LineChart className="h-5 w-5" />
+                  Evolução Mensal
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <ReLineChart data={lineData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="mes" />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" />
+                    <Tooltip />
+                    <Legend />
+                    <Line yAxisId="left" type="monotone" dataKey="litros" stroke="#3B82F6" name="Litros" />
+                    <Line yAxisId="right" type="monotone" dataKey="valor" stroke="#10B981" name="Valor (R$)" />
+                  </ReLineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Gráfico de Barras - Status dos Pagamentos */}
+            <Card data-testid="card-chart-status">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  Status dos Pagamentos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={statusData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="status" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="quantidade" fill="#3B82F6" name="Quantidade" />
+                    <Bar dataKey="valor" fill="#10B981" name="Valor (R$)" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Aba de Abastecimentos */}
+        <TabsContent value="abastecimentos" className="space-y-4">
+          <Card data-testid="card-lista-abastecimentos">
+            <CardHeader>
+              <CardTitle>Lista de Abastecimentos ({getAbastecimentos().length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {getAbastecimentos().length > 0 ? (
                 <div className="space-y-4">
-                  {abastecimentosData.data.map((item: Abastecimento) => (
-                    <div key={item.id} className="border rounded-lg p-4 space-y-3">
+                  {getAbastecimentos().map((item) => (
+                    <div key={item.id} className="border rounded-lg p-4 space-y-3" data-testid={`abastecimento-${item.id}`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <Badge className={getStatusColor(item.status)}>
                             {getStatusIcon(item.status)}
                             <span className="ml-1 capitalize">{item.status}</span>
                           </Badge>
-                          <span className="font-medium">{item.placa}</span>
-                          <span className="text-gray-600">{item.nome}</span>
+                          <span className="font-medium" data-testid={`text-placa-${item.id}`}>{item.placa}</span>
+                          <span className="text-gray-600" data-testid={`text-motorista-${item.id}`}>{item.nome}</span>
                         </div>
                         <div className="text-right">
-                          <div className="font-medium">{formatCurrency(item.valor_total)}</div>
-                          <div className="text-sm text-gray-500">{parseFloat(item.litros || '0').toFixed(2)}L</div>
+                          <div className="font-medium" data-testid={`text-valor-${item.id}`}>{formatCurrency(item.valor_total)}</div>
+                          <div className="text-sm text-gray-500">{parseFloat(String(item.litros || 0)).toFixed(2)}L</div>
                         </div>
                       </div>
 
@@ -501,7 +786,7 @@ export default function PainelAdministrativoAbastecimento() {
                         <div className="flex gap-2">
                           <Dialog>
                             <DialogTrigger asChild>
-                              <Button size="sm" variant="outline">
+                              <Button size="sm" variant="outline" data-testid={`button-detalhes-${item.id}`}>
                                 <Eye className="w-4 h-4 mr-2" />
                                 Ver Detalhes
                               </Button>
@@ -533,7 +818,7 @@ export default function PainelAdministrativoAbastecimento() {
                                 </div>
                                 <div>
                                   <span className="text-xs text-gray-500">Litros</span>
-                                  <p className="font-medium">{parseFloat(item.litros || '0').toFixed(2)} L</p>
+                                  <p className="font-medium">{parseFloat(String(item.litros || 0)).toFixed(2)} L</p>
                                 </div>
                                 <div>
                                   <span className="text-xs text-gray-500">Valor Total</span>
@@ -593,6 +878,7 @@ export default function PainelAdministrativoAbastecimento() {
                               size="sm"
                               onClick={() => updateStatusMutation.mutate({ id: item.id, status: 'faturado' })}
                               disabled={updateStatusMutation.isPending}
+                              data-testid={`button-faturar-${item.id}`}
                             >
                               Marcar como Faturado
                             </Button>
@@ -605,6 +891,7 @@ export default function PainelAdministrativoAbastecimento() {
                                 variant="outline"
                                 onClick={() => updateStatusMutation.mutate({ id: item.id, status: 'pendente' })}
                                 disabled={updateStatusMutation.isPending}
+                                data-testid={`button-voltar-pendente-${item.id}`}
                               >
                                 Voltar para Pendente
                               </Button>
@@ -612,6 +899,7 @@ export default function PainelAdministrativoAbastecimento() {
                                 size="sm"
                                 onClick={() => updateStatusMutation.mutate({ id: item.id, status: 'pago' })}
                                 disabled={updateStatusMutation.isPending}
+                                data-testid={`button-pagar-${item.id}`}
                               >
                                 Marcar como Pago
                               </Button>
