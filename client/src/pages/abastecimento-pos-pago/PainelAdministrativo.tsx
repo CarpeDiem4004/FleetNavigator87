@@ -26,7 +26,9 @@ import {
   BarChart3,
   PieChart,
   LineChart,
-  Lightbulb
+  Lightbulb,
+  ExternalLink,
+  Copy
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
