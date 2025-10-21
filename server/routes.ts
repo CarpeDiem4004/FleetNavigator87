@@ -11,6 +11,7 @@ import { createServer, type Server } from "http";
 import multer from "multer";
 import path from "path";
 import { promises as fs } from "fs";
+import fsSync from "fs";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
@@ -23632,8 +23633,8 @@ async function createFuelRequestNotification(fuelRequest) {
   const postpaidStorage = multer.diskStorage({
     destination: (req, file, cb) => {
       const uploadDir = './attached_assets/postpaid_receipts';
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
+      if (!fsSync.existsSync(uploadDir)) {
+        fsSync.mkdirSync(uploadDir, { recursive: true });
       }
       cb(null, uploadDir);
     },
