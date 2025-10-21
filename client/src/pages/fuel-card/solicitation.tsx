@@ -284,8 +284,24 @@ export default function FuelCardSolicitation() {
         description: `Solicitação adicionada. Total no bolsão: ${draftCount + 1}`,
       });
       
-      // Limpar formulário para próxima solicitação
-      form.reset();
+      // Limpar formulário para próxima solicitação - RESET COMPLETO com valores padrão
+      form.reset({
+        placa: "",
+        nomeMotorista: "",
+        km: "",
+        valor_solicitado: "",
+        tipo_cartao: "placa",
+        provedor_cartao: "Ticket",
+        numero_cartao: "",
+        tipo_combustivel: "diesel",
+        motorista: "",
+        telefone_celular: "",
+        projeto_id: "",
+        base_id: "",
+        observacoes: "",
+        data_uso: "",
+        turno: undefined
+      });
       
     } catch (error) {
       console.error("Erro ao adicionar ao bolsão:", error);
