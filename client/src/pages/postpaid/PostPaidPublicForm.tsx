@@ -156,6 +156,7 @@ export default function PostPaidPublicForm() {
       const response = await fetch('/api/postpaid/public-records', {
         method: 'POST',
         body: formDataToSend,
+        credentials: 'include',
       });
 
       console.log('[PostPaid] Status da resposta:', response.status, response.ok);
