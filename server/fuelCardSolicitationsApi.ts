@@ -2015,9 +2015,12 @@ export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: R
     // Gerar buffer do Excel
     const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
-    // Configurar headers para download
+    // Configurar headers para download (sem cache)
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=solicitacoes-abastecimento-${fuelDate}.xlsx`);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     
     console.log('[EXPORT-BY-FUEL-DATE] Exportação concluída com sucesso');
     res.send(excelBuffer);
