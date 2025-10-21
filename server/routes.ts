@@ -23673,7 +23673,30 @@ async function createFuelRequestNotification(fuelRequest) {
   });
 
   // Criar registro de abastecimento público (sem token) com upload de foto
-  app.post('/api/postpaid/public-records', uploadPostpaidReceipt.single('receipt_photo'), async (req, res) => {
+  app.post('/api/postpaid/public-records', (req, res, next) => {
+    uploadPostpaidReceipt.single('receipt_photo')(req, res, (err: any) => {
+      if (err) {
+        // Tratar erros do multer (arquivo muito grande, tipo inválido, etc)
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({
+            success: false,
+            message: 'Arquivo muito grande. Tamanho máximo: 5MB'
+          });
+        }
+        if (err.message === 'Apenas imagens são permitidas') {
+          return res.status(400).json({
+            success: false,
+            message: 'Apenas imagens são permitidas'
+          });
+        }
+        return res.status(400).json({
+          success: false,
+          message: err.message || 'Erro no upload do arquivo'
+        });
+      }
+      next();
+    });
+  }, async (req, res) => {
     try {
       const {
         project_id,
