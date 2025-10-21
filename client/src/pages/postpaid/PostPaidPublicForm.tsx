@@ -32,15 +32,16 @@ export default function PostPaidPublicForm() {
   const [selectedBase, setSelectedBase] = useState('');
   const [formData, setFormData] = useState({
     driver_name: '',
-    driver_rg: '',
     driver_phone: '',
     vehicle_plate: '',
+    odometer_km: '',
     fuel_type: '',
-    price_per_liter: '',
     liters: '',
-    period: '',
-    manager_name: '',
+    total_amount: '',
   });
+  
+  const [receiptPhoto, setReceiptPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>('');
 
   const [totalAmount, setTotalAmount] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -58,12 +59,40 @@ export default function PostPaidPublicForm() {
   });
   const bases = Array.isArray(basesResponse?.data) ? basesResponse.data : [];
 
-  // Calcular valor total automaticamente
-  useEffect(() => {
-    const price = parseFloat(formData.price_per_liter) || 0;
-    const liters = parseFloat(formData.liters) || 0;
-    setTotalAmount(price * liters);
-  }, [formData.price_per_liter, formData.liters]);
+  // Handler para upload de foto
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar tamanho (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: 'Arquivo muito grande',
+          description: 'A foto deve ter no máximo 5MB',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Validar tipo
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: 'Formato inválido',
+          description: 'Por favor, envie uma imagem',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      setReceiptPhoto(file);
+      
+      // Criar preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Mutation para enviar registro
   const submitMutation = useMutation({
@@ -72,15 +101,34 @@ export default function PostPaidPublicForm() {
         throw new Error('Selecione projeto e base');
       }
 
-      const response = await apiRequest('POST', '/api/postpaid/public-records', {
-        project_id: parseInt(selectedProject),
-        base_id: parseInt(selectedBase),
-        ...formData,
-        price_per_liter: parseFloat(formData.price_per_liter),
-        liters: parseFloat(formData.liters),
-        total_amount: totalAmount,
+      // Criar FormData para enviar arquivo
+      const formDataToSend = new FormData();
+      formDataToSend.append('project_id', selectedProject);
+      formDataToSend.append('base_id', selectedBase);
+      formDataToSend.append('driver_name', formData.driver_name);
+      formDataToSend.append('driver_phone', formData.driver_phone);
+      formDataToSend.append('vehicle_plate', formData.vehicle_plate);
+      formDataToSend.append('odometer_km', formData.odometer_km);
+      formDataToSend.append('fuel_type', formData.fuel_type);
+      formDataToSend.append('liters', formData.liters);
+      formDataToSend.append('total_amount', formData.total_amount);
+      
+      if (receiptPhoto) {
+        formDataToSend.append('receipt_photo', receiptPhoto);
+      }
+
+      // Fazer requisição com fetch direto (não usar apiRequest para FormData)
+      const response = await fetch('/api/postpaid/public-records', {
+        method: 'POST',
+        body: formDataToSend,
       });
-      return response;
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao enviar registro');
+      }
+
+      return await response.json();
     },
     onSuccess: () => {
       setSubmitted(true);
@@ -111,16 +159,25 @@ export default function PostPaidPublicForm() {
       return;
     }
 
-    if (!formData.driver_name || !formData.driver_rg || !formData.driver_phone) {
+    if (!formData.driver_name || !formData.driver_phone) {
       toast({
         title: 'Campos obrigatórios',
-        description: 'Preencha todos os dados do motorista.',
+        description: 'Preencha nome e telefone do motorista.',
         variant: 'destructive',
       });
       return;
     }
 
-    if (!formData.vehicle_plate || !formData.fuel_type || !formData.price_per_liter || !formData.liters) {
+    if (!formData.vehicle_plate || !formData.odometer_km) {
+      toast({
+        title: 'Campos obrigatórios',
+        description: 'Preencha placa e quilometragem do veículo.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!formData.fuel_type || !formData.liters || !formData.total_amount) {
       toast({
         title: 'Campos obrigatórios',
         description: 'Preencha todos os dados do abastecimento.',
@@ -129,10 +186,10 @@ export default function PostPaidPublicForm() {
       return;
     }
 
-    if (!formData.period || !formData.manager_name) {
+    if (!receiptPhoto) {
       toast({
-        title: 'Campos obrigatórios',
-        description: 'Preencha o período e nome do gestor.',
+        title: 'Foto obrigatória',
+        description: 'Por favor, anexe a foto da nota fiscal.',
         variant: 'destructive',
       });
       return;
@@ -160,18 +217,17 @@ export default function PostPaidPublicForm() {
                 setSubmitted(false);
                 setFormData({
                   driver_name: '',
-                  driver_rg: '',
                   driver_phone: '',
                   vehicle_plate: '',
+                  odometer_km: '',
                   fuel_type: '',
-                  price_per_liter: '',
                   liters: '',
-                  period: '',
-                  manager_name: '',
+                  total_amount: '',
                 });
                 setSelectedProject('');
                 setSelectedBase('');
-                setTotalAmount(0);
+                setReceiptPhoto(null);
+                setPhotoPreview('');
               }}
               className="w-full"
             >
@@ -248,29 +304,21 @@ export default function PostPaidPublicForm() {
               {/* Dados do Motorista */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Dados do Motorista</h3>
-                <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="driver_name">Nome do Motorista *</Label>
+                    <Label htmlFor="driver_name">Nome *</Label>
                     <Input
                       id="driver_name"
                       value={formData.driver_name}
                       onChange={(e) => setFormData({ ...formData, driver_name: e.target.value })}
-                      placeholder="Nome completo"
+                      placeholder="Nome completo do motorista"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="driver_rg">RG do Motorista *</Label>
-                    <Input
-                      id="driver_rg"
-                      value={formData.driver_rg}
-                      onChange={(e) => setFormData({ ...formData, driver_rg: e.target.value })}
-                      placeholder="00.000.000-0"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="driver_phone">Telefone do Motorista *</Label>
+                    <Label htmlFor="driver_phone">Telefone *</Label>
                     <Input
                       id="driver_phone"
+                      type="tel"
                       value={formData.driver_phone}
                       onChange={(e) => setFormData({ ...formData, driver_phone: e.target.value })}
                       placeholder="(00) 00000-0000"
@@ -279,19 +327,37 @@ export default function PostPaidPublicForm() {
                 </div>
               </div>
 
-              {/* Dados do Veículo e Abastecimento */}
+              {/* Dados do Veículo */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">Dados do Abastecimento</h3>
+                <h3 className="text-lg font-semibold border-b pb-2">Dados do Veículo</h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="vehicle_plate">Placa do Veículo *</Label>
+                    <Label htmlFor="vehicle_plate">Placa *</Label>
                     <Input
                       id="vehicle_plate"
                       value={formData.vehicle_plate}
                       onChange={(e) => setFormData({ ...formData, vehicle_plate: e.target.value.toUpperCase() })}
                       placeholder="ABC-1234"
+                      maxLength={8}
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="odometer_km">Quilometragem (KM) *</Label>
+                    <Input
+                      id="odometer_km"
+                      type="number"
+                      value={formData.odometer_km}
+                      onChange={(e) => setFormData({ ...formData, odometer_km: e.target.value })}
+                      placeholder="Ex: 150000"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Dados do Abastecimento */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Dados do Abastecimento</h3>
+                <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="fuel_type">Tipo de Combustível *</Label>
                     <Select
@@ -310,68 +376,69 @@ export default function PostPaidPublicForm() {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-
-                <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="price_per_liter">Preço por Litro (R$) *</Label>
-                    <Input
-                      id="price_per_liter"
-                      type="number"
-                      step="0.01"
-                      value={formData.price_per_liter}
-                      onChange={(e) => setFormData({ ...formData, price_per_liter: e.target.value })}
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="liters">Quantidade (Litros) *</Label>
+                    <Label htmlFor="liters">Litros Abastecidos *</Label>
                     <Input
                       id="liters"
                       type="number"
                       step="0.01"
                       value={formData.liters}
                       onChange={(e) => setFormData({ ...formData, liters: e.target.value })}
-                      placeholder="0.00"
+                      placeholder="Ex: 100.50"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Valor Total</Label>
-                    <div className="text-2xl font-bold text-green-600 mt-2">
-                      R$ {totalAmount.toFixed(2)}
-                    </div>
+                    <Label htmlFor="total_amount">Valor Total (R$) *</Label>
+                    <Input
+                      id="total_amount"
+                      type="number"
+                      step="0.01"
+                      value={formData.total_amount}
+                      onChange={(e) => setFormData({ ...formData, total_amount: e.target.value })}
+                      placeholder="Ex: 685.00"
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* Informações Adicionais */}
+              {/* Upload de Foto da Nota */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">Informações Adicionais</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="period">Período *</Label>
-                    <Select
-                      value={formData.period}
-                      onValueChange={(value) => setFormData({ ...formData, period: value })}
-                    >
-                      <SelectTrigger id="period">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="AM">Manhã (AM)</SelectItem>
-                        <SelectItem value="PM">Tarde (PM)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="manager_name">Nome do Gestor *</Label>
-                    <Input
-                      id="manager_name"
-                      value={formData.manager_name}
-                      onChange={(e) => setFormData({ ...formData, manager_name: e.target.value })}
-                      placeholder="Nome do gestor responsável"
-                    />
-                  </div>
+                <h3 className="text-lg font-semibold border-b pb-2">Foto da Nota Fiscal</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="receipt_photo">Anexar Foto da Nota *</Label>
+                  <Input
+                    id="receipt_photo"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handlePhotoChange}
+                    className="cursor-pointer"
+                  />
+                  <p className="text-sm text-gray-500">
+                    Tire uma foto clara da nota fiscal (máx 5MB)
+                  </p>
+                  {photoPreview && (
+                    <div className="mt-4 relative">
+                      <img 
+                        src={photoPreview} 
+                        alt="Preview da nota" 
+                        className="max-w-full h-auto rounded-lg border shadow-sm"
+                        style={{ maxHeight: '400px' }}
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={() => {
+                          setReceiptPhoto(null);
+                          setPhotoPreview('');
+                        }}
+                      >
+                        Remover
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
 

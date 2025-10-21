@@ -23628,23 +23628,56 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
-  // Criar registro de abastecimento público (sem token)
-  app.post('/api/postpaid/public-records', async (req, res) => {
+  // Configurar multer para upload de fotos (pós-pago)
+  const postpaidStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      const uploadDir = './attached_assets/postpaid_receipts';
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = `${Date.now()}_${Math.round(Math.random() * 1E9)}`;
+      const ext = path.extname(file.originalname);
+      cb(null, `receipt_${uniqueSuffix}${ext}`);
+    }
+  });
+
+  const uploadPostpaidReceipt = multer({
+    storage: postpaidStorage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Apenas imagens são permitidas'));
+      }
+    }
+  });
+
+  // Criar registro de abastecimento público (sem token) com upload de foto
+  app.post('/api/postpaid/public-records', uploadPostpaidReceipt.single('receipt_photo'), async (req, res) => {
     try {
       const {
         project_id,
         base_id,
         driver_name,
-        driver_rg,
         driver_phone,
         vehicle_plate,
+        odometer_km,
         fuel_type,
-        price_per_liter,
         liters,
         total_amount,
-        period,
-        manager_name,
       } = req.body;
+
+      // Verificar se a foto foi enviada
+      if (!req.file) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Foto da nota fiscal é obrigatória' 
+        });
+      }
 
       // Buscar nomes do projeto e base
       const projectResult = await pool.query(
@@ -23671,25 +23704,26 @@ async function createFuelRequestNotification(fuelRequest) {
       const ip_address = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
       const user_agent = req.headers['user-agent'];
 
-      // Inserir registro sem token_id (será NULL)
+      // URL da foto (relativo ao servidor)
+      const receipt_photo_url = `/attached_assets/postpaid_receipts/${req.file.filename}`;
+
+      // Inserir registro com os novos campos
       const result = await pool.query(
         `INSERT INTO postpaid_fuel_records (
-          driver_name, driver_rg, driver_phone, vehicle_plate,
-          fuel_type, price_per_liter, liters, total_amount, period, manager_name,
+          driver_name, driver_phone, vehicle_plate, odometer_km,
+          fuel_type, liters, total_amount, receipt_photo_url,
           project_id, base_id, project_name, base_name, ip_address, user_agent, status
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'pendente')
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pendente')
         RETURNING id, created_at`,
         [
           driver_name,
-          driver_rg,
           driver_phone,
           vehicle_plate,
+          parseInt(odometer_km),
           fuel_type,
-          price_per_liter,
-          liters,
-          total_amount,
-          period,
-          manager_name,
+          parseFloat(liters),
+          parseFloat(total_amount),
+          receipt_photo_url,
           project_id,
           base_id,
           project_name,
