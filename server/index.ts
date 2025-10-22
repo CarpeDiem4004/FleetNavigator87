@@ -122,6 +122,13 @@ app.use('/icons', express.static(path.join(process.cwd(), 'public', 'icons'), {
   }
 }));
 
+// Servir arquivos de attached_assets (fotos de notas fiscais, etc)
+app.use('/attached_assets', express.static(path.join(process.cwd(), 'attached_assets'), {
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+  }
+}));
+
 // INTERCEPTOR CRÍTICO PARA BASES - REGISTRAR ANTES DE QUALQUER MIDDLEWARE
 app.use((req, res, next) => {
   // Interceptar PATCH /api/bases/:id especificamente  
