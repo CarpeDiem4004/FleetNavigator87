@@ -4,6 +4,7 @@ import { pool } from '../db';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import * as XLSX from 'xlsx';
 
 // Middleware de autenticação (se necessário)
 const authMiddleware = (req: any, res: any, next: any) => {
@@ -190,6 +191,95 @@ export function setupPostPaidRoutes(app: Express) {
       }
     }
   );
+
+  // Listar registros de abastecimento (protegido)
+  app.get('/api/postpaid/records', authMiddleware, async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT * FROM postpaid_fuel_records 
+        ORDER BY created_at DESC 
+        LIMIT 100`
+      );
+
+      res.json({ 
+        success: true, 
+        data: result.rows 
+      });
+    } catch (error) {
+      console.error('[PostPaid] Erro ao listar registros:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro ao listar registros' 
+      });
+    }
+  });
+
+  // Exportar relatório em XLSX (protegido)
+  app.get('/api/postpaid/export', authMiddleware, async (req, res) => {
+    try {
+      console.log('[PostPaid] 📊 Exportando relatório XLSX...');
+      
+      const result = await pool.query(
+        `SELECT 
+          id,
+          driver_name as "Nome do Motorista",
+          driver_phone as "Telefone",
+          vehicle_plate as "Placa",
+          odometer_km as "KM",
+          fuel_type as "Combustível",
+          liters as "Litros",
+          total_amount as "Valor Total",
+          manager_name as "Gestor",
+          project_name as "Projeto",
+          base_name as "Base",
+          status as "Status",
+          TO_CHAR(created_at AT TIME ZONE 'America/Sao_Paulo', 'DD/MM/YYYY HH24:MI') as "Data/Hora"
+        FROM postpaid_fuel_records 
+        ORDER BY created_at DESC`
+      );
+
+      // Criar workbook e worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(result.rows);
+
+      // Definir larguras de colunas
+      worksheet['!cols'] = [
+        { wch: 8 },  // ID
+        { wch: 25 }, // Nome do Motorista
+        { wch: 15 }, // Telefone
+        { wch: 10 }, // Placa
+        { wch: 10 }, // KM
+        { wch: 12 }, // Combustível
+        { wch: 10 }, // Litros
+        { wch: 12 }, // Valor Total
+        { wch: 20 }, // Gestor
+        { wch: 15 }, // Projeto
+        { wch: 15 }, // Base
+        { wch: 12 }, // Status
+        { wch: 16 }, // Data/Hora
+      ];
+
+      // Adicionar worksheet ao workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Abastecimentos');
+
+      // Gerar buffer do arquivo
+      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+      // Enviar arquivo
+      const filename = `relatorio-pospago-${new Date().toISOString().split('T')[0]}.xlsx`;
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+
+      console.log('[PostPaid] ✅ Relatório XLSX exportado com sucesso');
+    } catch (error) {
+      console.error('[PostPaid] Erro ao exportar:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro ao exportar relatório' 
+      });
+    }
+  });
 
   console.log('✅ [POST-PAID] Rotas registradas com sucesso');
 }

@@ -23649,7 +23649,7 @@ async function createFuelRequestNotification(fuelRequest) {
         message: 'Erro ao criar registro' 
       });
     }
-
+  });
 
   const httpServer = createServer(app);
   return httpServer;
