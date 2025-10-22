@@ -2304,6 +2304,7 @@ app.use((req, res, next) => {
     const publicRoutes = [
       '/login',
       '/register',
+      '/attached_assets/',
       '/bases/campinas/login',
       '/bases/goiania/login',
       '/bases/alair/login',
