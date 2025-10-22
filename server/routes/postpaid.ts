@@ -155,7 +155,7 @@ export function setupPostPaidRoutes(app: Express) {
           (project_id, base_id, project_name, base_name, driver_name, driver_phone, 
            vehicle_plate, odometer_km, fuel_type, liters, total_amount, manager_name, 
            receipt_photo_url, ip_address, user_agent, status, created_at) 
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'pending', NOW()) 
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'pendente', NOW()) 
           RETURNING *`,
           [
             project_id,
