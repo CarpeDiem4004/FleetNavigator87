@@ -104,19 +104,42 @@ export function setupPostPaidRoutes(app: Express) {
           });
         }
 
-        // Buscar nomes do projeto e base
-        const projectQuery = await pool.query('SELECT name FROM projects WHERE id = $1', [project_id]);
-        const baseQuery = await pool.query('SELECT basename FROM bases WHERE id = $1', [base_id]);
+        // Buscar base e validar relacionamento com projeto
+        const baseQuery = await pool.query(
+          'SELECT id, basename, project_id FROM bases WHERE id = $1',
+          [base_id]
+        );
 
-        if (!projectQuery.rows[0] || !baseQuery.rows[0]) {
+        if (!baseQuery.rows[0]) {
           return res.status(404).json({
             success: false,
-            message: 'Projeto ou base não encontrados'
+            message: 'Base não encontrada'
+          });
+        }
+
+        const base = baseQuery.rows[0];
+
+        // Validar que a base pertence ao projeto selecionado
+        if (base.project_id !== parseInt(project_id)) {
+          console.log('[PostPaid] ❌ ERRO: Base não pertence ao projeto selecionado');
+          return res.status(400).json({
+            success: false,
+            message: 'A base selecionada não pertence ao projeto especificado'
+          });
+        }
+
+        // Buscar nome do projeto
+        const projectQuery = await pool.query('SELECT name FROM projects WHERE id = $1', [project_id]);
+
+        if (!projectQuery.rows[0]) {
+          return res.status(404).json({
+            success: false,
+            message: 'Projeto não encontrado'
           });
         }
 
         const project_name = projectQuery.rows[0].name;
-        const base_name = baseQuery.rows[0].basename;
+        const base_name = base.basename;
 
         // Capturar IP e user agent
         const ip_address = req.ip || req.connection.remoteAddress;
