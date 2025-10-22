@@ -2318,7 +2318,9 @@ app.use((req, res, next) => {
       '/api/workshops/validate-token', // Permitir acesso público para validação de token de oficinas
       '/api/workshops/test', // Permitir acesso público para teste de oficinas
       '/api/conferencia-rotas/', // Permitir acesso às rotas de conferência de rotas e abastecimentos
-      '/api/dashboard/km-per-base' // TEMPORÁRIO: Permitir acesso aos dados de quilometragem
+      '/api/dashboard/km-per-base', // TEMPORÁRIO: Permitir acesso aos dados de quilometragem
+      '/postpaid', // Link externo do formulário pós-pago
+      '/api/postpaid/', // APIs públicas do sistema pós-pago
     ];
     
     // Verificar se a rota atual é pública (não precisa de autenticação)

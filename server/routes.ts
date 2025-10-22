@@ -19745,6 +19745,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===========================
+  // ROTAS DE ABASTECIMENTO PÓS-PAGO
+  // ===========================
+  console.log('🟢 [ROUTES] Registrando rotas de abastecimento pós-pago');
+  setupPostPaidRoutes(app);
+
   const httpServer = createServer(app);
   // ===========================================
   // ROTAS PARA RECEBIMENTO DE COMBUSTÍVEL (EXTERNOS)
