@@ -1,0 +1,95 @@
+ESTRUTURA NO SUPABASE
+Tabela: abastecimentos
+CREATE TABLE abastecimentos (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  data_abastecimento timestamptz NOT NULL,
+  placa text REFERENCES veiculos(placa),
+  km_atual numeric,
+  motorista_nome text,
+  motorista_rg text,
+  projeto text,
+  combustivel_tipo text,
+  quantidade_litros numeric,
+  valor_por_litro numeric,
+  valor_total numeric,
+  lavagem_frota boolean DEFAULT false,
+  foto_nf text, -- URL da imagem armazenada no bucket
+  posto text,
+  observacoes text,
+  status text DEFAULT 'Pendente',
+  criado_em timestamptz DEFAULT now()
+);
+
+📦 BUCKET DE ARMAZENAMENTO (SUPABASE STORAGE)
+
+Crie um bucket chamado abastecimento_nfs
+
+Permitir upload público apenas via link autenticado temporariamente (RLS)
+
+Exemplo de regra RLS:
+
+create policy "permitir upload público"
+on storage.objects for insert
+to public
+with check (bucket_id = 'abastecimento_nfs');
+
+
+O campo foto_nf na tabela armazenará a URL pública do arquivo, por exemplo:
+
+https://<projeto>.supabase.co/storage/v1/object/public/abastecimento_nfs/2025-10-22_placaXYZ.jpg
+
+⚙️ INTEGRAÇÃO FRONTEND → SUPABASE
+
+Se o link for em React/Vue/HTML simples, o envio segue o fluxo:
+
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient('https://SEU-PROJETO.supabase.co', 'CHAVE_ANON_PUBLICA')
+
+async function enviarAbastecimento(formData) {
+  // 1. Upload da imagem
+  const foto = formData.get('foto_nf')
+  const nomeArquivo = `${Date.now()}_${foto.name}`
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from('abastecimento_nfs')
+    .upload(nomeArquivo, foto)
+
+  if (uploadError) throw uploadError
+
+  const fotoURL = `${supabase.storage.from('abastecimento_nfs').getPublicUrl(nomeArquivo).data.publicUrl}`
+
+  // 2. Inserção no banco
+  const { error } = await supabase.from('abastecimentos').insert([
+    {
+      data_abastecimento: new Date().toISOString(),
+      placa: formData.get('placa'),
+      km_atual: formData.get('km_atual'),
+      motorista_nome: formData.get('motorista_nome'),
+      motorista_rg: formData.get('motorista_rg'),
+      projeto: formData.get('projeto'),
+      combustivel_tipo: formData.get('combustivel_tipo'),
+      quantidade_litros: formData.get('quantidade_litros'),
+      valor_por_litro: formData.get('valor_por_litro'),
+      valor_total: formData.get('valor_total'),
+      lavagem_frota: formData.get('lavagem_frota') === 'true',
+      foto_nf: fotoURL,
+      posto: formData.get('posto'),
+      observacoes: formData.get('observacoes')
+    }
+  ])
+
+  if (error) throw error
+  alert('Abastecimento registrado com sucesso!')
+}
+
+💡 RECOMENDAÇÕES
+
+📱 O formulário deve ser mobile first (grandes botões, texto legível).
+
+🧮 Calcular valor_total automaticamente (quantidade_litros * valor_por_litro).
+
+🧾 Validar campos obrigatórios (placa, km, projeto, foto_nf).
+
+🔐 Se quiser restringir o acesso, use chave anônima + RLS no Supabase.
+
+📤 O link pode ser hospedado no Replit, Vercel ou Supabase Edge Functions.
