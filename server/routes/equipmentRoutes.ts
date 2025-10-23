@@ -833,8 +833,24 @@ router.put('/equipment-responsibility-terms/:id/return', unifiedAuthMiddleware, 
     // Atualizar status do equipamento para "disponivel"
     await db
       .update(equipments)
-      .set({ status: 'disponivel', updated_at: new Date() })
+      .set({ status: 'disponivel', condition: condition_at_return, updated_at: new Date() })
       .where(eq(equipments.id, updatedTerm[0].equipment_id));
+
+    // Registrar histórico de devolução
+    const userId = (req.user as any)?.id || 1;
+    await db.insert(equipmentMovements).values({
+      equipment_id: updatedTerm[0].equipment_id,
+      from_user_id: null,
+      to_user_id: null,
+      from_location: updatedTerm[0].department || 'Em uso',
+      to_location: 'Disponível',
+      movement_type: 'devolucao',
+      moved_by: userId,
+      moved_at: new Date(),
+      notes: `Equipamento devolvido. Usuário: ${updatedTerm[0].full_name}. Condição: ${condition_at_return || 'não especificada'}. ${notes || ''}`
+    });
+
+    console.log(`[EQUIPMENT] Devolução registrada - Termo ID: ${termId}, Equipment ID: ${updatedTerm[0].equipment_id}`);
 
     res.json({ success: true, data: updatedTerm[0] });
   } catch (error) {

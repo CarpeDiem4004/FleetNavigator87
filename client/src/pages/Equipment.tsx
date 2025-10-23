@@ -546,8 +546,10 @@ export default function Equipment() {
   const handleViewTerm = async (equipment: any) => {
     try {
       const response = await apiRequest('GET', `/api/equipment/equipment-responsibility-terms/equipment/${equipment.id}/active`);
-      if (response.success && response.data) {
-        setSelectedTermToView(response.data);
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        setSelectedTermToView(data.data);
         setIsViewTermDialogOpen(true);
       } else {
         toast({
@@ -576,10 +578,12 @@ export default function Equipment() {
   const handleReturnEquipment = async (equipment: any) => {
     try {
       const response = await apiRequest('GET', `/api/equipment/equipment-responsibility-terms/equipment/${equipment.id}/active`);
-      if (response.success && response.data) {
+      const data = await response.json();
+      
+      if (data.success && data.data) {
         // Se houver termo ativo, abre o diálogo completo de devolução
         setSelectedEquipmentForReturn(equipment);
-        setSelectedTermToView(response.data);
+        setSelectedTermToView(data.data);
         setIsReturnDialogOpen(true);
       } else {
         // Se não houver termo, permite devolução simplificada (apenas muda status para disponível)
