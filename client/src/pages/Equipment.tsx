@@ -569,29 +569,33 @@ export default function Equipment() {
     try {
       const response = await apiRequest('GET', `/api/equipment/equipment-responsibility-terms/equipment/${equipment.id}/active`);
       if (response.success && response.data) {
+        // Se houver termo ativo, abre o diálogo completo de devolução
         setSelectedEquipmentForReturn(equipment);
         setSelectedTermToView(response.data);
         setIsReturnDialogOpen(true);
       } else {
-        toast({
-          title: "Termo não encontrado",
-          description: "Não foi encontrado um termo ativo para registrar a devolução.",
-          variant: "destructive",
-        });
+        // Se não houver termo, permite devolução simplificada (apenas muda status para disponível)
+        setSelectedEquipmentForReturn(equipment);
+        setSelectedTermToView(null); // Sem termo ativo
+        setIsReturnDialogOpen(true);
       }
     } catch (error: any) {
       console.error('Erro ao buscar termo para devolução:', error);
       const errorMessage = error?.message || error?.error || "Erro ao buscar termo para devolução.";
       const isAuthError = errorMessage.includes("autenticado") || errorMessage.includes("Token");
       
-      toast({
-        title: isAuthError ? "Sessão expirada" : "Erro",
-        description: isAuthError ? "Sua sessão expirou. Por favor, faça login novamente." : errorMessage,
-        variant: "destructive",
-      });
-      
       if (isAuthError) {
+        toast({
+          title: "Sessão expirada",
+          description: "Sua sessão expirou. Por favor, faça login novamente.",
+          variant: "destructive",
+        });
         setTimeout(() => window.location.href = '/login', 2000);
+      } else {
+        // Se der erro mas não for de autenticação, permite devolução simplificada mesmo assim
+        setSelectedEquipmentForReturn(equipment);
+        setSelectedTermToView(null);
+        setIsReturnDialogOpen(true);
       }
     }
   };
@@ -1980,7 +1984,7 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
           </DialogHeader>
 
           <div className="space-y-4">
-            {selectedTermToView && (
+            {selectedTermToView ? (
               <div className="bg-gray-50 p-3 rounded">
                 <p className="text-sm text-gray-600">
                   <strong>Responsável:</strong> {selectedTermToView.full_name}
@@ -1994,6 +1998,13 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                       ? new Date(selectedTermToView.delivered_at).toLocaleDateString('pt-BR')
                       : new Date(selectedTermToView.created_at).toLocaleDateString('pt-BR')
                   }
+                </p>
+              </div>
+            ) : (
+              <div className="bg-yellow-50 border border-yellow-200 p-3 rounded">
+                <p className="text-sm text-yellow-800">
+                  <strong>Aviso:</strong> Este equipamento não possui termo de responsabilidade ativo. 
+                  A devolução irá apenas atualizar o status para "Disponível".
                 </p>
               </div>
             )}
@@ -2029,28 +2040,51 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                 Cancelar
               </Button>
               <Button onClick={async () => {
-                if (!selectedTermToView) return;
+                if (!selectedEquipmentForReturn) return;
                 
                 try {
                   const conditionSelect = document.getElementById('condition_at_return') as HTMLSelectElement;
                   const notesTextarea = document.getElementById('return_notes') as HTMLTextAreaElement;
                   
-                  const response = await apiRequest('PUT', `/api/equipment/equipment-responsibility-terms/${selectedTermToView.id}/return`, {
-                    condition_at_return: conditionSelect.value,
-                    notes: notesTextarea.value || null,
-                  });
-
-                  if (response.success) {
-                    toast({
-                      title: "Devolução registrada",
-                      description: "O equipamento foi marcado como devolvido com sucesso!",
+                  if (selectedTermToView) {
+                    // Se houver termo, registra devolução completa
+                    const response = await apiRequest('PUT', `/api/equipment/equipment-responsibility-terms/${selectedTermToView.id}/return`, {
+                      condition_at_return: conditionSelect.value,
+                      notes: notesTextarea.value || null,
                     });
-                    
-                    // Forçar atualização
-                    setForceRefreshKey(prev => prev + 1);
-                    queryClient.clear();
-                    
-                    setIsReturnDialogOpen(false);
+
+                    if (response.success) {
+                      toast({
+                        title: "Devolução registrada",
+                        description: "O equipamento foi marcado como devolvido com sucesso!",
+                      });
+                      
+                      // Forçar atualização
+                      setForceRefreshKey(prev => prev + 1);
+                      queryClient.clear();
+                      
+                      setIsReturnDialogOpen(false);
+                    }
+                  } else {
+                    // Se não houver termo, apenas atualiza status do equipamento para disponível
+                    const response = await apiRequest('PUT', `/api/equipment/equipments/${selectedEquipmentForReturn.id}`, {
+                      ...selectedEquipmentForReturn,
+                      status: 'disponivel',
+                      condition: conditionSelect.value,
+                    });
+
+                    if (response.success) {
+                      toast({
+                        title: "Equipamento devolvido",
+                        description: "O equipamento foi marcado como disponível!",
+                      });
+                      
+                      // Forçar atualização
+                      setForceRefreshKey(prev => prev + 1);
+                      queryClient.clear();
+                      
+                      setIsReturnDialogOpen(false);
+                    }
                   }
                 } catch (error) {
                   console.error('Erro ao registrar devolução:', error);
