@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -167,6 +167,7 @@ export default function Equipment() {
   const [isViewTermDialogOpen, setIsViewTermDialogOpen] = useState(false);
   const [selectedEquipmentForReturn, setSelectedEquipmentForReturn] = useState<any>(null);
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
+  const [isProcessingReturn, setIsProcessingReturn] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -255,6 +256,13 @@ export default function Equipment() {
   });
   
   const equipmentMaintenance = equipmentMaintenanceResponse?.data || [];
+
+  // Resetar estado de loading quando o modal for fechado
+  useEffect(() => {
+    if (!isReturnDialogOpen) {
+      setIsProcessingReturn(false);
+    }
+  }, [isReturnDialogOpen]);
 
   // Filtrar equipamentos baseado na busca
   const filteredEquipments = useMemo(() => {
@@ -2036,67 +2044,84 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsReturnDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setIsReturnDialogOpen(false)} disabled={isProcessingReturn}>
                 Cancelar
               </Button>
-              <Button onClick={async () => {
-                if (!selectedEquipmentForReturn) return;
-                
-                try {
-                  const conditionSelect = document.getElementById('condition_at_return') as HTMLSelectElement;
-                  const notesTextarea = document.getElementById('return_notes') as HTMLTextAreaElement;
+              <Button 
+                onClick={async () => {
+                  if (!selectedEquipmentForReturn || isProcessingReturn) return;
                   
-                  if (selectedTermToView) {
-                    // Se houver termo, registra devolução completa
-                    const response = await apiRequest('PUT', `/api/equipment/equipment-responsibility-terms/${selectedTermToView.id}/return`, {
-                      condition_at_return: conditionSelect.value,
-                      notes: notesTextarea.value || null,
-                    });
-
-                    if (response.success) {
-                      toast({
-                        title: "Devolução registrada",
-                        description: "O equipamento foi marcado como devolvido com sucesso!",
+                  setIsProcessingReturn(true);
+                  
+                  try {
+                    const conditionSelect = document.getElementById('condition_at_return') as HTMLSelectElement;
+                    const notesTextarea = document.getElementById('return_notes') as HTMLTextAreaElement;
+                    
+                    if (selectedTermToView) {
+                      // Se houver termo, registra devolução completa
+                      const response = await apiRequest('PUT', `/api/equipment/equipment-responsibility-terms/${selectedTermToView.id}/return`, {
+                        condition_at_return: conditionSelect.value,
+                        notes: notesTextarea.value || null,
                       });
-                      
-                      // Forçar atualização
-                      setForceRefreshKey(prev => prev + 1);
-                      queryClient.clear();
-                      
-                      setIsReturnDialogOpen(false);
-                    }
-                  } else {
-                    // Se não houver termo, apenas atualiza status do equipamento para disponível
-                    const response = await apiRequest('PUT', `/api/equipment/equipments/${selectedEquipmentForReturn.id}`, {
-                      ...selectedEquipmentForReturn,
-                      status: 'disponivel',
-                      condition: conditionSelect.value,
-                    });
 
-                    if (response.success) {
-                      toast({
-                        title: "Equipamento devolvido",
-                        description: "O equipamento foi marcado como disponível!",
+                      if (response.success) {
+                        toast({
+                          title: "Devolução registrada",
+                          description: "O equipamento foi marcado como devolvido com sucesso!",
+                        });
+                        
+                        // Forçar atualização
+                        setForceRefreshKey(prev => prev + 1);
+                        queryClient.clear();
+                        
+                        setIsReturnDialogOpen(false);
+                        setIsProcessingReturn(false);
+                      }
+                    } else {
+                      // Se não houver termo, apenas atualiza status do equipamento para disponível
+                      const response = await apiRequest('PUT', `/api/equipment/equipments/${selectedEquipmentForReturn.id}`, {
+                        ...selectedEquipmentForReturn,
+                        status: 'disponivel',
+                        condition: conditionSelect.value,
                       });
-                      
-                      // Forçar atualização
-                      setForceRefreshKey(prev => prev + 1);
-                      queryClient.clear();
-                      
-                      setIsReturnDialogOpen(false);
+
+                      if (response.success) {
+                        toast({
+                          title: "Equipamento devolvido",
+                          description: "O equipamento foi marcado como disponível!",
+                        });
+                        
+                        // Forçar atualização
+                        setForceRefreshKey(prev => prev + 1);
+                        queryClient.clear();
+                        
+                        setIsReturnDialogOpen(false);
+                        setIsProcessingReturn(false);
+                      }
                     }
+                  } catch (error) {
+                    console.error('Erro ao registrar devolução:', error);
+                    toast({
+                      title: "Erro",
+                      description: "Erro ao registrar devolução do equipamento.",
+                      variant: "destructive",
+                    });
+                    setIsProcessingReturn(false);
                   }
-                } catch (error) {
-                  console.error('Erro ao registrar devolução:', error);
-                  toast({
-                    title: "Erro",
-                    description: "Erro ao registrar devolução do equipamento.",
-                    variant: "destructive",
-                  });
-                }
-              }}>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Confirmar Devolução
+                }}
+                disabled={isProcessingReturn}
+              >
+                {isProcessingReturn ? (
+                  <>
+                    <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-gray-300 border-t-white"></div>
+                    Processando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Confirmar Devolução
+                  </>
+                )}
               </Button>
             </div>
           </div>
