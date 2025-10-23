@@ -691,7 +691,9 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
 
   const handleDownloadTerm = (termData: ResponsibilityTermFormData, equipment: any) => {
     const doc = generateTermPDF(termData, equipment);
-    doc.save(`termo_responsabilidade_${equipment.name.replace(/[^a-zA-Z0-9]/g, '_')}_${termData.full_name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+    const equipmentName = (equipment.name || 'equipamento').replace(/[^a-zA-Z0-9]/g, '_');
+    const userName = (termData.full_name || 'usuario').replace(/[^a-zA-Z0-9]/g, '_');
+    doc.save(`termo_responsabilidade_${equipmentName}_${userName}.pdf`);
   };
 
   const handleEdit = (equipment: any) => {
