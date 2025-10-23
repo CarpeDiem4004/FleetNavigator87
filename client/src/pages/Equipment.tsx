@@ -2064,7 +2064,9 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                         notes: notesTextarea.value || null,
                       });
 
-                      if (response.success) {
+                      const data = await response.json();
+                      
+                      if (data.success) {
                         toast({
                           title: "Devolução registrada",
                           description: "O equipamento foi marcado como devolvido com sucesso!",
@@ -2085,7 +2087,9 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                         condition: conditionSelect.value,
                       });
 
-                      if (response.success) {
+                      const data = await response.json();
+                      
+                      if (data.success || response.ok) {
                         toast({
                           title: "Equipamento devolvido",
                           description: "O equipamento foi marcado como disponível!",
