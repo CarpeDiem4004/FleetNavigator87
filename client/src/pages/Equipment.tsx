@@ -1932,11 +1932,15 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Marca/Modelo</Label>
-                  <p className="text-sm">{selectedTermToView.equipment_brand} {selectedTermToView.equipment_model}</p>
+                  <p className="text-sm">{selectedTermToView.equipment_brand || 'N/A'} {selectedTermToView.equipment_model || ''}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Número de Série</Label>
                   <p className="text-sm">{selectedTermToView.equipment_serial || 'N/A'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Número do Patrimônio</Label>
+                  <p className="text-sm">{selectedTermToView.equipment_patrimony || 'N/A'}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Responsável</Label>
@@ -1977,14 +1981,26 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                   Fechar
                 </Button>
                 <Button onClick={() => {
-                  // Gerar PDF do termo
                   if (selectedTermToView) {
-                    generateTermPDF(selectedTermToView, { 
+                    const termData = {
+                      full_name: selectedTermToView.full_name,
+                      cpf: selectedTermToView.cpf,
+                      phone: selectedTermToView.phone || '',
+                      department: selectedTermToView.department,
+                      address: selectedTermToView.address || '',
+                      position: selectedTermToView.position || '',
+                      condition_at_assignment: selectedTermToView.condition_at_assignment,
+                      notes: selectedTermToView.notes || ''
+                    };
+                    const equipment = {
                       name: selectedTermToView.equipment_name,
-                      brand: selectedTermToView.equipment_brand,
-                      model: selectedTermToView.equipment_model,
-                      serial_number: selectedTermToView.equipment_serial
-                    });
+                      type: selectedTermToView.equipment_type,
+                      brand: selectedTermToView.equipment_brand || '',
+                      model: selectedTermToView.equipment_model || '',
+                      serial_number: selectedTermToView.equipment_serial || '',
+                      patrimony_number: selectedTermToView.equipment_patrimony || ''
+                    };
+                    handleDownloadTerm(termData, equipment);
                   }
                 }}>
                   <Download className="h-4 w-4 mr-2" />

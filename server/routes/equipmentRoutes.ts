@@ -150,7 +150,10 @@ router.get('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req,
           ert.*,
           e.name as equipment_name,
           e.type as equipment_type,
-          e.serial_number as equipment_serial
+          e.brand as equipment_brand,
+          e.model as equipment_model,
+          e.serial_number as equipment_serial,
+          e.patrimony_number as equipment_patrimony
       FROM equipment_responsibility_terms ert
       LEFT JOIN equipments e ON ert.equipment_id = e.id
       ORDER BY ert.created_at DESC
@@ -173,6 +176,7 @@ router.get('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req,
       phone: term.phone,
       department: term.department,
       address: term.address,
+      position: term.position || null,
       assigned_at: term.assigned_at,
       returned_at: term.returned_at,
       assigned_by: term.assigned_by,
@@ -184,11 +188,21 @@ router.get('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req,
       is_active: term.is_active,
       created_at: term.created_at,
       updated_at: term.updated_at,
+      signed_document_url: term.signed_document_url,
+      equipment_name: term.equipment_name,
+      equipment_type: term.equipment_type,
+      equipment_brand: term.equipment_brand,
+      equipment_model: term.equipment_model,
+      equipment_serial: term.equipment_serial,
+      equipment_patrimony: term.equipment_patrimony,
       equipment: {
         id: term.equipment_id,
         name: term.equipment_name || 'Equipamento não encontrado',
         type: term.equipment_type || 'unknown',
+        brand: term.equipment_brand || '',
+        model: term.equipment_model || '',
         serial_number: term.equipment_serial || '',
+        patrimony_number: term.equipment_patrimony || ''
       }
     }));
 
@@ -220,6 +234,7 @@ router.get('/equipment-responsibility-terms/equipment/:equipmentId/active', unif
         ert.phone,
         ert.department,
         ert.address,
+        ert.position,
         ert.assigned_at,
         ert.returned_at,
         ert.condition_at_assignment,
@@ -232,7 +247,8 @@ router.get('/equipment-responsibility-terms/equipment/:equipmentId/active', unif
         e.type as equipment_type,
         e.brand as equipment_brand,
         e.model as equipment_model,
-        e.serial_number as equipment_serial
+        e.serial_number as equipment_serial,
+        e.patrimony_number as equipment_patrimony
       FROM equipment_responsibility_terms ert
       LEFT JOIN equipments e ON ert.equipment_id = e.id
       WHERE ert.equipment_id = ${equipmentId}
@@ -256,11 +272,13 @@ router.get('/equipment-responsibility-terms/equipment/:equipmentId/active', unif
         equipment_brand: termData.equipment_brand,
         equipment_model: termData.equipment_model,
         equipment_serial: termData.equipment_serial,
+        equipment_patrimony: termData.equipment_patrimony,
         full_name: termData.full_name,
         cpf: termData.cpf,
         phone: termData.phone,
         department: termData.department,
         address: termData.address,
+        position: termData.position,
         assigned_at: termData.assigned_at,
         returned_at: termData.returned_at,
         condition_at_assignment: termData.condition_at_assignment,
