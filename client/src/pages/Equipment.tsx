@@ -1054,13 +1054,22 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                           {new Date(term.assigned_at).toLocaleDateString('pt-BR')}
                         </td>
                         <td className="p-2">
-                          {term.signed_document_url ? (
+                          {term.returned_at ? (
+                            <span className="text-sm">
+                              {new Date(term.returned_at).toLocaleDateString('pt-BR')}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="p-2">
+                          {term.is_active ? (
                             <Badge variant="default" className="bg-green-100 text-green-800">
-                              Assinado
+                              Ativo
                             </Badge>
                           ) : (
-                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                              Pendente
+                            <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+                              Devolvido
                             </Badge>
                           )}
                         </td>
