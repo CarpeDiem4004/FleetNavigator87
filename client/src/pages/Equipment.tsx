@@ -2086,10 +2086,8 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                         status: 'disponivel',
                         condition: conditionSelect.value,
                       });
-
-                      const data = await response.json();
                       
-                      if (data.success || response.ok) {
+                      if (response.ok) {
                         toast({
                           title: "Equipamento devolvido",
                           description: "O equipamento foi marcado como disponível!",
@@ -2101,6 +2099,9 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                         
                         setIsReturnDialogOpen(false);
                         setIsProcessingReturn(false);
+                      } else {
+                        const data = await response.json();
+                        throw new Error(data.message || "Erro ao devolver equipamento");
                       }
                     }
                   } catch (error) {

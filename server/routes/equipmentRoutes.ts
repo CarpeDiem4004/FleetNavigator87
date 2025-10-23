@@ -466,6 +466,17 @@ router.put('/:id', async (req, res) => {
   try {
     const equipmentId = parseInt(req.params.id);
     
+    // Buscar equipamento anterior para comparar status
+    const previousEquipment = await db
+      .select()
+      .from(equipments)
+      .where(eq(equipments.id, equipmentId))
+      .limit(1);
+    
+    if (previousEquipment.length === 0) {
+      return res.status(404).json({ success: false, error: 'Equipamento não encontrado' });
+    }
+    
     // Converter strings vazias em null para campos únicos e opcionais
     const dataToValidate = {
       ...req.body,
@@ -488,6 +499,25 @@ router.put('/:id', async (req, res) => {
 
     if (updatedEquipment.length === 0) {
       return res.status(404).json({ success: false, error: 'Equipamento não encontrado' });
+    }
+
+    // Se o status mudou para 'disponivel', registrar histórico de devolução
+    if (previousEquipment[0].status !== 'disponivel' && validatedData.status === 'disponivel') {
+      const userId = (req.user as any)?.id || 1; // Pegar usuário autenticado ou usar admin como fallback
+      
+      await db.insert(equipmentMovements).values({
+        equipment_id: equipmentId,
+        from_user_id: null, // Não sabemos quem estava usando sem termo
+        to_user_id: null,
+        from_location: previousEquipment[0].location || 'Em uso',
+        to_location: validatedData.location || 'Disponível',
+        movement_type: 'devolucao',
+        moved_by: userId,
+        moved_at: new Date(),
+        notes: `Equipamento devolvido. Status anterior: ${previousEquipment[0].status}. Condição: ${validatedData.condition || 'não especificada'}`
+      });
+      
+      console.log(`[EQUIPMENT] Histórico de devolução registrado para equipamento ${equipmentId}`);
     }
 
     res.json({ success: true, data: updatedEquipment[0] });
