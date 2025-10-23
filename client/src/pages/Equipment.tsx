@@ -548,13 +548,20 @@ export default function Equipment() {
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao buscar termo:', error);
+      const errorMessage = error?.message || error?.error || "Erro ao buscar termo de responsabilidade.";
+      const isAuthError = errorMessage.includes("autenticado") || errorMessage.includes("Token");
+      
       toast({
-        title: "Erro",
-        description: "Erro ao buscar termo de responsabilidade.",
+        title: isAuthError ? "Sessão expirada" : "Erro",
+        description: isAuthError ? "Sua sessão expirou. Por favor, faça login novamente." : errorMessage,
         variant: "destructive",
       });
+      
+      if (isAuthError) {
+        setTimeout(() => window.location.href = '/login', 2000);
+      }
     }
   };
 
@@ -572,13 +579,20 @@ export default function Equipment() {
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao buscar termo para devolução:', error);
+      const errorMessage = error?.message || error?.error || "Erro ao buscar termo para devolução.";
+      const isAuthError = errorMessage.includes("autenticado") || errorMessage.includes("Token");
+      
       toast({
-        title: "Erro",
-        description: "Erro ao buscar termo para devolução.",
+        title: isAuthError ? "Sessão expirada" : "Erro",
+        description: isAuthError ? "Sua sessão expirou. Por favor, faça login novamente." : errorMessage,
         variant: "destructive",
       });
+      
+      if (isAuthError) {
+        setTimeout(() => window.location.href = '/login', 2000);
+      }
     }
   };
 
