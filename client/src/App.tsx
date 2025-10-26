@@ -124,6 +124,7 @@ import FuelCardDraft from "@/pages/fuel-card/draft";
 import FuelCardConfirmation from "@/pages/fuel-card/confirmation";
 import FuelCardDashboard from "@/pages/fuel-card/dashboard";
 import StationProfile from "@/pages/fuel-card/station-profile";
+import FuelConsumptionReport from "@/pages/FuelConsumptionReport";
 import PostoRemediosPage from "@/pages/PostoRemediosPage";
 import PostPaidManagement from "@/pages/postpaid/PostPaidManagement";
 import PostPaidPublicForm from "@/pages/postpaid/PostPaidPublicForm";
@@ -1011,6 +1012,8 @@ function App() {
           <ProtectedRoute path="/fuel-card-requests" component={FuelCardRequestsPanel} />
           <ProtectedRoute path="/fuel-cards" component={FuelCardRequestsPanel} />
           <ProtectedRoute path="/fuel-card-dashboard" component={FuelCard} />
+          {/* Relatório de consumo de combustível */}
+          <ProtectedRoute path="/fuel-consumption-report" component={FuelConsumptionReport} />
           {/* Página otimizada para solicitação mobile */}
           <Route path="/fuel-card/solicitation" component={FuelCardSolicitation} />
           <ProtectedRoute path="/posto-remedios" component={PostoRemediosPage} />

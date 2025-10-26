@@ -94,6 +94,7 @@ import {
   createFuelCardRequest,
   getFuelCardSolicitationsCounts
 } from "./fuelCardSolicitationsApi";
+import { getFuelConsumptionReport, getBasesForFilter } from "./routes/fuelConsumptionReportApi";
 import { exportFuelCardSolicitationsToCSV } from "./fuelCardExportAlternative";
 import { 
   getProjects, 
@@ -12177,6 +12178,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Nova rota para solicitações de cartão de combustível das bases
   app.post('/api/fuel-card-requests', createFuelCardRequest);
+  
+  // Rotas para relatório de consumo de combustível
+  app.get('/api/fuel-consumption-report', isAuthenticated, getFuelConsumptionReport);
+  app.get('/api/fuel-consumption-bases', isAuthenticated, getBasesForFilter);
 
   // Função específica para acesso público aos projetos
   const getProjectsWithBasesPublic = async (req: Request, res: Response) => {
