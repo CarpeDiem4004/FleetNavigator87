@@ -52,11 +52,11 @@ export async function getFuelConsumptionReport(req: Request, res: Response) {
     // Query para consumo em POSTOS
     let postoQuery = `
       SELECT 
-        base_projeto as base,
-        SUM(CAST(quantidade_litros AS NUMERIC)) as total_litros,
+        COALESCE(base_name, projeto, 'Não informado') as base,
+        SUM(CAST(litros AS NUMERIC)) as total_litros,
         SUM(CAST(valor_total AS NUMERIC)) as total_valor,
         COUNT(*) as registros
-      FROM fuel_records
+      FROM abastecimentos_postos
       WHERE 1=1
     `;
 
@@ -64,33 +64,33 @@ export async function getFuelConsumptionReport(req: Request, res: Response) {
     let paramCount = 1;
 
     if (start_date) {
-      postoQuery += ` AND data_abastecimento >= $${paramCount}`;
+      postoQuery += ` AND created_at >= $${paramCount}`;
       postoParams.push(start_date);
       paramCount++;
     }
 
     if (end_date) {
-      postoQuery += ` AND data_abastecimento <= $${paramCount}`;
+      postoQuery += ` AND created_at <= $${paramCount}`;
       postoParams.push(end_date);
       paramCount++;
     }
 
     if (base) {
-      postoQuery += ` AND base_projeto = $${paramCount}`;
+      postoQuery += ` AND (base_name = $${paramCount} OR projeto = $${paramCount})`;
       postoParams.push(base);
       paramCount++;
     }
 
-    postoQuery += ` GROUP BY base_projeto ORDER BY total_valor DESC`;
+    postoQuery += ` GROUP BY base_name, projeto ORDER BY total_valor DESC`;
 
     const postoResult = await storage.query(postoQuery, postoParams);
 
     // Query para consumo em CARTÕES
     let cartaoQuery = `
       SELECT 
-        base,
+        COALESCE(base, 'Não informado') as base,
         provedor_cartao,
-        SUM(CAST(COALESCE(litros, 0) AS NUMERIC)) as total_litros,
+        SUM(CAST(COALESCE(litros_solicitados, 0) AS NUMERIC)) as total_litros,
         SUM(CAST(COALESCE(valor_solicitado, 0) AS NUMERIC)) as total_valor,
         COUNT(*) as registros
       FROM solicitacoes_fuel_card
@@ -224,10 +224,10 @@ export async function getBasesForFilter(req: Request, res: Response) {
   try {
     // Buscar bases de postos
     const postoBases = await storage.query(`
-      SELECT DISTINCT base_projeto as base
-      FROM fuel_records
-      WHERE base_projeto IS NOT NULL
-      ORDER BY base_projeto
+      SELECT DISTINCT COALESCE(base_name, projeto) as base
+      FROM abastecimentos_postos
+      WHERE COALESCE(base_name, projeto) IS NOT NULL
+      ORDER BY COALESCE(base_name, projeto)
     `);
 
     // Buscar bases de cartões

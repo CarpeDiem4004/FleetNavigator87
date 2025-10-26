@@ -151,31 +151,49 @@ export default function FuelConsumptionReport() {
         {report && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              {/* Total Geral - Litros */}
+              {/* Total Postos - Litros */}
               <Card className="shadow-sm border-l-4 border-l-blue-600">
                 <CardHeader className="pb-2">
                   <div className="flex items-center gap-2">
                     <Droplets className="h-5 w-5 text-blue-600" />
                     <CardTitle className="text-sm font-medium text-gray-600 uppercase tracking-wide">
-                      Consumo Total
+                      Consumo Postos
                     </CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <p className="text-4xl font-bold text-gray-900">
-                    {report.total_geral.litros.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+                    {report.posto.total_litros.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
                   </p>
-                  <p className="text-sm text-gray-500 mt-1">litros</p>
+                  <p className="text-sm text-gray-500 mt-1">litros • {formatCurrency(report.posto.total_valor)}</p>
                 </CardContent>
               </Card>
 
-              {/* Total Geral - Valor */}
+              {/* Total Cartões - Valor */}
               <Card className="shadow-sm border-l-4 border-l-green-600">
                 <CardHeader className="pb-2">
                   <div className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5 text-green-600" />
+                    <CreditCard className="h-5 w-5 text-green-600" />
                     <CardTitle className="text-sm font-medium text-gray-600 uppercase tracking-wide">
-                      Valor Total
+                      Valor Cartões
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-4xl font-bold text-gray-900">
+                    {formatCurrency(report.cartao.total_valor)}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">{report.cartao.por_base.reduce((sum, b) => sum + b.registros, 0)} solicitações atendidas</p>
+                </CardContent>
+              </Card>
+
+              {/* Valor Total Geral */}
+              <Card className="shadow-sm border-l-4 border-l-purple-600">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-purple-600" />
+                    <CardTitle className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+                      Valor Total Geral
                     </CardTitle>
                   </div>
                 </CardHeader>
@@ -183,28 +201,13 @@ export default function FuelConsumptionReport() {
                   <p className="text-4xl font-bold text-gray-900">
                     {formatCurrency(report.total_geral.valor)}
                   </p>
-                  <p className="text-sm text-gray-500 mt-1">investido em combustível</p>
-                </CardContent>
-              </Card>
-
-              {/* Distribuição Posto vs Cartão */}
-              <Card className="shadow-sm border-l-4 border-l-purple-600">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-purple-600" />
-                    <CardTitle className="text-sm font-medium text-gray-600 uppercase tracking-wide">
-                      Distribuição
-                    </CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Postos:</span>
+                  <div className="space-y-1 mt-3">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-600">Postos:</span>
                       <span className="font-semibold">{((report.posto.total_valor / report.total_geral.valor) * 100 || 0).toFixed(1)}%</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Cartões:</span>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-600">Cartões:</span>
                       <span className="font-semibold">{((report.cartao.total_valor / report.total_geral.valor) * 100 || 0).toFixed(1)}%</span>
                     </div>
                   </div>
@@ -274,7 +277,7 @@ export default function FuelConsumptionReport() {
                   <div>
                     <CardTitle className="text-xl font-semibold">Consumo em Cartões de Abastecimento</CardTitle>
                     <p className="text-sm text-gray-600 mt-1">
-                      {formatCurrency(report.cartao.total_valor)} • {report.cartao.total_litros.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} litros
+                      {formatCurrency(report.cartao.total_valor)} • Solicitações atendidas por VALOR
                     </p>
                   </div>
                 </div>
@@ -295,12 +298,12 @@ export default function FuelConsumptionReport() {
                           <span className="font-bold text-green-900">{formatCurrency(report.cartao.por_provedor.ticket.valor)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-gray-700">Litros:</span>
-                          <span className="font-medium">{report.cartao.por_provedor.ticket.litros.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}L</span>
-                        </div>
-                        <div className="flex justify-between">
                           <span className="text-sm text-gray-700">Recargas:</span>
                           <span className="font-medium">{report.cartao.por_provedor.ticket.registros}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-700">Valor médio:</span>
+                          <span className="font-medium">{formatCurrency(report.cartao.por_provedor.ticket.valor / report.cartao.por_provedor.ticket.registros || 0)}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -319,12 +322,12 @@ export default function FuelConsumptionReport() {
                           <span className="font-bold text-purple-900">{formatCurrency(report.cartao.por_provedor.veloe.valor)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-gray-700">Litros:</span>
-                          <span className="font-medium">{report.cartao.por_provedor.veloe.litros.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}L</span>
-                        </div>
-                        <div className="flex justify-between">
                           <span className="text-sm text-gray-700">Recargas:</span>
                           <span className="font-medium">{report.cartao.por_provedor.veloe.registros}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-700">Valor médio:</span>
+                          <span className="font-medium">{formatCurrency(report.cartao.por_provedor.veloe.valor / report.cartao.por_provedor.veloe.registros || 0)}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -345,9 +348,9 @@ export default function FuelConsumptionReport() {
                               Base
                             </div>
                           </th>
-                          <th className="text-right p-3 font-semibold text-sm text-gray-700">Litros</th>
-                          <th className="text-right p-3 font-semibold text-sm text-gray-700">Valor</th>
-                          <th className="text-right p-3 font-semibold text-sm text-gray-700">Registros</th>
+                          <th className="text-right p-3 font-semibold text-sm text-gray-700">Valor Solicitado</th>
+                          <th className="text-right p-3 font-semibold text-sm text-gray-700">Solicitações</th>
+                          <th className="text-right p-3 font-semibold text-sm text-gray-700">Valor Médio</th>
                           <th className="text-right p-3 font-semibold text-sm text-gray-700">% do Total</th>
                         </tr>
                       </thead>
@@ -355,9 +358,9 @@ export default function FuelConsumptionReport() {
                         {report.cartao.por_base.map((base, idx) => (
                           <tr key={idx} className="border-b hover:bg-gray-50 transition-colors">
                             <td className="p-3 font-medium">{base.base}</td>
-                            <td className="p-3 text-right">{base.litros.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}L</td>
-                            <td className="p-3 text-right font-medium">{formatCurrency(base.valor)}</td>
+                            <td className="p-3 text-right font-medium text-lg">{formatCurrency(base.valor)}</td>
                             <td className="p-3 text-right">{base.registros}</td>
+                            <td className="p-3 text-right text-gray-600">{formatCurrency(base.valor / base.registros || 0)}</td>
                             <td className="p-3 text-right">
                               <span className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium">
                                 {((base.valor / report.cartao.total_valor) * 100).toFixed(1)}%
