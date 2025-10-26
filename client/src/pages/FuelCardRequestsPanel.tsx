@@ -218,12 +218,14 @@ const FuelCardRequestsPanel: React.FC = () => {
     }
   };
 
-  // Função para detectar placas com múltiplas solicitações no mesmo dia
+  // Função para detectar placas com múltiplas solicitações no mesmo dia (por data de uso)
   const getDailyPlateRepeats = () => {
     const dailyRepeats: Record<string, Record<string, number>> = {};
     
     solicitations.forEach(solicitation => {
-      const date = new Date(solicitation.data_solicitacao).toDateString();
+      // Usar data_uso ao invés de data_solicitacao para detectar duplicatas
+      const dataUso = solicitation.data_uso || solicitation.data_solicitacao;
+      const date = new Date(dataUso).toDateString();
       const placa = solicitation.placa;
       
       if (!dailyRepeats[placa]) {
@@ -1179,9 +1181,9 @@ const FuelCardRequestsPanel: React.FC = () => {
         return total + (isNaN(valor) ? 0 : valor);
       }, 0);
     
-    // Calcular placas com múltiplas solicitações no mesmo dia
+    // Calcular placas com múltiplas solicitações no mesmo dia (por data de uso)
     const placasRepetidas = solicitations.filter(s => 
-      hasMultipleRequestsToday(s.placa, s.data_solicitacao)
+      hasMultipleRequestsToday(s.placa, s.data_uso || s.data_solicitacao)
     ).length;
     
     return { pendentes, atendidas, valorTotalAtendido, placasRepetidas };
@@ -1675,7 +1677,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                     <div 
                       key={`${solicitacao.id}-${solicitacao.origem_tipo}-${index}`} 
                       className={`p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${
-                        hasMultipleRequestsToday(solicitacao.placa, solicitacao.data_solicitacao)
+                        hasMultipleRequestsToday(solicitacao.placa, solicitacao.data_uso || solicitacao.data_solicitacao)
                           ? 'bg-red-50 border-red-300 border-l-4 border-l-red-500 shadow-md' // Destaque especial para repetições
                           : index < 5 
                             ? (solicitacao.status === 'Pendente' || solicitacao.status === 'pendente') 
@@ -1695,15 +1697,15 @@ const FuelCardRequestsPanel: React.FC = () => {
                               <p className="text-sm font-bold text-gray-900">{solicitacao.placa}</p>
                               <p className="text-xs text-gray-500">Placa</p>
                               
-                              {/* Alerta para placas com múltiplas solicitações no mesmo dia */}
-                              {hasMultipleRequestsToday(solicitacao.placa, solicitacao.data_solicitacao) && (
+                              {/* Alerta para placas com múltiplas solicitações no mesmo dia (por data de uso) */}
+                              {hasMultipleRequestsToday(solicitacao.placa, solicitacao.data_uso || solicitacao.data_solicitacao) && (
                                 <Badge variant="destructive" className="text-xs bg-red-500 text-white mt-1">
-                                  ⚠️ {getDailyRequestCount(solicitacao.placa, solicitacao.data_solicitacao)}x
+                                  ⚠️ {getDailyRequestCount(solicitacao.placa, solicitacao.data_uso || solicitacao.data_solicitacao)}x
                                 </Badge>
                               )}
                               
                               {/* Badge de contagem total geral */}
-                              {solicitudeCounts[solicitacao.placa] > 1 && !hasMultipleRequestsToday(solicitacao.placa, solicitacao.data_solicitacao) && (
+                              {solicitudeCounts[solicitacao.placa] > 1 && !hasMultipleRequestsToday(solicitacao.placa, solicitacao.data_uso || solicitacao.data_solicitacao) && (
                                 <Badge variant="secondary" className="text-xs mt-1">
                                   {solicitudeCounts[solicitacao.placa]}x
                                 </Badge>
