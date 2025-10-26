@@ -233,13 +233,16 @@ export default function FuelCardDraft() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-3">
                               <Badge variant="outline">#{index + 1}</Badge>
-                              <span 
-                                className={`font-bold text-xl ${
-                                  isDuplicate ? 'text-red-600' : 'text-gray-900'
-                                }`}
-                              >
-                                {request.placa}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-600 text-sm font-medium">Placa do Cartão:</span>
+                                <span 
+                                  className={`font-bold text-xl ${
+                                    isDuplicate ? 'text-red-600' : 'text-gray-900'
+                                  }`}
+                                >
+                                  {request.placa}
+                                </span>
+                              </div>
                               {isDuplicate && (
                                 <Badge variant="destructive">Duplicata Detectada</Badge>
                               )}
