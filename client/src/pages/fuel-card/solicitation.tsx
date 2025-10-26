@@ -803,6 +803,11 @@ export default function FuelCardSolicitation() {
             </Form>
           </CardContent>
         </Card>
+        
+        {/* Rodapé */}
+        <div className="mt-6 text-center text-sm text-gray-500">
+          Desenvolvido por Carpe Diem 4004 | suporte 11 970558053 | Sistema v2.9.4
+        </div>
       </div>
     </div>
   );
