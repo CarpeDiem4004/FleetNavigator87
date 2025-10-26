@@ -218,57 +218,81 @@ export default function FuelCardDraft() {
             ) : (
               <>
                 <div className="space-y-3 mb-6">
-                  {draftRequests.map((request, index) => (
-                    <div
-                      key={request.id}
-                      className={`p-4 border rounded-lg ${
-                        duplicates.includes(request.id) 
-                          ? 'border-red-300 bg-red-50' 
-                          : 'border-gray-200 bg-white'
-                      }`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="outline">#{index + 1}</Badge>
-                            <span className="font-semibold text-lg">{request.placa}</span>
-                            {duplicates.includes(request.id) && (
-                              <Badge variant="destructive">Possível Duplicata</Badge>
+                  {draftRequests.map((request, index) => {
+                    const isDuplicate = duplicates.includes(request.id);
+                    return (
+                      <div
+                        key={request.id}
+                        className={`p-4 border rounded-lg ${
+                          isDuplicate 
+                            ? 'border-red-300 bg-red-50' 
+                            : 'border-gray-200 bg-white'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Badge variant="outline">#{index + 1}</Badge>
+                              <span 
+                                className={`font-bold text-xl ${
+                                  isDuplicate ? 'text-red-600' : 'text-gray-900'
+                                }`}
+                              >
+                                {request.placa}
+                              </span>
+                              {isDuplicate && (
+                                <Badge variant="destructive">Duplicata Detectada</Badge>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                              <div>
+                                <span className="text-gray-500 block mb-1">Motorista:</span>
+                                <p className="font-medium">{request.motorista}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-500 block mb-1">KM:</span>
+                                <p className="font-medium">{request.km.toLocaleString()}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-500 block mb-1">Valor:</span>
+                                <p className="font-medium text-green-600">{formatCurrency(request.valor_solicitado)}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-500 block mb-1">Data Uso:</span>
+                                <p className="font-medium">{request.data_uso ? new Date(request.data_uso + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</p>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 pt-3 border-t text-sm">
+                              <div>
+                                <span className="text-gray-500 block mb-1">⛽ Tipo de Combustível:</span>
+                                <p className="font-semibold text-blue-700">{request.tipo_combustivel || 'Não especificado'}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-500 block mb-1">💳 Provedor do Cartão:</span>
+                                <p className="font-semibold text-purple-700">{request.provedor_cartao || 'Não especificado'}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-500 block mb-1">📍 Base:</span>
+                                <p className="font-semibold text-indigo-700">{request.base || 'Não especificada'}</p>
+                              </div>
+                            </div>
+                            {request.observacoes && (
+                              <p className="text-sm text-gray-600 mt-3 italic border-t pt-2">{request.observacoes}</p>
                             )}
                           </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                            <div>
-                              <span className="text-gray-500">Motorista:</span>
-                              <p className="font-medium">{request.motorista}</p>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">KM:</span>
-                              <p className="font-medium">{request.km.toLocaleString()}</p>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Valor:</span>
-                              <p className="font-medium text-green-600">{formatCurrency(request.valor_solicitado)}</p>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Data Uso:</span>
-                              <p className="font-medium">{request.data_uso ? new Date(request.data_uso + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</p>
-                            </div>
-                          </div>
-                          {request.observacoes && (
-                            <p className="text-sm text-gray-600 mt-2 italic">{request.observacoes}</p>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemove(request.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 ml-2"
+                            data-testid={`button-remove-${request.id}`}
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemove(request.id)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </Button>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Resumo e ações */}
