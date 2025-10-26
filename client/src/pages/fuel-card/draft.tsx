@@ -231,16 +231,28 @@ export default function FuelCardDraft() {
                       >
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-3">
+                            <div className="flex flex-wrap items-center gap-3 mb-3">
                               <Badge variant="outline">#{index + 1}</Badge>
                               <div className="flex items-center gap-2">
-                                <span className="text-gray-600 text-sm font-medium">Placa do Cartão:</span>
+                                <span className="text-gray-600 text-sm font-medium">🚗 Placa do Carro:</span>
                                 <span 
                                   className={`font-bold text-xl ${
                                     isDuplicate ? 'text-red-600' : 'text-gray-900'
                                   }`}
                                 >
                                   {request.placa}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-600 text-sm font-medium">💳 Placa do Cartão:</span>
+                                <span 
+                                  className={`font-bold text-xl ${
+                                    isDuplicate ? 'text-red-600' : 'text-blue-700'
+                                  }`}
+                                >
+                                  {request.tipo_cartao === "numero" && request.numero_cartao 
+                                    ? request.numero_cartao 
+                                    : request.placa}
                                 </span>
                               </div>
                               {isDuplicate && (
