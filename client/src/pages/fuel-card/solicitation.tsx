@@ -229,6 +229,14 @@ export default function FuelCardSolicitation() {
         description: "Sua solicitação de cartão combustível foi enviada com sucesso.",
       });
       
+      // Passar data de uso para a página de confirmação
+      sessionStorage.setItem('fuelCardConfirmation', JSON.stringify({
+        successCount: 1,
+        errorCount: 0,
+        total: 1,
+        data_uso: data_uso_corrigida
+      }));
+      
       // Redirecionar para página de confirmação
       setLocation("/fuel-card/confirmation");
       

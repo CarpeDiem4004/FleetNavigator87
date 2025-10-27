@@ -144,11 +144,14 @@ export default function FuelCardDraft() {
       }
       
       // Passar dados de resultado para a página de confirmação via sessionStorage
+      // Captura a data_uso do primeiro item enviado com sucesso
+      const firstSuccessfulRequest = draftRequests[0];
       sessionStorage.setItem('fuelCardConfirmation', JSON.stringify({
         successCount,
         errorCount,
         total,
-        errorDetails: errorDetails.length > 0 ? errorDetails : undefined
+        errorDetails: errorDetails.length > 0 ? errorDetails : undefined,
+        data_uso: firstSuccessfulRequest?.data_uso
       }));
       
       setTimeout(() => {

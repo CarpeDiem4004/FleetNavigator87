@@ -11,6 +11,7 @@ interface LocationState {
   errorCount?: number;
   total?: number;
   errorDetails?: string[];
+  data_uso?: string;
 }
 
 export default function FuelCardConfirmation() {
@@ -32,11 +33,22 @@ export default function FuelCardConfirmation() {
     }
   }, []);
 
-  const { successCount, errorCount, total, errorDetails } = confirmationData;
+  const { successCount, errorCount, total, errorDetails, data_uso } = confirmationData;
 
   // Determinar se é envio em lote ou individual
   const isBatchSend = total !== undefined && total > 1;
   const hasErrors = errorCount !== undefined && errorCount > 0;
+  
+  // Formatar data de uso para exibição (DD/MM/YYYY)
+  const formatDataUso = (dataStr?: string): string => {
+    if (!dataStr) return '';
+    try {
+      const [year, month, day] = dataStr.split('-');
+      return `${day}/${month}/${year}`;
+    } catch {
+      return dataStr;
+    }
+  };
 
   return (
     <div className="container mx-auto py-12">
@@ -98,6 +110,20 @@ export default function FuelCardConfirmation() {
                   </ul>
                 </AlertDescription>
               </Alert>
+            )}
+
+            {/* Data de Solicitação do Uso do Saldo */}
+            {data_uso && (
+              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg mb-4 border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    📅 Data de Solicitação do Uso do Saldo:
+                  </span>
+                  <span className="text-lg font-bold text-blue-700 dark:text-blue-300">
+                    {formatDataUso(data_uso)}
+                  </span>
+                </div>
+              </div>
             )}
 
             <p className="text-muted-foreground mb-4">
