@@ -28,6 +28,7 @@ interface WhatsAppResponseButtonProps {
     origem_tipo?: string;
     base?: string;
     tipo_cartao?: string;
+    motivo_negacao?: string | null;
   };
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'sm' | 'default' | 'lg';
@@ -69,7 +70,8 @@ const WhatsAppResponseButton: React.FC<WhatsAppResponseButtonProps> = ({
       solicitation.placa,
       solicitation.status,
       solicitation.valor_solicitado,
-      solicitation.observacoes
+      solicitation.observacoes,
+      solicitation.motivo_negacao
     );
     
     setMessage(defaultMessage);

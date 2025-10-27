@@ -45,7 +45,8 @@ export function generateFuelCardMessage(
   placa: string,
   status: string,
   valorSolicitado?: number | string,
-  observacoes?: string
+  observacoes?: string,
+  motivoNegacao?: string | null
 ): string {
   let message = `Olá ${motorista}!\n\n`;
   
@@ -82,8 +83,10 @@ export function generateFuelCardMessage(
       if (valor && !isNaN(valor)) {
         message += `💰 Valor solicitado: R$ ${valor.toFixed(2)}\n`;
       }
-      if (observacoes) {
-        message += `\n📝 Motivo: ${observacoes}\n`;
+      // Priorizar motivoNegacao específico, se não existir, usar observações
+      const motivoParaExibir = motivoNegacao && motivoNegacao.trim() ? motivoNegacao : observacoes;
+      if (motivoParaExibir) {
+        message += `\n⚠️ Motivo da Negação: ${motivoParaExibir}\n`;
       }
       message += `\nEntre em contato para mais informações. 📞`;
       break;
