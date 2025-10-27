@@ -262,7 +262,7 @@ export default function FuelCardDraft() {
                                 <Badge variant="destructive">Duplicata Detectada</Badge>
                               )}
                             </div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
                               <div>
                                 <span className="text-gray-500 block mb-1">Motorista:</span>
                                 <p className="font-medium">{request.motorista}</p>
@@ -278,6 +278,10 @@ export default function FuelCardDraft() {
                               <div>
                                 <span className="text-gray-500 block mb-1">Data Uso:</span>
                                 <p className="font-medium">{request.data_uso ? new Date(request.data_uso + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-500 block mb-1">🕐 Turno:</span>
+                                <p className="font-bold text-orange-600">{request.turno || '-'}</p>
                               </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 pt-3 border-t text-sm">
