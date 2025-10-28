@@ -21,6 +21,7 @@ import { Separator } from '@/components/ui/separator';
 import FuelCardRequestForm from '@/components/FuelCardRequestForm';
 import WhatsAppResponseButton from '@/components/WhatsAppResponseButton';
 import { useLocation } from 'wouter';
+import { generateBatchApprovalMessage, openWhatsAppWeb, isValidPhoneNumber } from '@/lib/whatsapp-utils';
 
 // Função auxiliar para converter data corretamente (evita bug de timezone UTC)
 const parseLocalDate = (dateString: string): Date => {
@@ -111,6 +112,12 @@ const FuelCardRequestsPanel: React.FC = () => {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [isNewRequestDialogOpen, setIsNewRequestDialogOpen] = useState(false);
   const [approvingBatch, setApprovingBatch] = useState(false);
+  
+  // Estados para WhatsApp em lote
+  const [batchWhatsAppDialogOpen, setBatchWhatsAppDialogOpen] = useState(false);
+  const [approvedBatchSolicitations, setApprovedBatchSolicitations] = useState<FuelCardSolicitation[]>([]);
+  const [gestorPhone, setGestorPhone] = useState<string>('');
+  const [batchWhatsAppMessage, setBatchWhatsAppMessage] = useState<string>('');
   
   // Estados para relatório por data
   const [startDate, setStartDate] = useState<string>('');
@@ -982,6 +989,14 @@ const FuelCardRequestsPanel: React.FC = () => {
       const failures = results.filter(result => result.status === 'rejected').length;
 
       if (successes > 0) {
+        // Armazenar solicitações aprovadas para WhatsApp
+        const approvedSols = pendingSolicitations.slice(0, successes);
+        setApprovedBatchSolicitations(approvedSols);
+        
+        // Gerar mensagem do WhatsApp
+        const message = generateBatchApprovalMessage(approvedSols, baseFilter);
+        setBatchWhatsAppMessage(message);
+        
         // Atualizar a lista local
         setSolicitations(solicitations.map(sol => {
           if (sol.base === baseFilter && (sol.status === 'Pendente' || sol.status === 'pendente' || 
@@ -1000,6 +1015,9 @@ const FuelCardRequestsPanel: React.FC = () => {
           title: 'Aprovação em Lote Concluída',
           description: `${successes} solicitação(ões) aprovada(s) com sucesso${failures > 0 ? ` (${failures} falha(s))` : ''}`
         });
+        
+        // Abrir dialog para envio de WhatsApp
+        setBatchWhatsAppDialogOpen(true);
       } else {
         toast({
           variant: 'destructive',
@@ -1017,6 +1035,44 @@ const FuelCardRequestsPanel: React.FC = () => {
       });
     } finally {
       setApprovingBatch(false);
+    }
+  };
+  
+  const handleSendBatchWhatsApp = () => {
+    if (!gestorPhone.trim()) {
+      toast({
+        title: 'Telefone obrigatório',
+        description: 'Por favor, informe o número de telefone do gestor',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!isValidPhoneNumber(gestorPhone)) {
+      toast({
+        title: 'Número inválido',
+        description: 'Por favor, verifique o formato do número de telefone',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      openWhatsAppWeb(gestorPhone, batchWhatsAppMessage);
+      
+      toast({
+        title: 'WhatsApp aberto',
+        description: 'A mensagem consolidada foi aberta no WhatsApp Web. Confira e envie.',
+      });
+      
+      setBatchWhatsAppDialogOpen(false);
+      setGestorPhone('');
+    } catch (error) {
+      toast({
+        title: 'Erro ao abrir WhatsApp',
+        description: 'Não foi possível abrir o WhatsApp Web. Verifique se o serviço está disponível.',
+        variant: 'destructive'
+      });
     }
   };
   
@@ -2945,6 +3001,96 @@ const FuelCardRequestsPanel: React.FC = () => {
                   })}
                 </div>
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Modal de WhatsApp em Lote */}
+        <Dialog open={batchWhatsAppDialogOpen} onOpenChange={setBatchWhatsAppDialogOpen}>
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center text-green-700">
+                <CheckCircle2 className="h-6 w-6 mr-2" />
+                Notificação WhatsApp - Aprovação em Lote
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* Resumo das aprovações */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h3 className="font-semibold text-green-800 mb-2">
+                  ✅ {approvedBatchSolicitations.length} solicitações aprovadas
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                  {approvedBatchSolicitations.map((sol, idx) => (
+                    <div key={idx} className="flex items-center text-sm">
+                      <span className="font-medium text-green-700">{sol.placa}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Input de telefone */}
+              <div className="space-y-2">
+                <Label htmlFor="gestor-phone" className="flex items-center">
+                  📱 Telefone do Gestor/Responsável *
+                </Label>
+                <Input
+                  id="gestor-phone"
+                  type="tel"
+                  placeholder="(11) 99999-9999"
+                  value={gestorPhone}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const cleanValue = value.replace(/[^\d\(\)\s\-]/g, '');
+                    setGestorPhone(cleanValue);
+                  }}
+                  className="font-mono"
+                  data-testid="input-gestor-phone-batch"
+                />
+                <p className="text-xs text-gray-500">
+                  Formato: (11) 99999-9999 ou 11999999999
+                </p>
+              </div>
+              
+              {/* Preview da mensagem */}
+              <div className="space-y-2">
+                <Label htmlFor="batch-message">Mensagem (pré-visualização)</Label>
+                <Textarea
+                  id="batch-message"
+                  value={batchWhatsAppMessage}
+                  onChange={(e) => setBatchWhatsAppMessage(e.target.value)}
+                  rows={12}
+                  className="resize-none font-mono text-sm"
+                  data-testid="textarea-batch-message"
+                />
+                <p className="text-xs text-gray-500">
+                  Você pode editar a mensagem antes de enviar
+                </p>
+              </div>
+              
+              {/* Botões de ação */}
+              <div className="flex justify-between gap-3 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setBatchWhatsAppDialogOpen(false);
+                    setGestorPhone('');
+                  }}
+                  className="flex-1"
+                  data-testid="button-cancel-batch-whatsapp"
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleSendBatchWhatsApp}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  data-testid="button-send-batch-whatsapp"
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Enviar WhatsApp
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

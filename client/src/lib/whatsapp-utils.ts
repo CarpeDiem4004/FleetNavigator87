@@ -176,3 +176,39 @@ export function isLineHallRequest(solicitation: any): boolean {
     solicitation.tipo_cartao?.toLowerCase().includes('line hall')
   );
 }
+
+/**
+ * Gerar mensagem consolidada para aprovação em lote
+ * Lista todas as placas aprovadas com saldo disponível
+ */
+export function generateBatchApprovalMessage(
+  approvedSolicitations: Array<{
+    placa: string;
+    motorista: string;
+    valor_solicitado?: number | string;
+  }>,
+  baseName: string
+): string {
+  const totalApproved = approvedSolicitations.length;
+  const totalValue = approvedSolicitations.reduce((sum, sol) => {
+    const valor = sol.valor_solicitado ? parseFloat(sol.valor_solicitado.toString()) : 0;
+    return sum + (isNaN(valor) ? 0 : valor);
+  }, 0);
+
+  let message = `✅ *APROVAÇÃO EM LOTE - ${baseName.toUpperCase()}*\n\n`;
+  message += `🎉 ${totalApproved} solicitações foram APROVADAS!\n`;
+  message += `💰 Valor total: R$ ${totalValue.toFixed(2)}\n\n`;
+  message += `📋 *VEÍCULOS COM SALDO DISPONÍVEL:*\n\n`;
+
+  approvedSolicitations.forEach((sol, index) => {
+    const valor = sol.valor_solicitado ? parseFloat(sol.valor_solicitado.toString()) : 0;
+    message += `${index + 1}. 🚛 *${sol.placa}*\n`;
+    message += `   👤 ${sol.motorista}\n`;
+    message += `   💵 R$ ${isNaN(valor) ? '0.00' : valor.toFixed(2)}\n\n`;
+  });
+
+  message += `✨ Todos os veículos já podem abastecer!\n\n`;
+  message += `---\n📱 Mensagem automática do Sistema de Gestão de Frota`;
+
+  return message;
+}
