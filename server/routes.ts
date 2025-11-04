@@ -5184,14 +5184,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Public API endpoints for external access (no authentication required)
   
-  // GET - Obter todas as solicitações de fuel card (acesso público para painel) - OTIMIZADO
+  // GET - Obter todas as solicitações de fuel card (acesso público para painel) - OTIMIZADO COM FILTROS
   app.get('/api/public/fuel-card/solicitations', async (req, res) => {
     try {
-      console.log('[PUBLIC-FUEL-CARD] Processando requisição pública para todas as solicitações - OTIMIZADO');
+      console.log('[PUBLIC-FUEL-CARD] Processando requisição pública para todas as solicitações - OTIMIZADO COM FILTROS');
       
       const page = parseInt(req.query.page as string) || 1;
       const limit = Math.min(parseInt(req.query.limit as string) || 100, 1000); // Máximo 1000 registros
       const offset = (page - 1) * limit;
+      
+      // Filtros opcionais
+      const statusFilter = req.query.status as string;
+      const baseFilter = req.query.base as string;
+      const searchQuery = req.query.search as string;
+      
+      console.log('[PUBLIC-FUEL-CARD] Filtros aplicados:', { statusFilter, baseFilter, searchQuery });
       
       // Cache HTTP para 5 minutos (300 segundos)
       res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
@@ -5329,22 +5336,149 @@ export async function registerRoutes(app: Express): Promise<Server> {
           LEFT JOIN veiculos v ON lh.veiculo_placa = v.placa
 
         ) unified_data
+        WHERE 1=1
+          ${statusFilter ? `AND (
+            -- Normalizar status antes de comparar
+            CASE 
+              WHEN origem_tipo = 'line_hall' THEN
+                CASE 
+                  WHEN status IN ('pendente', 'pending') THEN 'Pendente'
+                  WHEN status IN ('aprovada', 'approved') THEN 'Recarga Efetuada'
+                  WHEN status IN ('rejeitada', 'rejected') THEN 'Negado'
+                  ELSE status
+                END
+              WHEN origem_tipo = 'base_system' THEN
+                CASE 
+                  WHEN status = 'pendente' THEN 'Pendente'
+                  WHEN status IN ('aprovado', 'approved') THEN 'Recarga Efetuada'
+                  WHEN status IN ('rejeitado', 'rejected') THEN 'Negado'
+                  ELSE status
+                END
+              ELSE
+                CASE 
+                  WHEN status = 'pendente' THEN 'Pendente'
+                  WHEN status = 'em_analise' THEN 'Em Análise'
+                  WHEN status = 'atendido' THEN 'Recarga Efetuada'
+                  WHEN status = 'rejeitado' THEN 'Negado'
+                  ELSE status
+                END
+            END = $3
+          )` : ''}
+          ${baseFilter ? `AND base = $${statusFilter ? '4' : '3'}` : ''}
+          ${searchQuery ? `AND (
+            placa ILIKE $${statusFilter && baseFilter ? '5' : statusFilter || baseFilter ? '4' : '3'}
+            OR motorista ILIKE $${statusFilter && baseFilter ? '5' : statusFilter || baseFilter ? '4' : '3'}
+            OR solicitante ILIKE $${statusFilter && baseFilter ? '5' : statusFilter || baseFilter ? '4' : '3'}
+            OR base ILIKE $${statusFilter && baseFilter ? '5' : statusFilter || baseFilter ? '4' : '3'}
+          )` : ''}
         ORDER BY data_solicitacao DESC
         LIMIT $1 OFFSET $2
       `;
       
+      // Construir array de parâmetros dinamicamente
+      const queryParams: any[] = [limit, offset];
+      if (statusFilter) queryParams.push(statusFilter);
+      if (baseFilter) queryParams.push(baseFilter);
+      if (searchQuery) queryParams.push(`%${searchQuery}%`);
+      
+      // Query de contagem com filtros
+      const filteredCountQuery = `
+        SELECT COUNT(*) as filtered_count FROM (
+          SELECT 
+            s.id,
+            s.status,
+            COALESCE(s.origem_tipo, 'tradicional') as origem_tipo,
+            COALESCE(s.base, 'Base Principal') as base,
+            COALESCE(s.placa, s.veiculo_placa, 'SEM-PLACA') as placa,
+            COALESCE(s.motorista, 'Motorista não informado') as motorista,
+            COALESCE(s.solicitante, 'Nome não informado') as solicitante
+          FROM solicitacoes_fuel_card s
+          
+          UNION ALL
+          
+          SELECT 
+            fcr.id,
+            fcr.status,
+            'base_system' as origem_tipo,
+            COALESCE(b.name, 'Base não especificada') as base,
+            COALESCE(fcr.plate, 'SEM-PLACA') as placa,
+            COALESCE(fcr.requested_by, 'Motorista não informado') as motorista,
+            COALESCE(fcr.driver_name, 'Nome não informado') as solicitante
+          FROM fuel_card_requests fcr
+          LEFT JOIN bases b ON fcr.base_id = b.id
+          
+          UNION ALL
+          
+          SELECT 
+            lh.id,
+            lh.status,
+            COALESCE(lh.origem_tipo, 'line_hall') as origem_tipo,
+            CONCAT(lh.rota_origem, ' → ', lh.rota_destino) as base,
+            COALESCE(lh.veiculo_placa, 'SEM-PLACA') as placa,
+            COALESCE(lh.motorista_nome, 'Motorista não informado') as motorista,
+            COALESCE(lh.motorista_nome, 'Nome não informado') as solicitante
+          FROM linehall_fuel_card_requests lh
+        ) unified_count
+        WHERE 1=1
+          ${statusFilter ? `AND (
+            CASE 
+              WHEN origem_tipo = 'line_hall' THEN
+                CASE 
+                  WHEN status IN ('pendente', 'pending') THEN 'Pendente'
+                  WHEN status IN ('aprovada', 'approved') THEN 'Recarga Efetuada'
+                  WHEN status IN ('rejeitada', 'rejected') THEN 'Negado'
+                  ELSE status
+                END
+              WHEN origem_tipo = 'base_system' THEN
+                CASE 
+                  WHEN status = 'pendente' THEN 'Pendente'
+                  WHEN status IN ('aprovado', 'approved') THEN 'Recarga Efetuada'
+                  WHEN status IN ('rejeitado', 'rejected') THEN 'Negado'
+                  ELSE status
+                END
+              ELSE
+                CASE 
+                  WHEN status = 'pendente' THEN 'Pendente'
+                  WHEN status = 'em_analise' THEN 'Em Análise'
+                  WHEN status = 'atendido' THEN 'Recarga Efetuada'
+                  WHEN status = 'rejeitado' THEN 'Negado'
+                  ELSE status
+                END
+            END = $1
+          )` : ''}
+          ${baseFilter ? `AND base = $${statusFilter ? '2' : '1'}` : ''}
+          ${searchQuery ? `AND (
+            placa ILIKE $${statusFilter && baseFilter ? '3' : statusFilter || baseFilter ? '2' : '1'}
+            OR motorista ILIKE $${statusFilter && baseFilter ? '3' : statusFilter || baseFilter ? '2' : '1'}
+            OR solicitante ILIKE $${statusFilter && baseFilter ? '3' : statusFilter || baseFilter ? '2' : '1'}
+            OR base ILIKE $${statusFilter && baseFilter ? '3' : statusFilter || baseFilter ? '2' : '1'}
+          )` : ''}
+      `;
+      
+      // Parâmetros para query de contagem (sem limit e offset)
+      const countParams: any[] = [];
+      if (statusFilter) countParams.push(statusFilter);
+      if (baseFilter) countParams.push(baseFilter);
+      if (searchQuery) countParams.push(`%${searchQuery}%`);
+      
       // Executar queries em paralelo
-      const [countResult, result] = await Promise.all([
+      const [countResult, filteredCountResult, result] = await Promise.all([
         pool.query(countQuery),
-        pool.query(query, [limit, offset])
+        countParams.length > 0 ? pool.query(filteredCountQuery, countParams) : Promise.resolve({ rows: [{ filtered_count: 0 }] }),
+        pool.query(query, queryParams)
       ]);
       
-      const totalCount = parseInt(countResult.rows[0].total_solicitacoes) + parseInt(countResult.rows[0].total_requests) + parseInt(countResult.rows[0].total_line_hall);
+      // Usar contagem filtrada se houver filtros, senão usar contagem total
+      const actualTotalCount = (countParams.length > 0 && filteredCountResult.rows.length > 0) 
+        ? parseInt(filteredCountResult.rows[0].filtered_count)
+        : parseInt(countResult.rows[0].total_solicitacoes) + parseInt(countResult.rows[0].total_requests) + parseInt(countResult.rows[0].total_line_hall);
+      
+      const totalCount = actualTotalCount;
       const totalPages = Math.ceil(totalCount / limit);
       const hasNextPage = page < totalPages;
       const hasPrevPage = page > 1;
       
-      console.log(`[PUBLIC-FUEL-CARD] Página ${page}/${totalPages} - ${result.rows.length} de ${totalCount} registros`);
+      console.log(`[PUBLIC-FUEL-CARD] Página ${page}/${totalPages} - ${result.rows.length} de ${totalCount} registros (filtros: ${countParams.length > 0 ? 'SIM' : 'NÃO'})`);
       
       // Normalizar status para exibição consistente
       const normalizeStatus = (status: string, origem: string): string => {

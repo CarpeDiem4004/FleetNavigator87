@@ -156,16 +156,23 @@ const FuelCardRequestsPanel: React.FC = () => {
     }
   }, [currentPage, itemsPerPage]);
 
-  // OTIMIZAÇÃO: Debounce para filtros
+  // Recarregar dados quando a aba ativa mudar
+  useEffect(() => {
+    console.log('[FUEL-CARD-PANEL] Aba ativa mudou para:', activeTab);
+    setCurrentPage(1); // Reset para página 1
+    fetchSolicitations(1, itemsPerPage);
+  }, [activeTab]);
+
+  // Recarregar dados quando filtros mudarem (com debounce para searchQuery)
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (searchQuery || statusFilter !== 'all' || projectFilter !== 'all' || baseFilter !== 'all') {
-        // Aplicar filtros com delay para evitar muitas re-renderizações
-      }
-    }, 300);
+      console.log('[FUEL-CARD-PANEL] Filtros mudaram, recarregando...');
+      setCurrentPage(1); // Reset para página 1
+      fetchSolicitations(1, itemsPerPage);
+    }, searchQuery ? 500 : 0); // Debounce de 500ms apenas para search
     
     return () => clearTimeout(timer);
-  }, [searchQuery, statusFilter, projectFilter, baseFilter]);
+  }, [baseFilter, searchQuery]);
 
   useEffect(() => {
     if (solicitations.length > 0) {
@@ -367,28 +374,49 @@ const FuelCardRequestsPanel: React.FC = () => {
     });
   }, [solicitations, searchQuery, statusFilter, projectFilter, baseFilter, dateFilter, fuelDateFilter, projects]);
 
+  // Agora os dados já vêm filtrados do backend por aba
   const pendingSolicitations = useMemo(() => {
-    return filteredSolicitations.filter(s => 
+    // Se estamos na aba de pendentes, todos os dados já são pendentes
+    if (activeTab === 'pendentes') {
+      return solicitations;
+    }
+    // Fallback para compatibilidade (filtro local)
+    return solicitations.filter(s => 
       s.status === 'Pendente' || s.status === 'pendente' || 
       s.status === 'Em Análise' || s.status === 'em_analise'
     );
-  }, [filteredSolicitations]);
+  }, [solicitations, activeTab]);
 
   const completedSolicitations = useMemo(() => {
-    return filteredSolicitations.filter(s => 
+    // Se estamos na aba de atendidas, todos os dados já são atendidos
+    if (activeTab === 'atendidas') {
+      return solicitations;
+    }
+    // Fallback para compatibilidade (filtro local)
+    return solicitations.filter(s => 
       s.status === 'Recarga Efetuada' || s.status === 'atendido'
     );
-  }, [filteredSolicitations]);
+  }, [solicitations, activeTab]);
 
   const deniedSolicitations = useMemo(() => {
-    return filteredSolicitations.filter(s => 
+    // Se estamos na aba de negadas, todos os dados já são negados
+    if (activeTab === 'negadas') {
+      return solicitations;
+    }
+    // Fallback para compatibilidade (filtro local)
+    return solicitations.filter(s => 
       s.status === 'Negado'
     );
-  }, [filteredSolicitations]);
+  }, [solicitations, activeTab]);
 
-  const lineHallSolicitations = useMemo(() => {
-    return filteredSolicitations.filter(s => s.origem_tipo === 'line_hall');
-  }, [filteredSolicitations]);
+  const lineHaulSolicitations = useMemo(() => {
+    // Se estamos na aba de line haul, todos os dados já são line haul
+    if (activeTab === 'linehaul') {
+      return solicitations;
+    }
+    // Fallback para compatibilidade (filtro local)
+    return solicitations.filter(s => s.origem_tipo === 'line_hall');
+  }, [solicitations, activeTab]);
 
   // Função legacy para compatibilidade
   const getPendingSolicitations = useCallback(() => pendingSolicitations, [pendingSolicitations]);
@@ -467,8 +495,42 @@ const FuelCardRequestsPanel: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // OTIMIZAÇÃO: Usar endpoint público com paginação
-      const response = await fetch(`/api/public/fuel-card/solicitations?page=${page}&limit=${limit}`);
+      // Construir query params com filtros
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString()
+      });
+      
+      // Adicionar filtros se presentes
+      // Mapear activeTab para status correto
+      if (activeTab === 'pendentes') {
+        params.append('status', 'Pendente');
+      } else if (activeTab === 'atendidas') {
+        params.append('status', 'Recarga Efetuada');
+      } else if (activeTab === 'negadas') {
+        params.append('status', 'Negado');
+      } else if (activeTab === 'linehaul') {
+        // Line Haul não tem filtro de status específico (mostra todos do line haul)
+      }
+      
+      if (baseFilter && baseFilter !== 'all') {
+        params.append('base', baseFilter);
+      }
+      
+      if (searchQuery) {
+        params.append('search', searchQuery);
+      }
+      
+      console.log('[FUEL-CARD-PANEL] Buscando com filtros:', {
+        activeTab,
+        baseFilter,
+        searchQuery,
+        page,
+        limit
+      });
+      
+      // OTIMIZAÇÃO: Usar endpoint público com paginação e filtros
+      const response = await fetch(`/api/public/fuel-card/solicitations?${params.toString()}`);
       const data = await response.json();
       
       if (data.success) {
