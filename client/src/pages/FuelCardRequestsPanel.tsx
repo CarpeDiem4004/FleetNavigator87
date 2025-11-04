@@ -421,17 +421,17 @@ const FuelCardRequestsPanel: React.FC = () => {
   // Função legacy para compatibilidade
   const getPendingSolicitations = useCallback(() => pendingSolicitations, [pendingSolicitations]);
   const getCompletedSolicitations = useCallback(() => completedSolicitations, [completedSolicitations]);
-  const getLineHallSolicitations = useCallback(() => lineHallSolicitations, [lineHallSolicitations]);
+  const getLineHallSolicitations = useCallback(() => lineHaulSolicitations, [lineHaulSolicitations]);
 
   // Memorização da verificação de solicitações novas do Line Haul (últimas 24h)
   const hasNewLineHallRequests = useMemo(() => {
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    return lineHallSolicitations.some(s => {
+    return lineHaulSolicitations.some(s => {
       const solicitationDate = new Date(s.data_solicitacao);
       return solicitationDate > yesterday && (s.status === 'Pendente' || s.status === 'pendente');
     });
-  }, [lineHallSolicitations]);
+  }, [lineHaulSolicitations]);
 
   // Memorização de cálculos de valor para melhor performance
   const getTotalValue = useCallback((solicitations: FuelCardSolicitation[]) => {
