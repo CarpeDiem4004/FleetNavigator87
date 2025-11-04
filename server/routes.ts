@@ -5197,8 +5197,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const statusFilter = req.query.status as string;
       const baseFilter = req.query.base as string;
       const searchQuery = req.query.search as string;
+      const fuelDateFilter = req.query.fuelDate as string; // Data de abastecimento (data_uso)
       
-      console.log('[PUBLIC-FUEL-CARD] Filtros aplicados:', { statusFilter, baseFilter, searchQuery });
+      console.log('[PUBLIC-FUEL-CARD] Filtros aplicados:', { statusFilter, baseFilter, searchQuery, fuelDateFilter });
       
       // Cache HTTP para 5 minutos (300 segundos)
       res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
@@ -5365,11 +5366,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
             END = $3
           )` : ''}
           ${baseFilter ? `AND base = $${statusFilter ? '4' : '3'}` : ''}
+          ${fuelDateFilter ? `AND data_uso = $${
+            statusFilter && baseFilter ? '5' :
+            statusFilter || baseFilter ? '4' : '3'
+          }` : ''}
           ${searchQuery ? `AND (
-            placa ILIKE $${statusFilter && baseFilter ? '5' : statusFilter || baseFilter ? '4' : '3'}
-            OR motorista ILIKE $${statusFilter && baseFilter ? '5' : statusFilter || baseFilter ? '4' : '3'}
-            OR solicitante ILIKE $${statusFilter && baseFilter ? '5' : statusFilter || baseFilter ? '4' : '3'}
-            OR base ILIKE $${statusFilter && baseFilter ? '5' : statusFilter || baseFilter ? '4' : '3'}
+            placa ILIKE $${
+              statusFilter && baseFilter && fuelDateFilter ? '6' :
+              (statusFilter && baseFilter) || (statusFilter && fuelDateFilter) || (baseFilter && fuelDateFilter) ? '5' :
+              statusFilter || baseFilter || fuelDateFilter ? '4' : '3'
+            }
+            OR motorista ILIKE $${
+              statusFilter && baseFilter && fuelDateFilter ? '6' :
+              (statusFilter && baseFilter) || (statusFilter && fuelDateFilter) || (baseFilter && fuelDateFilter) ? '5' :
+              statusFilter || baseFilter || fuelDateFilter ? '4' : '3'
+            }
+            OR solicitante ILIKE $${
+              statusFilter && baseFilter && fuelDateFilter ? '6' :
+              (statusFilter && baseFilter) || (statusFilter && fuelDateFilter) || (baseFilter && fuelDateFilter) ? '5' :
+              statusFilter || baseFilter || fuelDateFilter ? '4' : '3'
+            }
+            OR base ILIKE $${
+              statusFilter && baseFilter && fuelDateFilter ? '6' :
+              (statusFilter && baseFilter) || (statusFilter && fuelDateFilter) || (baseFilter && fuelDateFilter) ? '5' :
+              statusFilter || baseFilter || fuelDateFilter ? '4' : '3'
+            }
           )` : ''}
         ORDER BY data_solicitacao DESC
         LIMIT $1 OFFSET $2
@@ -5379,6 +5400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const queryParams: any[] = [limit, offset];
       if (statusFilter) queryParams.push(statusFilter);
       if (baseFilter) queryParams.push(baseFilter);
+      if (fuelDateFilter) queryParams.push(fuelDateFilter);
       if (searchQuery) queryParams.push(`%${searchQuery}%`);
       
       // Query de contagem com filtros
@@ -5391,7 +5413,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             COALESCE(s.base, 'Base Principal') as base,
             COALESCE(s.placa, s.veiculo_placa, 'SEM-PLACA') as placa,
             COALESCE(s.motorista, 'Motorista não informado') as motorista,
-            COALESCE(s.solicitante, 'Nome não informado') as solicitante
+            COALESCE(s.solicitante, 'Nome não informado') as solicitante,
+            TO_CHAR(s.data_uso, 'YYYY-MM-DD') as data_uso
           FROM solicitacoes_fuel_card s
           
           UNION ALL
@@ -5403,7 +5426,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             COALESCE(b.name, 'Base não especificada') as base,
             COALESCE(fcr.plate, 'SEM-PLACA') as placa,
             COALESCE(fcr.requested_by, 'Motorista não informado') as motorista,
-            COALESCE(fcr.driver_name, 'Nome não informado') as solicitante
+            COALESCE(fcr.driver_name, 'Nome não informado') as solicitante,
+            NULL as data_uso
           FROM fuel_card_requests fcr
           LEFT JOIN bases b ON fcr.base_id = b.id
           
@@ -5416,7 +5440,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             CONCAT(lh.rota_origem, ' → ', lh.rota_destino) as base,
             COALESCE(lh.veiculo_placa, 'SEM-PLACA') as placa,
             COALESCE(lh.motorista_nome, 'Motorista não informado') as motorista,
-            COALESCE(lh.motorista_nome, 'Nome não informado') as solicitante
+            COALESCE(lh.motorista_nome, 'Nome não informado') as solicitante,
+            TO_CHAR(lh.data_viagem, 'YYYY-MM-DD') as data_uso
           FROM linehall_fuel_card_requests lh
         ) unified_count
         WHERE 1=1
@@ -5447,11 +5472,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
             END = $1
           )` : ''}
           ${baseFilter ? `AND base = $${statusFilter ? '2' : '1'}` : ''}
+          ${fuelDateFilter ? `AND data_uso = $${
+            statusFilter && baseFilter ? '3' :
+            statusFilter || baseFilter ? '2' : '1'
+          }` : ''}
           ${searchQuery ? `AND (
-            placa ILIKE $${statusFilter && baseFilter ? '3' : statusFilter || baseFilter ? '2' : '1'}
-            OR motorista ILIKE $${statusFilter && baseFilter ? '3' : statusFilter || baseFilter ? '2' : '1'}
-            OR solicitante ILIKE $${statusFilter && baseFilter ? '3' : statusFilter || baseFilter ? '2' : '1'}
-            OR base ILIKE $${statusFilter && baseFilter ? '3' : statusFilter || baseFilter ? '2' : '1'}
+            placa ILIKE $${
+              statusFilter && baseFilter && fuelDateFilter ? '4' :
+              (statusFilter && baseFilter) || (statusFilter && fuelDateFilter) || (baseFilter && fuelDateFilter) ? '3' :
+              statusFilter || baseFilter || fuelDateFilter ? '2' : '1'
+            }
+            OR motorista ILIKE $${
+              statusFilter && baseFilter && fuelDateFilter ? '4' :
+              (statusFilter && baseFilter) || (statusFilter && fuelDateFilter) || (baseFilter && fuelDateFilter) ? '3' :
+              statusFilter || baseFilter || fuelDateFilter ? '2' : '1'
+            }
+            OR solicitante ILIKE $${
+              statusFilter && baseFilter && fuelDateFilter ? '4' :
+              (statusFilter && baseFilter) || (statusFilter && fuelDateFilter) || (baseFilter && fuelDateFilter) ? '3' :
+              statusFilter || baseFilter || fuelDateFilter ? '2' : '1'
+            }
+            OR base ILIKE $${
+              statusFilter && baseFilter && fuelDateFilter ? '4' :
+              (statusFilter && baseFilter) || (statusFilter && fuelDateFilter) || (baseFilter && fuelDateFilter) ? '3' :
+              statusFilter || baseFilter || fuelDateFilter ? '2' : '1'
+            }
           )` : ''}
       `;
       
@@ -5459,6 +5504,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const countParams: any[] = [];
       if (statusFilter) countParams.push(statusFilter);
       if (baseFilter) countParams.push(baseFilter);
+      if (fuelDateFilter) countParams.push(fuelDateFilter);
       if (searchQuery) countParams.push(`%${searchQuery}%`);
       
       // Executar queries em paralelo

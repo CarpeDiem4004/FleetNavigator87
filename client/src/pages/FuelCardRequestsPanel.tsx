@@ -172,7 +172,7 @@ const FuelCardRequestsPanel: React.FC = () => {
     }, searchQuery ? 500 : 0); // Debounce de 500ms apenas para search
     
     return () => clearTimeout(timer);
-  }, [baseFilter, searchQuery]);
+  }, [baseFilter, searchQuery, fuelDateFilter]);
 
   useEffect(() => {
     if (solicitations.length > 0) {
@@ -521,10 +521,15 @@ const FuelCardRequestsPanel: React.FC = () => {
         params.append('search', searchQuery);
       }
       
+      if (fuelDateFilter) {
+        params.append('fuelDate', fuelDateFilter);
+      }
+      
       console.log('[FUEL-CARD-PANEL] Buscando com filtros:', {
         activeTab,
         baseFilter,
         searchQuery,
+        fuelDateFilter,
         page,
         limit
       });
