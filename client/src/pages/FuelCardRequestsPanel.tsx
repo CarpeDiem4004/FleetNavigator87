@@ -993,6 +993,23 @@ const FuelCardRequestsPanel: React.FC = () => {
         const approvedSols = pendingSolicitations.slice(0, successes);
         setApprovedBatchSolicitations(approvedSols);
         
+        // Extrair telefone automaticamente das solicitações
+        let autoPhone = '';
+        for (const sol of approvedSols) {
+          if (sol.telefone_celular) {
+            autoPhone = sol.telefone_celular;
+            break;
+          } else if (sol.telefone_motorista) {
+            autoPhone = sol.telefone_motorista;
+            break;
+          }
+        }
+        
+        // Se encontrou telefone, preencher automaticamente
+        if (autoPhone) {
+          setGestorPhone(autoPhone);
+        }
+        
         // Gerar mensagem do WhatsApp
         const message = generateBatchApprovalMessage(approvedSols, baseFilter);
         setBatchWhatsAppMessage(message);
