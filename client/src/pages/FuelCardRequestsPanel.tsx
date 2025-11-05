@@ -1000,7 +1000,12 @@ const FuelCardRequestsPanel: React.FC = () => {
   };
 
   const handleBatchApproval = async () => {
+    console.log('🔄 [BATCH-APPROVAL] Iniciando aprovação em lote');
+    console.log('📊 [BATCH-APPROVAL] Base selecionada:', baseFilter);
+    console.log('📊 [BATCH-APPROVAL] Total de solicitações:', solicitations.length);
+    
     if (baseFilter === 'all') {
+      console.error('❌ [BATCH-APPROVAL] Base "all" não permitida');
       toast({
         variant: 'destructive',
         title: 'Erro',
@@ -1019,7 +1024,11 @@ const FuelCardRequestsPanel: React.FC = () => {
          sol.status === 'Em Análise' || sol.status === 'em_analise')
       );
       
+      console.log(`🔍 [BATCH-APPROVAL] Solicitações pendentes encontradas: ${pendingSolicitations.length}`);
+      console.log('📝 [BATCH-APPROVAL] Solicitações:', pendingSolicitations.map(s => ({ id: s.id, placa: s.placa, status: s.status, base: s.base })));
+      
       if (pendingSolicitations.length === 0) {
+        console.warn('⚠️ [BATCH-APPROVAL] Nenhuma solicitação pendente encontrada');
         toast({
           title: 'Informação',
           description: 'Não há solicitações pendentes para esta base'
@@ -1033,8 +1042,11 @@ const FuelCardRequestsPanel: React.FC = () => {
       );
 
       if (!confirmed) {
+        console.log('❌ [BATCH-APPROVAL] Aprovação cancelada pelo usuário');
         return;
       }
+
+      console.log('✅ [BATCH-APPROVAL] Confirmado! Iniciando aprovação...');
 
       // Aprovar todas as solicitações pendentes
       const approvalPromises = pendingSolicitations.map(async (sol) => {
@@ -1046,10 +1058,13 @@ const FuelCardRequestsPanel: React.FC = () => {
           observacoes: sol.observacoes
         };
         
+        console.log(`📤 [BATCH-APPROVAL] Enviando UPDATE para ID: ${sol.id}, Status: Recarga Efetuada, Origem: ${sol.origem_tipo}`);
         return apiRequest('PUT', `/api/fuel-card-solicitations/${sol.id}/status`, updateData);
       });
 
+      console.log(`⏳ [BATCH-APPROVAL] Aguardando ${approvalPromises.length} requisições...`);
       const results = await Promise.allSettled(approvalPromises);
+      console.log('📊 [BATCH-APPROVAL] Resultados:', results);
       
       // Contar sucessos e falhas
       const successes = results.filter(result => result.status === 'fulfilled').length;
