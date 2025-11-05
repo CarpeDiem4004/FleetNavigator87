@@ -752,7 +752,14 @@ router.post('/equipment-responsibility-terms/create-with-pdf', (req, res, next) 
 // POST /api/equipment-responsibility-terms - Criar novo termo de responsabilidade
 router.post('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req, res) => {
   try {
+    console.log('🔄 [CREATE-TERM] Criando termo de responsabilidade');
+    console.log('📋 [CREATE-TERM] Dados recebidos:', JSON.stringify(req.body, null, 2));
+    console.log('👤 [CREATE-TERM] Usuário:', req.user?.id, req.user?.name);
+    
     const validatedData = insertEquipmentResponsibilityTermSchema.parse(req.body);
+    
+    console.log('✅ [CREATE-TERM] Dados validados com sucesso');
+    console.log('📋 [CREATE-TERM] Equipment ID:', validatedData.equipment_id);
     
     // Verificar se o equipamento existe e está disponível
     const equipment = await db
@@ -762,11 +769,15 @@ router.post('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req
       .limit(1);
 
     if (equipment.length === 0) {
+      console.error('❌ [CREATE-TERM] Equipamento não encontrado:', validatedData.equipment_id);
       return res.status(404).json({ success: false, error: 'Equipamento não encontrado' });
     }
 
+    console.log('📊 [CREATE-TERM] Equipamento encontrado:', equipment[0].name, 'Status:', equipment[0].status);
+
     // Verificar se o equipamento está disponível (não pode estar em uso, manutenção, etc.)
     if (equipment[0].status !== 'disponivel') {
+      console.error('❌ [CREATE-TERM] Equipamento não disponível. Status:', equipment[0].status);
       return res.status(400).json({ 
         success: false, 
         error: `Equipamento não está disponível. Status atual: ${equipment[0].status}. Apenas equipamentos disponíveis podem ter termos de responsabilidade criados.` 
@@ -830,9 +841,24 @@ router.post('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req
         notes: `Termo de responsabilidade criado para ${validatedData.full_name} - ${validatedData.department}`
       });
 
+    console.log('✅ [CREATE-TERM] Termo criado com sucesso! ID:', newTerm[0].id);
+    
     res.status(201).json({ success: true, data: newTerm[0] });
-  } catch (error) {
-    console.error('Erro ao criar termo de responsabilidade:', error);
+  } catch (error: any) {
+    console.error('❌ [CREATE-TERM] ERRO ao criar termo de responsabilidade:');
+    console.error('📋 [CREATE-TERM] Tipo do erro:', error.name);
+    console.error('📋 [CREATE-TERM] Mensagem:', error.message);
+    console.error('📋 [CREATE-TERM] Stack:', error.stack);
+    
+    if (error.name === 'ZodError') {
+      console.error('📋 [CREATE-TERM] Erros de validação Zod:', error.errors);
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Dados inválidos', 
+        details: error.errors 
+      });
+    }
+    
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 });
@@ -1122,48 +1148,38 @@ router.get('/equipment-dashboard', unifiedAuthMiddleware, async (req, res) => {
 // Rota para buscar histórico de movimentação de equipamento
 router.get('/equipment-movements/:equipmentId', async (req, res) => {
   try {
-    const { equipmentId } = req.params;
+    const equipmentId = parseInt(req.params.equipmentId);
     
-    // Buscar movimentações do equipamento
-    const { data: movements, error } = await supabase
-      .from('equipment_movements')
-      .select('*')
-      .eq('equipment_id', equipmentId)
-      .order('created_at', { ascending: false });
+    // Buscar movimentações do equipamento usando Drizzle ORM
+    const movements = await db
+      .select()
+      .from(equipmentMovements)
+      .where(eq(equipmentMovements.equipment_id, equipmentId))
+      .orderBy(desc(equipmentMovements.created_at));
 
-    if (error) {
-      console.error('Erro ao buscar movimentações:', error);
-      return res.status(500).json({ error: 'Erro interno do servidor' });
-    }
-
-    res.json({ data: movements || [] });
+    res.json({ success: true, data: movements || [] });
   } catch (error) {
     console.error('Erro ao buscar movimentações:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 });
 
 // Rota para buscar histórico de manutenção de equipamento
 router.get('/equipment-maintenance/:equipmentId', async (req, res) => {
   try {
-    const { equipmentId } = req.params;
+    const equipmentId = parseInt(req.params.equipmentId);
     
-    // Buscar manutenções do equipamento
-    const { data: maintenance, error } = await supabase
-      .from('equipment_maintenance')
-      .select('*')
-      .eq('equipment_id', equipmentId)
-      .order('created_at', { ascending: false });
+    // Buscar manutenções do equipamento usando Drizzle ORM
+    const maintenance = await db
+      .select()
+      .from(equipmentMaintenance)
+      .where(eq(equipmentMaintenance.equipment_id, equipmentId))
+      .orderBy(desc(equipmentMaintenance.created_at));
 
-    if (error) {
-      console.error('Erro ao buscar manutenção:', error);
-      return res.status(500).json({ error: 'Erro interno do servidor' });
-    }
-
-    res.json({ data: maintenance || [] });
+    res.json({ success: true, data: maintenance || [] });
   } catch (error) {
     console.error('Erro ao buscar manutenção:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 });
 
