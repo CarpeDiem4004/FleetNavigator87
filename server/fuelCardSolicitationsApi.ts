@@ -592,7 +592,10 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
     const { status, origem_tipo, motivo_negacao } = req.body;
     const user = req.user as any;
     
+    console.log(`🔄 [UPDATE-STATUS] ID: ${id}, Status: ${status}, Origem: ${origem_tipo}, User: ${user?.name}`);
+    
     if (!id || !status) {
+      console.error('❌ [UPDATE-STATUS] ID ou status não fornecido');
       return res.status(400).json({
         success: false,
         message: 'ID e status são obrigatórios'
@@ -645,9 +648,12 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
     let tableName;
     let statusField;
     
+    console.log(`📊 [UPDATE-STATUS] Tipo detectado - isLineHall: ${isLineHall}, isGPBase: ${isGPBase}`);
+    
     if (isLineHall) {
       // Lógica para solicitações Line Hall
       tableName = 'linehall_fuel_card_requests';
+      console.log(`🔶 [UPDATE-STATUS] Usando tabela Line Hall`);
       
       // Mapear status para Line Hall
       const lineHallStatus = mapStatusToLineHall(status);
@@ -684,6 +690,7 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
     } else if (isGPBase) {
       // Lógica para solicitações GP Base (fuel_card_requests)
       tableName = 'fuel_card_requests';
+      console.log(`🔷 [UPDATE-STATUS] Usando tabela GP Base`);
       
       // Mapear status da interface para o banco GP Base
       let dbStatus;
@@ -744,12 +751,14 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
     } else {
       // Lógica para solicitações tradicionais
       tableName = 'solicitacoes_fuel_card';
+      console.log(`🔵 [UPDATE-STATUS] Usando tabela tradicional`);
       
       // Mapear status da interface para o banco
       let dbStatus;
       switch (status) {
         case 'Recarga Efetuada':
           dbStatus = 'atendido';
+          console.log(`✅ [UPDATE-STATUS] Status mapeado: ${status} → ${dbStatus}`);
           break;
         case 'Negado':
           dbStatus = 'rejeitado';
@@ -804,7 +813,13 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
       }
     }
     
+    console.log(`💾 [UPDATE-STATUS] Executando query na tabela: ${tableName}`);
+    console.log(`📝 [UPDATE-STATUS] Valores: ${JSON.stringify(values)}`);
+    
     const result = await pool.query(query, values);
+    
+    console.log(`✅ [UPDATE-STATUS] UPDATE executado com sucesso! Linhas afetadas: ${result.rowCount}`);
+    console.log(`📊 [UPDATE-STATUS] Dados atualizados:`, result.rows[0]);
     
     return res.status(200).json({
       success: true,
@@ -814,7 +829,8 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
       isGPBase
     });
   } catch (error: any) {
-    console.error('Erro ao atualizar status da solicitação:', error);
+    console.error('❌ [UPDATE-STATUS] Erro ao atualizar status da solicitação:', error);
+    console.error('❌ [UPDATE-STATUS] Stack:', error.stack);
     return res.status(500).json({
       success: false,
       message: 'Erro ao atualizar status',
