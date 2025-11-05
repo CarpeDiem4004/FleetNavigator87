@@ -484,6 +484,10 @@ router.put('/:id', async (req, res) => {
   try {
     const equipmentId = parseInt(req.params.id);
     
+    console.log('🔄 [EQUIPMENT-UPDATE] Recebendo atualização de equipamento');
+    console.log('📋 [EQUIPMENT-UPDATE] Equipment ID:', equipmentId);
+    console.log('📋 [EQUIPMENT-UPDATE] Dados recebidos:', req.body);
+    
     // Buscar equipamento anterior para comparar status
     const previousEquipment = await db
       .select()
@@ -492,8 +496,12 @@ router.put('/:id', async (req, res) => {
       .limit(1);
     
     if (previousEquipment.length === 0) {
+      console.error('❌ [EQUIPMENT-UPDATE] Equipamento não encontrado');
       return res.status(404).json({ success: false, error: 'Equipamento não encontrado' });
     }
+    
+    console.log('📊 [EQUIPMENT-UPDATE] Status anterior:', previousEquipment[0].status);
+    console.log('📊 [EQUIPMENT-UPDATE] Novo status:', req.body.status);
     
     // Converter strings vazias em null para campos únicos e opcionais
     const dataToValidate = {
@@ -509,11 +517,15 @@ router.put('/:id', async (req, res) => {
     
     const validatedData = insertEquipmentSchema.parse(dataToValidate);
     
+    console.log('⏳ [EQUIPMENT-UPDATE] Executando UPDATE no banco...');
     const updatedEquipment = await db
       .update(equipments)
       .set({ ...validatedData, updated_at: new Date() })
       .where(eq(equipments.id, equipmentId))
       .returning();
+    
+    console.log('✅ [EQUIPMENT-UPDATE] UPDATE executado. Resultado:', updatedEquipment[0]);
+    console.log('📊 [EQUIPMENT-UPDATE] Status final no banco:', updatedEquipment[0]?.status);
 
     if (updatedEquipment.length === 0) {
       return res.status(404).json({ success: false, error: 'Equipamento não encontrado' });
@@ -848,11 +860,22 @@ router.put('/equipment-responsibility-terms/:id/return', unifiedAuthMiddleware, 
       return res.status(404).json({ success: false, error: 'Termo de responsabilidade não encontrado' });
     }
 
+    console.log('🔄 [EQUIPMENT-RETURN] Processando devolução...');
+    console.log('📋 [EQUIPMENT-RETURN] Termo ID:', termId);
+    console.log('📋 [EQUIPMENT-RETURN] Equipment ID:', updatedTerm[0].equipment_id);
+    console.log('📋 [EQUIPMENT-RETURN] Condição:', condition_at_return);
+    console.log('📋 [EQUIPMENT-RETURN] Termo atualizado:', updatedTerm[0]);
+
     // Atualizar status do equipamento para "disponivel"
-    await db
+    console.log('⏳ [EQUIPMENT-RETURN] Atualizando status do equipamento para DISPONIVEL...');
+    const equipmentUpdate = await db
       .update(equipments)
       .set({ status: 'disponivel', condition: condition_at_return, updated_at: new Date() })
-      .where(eq(equipments.id, updatedTerm[0].equipment_id));
+      .where(eq(equipments.id, updatedTerm[0].equipment_id))
+      .returning();
+
+    console.log('✅ [EQUIPMENT-RETURN] Equipamento atualizado:', equipmentUpdate[0]);
+    console.log('📊 [EQUIPMENT-RETURN] Novo status:', equipmentUpdate[0]?.status);
 
     // Registrar histórico de devolução
     const userId = (req.user as any)?.id || 1;

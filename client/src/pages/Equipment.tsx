@@ -2112,13 +2112,27 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                       }
                     } else {
                       // Se não houver termo, apenas atualiza status do equipamento para disponível
-                      const response = await apiRequest('PUT', `/api/equipment/equipments/${selectedEquipmentForReturn.id}`, {
+                      console.log('🔄 [SIMPLE-RETURN] Devolução simplificada (sem termo)');
+                      console.log('📋 [SIMPLE-RETURN] Equipment ID:', selectedEquipmentForReturn.id);
+                      console.log('📋 [SIMPLE-RETURN] Novo status: disponivel');
+                      console.log('📋 [SIMPLE-RETURN] Condição:', conditionSelect.value);
+                      
+                      const updateData = {
                         ...selectedEquipmentForReturn,
                         status: 'disponivel',
                         condition: conditionSelect.value,
-                      });
+                      };
+                      
+                      console.log('📤 [SIMPLE-RETURN] Enviando PUT:', updateData);
+                      
+                      const response = await apiRequest('PUT', `/api/equipment/equipments/${selectedEquipmentForReturn.id}`, updateData);
+                      
+                      console.log('📥 [SIMPLE-RETURN] Response status:', response.status);
                       
                       if (response.ok) {
+                        const data = await response.json();
+                        console.log('✅ [SIMPLE-RETURN] Resposta:', data);
+                        
                         toast({
                           title: "Equipamento devolvido",
                           description: "O equipamento foi marcado como disponível!",
@@ -2132,6 +2146,7 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                         setIsProcessingReturn(false);
                       } else {
                         const data = await response.json();
+                        console.error('❌ [SIMPLE-RETURN] Erro na resposta:', data);
                         throw new Error(data.message || "Erro ao devolver equipamento");
                       }
                     }
