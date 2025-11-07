@@ -1987,28 +1987,28 @@ export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: R
     // Criar planilha Excel (mesmo se estiver vazia)
     const workbook = XLSX.utils.book_new();
     
-    // Formatar dados para a planilha
+    // Formatar dados para a planilha (TODOS EM CAIXA ALTA)
     const formattedData = allSolicitations.map((sol: any) => {
       // Se tipo_cartao for "placa", usar a placa do carro na coluna "Placa do Cartão"
       const placaCartao = sol.tipo_cartao?.toLowerCase() === 'placa' 
-        ? (sol.placa || '') 
-        : (sol.numero_cartao || '');
+        ? (sol.placa || '').toUpperCase() 
+        : (sol.numero_cartao || '').toUpperCase();
       
       return {
         'Data da Solicitação': sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleString('pt-BR') : '',
-        'Nome do Solicitante': sol.nome_solicitante || '',
+        'Nome do Solicitante': String(sol.nome_solicitante || '').toUpperCase(),
         'Telefone': sol.telefone || '',
-        'Placa do Carro': sol.placa || '',
-        'Nome do Motorista': sol.motorista || '',
-        'Provedor do Cartão': sol.provedor_cartao || '',
-        'Vinculado/Não Vinculado': sol.tipo_cartao || '',
+        'Placa do Carro': String(sol.placa || '').toUpperCase(),
+        'Nome do Motorista': String(sol.motorista || '').toUpperCase(),
+        'Provedor do Cartão': String(sol.provedor_cartao || '').toUpperCase(),
+        'Vinculado/Não Vinculado': String(sol.tipo_cartao || '').toUpperCase(),
         'Placa do Cartão': placaCartao,
         'Valor': Number(sol.valor_solicitado || 0),
         'Data de Uso': sol.data_uso ? new Date(sol.data_uso).toLocaleDateString('pt-BR') : '',
-        'Nome da Base': sol.base || '',
-        'AM/PM': sol.turno || '',
-        'Status': sol.status || '',
-        'Observação': sol.observacoes || ''
+        'Nome da Base': String(sol.base || '').toUpperCase(),
+        'AM/PM': String(sol.turno || '').toUpperCase(),
+        'Status': String(sol.status || '').toUpperCase(),
+        'Observação': String(sol.observacoes || '').toUpperCase()
       };
     });
 

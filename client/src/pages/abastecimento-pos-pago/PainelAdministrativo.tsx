@@ -340,15 +340,15 @@ export default function PainelAdministrativoAbastecimento() {
     const headers = ['Data', 'Motorista', 'Placa', 'KM', 'Combustível', 'Litros', 'Valor Total', 'Gestor', 'Base', 'Status'];
     const rows = abastecimentos.map(a => [
       formatDate(a.created_at),
-      a.nome,
-      a.placa,
+      String(a.nome || '').toUpperCase(),
+      String(a.placa || '').toUpperCase(),
       a.km,
-      a.tipo_combustivel,
+      String(a.tipo_combustivel || '').toUpperCase(),
       a.litros,
       a.valor_total,
-      a.nome_gestor,
-      a.base_name,
-      a.status
+      String(a.nome_gestor || '').toUpperCase(),
+      String(a.base_name || '').toUpperCase(),
+      String(a.status || '').toUpperCase()
     ]);
 
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
@@ -365,17 +365,17 @@ export default function PainelAdministrativoAbastecimento() {
     const abastecimentos = getAbastecimentos();
     const data = abastecimentos.map(a => ({
       'Data': formatDate(a.created_at),
-      'Motorista': a.nome,
+      'Motorista': String(a.nome || '').toUpperCase(),
       'Telefone': a.telefone,
-      'Placa': a.placa,
+      'Placa': String(a.placa || '').toUpperCase(),
       'KM': a.km,
-      'Combustível': a.tipo_combustivel,
+      'Combustível': String(a.tipo_combustivel || '').toUpperCase(),
       'Litros': parseFloat(String(a.litros || 0)).toFixed(2),
       'Valor Total': formatCurrency(a.valor_total),
-      'Gestor': a.nome_gestor,
-      'Projeto': a.projeto_name,
-      'Base': a.base_name,
-      'Status': a.status
+      'Gestor': String(a.nome_gestor || '').toUpperCase(),
+      'Projeto': String(a.projeto_name || '').toUpperCase(),
+      'Base': String(a.base_name || '').toUpperCase(),
+      'Status': String(a.status || '').toUpperCase()
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(data);
@@ -399,14 +399,14 @@ export default function PainelAdministrativoAbastecimento() {
 
     const tableData = abastecimentos.map(a => [
       formatDate(a.created_at),
-      a.nome,
-      a.placa,
+      String(a.nome || '').toUpperCase(),
+      String(a.placa || '').toUpperCase(),
       a.km?.toString() || '-',
-      a.tipo_combustivel,
+      String(a.tipo_combustivel || '').toUpperCase(),
       parseFloat(String(a.litros || 0)).toFixed(2),
       formatCurrency(a.valor_total),
-      a.base_name,
-      a.status
+      String(a.base_name || '').toUpperCase(),
+      String(a.status || '').toUpperCase()
     ]);
 
     (doc as any).autoTable({

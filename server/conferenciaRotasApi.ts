@@ -872,39 +872,39 @@ export const exportReportToExcel = async (req: Request, res: Response) => {
     // Criar planilha Excel
     const workbook = XLSX.utils.book_new();
 
-    // Planilha 1: Rodaram e Abasteceram
+    // Planilha 1: Rodaram e Abasteceram (CAIXA ALTA)
     const sheet1Data = report.rodaram_e_abasteceram.map(item => ({
       'Data': item.data,
-      'Placa': item.placa,
-      'Motorista': item.motorista,
-      'Operação': item.operacao,
-      'Modelo': item.modelo,
-      'Registros de Combustível': item.fuel_records?.map(f => f.tipo).join(', ') || '',
-      'Projetos Combustível': item.fuel_records?.map(f => f.projeto).join(', ') || ''
+      'Placa': String(item.placa || '').toUpperCase(),
+      'Motorista': String(item.motorista || '').toUpperCase(),
+      'Operação': String(item.operacao || '').toUpperCase(),
+      'Modelo': String(item.modelo || '').toUpperCase(),
+      'Registros de Combustível': item.fuel_records?.map(f => String(f.tipo || '').toUpperCase()).join(', ') || '',
+      'Projetos Combustível': item.fuel_records?.map(f => String(f.projeto || '').toUpperCase()).join(', ') || ''
     }));
 
     const worksheet1 = XLSX.utils.json_to_sheet(sheet1Data);
     XLSX.utils.book_append_sheet(workbook, worksheet1, 'Rodaram e Abasteceram');
 
-    // Planilha 2: Rodaram mas Não Abasteceram
+    // Planilha 2: Rodaram mas Não Abasteceram (CAIXA ALTA)
     const sheet2Data = report.rodaram_nao_abasteceram.map(item => ({
       'Data': item.data,
-      'Placa': item.placa,
-      'Motorista': item.motorista,
-      'Operação': item.operacao,
-      'Modelo': item.modelo
+      'Placa': String(item.placa || '').toUpperCase(),
+      'Motorista': String(item.motorista || '').toUpperCase(),
+      'Operação': String(item.operacao || '').toUpperCase(),
+      'Modelo': String(item.modelo || '').toUpperCase()
     }));
 
     const worksheet2 = XLSX.utils.json_to_sheet(sheet2Data);
     XLSX.utils.book_append_sheet(workbook, worksheet2, 'Rodaram Não Abasteceram');
 
-    // Planilha 3: Abasteceram mas Não Rodaram
+    // Planilha 3: Abasteceram mas Não Rodaram (CAIXA ALTA)
     const sheet3Data = report.abasteceram_nao_rodaram.map(item => ({
       'Data': item.data,
-      'Placa': item.placa,
-      'Motorista': item.motorista,
-      'Projeto': item.projeto,
-      'Tipo': item.tipo
+      'Placa': String(item.placa || '').toUpperCase(),
+      'Motorista': String(item.motorista || '').toUpperCase(),
+      'Projeto': String(item.projeto || '').toUpperCase(),
+      'Tipo': String(item.tipo || '').toUpperCase()
     }));
 
     const worksheet3 = XLSX.utils.json_to_sheet(sheet3Data);
