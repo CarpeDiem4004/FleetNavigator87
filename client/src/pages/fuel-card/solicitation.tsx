@@ -33,8 +33,7 @@ interface ProjectBase {
 // Schema de validação para solicitação de cartão combustível
 const solicitacaoSchema = z.object({
   placa: z.string()
-    .min(7, { message: "A placa deve ter no mínimo 7 caracteres" })
-    .max(8, { message: "A placa deve ter no máximo 8 caracteres" }),
+    .min(1, { message: "A placa é obrigatória" }),
   nomeMotorista: z.string()
     .min(3, { message: "O nome do motorista deve ter no mínimo 3 caracteres" }),
   km: z.string()
