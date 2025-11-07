@@ -17,6 +17,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Loader2, CreditCard, AlertCircle, ShoppingCart, Send } from "lucide-react";
 import { useFuelCardDraft } from "@/contexts/FuelCardDraftContext";
 import { VehiclePlateAutocomplete } from "@/components/vehicle-plate-autocomplete";
+import { validateAndFormatPlate } from "@/lib/plate-utils";
 
 interface Project {
   id: number;
@@ -35,7 +36,13 @@ interface ProjectBase {
 // Schema de validação para solicitação de cartão combustível
 const solicitacaoSchema = z.object({
   placa: z.string()
-    .min(1, { message: "A placa é obrigatória" }),
+    .min(1, { message: "A placa é obrigatória" })
+    .refine((val) => {
+      const validation = validateAndFormatPlate(val);
+      return validation.isValid;
+    }, {
+      message: "Formato de placa inválido. Use ABC1234 (antigo) ou ABC1D23 (Mercosul)"
+    }),
   nomeMotorista: z.string()
     .min(3, { message: "O nome do motorista deve ter no mínimo 3 caracteres" }),
   km: z.string()

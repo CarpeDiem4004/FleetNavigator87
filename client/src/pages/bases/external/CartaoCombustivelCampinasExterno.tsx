@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { validateAndFormatPlate } from '@/lib/plate-utils';
 import { 
   CreditCard, 
   Plus, 
@@ -69,7 +70,14 @@ interface FuelCard {
 
 // Esquemas de validação
 const fuelCardRequestSchema = z.object({
-  plate: z.string().min(1, { message: 'Placa é obrigatória' }),
+  plate: z.string()
+    .min(1, { message: 'Placa é obrigatória' })
+    .refine((val) => {
+      const validation = validateAndFormatPlate(val);
+      return validation.isValid;
+    }, {
+      message: 'Formato de placa inválido. Use ABC1234 (antigo) ou ABC1D23 (Mercosul)'
+    }),
   cardNumber: z.string().min(1, { message: 'Número do cartão é obrigatório' }),
   amount: z.number().min(10, { message: 'Valor mínimo é R$ 10,00' }).max(5000, { message: 'Valor máximo é R$ 5.000,00' }),
   reason: z.string().min(10, { message: 'Justificativa deve ter pelo menos 10 caracteres' }),

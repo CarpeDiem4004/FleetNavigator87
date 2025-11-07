@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { validateAndFormatPlate } from '@/lib/plate-utils';
 import { 
   CreditCard, 
   Fuel, 
@@ -141,6 +142,19 @@ const CartaoCombustivelGoianiaExterno: React.FC = () => {
           description: "Por favor, preencha todos os campos obrigatórios",
           variant: "destructive",
         });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Validar formato da placa
+      const plateValidation = validateAndFormatPlate(formData.plate);
+      if (!plateValidation.isValid) {
+        toast({
+          title: "Formato de placa inválido",
+          description: "Use o formato ABC1234 (antigo) ou ABC1D23 (Mercosul)",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
         return;
       }
 
