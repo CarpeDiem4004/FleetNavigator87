@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -15,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Loader2, CreditCard, AlertCircle, ShoppingCart, Send } from "lucide-react";
 import { useFuelCardDraft } from "@/contexts/FuelCardDraftContext";
+import { VehiclePlateAutocomplete } from "@/components/vehicle-plate-autocomplete";
 
 interface Project {
   id: number;
@@ -104,7 +106,14 @@ export default function FuelCardSolicitation() {
   const [error, setError] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
-  const { addToDraft, draftCount } = useFuelCardDraft();
+  const { addToDraft, draftCount} = useFuelCardDraft();
+  
+  // Buscar veículos para autocomplete
+  const { data: vehicles = [] } = useQuery<{ plate: string; model?: string }[]>({
+    queryKey: ["/api/vehicles"],
+    select: (data: any[]) => data.map(v => ({ plate: v.plate, model: v.model })),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
   
   const form = useForm<SolicitacaoValues>({
     resolver: zodResolver(solicitacaoSchema),
@@ -367,20 +376,14 @@ export default function FuelCardSolicitation() {
                     control={form.control}
                     name="placa"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium">🚗 Placa do Veículo</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="ABC1234" 
-                            className="text-base h-12" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormDescription className="text-xs">
-                          Informe a placa sem traços ou espaços
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
+                      <VehiclePlateAutocomplete
+                        form={form}
+                        name="placa"
+                        label="🚗 Placa do Veículo"
+                        placeholder="Digite ou selecione a placa"
+                        helpText="Selecione de veículos cadastrados ou digite uma placa nova"
+                        vehicles={vehicles}
+                      />
                     )}
                   />
 
