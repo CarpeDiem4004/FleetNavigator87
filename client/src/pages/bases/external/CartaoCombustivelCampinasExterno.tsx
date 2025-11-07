@@ -69,7 +69,7 @@ interface FuelCard {
 
 // Esquemas de validação
 const fuelCardRequestSchema = z.object({
-  plate: z.string().min(7, { message: 'Placa deve ter pelo menos 7 caracteres' }),
+  plate: z.string().min(1, { message: 'Placa é obrigatória' }),
   cardNumber: z.string().min(1, { message: 'Número do cartão é obrigatório' }),
   amount: z.number().min(10, { message: 'Valor mínimo é R$ 10,00' }).max(5000, { message: 'Valor máximo é R$ 5.000,00' }),
   reason: z.string().min(10, { message: 'Justificativa deve ter pelo menos 10 caracteres' }),
