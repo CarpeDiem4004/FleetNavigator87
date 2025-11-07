@@ -608,20 +608,28 @@ router.delete('/:id', async (req, res) => {
 router.post('/equipment-responsibility-terms/create-with-pdf', (req, res, next) => {
   unifiedAuthMiddleware(req, res, (err) => {
     if (err) {
-      console.error('Auth error in create-with-pdf:', err);
+      console.error('❌ [CREATE-PDF] Auth error:', err);
       return res.status(401).json({ success: false, error: 'Não autorizado' });
     }
     next();
   });
 }, upload.single('signed_document'), async (req, res) => {
   try {
-    console.log('[CREATE-WITH-PDF] Iniciando criação de termo com PDF');
-    console.log('[CREATE-WITH-PDF] Body:', req.body);
-    console.log('[CREATE-WITH-PDF] File:', req.file ? req.file.filename : 'Nenhum arquivo');
+    console.log('🔄 [CREATE-PDF] Iniciando criação de termo com PDF');
+    console.log('📋 [CREATE-PDF] Body completo:', JSON.stringify(req.body, null, 2));
+    console.log('📎 [CREATE-PDF] Arquivo:', req.file ? {
+      filename: req.file.filename,
+      size: req.file.size,
+      mimetype: req.file.mimetype
+    } : 'Nenhum arquivo');
+    console.log('👤 [CREATE-PDF] Usuário:', req.user?.id, req.user?.name);
 
     // Validar dados recebidos
     const equipmentId = parseInt(req.body.equipment_id);
+    console.log('📊 [CREATE-PDF] Equipment ID parseado:', equipmentId);
+    
     if (isNaN(equipmentId)) {
+      console.error('❌ [CREATE-PDF] Equipment ID inválido:', req.body.equipment_id);
       if (req.file) fs.unlinkSync(req.file.path); // Limpar arquivo se houver erro
       return res.status(400).json({ success: false, error: 'ID do equipamento inválido' });
     }
@@ -639,7 +647,10 @@ router.post('/equipment-responsibility-terms/create-with-pdf', (req, res, next) 
       term_content: req.body.term_content || `Termo de Responsabilidade`
     };
 
+    console.log('📋 [CREATE-PDF] Dados para validação:', JSON.stringify(dataToValidate, null, 2));
+    
     const validatedData = insertEquipmentResponsibilityTermSchema.parse(dataToValidate);
+    console.log('✅ [CREATE-PDF] Dados validados com sucesso!');
     
     // Verificar se o equipamento existe e está disponível
     const equipment = await db
@@ -727,25 +738,31 @@ router.post('/equipment-responsibility-terms/create-with-pdf', (req, res, next) 
       message: 'Termo criado e PDF salvo com sucesso!'
     });
 
-  } catch (error) {
+  } catch (error: any) {
     // Limpar arquivo em caso de erro
     if (req.file) {
       try {
         fs.unlinkSync(req.file.path);
       } catch (unlinkError) {
-        console.error('Erro ao deletar arquivo:', unlinkError);
+        console.error('❌ [CREATE-PDF] Erro ao deletar arquivo:', unlinkError);
       }
     }
 
-    console.error('[CREATE-WITH-PDF] Erro:', error);
+    console.error('❌ [CREATE-PDF] ERRO CRÍTICO ao criar termo:');
+    console.error('📋 [CREATE-PDF] Tipo do erro:', error.name);
+    console.error('📋 [CREATE-PDF] Mensagem:', error.message);
+    console.error('📋 [CREATE-PDF] Stack completo:', error.stack);
+    
     if (error.name === 'ZodError') {
+      console.error('❌ [CREATE-PDF] Erros de validação Zod:', error.errors);
       return res.status(400).json({ 
         success: false, 
         error: 'Dados inválidos', 
         details: error.errors 
       });
     }
-    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+    
+    res.status(500).json({ success: false, error: 'Erro interno do servidor', message: error.message });
   }
 });
 
