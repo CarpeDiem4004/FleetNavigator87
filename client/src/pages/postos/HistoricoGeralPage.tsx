@@ -886,12 +886,12 @@ const HistoricoGeralPage = () => {
         return Number(valor);
       };
       
-      // Função segura para formatar texto
+      // Função segura para formatar texto (CAIXA ALTA)
       const formatarTextoExcel = (texto: any): string => {
         if (texto === null || texto === undefined) {
           return '';
         }
-        return String(texto);
+        return String(texto).toUpperCase();
       };
       
       console.log(`Preparando exportação para ${dadosFiltrados.length} registros...`);
