@@ -381,23 +381,9 @@ export default function FuelCardSolicitation() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-6">
       <div className="max-w-md mx-auto sm:max-w-2xl lg:max-w-3xl">
         <div className="text-center mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800">💳 Solicitação de Cartão</h1>
-              <p className="text-sm sm:text-base text-muted-foreground">Preencha os dados para solicitar recarga de combustível</p>
-            </div>
-            {/* Botão de acesso ao bolsão sempre visível */}
-            <Button
-              type="button"
-              onClick={() => setLocation("/fuel-card/draft")}
-              className="ml-4 h-16 px-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg"
-              data-testid="button-view-draft"
-            >
-              <div className="flex flex-col items-center">
-                <ShoppingCart className="h-6 w-6 mb-1" />
-                <span className="text-xs font-semibold">Bolsão {draftCount > 0 && `(${draftCount})`}</span>
-              </div>
-            </Button>
+          <div className="mb-4">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800">💳 Solicitação de Cartão</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">Preencha os dados para solicitar recarga de combustível</p>
           </div>
         </div>
         
@@ -807,39 +793,7 @@ export default function FuelCardSolicitation() {
                 />
                 
                 <div className="pt-6 space-y-3">
-                  {/* Indicador de bolsão */}
-                  {draftCount > 0 && (
-                    <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <ShoppingCart className="h-5 w-5 text-green-600" />
-                        <span className="text-sm font-medium text-green-700">
-                          {draftCount} {draftCount === 1 ? 'solicitação' : 'solicitações'} no bolsão
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setLocation("/fuel-card/draft")}
-                        className="text-green-700 border-green-300 hover:bg-green-100"
-                      >
-                        Ver Bolsão
-                      </Button>
-                    </div>
-                  )}
-                  
-                  {/* Botão: Adicionar ao Bolsão */}
-                  <Button 
-                    type="button"
-                    onClick={form.handleSubmit(handleAddToDraft)}
-                    className="w-full h-12 text-base font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700" 
-                    disabled={isSubmitting}
-                  >
-                    <ShoppingCart className="mr-2 h-5 w-5" />
-                    Adicionar ao Bolsão
-                  </Button>
-                  
-                  {/* Botão: Enviar Direto */}
+                  {/* Botão: Enviar Solicitação */}
                   <Button 
                     type="submit" 
                     className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700" 
