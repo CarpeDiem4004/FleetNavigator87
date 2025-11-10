@@ -51,6 +51,9 @@ export interface IStorage {
   getVehicleByPlate(plate: string): Promise<Vehicle | undefined>;
   getVehiclesByBase(baseId: number): Promise<Vehicle[]>;
   getAllVehicles(): Promise<Vehicle[]>;
+  getActiveVehicles(): Promise<Vehicle[]>;
+  getTemporaryVehicles(): Promise<Vehicle[]>;
+  isVehicleActive(vehicleId: number): Promise<boolean>;
   createVehicle(vehicle: InsertVehicle): Promise<Vehicle>;
   updateVehicle(id: number, vehicle: Partial<InsertVehicle>): Promise<Vehicle | undefined>;
   updateVehicleStatus(id: number, status: Vehicle['status']): Promise<Vehicle | undefined>;
@@ -629,7 +632,9 @@ export class DatabaseStorage implements IStorage {
                status, base_id as "baseId",
                COALESCE(fuel_type, 'diesel') as "fuelType",
                year, 
-               COALESCE(consumo_medio_km_l, 0) as "mediaConsumoCombutivel"
+               COALESCE(consumo_medio_km_l, 0) as "mediaConsumoCombutivel",
+               is_temporary as "isTemporary",
+               deactivation_date as "deactivationDate"
         FROM vehicles
       `);
       
@@ -644,11 +649,125 @@ export class DatabaseStorage implements IStorage {
         baseId: row.baseId,
         fuelType: row.fuelType,
         year: row.year,
-        mediaConsumoCombutivel: row.mediaConsumoCombutivel
+        mediaConsumoCombutivel: row.mediaConsumoCombutivel,
+        isTemporary: row.isTemporary,
+        deactivationDate: row.deactivationDate
       }));
     } catch (error) {
       console.error("Erro ao buscar veículos:", error);
       return [];
+    }
+  }
+
+  async getActiveVehicles(): Promise<Vehicle[]> {
+    try {
+      // Retorna veículos que são permanentes OU temporários com data de desativação no futuro
+      const result = await db.execute(sql`
+        SELECT id, plate, 
+               COALESCE(model, '') as model,
+               COALESCE(make, '') as make,
+               vehicle_type as "vehicleType", 
+               status, base_id as "baseId",
+               COALESCE(fuel_type, 'diesel') as "fuelType",
+               year, 
+               COALESCE(consumo_medio_km_l, 0) as "mediaConsumoCombutivel",
+               is_temporary as "isTemporary",
+               deactivation_date as "deactivationDate"
+        FROM vehicles
+        WHERE is_temporary = false 
+           OR (is_temporary = true AND deactivation_date >= CURRENT_DATE)
+        ORDER BY plate
+      `);
+      
+      return result.rows.map(row => ({
+        id: row.id,
+        plate: row.plate,
+        model: row.model,
+        make: row.make,
+        vehicleType: row.vehicleType,
+        status: row.status,
+        baseId: row.baseId,
+        fuelType: row.fuelType,
+        year: row.year,
+        mediaConsumoCombutivel: row.mediaConsumoCombutivel,
+        isTemporary: row.isTemporary,
+        deactivationDate: row.deactivationDate
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar veículos ativos:", error);
+      return [];
+    }
+  }
+
+  async getTemporaryVehicles(): Promise<Vehicle[]> {
+    try {
+      // Retorna apenas veículos temporários
+      const result = await db.execute(sql`
+        SELECT id, plate, 
+               COALESCE(model, '') as model,
+               COALESCE(make, '') as make,
+               vehicle_type as "vehicleType", 
+               status, base_id as "baseId",
+               COALESCE(fuel_type, 'diesel') as "fuelType",
+               year, 
+               COALESCE(consumo_medio_km_l, 0) as "mediaConsumoCombutivel",
+               is_temporary as "isTemporary",
+               deactivation_date as "deactivationDate"
+        FROM vehicles
+        WHERE is_temporary = true
+        ORDER BY deactivation_date DESC, plate
+      `);
+      
+      return result.rows.map(row => ({
+        id: row.id,
+        plate: row.plate,
+        model: row.model,
+        make: row.make,
+        vehicleType: row.vehicleType,
+        status: row.status,
+        baseId: row.baseId,
+        fuelType: row.fuelType,
+        year: row.year,
+        mediaConsumoCombutivel: row.mediaConsumoCombutivel,
+        isTemporary: row.isTemporary,
+        deactivationDate: row.deactivationDate
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar veículos temporários:", error);
+      return [];
+    }
+  }
+
+  async isVehicleActive(vehicleId: number): Promise<boolean> {
+    try {
+      const result = await db.execute(sql`
+        SELECT is_temporary, deactivation_date
+        FROM vehicles
+        WHERE id = ${vehicleId}
+      `);
+      
+      if (result.rows.length === 0) {
+        return false;
+      }
+      
+      const vehicle = result.rows[0];
+      
+      // Veículo é ativo se NÃO for temporário OU se for temporário com data futura
+      if (!vehicle.is_temporary) {
+        return true;
+      }
+      
+      if (vehicle.deactivation_date) {
+        const deactivationDate = new Date(vehicle.deactivation_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return deactivationDate >= today;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Erro ao verificar se veículo está ativo:", error);
+      return false;
     }
   }
 
