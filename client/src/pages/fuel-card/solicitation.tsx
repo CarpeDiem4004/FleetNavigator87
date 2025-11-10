@@ -12,9 +12,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Loader2, CreditCard, AlertCircle, ShoppingCart, Send } from "lucide-react";
+import { Loader2, CreditCard, AlertCircle, ShoppingCart, Send, AlertTriangle } from "lucide-react";
 import { useFuelCardDraft } from "@/contexts/FuelCardDraftContext";
 import { VehiclePlateAutocomplete } from "@/components/vehicle-plate-autocomplete";
 import { validateAndFormatPlate } from "@/lib/plate-utils";
@@ -120,6 +121,7 @@ export default function FuelCardSolicitation() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const { addToDraft, draftCount} = useFuelCardDraft();
+  const [showRulesDialog, setShowRulesDialog] = useState(true);
   
   // Buscar veículos para autocomplete
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
@@ -379,6 +381,89 @@ export default function FuelCardSolicitation() {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-6">
+      {/* Modal de Regras */}
+      <Dialog open={showRulesDialog} onOpenChange={setShowRulesDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <AlertTriangle className="h-6 w-6 text-amber-600" />
+              📢 AVISO IMPORTANTE — REGRAS PARA SOLICITAÇÃO DE SALDO
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <p className="text-base font-medium text-gray-700">
+              Para garantir o correto processamento das solicitações de saldo, siga atentamente as orientações abaixo:
+            </p>
+            
+            <div className="space-y-3 bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">🕓</span>
+                <div>
+                  <p className="font-semibold text-blue-900">Solicitações para o período da manhã (AM):</p>
+                  <p className="text-blue-800">Devem ser realizadas até às 16h30 do dia anterior.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">🕛</span>
+                <div>
+                  <p className="font-semibold text-blue-900">Solicitações para o período da tarde (PM):</p>
+                  <p className="text-blue-800">Devem ser feitas no mesmo dia, até às 12h00.</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-3 bg-red-50 p-4 rounded-lg border border-red-200">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">🚫</span>
+                <div>
+                  <p className="font-semibold text-red-900">Não misture operadoras:</p>
+                  <p className="text-red-800">Exemplo: Ticket e Veloe não devem constar na mesma solicitação. E NEM DATAS DIFERENTES.</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-3 bg-amber-50 p-4 rounded-lg border border-amber-200">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">🔎</span>
+                <div>
+                  <p className="font-semibold text-amber-900">Verifique todas as informações antes do envio:</p>
+                  <p className="text-amber-800">É possível conferir no bolsão se as solicitações estão corretas.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">❌</span>
+                <div>
+                  <p className="font-semibold text-amber-900">Atenção aos dados:</p>
+                  <p className="text-amber-800">Solicitações com erro de digitação na placa ou número do cartão não serão processadas.</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-gray-100 p-4 rounded-lg border border-gray-300">
+              <p className="text-center text-gray-700 font-medium">
+                Contamos com a colaboração de todos para manter o processo ágil e sem retrabalho.
+              </p>
+              <p className="text-center text-gray-600 text-sm mt-2">
+                <strong>Equipe de Gestão de Combustível da Murici</strong>
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              onClick={() => setShowRulesDialog(false)}
+              className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+              data-testid="button-rules-acknowledge"
+            >
+              ✓ Ciente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       <div className="max-w-md mx-auto sm:max-w-2xl lg:max-w-3xl">
         <div className="text-center mb-6">
           <div className="mb-4">
