@@ -145,8 +145,8 @@ const EditVehicleForm: React.FC<EditVehicleFormProps> = ({ vehicle, onUpdate, on
       try {
         const response = await fetch('/api/bases');
         if (response.ok) {
-          const data = await response.json();
-          setBases(data);
+          const result = await response.json();
+          setBases(result.success && result.data ? result.data : []);
         }
       } catch (error) {
         console.error("Erro ao carregar bases:", error);
