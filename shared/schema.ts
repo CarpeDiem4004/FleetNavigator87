@@ -208,6 +208,8 @@ export const vehicles = pgTable("vehicles", {
   ownership: vehicleOwnershipEnum("ownership").notNull().default('murici'),
   crlvUrl: text("crlv_url"),
   anttUrl: text("antt_url"),
+  isTemporary: boolean("is_temporary").default(false).notNull(),
+  deactivationDate: date("deactivation_date"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
