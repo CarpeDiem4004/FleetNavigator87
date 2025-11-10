@@ -21,7 +21,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, FileEdit, Trash2 } from 'lucide-react';
+import { Search, Plus, FileEdit, Trash2, Upload, AlertTriangle } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { 
   Select,
@@ -286,6 +286,9 @@ const VehiclesNew: React.FC = () => {
   const [activeTab, setActiveTab] = useState("list");
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
 
   // Função para carregar veículos usando a API REST
@@ -455,6 +458,58 @@ const VehiclesNew: React.FC = () => {
     }
   };
 
+  // Função para importar planilha de manutenção
+  const handleImportMaintenance = async () => {
+    if (!selectedFile) {
+      toast({
+        title: "Nenhum arquivo selecionado",
+        description: "Por favor, selecione um arquivo Excel para importar.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      const response = await fetch('/api/maintenance/import', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao importar planilha');
+      }
+
+      const result = await response.json();
+      
+      // Recarregar lista de veículos
+      await fetchVehicles();
+      
+      setIsImportDialogOpen(false);
+      setSelectedFile(null);
+      
+      toast({
+        title: "Importação concluída",
+        description: `${result.updated} veículos foram marcados como "Em Manutenção"`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error("Erro ao importar planilha:", error);
+      toast({
+        title: "Erro na importação",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <MainLayoutSimple>
       <div className="space-y-6">
@@ -475,7 +530,77 @@ const VehiclesNew: React.FC = () => {
           
           <TabsContent value="list" className="space-y-4">
             <div className="flex justify-between items-center">
-              <div></div>
+              <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Upload className="h-4 w-4" />
+                    Importar Manutenção
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Importar Planilha de Manutenção</DialogTitle>
+                    <DialogDescription>
+                      Selecione um arquivo Excel (.xlsx) com as placas dos veículos em manutenção.
+                      Os veículos serão marcados como "Em Manutenção" automaticamente.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="import-file">Arquivo Excel</Label>
+                      <Input
+                        id="import-file"
+                        type="file"
+                        accept=".xlsx,.xls"
+                        onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                      />
+                      {selectedFile && (
+                        <p className="text-sm text-gray-500">
+                          Arquivo selecionado: {selectedFile.name}
+                        </p>
+                      )}
+                    </div>
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                      <div className="flex gap-2">
+                        <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                        <div className="text-sm text-yellow-800">
+                          <p className="font-medium mb-1">Formato do arquivo:</p>
+                          <ul className="list-disc list-inside space-y-1">
+                            <li>A planilha deve conter uma coluna chamada "Placa"</li>
+                            <li>As placas devem estar no formato ABC1234 ou ABC1D23</li>
+                            <li>Veículos já em manutenção serão ignorados</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setIsImportDialogOpen(false);
+                        setSelectedFile(null);
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button 
+                      onClick={handleImportMaintenance}
+                      disabled={!selectedFile || isUploading}
+                    >
+                      {isUploading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                          Importando...
+                        </>
+                      ) : (
+                        'Importar'
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                 <Input

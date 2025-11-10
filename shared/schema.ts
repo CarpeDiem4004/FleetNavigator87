@@ -212,6 +212,16 @@ export const vehicles = pgTable("vehicles", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Tabela de auditoria de importações de manutenção
+export const maintenanceImports = pgTable("maintenance_imports", {
+  id: serial("id").primaryKey(),
+  importedBy: text("imported_by").notNull(),
+  importedAt: timestamp("imported_at").defaultNow(),
+  affectedVehiclesCount: integer("affected_vehicles_count").notNull(),
+  filename: text("filename").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Create the workshops table (oficinas)
 export const workshops = pgTable("oficinas", {
   id: serial("id").primaryKey(),
@@ -651,6 +661,10 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages);
 export const insertMaintenanceLifecycleSchema = createInsertSchema(maintenanceLifecycle);
 export const insertCarReceptionSchema = createInsertSchema(carReceptions);
 export const insertWorkshopBudgetSchema = createInsertSchema(workshopBudgets);
+export const insertMaintenanceImportSchema = createInsertSchema(maintenanceImports).omit({
+  importedAt: true,
+  createdAt: true,
+});
 export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
   email: true,
@@ -694,6 +708,9 @@ export type InsertCarReception = z.infer<typeof insertCarReceptionSchema>;
 
 export type WorkshopBudget = typeof workshopBudgets.$inferSelect;
 export type InsertWorkshopBudget = z.infer<typeof insertWorkshopBudgetSchema>;
+
+export type MaintenanceImport = typeof maintenanceImports.$inferSelect;
+export type InsertMaintenanceImport = z.infer<typeof insertMaintenanceImportSchema>;
 
 export type Operation = typeof operations.$inferSelect;
 export type InsertOperation = z.infer<typeof insertOperationSchema>;
