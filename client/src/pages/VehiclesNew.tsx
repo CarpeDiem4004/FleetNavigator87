@@ -355,7 +355,7 @@ const VehiclesNew: React.FC = () => {
   // Carregar veículos quando o componente é montado
   useEffect(() => {
     fetchVehicles();
-  }, [toast]);
+  }, []);
 
   // Filtrar veículos com base no termo de busca
   const filteredVehicles = vehicles.filter(
