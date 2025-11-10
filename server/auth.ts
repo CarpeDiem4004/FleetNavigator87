@@ -231,7 +231,7 @@ export function setupAuth(app: Express) {
         console.log(`[Cookie Middleware] Ajustando sessão: maxAge=${(req.session as any).cookie.maxAge}, sameSite=${(req.session as any).cookie.sameSite}`);
         
         // CORREÇÃO DEFINITIVA: Configuração baseada no ambiente
-        const isReplit = req.hostname.includes('replit.dev');
+        const isReplit = req.hostname.includes('replit.dev') || req.hostname.includes('replit.app');
         if (isReplit) {
           (req.session as any).cookie.secure = true; // REQUERIDO para sameSite=none
           (req.session as any).cookie.sameSite = 'none'; // PERMITIR cross-origin
@@ -239,7 +239,7 @@ export function setupAuth(app: Express) {
           (req.session as any).cookie.secure = false; // Para desenvolvimento local
           (req.session as any).cookie.sameSite = 'lax'; // Para desenvolvimento local
         }
-        (req.session as any).cookie.httpOnly = false;
+        (req.session as any).cookie.httpOnly = true; // SEGURANÇA: Prevenir XSS
       }
       
       // Tocar na sessão para garantir que ela será salva
@@ -252,7 +252,7 @@ export function setupAuth(app: Express) {
       if (!res.headersSent && res.getHeader('set-cookie')) {
         if (isDev) {
           let cookies = res.getHeader('set-cookie');
-          const isReplit = req.hostname.includes('replit.dev');
+          const isReplit = req.hostname.includes('replit.dev') || req.hostname.includes('replit.app');
           
           if (Array.isArray(cookies)) {
             cookies = cookies.map((cookie: string) => {
