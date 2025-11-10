@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/hooks/use-toast'
 import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react'
 import { validateAndFormatPlate, applyPlateMask, getPlateFormatHint } from '@/lib/plate-utils'
@@ -39,6 +40,10 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
   
   // Estado para cartão de abastecimento (Line Hall apenas)
   const [cartaoAbastecimento, setCartaoAbastecimento] = useState('')
+  
+  // Estados para veículo temporário
+  const [isTemporary, setIsTemporary] = useState(false)
+  const [deactivationDate, setDeactivationDate] = useState('')
   
   // Novos estados para os arquivos
   const [crlvFile, setCrlvFile] = useState<File | null>(null)
@@ -319,6 +324,16 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
       return
     }
     
+    // Validar data de desativação para veículos temporários
+    if (isTemporary && !deactivationDate) {
+      toast({
+        title: 'Data de desativação obrigatória',
+        description: 'Informe a data de desativação para veículos temporários.',
+        variant: 'destructive'
+      })
+      return
+    }
+    
     setIsSubmitting(true)
     
     try {
@@ -354,6 +369,8 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
           crlvUrl: crlvUrl, // Adicionar URL do CRLV
           anttUrl: anttUrl, // Adicionar URL do ANTT
           cartaoAbastecimento: shouldShowCartaoAbastecimento() ? cartaoAbastecimento : null, // Campo específico para Line Hall
+          isTemporary: isTemporary,
+          deactivationDate: isTemporary ? deactivationDate : null,
         })
       });
       
@@ -387,6 +404,8 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
       setBaseId(undefined)
       setOwnership('murici')
       setLeasingCompany('')
+      setIsTemporary(false)
+      setDeactivationDate('')
       
       // Notificar o componente pai sobre a adição
       if (onVehicleAdded) {
@@ -688,6 +707,44 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Seção de Configuração Temporária */}
+          <div className="border-t pt-4 mt-6 space-y-4">
+            <h3 className="text-sm font-medium">Configuração Temporária</h3>
+            
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="isTemporary"
+                checked={isTemporary}
+                onCheckedChange={(checked) => setIsTemporary(checked === true)}
+                data-testid="checkbox-is-temporary"
+              />
+              <div className="space-y-1">
+                <Label htmlFor="isTemporary" className="text-sm font-medium cursor-pointer">
+                  Veículo Temporário
+                </Label>
+                <p className="text-sm text-gray-500">
+                  Marque esta opção se o veículo for temporário. Veículos temporários expirados não poderão solicitar combustível.
+                </p>
+              </div>
+            </div>
+
+            {isTemporary && (
+              <div className="space-y-2">
+                <Label htmlFor="deactivationDate">Data de Desativação *</Label>
+                <Input
+                  id="deactivationDate"
+                  type="date"
+                  value={deactivationDate}
+                  onChange={(e) => setDeactivationDate(e.target.value)}
+                  data-testid="input-deactivation-date"
+                />
+                <p className="text-sm text-gray-500">
+                  Data em que o veículo será automaticamente desativado
+                </p>
+              </div>
+            )}
           </div>
         </CardContent>
         <CardFooter>
