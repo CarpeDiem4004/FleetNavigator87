@@ -5129,6 +5129,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Validação: Verificar se o veículo existe e está ativo (não expirado)
+      const vehicle = await storage.getVehicleByPlate(plate);
+      if (!vehicle) {
+        console.log('[FUEL-CARD-REQUEST] Veículo não encontrado:', plate);
+        return res.status(404).json({
+          success: false,
+          message: `Veículo com placa ${plate} não encontrado no sistema`
+        });
+      }
+      
+      const isActive = await storage.isVehicleActive(vehicle.id);
+      if (!isActive) {
+        console.log('[FUEL-CARD-REQUEST] Veículo temporário expirado:', {
+          plate: vehicle.plate,
+          isTemporary: vehicle.isTemporary,
+          deactivationDate: vehicle.deactivationDate
+        });
+        return res.status(403).json({
+          success: false,
+          message: `Veículo ${plate} está desativado. Veículos temporários expirados não podem solicitar combustível.`
+        });
+      }
+      
       if (amount <= 0 || amount > 5000) {
         console.log('[FUEL-CARD-REQUEST] Validação falhada - valor inválido:', amount);
         return res.status(400).json({
@@ -5720,6 +5743,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({
           success: false,
           message: 'Valor deve estar entre R$ 10,00 e R$ 5.000,00'
+        });
+      }
+      
+      // Validação: Verificar se o veículo existe e está ativo (não expirado)
+      const vehicle = await storage.getVehicleByPlate(plate);
+      if (!vehicle) {
+        console.log('[PUBLIC-FUEL-CARD-REQUEST] Veículo não encontrado:', plate);
+        return res.status(404).json({
+          success: false,
+          message: `Veículo com placa ${plate} não encontrado no sistema`
+        });
+      }
+      
+      const isActive = await storage.isVehicleActive(vehicle.id);
+      if (!isActive) {
+        console.log('[PUBLIC-FUEL-CARD-REQUEST] Veículo temporário expirado:', {
+          plate: vehicle.plate,
+          isTemporary: vehicle.isTemporary,
+          deactivationDate: vehicle.deactivationDate
+        });
+        return res.status(403).json({
+          success: false,
+          message: `Veículo ${plate} está desativado. Veículos temporários expirados não podem solicitar combustível.`
         });
       }
       
@@ -20655,6 +20701,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status = 'pendente'
       } = req.body;
 
+      // Validação: Verificar se o veículo existe e está ativo (não expirado)
+      if (vehicle_plate) {
+        const vehicle = await storage.getVehicleByPlate(vehicle_plate);
+        if (!vehicle) {
+          console.log('[LINE-HALL-FUEL-REQUEST] Veículo não encontrado:', vehicle_plate);
+          return res.status(404).json({
+            success: false,
+            message: `Veículo com placa ${vehicle_plate} não encontrado no sistema`
+          });
+        }
+        
+        const isActive = await storage.isVehicleActive(vehicle.id);
+        if (!isActive) {
+          console.log('[LINE-HALL-FUEL-REQUEST] Veículo temporário expirado:', {
+            plate: vehicle.plate,
+            isTemporary: vehicle.isTemporary,
+            deactivationDate: vehicle.deactivationDate
+          });
+          return res.status(403).json({
+            success: false,
+            message: `Veículo ${vehicle_plate} está desativado. Veículos temporários expirados não podem solicitar combustível.`
+          });
+        }
+      }
+
       const insertQuery = `
         INSERT INTO fuel_requests (
           motorista_id, motorista_nome, vehicle_plate, km_atual, 
@@ -20831,6 +20902,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         telefone_motorista,
         status = 'pendente'
       } = req.body;
+
+      // Validação: Verificar se o veículo existe e está ativo (não expirado)
+      if (veiculo_placa) {
+        const vehicle = await storage.getVehicleByPlate(veiculo_placa);
+        if (!vehicle) {
+          console.log('[LINE-HALL-FUEL-CARD-REQUEST] Veículo não encontrado:', veiculo_placa);
+          return res.status(404).json({
+            success: false,
+            message: `Veículo com placa ${veiculo_placa} não encontrado no sistema`
+          });
+        }
+        
+        const isActive = await storage.isVehicleActive(vehicle.id);
+        if (!isActive) {
+          console.log('[LINE-HALL-FUEL-CARD-REQUEST] Veículo temporário expirado:', {
+            plate: vehicle.plate,
+            isTemporary: vehicle.isTemporary,
+            deactivationDate: vehicle.deactivationDate
+          });
+          return res.status(403).json({
+            success: false,
+            message: `Veículo ${veiculo_placa} está desativado. Veículos temporários expirados não podem solicitar combustível.`
+          });
+        }
+      }
 
       // Verificar se já existe uma solicitação aprovada para a mesma rota pelo mesmo motorista
       const checkRouteQuery = `

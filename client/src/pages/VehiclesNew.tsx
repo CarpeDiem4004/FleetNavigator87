@@ -38,7 +38,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import CadastroFrota from '@/components/vehicle/CadastroFrota';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from "react-hook-form";
@@ -55,6 +57,8 @@ interface Vehicle {
   base_nome?: string;
   status: string;
   cartao_combustivel?: string;
+  isTemporary?: boolean;
+  deactivationDate?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -98,6 +102,17 @@ const editVehicleSchema = z.object({
   status: z.string().min(1, "Status é obrigatório"),
   baseId: z.number().min(1, "Base é obrigatória"),
   cartaoAbastecimento: z.string().optional(),
+  isTemporary: z.boolean().default(false),
+  deactivationDate: z.string().optional(),
+}).refine(data => {
+  // Se isTemporary for true, deactivationDate é obrigatório
+  if (data.isTemporary && !data.deactivationDate) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Data de desativação é obrigatória para veículos temporários",
+  path: ["deactivationDate"],
 });
 
 // Componente de formulário para edição de veículos
@@ -119,6 +134,8 @@ const EditVehicleForm: React.FC<EditVehicleFormProps> = ({ vehicle, onUpdate, on
       status: vehicle.status || "em_operacao",
       baseId: vehicle.base_id || 1,
       cartaoAbastecimento: vehicle.cartao_combustivel || "",
+      isTemporary: vehicle.isTemporary || false,
+      deactivationDate: vehicle.deactivationDate || "",
     },
   });
 
@@ -264,6 +281,55 @@ const EditVehicleForm: React.FC<EditVehicleFormProps> = ({ vehicle, onUpdate, on
             </FormItem>
           )}
         />
+
+        <div className="border-t pt-4 mt-6">
+          <h3 className="text-sm font-medium mb-4">Configuração Temporária</h3>
+          
+          <FormField
+            control={form.control}
+            name="isTemporary"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    data-testid="checkbox-is-temporary"
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>Veículo Temporário</FormLabel>
+                  <FormDescription>
+                    Marque esta opção se o veículo for temporário. Veículos temporários expirados não poderão solicitar combustível.
+                  </FormDescription>
+                </div>
+              </FormItem>
+            )}
+          />
+
+          {form.watch("isTemporary") && (
+            <FormField
+              control={form.control}
+              name="deactivationDate"
+              render={({ field }) => (
+                <FormItem className="mt-4">
+                  <FormLabel>Data de Desativação *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="date" 
+                      {...field}
+                      data-testid="input-deactivation-date"
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Data em que o veículo será automaticamente desativado
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+        </div>
 
         <div className="flex justify-end space-x-2 pt-4">
           <Button type="button" variant="outline" onClick={onCancel}>
