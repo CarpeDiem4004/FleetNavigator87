@@ -536,16 +536,27 @@ export class DatabaseStorage implements IStorage {
   // Vehicle operations
   async getVehicle(id: number): Promise<Vehicle | undefined> {
     try {
-      // Usar SQL bruto para evitar problemas com mapeamento de campos
       const result = await db.execute(sql`
-        SELECT id, placa as "plate", modelo as "model", tipo as "vehicleType", 
-               status, base_id as "baseId", fuel_type as "fuelType", ano as "year",
-               km_atual as "mileage", cartao_abastecimento as "cartaoAbastecimento",
-               'murici' as ownership, null as "rentalCompany"
-        FROM veiculos
+        SELECT id, plate, model, make, year,
+               vehicle_type as "vehicleType", 
+               status, base_id as "baseId", fuel_type as "fuelType",
+               cartao_abastecimento as "cartaoAbastecimento",
+               km_atual as "kmAtual",
+               consumo_medio_km_l as "consumoMedioKmL",
+               ownership,
+               crlv_url as "crlvUrl",
+               antt_url as "anttUrl",
+               is_temporary as "isTemporary",
+               deactivation_date as "deactivationDate",
+               created_at as "createdAt",
+               updated_at as "updatedAt"
+        FROM vehicles
         WHERE id = ${id}
       `);
-      return result.rows[0] as Vehicle || undefined;
+      
+      if (result.rows.length === 0) return undefined;
+      
+      return result.rows[0] as Vehicle;
     } catch (error) {
       console.error("Erro ao buscar veículo por ID:", error);
       return undefined;
@@ -554,33 +565,27 @@ export class DatabaseStorage implements IStorage {
 
   async getVehicleByPlate(plate: string): Promise<Vehicle | undefined> {
     try {
-      // Usar SQL bruto para evitar problemas com mapeamento de campos
       const result = await db.execute(sql`
-        SELECT id, plate, model, vehicletype as "vehicleType", 
-               status, baseid as "baseId", fueltype,
-               year, mileage, color
-        FROM veiculos
+        SELECT id, plate, model, make, year,
+               vehicle_type as "vehicleType", 
+               status, base_id as "baseId", fuel_type as "fuelType",
+               cartao_abastecimento as "cartaoAbastecimento",
+               km_atual as "kmAtual",
+               consumo_medio_km_l as "consumoMedioKmL",
+               ownership,
+               crlv_url as "crlvUrl",
+               antt_url as "anttUrl",
+               is_temporary as "isTemporary",
+               deactivation_date as "deactivationDate",
+               created_at as "createdAt",
+               updated_at as "updatedAt"
+        FROM vehicles
         WHERE plate = ${plate}
       `);
       
-      if (!result.rows[0]) return undefined;
+      if (result.rows.length === 0) return undefined;
       
-      // Map the result to match the Vehicle interface
-      return {
-        id: result.rows[0].id,
-        plate: result.rows[0].plate,
-        model: result.rows[0].model,
-        vehicleType: result.rows[0].vehicleType,
-        status: result.rows[0].status,
-        baseId: result.rows[0].baseId,
-        fuelType: result.rows[0].fueltype,
-        year: result.rows[0].year,
-        mileage: result.rows[0].mileage,
-        color: result.rows[0].color,
-        // Add default/null values for any fields expected by Vehicle interface but not in DB
-        ownership: 'murici',
-        rentalCompany: null
-      };
+      return result.rows[0] as Vehicle;
     } catch (error) {
       console.error("Erro ao buscar veículo pela placa:", error);
       return undefined;
@@ -589,32 +594,26 @@ export class DatabaseStorage implements IStorage {
 
   async getVehiclesByBase(baseId: number): Promise<Vehicle[]> {
     try {
-      // Usar SQL bruto para evitar problemas com mapeamento de campos
       const result = await db.execute(sql`
-        SELECT id, plate, model, vehicletype as "vehicleType", 
-               status, baseid as "baseId", fueltype,
-               year, mileage, color, cartao_abastecimento as "cartaoAbastecimento"
-        FROM veiculos
-        WHERE baseid = ${baseId}
+        SELECT id, plate, model, make, year,
+               vehicle_type as "vehicleType", 
+               status, base_id as "baseId", fuel_type as "fuelType",
+               cartao_abastecimento as "cartaoAbastecimento",
+               km_atual as "kmAtual",
+               consumo_medio_km_l as "consumoMedioKmL",
+               ownership,
+               crlv_url as "crlvUrl",
+               antt_url as "anttUrl",
+               is_temporary as "isTemporary",
+               deactivation_date as "deactivationDate",
+               created_at as "createdAt",
+               updated_at as "updatedAt"
+        FROM vehicles
+        WHERE base_id = ${baseId}
+        ORDER BY plate
       `);
       
-      // Map the result to match the Vehicle interface
-      return result.rows.map(row => ({
-        id: row.id,
-        plate: row.plate,
-        model: row.model,
-        vehicleType: row.vehicleType,
-        status: row.status,
-        baseId: row.baseId,
-        fuelType: row.fueltype,
-        year: row.year,
-        mileage: row.mileage,
-        color: row.color,
-        cartaoAbastecimento: row.cartaoAbastecimento,
-        // Add default/null values for any fields expected by Vehicle interface but not in DB
-        ownership: 'murici',
-        rentalCompany: null
-      }));
+      return result.rows as Vehicle[];
     } catch (error) {
       console.error("Erro ao buscar veículos da base:", error);
       return [];
@@ -623,36 +622,24 @@ export class DatabaseStorage implements IStorage {
 
   async getAllVehicles(): Promise<Vehicle[]> {
     try {
-      // Use the correct vehicles table with proper column names
       const result = await db.execute(sql`
-        SELECT id, plate, 
-               COALESCE(model, '') as model,
-               COALESCE(make, '') as make,
+        SELECT id, plate, model, make, year,
                vehicle_type as "vehicleType", 
-               status, base_id as "baseId",
-               COALESCE(fuel_type, 'diesel') as "fuelType",
-               year, 
-               COALESCE(consumo_medio_km_l, 0) as "mediaConsumoCombutivel",
+               status, base_id as "baseId", fuel_type as "fuelType",
+               cartao_abastecimento as "cartaoAbastecimento",
+               km_atual as "kmAtual",
+               consumo_medio_km_l as "consumoMedioKmL",
+               ownership,
+               crlv_url as "crlvUrl",
+               antt_url as "anttUrl",
                is_temporary as "isTemporary",
-               deactivation_date as "deactivationDate"
+               deactivation_date as "deactivationDate",
+               created_at as "createdAt",
+               updated_at as "updatedAt"
         FROM vehicles
       `);
       
-      // Map the result to match the Vehicle interface
-      return result.rows.map(row => ({
-        id: row.id,
-        plate: row.plate,
-        model: row.model,
-        make: row.make,
-        vehicleType: row.vehicleType,
-        status: row.status,
-        baseId: row.baseId,
-        fuelType: row.fuelType,
-        year: row.year,
-        mediaConsumoCombutivel: row.mediaConsumoCombutivel,
-        isTemporary: row.isTemporary,
-        deactivationDate: row.deactivationDate
-      }));
+      return result.rows as Vehicle[];
     } catch (error) {
       console.error("Erro ao buscar veículos:", error);
       return [];
@@ -661,38 +648,27 @@ export class DatabaseStorage implements IStorage {
 
   async getActiveVehicles(): Promise<Vehicle[]> {
     try {
-      // Retorna veículos que são permanentes OU temporários com data de desativação no futuro
       const result = await db.execute(sql`
-        SELECT id, plate, 
-               COALESCE(model, '') as model,
-               COALESCE(make, '') as make,
+        SELECT id, plate, model, make, year,
                vehicle_type as "vehicleType", 
-               status, base_id as "baseId",
-               COALESCE(fuel_type, 'diesel') as "fuelType",
-               year, 
-               COALESCE(consumo_medio_km_l, 0) as "mediaConsumoCombutivel",
+               status, base_id as "baseId", fuel_type as "fuelType",
+               cartao_abastecimento as "cartaoAbastecimento",
+               km_atual as "kmAtual",
+               consumo_medio_km_l as "consumoMedioKmL",
+               ownership,
+               crlv_url as "crlvUrl",
+               antt_url as "anttUrl",
                is_temporary as "isTemporary",
-               deactivation_date as "deactivationDate"
+               deactivation_date as "deactivationDate",
+               created_at as "createdAt",
+               updated_at as "updatedAt"
         FROM vehicles
         WHERE is_temporary = false 
-           OR (is_temporary = true AND deactivation_date >= CURRENT_DATE)
+           OR (is_temporary = true AND deactivation_date IS NOT NULL AND deactivation_date >= CURRENT_DATE)
         ORDER BY plate
       `);
       
-      return result.rows.map(row => ({
-        id: row.id,
-        plate: row.plate,
-        model: row.model,
-        make: row.make,
-        vehicleType: row.vehicleType,
-        status: row.status,
-        baseId: row.baseId,
-        fuelType: row.fuelType,
-        year: row.year,
-        mediaConsumoCombutivel: row.mediaConsumoCombutivel,
-        isTemporary: row.isTemporary,
-        deactivationDate: row.deactivationDate
-      }));
+      return result.rows as Vehicle[];
     } catch (error) {
       console.error("Erro ao buscar veículos ativos:", error);
       return [];
@@ -701,37 +677,26 @@ export class DatabaseStorage implements IStorage {
 
   async getTemporaryVehicles(): Promise<Vehicle[]> {
     try {
-      // Retorna apenas veículos temporários
       const result = await db.execute(sql`
-        SELECT id, plate, 
-               COALESCE(model, '') as model,
-               COALESCE(make, '') as make,
+        SELECT id, plate, model, make, year,
                vehicle_type as "vehicleType", 
-               status, base_id as "baseId",
-               COALESCE(fuel_type, 'diesel') as "fuelType",
-               year, 
-               COALESCE(consumo_medio_km_l, 0) as "mediaConsumoCombutivel",
+               status, base_id as "baseId", fuel_type as "fuelType",
+               cartao_abastecimento as "cartaoAbastecimento",
+               km_atual as "kmAtual",
+               consumo_medio_km_l as "consumoMedioKmL",
+               ownership,
+               crlv_url as "crlvUrl",
+               antt_url as "anttUrl",
                is_temporary as "isTemporary",
-               deactivation_date as "deactivationDate"
+               deactivation_date as "deactivationDate",
+               created_at as "createdAt",
+               updated_at as "updatedAt"
         FROM vehicles
         WHERE is_temporary = true
         ORDER BY deactivation_date DESC, plate
       `);
       
-      return result.rows.map(row => ({
-        id: row.id,
-        plate: row.plate,
-        model: row.model,
-        make: row.make,
-        vehicleType: row.vehicleType,
-        status: row.status,
-        baseId: row.baseId,
-        fuelType: row.fuelType,
-        year: row.year,
-        mediaConsumoCombutivel: row.mediaConsumoCombutivel,
-        isTemporary: row.isTemporary,
-        deactivationDate: row.deactivationDate
-      }));
+      return result.rows as Vehicle[];
     } catch (error) {
       console.error("Erro ao buscar veículos temporários:", error);
       return [];
@@ -752,19 +717,21 @@ export class DatabaseStorage implements IStorage {
       
       const vehicle = result.rows[0];
       
-      // Veículo é ativo se NÃO for temporário OU se for temporário com data futura
+      // Veículo permanente é sempre ativo
       if (!vehicle.is_temporary) {
         return true;
       }
       
-      if (vehicle.deactivation_date) {
-        const deactivationDate = new Date(vehicle.deactivation_date);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return deactivationDate >= today;
+      // Veículo temporário sem data de desativação é considerado expirado
+      if (!vehicle.deactivation_date) {
+        return false;
       }
       
-      return false;
+      // Veículo temporário com data: verifica se ainda não expirou
+      const deactivationDate = new Date(vehicle.deactivation_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return deactivationDate >= today;
     } catch (error) {
       console.error("Erro ao verificar se veículo está ativo:", error);
       return false;
@@ -776,27 +743,34 @@ export class DatabaseStorage implements IStorage {
     console.log("Dados do veículo para inserção:", JSON.stringify(vehicle, null, 2));
     
     try {
-      // Verificar primeiro se a placa já existe
       const existingVehicle = await this.getVehicleByPlate(vehicle.plate);
       if (existingVehicle) {
-        // Lançar um erro personalizado para placas duplicadas
         const duplicateError = new Error(`Veículo com placa ${vehicle.plate} já existe no sistema`);
         duplicateError.name = "DuplicatePlateError";
         throw duplicateError;
       }
       
-      // Usar SQL bruto com os nomes corretos das colunas (sem make)
       const result = await db.execute(sql`
-        INSERT INTO veiculos 
-        (placa, modelo, marca, tipo, status, base_id, fuel_type, year, media_consumo_combustivel)
+        INSERT INTO vehicles 
+        (plate, model, make, vehicle_type, status, base_id, fuel_type, year, 
+         cartao_abastecimento, km_atual, consumo_medio_km_l, ownership,
+         crlv_url, antt_url, is_temporary, deactivation_date)
         VALUES 
-        (${vehicle.plate}, ${vehicle.model || ''}, ${vehicle.make || 'Mercedes'}, 
+        (${vehicle.plate}, ${vehicle.model}, ${vehicle.make}, 
          ${vehicle.vehicleType}, ${vehicle.status}, ${vehicle.baseId}, 
-         ${vehicle.fuelType || 'Diesel'}, ${vehicle.year || null}, 
-         ${vehicle.mediaConsumoCombutivel || null})
-        RETURNING id, placa as plate, modelo as model, marca as make, tipo as "vehicleType", 
-                 status, base_id as "baseId", fuel_type as "fuelType", 
-                 year, media_consumo_combustivel as "mediaConsumoCombutivel"
+         ${vehicle.fuelType}, ${vehicle.year}, 
+         ${vehicle.cartaoAbastecimento || null}, ${vehicle.kmAtual || null},
+         ${vehicle.consumoMedioKmL || null}, ${vehicle.ownership || 'murici'},
+         ${vehicle.crlvUrl || null}, ${vehicle.anttUrl || null},
+         ${vehicle.isTemporary || false}, ${vehicle.deactivationDate || null})
+        RETURNING id, plate, model, make, year, vehicle_type as "vehicleType", 
+                 status, base_id as "baseId", fuel_type as "fuelType",
+                 cartao_abastecimento as "cartaoAbastecimento",
+                 km_atual as "kmAtual",
+                 consumo_medio_km_l as "consumoMedioKmL",
+                 ownership, crlv_url as "crlvUrl", antt_url as "anttUrl",
+                 is_temporary as "isTemporary", deactivation_date as "deactivationDate",
+                 created_at as "createdAt", updated_at as "updatedAt"
       `);
       
       console.log("Veículo inserido com sucesso:", JSON.stringify(result.rows[0], null, 2));
@@ -804,8 +778,7 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Erro ao inserir veículo no banco de dados:", error);
       
-      // Verificar se é um erro de violação de constraint unique
-      if ((error as any)?.code === '23505' && (error as any)?.constraint === 'veiculos_plate_unique') {
+      if ((error as any)?.code === '23505' && (error as any)?.constraint === 'vehicles_plate_unique') {
         const duplicateError = new Error(`Veículo com placa ${vehicle.plate} já existe no sistema`);
         duplicateError.name = "DuplicatePlateError";
         throw duplicateError;
@@ -817,23 +790,27 @@ export class DatabaseStorage implements IStorage {
 
   async updateVehicle(id: number, vehicle: Partial<InsertVehicle>): Promise<Vehicle | undefined> {
     try {
-      // Preparar os campos para update, com seus nomes corretos no banco de dados
       const updateData: Record<string, any> = {};
       
-      if (vehicle.plate !== undefined) updateData.placa = vehicle.plate;
-      if (vehicle.model !== undefined) updateData.modelo = vehicle.model;
-      if (vehicle.vehicleType !== undefined) updateData.tipo = vehicle.vehicleType;
+      if (vehicle.plate !== undefined) updateData.plate = vehicle.plate;
+      if (vehicle.model !== undefined) updateData.model = vehicle.model;
+      if (vehicle.make !== undefined) updateData.make = vehicle.make;
+      if (vehicle.vehicleType !== undefined) updateData.vehicle_type = vehicle.vehicleType;
       if (vehicle.status !== undefined) updateData.status = vehicle.status;
       if (vehicle.baseId !== undefined) updateData.base_id = vehicle.baseId;
       if (vehicle.fuelType !== undefined) updateData.fuel_type = vehicle.fuelType;
-      if (vehicle.year !== undefined) updateData.ano = vehicle.year;
-      if (vehicle.mileage !== undefined) updateData.km_atual = vehicle.mileage;
-      if (vehicle.color !== undefined) updateData.color = vehicle.color;
+      if (vehicle.year !== undefined) updateData.year = vehicle.year;
       if (vehicle.cartaoAbastecimento !== undefined) updateData.cartao_abastecimento = vehicle.cartaoAbastecimento;
+      if (vehicle.kmAtual !== undefined) updateData.km_atual = vehicle.kmAtual;
+      if (vehicle.consumoMedioKmL !== undefined) updateData.consumo_medio_km_l = vehicle.consumoMedioKmL;
+      if (vehicle.ownership !== undefined) updateData.ownership = vehicle.ownership;
+      if (vehicle.crlvUrl !== undefined) updateData.crlv_url = vehicle.crlvUrl;
+      if (vehicle.anttUrl !== undefined) updateData.antt_url = vehicle.anttUrl;
+      if (vehicle.isTemporary !== undefined) updateData.is_temporary = vehicle.isTemporary;
+      if (vehicle.deactivationDate !== undefined) updateData.deactivation_date = vehicle.deactivationDate;
       
-      // Usar SQL bruto para evitar problemas com mapeamento de campos
       const result = await db.execute(sql`
-        UPDATE veiculos
+        UPDATE vehicles
         SET ${sql.join(
           Object.entries(updateData).map(
             ([key, value]) => sql`${sql.identifier(key)} = ${value}`
@@ -841,29 +818,19 @@ export class DatabaseStorage implements IStorage {
           sql`, `
         )}
         WHERE id = ${id}
-        RETURNING id, placa as "plate", modelo as "model", tipo as "vehicleType", 
-                 status, base_id as "baseId", fuel_type as "fuelType", ano as "year", 
-                 km_atual as "mileage", cartao_abastecimento as "cartaoAbastecimento"
+        RETURNING id, plate, model, make, year, vehicle_type as "vehicleType", 
+                 status, base_id as "baseId", fuel_type as "fuelType",
+                 cartao_abastecimento as "cartaoAbastecimento",
+                 km_atual as "kmAtual",
+                 consumo_medio_km_l as "consumoMedioKmL",
+                 ownership, crlv_url as "crlvUrl", antt_url as "anttUrl",
+                 is_temporary as "isTemporary", deactivation_date as "deactivationDate",
+                 created_at as "createdAt", updated_at as "updatedAt"
       `);
       
       if (!result.rows[0]) return undefined;
       
-      // Map the result to match the Vehicle interface
-      return {
-        id: result.rows[0].id,
-        plate: result.rows[0].plate,
-        model: result.rows[0].model,
-        vehicleType: result.rows[0].vehicleType,
-        status: result.rows[0].status,
-        baseId: result.rows[0].baseId,
-        fuelType: result.rows[0].fuelType,
-        year: result.rows[0].year,
-        mileage: result.rows[0].mileage,
-        cartaoAbastecimento: result.rows[0].cartaoAbastecimento,
-        // Add default values for fields expected by Vehicle interface but not in DB
-        ownership: 'murici',
-        rentalCompany: null
-      };
+      return result.rows[0] as Vehicle;
     } catch (error) {
       console.error("Erro ao atualizar veículo:", error);
       return undefined;
@@ -872,9 +839,8 @@ export class DatabaseStorage implements IStorage {
 
   async deleteVehicle(id: number): Promise<boolean> {
     try {
-      // Usar SQL bruto para evitar problemas com mapeamento de campos
       const result = await db.execute(sql`
-        DELETE FROM veiculos
+        DELETE FROM vehicles
         WHERE id = ${id}
         RETURNING id
       `);
@@ -889,13 +855,17 @@ export class DatabaseStorage implements IStorage {
   async updateVehicleStatus(id: number, status: Vehicle['status']): Promise<Vehicle | undefined> {
     try {
       const result = await db.execute(sql`
-        UPDATE veiculos
+        UPDATE vehicles
         SET status = ${status}
         WHERE id = ${id}
-        RETURNING id, placa as "plate", modelo as "model", marca as "make", tipo as "vehicleType", 
-                 status, base_id as "baseId", fuel_type as "fuelType", ano as "year", 
-                 km_atual as "mileage", cartao_abastecimento as "cartaoAbastecimento",
-                 proprietario as "ownership", locadora as "rentalCompany"
+        RETURNING id, plate, model, make, year, vehicle_type as "vehicleType", 
+                 status, base_id as "baseId", fuel_type as "fuelType",
+                 cartao_abastecimento as "cartaoAbastecimento",
+                 km_atual as "kmAtual",
+                 consumo_medio_km_l as "consumoMedioKmL",
+                 ownership, crlv_url as "crlvUrl", antt_url as "anttUrl",
+                 is_temporary as "isTemporary", deactivation_date as "deactivationDate",
+                 created_at as "createdAt", updated_at as "updatedAt"
       `);
       
       if (!result.rows[0]) return undefined;
