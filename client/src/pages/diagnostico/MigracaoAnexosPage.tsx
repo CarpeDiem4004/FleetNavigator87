@@ -20,7 +20,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseClient } from "@/lib/supabase-compat";
 import { FileText, AlertCircle, Download, Upload, Check, AlertTriangle } from "lucide-react";
 
 // Tipo para solicitações de orçamento
@@ -42,10 +42,8 @@ const MigracaoAnexosPage: React.FC = () => {
   const [migrated, setMigrated] = useState<{[key: number]: boolean}>({});
   const [errors, setErrors] = useState<{[key: number]: string}>({});
 
-  // Inicializar cliente Supabase
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  // Usar cliente singleton Supabase
+  const supabase = getSupabaseClient();
 
   useEffect(() => {
     fetchBlobAttachments();

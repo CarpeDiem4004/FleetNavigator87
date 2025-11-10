@@ -162,6 +162,8 @@ import jwtAuthRoutes from './jwtAuthRoutes.js';
 import lineHallRoutes from './routes/lineHallRoutes';
 // Importação das rotas de equipamentos
 import equipmentRoutes from './routes/equipmentRoutes';
+// Importação das rotas de storage
+import storageRoutes from './routes/storageRoutes';
 // Importação das rotas de recebimento de combustível
 import fuelReceiptRoutes from './routes/fuelReceiptRoutes.js';
 // Importação das rotas pós-pago (isoladas em arquivo separado)
@@ -19815,6 +19817,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas de autenticação de parceiros de guincho
   const { default: partnerAuthRoutes } = await import('./routes/partnerAuth.js');
   app.use('/api/auth', partnerAuthRoutes);
+  
+  // Registrar rotas de storage
+  app.use('/api/storage', storageRoutes);
   
   // Registrar rotas para gestão de pneus
   app.use('/api/pneus', pneusRoutes);

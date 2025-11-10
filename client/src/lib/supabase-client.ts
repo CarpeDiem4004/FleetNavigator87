@@ -7,15 +7,13 @@
  * TODOS os códigos devem ser migrados eventualmente para usar '@/lib/supabaseClient' diretamente.
  */
 
-// Re-exportar tudo do arquivo principal consolidado
-export * from './supabaseClient';
+// Re-exportar tudo do arquivo principal consolidado (SEGURO - apenas cliente anônimo)
+export * from './supabase-compat';
 
 // Exportações nomeadas explícitas para compatibilidade com importações antigas
 import { 
   supabase,
-  supabaseAdmin,
   getSupabaseClient,
-  getSupabaseAdminClient,
   checkConnection,
   checkSupabaseConnection,
   checkAllConnections,
@@ -26,16 +24,13 @@ import {
   deleteRecord,
   deleteRecords,
   withRetry,
-  createSupabaseClient,
-  createSupabaseAdmin
-} from './supabaseClient';
+  createSupabaseClient
+} from './supabase-compat';
 
 // Re-exportar explicitamente para compatibilidade
 export {
   supabase,
-  supabaseAdmin,
   getSupabaseClient,
-  getSupabaseAdminClient,
   checkConnection,
   checkSupabaseConnection,
   checkAllConnections,
@@ -46,9 +41,11 @@ export {
   deleteRecord,
   deleteRecords,
   withRetry,
-  createSupabaseClient,
-  createSupabaseAdmin
+  createSupabaseClient
 };
+
+// REMOVIDO POR SEGURANÇA: supabaseAdmin, getSupabaseAdminClient, createSupabaseAdmin
+// Operações admin devem ser feitas via APIs backend (/api/storage/*, etc)
 
 // Exportação padrão para compatibilidade
 export default supabase;

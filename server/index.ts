@@ -77,7 +77,8 @@ import basesRoutes from './routes/basesRoutes';
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
 process.env.SUPABASE_URL = process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
 process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
-process.env.SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
+// IMPORTANTE: Usar SUPABASE_SERVICE_ROLE_KEY para admin (NÃO expor no frontend!)
+process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDg5ODIwNiwiZXhwIjoyMDYwMjc0MjA2fQ.bvwwqQBQVUOlyHYMsX9C5dSQhsQYI2r8qmqRBHgG_0Y';
 
 // CORREÇÃO DEFINITIVA: Configurar timezone como UTC no backend
 // Seguindo as melhores práticas: backend em UTC, frontend converte para local
@@ -87,6 +88,11 @@ console.log(`[SISTEMA] Data atual: ${new Date().toISOString()}`);
 console.log(`[SISTEMA] TZ environment: ${process.env.TZ}`);
 
 const app = express();
+
+// CRÍTICO: Confiar no proxy do Replit para aceitar cookies secure
+// Sem isso, o Express rejeita cookies secure mesmo com sameSite=none
+app.set('trust proxy', 1);
+console.log('[App] Trust proxy configurado para aceitar cookies secure através de proxy');
 
 // MIDDLEWARE PWA PRIMEIRO - ANTES DE QUALQUER OUTRO MIDDLEWARE
 app.get('/manifest.json', (req, res) => {

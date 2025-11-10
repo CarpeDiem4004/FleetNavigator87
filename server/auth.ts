@@ -78,8 +78,8 @@ async function verifyJwtToken(token: string): Promise<SelectUser | null> {
     // Tentar o método padrão do Supabase
     // Criar cliente Supabase com service key
     const supabase = createClient(
-      process.env.VITE_SUPABASE_URL || '',
-      process.env.VITE_SUPABASE_SERVICE_KEY || ''
+      process.env.SUPABASE_URL || '',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
     );
     
     // Verificar o token JWT
@@ -183,6 +183,18 @@ export function setupAuth(app: Express) {
     console.warn('Para produção, defina SESSION_SECRET como variável de ambiente.');
   }
   
+  // Detectar ambiente Replit para configurar cookies corretamente desde o início
+  // Usa múltiplos indicadores para máxima confiabilidade
+  const isReplitEnv = Boolean(
+    process.env.REPL_ID || 
+    process.env.REPLIT_DB_URL ||
+    process.env.REPL_SLUG ||
+    process.env.REPLIT_ENV ||
+    (typeof process.env.HOSTNAME === 'string' && process.env.HOSTNAME.includes('replit'))
+  );
+  
+  console.log(`[Auth Setup] Ambiente Replit detectado: ${isReplitEnv}`);
+  
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || (process.env.NODE_ENV !== 'production' ? 
       'dev_temp_secret_' + Date.now().toString() : 
@@ -191,19 +203,20 @@ export function setupAuth(app: Express) {
     saveUninitialized: true, // Garante que a sessão seja salva mesmo que não modificada
     store: sessionStore,
     cookie: {
-      secure: false, // Desabilitado para desenvolvimento, em produção deveria ser true
+      secure: isReplitEnv, // true em Replit, false em localhost
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dias para maior persistência
-      sameSite: 'lax', // Ajuda nas requisições cross-site (importante para APIs)
+      sameSite: isReplitEnv ? 'none' : 'lax', // none em Replit para cross-origin, lax em localhost
       httpOnly: true,
       path: '/'
     }
   };
   
   console.log(`Configuração da sessão: 
-  - Secure: ${process.env.NODE_ENV === 'production'}
-  - MaxAge: ${7 * 24 * 60 * 60 * 1000}ms (${7} dias)
+  - Secure: ${isReplitEnv}
+  - SameSite: ${isReplitEnv ? 'none' : 'lax'}
+  - MaxAge: ${30 * 24 * 60 * 60 * 1000}ms (30 dias)
   - Store: ${!useMemoryStore ? 'PostgreSQL' : 'Memory'}
-  - Environment: ${process.env.NODE_ENV || 'development'}`);
+  - Environment: ${isReplitEnv ? 'Replit' : 'Local'}`);
   
 
   app.use(session(sessionSettings));

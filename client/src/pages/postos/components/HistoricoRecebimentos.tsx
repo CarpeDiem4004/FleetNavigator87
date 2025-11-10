@@ -8,7 +8,7 @@ import { DropletIcon, TruckIcon, AlertCircleIcon, Trash2, Loader2, AlertTriangle
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { apiRequest } from '@/lib/queryClient';
-import { supabaseAdmin } from '@/lib/supabase-compat';
+// REMOVIDO: import { supabaseAdmin } - operações admin via backend
 import { useAuth } from '@/context/AuthContext';
 
 interface RecebimentoItem {

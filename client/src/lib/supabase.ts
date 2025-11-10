@@ -1,5 +1,5 @@
-// Importar o cliente Supabase do arquivo unificado
-import { getSupabaseClient, getSupabaseAdminClient, supabase as supabaseClient, supabaseAdmin } from './supabaseClient';
+// Importar o cliente Supabase do arquivo unificado (APENAS cliente seguro)
+import { getSupabaseClient, supabase as supabaseClient } from './supabase-compat';
 
 // Re-exportar o cliente Supabase para compatibilidade
 export const supabase = supabaseClient;
@@ -7,28 +7,20 @@ export const supabase = supabaseClient;
 // Verificar se as variáveis de ambiente estão definidas
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Variáveis de ambiente do Supabase não configuradas. Certifique-se de que VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY estão definidas.');
 }
 
-// Informações de configuração para debugging
+// Informações de configuração para debugging (REMOVIDO SERVICE_KEY por segurança)
 console.log('Verificando variáveis de ambiente do Supabase:');
 console.log('- VITE_SUPABASE_URL disponível:', Boolean(supabaseUrl));
 console.log('- VITE_SUPABASE_ANON_KEY disponível:', Boolean(supabaseAnonKey));
-console.log('- VITE_SUPABASE_SERVICE_KEY disponível:', Boolean(supabaseServiceKey));
-
-if (supabaseServiceKey) {
-  // Mostrar apenas os primeiros 10 caracteres para debug, mas não exibir a chave completa
-  console.log('Supabase Service Key (primeiros 10 caracteres):', supabaseServiceKey.substring(0, 10) + '...');
-}
 
 // Exportar informações de configuração para debugging
 export const supabaseConfig = {
   url: supabaseUrl,
-  anonKeyAvailable: Boolean(supabaseAnonKey),
-  serviceKeyAvailable: Boolean(supabaseServiceKey)
+  anonKeyAvailable: Boolean(supabaseAnonKey)
 };
 
 console.log('Configuração Supabase Cliente:', supabaseConfig);
@@ -156,8 +148,12 @@ export const getBucketName = async (): Promise<string> => {
 };
 
 /**
+ * DEPRECADO: Use as rotas backend /api/storage/* para uploads
+ * Esta função mantida apenas para compatibilidade temporária
+ * 
  * Função para fazer upload de um arquivo para o Supabase Storage
- * Esta função agora usa um bucket existente ao invés de tentar criar um
+ * IMPORTANTE: Esta função usa apenas o cliente anônimo e pode falhar se RLS bloquear
+ * Para uploads confiáveis, use as rotas backend (/api/storage/upload)
  * 
  * @param file - O arquivo a ser enviado
  * @param path - O caminho dentro do bucket onde o arquivo será armazenado
@@ -165,6 +161,8 @@ export const getBucketName = async (): Promise<string> => {
  * @returns - A URL pública do arquivo armazenado
  */
 export const uploadFileToSupabase = async (file: File, path: string, bucketName?: string): Promise<string> => {
+  console.warn('[DEPRECADO] uploadFileToSupabase: Use /api/storage/upload para uploads confiáveis via backend');
+  
   try {
     // Verificar se o arquivo é válido
     if (!file) {
@@ -175,42 +173,18 @@ export const uploadFileToSupabase = async (file: File, path: string, bucketName?
     const bucket = bucketName || await getBucketName();
     console.log(`Usando bucket para upload: ${bucket}`);
     
-    // Obter os clientes Supabase
+    // Obter o cliente Supabase (APENAS anônimo - admin removido por segurança)
     const supabase = getSupabaseClient();
-    const supabaseAdmin = getSupabaseAdminClient();
     
-    // Escolher o cliente Supabase para usar (admin se disponível, cliente normal caso contrário)
-    const client = supabaseAdmin || supabase;
+    // Fazer upload do arquivo para o Supabase Storage usando cliente anônimo
+    console.log(`Tentando fazer upload para ${bucket}/${path} usando cliente anônimo`);
     
-    // Fazer upload do arquivo para o Supabase Storage
-    console.log(`Tentando fazer upload para ${bucket}/${path} usando ${supabaseAdmin ? 'chave de serviço' : 'chave anônima'}`);
-    
-    // Primeira tentativa com o cliente escolhido
-    let uploadResult;
-    try {
-      uploadResult = await client.storage
-        .from(bucket)
-        .upload(path, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-    } catch (err) {
-      console.warn('Erro na primeira tentativa de upload, tentando com cliente alternativo:', err);
-      // Se falhar e tivermos um cliente alternativo, tente novamente
-      if (supabaseAdmin && client === supabase) {
-        uploadResult = await supabaseAdmin.storage
-          .from(bucket)
-          .upload(path, file, {
-            cacheControl: '3600',
-            upsert: true
-          });
-      } else {
-        // Se não tivermos um cliente alternativo ou já estivermos usando o admin, propague o erro
-        throw err;
-      }
-    }
-    
-    const { data, error } = uploadResult;
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(path, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
 
     if (error) {
       console.error('Erro detalhado do Supabase Storage:', error);
@@ -225,7 +199,7 @@ export const uploadFileToSupabase = async (file: File, path: string, bucketName?
     console.log(`Upload concluído com sucesso para ${bucket}/${path}`);
 
     // Obter a URL pública do arquivo
-    const { data: { publicUrl } } = client.storage
+    const { data: { publicUrl } } = supabase.storage
       .from(bucket)
       .getPublicUrl(path);
 

@@ -10,15 +10,15 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Constantes de configuração do Supabase
+// IMPORTANTE: Apenas ANON_KEY deve estar no frontend! Service key é APENAS para backend!
 export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
 export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
-export const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDg5ODIwNiwiZXhwIjoyMDYwMjc0MjA2fQ.bvwwqQBQVUOlyHYMsX9C5dSQhsQYI2r8qmqRBHgG_0Y';
 
-// Log de diagnóstico para verificar URLs e chaves (evitar mostrar a chave completa)
+// Log de diagnóstico para verificar URLs e chaves
 console.log('[supabase-compat] Verificando variáveis de ambiente do Supabase:');
 console.log('- VITE_SUPABASE_URL disponível:', Boolean(import.meta.env.VITE_SUPABASE_URL));
 console.log('- VITE_SUPABASE_ANON_KEY disponível:', Boolean(import.meta.env.VITE_SUPABASE_ANON_KEY));
-console.log('- VITE_SUPABASE_SERVICE_KEY disponível:', Boolean(import.meta.env.VITE_SUPABASE_SERVICE_KEY));
+// REMOVIDO: VITE_SUPABASE_SERVICE_KEY logging - não deve estar no frontend!
 
 // Definição de tipos unificados para diagnósticos
 export interface ClientDiagnosticResults {
@@ -46,9 +46,9 @@ export interface ServerDiagnosticResults {
   readSample?: any;
 }
 
-// Instâncias do cliente Supabase (singleton pattern)
+// Instância do cliente Supabase (singleton pattern)
+// IMPORTANTE: Removido _supabaseAdmin por segurança - admin client apenas no backend!
 let _supabase: SupabaseClient | null = null;
-let _supabaseAdmin: SupabaseClient | null = null;
 
 /**
  * Função singleton para obter ou criar o cliente Supabase.
@@ -75,31 +75,14 @@ export const getSupabaseClient = (): SupabaseClient => {
   return _supabase;
 };
 
-/**
- * Função singleton para obter ou criar o cliente Supabase Admin.
- * Este cliente tem permissões elevadas usando a service key.
- */
-export const getSupabaseAdminClient = (): SupabaseClient => {
-  if (!_supabaseAdmin) {
-    console.log("[supabase-compat] Criando nova instância do cliente Supabase Admin");
-    _supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        storageKey: 'supabase.auth.admin.token',
-        autoRefreshToken: true,
-        persistSession: true
-      }
-    });
-  }
-  return _supabaseAdmin;
-};
-
-// Aliases para manter compatibilidade com código existente
+// Alias para manter compatibilidade com código existente
 export const createSupabaseClient = getSupabaseClient;
-export const createSupabaseAdmin = getSupabaseAdminClient;
 
-// Exportar instâncias únicas para uso geral no aplicativo
+// Exportar instância única para uso geral no aplicativo
 export const supabase = getSupabaseClient();
-export const supabaseAdmin = getSupabaseAdminClient();
+
+// REMOVIDO: getSupabaseAdminClient, createSupabaseAdmin e supabaseAdmin
+// Operações admin devem ser feitas via rotas backend (/api/storage/* etc)
 
 /**
  * Verifica se a conexão com o Supabase está funcionando
@@ -262,21 +245,9 @@ export async function insertRecord(
     const result = await Promise.race([insertPromise, timeoutPromise]) as any;
     
     if (result.error) {
-      console.error(`[supabase-compat] Erro ao inserir registro em ${table} com cliente padrão:`, result.error);
-      
-      // Tentativa com cliente admin como fallback
-      console.log(`[supabase-compat] Tentando inserir registro em ${table} com cliente admin`);
-      const { data: adminResult, error: adminError } = await supabaseAdmin
-        .from(table)
-        .insert([data])
-        .select();
-      
-      if (adminError) {
-        console.error(`[supabase-compat] Erro ao inserir registro em ${table} com cliente admin:`, adminError);
-        return { success: false, error: adminError };
-      }
-      
-      return { success: true, data: adminResult };
+      console.error(`[supabase-compat] Erro ao inserir registro em ${table}:`, result.error);
+      // REMOVIDO: fallback admin - todas as inserções devem ter permissão RLS apropriada
+      return { success: false, error: result.error };
     }
     
     return { success: true, data: result.data };
@@ -559,42 +530,22 @@ export const uploadFileToSupabase = async (file: File, path: string, bucketName?
       throw new Error('Arquivo inválido');
     }
     
+    // DEPRECADO: Use /api/storage/upload para uploads confiáveis via backend
+    console.warn('[DEPRECADO] uploadFileToSupabase: Use /api/storage/upload via backend');
+    
     // Obter o nome do bucket a ser usado
     const bucket = bucketName || await getBucketName();
     console.log(`Usando bucket para upload: ${bucket}`);
     
-    // Escolher o cliente Supabase para usar (admin se disponível, cliente normal caso contrário)
-    const client = supabaseAdmin || supabase;
+    // Fazer upload do arquivo usando APENAS cliente anônimo
+    console.log(`Tentando fazer upload para ${bucket}/${path} usando cliente anônimo`);
     
-    // Fazer upload do arquivo para o Supabase Storage
-    console.log(`Tentando fazer upload para ${bucket}/${path} usando ${supabaseAdmin ? 'chave de serviço' : 'chave anônima'}`);
-    
-    // Primeira tentativa com o cliente escolhido
-    let uploadResult;
-    try {
-      uploadResult = await client.storage
-        .from(bucket)
-        .upload(path, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-    } catch (err) {
-      console.warn('Erro na primeira tentativa de upload, tentando com cliente alternativo:', err);
-      // Se falhar e tivermos um cliente alternativo, tente novamente
-      if (supabaseAdmin && client === supabase) {
-        uploadResult = await supabaseAdmin.storage
-          .from(bucket)
-          .upload(path, file, {
-            cacheControl: '3600',
-            upsert: true
-          });
-      } else {
-        // Se não tivermos um cliente alternativo ou já estivermos usando o admin, propague o erro
-        throw err;
-      }
-    }
-    
-    const { data, error } = uploadResult;
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(path, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
 
     if (error) {
       console.error('Erro detalhado do Supabase Storage:', error);
@@ -810,20 +761,26 @@ export const uploadInvoiceFile = async (
 };
 
 /**
+ * DEPRECADO: Esta função não deve ser usada no frontend
+ * Use rotas backend apropriadas para operações administrativas
+ * 
  * Função para limpar tabelas no Supabase
  * Útil apenas para ambientes de desenvolvimento e testes
  * @param tableNames - Lista de nomes de tabelas para limpar
  * @returns - Status da operação para cada tabela
  */
 export const limparTodosOsDados = async (tableNames: string[]): Promise<any> => {
+  console.error('[ERRO] limparTodosOsDados: Esta função está DEPRECADA e não deve ser usada no frontend!');
+  console.error('Use rotas backend apropriadas para operações administrativas.');
+  
   const resultados: Record<string, any> = {};
   
   for (const tableName of tableNames) {
     try {
-      console.log(`Limpando tabela: ${tableName}`);
+      console.log(`[DEPRECADO] Tentando limpar tabela: ${tableName} com cliente anônimo (pode falhar)`);
       
-      // Tentar usar o cliente admin se disponível, caso contrário usar o cliente normal
-      const client = supabaseAdmin || supabase;
+      // Usar APENAS cliente anônimo (provavelmente falhará devido a RLS)
+      const client = supabase;
       
       // Executar DELETE sem WHERE para limpar toda a tabela
       const { error } = await client.from(tableName).delete().not('id', 'is', null);

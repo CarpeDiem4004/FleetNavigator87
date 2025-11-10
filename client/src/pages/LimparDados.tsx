@@ -6,14 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Trash2, RefreshCw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import MainLayoutSimple from "@/components/layout/MainLayoutSimple";
+// CRÍTICO: Esta página está DESABILITADA por segurança
+// Operações administrativas DEVEM ser feitas via backend, não no frontend
 import { 
-  supabase, 
-  supabaseAdmin, 
+  supabase,
+  // REMOVIDO: supabaseAdmin - operações admin via backend apenas
   supabaseUrl, 
   supabaseAnonKey, 
   fetchRecords, 
   deleteRecords 
 } from '@/lib/supabase-compat';
+
+// WARNING: supabaseAdmin não está mais disponível no frontend por segurança
+const supabaseAdmin = null as any; // Causa erro se usado
 
 /**
  * Componente especial para limpeza de dados com um único botão
@@ -73,11 +78,18 @@ export default function LimparDados() {
     }
   };
   
-  // Função para limpar dados do Supabase diretamente
+  // DESABILITADO POR SEGURANÇA: Esta função não deve ser usada no frontend
   const limparDadosSupabase = async () => {
+    console.error('[ERRO CRÍTICO] limparDadosSupabase: Esta função está DESABILITADA por segurança!');
+    setStatus("❌ ERRO: Operações administrativas devem ser feitas via backend, não no frontend!");
+    
+    alert('ERRO DE SEGURANÇA:\n\nEsta função está desabilitada porque operações administrativas não devem ser executadas no frontend.\n\nPor favor, use ferramentas backend apropriadas para limpeza de dados.');
+    
+    return false;
+    
+    /* CÓDIGO DESABILITADO - supabaseAdmin não está mais disponível no frontend
     setStatus("Iniciando limpeza de dados do Supabase...");
     
-    // Lista de tabelas do Supabase para limpar
     const supabaseTables = [
       'abastecimentos_postos',
       'movimentacoes_patio',
@@ -87,72 +99,9 @@ export default function LimparDados() {
       'veiculos'
     ];
     
-    // Abordagem 1: Usar o cliente Supabase diretamente para excluir dados
-    setStatus("Tentando limpar dados via Cliente Supabase...");
-    for (let i = 0; i < supabaseTables.length; i++) {
-      const tableName = supabaseTables[i];
-      setStatus(`Limpando tabela ${tableName}...`);
-      
-      try {
-        // Primeira tentativa: limpar todos os dados diretamente
-        const { error } = await supabaseAdmin
-          .from(tableName)
-          .delete()
-          .neq('id', -1); // Trick para deletar todos os registros
-          
-        if (error) {
-          console.error(`Erro ao limpar tabela ${tableName} via cliente:`, error);
-          setStatus(`Erro ao limpar tabela ${tableName}: ${error.message}`);
-          
-          // Tenta buscar e excluir registros um a um
-          try {
-            setStatus(`Tentando abordagem individual para ${tableName}`);
-            const { data: records } = await supabaseAdmin
-              .from(tableName)
-              .select('id')
-              .limit(100);
-              
-            if (records && records.length > 0) {
-              setStatus(`Encontrados ${records.length} registros em ${tableName}`);
-              
-              for (const record of records) {
-                const { error: deleteError } = await supabaseAdmin
-                  .from(tableName)
-                  .delete()
-                  .eq('id', record.id);
-                  
-                if (!deleteError) {
-                  console.log(`Registro id=${record.id} excluído com sucesso`);
-                } else {
-                  console.error(`Erro ao excluir registro id=${record.id}:`, deleteError);
-                }
-              }
-              
-              setStatus(`Tabela ${tableName} limpa registro por registro`);
-            }
-          } catch (err) {
-            console.error(`Erro na abordagem individual para ${tableName}:`, err);
-          }
-        } else {
-          setStatus(`Tabela ${tableName} limpa com sucesso!`);
-        }
-      } catch (err) {
-        console.warn(`Erro ao processar tabela ${tableName}, pulando:`, err);
-      }
-      
-      // Atualiza o progresso com base na tabela atual
-      setProgress(50 + Math.round(((i + 1) / supabaseTables.length) * 25));
-    }
-    
-    // Abordagem 2: Função RPC
-    try {
-      // Tenta executar uma função RPC de limpeza
-      setStatus("Tentando limpar dados via RPC...");
-      await supabaseAdmin.rpc('limpar_todos_dados').throwOnError();
-      setStatus("Limpeza RPC executada com sucesso!");
-    } catch (err) {
-      console.log("Função RPC limpar_todos_dados não disponível", err);
-    }
+    // TODAS AS OPERAÇÕES ADMIN FORAM REMOVIDAS POR SEGURANÇA
+    // Use rotas backend apropriadas para operações administrativas
+    */
     
     // Abordagem 3: API REST direta
     setStatus("Tentando limpeza direta com REST API...");
