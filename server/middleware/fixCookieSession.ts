@@ -11,24 +11,24 @@ export default function fixCookieSession(req: Request, res: Response, next: Next
     return next();
   }
 
-  // Log para diagnóstico
-  console.log('[Cookie Middleware] Ajustando sessão: maxAge=2592000000, sameSite=lax');
-
-  // CORREÇÃO CRÍTICA: Configurar cookies adequadamente para melhor compatibilidade 
-  // e garantir compartilhamento entre domínios
-
   // Ajustar configurações do cookie de sessão para máxima compatibilidade
   if (req.session.cookie) {
     req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias
     
     // CORREÇÃO DEFINITIVA: Para Replit, sempre usar secure=true + sameSite=none
-    const isReplit = req.hostname.includes('replit.dev') || req.hostname.includes('replit.app');
+    const isReplit = req.hostname.includes('replit.dev') || req.hostname.includes('replit.app') || req.hostname.includes('picard.replit');
+    
+    // Log para diagnóstico
+    console.log(`[Cookie Middleware] hostname: ${req.hostname}, isReplit: ${isReplit}`);
+    
     if (isReplit) {
       req.session.cookie.secure = true; // REQUERIDO para sameSite=none no navegador
       req.session.cookie.sameSite = 'none'; // PERMITIR cross-origin cookies
+      console.log('[Cookie Middleware] Configurado para Replit: secure=true, sameSite=none');
     } else {
       req.session.cookie.secure = false; // Para desenvolvimento local
       req.session.cookie.sameSite = 'lax'; // Para desenvolvimento local
+      console.log('[Cookie Middleware] Configurado para localhost: secure=false, sameSite=lax');
     }
     req.session.cookie.httpOnly = true; // SEGURANÇA: Prevenir acesso JavaScript aos cookies
 

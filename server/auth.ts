@@ -228,16 +228,20 @@ export function setupAuth(app: Express) {
         }
       } else if (isDev) {
         // Para ambiente de desenvolvimento/teste
-        console.log(`[Cookie Middleware] Ajustando sessão: maxAge=${(req.session as any).cookie.maxAge}, sameSite=${(req.session as any).cookie.sameSite}`);
         
-        // CORREÇÃO DEFINITIVA: Configuração baseada no ambiente
-        const isReplit = req.hostname.includes('replit.dev') || req.hostname.includes('replit.app');
+        // CORREÇÃO DEFINITIVA: Detectar qualquer hostname com '.replit.'
+        const isReplit = req.hostname.includes('.replit.');
+        
+        console.log(`[Cookie Middleware] hostname: ${req.hostname}, isReplit: ${isReplit}`);
+        
         if (isReplit) {
           (req.session as any).cookie.secure = true; // REQUERIDO para sameSite=none
           (req.session as any).cookie.sameSite = 'none'; // PERMITIR cross-origin
+          console.log('[Cookie Middleware] Configurado para Replit: secure=true, sameSite=none');
         } else {
           (req.session as any).cookie.secure = false; // Para desenvolvimento local
           (req.session as any).cookie.sameSite = 'lax'; // Para desenvolvimento local
+          console.log('[Cookie Middleware] Configurado para localhost: secure=false, sameSite=lax');
         }
         (req.session as any).cookie.httpOnly = true; // SEGURANÇA: Prevenir XSS
       }
@@ -252,7 +256,7 @@ export function setupAuth(app: Express) {
       if (!res.headersSent && res.getHeader('set-cookie')) {
         if (isDev) {
           let cookies = res.getHeader('set-cookie');
-          const isReplit = req.hostname.includes('replit.dev') || req.hostname.includes('replit.app');
+          const isReplit = req.hostname.includes('.replit.');
           
           if (Array.isArray(cookies)) {
             cookies = cookies.map((cookie: string) => {

@@ -560,8 +560,6 @@ app.get('/consumo-data/postos', async (req, res) => {
 
 // Aplicar middleware CORS personalizado
 app.use(corsMiddleware);
-// Aplicar middleware de correção de cookies
-app.use(fixCookieSession);
 // Middlewares padrão do Express
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
