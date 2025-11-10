@@ -5152,6 +5152,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Validação: Verificar se o veículo está em manutenção
+      if (vehicle.status === 'em_manutencao') {
+        console.log('[FUEL-CARD-REQUEST] Veículo em manutenção:', plate);
+        return res.status(403).json({
+          success: false,
+          message: `Veículo ${plate} está em manutenção e não pode solicitar combustível no momento.`
+        });
+      }
+      
       if (amount <= 0 || amount > 5000) {
         console.log('[FUEL-CARD-REQUEST] Validação falhada - valor inválido:', amount);
         return res.status(400).json({
@@ -5766,6 +5775,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({
           success: false,
           message: `Veículo ${plate} está desativado. Veículos temporários expirados não podem solicitar combustível.`
+        });
+      }
+      
+      // Validação: Verificar se o veículo está em manutenção
+      if (vehicle.status === 'em_manutencao') {
+        console.log('[PUBLIC-FUEL-CARD-REQUEST] Veículo em manutenção:', plate);
+        return res.status(403).json({
+          success: false,
+          message: `Veículo ${plate} está em manutenção e não pode solicitar combustível no momento.`
         });
       }
       
@@ -20724,6 +20742,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             message: `Veículo ${vehicle_plate} está desativado. Veículos temporários expirados não podem solicitar combustível.`
           });
         }
+        
+        // Validação: Verificar se o veículo está em manutenção
+        if (vehicle.status === 'em_manutencao') {
+          console.log('[LINE-HALL-FUEL-REQUEST] Veículo em manutenção:', vehicle_plate);
+          return res.status(403).json({
+            success: false,
+            message: `Veículo ${vehicle_plate} está em manutenção e não pode solicitar combustível no momento.`
+          });
+        }
       }
 
       const insertQuery = `
@@ -20924,6 +20951,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(403).json({
             success: false,
             message: `Veículo ${veiculo_placa} está desativado. Veículos temporários expirados não podem solicitar combustível.`
+          });
+        }
+        
+        // Validação: Verificar se o veículo está em manutenção
+        if (vehicle.status === 'em_manutencao') {
+          console.log('[LINE-HALL-FUEL-CARD-REQUEST] Veículo em manutenção:', veiculo_placa);
+          return res.status(403).json({
+            success: false,
+            message: `Veículo ${veiculo_placa} está em manutenção e não pode solicitar combustível no momento.`
           });
         }
       }
