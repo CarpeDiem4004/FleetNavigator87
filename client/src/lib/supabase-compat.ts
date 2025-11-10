@@ -399,7 +399,7 @@ export const INVOICE_ATTACHMENTS_BUCKET = 'notas-fiscais';
 export const supabaseConfig = {
   url: supabaseUrl,
   anonKeyAvailable: Boolean(supabaseAnonKey),
-  serviceKeyAvailable: Boolean(supabaseServiceKey)
+  // REMOVIDO: serviceKeyAvailable - não deve estar no frontend!
 };
 
 /**
