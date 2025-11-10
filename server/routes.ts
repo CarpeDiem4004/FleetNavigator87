@@ -265,6 +265,25 @@ const uploadExcel = multer({
   }
 });
 
+// Configuração específica para importação de manutenção (10MB)
+const uploadMaintenanceImport = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limite para importação
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel'
+    ];
+    if (allowedMimes.includes(file.mimetype) || /\.(xlsx|xls)$/i.test(file.originalname)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas arquivos Excel (.xlsx, .xls) são permitidos'), false);
+    }
+  }
+});
+
 // Definindo funções middleware para compatibilidade com o código existente
 const isAdmin = adminMiddleware;  
 const hasMaintenanceAccess = maintenanceAccessMiddleware;
@@ -11062,6 +11081,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
       success: true,
       templates: templates
     });
+  });
+
+  // Rota para importação de manutenção via Excel
+  app.post("/api/maintenance/import", isAuthenticated, hasMaintenanceAccessV2, uploadMaintenanceImport.single('file'), async (req, res) => {
+    try {
+      // Validar que o arquivo foi enviado
+      if (!req.file) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Nenhum arquivo foi enviado" 
+        });
+      }
+
+      // Validar tipo de arquivo
+      const allowedMimes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel'
+      ];
+      const allowedExtensions = /\.(xlsx|xls)$/i;
+
+      if (!allowedMimes.includes(req.file.mimetype) && !allowedExtensions.test(req.file.originalname)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Tipo de arquivo inválido. Apenas arquivos Excel (.xlsx, .xls) são permitidos" 
+        });
+      }
+
+      // Obter email do usuário autenticado
+      const importedBy = req.user?.email || 'unknown';
+
+      // Importar serviço de processamento
+      const { processMaintenanceImport } = await import('./services/maintenanceImportService');
+
+      // Processar importação
+      const result = await processMaintenanceImport(
+        req.file.buffer,
+        req.file.originalname,
+        importedBy
+      );
+
+      // Retornar resultado estruturado
+      return res.status(200).json({
+        success: result.success,
+        summary: {
+          updated: result.updated,
+          alreadyInMaintenance: result.alreadyInMaintenance,
+          notFound: result.notFound,
+          invalid: result.invalid,
+          total: result.total
+        },
+        errors: result.errors
+      });
+
+    } catch (error: any) {
+      console.error('Erro ao processar importação de manutenção:', error);
+
+      // Tratamento de erros do multer
+      if (error.name === 'MulterError') {
+        if (error.code === 'LIMIT_FILE_SIZE') {
+          return res.status(413).json({ 
+            success: false, 
+            message: "Arquivo muito grande. O tamanho máximo permitido é 10MB" 
+          });
+        }
+        return res.status(400).json({ 
+          success: false, 
+          message: `Erro no upload: ${error.message}` 
+        });
+      }
+
+      // Erro genérico
+      return res.status(500).json({ 
+        success: false, 
+        message: error.message || "Erro ao processar importação" 
+      });
+    }
   });
   
   app.post("/api/maintenance", hasMaintenanceAccess, async (req, res) => {

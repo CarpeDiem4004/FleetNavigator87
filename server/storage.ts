@@ -1,6 +1,6 @@
 import { 
   users, vehicles as veiculos, maintenance, tires, refueling, fines, bases, workshops, painelPrincipal, operations,
-  maintenanceChat, chatMessages, baseRequests, baseRequestUpdates, carReceptions, workshopBudgets,
+  maintenanceChat, chatMessages, baseRequests, baseRequestUpdates, carReceptions, workshopBudgets, maintenanceImports,
   type User, type InsertUser, type Vehicle, type InsertVehicle,
   type Maintenance, type InsertMaintenance, type Tire, type InsertTire,
   type Refueling, type InsertRefueling, type Fine, type InsertFine,
@@ -9,7 +9,7 @@ import {
   type PainelPrincipal, type InsertPainelPrincipal, type MaintenanceChat, type InsertMaintenanceChat,
   type ChatMessage, type InsertChatMessage, type BaseRequest, type InsertBaseRequest,
   type BaseRequestUpdate, type InsertBaseRequestUpdate, type CarReception, type InsertCarReception,
-  type WorkshopBudget, type InsertWorkshopBudget
+  type WorkshopBudget, type InsertWorkshopBudget, type MaintenanceImport, type InsertMaintenanceImport
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, like, desc, sql } from "drizzle-orm";
@@ -53,7 +53,11 @@ export interface IStorage {
   getAllVehicles(): Promise<Vehicle[]>;
   createVehicle(vehicle: InsertVehicle): Promise<Vehicle>;
   updateVehicle(id: number, vehicle: Partial<InsertVehicle>): Promise<Vehicle | undefined>;
+  updateVehicleStatus(id: number, status: Vehicle['status']): Promise<Vehicle | undefined>;
   deleteVehicle(id: number): Promise<boolean>;
+  
+  // Maintenance Import operations
+  createMaintenanceImport(importData: InsertMaintenanceImport): Promise<MaintenanceImport>;
   
   // Workshop operations
   getWorkshop(id: number): Promise<Workshop | undefined>;
@@ -760,6 +764,37 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Erro ao excluir veículo:", error);
       return false;
+    }
+  }
+
+  async updateVehicleStatus(id: number, status: Vehicle['status']): Promise<Vehicle | undefined> {
+    try {
+      const result = await db.execute(sql`
+        UPDATE veiculos
+        SET status = ${status}
+        WHERE id = ${id}
+        RETURNING id, placa as "plate", modelo as "model", marca as "make", tipo as "vehicleType", 
+                 status, base_id as "baseId", fuel_type as "fuelType", ano as "year", 
+                 km_atual as "mileage", cartao_abastecimento as "cartaoAbastecimento",
+                 proprietario as "ownership", locadora as "rentalCompany"
+      `);
+      
+      if (!result.rows[0]) return undefined;
+      
+      return result.rows[0] as Vehicle;
+    } catch (error) {
+      console.error("Erro ao atualizar status do veículo:", error);
+      return undefined;
+    }
+  }
+
+  async createMaintenanceImport(importData: InsertMaintenanceImport): Promise<MaintenanceImport> {
+    try {
+      const result = await db.insert(maintenanceImports).values(importData).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Erro ao criar registro de importação de manutenção:", error);
+      throw error;
     }
   }
   
