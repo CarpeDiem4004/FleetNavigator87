@@ -478,12 +478,26 @@ const VehiclesNew: React.FC = () => {
 
     try {
       console.log(`Editando veículo com ID ${editingVehicle.id} via API REST`);
+      
+      // Mapear campos do frontend para o formato esperado pelo backend
+      const mappedData: any = {};
+      if (vehicleData.plate !== undefined) mappedData.plate = vehicleData.plate;
+      if (vehicleData.model !== undefined) mappedData.model = vehicleData.model;
+      if (vehicleData.vehicleType !== undefined) mappedData.vehicleType = vehicleData.vehicleType;
+      if (vehicleData.status !== undefined) mappedData.status = vehicleData.status;
+      if (vehicleData.baseId !== undefined) mappedData.baseId = vehicleData.baseId;
+      if (vehicleData.cartaoAbastecimento !== undefined) mappedData.cartaoAbastecimento = vehicleData.cartaoAbastecimento;
+      if (vehicleData.isTemporary !== undefined) mappedData.isTemporary = vehicleData.isTemporary;
+      if (vehicleData.deactivationDate !== undefined) mappedData.deactivationDate = vehicleData.deactivationDate;
+      
+      console.log('Dados mapeados para envio:', mappedData);
+      
       const response = await fetch(`/api/vehicles/${editingVehicle.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(vehicleData),
+        body: JSON.stringify(mappedData),
       });
       
       if (!response.ok) {
