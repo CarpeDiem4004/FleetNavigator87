@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -15,7 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Loader2, CreditCard, AlertCircle, ShoppingCart, Send, AlertTriangle } from "lucide-react";
+import { Loader2, CreditCard, AlertCircle, ShoppingCart, Send, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useFuelCardDraft } from "@/contexts/FuelCardDraftContext";
 import { VehiclePlateAutocomplete } from "@/components/vehicle-plate-autocomplete";
 import { validateAndFormatPlate } from "@/lib/plate-utils";
@@ -122,6 +122,31 @@ export default function FuelCardSolicitation() {
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const { addToDraft, draftCount} = useFuelCardDraft();
   const [showRulesDialog, setShowRulesDialog] = useState(true);
+  const [showDraftSuccess, setShowDraftSuccess] = useState(false);
+  const [currentDraftCount, setCurrentDraftCount] = useState(0);
+  const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Auto-hide success card after 10 seconds
+  useEffect(() => {
+    if (showDraftSuccess) {
+      // Clear any existing timer
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
+      
+      // Set new timer
+      hideTimerRef.current = setTimeout(() => {
+        setShowDraftSuccess(false);
+      }, 10000);
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
+    };
+  }, [showDraftSuccess]);
   
   // Buscar veículos para autocomplete
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
@@ -345,10 +370,17 @@ export default function FuelCardSolicitation() {
         base_nome: selectedBase?.base_name
       });
       
+      // Capturar o count atualizado antes de mostrar o card
+      const nextCount = draftCount + 1;
+      setCurrentDraftCount(nextCount);
+      
       toast({
         title: "Adicionado ao bolsão",
-        description: `Solicitação adicionada. Total no bolsão: ${draftCount + 1}`,
+        description: `Solicitação adicionada. Total no bolsão: ${nextCount}`,
       });
+      
+      // Mostrar card de sucesso (auto-hide gerenciado por useEffect)
+      setShowDraftSuccess(true);
       
       // Limpar formulário para próxima solicitação - RESET COMPLETO com valores padrão
       form.reset({
@@ -489,6 +521,43 @@ export default function FuelCardSolicitation() {
               Por favor, selecione outro veículo.
             </AlertDescription>
           </Alert>
+        )}
+        
+        {/* Card de sucesso ao adicionar ao bolsão */}
+        {showDraftSuccess && (
+          <Card className="mb-6 bg-green-50 border-green-200 shadow-lg" data-testid="draft-success-card">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <CheckCircle2 className="h-8 w-8 text-green-600 flex-shrink-0 mt-1" />
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-green-900 mb-2">
+                    ✓ Solicitação adicionada ao bolsão!
+                  </h3>
+                  <p className="text-green-800 mb-4">
+                    Você tem <strong>{currentDraftCount}</strong> {currentDraftCount === 1 ? 'solicitação' : 'solicitações'} no bolsão.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      onClick={() => setLocation("/fuel-card/draft")}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      data-testid="button-view-draft-success"
+                    >
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      Ver e Conferir Bolsão
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowDraftSuccess(false)}
+                      className="border-green-300 text-green-700 hover:bg-green-100"
+                      data-testid="button-dismiss-success"
+                    >
+                      Continuar Adicionando
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
         
         <Card className="shadow-lg border-0 bg-white/95 backdrop-blur-sm">
