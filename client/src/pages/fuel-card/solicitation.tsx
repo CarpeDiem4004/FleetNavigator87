@@ -33,6 +33,12 @@ interface ProjectBase {
   description?: string;
 }
 
+interface Vehicle {
+  plate: string;
+  model?: string;
+  status?: string;
+}
+
 // Schema de validação para solicitação de cartão combustível
 const solicitacaoSchema = z.object({
   placa: z.string()
@@ -116,11 +122,14 @@ export default function FuelCardSolicitation() {
   const { addToDraft, draftCount} = useFuelCardDraft();
   
   // Buscar veículos para autocomplete
-  const { data: vehicles = [] } = useQuery<{ plate: string; model?: string }[]>({
+  const { data: vehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
-    select: (data: any[]) => data.map(v => ({ plate: v.plate, model: v.model })),
+    select: (data: any[]) => data.map(v => ({ plate: v.plate, model: v.model, status: v.status })),
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
+  
+  // State para rastrear veículo selecionado
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   
   const form = useForm<SolicitacaoValues>({
     resolver: zodResolver(solicitacaoSchema),
@@ -146,6 +155,17 @@ export default function FuelCardSolicitation() {
   const tipoCartao = form.watch("tipo_cartao");
   const selectedProjectId = form.watch("projeto_id");
   const selectedProject = projects.find(p => p.id.toString() === selectedProjectId);
+  const selectedPlate = form.watch("placa");
+  
+  // Rastrear veículo selecionado para validação de manutenção
+  useEffect(() => {
+    if (selectedPlate && vehicles.length > 0) {
+      const vehicle = vehicles.find(v => v.plate === selectedPlate);
+      setSelectedVehicle(vehicle || null);
+    } else {
+      setSelectedVehicle(null);
+    }
+  }, [selectedPlate, vehicles]);
 
   // Carregar projetos
   useEffect(() => {
@@ -191,6 +211,17 @@ export default function FuelCardSolicitation() {
     setError(null);
     
     try {
+      // Validação: Bloquear se veículo está em manutenção
+      if (selectedVehicle?.status === 'em_manutencao') {
+        toast({
+          title: "Veículo em manutenção",
+          description: `O veículo ${values.placa} está em manutenção e não pode solicitar combustível no momento.`,
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
       // Get selected base info for legacy compatibility
       const selectedBase = selectedProject?.bases.find(b => b.id.toString() === values.base_id);
       
@@ -271,6 +302,16 @@ export default function FuelCardSolicitation() {
   
   function handleAddToDraft(values: SolicitacaoValues) {
     try {
+      // Validação: Bloquear se veículo está em manutenção
+      if (selectedVehicle?.status === 'em_manutencao') {
+        toast({
+          title: "Veículo em manutenção",
+          description: `O veículo ${values.placa} está em manutenção e não pode solicitar combustível no momento.`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
       // Get selected base info
       const selectedBase = selectedProject?.bases.find(b => b.id.toString() === values.base_id);
       
@@ -365,6 +406,17 @@ export default function FuelCardSolicitation() {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Erro</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        {selectedVehicle?.status === 'em_manutencao' && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Veículo em Manutenção</AlertTitle>
+            <AlertDescription>
+              O veículo {selectedVehicle.plate} está atualmente em manutenção e não pode solicitar combustível.
+              Por favor, selecione outro veículo.
+            </AlertDescription>
           </Alert>
         )}
         
