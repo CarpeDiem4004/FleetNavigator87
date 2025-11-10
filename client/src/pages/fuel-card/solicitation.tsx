@@ -793,7 +793,18 @@ export default function FuelCardSolicitation() {
                 />
                 
                 <div className="pt-6 space-y-3">
-                  {/* Botão: Enviar Solicitação */}
+                  {/* Botão: Adicionar ao Bolsão */}
+                  <Button 
+                    type="button"
+                    onClick={form.handleSubmit(handleAddToDraft)}
+                    className="w-full h-12 text-base font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700" 
+                    disabled={isSubmitting}
+                  >
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    Adicionar ao Bolsão
+                  </Button>
+                  
+                  {/* Botão: Enviar Agora */}
                   <Button 
                     type="submit" 
                     className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700" 
