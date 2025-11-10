@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -124,29 +124,6 @@ export default function FuelCardSolicitation() {
   const [showRulesDialog, setShowRulesDialog] = useState(true);
   const [showDraftSuccess, setShowDraftSuccess] = useState(false);
   const [currentDraftCount, setCurrentDraftCount] = useState(0);
-  const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Auto-hide success card after 10 seconds
-  useEffect(() => {
-    if (showDraftSuccess) {
-      // Clear any existing timer
-      if (hideTimerRef.current) {
-        clearTimeout(hideTimerRef.current);
-      }
-      
-      // Set new timer
-      hideTimerRef.current = setTimeout(() => {
-        setShowDraftSuccess(false);
-      }, 10000);
-    }
-    
-    // Cleanup on unmount
-    return () => {
-      if (hideTimerRef.current) {
-        clearTimeout(hideTimerRef.current);
-      }
-    };
-  }, [showDraftSuccess]);
   
   // Buscar veículos para autocomplete
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
@@ -379,7 +356,7 @@ export default function FuelCardSolicitation() {
         description: `Solicitação adicionada. Total no bolsão: ${nextCount}`,
       });
       
-      // Mostrar card de sucesso (auto-hide gerenciado por useEffect)
+      // Mostrar card de sucesso (permanece fixo após primeira adição)
       setShowDraftSuccess(true);
       
       // Limpar formulário para próxima solicitação - RESET COMPLETO com valores padrão
@@ -523,7 +500,7 @@ export default function FuelCardSolicitation() {
           </Alert>
         )}
         
-        {/* Card de sucesso ao adicionar ao bolsão */}
+        {/* Card de sucesso - permanece fixo após primeira solicitação */}
         {showDraftSuccess && (
           <Card className="mb-6 bg-green-50 border-green-200 shadow-lg" data-testid="draft-success-card">
             <CardContent className="pt-6">
@@ -531,29 +508,19 @@ export default function FuelCardSolicitation() {
                 <CheckCircle2 className="h-8 w-8 text-green-600 flex-shrink-0 mt-1" />
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-green-900 mb-2">
-                    ✓ Solicitação adicionada ao bolsão!
+                    ✓ Solicitações no Bolsão
                   </h3>
                   <p className="text-green-800 mb-4">
-                    Você tem <strong>{currentDraftCount}</strong> {currentDraftCount === 1 ? 'solicitação' : 'solicitações'} no bolsão.
+                    Você tem <strong>{currentDraftCount}</strong> {currentDraftCount === 1 ? 'solicitação' : 'solicitações'} aguardando envio.
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Button
-                      onClick={() => setLocation("/fuel-card/draft")}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                      data-testid="button-view-draft-success"
-                    >
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      Ver e Conferir Bolsão
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowDraftSuccess(false)}
-                      className="border-green-300 text-green-700 hover:bg-green-100"
-                      data-testid="button-dismiss-success"
-                    >
-                      Continuar Adicionando
-                    </Button>
-                  </div>
+                  <Button
+                    onClick={() => setLocation("/fuel-card/draft")}
+                    className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
+                    data-testid="button-view-draft-fixed"
+                  >
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Ver e Conferir Bolsão
+                  </Button>
                 </div>
               </div>
             </CardContent>
