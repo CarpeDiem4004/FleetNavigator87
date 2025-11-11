@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -1648,19 +1649,19 @@ const FuelCardRequestsPanel: React.FC = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="base-filter">Base</Label>
-                <Select value={baseFilter} onValueChange={setBaseFilter}>
-                  <SelectTrigger id="base-filter">
-                    <SelectValue placeholder="Todas as Bases" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as Bases</SelectItem>
-                    {getFilteredBases().map((baseName: string) => (
-                      <SelectItem key={baseName} value={baseName}>
-                        {baseName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  options={[
+                    { value: 'all', label: 'Todas as Bases' },
+                    ...getFilteredBases().map((baseName: string) => ({
+                      value: baseName,
+                      label: cleanBaseName(baseName)
+                    }))
+                  ]}
+                  value={baseFilter}
+                  onChange={setBaseFilter}
+                  placeholder="Todas as Bases"
+                  emptyMessage="Nenhuma base encontrada."
+                />
               </div>
               
               <div className="space-y-2">
