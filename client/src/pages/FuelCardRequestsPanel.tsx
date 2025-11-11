@@ -1267,6 +1267,11 @@ const FuelCardRequestsPanel: React.FC = () => {
   // Funções para calcular estatísticas
   // Get filtered bases based on selected project
   const getFilteredBases = () => {
+    // Helper function to remove quotes from base names
+    const cleanBaseName = (name: string) => {
+      return name.replace(/^["']|["']$/g, '').trim();
+    };
+    
     if (projectFilter === 'all') {
       // Return all unique bases from solicitations + projects
       const allBases = new Set<string>();
@@ -1274,7 +1279,7 @@ const FuelCardRequestsPanel: React.FC = () => {
       // Add bases from solicitations (real data from database)
       solicitations.forEach(sol => {
         if (sol.base && sol.base.trim() !== '') {
-          allBases.add(sol.base);
+          allBases.add(cleanBaseName(sol.base));
         }
       });
       
@@ -1283,7 +1288,7 @@ const FuelCardRequestsPanel: React.FC = () => {
         if (project.bases) {
           project.bases.forEach((base: any) => {
             if (base.base_name) {
-              allBases.add(base.base_name);
+              allBases.add(cleanBaseName(base.base_name));
             }
           });
         }
@@ -1299,7 +1304,7 @@ const FuelCardRequestsPanel: React.FC = () => {
       if (selectedProject && selectedProject.bases) {
         selectedProject.bases.forEach((base: any) => {
           if (base.base_name) {
-            projectBases.add(base.base_name);
+            projectBases.add(cleanBaseName(base.base_name));
           }
         });
       }
@@ -1309,9 +1314,12 @@ const FuelCardRequestsPanel: React.FC = () => {
         if (sol.base && sol.base.trim() !== '') {
           // Check if this solicitation's base belongs to the selected project
           if (selectedProject && selectedProject.bases) {
-            const belongsToProject = selectedProject.bases.some((base: any) => base.base_name === sol.base);
+            const cleanName = cleanBaseName(sol.base);
+            const belongsToProject = selectedProject.bases.some((base: any) => 
+              cleanBaseName(base.base_name) === cleanName
+            );
             if (belongsToProject) {
-              projectBases.add(sol.base);
+              projectBases.add(cleanName);
             }
           }
         }
