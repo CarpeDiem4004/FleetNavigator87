@@ -1,16 +1,16 @@
 /**
- * Remove aspas e parênteses dos nomes de bases
+ * Remove aspas e parênteses dos nomes de bases (mantém o conteúdo)
  * Exemplos:
- * - "SC (ARACATUBA) SSP10" -> SC SSP10
- * - 'Base (CODE) Name' -> Base Name
+ * - "SC (ARACATUBA) SSP10" -> SC ARACATUBA SSP10
+ * - 'Base (CODE) Name' -> Base CODE Name
  * - Base Normal -> Base Normal
  */
 export function cleanBaseName(name: string | null | undefined): string {
   if (!name) return '';
-  // Remove aspas do início e fim, depois remove parênteses e seu conteúdo
+  // Remove aspas do início e fim, depois remove apenas os parênteses (mantém conteúdo)
   return name
     .replace(/^["']|["']$/g, '')  // Remove aspas
-    .replace(/\s*\([^)]*\)\s*/g, ' ')  // Remove parênteses e conteúdo
+    .replace(/[()]/g, '')  // Remove parênteses mas mantém o conteúdo
     .replace(/\s+/g, ' ')  // Normaliza espaços múltiplos
     .trim();
 }
