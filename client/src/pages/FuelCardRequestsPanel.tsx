@@ -22,6 +22,7 @@ import FuelCardRequestForm from '@/components/FuelCardRequestForm';
 import WhatsAppResponseButton from '@/components/WhatsAppResponseButton';
 import { useLocation } from 'wouter';
 import { generateBatchApprovalMessage, openWhatsAppWeb, isValidPhoneNumber } from '@/lib/whatsapp-utils';
+import { cleanBaseName } from '@/lib/base-utils';
 
 // Função auxiliar para converter data corretamente (evita bug de timezone UTC)
 const parseLocalDate = (dateString: string): Date => {
@@ -1267,11 +1268,6 @@ const FuelCardRequestsPanel: React.FC = () => {
   // Funções para calcular estatísticas
   // Get filtered bases based on selected project
   const getFilteredBases = () => {
-    // Helper function to remove quotes from base names
-    const cleanBaseName = (name: string) => {
-      return name.replace(/^["']|["']$/g, '').trim();
-    };
-    
     if (projectFilter === 'all') {
       // Return all unique bases from solicitations + projects
       const allBases = new Set<string>();

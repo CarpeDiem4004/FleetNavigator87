@@ -19,6 +19,7 @@ import { Loader2, CreditCard, AlertCircle, ShoppingCart, Send, AlertTriangle, Ch
 import { useFuelCardDraft } from "@/contexts/FuelCardDraftContext";
 import { VehiclePlateAutocomplete } from "@/components/vehicle-plate-autocomplete";
 import { validateAndFormatPlate } from "@/lib/plate-utils";
+import { cleanBaseName } from "@/lib/base-utils";
 
 interface Project {
   id: number;
@@ -249,7 +250,7 @@ export default function FuelCardSolicitation() {
         motorista: values.nomeMotorista, // Nome do motorista
         solicitante: values.motorista, // Nome do solicitante
         telefone_celular: values.telefone_celular,
-        base: selectedBase?.base_name || "",
+        base: cleanBaseName(selectedBase?.base_name) || "",
         id_rota: selectedBase?.base_code || "",
         observacoes: values.observacoes || "",
         projeto_id: parseInt(values.projeto_id),
@@ -336,7 +337,7 @@ export default function FuelCardSolicitation() {
         motorista: values.nomeMotorista,
         solicitante: values.motorista,
         telefone_celular: values.telefone_celular,
-        base: selectedBase?.base_name || "",
+        base: cleanBaseName(selectedBase?.base_name) || "",
         id_rota: selectedBase?.base_code || "",
         observacoes: values.observacoes || "",
         projeto_id: parseInt(values.projeto_id),
@@ -344,7 +345,7 @@ export default function FuelCardSolicitation() {
         data_uso: data_uso_corrigida,
         turno: values.turno,
         projeto_nome: selectedProject?.name,
-        base_nome: selectedBase?.base_name
+        base_nome: cleanBaseName(selectedBase?.base_name)
       });
       
       // Capturar o count atualizado antes de mostrar o card
@@ -881,7 +882,7 @@ export default function FuelCardSolicitation() {
                           <SelectContent>
                             {selectedProject?.bases.map((base) => (
                               <SelectItem key={base.id} value={base.id.toString()}>
-                                {base.base_name} ({base.base_code})
+                                {cleanBaseName(base.base_name)} ({base.base_code})
                               </SelectItem>
                             ))}
                           </SelectContent>
