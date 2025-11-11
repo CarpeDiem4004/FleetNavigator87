@@ -234,7 +234,6 @@ router.get('/equipment-responsibility-terms/equipment/:equipmentId/active', unif
         ert.phone,
         ert.department,
         ert.address,
-        ert.position,
         ert.assigned_at,
         ert.returned_at,
         ert.condition_at_assignment,
@@ -278,7 +277,6 @@ router.get('/equipment-responsibility-terms/equipment/:equipmentId/active', unif
         phone: termData.phone,
         department: termData.department,
         address: termData.address,
-        position: termData.position,
         assigned_at: termData.assigned_at,
         returned_at: termData.returned_at,
         condition_at_assignment: termData.condition_at_assignment,
@@ -503,24 +501,34 @@ router.put('/:id', async (req, res) => {
     console.log('📊 [EQUIPMENT-UPDATE] Status anterior:', previousEquipment[0].status);
     console.log('📊 [EQUIPMENT-UPDATE] Novo status:', req.body.status);
     
-    // Converter strings vazias em null para campos únicos e opcionais
-    const dataToValidate = {
-      ...req.body,
-      serial_number: req.body.serial_number?.trim() === '' ? null : req.body.serial_number?.trim(),
-      patrimony_number: req.body.patrimony_number?.trim() === '' ? null : req.body.patrimony_number?.trim(),
-      model: req.body.model?.trim() === '' ? null : req.body.model?.trim(),
-      brand: req.body.brand?.trim() === '' ? null : req.body.brand?.trim(),
-      supplier: req.body.supplier?.trim() === '' ? null : req.body.supplier?.trim(),
-      location: req.body.location?.trim() === '' ? null : req.body.location?.trim(),
-      notes: req.body.notes?.trim() === '' ? null : req.body.notes?.trim()
-    };
+    // Preparar dados para atualização parcial (não requer todos os campos)
+    const updateData: any = {};
     
-    const validatedData = insertEquipmentSchema.parse(dataToValidate);
+    // Campos obrigatórios
+    if (req.body.name !== undefined) updateData.name = req.body.name;
+    if (req.body.type !== undefined) updateData.type = req.body.type;
+    if (req.body.ownership_type !== undefined) updateData.ownership_type = req.body.ownership_type;
+    if (req.body.status !== undefined) updateData.status = req.body.status;
+    if (req.body.condition !== undefined) updateData.condition = req.body.condition;
+    
+    // Campos opcionais - converter strings vazias em null
+    if (req.body.brand !== undefined) updateData.brand = req.body.brand?.trim() || null;
+    if (req.body.model !== undefined) updateData.model = req.body.model?.trim() || null;
+    if (req.body.serial_number !== undefined) updateData.serial_number = req.body.serial_number?.trim() || null;
+    if (req.body.patrimony_number !== undefined) updateData.patrimony_number = req.body.patrimony_number?.trim() || null;
+    if (req.body.purchase_date !== undefined) updateData.purchase_date = req.body.purchase_date || null;
+    if (req.body.purchase_value !== undefined) updateData.purchase_value = req.body.purchase_value || null;
+    if (req.body.supplier !== undefined) updateData.supplier = req.body.supplier?.trim() || null;
+    if (req.body.warranty_expires !== undefined) updateData.warranty_expires = req.body.warranty_expires || null;
+    if (req.body.location !== undefined) updateData.location = req.body.location?.trim() || null;
+    if (req.body.notes !== undefined) updateData.notes = req.body.notes?.trim() || null;
     
     console.log('⏳ [EQUIPMENT-UPDATE] Executando UPDATE no banco...');
+    console.log('📋 [EQUIPMENT-UPDATE] Dados a serem atualizados:', updateData);
+    
     const updatedEquipment = await db
       .update(equipments)
-      .set({ ...validatedData, updated_at: new Date() })
+      .set({ ...updateData, updated_at: new Date() })
       .where(eq(equipments.id, equipmentId))
       .returning();
     
@@ -532,7 +540,7 @@ router.put('/:id', async (req, res) => {
     }
 
     // Se o status mudou para 'disponivel', registrar histórico de devolução
-    if (previousEquipment[0].status !== 'disponivel' && validatedData.status === 'disponivel') {
+    if (previousEquipment[0].status !== 'disponivel' && updateData.status === 'disponivel') {
       const userId = (req.user as any)?.id || 1; // Pegar usuário autenticado ou usar admin como fallback
       
       await db.insert(equipmentMovements).values({
@@ -540,11 +548,11 @@ router.put('/:id', async (req, res) => {
         from_user_id: null, // Não sabemos quem estava usando sem termo
         to_user_id: null,
         from_location: previousEquipment[0].location || 'Em uso',
-        to_location: validatedData.location || 'Disponível',
+        to_location: updateData.location || updatedEquipment[0].location || 'Disponível',
         movement_type: 'devolucao',
         moved_by: userId,
         moved_at: new Date(),
-        notes: `Equipamento devolvido. Status anterior: ${previousEquipment[0].status}. Condição: ${validatedData.condition || 'não especificada'}`
+        notes: `Equipamento devolvido. Status anterior: ${previousEquipment[0].status}. Condição: ${updateData.condition || updatedEquipment[0].condition || 'não especificada'}`
       });
       
       console.log(`[EQUIPMENT] Histórico de devolução registrado para equipamento ${equipmentId}`);
