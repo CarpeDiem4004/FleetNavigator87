@@ -800,14 +800,14 @@ export class DatabaseStorage implements IStorage {
       if (vehicle.baseId !== undefined) updateData.base_id = vehicle.baseId;
       if (vehicle.fuelType !== undefined) updateData.fuel_type = vehicle.fuelType;
       if (vehicle.year !== undefined) updateData.year = vehicle.year;
-      if (vehicle.cartaoAbastecimento !== undefined) updateData.cartao_abastecimento = vehicle.cartaoAbastecimento;
+      if (vehicle.cartaoAbastecimento !== undefined) updateData.cartao_abastecimento = vehicle.cartaoAbastecimento || null;
       if (vehicle.kmAtual !== undefined) updateData.km_atual = vehicle.kmAtual;
       if (vehicle.consumoMedioKmL !== undefined) updateData.consumo_medio_km_l = vehicle.consumoMedioKmL;
       if (vehicle.ownership !== undefined) updateData.ownership = vehicle.ownership;
-      if (vehicle.crlvUrl !== undefined) updateData.crlv_url = vehicle.crlvUrl;
-      if (vehicle.anttUrl !== undefined) updateData.antt_url = vehicle.anttUrl;
+      if (vehicle.crlvUrl !== undefined) updateData.crlv_url = vehicle.crlvUrl || null;
+      if (vehicle.anttUrl !== undefined) updateData.antt_url = vehicle.anttUrl || null;
       if (vehicle.isTemporary !== undefined) updateData.is_temporary = vehicle.isTemporary;
-      if (vehicle.deactivationDate !== undefined) updateData.deactivation_date = vehicle.deactivationDate;
+      if (vehicle.deactivationDate !== undefined) updateData.deactivation_date = vehicle.deactivationDate || null;
       
       // Se não há dados para atualizar, retornar undefined
       if (Object.keys(updateData).length === 0) {
