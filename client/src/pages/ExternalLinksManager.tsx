@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Search, ExternalLink, Copy, CheckCircle, Power, PowerOff } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { useToast } from '@/hooks/use-toast';
+import { cleanBaseName } from '@/lib/base-utils';
 
 const ExternalLinksManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -330,7 +331,7 @@ const ExternalLinksManager: React.FC = () => {
                     <Card key={base.id} className="border-green-200">
                       <CardContent className="p-4">
                         <div className="text-center">
-                          <h3 className="font-semibold text-green-800">{base.basename}</h3>
+                          <h3 className="font-semibold text-green-800">{cleanBaseName(base.basename)}</h3>
                           <p className="text-sm text-gray-600 mb-3">{base.location}</p>
                           <div className="space-y-2">
                             <code className="text-xs bg-green-50 px-2 py-1 rounded block break-all">
@@ -338,7 +339,7 @@ const ExternalLinksManager: React.FC = () => {
                             </code>
                             <Button
                               size="sm"
-                              onClick={() => copyToClipboard(url, base.basename)}
+                              onClick={() => copyToClipboard(url, cleanBaseName(base.basename))}
                               className="w-full bg-green-600 hover:bg-green-700"
                             >
                               {copiedLink === url ? 'Copiado!' : 'Copiar Link'}

@@ -16,6 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { cleanBaseName } from '@/lib/base-utils';
 
 // Definição do esquema de validação para solicitação de recarga
 const fuelCardRequestSchema = z.object({
@@ -1245,7 +1246,7 @@ const ConsumptionReports: React.FC = () => {
                         {report.placa}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {report.base_name}
+                        {cleanBaseName(report.base_name)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {report.projeto}

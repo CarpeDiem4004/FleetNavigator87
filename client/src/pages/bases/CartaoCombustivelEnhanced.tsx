@@ -52,6 +52,7 @@ import {
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import BaseCampinasLayout from '@/components/layouts/BaseCampinasLayout';
+import { cleanBaseName } from '@/lib/base-utils';
 
 // Interfaces
 interface FuelCardRequest {

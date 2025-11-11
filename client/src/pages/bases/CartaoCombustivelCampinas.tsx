@@ -13,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CreditCard, ArrowLeft, CheckCircle, History, FileText, Calendar, DollarSign, Clock, User, Car, X } from "lucide-react";
 import { Link } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
+import { cleanBaseName } from '@/lib/base-utils';
 
 interface SolicitacaoHistorico {
   id: string;
@@ -599,7 +600,7 @@ const CartaoCombustivelCampinas: React.FC = () => {
                               <SelectContent>
                                 {selectedProject?.bases.map((base) => (
                                   <SelectItem key={base.id} value={base.id.toString()}>
-                                    {base.base_name}
+                                    {cleanBaseName(base.base_name)}
                                   </SelectItem>
                                 ))}
                               </SelectContent>

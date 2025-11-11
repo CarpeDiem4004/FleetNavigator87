@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cleanBaseName } from '@/lib/base-utils';
 
 interface StoppedVehicle {
   plate: string;
@@ -215,7 +216,7 @@ const StoppedVehicles: React.FC = () => {
                     {vehicle.base_name && (
                       <div>
                         <p className="text-gray-600 text-sm">Base</p>
-                        <Badge variant="outline">{vehicle.base_name}</Badge>
+                        <Badge variant="outline">{cleanBaseName(vehicle.base_name)}</Badge>
                       </div>
                     )}
                   </div>

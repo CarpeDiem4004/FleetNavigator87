@@ -3,6 +3,7 @@ import { useLocation, Link } from 'wouter';
 import { AlertTriangle, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
+import { cleanBaseName } from '@/lib/base-utils';
 
 const AccessDeniedPage: React.FC = () => {
   const [, navigate] = useLocation();
@@ -94,7 +95,7 @@ const AccessDeniedPage: React.FC = () => {
           
           {user?.baseId && user?.basename && (
             <p className="text-muted-foreground">
-              Seu acesso está limitado à base: <span className="font-medium">{user.basename}</span>
+              Seu acesso está limitado à base: <span className="font-medium">{cleanBaseName(user.basename)}</span>
             </p>
           )}
           
