@@ -809,6 +809,12 @@ export class DatabaseStorage implements IStorage {
       if (vehicle.isTemporary !== undefined) updateData.is_temporary = vehicle.isTemporary;
       if (vehicle.deactivationDate !== undefined) updateData.deactivation_date = vehicle.deactivationDate;
       
+      // Se não há dados para atualizar, retornar undefined
+      if (Object.keys(updateData).length === 0) {
+        console.log("Nenhum dado para atualizar");
+        return undefined;
+      }
+      
       const result = await db.execute(sql`
         UPDATE vehicles
         SET ${sql.join(
@@ -833,7 +839,7 @@ export class DatabaseStorage implements IStorage {
       return result.rows[0] as Vehicle;
     } catch (error) {
       console.error("Erro ao atualizar veículo:", error);
-      return undefined;
+      throw error;
     }
   }
 

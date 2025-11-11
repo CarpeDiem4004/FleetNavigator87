@@ -6941,10 +6941,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const updatedVehicle = await storage.updateVehicle(vehicleId, result.data);
+      
+      if (!updatedVehicle) {
+        return res.status(500).json({ message: "Failed to update vehicle" });
+      }
+      
       return res.status(200).json(updatedVehicle);
     } catch (error) {
       console.error("Error updating vehicle:", error);
-      return res.status(500).json({ message: "Server error" });
+      return res.status(500).json({ message: "Server error", error: String(error) });
     }
   });
   
