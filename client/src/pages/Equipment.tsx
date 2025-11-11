@@ -2125,7 +2125,7 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                       
                       console.log('📤 [SIMPLE-RETURN] Enviando PUT:', updateData);
                       
-                      const response = await apiRequest('PUT', `/api/equipment/equipments/${selectedEquipmentForReturn.id}`, updateData);
+                      const response = await apiRequest('PUT', `/api/equipment/${selectedEquipmentForReturn.id}`, updateData);
                       
                       console.log('📥 [SIMPLE-RETURN] Response status:', response.status);
                       
