@@ -882,7 +882,7 @@ export default function FuelCardSolicitation() {
                           <SelectContent>
                             {selectedProject?.bases.map((base) => (
                               <SelectItem key={base.id} value={base.id.toString()}>
-                                {cleanBaseName(base.base_name)} ({base.base_code})
+                                {cleanBaseName(base.base_name)}
                               </SelectItem>
                             ))}
                           </SelectContent>
