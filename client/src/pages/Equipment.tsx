@@ -43,10 +43,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
-import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download, Search, History, Clock, Wrench, Paperclip, Eye, Upload, RefreshCw, ClipboardList, CheckCircle, RotateCcw, Share, Copy } from "lucide-react";
+import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download, Search, History, Clock, Wrench, Paperclip, Eye, Upload, RefreshCw, ClipboardList, CheckCircle, RotateCcw, Share, Copy, FileSpreadsheet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import jsPDF from "jspdf";
+import * as XLSX from "xlsx";
 
 // Schema para validação do formulário de equipamento
 const equipmentSchema = z.object({
@@ -735,6 +736,76 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
     setIsCreateDialogOpen(true);
   };
 
+  const handleExportToExcel = () => {
+    try {
+      // Preparar dados para exportação
+      const exportData = equipments.map((equipment: any) => ({
+        'ID': equipment.id,
+        'Nome': equipment.name,
+        'Tipo': equipmentTypeLabels[equipment.type as keyof typeof equipmentTypeLabels] || equipment.type,
+        'Marca': equipment.brand || '-',
+        'Modelo': equipment.model || '-',
+        'Número de Série': equipment.serial_number || '-',
+        'Patrimônio': equipment.patrimony_number || '-',
+        'Status': equipmentStatusLabels[equipment.status as keyof typeof equipmentStatusLabels] || equipment.status,
+        'Condição': equipmentConditionLabels[equipment.condition as keyof typeof equipmentConditionLabels] || equipment.condition,
+        'Tipo de Propriedade': ownershipTypeLabels[equipment.ownership_type as keyof typeof ownershipTypeLabels] || equipment.ownership_type,
+        'Localização': equipment.location || '-',
+        'Fornecedor': equipment.supplier || '-',
+        'Data de Compra': equipment.purchase_date || '-',
+        'Valor de Compra': equipment.purchase_value || '-',
+        'Garantia Expira': equipment.warranty_expires || '-',
+        'Observações': equipment.notes || '-',
+        'Criado em': equipment.created_at ? new Date(equipment.created_at).toLocaleDateString('pt-BR') : '-',
+        'Atualizado em': equipment.updated_at ? new Date(equipment.updated_at).toLocaleDateString('pt-BR') : '-',
+      }));
+
+      // Criar planilha
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Equipamentos');
+
+      // Ajustar largura das colunas
+      const columnWidths = [
+        { wch: 5 },  // ID
+        { wch: 25 }, // Nome
+        { wch: 15 }, // Tipo
+        { wch: 15 }, // Marca
+        { wch: 20 }, // Modelo
+        { wch: 20 }, // Número de Série
+        { wch: 12 }, // Patrimônio
+        { wch: 12 }, // Status
+        { wch: 12 }, // Condição
+        { wch: 18 }, // Tipo de Propriedade
+        { wch: 25 }, // Localização
+        { wch: 20 }, // Fornecedor
+        { wch: 15 }, // Data de Compra
+        { wch: 15 }, // Valor de Compra
+        { wch: 15 }, // Garantia Expira
+        { wch: 30 }, // Observações
+        { wch: 15 }, // Criado em
+        { wch: 15 }, // Atualizado em
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Gerar e baixar arquivo
+      const fileName = `equipamentos_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      toast({
+        title: "Exportação concluída!",
+        description: `Arquivo ${fileName} foi baixado com sucesso.`,
+      });
+    } catch (error) {
+      console.error('Erro ao exportar para Excel:', error);
+      toast({
+        title: "Erro ao exportar",
+        description: "Não foi possível gerar o arquivo Excel. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return <div className="p-8">Carregando...</div>;
   }
@@ -749,6 +820,14 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
           </p>
         </div>
         <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={handleExportToExcel}
+            title="Exportar todos os equipamentos para Excel"
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Exportar Excel
+          </Button>
           <Button variant="outline" onClick={() => setIsShareDialogOpen(true)}>
             <Share className="mr-2 h-4 w-4" />
             Link Solicitação Equipamento
