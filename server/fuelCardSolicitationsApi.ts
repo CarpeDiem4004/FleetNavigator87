@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { pool } from './db';
 import * as XLSX from 'xlsx';
+import { normalizeBaseName } from '../shared/baseNormalization';
 
 /**
  * Determina o consumo médio baseado no modelo do veículo
@@ -536,6 +537,10 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
     
     console.log("Valor solicitado final que será inserido no banco:", valorFinal);
     
+    // Normalizar nome da base para formato canônico
+    const baseNormalizada = base ? normalizeBaseName(base) : null;
+    console.log("Base normalizada:", { original: base, normalizada: baseNormalizada });
+    
     const values = [
       placa,
       km,
@@ -548,7 +553,7 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       observacoes || null,
       valorFinal, // Valor garantido como número fixo
       tipo_combustivel || 'diesel',
-      base || null,
+      baseNormalizada, // Base normalizada para consistência
       id_rota || null,
       origem_tipo || 'tradicional', // Padrão para 'tradicional' se não informado
       data_uso_corrigida, // Data prevista de uso do saldo (corrigida para timezone BR)
