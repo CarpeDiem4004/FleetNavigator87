@@ -68,36 +68,110 @@ export function normalizeBaseName(rawName: string | null | undefined): string {
 /**
  * Obtém o nome de exibição amigável para uma base
  * Converte o formato canônico de volta para visualização
- * Exemplo: "PTL02_JUNDIA_PETLOVE" -> "PTL02 JUNDIAÍ (PETLOVE)"
+ * Exemplo: "PTL02_JUNDIA_PETLOVE" -> "PTL02 Jundiaí (Petlove)"
  */
 export function getBaseDisplayName(baseKey: string | null | undefined): string {
   if (!baseKey) return '';
   
-  const displayNames: Record<string, string> = {
-    'PTL02_JUNDIA_PETLOVE': 'PTL02 JUNDIAÍ (PETLOVE)',
-    'PTL01_BELEM_PETLOVE': 'PTL01 BELÉM (PETLOVE)',
-    'GP02_JACAREI': 'GP02 JACAREÍ',
-    'GP03_HORTOLANDIA': 'GP03 HORTOLÂNDIA',
-    'GP01_VARGEM_GRANDE': 'GP01 VARGEM GRANDE',
-    'SC_CHAPECO_SSC4': 'SC CHAPECÓ (SSC4)',
-    'SC_ARACATUBA_SSP10': 'SC ARAÇATUBA (SSP10)',
-    'SC_ATIBAIA_SSP25': 'SC ATIBAIA (SSP25)',
-    'SC_AVARE_SSP24': 'SC AVARÉ (SSP24)',
-    'SC_BAHIA_SALVADOR_SBA1': 'SC BAHIA SALVADOR (SBA1)',
-    'SC_BAURU_SSP14': 'SC BAURU (SSP14)',
-    'SC_BLUMENAU_SSC3': 'SC BLUMENAU (SSC3)',
-    'SC_CONTAGEM_SMG1': 'SC CONTAGEM (SMG1)',
-    'SC_CURITIBA_SPR1': 'SC CURITIBA (SPR1)',
-    'SC_DIVINOPOLIS_SMG10': 'SC DIVINÓPOLIS (SMG10)',
-    'SC_FORTALEZA_SCE1': 'SC FORTALEZA (SCE1)',
-    'SC_ITUPEVA_SSP38SDD': 'SC ITUPEVA (SSP38-SDD)',
-    'SC_PONTA_GROSSA_SPR7': 'SC PONTA GROSSA (SPR7)',
-    'SC_POCOS_DE_CALDAS_SMG5': 'SC POÇOS DE CALDAS (SMG5)',
-    'XPT_CHAPADINHA_EMN3_SMN1': 'XPT CHAPADINHA (EMN3/SMN1)',
-    'XPT_SAO_MATEUS_DO_SUL_ERP6_SPR7': 'XPT SÃO MATEUS DO SUL (ERP6/SPR7)',
-    'XPT_3_LAGOAS_SSP10_EMS4': 'XPT 3 LAGOAS (SSP10/EMS4)',
-    'XPT_ANAPOLIS_SGO1_EGO4': 'XPT ANÁPOLIS (SGO1/EGO4)',
+  // Se não tiver underscore, retorna como está (já é nome original)
+  if (!baseKey.includes('_')) {
+    return baseKey;
+  }
+  
+  // Dicionário com acentuação correta para nomes comuns
+  const accentMap: Record<string, string> = {
+    'JUNDIA': 'Jundiaí',
+    'BELEM': 'Belém',
+    'JACAREI': 'Jacareí',
+    'HORTOLANDIA': 'Hortolândia',
+    'CHAPECO': 'Chapecó',
+    'ARACATUBA': 'Araçatuba',
+    'AVARE': 'Avaré',
+    'DIVINOPOLIS': 'Divinópolis',
+    'GOIANIA': 'Goiânia',
+    'MARILIA': 'Marília',
+    'MARINGA': 'Maringá',
+    'RIBEIRAO': 'Ribeirão',
+    'SAO': 'São',
+    'JOSE': 'José',
+    'CARLOS': 'Carlos',
+    'POCOS': 'Poços',
+    'CUIABA': 'Cuiabá',
+    'FLORIANOPOLIS': 'Florianópolis',
+    'CRICIUMA': 'Criciúma',
+    'VITORIA': 'Vitória',
+    'ANAPOLIS': 'Anápolis',
+    'BRASILIA': 'Brasília',
+    'NITEROI': 'Niterói',
+    'PETROPOLIS': 'Petrópolis',
+    'IJUI': 'Ijuí',
+    'TRES': 'Três',
+    'VICOSA': 'Viçosa'
   };
   
-  return displayNames[baseKey] || baseKey.replace(/_/g, ' ');
+  // Separar em partes
+  const parts = baseKey.split('_');
+  
+  // Lista de códigos de base conhecidos (apenas letras)
+  const knownLetterCodes = new Set([
+    'SDD', 'SSP', 'SPR', 'SSC', 'SMG', 'SMS', 'SBA', 'SCE', 'SAM', 'SPE', 'SES',
+    'SRS', 'SDF', 'SDP', 'SRJ', 'SMN', 'SMR', 'ERP', 'EPR', 'EMN', 'EMR', 'EMS',
+    'ESP', 'EGO', 'EBA', 'ERS', 'EMG', 'SPSP5', 'FULL'
+  ]);
+  
+  // Função para identificar tipo de cada parte
+  const getPartType = (part: string): 'code_with_number' | 'prefix' | 'city' | 'word' => {
+    // Códigos com números e possível sufixo de letras (SSP10, SPR1, SSP38SDD, etc) - vão para parênteses
+    if (/^[A-Z]{2,4}\d+[A-Z]*$/.test(part)) return 'code_with_number';
+    
+    // Códigos conhecidos apenas com letras (SDD, SPR, etc) - vão para parênteses
+    if (knownLetterCodes.has(part)) return 'code_with_number';
+    
+    // Prefixos conhecidos (XPT, SC, GP, PTL, MM, etc) - mantém maiúsculo
+    if (/^(XPT|SC|GP|PTL|MM|FMS|PB|MI|LH|OXXO|CC)0?\d*$/.test(part)) return 'prefix';
+    
+    // Cidades no mapa de acentos
+    if (accentMap[part]) return 'city';
+    
+    // Outras palavras
+    return 'word';
+  };
+  
+  // Formatar cada parte
+  const formatted = parts.map(part => {
+    const type = getPartType(part);
+    
+    if (type === 'code_with_number') {
+      return { text: part, type: 'code_with_number' };
+    } else if (type === 'prefix') {
+      return { text: part, type: 'prefix' };
+    } else if (type === 'city') {
+      return { text: accentMap[part], type: 'city' };
+    } else {
+      // Capitalizar: primeira letra maiúscula, resto minúscula
+      const capitalized = part.charAt(0) + part.slice(1).toLowerCase();
+      return { text: capitalized, type: 'word' };
+    }
+  });
+  
+  // Encontrar códigos consecutivos no final (apenas code_with_number)
+  let codeStartIndex = formatted.length;
+  for (let i = formatted.length - 1; i >= 0; i--) {
+    if (formatted[i].type === 'code_with_number') {
+      codeStartIndex = i;
+    } else {
+      break;
+    }
+  }
+  
+  // Separar nome e códigos
+  const nameParts = formatted.slice(0, codeStartIndex).map(f => f.text);
+  const codeParts = formatted.slice(codeStartIndex).map(f => f.text);
+  
+  // Montar resultado
+  if (codeParts.length > 0) {
+    return nameParts.join(' ') + ' (' + codeParts.join('/') + ')';
+  } else {
+    return formatted.map(f => f.text).join(' ');
+  }
 }

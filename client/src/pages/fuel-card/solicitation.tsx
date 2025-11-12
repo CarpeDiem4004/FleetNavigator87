@@ -19,7 +19,7 @@ import { Loader2, CreditCard, AlertCircle, ShoppingCart, Send, AlertTriangle, Ch
 import { useFuelCardDraft } from "@/contexts/FuelCardDraftContext";
 import { VehiclePlateAutocomplete } from "@/components/vehicle-plate-autocomplete";
 import { validateAndFormatPlate } from "@/lib/plate-utils";
-import { cleanBaseName } from "@/lib/base-utils";
+import { cleanBaseName, getBaseDisplayName } from "@/lib/base-utils";
 
 interface Project {
   id: number;
@@ -882,7 +882,7 @@ export default function FuelCardSolicitation() {
                           <SelectContent>
                             {selectedProject?.bases.map((base) => (
                               <SelectItem key={base.id} value={base.id.toString()}>
-                                {cleanBaseName(base.base_name)}
+                                {getBaseDisplayName(base.base_name)}
                               </SelectItem>
                             ))}
                           </SelectContent>
