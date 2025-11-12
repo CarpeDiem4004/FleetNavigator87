@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import pkg from 'pg';
-import { normalizeBaseName } from '../shared/baseNormalization';
+import { normalizeBaseName, getBaseDisplayName } from '../shared/baseNormalization';
 const { Pool } = pkg;
 
 // Configuração do pool PostgreSQL
@@ -188,7 +188,8 @@ export async function getProjectsWithBases(req: Request, res: Response) {
       }
       basesMap.get(base.project_id).push({
         id: base.id,
-        base_name: base.base_name,
+        base_name: base.base_name, // Valor normalizado (para filtros)
+        display_name: getBaseDisplayName(base.base_name), // Nome formatado (para exibição)
         base_code: base.base_code,
         description: base.description,
         is_active: base.is_active

@@ -1271,12 +1271,14 @@ const FuelCardRequestsPanel: React.FC = () => {
   const getFilteredBases = () => {
     if (projectFilter === 'all') {
       // Return all unique bases from solicitations + projects
-      const allBases = new Set<string>();
+      const allBases = new Map<string, string>(); // base_name -> display_name
       
       // Add bases from solicitations (real data from database)
       solicitations.forEach(sol => {
         if (sol.base && sol.base.trim() !== '') {
-          allBases.add(cleanBaseName(sol.base));
+          if (!allBases.has(sol.base)) {
+            allBases.set(sol.base, sol.base); // Usar nome normalizado (será formatado no dropdown)
+          }
         }
       });
       
@@ -1285,23 +1287,25 @@ const FuelCardRequestsPanel: React.FC = () => {
         if (project.bases) {
           project.bases.forEach((base: any) => {
             if (base.base_name) {
-              allBases.add(cleanBaseName(base.base_name));
+              allBases.set(base.base_name, base.display_name || base.base_name);
             }
           });
         }
       });
       
-      return Array.from(allBases).sort();
+      return Array.from(allBases.entries())
+        .map(([base_name, display_name]) => ({ base_name, display_name }))
+        .sort((a, b) => a.display_name.localeCompare(b.display_name));
     } else {
       // Return bases from selected project + solicitations matching that project
       const selectedProject = projects.find(p => p.id.toString() === projectFilter);
-      const projectBases = new Set<string>();
+      const projectBases = new Map<string, string>(); // base_name -> display_name
       
       // Add bases from the selected project
       if (selectedProject && selectedProject.bases) {
         selectedProject.bases.forEach((base: any) => {
           if (base.base_name) {
-            projectBases.add(cleanBaseName(base.base_name));
+            projectBases.set(base.base_name, base.display_name || base.base_name);
           }
         });
       }
@@ -1311,18 +1315,19 @@ const FuelCardRequestsPanel: React.FC = () => {
         if (sol.base && sol.base.trim() !== '') {
           // Check if this solicitation's base belongs to the selected project
           if (selectedProject && selectedProject.bases) {
-            const cleanName = cleanBaseName(sol.base);
             const belongsToProject = selectedProject.bases.some((base: any) => 
-              cleanBaseName(base.base_name) === cleanName
+              base.base_name === sol.base
             );
-            if (belongsToProject) {
-              projectBases.add(cleanName);
+            if (belongsToProject && !projectBases.has(sol.base)) {
+              projectBases.set(sol.base, sol.base);
             }
           }
         }
       });
       
-      return Array.from(projectBases).sort();
+      return Array.from(projectBases.entries())
+        .map(([base_name, display_name]) => ({ base_name, display_name }))
+        .sort((a, b) => a.display_name.localeCompare(b.display_name));
     }
   };
 
@@ -1652,9 +1657,9 @@ const FuelCardRequestsPanel: React.FC = () => {
                 <Combobox
                   options={[
                     { value: 'all', label: 'Todas as Bases' },
-                    ...getFilteredBases().map((baseName: string) => ({
-                      value: baseName,
-                      label: cleanBaseName(baseName)
+                    ...getFilteredBases().map((base: { base_name: string, display_name: string }) => ({
+                      value: base.base_name,
+                      label: base.display_name
                     }))
                   ]}
                   value={baseFilter}
