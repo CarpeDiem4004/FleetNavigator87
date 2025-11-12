@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import pkg from 'pg';
+import { normalizeBaseName } from '../shared/baseNormalization';
 const { Pool } = pkg;
 
 // Configuração do pool PostgreSQL
@@ -315,6 +316,11 @@ export async function createProjectBase(req: Request, res: Response) {
       });
     }
     
+    // IMPORTANTE: Normalizar nome da base antes de inserir
+    const normalizedBaseName = normalizeBaseName(base_name);
+    
+    console.log(`[CREATE-BASE] Normalizando base: "${base_name}" → "${normalizedBaseName}"`);
+    
     const query = `
       INSERT INTO project_bases (project_id, base_name, base_code, description) 
       VALUES ($1, $2, $3, $4) 
@@ -323,7 +329,7 @@ export async function createProjectBase(req: Request, res: Response) {
     
     const result = await pool.query(query, [
       projectId, 
-      base_name, 
+      normalizedBaseName, 
       base_code || null, 
       description || null
     ]);
