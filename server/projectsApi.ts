@@ -164,11 +164,11 @@ export async function getProjectsWithBases(req: Request, res: Response) {
         LIMIT 50
       `),
       pool.query(`
-        SELECT b.id, b.project_id, b.name as base_name, b.basename as base_code, NULL as description, b.active as is_active
-        FROM bases b
-        INNER JOIN projects p ON b.project_id = p.id
-        WHERE b.active = true AND p.is_active = true
-        ORDER BY b.name ASC
+        SELECT pb.id, pb.project_id, pb.base_name, pb.base_code, pb.description, pb.is_active
+        FROM project_bases pb
+        INNER JOIN projects p ON pb.project_id = p.id
+        WHERE pb.is_active = true AND p.is_active = true
+        ORDER BY pb.base_name ASC
       `)
     ]);
     
