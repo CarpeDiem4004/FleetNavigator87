@@ -11179,17 +11179,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Obter email do usuário autenticado
+      // Obter email e escopo do usuário autenticado
       const importedBy = req.user?.email || 'unknown';
+      const userBaseId = req.user?.base_id;
+      const isAdmin = req.user?.role === 'admin';
+
+      console.log(`[MAINTENANCE-IMPORT-ROUTE] Usuário: ${importedBy}, Base ID: ${userBaseId ?? 'GLOBAL'}, Admin: ${isAdmin}`);
 
       // Importar serviço de processamento
       const { processMaintenanceImport } = await import('./services/maintenanceImportService');
 
-      // Processar importação
+      // Processar importação com escopo de base
       const result = await processMaintenanceImport(
         req.file.buffer,
         req.file.originalname,
-        importedBy
+        importedBy,
+        userBaseId,
+        isAdmin
       );
 
       // Retornar resultado estruturado

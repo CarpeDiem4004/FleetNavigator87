@@ -35,7 +35,9 @@ interface ImportResult {
 export async function processMaintenanceImport(
   fileBuffer: Buffer,
   filename: string,
-  importedBy: string
+  importedBy: string,
+  userBaseId?: number | null, // null = admin global (pode acessar todos)
+  isAdmin: boolean = false
 ): Promise<ImportResult> {
   const result: ImportResult = {
     success: false,
@@ -77,14 +79,23 @@ export async function processMaintenanceImport(
     result.total = platesInSpreadsheet.size;
 
     console.log(`[MAINTENANCE-IMPORT] Total de placas na planilha: ${platesInSpreadsheet.size}`);
+    console.log(`[MAINTENANCE-IMPORT] Escopo de base: ${userBaseId ?? 'ADMIN GLOBAL'}`);
 
     // SINCRONIZAÇÃO BIDIRECIONAL
     // A planilha é a fonte da verdade: veículos NA planilha devem estar em manutenção,
     // veículos FORA da planilha (mas que estão em manutenção) devem voltar para operação.
 
-    // Buscar TODOS os veículos do sistema
-    const allVehicles = await storage.getAllVehicles();
-    console.log(`[MAINTENANCE-IMPORT] Total de veículos no sistema: ${allVehicles.length}`);
+    // Buscar veículos respeitando o escopo de base do usuário
+    let allVehicles;
+    if (!isAdmin && userBaseId !== null && userBaseId !== undefined) {
+      // Usuário de base específica: só pode afetar veículos da sua base
+      allVehicles = (await storage.getAllVehicles()).filter(v => v.baseId === userBaseId);
+      console.log(`[MAINTENANCE-IMPORT] Total de veículos da base ${userBaseId}: ${allVehicles.length}`);
+    } else {
+      // Admin global: pode afetar todos os veículos
+      allVehicles = await storage.getAllVehicles();
+      console.log(`[MAINTENANCE-IMPORT] Total de veículos (ADMIN GLOBAL): ${allVehicles.length}`);
+    }
 
     // Separar veículos em categorias
     const vehiclesInSpreadsheet: typeof allVehicles = [];
