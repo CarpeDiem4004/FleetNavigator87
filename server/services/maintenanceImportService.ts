@@ -66,11 +66,24 @@ export async function processMaintenanceImport(
     const sheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(sheet);
 
+    // Debug: mostrar colunas da planilha
+    if (data.length > 0) {
+      const firstRow = data[0] as any;
+      const columns = Object.keys(firstRow);
+      console.log(`[MAINTENANCE-IMPORT] Colunas encontradas na planilha:`, columns);
+    } else {
+      console.log(`[MAINTENANCE-IMPORT] ATENÇÃO: Planilha vazia ou sem dados!`);
+    }
+
     // Extrair e validar placas da planilha
     const platesInSpreadsheet = new Set<string>();
     
     for (const row of data as any[]) {
-      const rawPlate = row.Placa || row.placa || row.PLACA;
+      // Aceitar múltiplas variações de nome de coluna
+      const rawPlate = row.Placa || row.placa || row.PLACA || row.Placas || row.placas || 
+                       row.PLACAS || row.plate || row.Plate || row.PLATE || row.Vehicle || 
+                       row.vehicle || row.VEHICLE || row.Veículo || row.veículo || row.VEICULO;
+      
       const normalizedPlate = validateAndNormalizePlate(rawPlate);
       
       if (normalizedPlate) {
