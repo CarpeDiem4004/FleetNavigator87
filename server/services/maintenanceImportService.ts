@@ -1,6 +1,14 @@
 import XLSX from 'xlsx';
 import { storage } from '../storage';
 
+// Classe de erro para autorização
+export class AuthorizationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthorizationError';
+  }
+}
+
 // Função para validar e normalizar placa brasileira
 function validateAndNormalizePlate(plate: string | undefined): string | null {
   if (!plate || typeof plate !== 'string') return null;
@@ -79,7 +87,14 @@ export async function processMaintenanceImport(
     result.total = platesInSpreadsheet.size;
 
     console.log(`[MAINTENANCE-IMPORT] Total de placas na planilha: ${platesInSpreadsheet.size}`);
-    console.log(`[MAINTENANCE-IMPORT] Escopo de base: ${userBaseId ?? 'ADMIN GLOBAL'}`);
+    console.log(`[MAINTENANCE-IMPORT] Escopo - isAdmin: ${isAdmin}, userBaseId: ${userBaseId ?? 'NULL'}`);
+
+    // VALIDAÇÃO DE SEGURANÇA: usuários não-admin DEVEM ter base_id definida
+    if (!isAdmin && (userBaseId === null || userBaseId === undefined)) {
+      const errorMsg = 'Acesso negado: usuário não possui permissão para importar manutenção sem base definida';
+      console.error(`[MAINTENANCE-IMPORT] ERRO DE AUTORIZAÇÃO: ${errorMsg}`);
+      throw new AuthorizationError(errorMsg);
+    }
 
     // SINCRONIZAÇÃO BIDIRECIONAL
     // A planilha é a fonte da verdade: veículos NA planilha devem estar em manutenção,
@@ -87,14 +102,14 @@ export async function processMaintenanceImport(
 
     // Buscar veículos respeitando o escopo de base do usuário
     let allVehicles;
-    if (!isAdmin && userBaseId !== null && userBaseId !== undefined) {
-      // Usuário de base específica: só pode afetar veículos da sua base
-      allVehicles = (await storage.getAllVehicles()).filter(v => v.baseId === userBaseId);
-      console.log(`[MAINTENANCE-IMPORT] Total de veículos da base ${userBaseId}: ${allVehicles.length}`);
-    } else {
+    if (isAdmin) {
       // Admin global: pode afetar todos os veículos
       allVehicles = await storage.getAllVehicles();
-      console.log(`[MAINTENANCE-IMPORT] Total de veículos (ADMIN GLOBAL): ${allVehicles.length}`);
+      console.log(`[MAINTENANCE-IMPORT] Admin Global - Total de veículos: ${allVehicles.length}`);
+    } else {
+      // Usuário de base específica: só pode afetar veículos da sua base
+      allVehicles = (await storage.getAllVehicles()).filter(v => v.baseId === userBaseId);
+      console.log(`[MAINTENANCE-IMPORT] Base ${userBaseId} - Total de veículos: ${allVehicles.length}`);
     }
 
     // Separar veículos em categorias

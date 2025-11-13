@@ -11216,6 +11216,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Erro ao processar importação de manutenção:', error);
 
+      // Tratamento de erro de autorização
+      if (error.name === 'AuthorizationError') {
+        return res.status(403).json({ 
+          success: false, 
+          message: error.message || "Acesso negado" 
+        });
+      }
+
       // Tratamento de erros do multer
       if (error.name === 'MulterError') {
         if (error.code === 'LIMIT_FILE_SIZE') {
