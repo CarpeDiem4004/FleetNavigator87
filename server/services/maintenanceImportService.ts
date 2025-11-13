@@ -22,11 +22,13 @@ function validateAndNormalizePlate(plate: string | undefined): string | null {
 
 interface ImportResult {
   success: boolean;
-  updated: number;
-  alreadyInMaintenance: number;
-  notFound: number;
-  invalid: number;
-  total: number;
+  updated: number; // Total de atualizações realizadas
+  alreadyInMaintenance: number; // Já estavam em manutenção
+  notFound: number; // Placas não encontradas
+  invalid: number; // Placas inválidas
+  total: number; // Total de placas na planilha
+  enteredMaintenance: number; // Veículos que entraram em manutenção
+  exitedMaintenance: number; // Veículos que saíram de manutenção
   errors: Array<{plate: string; reason: string}>;
 }
 
@@ -42,6 +44,8 @@ export async function processMaintenanceImport(
     notFound: 0,
     invalid: 0,
     total: 0,
+    enteredMaintenance: 0,
+    exitedMaintenance: 0,
     errors: []
   };
 
@@ -52,15 +56,15 @@ export async function processMaintenanceImport(
     const sheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(sheet);
 
-    // Extrair e validar placas
-    const plates = new Set<string>();
+    // Extrair e validar placas da planilha
+    const platesInSpreadsheet = new Set<string>();
     
     for (const row of data as any[]) {
       const rawPlate = row.Placa || row.placa || row.PLACA;
       const normalizedPlate = validateAndNormalizePlate(rawPlate);
       
       if (normalizedPlate) {
-        plates.add(normalizedPlate);
+        platesInSpreadsheet.add(normalizedPlate);
       } else if (rawPlate) {
         result.invalid++;
         result.errors.push({
@@ -70,37 +74,83 @@ export async function processMaintenanceImport(
       }
     }
 
-    result.total = plates.size;
+    result.total = platesInSpreadsheet.size;
 
-    // Processar cada placa
-    for (const plate of Array.from(plates)) {
+    console.log(`[MAINTENANCE-IMPORT] Total de placas na planilha: ${platesInSpreadsheet.size}`);
+
+    // SINCRONIZAÇÃO BIDIRECIONAL
+    // A planilha é a fonte da verdade: veículos NA planilha devem estar em manutenção,
+    // veículos FORA da planilha (mas que estão em manutenção) devem voltar para operação.
+
+    // Buscar TODOS os veículos do sistema
+    const allVehicles = await storage.getAllVehicles();
+    console.log(`[MAINTENANCE-IMPORT] Total de veículos no sistema: ${allVehicles.length}`);
+
+    // Separar veículos em categorias
+    const vehiclesInSpreadsheet: typeof allVehicles = [];
+    const vehiclesInMaintenanceNotInSpreadsheet: typeof allVehicles = [];
+
+    for (const vehicle of allVehicles) {
+      const isInSpreadsheet = platesInSpreadsheet.has(vehicle.plate);
+      
+      if (isInSpreadsheet) {
+        vehiclesInSpreadsheet.push(vehicle);
+      } else if (vehicle.status === 'em_manutencao') {
+        // Veículo em manutenção MAS não está na planilha → deve voltar para operação
+        vehiclesInMaintenanceNotInSpreadsheet.push(vehicle);
+      }
+    }
+
+    console.log(`[MAINTENANCE-IMPORT] Veículos na planilha: ${vehiclesInSpreadsheet.length}`);
+    console.log(`[MAINTENANCE-IMPORT] Veículos em manutenção não na planilha: ${vehiclesInMaintenanceNotInSpreadsheet.length}`);
+
+    // 1. ENTRAR EM MANUTENÇÃO: Veículos na planilha que NÃO estão em manutenção
+    for (const vehicle of vehiclesInSpreadsheet) {
       try {
-        // Buscar veículo no banco
-        const vehicle = await storage.getVehicleByPlate(plate);
-        
-        if (!vehicle) {
-          result.notFound++;
-          result.errors.push({
-            plate,
-            reason: 'Veículo não encontrado no sistema'
-          });
-          continue;
-        }
-
-        // Verificar se já está em manutenção
         if (vehicle.status === 'em_manutencao') {
           result.alreadyInMaintenance++;
-          continue;
+          console.log(`[MAINTENANCE-IMPORT] ${vehicle.plate} já está em manutenção`);
+        } else {
+          // Mudar para manutenção
+          await storage.updateVehicleStatus(vehicle.id, 'em_manutencao');
+          result.enteredMaintenance++;
+          result.updated++;
+          console.log(`[MAINTENANCE-IMPORT] ${vehicle.plate} entrou em manutenção (${vehicle.status} → em_manutencao)`);
         }
-
-        // Atualizar status para em_manutencao
-        await storage.updateVehicleStatus(vehicle.id, 'em_manutencao');
-        result.updated++;
       } catch (error) {
-        console.error(`Erro ao processar placa ${plate}:`, error);
+        console.error(`[MAINTENANCE-IMPORT] Erro ao processar placa ${vehicle.plate}:`, error);
+        result.errors.push({
+          plate: vehicle.plate,
+          reason: error instanceof Error ? error.message : 'Erro ao atualizar status'
+        });
+      }
+    }
+
+    // 2. SAIR DE MANUTENÇÃO: Veículos em manutenção que NÃO estão na planilha
+    for (const vehicle of vehiclesInMaintenanceNotInSpreadsheet) {
+      try {
+        // Voltar para operação
+        await storage.updateVehicleStatus(vehicle.id, 'em_operacao');
+        result.exitedMaintenance++;
+        result.updated++;
+        console.log(`[MAINTENANCE-IMPORT] ${vehicle.plate} saiu de manutenção (em_manutencao → em_operacao)`);
+      } catch (error) {
+        console.error(`[MAINTENANCE-IMPORT] Erro ao processar placa ${vehicle.plate}:`, error);
+        result.errors.push({
+          plate: vehicle.plate,
+          reason: error instanceof Error ? error.message : 'Erro ao atualizar status'
+        });
+      }
+    }
+
+    // 3. VERIFICAR PLACAS NA PLANILHA QUE NÃO EXISTEM NO SISTEMA
+    const vehiclePlatesInSystem = new Set(allVehicles.map(v => v.plate));
+    for (const plate of Array.from(platesInSpreadsheet)) {
+      if (!vehiclePlatesInSystem.has(plate)) {
+        result.notFound++;
         result.errors.push({
           plate,
-          reason: error instanceof Error ? error.message : 'Erro desconhecido'
+          reason: 'Veículo não encontrado no sistema'
         });
       }
     }
@@ -114,10 +164,20 @@ export async function processMaintenanceImport(
       createdAt: new Date()
     });
 
+    console.log(`[MAINTENANCE-IMPORT] Resumo final:`, {
+      total: result.total,
+      enteredMaintenance: result.enteredMaintenance,
+      exitedMaintenance: result.exitedMaintenance,
+      alreadyInMaintenance: result.alreadyInMaintenance,
+      notFound: result.notFound,
+      invalid: result.invalid,
+      updated: result.updated
+    });
+
     result.success = true;
     return result;
   } catch (error) {
-    console.error('Erro ao processar importação:', error);
+    console.error('[MAINTENANCE-IMPORT] Erro ao processar importação:', error);
     throw error;
   }
 }
