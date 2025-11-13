@@ -37,6 +37,12 @@ interface ImportResult {
   total: number; // Total de placas na planilha
   enteredMaintenance: number; // Veículos que entraram em manutenção
   exitedMaintenance: number; // Veículos que saíram de manutenção
+  finalStats: {
+    totalVehicles: number; // Total de veículos no escopo
+    inMaintenance: number; // Veículos em manutenção após importação
+    available: number; // Veículos disponíveis (em_operacao) após importação
+    stopped: number; // Veículos parados
+  };
   errors: Array<{plate: string; reason: string}>;
 }
 
@@ -56,6 +62,12 @@ export async function processMaintenanceImport(
     total: 0,
     enteredMaintenance: 0,
     exitedMaintenance: 0,
+    finalStats: {
+      totalVehicles: 0,
+      inMaintenance: 0,
+      available: 0,
+      stopped: 0
+    },
     errors: []
   };
 
@@ -64,36 +76,72 @@ export async function processMaintenanceImport(
     const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(sheet);
-
-    // Debug: mostrar colunas da planilha
+    
+    // Primeiro, tentar ler COM cabeçalho
+    let data = XLSX.utils.sheet_to_json(sheet);
+    
+    // Verificar se a primeira linha parece ser um cabeçalho válido ou dados
+    let hasValidHeader = false;
+    let platesInSpreadsheet = new Set<string>();
+    
     if (data.length > 0) {
       const firstRow = data[0] as any;
       const columns = Object.keys(firstRow);
       console.log(`[MAINTENANCE-IMPORT] Colunas encontradas na planilha:`, columns);
-    } else {
-      console.log(`[MAINTENANCE-IMPORT] ATENÇÃO: Planilha vazia ou sem dados!`);
+      
+      // Verificar se alguma coluna tem nome relacionado a placa
+      const plateColumnNames = ['Placa', 'placa', 'PLACA', 'Placas', 'placas', 'PLACAS', 
+                                'plate', 'Plate', 'PLATE', 'Vehicle', 'vehicle', 'VEHICLE', 
+                                'Veículo', 'veículo', 'VEICULO'];
+      hasValidHeader = columns.some(col => plateColumnNames.includes(col));
+      
+      if (hasValidHeader) {
+        console.log(`[MAINTENANCE-IMPORT] Planilha COM cabeçalho detectada`);
+      } else {
+        console.log(`[MAINTENANCE-IMPORT] Planilha SEM cabeçalho detectada - processando primeira coluna como placas`);
+      }
     }
-
-    // Extrair e validar placas da planilha
-    const platesInSpreadsheet = new Set<string>();
     
-    for (const row of data as any[]) {
-      // Aceitar múltiplas variações de nome de coluna
-      const rawPlate = row.Placa || row.placa || row.PLACA || row.Placas || row.placas || 
-                       row.PLACAS || row.plate || row.Plate || row.PLATE || row.Vehicle || 
-                       row.vehicle || row.VEHICLE || row.Veículo || row.veículo || row.VEICULO;
+    // Se não tem cabeçalho válido, reprocessar SEM cabeçalho
+    if (!hasValidHeader && data.length > 0) {
+      data = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[];
+      console.log(`[MAINTENANCE-IMPORT] Reprocessando ${data.length} linhas sem cabeçalho`);
       
-      const normalizedPlate = validateAndNormalizePlate(rawPlate);
-      
-      if (normalizedPlate) {
-        platesInSpreadsheet.add(normalizedPlate);
-      } else if (rawPlate) {
-        result.invalid++;
-        result.errors.push({
-          plate: rawPlate,
-          reason: 'Formato de placa inválido'
-        });
+      // Processar primeira coluna como placas
+      for (const row of data as any[]) {
+        if (Array.isArray(row) && row.length > 0) {
+          const rawPlate = row[0]; // Primeira coluna
+          const normalizedPlate = validateAndNormalizePlate(rawPlate);
+          
+          if (normalizedPlate) {
+            platesInSpreadsheet.add(normalizedPlate);
+          } else if (rawPlate) {
+            result.invalid++;
+            result.errors.push({
+              plate: String(rawPlate),
+              reason: 'Formato de placa inválido'
+            });
+          }
+        }
+      }
+    } else {
+      // Processar COM cabeçalho (comportamento original)
+      for (const row of data as any[]) {
+        const rawPlate = row.Placa || row.placa || row.PLACA || row.Placas || row.placas || 
+                         row.PLACAS || row.plate || row.Plate || row.PLATE || row.Vehicle || 
+                         row.vehicle || row.VEHICLE || row.Veículo || row.veículo || row.VEICULO;
+        
+        const normalizedPlate = validateAndNormalizePlate(rawPlate);
+        
+        if (normalizedPlate) {
+          platesInSpreadsheet.add(normalizedPlate);
+        } else if (rawPlate) {
+          result.invalid++;
+          result.errors.push({
+            plate: rawPlate,
+            reason: 'Formato de placa inválido'
+          });
+        }
       }
     }
 
@@ -203,6 +251,19 @@ export async function processMaintenanceImport(
       createdAt: new Date()
     });
 
+    // Buscar estatísticas finais dos veículos no escopo
+    const finalVehicles = await storage.getAllVehicles();
+    const scopedFinalVehicles = isAdmin 
+      ? finalVehicles 
+      : finalVehicles.filter(v => v.baseId === userBaseId);
+    
+    result.finalStats = {
+      totalVehicles: scopedFinalVehicles.length,
+      inMaintenance: scopedFinalVehicles.filter(v => v.status === 'em_manutencao').length,
+      available: scopedFinalVehicles.filter(v => v.status === 'em_operacao').length,
+      stopped: scopedFinalVehicles.filter(v => v.status === 'parado').length
+    };
+
     console.log(`[MAINTENANCE-IMPORT] Resumo final:`, {
       total: result.total,
       enteredMaintenance: result.enteredMaintenance,
@@ -210,7 +271,8 @@ export async function processMaintenanceImport(
       alreadyInMaintenance: result.alreadyInMaintenance,
       notFound: result.notFound,
       invalid: result.invalid,
-      updated: result.updated
+      updated: result.updated,
+      finalStats: result.finalStats
     });
 
     result.success = true;

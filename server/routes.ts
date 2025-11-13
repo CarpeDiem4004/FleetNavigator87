@@ -11210,6 +11210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           enteredMaintenance: result.enteredMaintenance,
           exitedMaintenance: result.exitedMaintenance
         },
+        finalStats: result.finalStats,
         errors: result.errors
       });
 
