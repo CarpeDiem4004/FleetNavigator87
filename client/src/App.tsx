@@ -119,6 +119,7 @@ import LineHallChecklistManager from "@/pages/LineHallChecklistManager";
 import FuelCardPage from "@/pages/FuelCardPage";
 import FuelCard from "@/pages/FuelCard";
 import FuelCardRequestsPanel from "@/pages/FuelCardRequestsPanel";
+import FuelCardAnalyticsDashboard from "@/pages/FuelCardAnalyticsDashboard";
 import FuelCardSolicitation from "@/pages/fuel-card/solicitation";
 import FuelCardDraft from "@/pages/fuel-card/draft";
 import FuelCardConfirmation from "@/pages/fuel-card/confirmation";
@@ -1011,6 +1012,8 @@ function App() {
           {/* Página principal de solicitações de cartão combustível */}
           <ProtectedRoute path="/fuel-card-requests" component={FuelCardRequestsPanel} />
           <ProtectedRoute path="/fuel-cards" component={FuelCardRequestsPanel} />
+          {/* Dashboard de análise de consumo de combustível */}
+          <ProtectedRoute path="/fuel-card/analytics" component={FuelCardAnalyticsDashboard} />
           <ProtectedRoute path="/fuel-card-dashboard" component={FuelCard} />
           {/* Relatório de consumo de combustível */}
           <ProtectedRoute path="/fuel-consumption-report" component={FuelConsumptionReport} />

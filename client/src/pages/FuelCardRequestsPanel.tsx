@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/lib/queryClient';
-import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, TrendingUp, TrendingDown, DollarSign, Download, Plus, Trash2, Truck, History, FileText, AlertTriangle } from 'lucide-react';
+import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, TrendingUp, TrendingDown, DollarSign, Download, Plus, Trash2, Truck, History, FileText, AlertTriangle, BarChart3 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
@@ -1394,14 +1394,25 @@ const FuelCardRequestsPanel: React.FC = () => {
           </h1>
           <div className="flex items-center gap-3">
             {(user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
-              <Button 
-                variant="secondary" 
-                className="flex items-center gap-2 bg-blue-100 text-blue-700 hover:bg-blue-200"
-                onClick={() => setLocation('/terceiros/gerenciamento')}
-              >
-                <Truck className="h-4 w-4" />
-                Gerenciamento Terceiros
-              </Button>
+              <>
+                <Button 
+                  variant="secondary" 
+                  className="flex items-center gap-2 bg-purple-100 text-purple-700 hover:bg-purple-200"
+                  onClick={() => setLocation('/fuel-card/analytics')}
+                  data-testid="button-analytics"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  Análise de Consumo
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  className="flex items-center gap-2 bg-blue-100 text-blue-700 hover:bg-blue-200"
+                  onClick={() => setLocation('/terceiros/gerenciamento')}
+                >
+                  <Truck className="h-4 w-4" />
+                  Gerenciamento Terceiros
+                </Button>
+              </>
             )}
             
             {/* Controles para relatório por data */}
