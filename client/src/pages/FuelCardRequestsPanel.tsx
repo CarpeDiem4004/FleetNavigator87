@@ -1285,6 +1285,8 @@ const FuelCardRequestsPanel: React.FC = () => {
   // Funções para calcular estatísticas
   // Get filtered bases based on selected project
   const getFilteredBases = () => {
+    console.log('🔍 [getFilteredBases] CHAMADA! Filter:', projectFilter, 'Projetos:', projects.length);
+    
     if (projectFilter === 'all') {
       // Return all unique bases from solicitations + projects
       const allBases = new Map<string, string>(); // base_name -> display_name
@@ -1309,13 +1311,19 @@ const FuelCardRequestsPanel: React.FC = () => {
         }
       });
       
-      return Array.from(allBases.entries())
+      const result = Array.from(allBases.entries())
         .map(([base_name, display_name]) => ({ base_name, display_name }))
         .sort((a, b) => a.display_name.localeCompare(b.display_name));
+      
+      const vespasiano = result.find(b => b.base_name.includes('VESPASIANO'));
+      console.log('📊 [ALL] Total bases:', result.length, 'VESPASIANO?', vespasiano ? `SIM: ${vespasiano.display_name}` : 'NÃO');
+      return result;
     } else {
       // Return bases from selected project + solicitations matching that project
       const selectedProject = projects.find(p => p.id.toString() === projectFilter);
       const projectBases = new Map<string, string>(); // base_name -> display_name
+      
+      console.log('📂 [PROJETO] Selecionado:', selectedProject?.name, 'Bases do projeto:', selectedProject?.bases?.length || 0);
       
       // Add bases from the selected project
       if (selectedProject && selectedProject.bases) {
@@ -1341,9 +1349,13 @@ const FuelCardRequestsPanel: React.FC = () => {
         }
       });
       
-      return Array.from(projectBases.entries())
+      const result = Array.from(projectBases.entries())
         .map(([base_name, display_name]) => ({ base_name, display_name }))
         .sort((a, b) => a.display_name.localeCompare(b.display_name));
+      
+      const vespasiano = result.find(b => b.base_name.includes('VESPASIANO'));
+      console.log('📊 [PROJETO] Total bases filtradas:', result.length, 'VESPASIANO?', vespasiano ? `SIM: ${vespasiano.display_name}` : 'NÃO');
+      return result;
     }
   };
 
