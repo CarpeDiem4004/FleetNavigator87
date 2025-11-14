@@ -594,15 +594,22 @@ const FuelCardRequestsPanel: React.FC = () => {
       const data = await response.json();
       
       if (data.success) {
-        setProjects(data.data);
+        // FORÇA TIMESTAMP NO STATE PARA FORÇAR RE-RENDER
+        const projectsWithTimestamp = data.data.map((p: any) => ({
+          ...p,
+          _loadedAt: Date.now()
+        }));
+        setProjects(projectsWithTimestamp);
         
         // DEBUG: Log de bases carregadas
         const totalBases = data.data.reduce((acc: number, proj: any) => acc + (proj.bases?.length || 0), 0);
-        const vespasiano = data.data.find((p: any) => p.id === 3)?.bases?.find((b: any) => b.base_name.includes('VESPASIANO'));
-        console.log('[FUEL-CARD-PANEL] ✅ Projetos carregados:', {
+        const mercadoLivre = data.data.find((p: any) => p.id === 3);
+        const vespasiano = mercadoLivre?.bases?.find((b: any) => b.base_name.includes('VESPASIANO'));
+        console.log('🔥 [FUEL-CARD] ATUALIZADO!', {
           projetos: data.data.length,
           totalBases,
-          vespasiano: vespasiano ? 'ENCONTRADA ✓' : 'NÃO ENCONTRADA ✗'
+          mercadoLivreBases: mercadoLivre?.bases?.length || 0,
+          vespasiano: vespasiano ? `ENCONTRADA: ${vespasiano.display_name}` : 'NÃO ENCONTRADA'
         });
       }
     } catch (err) {
