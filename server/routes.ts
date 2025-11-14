@@ -94,6 +94,7 @@ import {
   createFuelCardRequest,
   getFuelCardSolicitationsCounts
 } from "./fuelCardSolicitationsApi";
+import { getFuelCardAnalytics } from "./fuelCardAnalyticsApi";
 import { getFuelConsumptionReport, getBasesForFilter } from "./routes/fuelConsumptionReportApi";
 import { exportFuelCardSolicitationsToCSV } from "./fuelCardExportAlternative";
 import { 
@@ -3657,6 +3658,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // GET - Analytics de consumo de combustível
+  app.get('/api/fuel-card/analytics', isAuthenticated, getFuelCardAnalytics);
 
   // POST - Aprovar solicitação de recarga
   app.post('/api/fuel-card/:id/approve', isAuthenticated, async (req, res) => {
