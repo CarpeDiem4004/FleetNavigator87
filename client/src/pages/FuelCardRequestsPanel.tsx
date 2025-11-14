@@ -595,6 +595,15 @@ const FuelCardRequestsPanel: React.FC = () => {
       
       if (data.success) {
         setProjects(data.data);
+        
+        // DEBUG: Log de bases carregadas
+        const totalBases = data.data.reduce((acc: number, proj: any) => acc + (proj.bases?.length || 0), 0);
+        const vespasiano = data.data.find((p: any) => p.id === 3)?.bases?.find((b: any) => b.base_name.includes('VESPASIANO'));
+        console.log('[FUEL-CARD-PANEL] ✅ Projetos carregados:', {
+          projetos: data.data.length,
+          totalBases,
+          vespasiano: vespasiano ? 'ENCONTRADA ✓' : 'NÃO ENCONTRADA ✗'
+        });
       }
     } catch (err) {
       console.error('Erro ao buscar projetos:', err);
