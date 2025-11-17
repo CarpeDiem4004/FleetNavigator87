@@ -1274,3 +1274,81 @@ export type FormToken = typeof formTokens.$inferSelect;
 export type InsertFormToken = z.infer<typeof insertFormTokenSchema>;
 export type AbastecimentoPosPago = typeof abastecimentosPosPago.$inferSelect;
 export type InsertAbastecimentoPosPago = z.infer<typeof insertAbastecimentoPosPagoSchema>;
+
+// ==================== SISTEMA DE INDICADORES DE MANUTENÇÃO ====================
+
+// Tabela para controle de uploads de indicadores de manutenção
+export const indicadoresUploads = pgTable("indicadores_uploads", {
+  id: serial("id").primaryKey(),
+  filename: text("filename").notNull(),
+  upload_date: date("upload_date").notNull(),
+  total_records: integer("total_records").notNull().default(0),
+  user_id: integer("user_id").references(() => users.id),
+  processed_at: timestamp("processed_at").defaultNow(),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// Tabela para controle de estoque de peças
+export const indicadoresPecas = pgTable("indicadores_pecas", {
+  id: serial("id").primaryKey(),
+  upload_id: integer("upload_id").references(() => indicadoresUploads.id).notNull(),
+  data: date("data").notNull(),
+  filtro_combustivel: integer("filtro_combustivel"),
+  filtro_ar: integer("filtro_ar"),
+  filtro_oleo: integer("filtro_oleo"),
+  oleo_motor_5w30: integer("oleo_motor_5w30"),
+  pastilha_freio_dianteira: integer("pastilha_freio_dianteira"),
+  filtro_combustivel_master_2023: integer("filtro_combustivel_master_2023"),
+  pastilha_freio_traseira: integer("pastilha_freio_traseira"),
+  disco_freio_dianteiro: integer("disco_freio_dianteiro"),
+  disco_freio_traseiro: integer("disco_freio_traseiro"),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// Tabela para veículos em manutenção
+export const indicadoresDados = pgTable("indicadores_dados", {
+  id: serial("id").primaryKey(),
+  upload_id: integer("upload_id").references(() => indicadoresUploads.id).notNull(),
+  oficina_debito: text("oficina_debito"),
+  atendimento: text("atendimento"),
+  placa: text("placa").notNull(),
+  modelo: text("modelo"),
+  km: integer("km"),
+  relato: text("relato"),
+  data_agenda: date("data_agenda"),
+  focal: text("focal"),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// Tabela para histórico de manutenções liberadas/concluídas
+export const indicadoresLiberado = pgTable("indicadores_liberado", {
+  id: serial("id").primaryKey(),
+  upload_id: integer("upload_id").references(() => indicadoresUploads.id).notNull(),
+  data_forms: date("data_forms"),
+  atendimento: text("atendimento"),
+  placa: text("placa").notNull(),
+  modelo: text("modelo"),
+  km: decimal("km", { precision: 12, scale: 3 }),
+  relato: text("relato"),
+  data_agenda: date("data_agenda"),
+  focal: text("focal"),
+  reparo: text("reparo"),
+  tipo_manutencao: text("tipo_manutencao"),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// Schemas para inserção
+export const insertIndicadoresUploadSchema = createInsertSchema(indicadoresUploads);
+export const insertIndicadoresPecasSchema = createInsertSchema(indicadoresPecas);
+export const insertIndicadoresDadosSchema = createInsertSchema(indicadoresDados);
+export const insertIndicadoresLiberadoSchema = createInsertSchema(indicadoresLiberado);
+
+// Tipos TypeScript
+export type IndicadoresUpload = typeof indicadoresUploads.$inferSelect;
+export type InsertIndicadoresUpload = z.infer<typeof insertIndicadoresUploadSchema>;
+export type IndicadoresPecas = typeof indicadoresPecas.$inferSelect;
+export type InsertIndicadoresPecas = z.infer<typeof insertIndicadoresPecasSchema>;
+export type IndicadoresDados = typeof indicadoresDados.$inferSelect;
+export type InsertIndicadoresDados = z.infer<typeof insertIndicadoresDadosSchema>;
+export type IndicadoresLiberado = typeof indicadoresLiberado.$inferSelect;
+export type InsertIndicadoresLiberado = z.infer<typeof insertIndicadoresLiberadoSchema>;
