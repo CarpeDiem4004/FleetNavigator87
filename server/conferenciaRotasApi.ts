@@ -317,7 +317,8 @@ export const uploadRouteData = async (req: Request, res: Response) => {
       success: true,
       message: 'Planilha processada com sucesso',
       upload_id: uploadId,
-      total_records: routeData.length
+      total_records: routeData.length,
+      records_processed: routeData.length
     });
 
   } catch (error) {

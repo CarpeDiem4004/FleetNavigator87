@@ -166,15 +166,15 @@ const ConferenciaRotas: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      // Processar arquivo Excel
-      const excelData = await processExcelFile(selectedFile);
-      setUploadedData(excelData);
-
-      // Enviar dados para o backend
+      // Enviar arquivo direto para o backend sem processamento local
       const formData = new FormData();
       formData.append('file', selectedFile);
-      formData.append('data', JSON.stringify(excelData));
       formData.append('upload_date', selectedDate);
+
+      console.log('[Frontend] Enviando arquivo para processamento no servidor:', {
+        fileName: selectedFile.name,
+        uploadDate: selectedDate
+      });
 
       const response = await fetch('/api/conferencia-rotas/upload', {
         method: 'POST',
@@ -195,9 +195,15 @@ const ConferenciaRotas: React.FC = () => {
 
       const result = await response.json();
 
+      console.log('[Frontend] Resposta do servidor:', result);
+
+      if (!result.success) {
+        throw new Error(result.message || 'Erro ao processar arquivo');
+      }
+
       toast({
         title: "Upload realizado com sucesso!",
-        description: `${excelData.length} registros processados para a data ${selectedDate}`,
+        description: `${result.records_processed || 0} registros processados para a data ${selectedDate}`,
       });
 
       // Gerar relatório automaticamente
@@ -214,7 +220,7 @@ const ConferenciaRotas: React.FC = () => {
       setIsUploading(false);
       setIsProcessing(false);
     }
-  }, [selectedFile, selectedDate, processExcelFile, toast]);
+  }, [selectedFile, selectedDate, toast]);
 
   const generateReport = useCallback(async () => {
     if (!selectedDate) {
