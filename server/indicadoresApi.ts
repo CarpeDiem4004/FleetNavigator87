@@ -5,7 +5,10 @@ import xlsx from 'xlsx';
 
 // Middleware para verificar autenticação
 function isAuthenticated(req: Request, res: Response, next: any) {
-  if (req.session && req.session.user) {
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    return next();
+  }
+  if (req.user) {
     return next();
   }
   return res.status(401).json({ success: false, message: 'Não autenticado' });
