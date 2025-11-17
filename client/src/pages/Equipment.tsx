@@ -482,7 +482,9 @@ export default function Equipment() {
         });
         
         if (!response.ok) {
-          throw new Error('Erro ao criar termo com PDF');
+          const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+          console.error('[TERMO] Erro ao criar termo:', errorData);
+          throw new Error(errorData.error || errorData.message || 'Erro ao criar termo com PDF');
         }
         
         const result = await response.json();
@@ -504,11 +506,12 @@ export default function Equipment() {
         // Também baixar o PDF para o usuário
         handleDownloadTerm(data, selectedEquipmentForTerm);
         
-      } catch (error) {
-        console.error('Erro ao criar termo:', error);
+      } catch (error: any) {
+        console.error('[TERMO] Erro ao criar termo:', error);
+        const errorMessage = error.message || "Erro ao criar termo de responsabilidade.";
         toast({
           title: "Erro",
-          description: "Erro ao criar termo de responsabilidade.",
+          description: errorMessage,
           variant: "destructive",
         });
       }
