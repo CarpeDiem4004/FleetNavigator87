@@ -179,6 +179,22 @@ export default function FleetManagement() {
                 </Button>
               </CardFooter>
             </Card>
+
+            <Card className="flex flex-col">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <FileBarChart className="h-5 w-5 text-primary" />
+                  Indicadores de Manutenção
+                </CardTitle>
+              </CardHeader>
+              <CardFooter className="mt-auto">
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href="/fleet-management/indicadores-manutencao">
+                    Acessar <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
           </div>
 
           <div className="mt-6">
