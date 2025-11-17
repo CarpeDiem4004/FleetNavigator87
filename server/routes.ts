@@ -118,6 +118,7 @@ import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoute
 import { registerPostosMapeamentoRoutes } from "./routes/postosMapeamentoRoutes";
 import { registerUsuariosSupabaseRoutes } from "./routes/usuariosSupabaseRoutes";
 import { uploadRouteData, generateReport, listUploads, getUploadData, deleteUpload, exportReportToExcel } from "./conferenciaRotasApi";
+import { getRelatorioConsumo } from "./relatorioConsumoApi";
 // import { supabaseInsertHandler } from "./routes/supabaseInsertRoute"; // Desabilitado - usando versão PostgreSQL direta
 import postoSupabaseRoutes from "./routes/postoSupabaseRoutes";
 import postoRoutes from "./routes/postoRoutes.js";
@@ -1741,6 +1742,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Deletar upload
   app.delete('/api/conferencia-rotas/upload/:uploadId', isAuthenticated, deleteUpload);
+  
+  // Relatório e Análise de Consumo (cruza rotas com solicitações de saldo)
+  app.get('/api/relatorio/consumo', isAuthenticated, getRelatorioConsumo);
 
   // ENDPOINTS CRÍTICOS - Registrar primeiro para evitar interceptação pelos middlewares
   

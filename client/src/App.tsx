@@ -138,6 +138,7 @@ import ManutencaoPage from "@/pages/ManutencaoPage";
 import TratativaManutencaoPage from "@/pages/TratativaManutencaoPage";
 import OficinasExternaPage from "@/pages/OficinasExternaPage";
 import ConferenciaRotas from "@/pages/ConferenciaRotas";
+import RelatorioConsumo from "@/pages/RelatorioConsumo";
 import OficinaDashboard from "@/pages/oficina/OficinaDashboard";
 import OficinaLogin from "@/pages/oficina/OficinaLogin";
 import LoginAutofrei from "@/pages/oficina/LoginAutofrei";
@@ -757,6 +758,7 @@ function App() {
           <ProtectedRoute path="/fuel-receipts" component={FuelReceiptsPage} />
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
           <ProtectedRoute path="/conferencia-rotas" component={ConferenciaRotas} />
+          <ProtectedRoute path="/relatorio-consumo" component={RelatorioConsumo} />
           <ProtectedRoute path="/line-haul" component={LineHaulPage} />
           <ProtectedRoute path="/users" component={UsersNew} />
           <ProtectedRoute path="/bases" component={Bases} />

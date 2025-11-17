@@ -116,6 +116,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     { href: '/accidents', label: 'Sinistros e Roubos', icon: AlertCircle },
     { href: '/work-safety', label: 'Segurança do Trabalho', icon: ShieldCheck },
     { href: '/conferencia-rotas', label: 'Conferência de Rotas', icon: FolderOpen },
+    { href: '/relatorio-consumo', label: 'Relatório de Consumo', icon: BarChart4 },
     { href: '/users', label: 'Usuários', icon: Users },
     { href: '/bases', label: 'Bases', icon: Building2 },
     { href: '/solicitacoes', label: 'Solicitações da Base', icon: MessageSquare },
