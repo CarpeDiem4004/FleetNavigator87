@@ -157,8 +157,10 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Reque
           await pool.query(
             `INSERT INTO indicadores_liberado (
               upload_id, data_forms, atendimento, placa, modelo, km, relato, 
-              data_agenda, focal, reparo, tipo_manutencao
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+              data_agenda, focal, reparo, tipo_manutencao, aprovacao, centro_custo,
+              operacao, status, previsao_entrega, liberado, d_manut, status2, oficina,
+              lider_base, mes
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
             [
               uploadId,
               convertExcelDate(row['Data Forms']),
@@ -170,7 +172,18 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Reque
               convertExcelDate(row['Data Agenda']),
               row['Focal'] || null,
               row['Reparo'] || null,
-              row['Tipo de Manutenção'] || row['Tipo de manutenção'] || null
+              row['Tipo de Manutenção'] || row['Tipo de manutenção'] || null,
+              row['Aprovação '] || row['Aprovação'] || null,
+              row['Centro de Custo'] || null,
+              row['Operação'] || null,
+              row['Status'] || null,
+              convertExcelDate(row['Previsão de Entrega']),
+              convertExcelDate(row['Liberado']),
+              parseNumber(row['D+Manut']),
+              row['Status2'] || null,
+              row['Oficina'] || null,
+              row['Lider Base'] || null,
+              row['Mês'] || null
             ]
           );
           totalRecords++;

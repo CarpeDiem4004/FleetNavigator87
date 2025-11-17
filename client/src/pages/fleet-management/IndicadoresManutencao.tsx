@@ -82,6 +82,17 @@ interface Liberado {
   tipo_manutencao: string;
   data_forms: string;
   atendimento: string;
+  aprovacao: string;
+  centro_custo: string;
+  operacao: string;
+  status: string;
+  previsao_entrega: string;
+  liberado: string;
+  d_manut: number;
+  status2: string;
+  oficina: string;
+  lider_base: string;
+  mes: string;
 }
 
 interface Stats {
@@ -522,11 +533,15 @@ export default function IndicadoresManutencao() {
                             <TableRow>
                               <TableHead>Placa</TableHead>
                               <TableHead>Modelo</TableHead>
+                              <TableHead>Operação</TableHead>
                               <TableHead>Tipo</TableHead>
-                              <TableHead>Relato</TableHead>
-                              <TableHead>Reparo</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>D+Manut</TableHead>
+                              <TableHead>Oficina</TableHead>
                               <TableHead>Focal</TableHead>
+                              <TableHead>Centro Custo</TableHead>
                               <TableHead>Data Agenda</TableHead>
+                              <TableHead>Liberado</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -534,6 +549,7 @@ export default function IndicadoresManutencao() {
                               <TableRow key={item.id}>
                                 <TableCell className="font-medium">{item.placa}</TableCell>
                                 <TableCell>{item.modelo || '-'}</TableCell>
+                                <TableCell>{item.operacao || '-'}</TableCell>
                                 <TableCell>
                                   <Badge 
                                     variant={
@@ -545,10 +561,17 @@ export default function IndicadoresManutencao() {
                                     {item.tipo_manutencao || '-'}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="max-w-xs truncate">{item.relato || '-'}</TableCell>
-                                <TableCell>{item.reparo || '-'}</TableCell>
+                                <TableCell>
+                                  <Badge variant={item.status2?.includes('Fora do Prazo') ? 'destructive' : 'outline'}>
+                                    {item.status2 || item.status || '-'}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>{item.d_manut || '-'}</TableCell>
+                                <TableCell className="max-w-xs truncate">{item.oficina || '-'}</TableCell>
                                 <TableCell>{item.focal || '-'}</TableCell>
+                                <TableCell>{item.centro_custo || '-'}</TableCell>
                                 <TableCell>{formatDate(item.data_agenda)}</TableCell>
+                                <TableCell>{formatDate(item.liberado)}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
