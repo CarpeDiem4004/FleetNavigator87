@@ -221,8 +221,8 @@ export const uploadRouteData = async (req: Request, res: Response) => {
 
     // Processar dados
     const routeData = rawData.map((row: any) => {
-      // Converter data do Excel para formato brasileiro
-      let dataFormatada = '';
+      // Converter data do Excel para formato ISO (YYYY-MM-DD) para o PostgreSQL
+      let dataISO = '';
       let dataExcel;
 
       if (isSimpleFormat) {
@@ -234,22 +234,29 @@ export const uploadRouteData = async (req: Request, res: Response) => {
       }
       
       if (typeof dataExcel === 'number') {
-        // Data serial do Excel - corrigir offset de fuso horário
+        // Data serial do Excel - converter para formato ISO
         const date = new Date((dataExcel - 25569) * 86400 * 1000);
         // Ajustar para timezone UTC para evitar problemas de fuso horário
         const utcDate = new Date(date.getTime() + (date.getTimezoneOffset() * 60000));
-        dataFormatada = utcDate.toLocaleDateString('pt-BR');
+        // Formato ISO: YYYY-MM-DD
+        dataISO = utcDate.toISOString().split('T')[0];
         
-        console.log(`[CONFERENCIA] Conversão de data Excel: ${dataExcel} -> ${date.toISOString()} -> ${dataFormatada}`);
+        console.log(`[CONFERENCIA] Conversão de data Excel: ${dataExcel} -> ${utcDate.toISOString()} -> ${dataISO}`);
       } else if (typeof dataExcel === 'string') {
-        // Data já em string
-        dataFormatada = dataExcel;
+        // Data já em string - tentar converter para ISO
+        // Se já estiver em formato brasileiro (dd/mm/yyyy), converter
+        if (dataExcel.includes('/')) {
+          const [dia, mes, ano] = dataExcel.split('/');
+          dataISO = `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+        } else {
+          dataISO = dataExcel;
+        }
       }
 
       if (isSimpleFormat) {
         // Formato simples
         return {
-          data: dataFormatada,
+          data: dataISO,
           operacao: row['Base'] || row['base'] || '',
           motorista: 'N/D',
           placa: row['PLACA'] || row['placa'] || '',
@@ -258,7 +265,7 @@ export const uploadRouteData = async (req: Request, res: Response) => {
       } else {
         // Formato completo
         return {
-          data: dataFormatada,
+          data: dataISO,
           operacao: row['OPERAÇÃO'] || '',
           motorista: row['MOTORISTA'] || '',
           placa: row['PLACA'] || '',
