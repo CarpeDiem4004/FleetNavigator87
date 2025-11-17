@@ -97,6 +97,7 @@ import {
 import { getFuelCardAnalytics } from "./fuelCardAnalyticsApi";
 import { getFuelConsumptionReport, getBasesForFilter } from "./routes/fuelConsumptionReportApi";
 import { exportFuelCardSolicitationsToCSV } from "./fuelCardExportAlternative";
+import { getBaseDisplayName } from "@shared/baseNormalization";
 import { 
   getProjects, 
   getProjectBases, 
@@ -12566,11 +12567,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           LIMIT 50
         `),
         pool.query(`
-          SELECT b.id, b.project_id, b.name as base_name, b.basename as base_code, b.active as is_active
-          FROM bases b
-          LEFT JOIN projects p ON b.project_id = p.id
-          WHERE b.active = true
-          ORDER BY b.name ASC
+          SELECT pb.id, pb.project_id, pb.base_name, pb.base_code, pb.is_active
+          FROM project_bases pb
+          INNER JOIN projects p ON pb.project_id = p.id
+          WHERE pb.is_active = true AND p.is_active = true
+          ORDER BY pb.base_name ASC
         `)
       ]);
       
@@ -12582,7 +12583,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         basesMap.get(base.project_id).push({
           id: base.id,
-          base_name: base.base_name || `Base ${base.id}`,
+          base_name: getBaseDisplayName(base.base_name) || `Base ${base.id}`,
           base_code: base.base_code,
           is_active: base.is_active
         });

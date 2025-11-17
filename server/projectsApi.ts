@@ -177,6 +177,15 @@ export async function getProjectsWithBases(req: Request, res: Response) {
     console.log(`[PROJECTS-API] 📊 Projetos encontrados: ${projectsResult.rows.length}`);
     console.log(`[PROJECTS-API] 📊 Bases encontradas: ${basesResult.rows.length}`);
     
+    // DEBUG: Procurar por BRASILIA
+    const brasiliaBase = basesResult.rows.find(b => b.base_name && b.base_name.toUpperCase().includes('BRASILIA'));
+    if (brasiliaBase) {
+      console.log(`[DEBUG-BRASILIA] 🔍 Base BRASILIA encontrada no DB:`, brasiliaBase);
+      console.log(`[DEBUG-BRASILIA] 🏷️ Display name será:`, getBaseDisplayName(brasiliaBase.base_name));
+    } else {
+      console.log(`[DEBUG-BRASILIA] ❌ Base BRASILIA NÃO encontrada nos resultados do DB`);
+    }
+    
     // Medir tempo de processamento em memória
     const processStart = Date.now();
     
