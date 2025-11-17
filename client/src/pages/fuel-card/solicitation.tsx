@@ -434,6 +434,24 @@ export default function FuelCardSolicitation() {
               </div>
             </div>
             
+            <div className="space-y-3 bg-orange-50 p-4 rounded-lg border-2 border-orange-400">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">⚠️</span>
+                <div>
+                  <p className="font-bold text-orange-900 text-lg">AVISO IMPORTANTE – CONFIRA A PLACA ANTES DE ENVIAR</p>
+                  <div className="mt-3 space-y-2 text-orange-800">
+                    <p>O envio de placa incorreta poderá resultar no uso indevido do saldo por outra pessoa.</p>
+                    <p className="font-semibold">O responsável pela solicitação com erro será submetido às medidas administrativas cabíveis.</p>
+                    <p>Erros de placa não são aceitáveis, pois é possível realizar a conferência antes do envio.</p>
+                    <p className="flex items-center gap-2 mt-3 font-semibold">
+                      <span>👉</span>
+                      <span>Revise todas as informações antes de enviar a solicitação.</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
             <div className="space-y-3 bg-amber-50 p-4 rounded-lg border border-amber-200">
               <div className="flex items-start gap-3">
                 <span className="text-2xl">🔎</span>
