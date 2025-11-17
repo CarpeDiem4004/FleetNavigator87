@@ -2,7 +2,14 @@ import { Router, Request, Response } from 'express';
 import { pool } from './db';
 import multer from 'multer';
 import xlsx from 'xlsx';
-import { isAuthenticated } from './middleware';
+
+// Middleware para verificar autenticação
+function isAuthenticated(req: Request, res: Response, next: any) {
+  if (req.session && req.session.user) {
+    return next();
+  }
+  return res.status(401).json({ success: false, message: 'Não autenticado' });
+}
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
