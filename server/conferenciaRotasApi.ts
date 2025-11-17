@@ -184,11 +184,27 @@ export const uploadRouteData = async (req: Request, res: Response) => {
 
     console.log('[CONFERENCIA] Dados brutos extraídos:', rawData.length, 'registros');
 
-    // Processar dados do MercadoLivre
+    // Detectar formato do arquivo
+    const firstRow = rawData[0] as any;
+    const isSimpleFormat = firstRow && ('Data' in firstRow || 'data' in firstRow) && 
+                          ('Base' in firstRow || 'base' in firstRow) && 
+                          !('DATA DO FRETE/ABASTECIMENTO' in firstRow);
+
+    console.log('[CONFERENCIA] Formato detectado:', isSimpleFormat ? 'Simples (Data/Base/Placa)' : 'Completo (MercadoLivre)');
+
+    // Processar dados
     const routeData = rawData.map((row: any) => {
       // Converter data do Excel para formato brasileiro
       let dataFormatada = '';
-      const dataExcel = row['DATA DO FRETE/ABASTECIMENTO'];
+      let dataExcel;
+
+      if (isSimpleFormat) {
+        // Formato simples: Data, Base, PLACA
+        dataExcel = row['Data'] || row['data'];
+      } else {
+        // Formato completo: DATA DO FRETE/ABASTECIMENTO
+        dataExcel = row['DATA DO FRETE/ABASTECIMENTO'];
+      }
       
       if (typeof dataExcel === 'number') {
         // Data serial do Excel - corrigir offset de fuso horário
@@ -203,13 +219,25 @@ export const uploadRouteData = async (req: Request, res: Response) => {
         dataFormatada = dataExcel;
       }
 
-      return {
-        data: dataFormatada,
-        operacao: row['OPERAÇÃO'] || '',
-        motorista: row['MOTORISTA'] || '',
-        placa: row['PLACA'] || '',
-        modelo: row['MODELO'] || ''
-      };
+      if (isSimpleFormat) {
+        // Formato simples
+        return {
+          data: dataFormatada,
+          operacao: row['Base'] || row['base'] || '',
+          motorista: 'N/D',
+          placa: row['PLACA'] || row['placa'] || '',
+          modelo: 'N/D'
+        };
+      } else {
+        // Formato completo
+        return {
+          data: dataFormatada,
+          operacao: row['OPERAÇÃO'] || '',
+          motorista: row['MOTORISTA'] || '',
+          placa: row['PLACA'] || '',
+          modelo: row['MODELO'] || ''
+        };
+      }
     }).filter(item => item.data && item.placa); // Filtrar registros válidos
 
     console.log('[CONFERENCIA] Dados processados:', routeData.length, 'registros válidos');
