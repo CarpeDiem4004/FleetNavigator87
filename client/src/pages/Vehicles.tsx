@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
-import { Plus, Search, Edit, Eye, Trash2, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, Search, Edit, Eye, Trash2, Loader2, CheckCircle, AlertCircle, Activity } from 'lucide-react';
+import { VehicleMaintenanceIndicators } from '@/components/VehicleMaintenanceIndicators';
 import { apiRequest } from '@/lib/queryClient';
 import { validateAndFormatPlate, applyPlateMask, getPlateFormatHint } from '@/lib/plate-utils';
 import { 
@@ -71,6 +72,8 @@ const Vehicles: React.FC = () => {
   const { toast } = useToast();
   const [location] = useLocation();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [indicadoresDialogOpen, setIndicadoresDialogOpen] = useState(false);
+  const [selectedVehiclePlate, setSelectedVehiclePlate] = useState<string>('');
   const [filters, setFilters] = useState({
     status: '',
     type: '',
@@ -527,6 +530,18 @@ const Vehicles: React.FC = () => {
                           variant="ghost" 
                           size="icon"
                           onClick={() => {
+                            setSelectedVehiclePlate(vehicle.plate);
+                            setIndicadoresDialogOpen(true);
+                          }}
+                          data-testid={`button-indicadores-${vehicle.plate}`}
+                          title="Ver Indicadores de Manutenção"
+                        >
+                          <Activity className="h-4 w-4 text-blue-600" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => {
                             if (window.confirm(`Tem certeza que deseja excluir o veículo ${vehicle.plate}?`)) {
                               deleteVehicleMutation.mutate(vehicle.id);
                             }
@@ -818,6 +833,19 @@ const Vehicles: React.FC = () => {
               {addVehicleMutation.isPending ? 'Salvando...' : 'Salvar'}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Indicadores de Manutenção */}
+      <Dialog open={indicadoresDialogOpen} onOpenChange={setIndicadoresDialogOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Indicadores de Manutenção - {selectedVehiclePlate}</DialogTitle>
+            <DialogDescription>
+              Histórico completo de manutenções e indicadores do veículo
+            </DialogDescription>
+          </DialogHeader>
+          <VehicleMaintenanceIndicators placa={selectedVehiclePlate} />
         </DialogContent>
       </Dialog>
     </div>
