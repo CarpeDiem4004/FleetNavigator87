@@ -479,7 +479,7 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
     if (tipo_cartao === 'numero' && !numero_cartao) {
       return res.status(400).json({
         success: false,
-        message: 'O número do cartão é obrigatório quando o tipo de cartão é "número"'
+        message: `Placa ${placa}: O cartão é diferente do veículo, falta a placa do cartão que receberá o saldo!`
       });
     }
     
