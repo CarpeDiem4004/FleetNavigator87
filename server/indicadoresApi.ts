@@ -326,4 +326,49 @@ router.get('/stats', isAuthenticated, async (req: Request, res: Response) => {
   }
 });
 
+// Buscar histórico completo de um veículo por placa (INDEPENDENTE do upload)
+router.get('/veiculo/:placa', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { placa } = req.params;
+
+    // Buscar dados consolidados da view
+    const consolidado = await pool.query(
+      `SELECT * FROM vw_veiculos_indicadores WHERE UPPER(TRIM(placa)) = UPPER(TRIM($1))`,
+      [placa]
+    );
+
+    // Buscar histórico completo de manutenções (todos os uploads)
+    const manutencoes = await pool.query(
+      `SELECT il.*, u.upload_date, u.user_id
+       FROM indicadores_liberado il
+       LEFT JOIN indicadores_uploads u ON il.upload_id = u.id
+       WHERE UPPER(TRIM(il.placa)) = UPPER(TRIM($1))
+       ORDER BY il.data_agenda DESC NULLS LAST`,
+      [placa]
+    );
+
+    // Buscar dados em manutenção atual
+    const emManutencao = await pool.query(
+      `SELECT id.*, u.upload_date
+       FROM indicadores_dados id
+       LEFT JOIN indicadores_uploads u ON id.upload_id = u.id
+       WHERE UPPER(TRIM(id.placa)) = UPPER(TRIM($1))
+       ORDER BY id.data_agenda DESC NULLS LAST`,
+      [placa]
+    );
+
+    res.json({
+      success: true,
+      veiculo: consolidado.rows[0] || null,
+      manutencoes: manutencoes.rows,
+      emManutencao: emManutencao.rows,
+      totalManutencoes: manutencoes.rows.length,
+      totalEmManutencao: emManutencao.rows.length
+    });
+  } catch (error) {
+    console.error('[INDICADORES] Erro ao buscar dados do veículo:', error);
+    res.status(500).json({ success: false, message: 'Erro ao buscar dados do veículo' });
+  }
+});
+
 export default router;
