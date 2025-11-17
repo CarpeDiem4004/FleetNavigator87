@@ -186,9 +186,30 @@ export const uploadRouteData = async (req: Request, res: Response) => {
 
     // Detectar formato do arquivo
     const firstRow = rawData[0] as any;
-    const isSimpleFormat = firstRow && ('Data' in firstRow || 'data' in firstRow) && 
-                          ('Base' in firstRow || 'base' in firstRow) && 
-                          !('DATA DO FRETE/ABASTECIMENTO' in firstRow);
+    
+    // Log detalhado da primeira linha para debug
+    console.log('[CONFERENCIA] DEBUG - Primeira linha do arquivo:');
+    console.log('[CONFERENCIA] DEBUG - Chaves disponíveis:', firstRow ? Object.keys(firstRow) : 'nenhuma');
+    console.log('[CONFERENCIA] DEBUG - Valores da primeira linha:', firstRow);
+    
+    // Verificar se tem as colunas do formato simples
+    const hasDataColumn = firstRow && ('Data' in firstRow || 'data' in firstRow || 'DATA' in firstRow);
+    const hasBaseColumn = firstRow && ('Base' in firstRow || 'base' in firstRow || 'BASE' in firstRow);
+    const hasPlacaColumn = firstRow && ('PLACA' in firstRow || 'placa' in firstRow || 'Placa' in firstRow);
+    
+    // Verificar se NÃO tem as colunas do formato completo
+    const hasMercadoLivreFormat = firstRow && ('DATA DO FRETE/ABASTECIMENTO' in firstRow || 'OPERAÇÃO' in firstRow || 'MOTORISTA' in firstRow);
+    
+    // É formato simples se tiver Data/Base/Placa E NÃO tiver colunas do MercadoLivre
+    const isSimpleFormat = hasDataColumn && hasBaseColumn && !hasMercadoLivreFormat;
+    
+    console.log('[CONFERENCIA] DEBUG - Detecção de formato:', {
+      hasDataColumn,
+      hasBaseColumn,
+      hasPlacaColumn,
+      hasMercadoLivreFormat,
+      isSimpleFormat
+    });
 
     console.log('[CONFERENCIA] Formato detectado:', isSimpleFormat ? 'Simples (Data/Base/Placa)' : 'Completo (MercadoLivre)');
 
