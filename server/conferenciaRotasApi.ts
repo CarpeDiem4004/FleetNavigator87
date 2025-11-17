@@ -193,7 +193,13 @@ export const uploadRouteData = async (req: Request, res: Response) => {
     console.log('[CONFERENCIA] DEBUG - Valores da primeira linha:', firstRow);
     
     // Verificar se tem as colunas do formato simples
-    const hasDataColumn = firstRow && ('Data' in firstRow || 'data' in firstRow || 'DATA' in firstRow);
+    const hasDataColumn = firstRow && (
+      'Data' in firstRow || 
+      'data' in firstRow || 
+      'DATA' in firstRow || 
+      'Data da rota' in firstRow || 
+      'data da rota' in firstRow
+    );
     const hasBaseColumn = firstRow && ('Base' in firstRow || 'base' in firstRow || 'BASE' in firstRow);
     const hasPlacaColumn = firstRow && ('PLACA' in firstRow || 'placa' in firstRow || 'Placa' in firstRow);
     
@@ -220,8 +226,8 @@ export const uploadRouteData = async (req: Request, res: Response) => {
       let dataExcel;
 
       if (isSimpleFormat) {
-        // Formato simples: Data, Base, PLACA
-        dataExcel = row['Data'] || row['data'];
+        // Formato simples: Data (ou "Data da rota"), Base, PLACA
+        dataExcel = row['Data'] || row['data'] || row['Data da rota'] || row['data da rota'];
       } else {
         // Formato completo: DATA DO FRETE/ABASTECIMENTO
         dataExcel = row['DATA DO FRETE/ABASTECIMENTO'];
