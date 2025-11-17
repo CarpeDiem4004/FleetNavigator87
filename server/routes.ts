@@ -117,7 +117,7 @@ import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
 import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
 import { registerPostosMapeamentoRoutes } from "./routes/postosMapeamentoRoutes";
 import { registerUsuariosSupabaseRoutes } from "./routes/usuariosSupabaseRoutes";
-import { uploadRouteData, generateReport, listUploads, getUploadData, deleteUpload, exportReportToExcel } from "./conferenciaRotasApi";
+import { upload as uploadConferencia, uploadRouteData, generateReport, listUploads, getUploadData, deleteUpload, exportReportToExcel } from "./conferenciaRotasApi";
 import { getRelatorioConsumo } from "./relatorioConsumoApi";
 // import { supabaseInsertHandler } from "./routes/supabaseInsertRoute"; // Desabilitado - usando versão PostgreSQL direta
 import postoSupabaseRoutes from "./routes/postoSupabaseRoutes";
@@ -1726,7 +1726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ****************************************
   
   // Upload de planilha de rotas - DEVE FICAR NO INÍCIO
-  app.post('/api/conferencia-rotas/upload', uploadExcel.single('file'), uploadRouteData);
+  app.post('/api/conferencia-rotas/upload', uploadConferencia.single('file'), uploadRouteData);
   
   // Gerar relatório de conferência (acesso público para funcionalidade de conferência)
   app.get('/api/conferencia-rotas/report', generateReport);
