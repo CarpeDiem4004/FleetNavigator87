@@ -105,6 +105,7 @@ import WorkSafety from "@/pages/work-safety";
 import WorkshopsPage from "@/pages/fleet-management/WorkshopsPage";
 import MaintenancePage from "@/pages/fleet-management/MaintenancePage";
 import MaintenanceManagement from "@/pages/fleet-management/maintenance-management";
+import IndicadoresManutencao from "@/pages/fleet-management/IndicadoresManutencao";
 import BudgetManagementPage from "@/pages/fleet-management/BudgetManagementPage";
 import WorkshopBudgets from "@/pages/fleet-management/WorkshopBudgets";
 import InventoryPage from "@/pages/fleet-management/InventoryPage";
@@ -736,6 +737,7 @@ function App() {
           <ProtectedRoute path="/fleet-management/workshops" component={WorkshopsPage} />
           <ProtectedRoute path="/fleet-management/maintenance" component={MaintenanceManagement} />
           <ProtectedRoute path="/fleet-management/maintenance-management" component={MaintenanceManagement} />
+          <ProtectedRoute path="/fleet-management/indicadores-manutencao" component={IndicadoresManutencao} />
           <ProtectedRoute path="/fleet-management/budgets" component={BudgetManagementPage} />
           {/* Redirecionamento da rota antiga para a nova */}
           <Route path="/fleet-management/workshop-budgets">
