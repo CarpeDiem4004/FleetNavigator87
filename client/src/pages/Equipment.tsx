@@ -218,7 +218,13 @@ export default function Equipment() {
   });
   
   const equipments = equipmentsResponse?.data || [];
-  console.log('Equipamentos carregados:', equipments.length, equipments);
+  console.log('Equipamentos carregados:', equipments.length);
+  console.log('📊 [DEBUG] Primeiros 5 equipamentos:', equipments.slice(0, 5).map(e => ({
+    id: e.id,
+    name: e.name,
+    status: e.status,
+    created_at: e.created_at
+  })));
 
   // Query para dashboard
   const { data: dashboardResponse, refetch: refetchDashboard } = useQuery({
@@ -1068,10 +1074,14 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleCreateTerm(equipment)}
-                                title={equipment.status !== 'disponivel' ? 'Apenas equipamentos disponíveis podem ter termos criados' : 'Criar Termo de Responsabilidade'}
+                                onClick={() => {
+                                  console.log('🔘 [CREATE-TERM-BTN] Equipamento:', equipment.name, 'Status:', equipment.status, 'ID:', equipment.id);
+                                  handleCreateTerm(equipment);
+                                }}
+                                title={equipment.status !== 'disponivel' ? `Apenas equipamentos disponíveis podem ter termos criados (Status atual: ${equipment.status})` : 'Criar Termo de Responsabilidade'}
                                 disabled={equipment.status !== 'disponivel'}
                                 className={equipment.status !== 'disponivel' ? 'opacity-50 cursor-not-allowed' : ''}
+                                data-testid={`button-create-term-${equipment.id}`}
                               >
                                 <UserCheck className="h-4 w-4" />
                               </Button>
