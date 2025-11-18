@@ -525,12 +525,19 @@ export default function Equipment() {
   };
 
   const handleCreateTerm = (equipment: any) => {
+    console.log('🎯 [HANDLE-CREATE-TERM] Iniciando criação de termo para:', equipment);
+    console.log('🔍 [TERMS-CHECK] Total de termos:', responsibilityTerms?.length);
+    console.log('🔍 [TERMS-CHECK] Termos do equipamento:', responsibilityTerms?.filter(t => t.equipment_id === equipment.id));
+    
     // Verificar se já existe um termo ativo para este equipamento
     const existingActiveTerm = responsibilityTerms?.find(
       term => term.equipment_id === equipment.id && term.is_active
     );
     
+    console.log('🔍 [EXISTING-TERM] Termo ativo existente:', existingActiveTerm);
+    
     if (existingActiveTerm) {
+      console.log('❌ [BLOCKED] Equipamento já possui termo ativo');
       toast({
         title: "Termo já existe",
         description: `Equipamento já possui um termo ativo. Para criar um novo termo, primeiro marque o atual como devolvido.`,
@@ -540,7 +547,10 @@ export default function Equipment() {
     }
     
     // Verificar se o equipamento está disponível para criar termo
+    console.log('🔍 [STATUS-CHECK] Status do equipamento:', equipment.status);
+    
     if (equipment.status !== 'disponivel') {
+      console.log('❌ [BLOCKED] Status não permite criação de termo:', equipment.status);
       toast({
         title: "Equipamento indisponível",
         description: `Equipamento não está disponível (Status: ${equipment.status}). Apenas equipamentos disponíveis podem ter termos criados.`,
@@ -549,6 +559,7 @@ export default function Equipment() {
       return;
     }
     
+    console.log('✅ [OPENING-DIALOG] Abrindo dialog de criação de termo');
     setSelectedEquipmentForTerm(equipment);
     setIsTermDialogOpen(true);
   };
