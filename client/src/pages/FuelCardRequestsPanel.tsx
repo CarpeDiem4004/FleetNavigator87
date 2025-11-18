@@ -1315,8 +1315,10 @@ const FuelCardRequestsPanel: React.FC = () => {
         .map(([base_name, display_name]) => ({ base_name, display_name }))
         .sort((a, b) => a.display_name.localeCompare(b.display_name));
       
-      const vespasiano = result.find(b => b.base_name.includes('VESPASIANO'));
-      console.log('📊 [ALL] Total bases:', result.length, 'VESPASIANO?', vespasiano ? `SIM: ${vespasiano.display_name}` : 'NÃO');
+      const vespasiano = result.filter(b => b.base_name.includes('VESPASIANO'));
+      console.log('📊 [ALL] Total bases:', result.length);
+      console.log('📊 [VESPASIANO DUPLICATAS?]', vespasiano.length, 'encontradas:', vespasiano);
+      console.log('📊 [TODAS AS BASES]:', result.map(b => ({ name: b.base_name, display: b.display_name })));
       return result;
     } else {
       // Return bases from selected project + solicitations matching that project
