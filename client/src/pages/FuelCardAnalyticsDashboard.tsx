@@ -52,6 +52,7 @@ interface AnalyticsData {
   tabelas: {
     rankingVeiculos: Array<{
       placa: string;
+      base: string;
       litros_total: string;
       valor_total: string;
       quantidade_abastecimentos: string;
@@ -165,9 +166,10 @@ const FuelCardAnalyticsDashboard = () => {
 
       // Aba 2: Ranking de Veículos
       const rankingData = [
-        ['Placa', 'Litros Total', 'Valor Total (R$)', 'Qtd Abastecimentos', 'Valor Médio (R$)', 'KM Atual'],
+        ['Placa', 'Base', 'Litros Total', 'Valor Total (R$)', 'Qtd Abastecimentos', 'Valor Médio (R$)', 'KM Atual'],
         ...analytics.tabelas.rankingVeiculos.map(v => [
           v.placa,
+          v.base || 'Não especificado',
           parseFloat(v.litros_total),
           parseFloat(v.valor_total),
           parseInt(v.quantidade_abastecimentos),
@@ -514,6 +516,7 @@ const FuelCardAnalyticsDashboard = () => {
                       <TableRow>
                         <TableHead className="w-12">#</TableHead>
                         <TableHead>Placa</TableHead>
+                        <TableHead>Base</TableHead>
                         <TableHead className="text-right">Litros Total</TableHead>
                         <TableHead className="text-right">Valor Total</TableHead>
                         <TableHead className="text-right">Qtd Abastecimentos</TableHead>
@@ -524,7 +527,7 @@ const FuelCardAnalyticsDashboard = () => {
                     <TableBody>
                       {analytics.tabelas.rankingVeiculos.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                             Nenhum veículo encontrado
                           </TableCell>
                         </TableRow>
@@ -533,6 +536,7 @@ const FuelCardAnalyticsDashboard = () => {
                           <TableRow key={veiculo.placa}>
                             <TableCell className="font-medium">{index + 1}</TableCell>
                             <TableCell className="font-mono font-bold">{veiculo.placa}</TableCell>
+                            <TableCell className="text-sm">{veiculo.base || 'Não especificado'}</TableCell>
                             <TableCell className="text-right">{formatNumber(parseFloat(veiculo.litros_total))}</TableCell>
                             <TableCell className="text-right">{formatCurrency(parseFloat(veiculo.valor_total))}</TableCell>
                             <TableCell className="text-right">{veiculo.quantidade_abastecimentos}</TableCell>

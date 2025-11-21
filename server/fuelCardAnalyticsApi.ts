@@ -234,6 +234,7 @@ export async function getFuelCardAnalytics(req: Request, res: Response) {
     const rankingVeiculosQuery = `
       SELECT 
         placa,
+        base,
         SUM(litros_solicitados) as litros_total,
         SUM(valor_solicitado) as valor_total,
         COUNT(*) as quantidade_abastecimentos,
@@ -241,7 +242,7 @@ export async function getFuelCardAnalytics(req: Request, res: Response) {
         MAX(km_veiculo) as km_atual
       FROM solicitacoes_fuel_card
       ${whereClause}
-      GROUP BY placa
+      GROUP BY placa, base
       ORDER BY valor_total DESC
       LIMIT 50
     `;
