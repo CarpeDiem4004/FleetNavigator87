@@ -1294,8 +1294,10 @@ const FuelCardRequestsPanel: React.FC = () => {
       // Add bases from solicitations (real data from database)
       solicitations.forEach(sol => {
         if (sol.base && sol.base.trim() !== '') {
-          if (!allBases.has(sol.base)) {
-            allBases.set(sol.base, sol.base); // Usar nome normalizado (será formatado no dropdown)
+          // NORMALIZAR antes de adicionar ao Map para eliminar duplicatas por espaços/caracteres invisíveis
+          const normalizedBase = sol.base.trim().replace(/\s+/g, '_').toUpperCase();
+          if (!allBases.has(normalizedBase)) {
+            allBases.set(normalizedBase, normalizedBase);
           }
         }
       });
@@ -1305,7 +1307,9 @@ const FuelCardRequestsPanel: React.FC = () => {
         if (project.bases) {
           project.bases.forEach((base: any) => {
             if (base.base_name) {
-              allBases.set(base.base_name, base.display_name || base.base_name);
+              // NORMALIZAR antes de adicionar ao Map
+              const normalizedBase = base.base_name.trim().replace(/\s+/g, '_').toUpperCase();
+              allBases.set(normalizedBase, base.display_name || normalizedBase);
             }
           });
         }
@@ -1331,7 +1335,9 @@ const FuelCardRequestsPanel: React.FC = () => {
       if (selectedProject && selectedProject.bases) {
         selectedProject.bases.forEach((base: any) => {
           if (base.base_name) {
-            projectBases.set(base.base_name, base.display_name || base.base_name);
+            // NORMALIZAR antes de adicionar ao Map
+            const normalizedBase = base.base_name.trim().replace(/\s+/g, '_').toUpperCase();
+            projectBases.set(normalizedBase, base.display_name || normalizedBase);
           }
         });
       }
@@ -1339,13 +1345,16 @@ const FuelCardRequestsPanel: React.FC = () => {
       // Add bases from solicitations that belong to this project
       solicitations.forEach(sol => {
         if (sol.base && sol.base.trim() !== '') {
+          // NORMALIZAR base da solicitação
+          const normalizedSolBase = sol.base.trim().replace(/\s+/g, '_').toUpperCase();
           // Check if this solicitation's base belongs to the selected project
           if (selectedProject && selectedProject.bases) {
-            const belongsToProject = selectedProject.bases.some((base: any) => 
-              base.base_name === sol.base
-            );
-            if (belongsToProject && !projectBases.has(sol.base)) {
-              projectBases.set(sol.base, sol.base);
+            const belongsToProject = selectedProject.bases.some((base: any) => {
+              const normalizedProjectBase = base.base_name.trim().replace(/\s+/g, '_').toUpperCase();
+              return normalizedProjectBase === normalizedSolBase;
+            });
+            if (belongsToProject && !projectBases.has(normalizedSolBase)) {
+              projectBases.set(normalizedSolBase, normalizedSolBase);
             }
           }
         }
