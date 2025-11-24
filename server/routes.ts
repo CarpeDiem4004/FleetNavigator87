@@ -18960,6 +18960,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const {
         motorista_id,
+        km_inicial,
         itens_verificados,
         total_itens,
         itens_detalhes,
@@ -18967,22 +18968,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status
       } = req.body;
 
-      if (!motorista_id || !itens_detalhes) {
+      if (!motorista_id || !itens_detalhes || !km_inicial) {
         return res.status(400).json({
           success: false,
-          message: 'Dados obrigatórios não fornecidos'
+          message: 'Dados obrigatórios não fornecidos (motorista_id, itens_detalhes, km_inicial)'
         });
       }
 
-      // Simular inserção de checklist (seria salvo em tabela real)
-      const checklistId = Math.floor(Math.random() * 1000) + 1;
+      // Buscar dados do motorista
+      const motoristaQuery = `SELECT nome, cpf FROM motoristas WHERE id = $1`;
+      const motoristaResult = await pool.query(motoristaQuery, [motorista_id]);
+      
+      if (motoristaResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Motorista não encontrado'
+        });
+      }
+
+      const motorista = motoristaResult.rows[0];
+
+      // Buscar placa do veículo associado ao motorista (se houver)
+      const veiculoQuery = `SELECT placa FROM veiculos WHERE motorista_id = $1 LIMIT 1`;
+      const veiculoResult = await pool.query(veiculoQuery, [motorista_id]);
+      const vehiclePlate = veiculoResult.rows[0]?.placa || 'N/A';
+
+      // Inserir checklist no banco
+      const insertQuery = `
+        INSERT INTO driver_checklists (
+          driver_id,
+          driver_name,
+          vehicle_plate,
+          km_atual,
+          observacoes,
+          status,
+          source,
+          driver_type,
+          created_at,
+          updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'line_hall', 'line_hall', NOW(), NOW())
+        RETURNING id
+      `;
+
+      const result = await pool.query(insertQuery, [
+        motorista_id,
+        motorista.nome,
+        vehiclePlate,
+        km_inicial,
+        observacoes_gerais || '',
+        status || 'aprovado'
+      ]);
+
+      const checklistId = result.rows[0].id;
 
       console.log(`Checklist salvo para motorista ${motorista_id}:`, {
         checklistId,
         itens_verificados,
         total_itens,
         status,
-        observacoes_gerais
+        observacoes_gerais,
+        km_inicial
       });
 
       res.json({

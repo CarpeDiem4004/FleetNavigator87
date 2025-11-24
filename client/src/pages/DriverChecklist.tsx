@@ -4,9 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertTriangle, Loader2, Gauge } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 interface ChecklistItem {
@@ -22,6 +23,7 @@ const DriverChecklist: React.FC = () => {
   const [, setLocation] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [observacoes, setObservacoes] = useState('');
+  const [kmInicial, setKmInicial] = useState('');
   const { toast } = useToast();
 
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([
@@ -80,6 +82,15 @@ const DriverChecklist: React.FC = () => {
     const checkedItems = checklistItems.filter(item => item.checked);
     const uncheckedItems = checklistItems.filter(item => !item.checked);
 
+    if (!kmInicial || parseInt(kmInicial) <= 0) {
+      toast({
+        title: "KM inicial obrigatório",
+        description: "Por favor, informe o KM inicial do veículo",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (uncheckedItems.length > 0) {
       toast({
         title: "Checklist incompleto",
@@ -92,6 +103,7 @@ const DriverChecklist: React.FC = () => {
     try {
       const checklistData = {
         motorista_id: parseInt(params.id as string),
+        km_inicial: parseInt(kmInicial),
         itens_verificados: checkedItems.length,
         total_itens: checklistItems.length,
         itens_detalhes: checklistItems,
@@ -171,6 +183,37 @@ const DriverChecklist: React.FC = () => {
                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${completionPercentage}%` }}
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* KM Inicial */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Gauge className="h-5 w-5" />
+              KM Inicial do Veículo
+            </CardTitle>
+            <CardDescription>
+              Informe a quilometragem atual do veículo antes de iniciar a viagem
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="km-inicial">KM Atual *</Label>
+              <Input
+                id="km-inicial"
+                type="number"
+                placeholder="Ex: 125000"
+                value={kmInicial}
+                onChange={(e) => setKmInicial(e.target.value)}
+                className="text-lg font-medium"
+                min="0"
+                required
+              />
+              <p className="text-sm text-gray-500">
+                Este valor será usado para controle de quilometragem da viagem
+              </p>
             </div>
           </CardContent>
         </Card>
