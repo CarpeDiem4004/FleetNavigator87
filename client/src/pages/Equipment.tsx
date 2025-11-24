@@ -635,48 +635,75 @@ export default function Equipment() {
 
   const generateTermPDF = (termData: ResponsibilityTermFormData, equipment: any) => {
     const doc = new jsPDF();
+    let currentY = 20; // Posição Y dinâmica
+    const lineHeight = 10; // Altura entre linhas
+    const pageWidth = 210; // Largura da página A4
+    const margin = 20;
+    const maxWidth = pageWidth - (margin * 2); // Largura máxima do texto
     
     // Título
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('TERMO DE RESPONSABILIDADE', 105, 20, { align: 'center' });
+    doc.text('TERMO DE RESPONSABILIDADE', pageWidth / 2, currentY, { align: 'center' });
+    currentY += 10;
     
     // Subtítulo
     doc.setFontSize(14);
     doc.setFont('helvetica', 'normal');
-    doc.text('CONTROLE DE EQUIPAMENTOS', 105, 30, { align: 'center' });
+    doc.text('CONTROLE DE EQUIPAMENTOS', pageWidth / 2, currentY, { align: 'center' });
+    currentY += 20;
     
     // Informações do equipamento
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('DADOS DO EQUIPAMENTO:', 20, 50);
+    doc.text('DADOS DO EQUIPAMENTO:', margin, currentY);
+    currentY += lineHeight;
     
     doc.setFont('helvetica', 'normal');
-    doc.text(`Equipamento: ${equipment.name}`, 20, 60);
-    doc.text(`Tipo: ${equipmentTypeLabels[equipment.type]}`, 20, 70);
-    doc.text(`Marca/Modelo: ${equipment.brand || 'N/A'} ${equipment.model || ''}`, 20, 80);
-    doc.text(`Número de Série: ${equipment.serial_number || 'N/A'}`, 20, 90);
-    doc.text(`Número do Patrimônio: ${equipment.patrimony_number || 'N/A'}`, 20, 100);
-    doc.text(`Condição: ${equipmentConditionLabels[termData.condition_at_assignment]}`, 20, 110);
+    doc.text(`Equipamento: ${equipment.name}`, margin, currentY);
+    currentY += lineHeight;
+    doc.text(`Tipo: ${equipmentTypeLabels[equipment.type]}`, margin, currentY);
+    currentY += lineHeight;
+    doc.text(`Marca/Modelo: ${equipment.brand || 'N/A'} ${equipment.model || ''}`, margin, currentY);
+    currentY += lineHeight;
+    doc.text(`Número de Série: ${equipment.serial_number || 'N/A'}`, margin, currentY);
+    currentY += lineHeight;
+    doc.text(`Número do Patrimônio: ${equipment.patrimony_number || 'N/A'}`, margin, currentY);
+    currentY += lineHeight;
+    doc.text(`Condição: ${equipmentConditionLabels[termData.condition_at_assignment]}`, margin, currentY);
+    currentY += 15;
     
     // Dados do responsável
     doc.setFont('helvetica', 'bold');
-    doc.text('DADOS DO RESPONSÁVEL:', 20, 130);
+    doc.text('DADOS DO RESPONSÁVEL:', margin, currentY);
+    currentY += lineHeight;
     
     doc.setFont('helvetica', 'normal');
-    doc.text(`Nome Completo: ${termData.full_name}`, 20, 140);
-    doc.text(`CPF: ${termData.cpf}`, 20, 150);
-    doc.text(`Telefone: ${termData.phone}`, 20, 160);
-    doc.text(`Departamento: ${termData.department}`, 20, 170);
-    doc.text(`Endereço: ${termData.address}`, 20, 180);
+    doc.text(`Nome Completo: ${termData.full_name}`, margin, currentY);
+    currentY += lineHeight;
+    doc.text(`CPF: ${termData.cpf}`, margin, currentY);
+    currentY += lineHeight;
+    doc.text(`Telefone: ${termData.phone}`, margin, currentY);
+    currentY += lineHeight;
+    doc.text(`Departamento: ${termData.department}`, margin, currentY);
+    currentY += lineHeight;
+    
+    // Dividir endereço em múltiplas linhas se necessário
+    const addressLines = doc.splitTextToSize(`Endereço: ${termData.address}`, maxWidth);
+    addressLines.forEach((line: string) => {
+      doc.text(line, margin, currentY);
+      currentY += lineHeight;
+    });
+    currentY += 5;
     
     // Termo de responsabilidade
     doc.setFont('helvetica', 'bold');
-    doc.text('TERMO DE RESPONSABILIDADE:', 20, 200);
+    doc.text('TERMO DE RESPONSABILIDADE:', margin, currentY);
+    currentY += lineHeight;
     
     doc.setFont('helvetica', 'normal');
-    const termoText = `
-Eu, ${termData.full_name}, portador do CPF ${termData.cpf}, declaro ter recebido em perfeito estado de funcionamento e conservação o equipamento descrito acima, comprometendo-me a:
+    doc.setFontSize(11);
+    const termoText = `Eu, ${termData.full_name}, portador do CPF ${termData.cpf}, declaro ter recebido em perfeito estado de funcionamento e conservação o equipamento descrito acima, comprometendo-me a:
 
 1. Utilizar o equipamento exclusivamente para atividades profissionais relacionadas ao meu trabalho na empresa;
 2. Manter o equipamento em bom estado de conservação;
@@ -685,27 +712,64 @@ Eu, ${termData.full_name}, portador do CPF ${termData.cpf}, declaro ter recebido
 5. Devolver o equipamento quando solicitado ou ao me desligar da empresa;
 6. Responsabilizar-me por eventuais danos causados por uso inadequado.
 
-Declaro estar ciente de que sou responsável pelo equipamento até sua devolução formal.
-    `;
+Declaro estar ciente de que sou responsável pelo equipamento até sua devolução formal.`;
     
-    const splitText = doc.splitTextToSize(termoText, 170);
-    doc.text(splitText, 20, 210);
+    const splitText = doc.splitTextToSize(termoText, maxWidth);
+    splitText.forEach((line: string) => {
+      // Verificar se precisa adicionar nova página
+      if (currentY > 270) {
+        doc.addPage();
+        currentY = 20;
+      }
+      doc.text(line, margin, currentY);
+      currentY += 7; // Espaçamento menor para o texto do termo
+    });
+    currentY += 10;
     
     // Observações
     if (termData.notes) {
-      doc.text('Observações:', 20, 260);
-      const notesText = doc.splitTextToSize(termData.notes, 170);
-      doc.text(notesText, 20, 270);
+      // Verificar se precisa adicionar nova página
+      if (currentY > 260) {
+        doc.addPage();
+        currentY = 20;
+      }
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Observações:', margin, currentY);
+      currentY += lineHeight;
+      
+      doc.setFont('helvetica', 'normal');
+      const notesText = doc.splitTextToSize(termData.notes, maxWidth);
+      notesText.forEach((line: string) => {
+        if (currentY > 270) {
+          doc.addPage();
+          currentY = 20;
+        }
+        doc.text(line, margin, currentY);
+        currentY += 7;
+      });
+      currentY += 15;
+    }
+    
+    // Garantir espaço para assinaturas
+    if (currentY > 240) {
+      doc.addPage();
+      currentY = 20;
     }
     
     // Assinaturas
-    doc.text('_________________________', 20, 280);
-    doc.text('Assinatura do Responsável', 20, 290);
-    doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 20, 300);
+    doc.setFontSize(12);
+    doc.text('_________________________', margin, currentY);
+    doc.text('_________________________', 120, currentY);
+    currentY += 10;
     
-    doc.text('_________________________', 120, 280);
-    doc.text('Assinatura do Gestor', 120, 290);
-    doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 120, 300);
+    doc.text('Assinatura do Responsável', margin, currentY);
+    doc.text('Assinatura do Gestor', 120, currentY);
+    currentY += 10;
+    
+    doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, margin, currentY);
+    doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 120, currentY);
     
     return doc;
   };
