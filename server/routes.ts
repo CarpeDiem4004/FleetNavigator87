@@ -18988,10 +18988,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const motorista = motoristaResult.rows[0];
 
-      // Buscar placa do veículo associado ao motorista (se houver)
-      const veiculoQuery = `SELECT placa FROM veiculos WHERE motorista_id = $1 LIMIT 1`;
-      const veiculoResult = await pool.query(veiculoQuery, [motorista_id]);
-      const vehiclePlate = veiculoResult.rows[0]?.placa || 'N/A';
+      // Buscar última operação do motorista para pegar a placa do veículo
+      const operacaoQuery = `
+        SELECT vehicle_plate 
+        FROM linehall_operations 
+        WHERE motorista_id = $1 
+        ORDER BY created_at DESC 
+        LIMIT 1
+      `;
+      const operacaoResult = await pool.query(operacaoQuery, [motorista_id]);
+      const vehiclePlate = operacaoResult.rows[0]?.vehicle_plate || 'N/A';
 
       // Inserir checklist no banco
       const insertQuery = `
