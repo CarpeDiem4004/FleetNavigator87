@@ -1352,3 +1352,47 @@ export type IndicadoresDados = typeof indicadoresDados.$inferSelect;
 export type InsertIndicadoresDados = z.infer<typeof insertIndicadoresDadosSchema>;
 export type IndicadoresLiberado = typeof indicadoresLiberado.$inferSelect;
 export type InsertIndicadoresLiberado = z.infer<typeof insertIndicadoresLiberadoSchema>;
+
+// ==================== SISTEMA LINE HALL - ORDENS DE SERVIÇO ====================
+
+// Tabela para ordens de serviço detalhadas de manutenções Line Hall
+export const linehallMaintenanceWorkorders = pgTable("linehall_maintenance_workorders", {
+  id: serial("id").primaryKey(),
+  maintenanceRequestId: integer("maintenance_request_id").notNull(),
+  workshopId: integer("workshop_id").references(() => workshops.id),
+  workshopName: text("workshop_name"),
+  serviceDescription: text("service_description"),
+  laborCost: decimal("labor_cost", { precision: 10, scale: 2 }).default('0'),
+  partsCost: decimal("parts_cost", { precision: 10, scale: 2 }).default('0'),
+  otherCosts: decimal("other_costs", { precision: 10, scale: 2 }).default('0'),
+  invoiceNumber: text("invoice_number"),
+  technicianName: text("technician_name"),
+  partsUsed: text("parts_used"),
+  startedAt: timestamp("started_at").defaultNow(),
+  expectedCompletionAt: timestamp("expected_completion_at"),
+  completedAt: timestamp("completed_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: text("created_by"),
+});
+
+// Schema de inserção para ordens de serviço
+export const insertLinehallMaintenanceWorkorderSchema = createInsertSchema(linehallMaintenanceWorkorders, {
+  maintenanceRequestId: z.number().int().positive(),
+  workshopId: z.number().int().positive().optional().nullable(),
+  workshopName: z.string().min(1, "Nome da oficina é obrigatório"),
+  serviceDescription: z.string().optional().nullable(),
+  laborCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+  partsCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+  otherCosts: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+  invoiceNumber: z.string().optional().nullable(),
+  technicianName: z.string().optional().nullable(),
+  partsUsed: z.string().optional().nullable(),
+  expectedCompletionAt: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+// Tipos TypeScript
+export type LinehallMaintenanceWorkorder = typeof linehallMaintenanceWorkorders.$inferSelect;
+export type InsertLinehallMaintenanceWorkorder = z.infer<typeof insertLinehallMaintenanceWorkorderSchema>;
