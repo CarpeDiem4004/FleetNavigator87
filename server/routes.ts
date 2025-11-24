@@ -18990,7 +18990,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Buscar última operação do motorista para pegar a placa do veículo
       const operacaoQuery = `
-        SELECT vehicle_plate 
+        SELECT COALESCE(placa_truck, placa_cavalo) as vehicle_plate
         FROM line_hall_operations 
         WHERE motorista_id = $1 
         ORDER BY created_at DESC 
