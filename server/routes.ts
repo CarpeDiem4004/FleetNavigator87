@@ -4505,11 +4505,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updateQuery = `
         UPDATE linehall_maintenance 
         SET 
-          status = $1,
+          status = $1::VARCHAR,
           notes = COALESCE($2, notes),
           approved_by = COALESCE($3, approved_by),
           updated_at = NOW(),
-          completed_at = CASE WHEN $1 = 'concluida' THEN NOW() ELSE completed_at END
+          completed_at = CASE WHEN $1::VARCHAR = 'concluida' THEN NOW() ELSE completed_at END
         WHERE id = $4
         RETURNING *
       `;
