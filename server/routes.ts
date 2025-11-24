@@ -4547,6 +4547,239 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Criar ordem de serviço para manutenção Line Hall
+  app.post('/api/line-hall/maintenance-requests/:id/workorders', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const workorderData = req.body;
+      
+      // Buscar dados da solicitação de manutenção
+      const maintenanceQuery = 'SELECT * FROM linehall_maintenance WHERE id = $1';
+      const maintenanceResult = await pool.query(maintenanceQuery, [id]);
+      
+      if (maintenanceResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Solicitação de manutenção não encontrada'
+        });
+      }
+      
+      const maintenanceData = maintenanceResult.rows[0];
+      
+      // Inserir ordem de serviço
+      const insertQuery = `
+        INSERT INTO linehall_maintenance_workorders (
+          maintenance_request_id,
+          workshop_id,
+          workshop_name,
+          service_description,
+          labor_cost,
+          parts_cost,
+          other_costs,
+          invoice_number,
+          technician_name,
+          parts_used,
+          expected_completion_at,
+          notes,
+          created_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        RETURNING *
+      `;
+      
+      const values = [
+        id,
+        workorderData.workshopId || null,
+        workorderData.workshopName,
+        workorderData.serviceDescription || null,
+        workorderData.laborCost || '0',
+        workorderData.partsCost || '0',
+        workorderData.otherCosts || '0',
+        workorderData.invoiceNumber || null,
+        workorderData.technicianName || null,
+        workorderData.partsUsed || null,
+        workorderData.expectedCompletionAt || null,
+        workorderData.notes || null,
+        req.user?.name || 'Sistema'
+      ];
+      
+      const result = await pool.query(insertQuery, values);
+      const workorder = result.rows[0];
+      
+      // Atualizar status da manutenção para em_andamento
+      const updateMaintenanceQuery = `
+        UPDATE linehall_maintenance 
+        SET status = 'em_andamento', updated_at = NOW()
+        WHERE id = $1
+      `;
+      await pool.query(updateMaintenanceQuery, [id]);
+      
+      // Criar registro no histórico da placa
+      const totalCost = parseFloat(workorderData.laborCost || '0') + 
+                       parseFloat(workorderData.partsCost || '0') + 
+                       parseFloat(workorderData.otherCosts || '0');
+      
+      await createPlateHistory(
+        maintenanceData.vehicle_plate,
+        'maintenance_workorder_created',
+        `Ordem de serviço iniciada na ${workorderData.workshopName}`,
+        {
+          maintenance_id: id,
+          workorder_id: workorder.id,
+          workshop_name: workorderData.workshopName,
+          total_cost: totalCost,
+          description: maintenanceData.description
+        }
+      );
+      
+      return res.status(201).json({
+        success: true,
+        data: workorder,
+        message: 'Ordem de serviço criada com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao criar ordem de serviço:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao criar ordem de serviço',
+        error: error.message
+      });
+    }
+  });
+
+  // Buscar ordens de serviço de uma manutenção
+  app.get('/api/line-hall/maintenance-requests/:id/workorders', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const query = `
+        SELECT * FROM linehall_maintenance_workorders
+        WHERE maintenance_request_id = $1
+        ORDER BY created_at DESC
+      `;
+      
+      const result = await pool.query(query, [id]);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar ordens de serviço:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar ordens de serviço',
+        error: error.message
+      });
+    }
+  });
+
+  // Atualizar/finalizar ordem de serviço
+  app.put('/api/line-hall/maintenance-requests/:id/workorders/:workorderId', isAuthenticated, async (req, res) => {
+    try {
+      const { id, workorderId } = req.params;
+      const updateData = req.body;
+      
+      // Buscar ordem de serviço atual
+      const currentQuery = 'SELECT * FROM linehall_maintenance_workorders WHERE id = $1 AND maintenance_request_id = $2';
+      const currentResult = await pool.query(currentQuery, [workorderId, id]);
+      
+      if (currentResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Ordem de serviço não encontrada'
+        });
+      }
+      
+      const currentData = currentResult.rows[0];
+      
+      // Atualizar ordem de serviço
+      const updateQuery = `
+        UPDATE linehall_maintenance_workorders
+        SET
+          workshop_id = COALESCE($1, workshop_id),
+          workshop_name = COALESCE($2, workshop_name),
+          service_description = COALESCE($3, service_description),
+          labor_cost = COALESCE($4, labor_cost),
+          parts_cost = COALESCE($5, parts_cost),
+          other_costs = COALESCE($6, other_costs),
+          invoice_number = COALESCE($7, invoice_number),
+          technician_name = COALESCE($8, technician_name),
+          parts_used = COALESCE($9, parts_used),
+          expected_completion_at = COALESCE($10, expected_completion_at),
+          completed_at = COALESCE($11, completed_at),
+          notes = COALESCE($12, notes),
+          updated_at = NOW()
+        WHERE id = $13
+        RETURNING *
+      `;
+      
+      const values = [
+        updateData.workshopId,
+        updateData.workshopName,
+        updateData.serviceDescription,
+        updateData.laborCost,
+        updateData.partsCost,
+        updateData.otherCosts,
+        updateData.invoiceNumber,
+        updateData.technicianName,
+        updateData.partsUsed,
+        updateData.expectedCompletionAt,
+        updateData.completedAt,
+        updateData.notes,
+        workorderId
+      ];
+      
+      const result = await pool.query(updateQuery, values);
+      const updatedWorkorder = result.rows[0];
+      
+      // Se foi marcada como concluída, atualizar a manutenção também
+      if (updateData.completedAt) {
+        const updateMaintenanceQuery = `
+          UPDATE linehall_maintenance 
+          SET status = 'concluida', completed_at = NOW(), updated_at = NOW()
+          WHERE id = $1
+          RETURNING *
+        `;
+        const maintenanceResult = await pool.query(updateMaintenanceQuery, [id]);
+        const maintenanceData = maintenanceResult.rows[0];
+        
+        // Criar registro no histórico da placa
+        const totalCost = parseFloat(updatedWorkorder.labor_cost || '0') + 
+                         parseFloat(updatedWorkorder.parts_cost || '0') + 
+                         parseFloat(updatedWorkorder.other_costs || '0');
+        
+        await createPlateHistory(
+          maintenanceData.vehicle_plate,
+          'maintenance_workorder_completed',
+          `Manutenção finalizada na ${updatedWorkorder.workshop_name}`,
+          {
+            maintenance_id: id,
+            workorder_id: workorderId,
+            workshop_name: updatedWorkorder.workshop_name,
+            total_cost: totalCost,
+            labor_cost: updatedWorkorder.labor_cost,
+            parts_cost: updatedWorkorder.parts_cost,
+            other_costs: updatedWorkorder.other_costs,
+            invoice_number: updatedWorkorder.invoice_number
+          }
+        );
+      }
+      
+      return res.status(200).json({
+        success: true,
+        data: updatedWorkorder,
+        message: 'Ordem de serviço atualizada com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao atualizar ordem de serviço:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar ordem de serviço',
+        error: error.message
+      });
+    }
+  });
+
   // Função helper para criar registros de histórico da placa
   async function createPlateHistory(plate: string, eventType: string, description: string, metadata: any = {}) {
     try {
