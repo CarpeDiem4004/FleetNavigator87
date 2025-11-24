@@ -3994,18 +3994,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Estatísticas de veículos na garagem
   app.get('/api/line-hall/garage-stats', isAuthenticated, async (req, res) => {
     try {
-      // Simular dados de veículos na garagem baseado nos checklists de entrada
-      const vehiculosNaGaragem = [
-        { plate: 'DEF5678', driver_name: 'Carlos Santos', dias_na_garagem: 2, km_final: 99120 },
-        { plate: 'GHI9012', driver_name: 'Maria Oliveira', dias_na_garagem: 3, km_final: 87580 },
-        { plate: 'JKL3456', driver_name: 'Pedro Lima', dias_na_garagem: 6, km_final: 146200 }
-      ];
+      // Buscar veículos na garagem do banco de dados
+      const query = `
+        SELECT 
+          vehicle_plate as plate,
+          driver_name,
+          km_final,
+          entry_date,
+          EXTRACT(DAY FROM (NOW() - entry_date)) as dias_na_garagem
+        FROM vehicles_in_garage
+        ORDER BY entry_date DESC
+      `;
+
+      const result = await pool.query(query);
+      const vehiculosNaGaragem = result.rows;
+
+      // Calcular média de dias (se houver veículos)
+      const mediaDias = vehiculosNaGaragem.length > 0
+        ? Math.round(vehiculosNaGaragem.reduce((acc, v) => acc + Number(v.dias_na_garagem || 0), 0) / vehiculosNaGaragem.length)
+        : 0;
 
       return res.status(200).json({
         success: true,
         data: vehiculosNaGaragem,
         total_veiculos: vehiculosNaGaragem.length,
-        media_dias: Math.round(vehiculosNaGaragem.reduce((acc, v) => acc + v.dias_na_garagem, 0) / vehiculosNaGaragem.length)
+        media_dias: mediaDias
       });
     } catch (error: any) {
       console.error('Erro ao buscar estatísticas da garagem:', error);
@@ -19038,22 +19051,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await pool.query(updateQuery, [km_final, checklistId]);
       const checklistAtualizado = result.rows[0];
 
+      // Adicionar veículo à garagem
+      const garageQuery = `
+        INSERT INTO vehicles_in_garage (vehicle_plate, driver_id, driver_name, km_final, checklist_id, entry_date)
+        VALUES ($1, $2, $3, $4, $5, NOW())
+        ON CONFLICT (vehicle_plate) 
+        DO UPDATE SET 
+          driver_id = EXCLUDED.driver_id,
+          driver_name = EXCLUDED.driver_name,
+          km_final = EXCLUDED.km_final,
+          checklist_id = EXCLUDED.checklist_id,
+          entry_date = EXCLUDED.entry_date,
+          updated_at = NOW()
+      `;
+
+      await pool.query(garageQuery, [
+        checklistAtualizado.vehicle_plate,
+        checklistAtualizado.driver_id,
+        checklistAtualizado.driver_name,
+        km_final,
+        checklistId
+      ]);
+
       console.log(`Checklist ${checklistId} finalizado com sucesso:`, {
         km_inicial: checklistAtualizado.km_atual,
         km_final: checklistAtualizado.km_final,
         km_rodados: km_final - checklistAtualizado.km_atual,
-        status: 'concluido'
+        status: 'concluido',
+        vehicle_in_garage: true
       });
 
       res.json({
         success: true,
-        message: 'Checklist finalizado com sucesso!',
+        message: 'Checklist finalizado com sucesso! Veículo registrado na garagem.',
         checklist: {
           id: checklistAtualizado.id,
           km_inicial: checklistAtualizado.km_atual,
           km_final: checklistAtualizado.km_final,
           km_rodados: km_final - checklistAtualizado.km_atual,
-          status: 'concluido'
+          status: 'concluido',
+          vehicle_in_garage: true
         }
       });
 
