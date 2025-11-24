@@ -823,26 +823,65 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
   const handleExportToExcel = () => {
     try {
       // Preparar dados para exportação
-      const exportData = equipments.map((equipment: any) => ({
-        'ID': equipment.id,
-        'Nome': equipment.name,
-        'Tipo': equipmentTypeLabels[equipment.type as keyof typeof equipmentTypeLabels] || equipment.type,
-        'Marca': equipment.brand || '-',
-        'Modelo': equipment.model || '-',
-        'Número de Série': equipment.serial_number || '-',
-        'Patrimônio': equipment.patrimony_number || '-',
-        'Status': equipmentStatusLabels[equipment.status as keyof typeof equipmentStatusLabels] || equipment.status,
-        'Condição': equipmentConditionLabels[equipment.condition as keyof typeof equipmentConditionLabels] || equipment.condition,
-        'Tipo de Propriedade': ownershipTypeLabels[equipment.ownership_type as keyof typeof ownershipTypeLabels] || equipment.ownership_type,
-        'Localização': equipment.location || '-',
-        'Fornecedor': equipment.supplier || '-',
-        'Data de Compra': equipment.purchase_date || '-',
-        'Valor de Compra': equipment.purchase_value || '-',
-        'Garantia Expira': equipment.warranty_expires || '-',
-        'Observações': equipment.notes || '-',
-        'Criado em': equipment.created_at ? new Date(equipment.created_at).toLocaleDateString('pt-BR') : '-',
-        'Atualizado em': equipment.updated_at ? new Date(equipment.updated_at).toLocaleDateString('pt-BR') : '-',
-      }));
+      const exportData = equipments.map((equipment: any) => {
+        // Buscar termo de responsabilidade ativo para este equipamento
+        const activeTerm = responsibilityTerms?.find(
+          (term: any) => term.equipment_id === equipment.id && term.is_active
+        );
+        
+        // Dados base do equipamento
+        const baseData = {
+          'ID': equipment.id,
+          'Nome': equipment.name,
+          'Tipo': equipmentTypeLabels[equipment.type as keyof typeof equipmentTypeLabels] || equipment.type,
+          'Marca': equipment.brand || '-',
+          'Modelo': equipment.model || '-',
+          'Número de Série': equipment.serial_number || '-',
+          'Patrimônio': equipment.patrimony_number || '-',
+          'Status': equipmentStatusLabels[equipment.status as keyof typeof equipmentStatusLabels] || equipment.status,
+          'Condição': equipmentConditionLabels[equipment.condition as keyof typeof equipmentConditionLabels] || equipment.condition,
+          'Tipo de Propriedade': ownershipTypeLabels[equipment.ownership_type as keyof typeof ownershipTypeLabels] || equipment.ownership_type,
+          'Localização': equipment.location || '-',
+        };
+        
+        // Se equipamento está em uso, adicionar dados do responsável
+        if (equipment.status === 'em_uso' && activeTerm) {
+          return {
+            ...baseData,
+            'Responsável': activeTerm.full_name || '-',
+            'CPF Responsável': activeTerm.cpf || '-',
+            'Telefone Responsável': activeTerm.phone || '-',
+            'Departamento': activeTerm.department || '-',
+            'Endereço Responsável': activeTerm.address || '-',
+            'Data de Atribuição': activeTerm.assigned_at ? new Date(activeTerm.assigned_at).toLocaleDateString('pt-BR') : '-',
+            'Fornecedor': equipment.supplier || '-',
+            'Data de Compra': equipment.purchase_date || '-',
+            'Valor de Compra': equipment.purchase_value || '-',
+            'Garantia Expira': equipment.warranty_expires || '-',
+            'Observações': equipment.notes || '-',
+            'Criado em': equipment.created_at ? new Date(equipment.created_at).toLocaleDateString('pt-BR') : '-',
+            'Atualizado em': equipment.updated_at ? new Date(equipment.updated_at).toLocaleDateString('pt-BR') : '-',
+          };
+        }
+        
+        // Se não está em uso, manter estrutura original
+        return {
+          ...baseData,
+          'Responsável': '-',
+          'CPF Responsável': '-',
+          'Telefone Responsável': '-',
+          'Departamento': '-',
+          'Endereço Responsável': '-',
+          'Data de Atribuição': '-',
+          'Fornecedor': equipment.supplier || '-',
+          'Data de Compra': equipment.purchase_date || '-',
+          'Valor de Compra': equipment.purchase_value || '-',
+          'Garantia Expira': equipment.warranty_expires || '-',
+          'Observações': equipment.notes || '-',
+          'Criado em': equipment.created_at ? new Date(equipment.created_at).toLocaleDateString('pt-BR') : '-',
+          'Atualizado em': equipment.updated_at ? new Date(equipment.updated_at).toLocaleDateString('pt-BR') : '-',
+        };
+      });
 
       // Criar planilha
       const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -862,6 +901,12 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
         { wch: 12 }, // Condição
         { wch: 18 }, // Tipo de Propriedade
         { wch: 25 }, // Localização
+        { wch: 25 }, // Responsável
+        { wch: 18 }, // CPF Responsável
+        { wch: 18 }, // Telefone Responsável
+        { wch: 20 }, // Departamento
+        { wch: 35 }, // Endereço Responsável
+        { wch: 15 }, // Data de Atribuição
         { wch: 20 }, // Fornecedor
         { wch: 15 }, // Data de Compra
         { wch: 15 }, // Valor de Compra
