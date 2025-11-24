@@ -3826,7 +3826,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Consultar estatísticas de checklists
       const query = `
         SELECT 
-          COUNT(*) FILTER (WHERE status = 'pendente') as pendentes,
+          COUNT(*) FILTER (WHERE status = 'em_andamento') as pendentes,
           COUNT(*) FILTER (WHERE status = 'concluido') as concluidos,
           COUNT(*) as total
         FROM driver_checklists
@@ -3957,90 +3957,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Listar todos os checklists do Line Hall
   app.get('/api/line-hall/checklists', isAuthenticated, async (req, res) => {
     try {
-      // Simular dados de checklist com informações de quilometragem
-      const mockChecklists = [
-        {
-          id: 1,
-          driver_name: 'João Silva',
-          vehicle_plate: 'ABC1234',
-          checklist_type: 'saida_garagem',
-          status: 'concluido',
-          created_at: '2024-05-26T08:00:00Z',
-          completed_at: '2024-05-26T08:15:00Z',
-          km_inicial: 125840,
-          km_final: null,
-          dias_na_garagem: 0,
-          items: [
-            { item: 'Verificar freios', status: 'ok', observations: '' },
-            { item: 'Verificar pneus', status: 'ok', observations: '' },
-            { item: 'Verificar óleo', status: 'problema', observations: 'Nível baixo' },
-            { item: 'Verificar combustível', status: 'ok', observations: '' },
-            { item: 'Verificar documentação', status: 'ok', observations: '' }
-          ]
-        },
-        {
-          id: 2,
-          driver_name: 'Carlos Santos',
-          vehicle_plate: 'DEF5678',
-          checklist_type: 'entrada_garagem',
-          status: 'concluido',
-          created_at: '2024-05-24T18:30:00Z',
-          completed_at: '2024-05-24T18:45:00Z',
-          km_inicial: 98750,
-          km_final: 99120,
-          dias_na_garagem: 2,
-          items: [
-            { item: 'Verificar freios', status: 'ok', observations: '' },
-            { item: 'Verificar pneus', status: 'ok', observations: '' },
-            { item: 'Verificar óleo', status: 'ok', observations: '' },
-            { item: 'Verificar combustível', status: 'ok', observations: '' },
-            { item: 'Verificar documentação', status: 'ok', observations: '' }
-          ]
-        },
-        {
-          id: 3,
-          driver_name: 'Maria Oliveira',
-          vehicle_plate: 'GHI9012',
-          checklist_type: 'entrada_garagem',
-          status: 'concluido',
-          created_at: '2024-05-23T17:15:00Z',
-          completed_at: '2024-05-23T17:30:00Z',
-          km_inicial: 87200,
-          km_final: 87580,
-          dias_na_garagem: 3,
-          items: [
-            { item: 'Verificar freios', status: 'ok', observations: '' },
-            { item: 'Verificar pneus', status: 'problema', observations: 'Pneu dianteiro com baixa pressão' },
-            { item: 'Verificar óleo', status: 'ok', observations: '' },
-            { item: 'Verificar combustível', status: 'ok', observations: '' },
-            { item: 'Verificar documentação', status: 'ok', observations: '' }
-          ]
-        },
-        {
-          id: 4,
-          driver_name: 'Pedro Lima',
-          vehicle_plate: 'JKL3456',
-          checklist_type: 'entrada_garagem',
-          status: 'concluido',
-          created_at: '2024-05-20T19:00:00Z',
-          completed_at: '2024-05-20T19:15:00Z',
-          km_inicial: 145600,
-          km_final: 146200,
-          dias_na_garagem: 6,
-          items: [
-            { item: 'Verificar freios', status: 'ok', observations: '' },
-            { item: 'Verificar pneus', status: 'ok', observations: '' },
-            { item: 'Verificar óleo', status: 'ok', observations: '' },
-            { item: 'Verificar combustível', status: 'ok', observations: '' },
-            { item: 'Verificar documentação', status: 'ok', observations: '' }
-          ]
-        }
-      ];
-
+      const query = `
+        SELECT 
+          id,
+          driver_id,
+          driver_name,
+          vehicle_plate,
+          km_atual as km_inicial,
+          km_final,
+          status,
+          observacoes,
+          created_at,
+          updated_at
+        FROM driver_checklists
+        WHERE source = 'line_hall' OR driver_type = 'line_hall'
+        ORDER BY created_at DESC
+      `;
+      
+      const result = await pool.query(query);
+      
       return res.status(200).json({
         success: true,
-        data: mockChecklists,
-        count: mockChecklists.length
+        data: result.rows,
+        count: result.rows.length
       });
     } catch (error: any) {
       console.error('Erro ao buscar checklists:', error);
