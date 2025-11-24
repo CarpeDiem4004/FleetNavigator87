@@ -109,7 +109,7 @@ const DriverChecklist: React.FC = () => {
             ? "Veículo aprovado para viagem" 
             : "Veículo com pendências registradas"
         });
-        setLocation('/driver-access');
+        setLocation('/app/system/driver-access');
       } else {
         throw new Error(data.message || 'Erro ao salvar checklist');
       }
