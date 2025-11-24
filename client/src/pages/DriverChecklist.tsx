@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useParams } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, CheckCircle2, AlertTriangle, Loader2, Gauge } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertTriangle, Loader2, Gauge, Clock } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 interface ChecklistItem {
@@ -18,12 +18,24 @@ interface ChecklistItem {
   observation?: string;
 }
 
+interface PendingChecklist {
+  id: number;
+  driver_name: string;
+  vehicle_plate: string;
+  km_atual: number;
+  created_at: string;
+  status: string;
+}
+
 const DriverChecklist: React.FC = () => {
   const params = useParams();
   const [, setLocation] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [observacoes, setObservacoes] = useState('');
   const [kmInicial, setKmInicial] = useState('');
+  const [kmFinal, setKmFinal] = useState('');
+  const [pendingChecklist, setPendingChecklist] = useState<PendingChecklist | null>(null);
   const { toast } = useToast();
 
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([
@@ -62,6 +74,26 @@ const DriverChecklist: React.FC = () => {
     { id: 'carr_4', category: 'Carroceria', item: 'Buzina funcionando', checked: false }
   ]);
 
+  // Buscar checklists pendentes ao carregar
+  useEffect(() => {
+    const fetchPendingChecklists = async () => {
+      try {
+        const response = await apiRequest('GET', `/api/line-hall/checklist/motorista/${params.id}/pendentes`);
+        const data = await response.json();
+        
+        if (data.success && data.checklists.length > 0) {
+          setPendingChecklist(data.checklists[0]); // Pega o mais recente
+        }
+      } catch (error) {
+        console.error('Erro ao buscar checklists pendentes:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPendingChecklists();
+  }, [params.id]);
+
   const handleItemCheck = (itemId: string, checked: boolean) => {
     setChecklistItems(items =>
       items.map(item =>
@@ -78,7 +110,7 @@ const DriverChecklist: React.FC = () => {
     );
   };
 
-  const handleSubmit = async () => {
+  const handleSubmitInicial = async () => {
     const checkedItems = checklistItems.filter(item => item.checked);
     const uncheckedItems = checklistItems.filter(item => !item.checked);
 
@@ -116,10 +148,9 @@ const DriverChecklist: React.FC = () => {
 
       if (data.success) {
         toast({
-          title: "Checklist enviado com sucesso",
-          description: uncheckedItems.length === 0 
-            ? "Veículo aprovado para viagem" 
-            : "Veículo com pendências registradas"
+          title: "Viagem iniciada!",
+          description: "Checklist salvo. Adicione o KM final ao retornar à garagem.",
+          variant: "default"
         });
         setLocation('/app/system/driver-access');
       } else {
@@ -129,6 +160,55 @@ const DriverChecklist: React.FC = () => {
       console.error('Erro ao enviar checklist:', error);
       toast({
         title: "Erro ao enviar checklist",
+        description: "Tente novamente ou procure ajuda",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleFinalizarChecklist = async () => {
+    if (!kmFinal || parseInt(kmFinal) <= 0) {
+      toast({
+        title: "KM final obrigatório",
+        description: "Por favor, informe o KM final do veículo",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (pendingChecklist && parseInt(kmFinal) <= pendingChecklist.km_atual) {
+      toast({
+        title: "KM inválido",
+        description: "KM final deve ser maior que KM inicial",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await apiRequest('PUT', `/api/line-hall/checklist/${pendingChecklist?.id}/finalizar`, {
+        km_final: parseInt(kmFinal)
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        const kmRodados = parseInt(kmFinal) - (pendingChecklist?.km_atual || 0);
+        toast({
+          title: "Checklist finalizado!",
+          description: `Viagem concluída. Total de ${kmRodados} km rodados.`,
+          variant: "default"
+        });
+        setLocation('/app/system/driver-access');
+      } else {
+        throw new Error(data.message || 'Erro ao finalizar checklist');
+      }
+    } catch (error) {
+      console.error('Erro ao finalizar checklist:', error);
+      toast({
+        title: "Erro ao finalizar checklist",
         description: "Tente novamente ou procure ajuda",
         variant: "destructive"
       });
@@ -149,6 +229,140 @@ const DriverChecklist: React.FC = () => {
   const totalCount = checklistItems.length;
   const completionPercentage = Math.round((checkedCount / totalCount) * 100);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Verificando checklists pendentes...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Se houver checklist pendente, mostrar interface para finalizar
+  if (pendingChecklist) {
+    const kmRodados = kmFinal ? parseInt(kmFinal) - pendingChecklist.km_atual : 0;
+    
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-2xl mx-auto space-y-6">
+          {/* Header */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <Button variant="ghost" onClick={() => setLocation('/app/system/driver-access')}>
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div>
+                    <CardTitle>Finalizar Checklist</CardTitle>
+                    <CardDescription>
+                      Viagem em andamento - Adicione o KM final
+                    </CardDescription>
+                  </div>
+                </div>
+                <Clock className="h-8 w-8 text-amber-500" />
+              </div>
+            </CardHeader>
+          </Card>
+
+          {/* Informações da viagem */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Informações da Viagem</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Motorista:</span>
+                <span className="font-medium">{pendingChecklist.driver_name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Veículo:</span>
+                <span className="font-medium">{pendingChecklist.vehicle_plate}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">KM Inicial:</span>
+                <span className="font-medium">{pendingChecklist.km_atual.toLocaleString()} km</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Data de Início:</span>
+                <span className="font-medium">{new Date(pendingChecklist.created_at).toLocaleString('pt-BR')}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* KM Final */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Gauge className="h-5 w-5" />
+                KM Final do Veículo
+              </CardTitle>
+              <CardDescription>
+                Informe a quilometragem atual ao retornar à garagem
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="km-final">KM Final *</Label>
+                  <Input
+                    id="km-final"
+                    type="number"
+                    placeholder="Ex: 125500"
+                    value={kmFinal}
+                    onChange={(e) => setKmFinal(e.target.value)}
+                    className="text-lg font-medium"
+                    min={pendingChecklist.km_atual + 1}
+                    required
+                  />
+                  <p className="text-sm text-gray-500">
+                    Deve ser maior que {pendingChecklist.km_atual.toLocaleString()} km (KM inicial)
+                  </p>
+                </div>
+
+                {kmRodados > 0 && (
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-green-800">Total de KM rodados:</span>
+                      <span className="text-xl font-bold text-green-900">{kmRodados.toLocaleString()} km</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Submit button */}
+          <Card>
+            <CardContent className="pt-6">
+              <Button 
+                onClick={handleFinalizarChecklist} 
+                className="w-full" 
+                size="lg"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Finalizando Checklist...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Concluir Viagem
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Se não houver checklist pendente, mostrar formulário para iniciar nova viagem
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -278,7 +492,7 @@ const DriverChecklist: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             <Button 
-              onClick={handleSubmit} 
+              onClick={handleSubmitInicial} 
               className="w-full" 
               size="lg"
               disabled={isSubmitting}
@@ -286,12 +500,12 @@ const DriverChecklist: React.FC = () => {
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Enviando Checklist...
+                  Iniciando Viagem...
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Finalizar Checklist
+                  Iniciar Viagem
                 </>
               )}
             </Button>
