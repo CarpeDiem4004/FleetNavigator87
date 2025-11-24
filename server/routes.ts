@@ -19022,7 +19022,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         vehiclePlate,
         km_inicial,
         observacoes_gerais || '',
-        status || 'aprovado'
+        'em_andamento'  // Sempre começa como em_andamento
       ]);
 
       const checklistId = result.rows[0].id;
@@ -19038,13 +19038,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         success: true,
-        message: 'Checklist salvo com sucesso',
+        message: 'Checklist iniciado com sucesso. Adicione o KM final ao retornar.',
         checklistId,
-        status
+        status: 'em_andamento'
       });
 
     } catch (error) {
       console.error('Erro ao salvar checklist:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
+
+  // Atualizar checklist com KM final (quando motorista retorna)
+  app.put('/api/line-hall/checklist/:checklistId/finalizar', async (req, res) => {
+    try {
+      const { checklistId } = req.params;
+      const { km_final } = req.body;
+
+      if (!km_final) {
+        return res.status(400).json({
+          success: false,
+          message: 'KM final é obrigatório'
+        });
+      }
+
+      // Buscar checklist atual
+      const checkQuery = 'SELECT * FROM driver_checklists WHERE id = $1';
+      const checkResult = await pool.query(checkQuery, [checklistId]);
+      
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Checklist não encontrado'
+        });
+      }
+
+      const checklist = checkResult.rows[0];
+      
+      // Validar que KM final é maior que KM inicial
+      if (km_final <= checklist.km_atual) {
+        return res.status(400).json({
+          success: false,
+          message: 'KM final deve ser maior que KM inicial'
+        });
+      }
+
+      // Atualizar checklist com KM final e status concluído
+      const updateQuery = `
+        UPDATE driver_checklists 
+        SET km_final = $1,
+            status = 'concluido',
+            updated_at = NOW()
+        WHERE id = $2
+        RETURNING *
+      `;
+
+      const result = await pool.query(updateQuery, [km_final, checklistId]);
+      const checklistAtualizado = result.rows[0];
+
+      console.log(`Checklist ${checklistId} finalizado com sucesso:`, {
+        km_inicial: checklistAtualizado.km_atual,
+        km_final: checklistAtualizado.km_final,
+        km_rodados: km_final - checklistAtualizado.km_atual,
+        status: 'concluido'
+      });
+
+      res.json({
+        success: true,
+        message: 'Checklist finalizado com sucesso!',
+        checklist: {
+          id: checklistAtualizado.id,
+          km_inicial: checklistAtualizado.km_atual,
+          km_final: checklistAtualizado.km_final,
+          km_rodados: km_final - checklistAtualizado.km_atual,
+          status: 'concluido'
+        }
+      });
+
+    } catch (error) {
+      console.error('Erro ao finalizar checklist:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
+
+  // Buscar checklists pendentes do motorista
+  app.get('/api/line-hall/checklist/motorista/:motoristaId/pendentes', async (req, res) => {
+    try {
+      const { motoristaId } = req.params;
+
+      const query = `
+        SELECT * FROM driver_checklists
+        WHERE driver_id = $1 
+        AND status = 'em_andamento'
+        ORDER BY created_at DESC
+      `;
+
+      const result = await pool.query(query, [motoristaId]);
+
+      res.json({
+        success: true,
+        checklists: result.rows
+      });
+
+    } catch (error) {
+      console.error('Erro ao buscar checklists pendentes:', error);
       res.status(500).json({
         success: false,
         message: 'Erro interno do servidor'
