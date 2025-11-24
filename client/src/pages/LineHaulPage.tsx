@@ -132,6 +132,7 @@ const LineHaulPage = () => {
   const [trips, setTrips] = useState<LineHallTrip[]>([]);
   const [routes, setRoutes] = useState<RouteData[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [garageVehicles, setGarageVehicles] = useState<any[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [checklists, setChecklists] = useState<DriverChecklist[]>([]);
   
@@ -478,9 +479,12 @@ const LineHaulPage = () => {
           ...prev,
           garageStats: {
             total_veiculos: garageResponse.total_veiculos || 0,
-            media_dias: garageResponse.media_dias || 0
+            media_dias: garageResponse.media_dias || 0,
+            data: garageResponse.data || []
           }
         }));
+        // Popular garageVehicles com os veículos da garagem
+        setGarageVehicles(garageResponse.data || []);
       }
     } catch (error) {
       console.error('Erro ao buscar estatísticas:', error);
@@ -1151,28 +1155,7 @@ const LineHaulPage = () => {
                     onClick={() => setGarageFilter('todos')}
                     className="flex-1"
                   >
-                    Todos ({vehicles.length})
-                  </Button>
-                  <Button 
-                    variant={garageFilter === 'cavalos' ? 'default' : 'outline'}
-                    onClick={() => setGarageFilter('cavalos')}
-                    className="flex-1"
-                  >
-                    Cavalos ({vehicles.filter(v => v.vehicleType === 'cavalo_mecanico').length})
-                  </Button>
-                  <Button 
-                    variant={garageFilter === 'carretas' ? 'default' : 'outline'}
-                    onClick={() => setGarageFilter('carretas')}
-                    className="flex-1"
-                  >
-                    Carretas ({vehicles.filter(v => v.vehicleType === 'carreta').length})
-                  </Button>
-                  <Button 
-                    variant={garageFilter === 'manutencao' ? 'default' : 'outline'}
-                    onClick={() => setGarageFilter('manutencao')}
-                    className="flex-1"
-                  >
-                    Em Manutenção ({vehicles.filter(v => v.status === 'em_manutencao').length})
+                    Todos ({garageVehicles.length})
                   </Button>
                 </div>
               </CardContent>
@@ -1180,89 +1163,62 @@ const LineHaulPage = () => {
 
             {/* Lista de Veículos na Garagem */}
             <div className="grid gap-4">
-              {vehicles
-                .filter(vehicle => {
-                  // Filtro por busca de placa
-                  const matchesPlateSearch = plateSearch === '' || 
-                    vehicle.plate.toLowerCase().includes(plateSearch.toLowerCase());
-                  
-                  // Filtro por tipo/status
-                  let matchesFilter = true;
-                  if (garageFilter === 'cavalos') matchesFilter = vehicle.vehicleType === 'cavalo_mecanico';
-                  else if (garageFilter === 'carretas') matchesFilter = vehicle.vehicleType === 'carreta';
-                  else if (garageFilter === 'manutencao') matchesFilter = vehicle.status === 'em_manutencao';
-                  
-                  return matchesPlateSearch && matchesFilter;
-                })
-                .map(vehicle => (
-                <Card key={vehicle.id} className="bg-white/80 backdrop-blur-sm">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg">{vehicle.plate}</h3>
-                        <p className="text-sm text-gray-600">Modelo: {vehicle.model}</p>
-                        <p className="text-sm text-gray-600">Tipo: {vehicle.vehicleType === 'cavalo_mecanico' ? 'Cavalo Mecânico' : vehicle.vehicleType === 'carreta' ? 'Carreta' : vehicle.vehicleType}</p>
-                        <p className="text-sm text-gray-600">Operação: Line Haul</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <Badge 
-                          variant="default"
-                          className={
-                            vehicle.status === 'ativo' ? 'bg-green-500' :
-                            vehicle.status === 'em_manutencao' ? 'bg-orange-500' :
-                            vehicle.status === 'inativo' ? 'bg-red-500' :
-                            'bg-gray-500'
-                          }
-                        >
-                          {vehicle.status === 'ativo' ? 'Ativo' :
-                           vehicle.status === 'em_manutencao' ? 'Em Manutenção' :
-                           vehicle.status === 'inativo' ? 'Inativo' :
-                           vehicle.status || 'Indefinido'}
-                        </Badge>
-                        <Badge 
-                          variant="outline"
-                          className={
-                            vehicle.vehicleType === 'cavalo_mecanico' ? 'border-blue-500 text-blue-700' :
-                            vehicle.vehicleType === 'carreta' ? 'border-green-500 text-green-700' :
-                            'border-gray-500 text-gray-700'
-                          }
-                        >
-                          {vehicle.vehicleType === 'cavalo_mecanico' ? 'Cavalo' :
-                           vehicle.vehicleType === 'carreta' ? 'Carreta' :
-                           vehicle.vehicleType || 'Outro'}
-                        </Badge>
-                      </div>
-                    </div>
+              {garageVehicles.length > 0 ? (
+                garageVehicles
+                  .filter(vehicle => {
+                    // Filtro por busca de placa
+                    const matchesPlateSearch = plateSearch === '' || 
+                      vehicle.plate.toLowerCase().includes(plateSearch.toLowerCase());
                     
-                    <div className="mb-3">
-                      <p className="text-sm text-gray-700">
-                        <strong>Status:</strong> {vehicle.status === 'ativo' ? 'Ativo' :
-                           vehicle.status === 'em_manutencao' ? 'Em Manutenção' :
-                           vehicle.status === 'inativo' ? 'Inativo' :
-                           vehicle.status || 'Indefinido'}
-                      </p>
-                    </div>
-
-                    <div className="mb-3">
-                      <div className="text-sm text-gray-700 mb-2">
-                        <strong>Informações de Rota:</strong>
+                    return matchesPlateSearch;
+                  })
+                  .map((vehicle, index) => (
+                  <Card key={index} className="bg-white/80 backdrop-blur-sm">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">{vehicle.plate}</h3>
+                          <p className="text-sm text-gray-600">Motorista: {vehicle.driver_name}</p>
+                          <p className="text-sm text-gray-600">KM Final: {vehicle.km_final}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <Badge variant="outline" className="border-green-500 text-green-700">
+                            Na Garagem
+                          </Badge>
+                          <Badge variant="default" className="bg-blue-500">
+                            {Math.floor(vehicle.dias_na_garagem)} dias
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600">
-                        <p><strong>Última Rota:</strong> {generateRandomRoute()}</p>
-                        <p><strong>Data de Chegada:</strong> {new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')}</p>
-                        <p><strong>Dias na Garagem:</strong> {Math.floor(Math.random() * 15) + 1}</p>
+                      
+                      <div className="mb-3">
+                        <div className="text-sm text-gray-700 mb-2">
+                          <strong>Informações do Checklist:</strong>
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          <p><strong>Data de Entrada:</strong> {new Date(vehicle.entry_date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                          <p><strong>Dias Parado:</strong> {Math.floor(vehicle.dias_na_garagem)} dias</p>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" className="w-full">
-                        <Eye className="h-4 w-4 mr-1" />
-                        Ver Detalhes
-                      </Button>
-                    </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" className="w-full">
+                          <Eye className="h-4 w-4 mr-1" />
+                          Ver Detalhes do Checklist
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <Card className="bg-white/80 backdrop-blur-sm">
+                  <CardContent className="p-8 text-center">
+                    <Car className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">Nenhum veículo na garagem</h3>
+                    <p className="text-sm text-gray-600">Todos os veículos estão em operação</p>
                   </CardContent>
                 </Card>
-              ))}
+              )}
             </div>
           </div>
         ) : (
