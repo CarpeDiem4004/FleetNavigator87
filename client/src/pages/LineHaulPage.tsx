@@ -170,6 +170,24 @@ const LineHaulPage = () => {
   // Estado para controlar o cálculo automático de distância
   const [distanceStatus, setDistanceStatus] = useState<string>('');
   const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
+  
+  // Estados para Dialog de Ordem de Serviço
+  const [showWorkorderDialog, setShowWorkorderDialog] = useState(false);
+  const [selectedMaintenanceForWorkorder, setSelectedMaintenanceForWorkorder] = useState<MaintenanceRequest | null>(null);
+  const [workshopsList, setWorkshopsList] = useState<any[]>([]);
+  const [workorderForm, setWorkorderForm] = useState({
+    workshopId: '',
+    workshopName: '',
+    serviceDescription: '',
+    laborCost: '',
+    partsCost: '',
+    otherCosts: '',
+    invoiceNumber: '',
+    technicianName: '',
+    partsUsed: '',
+    expectedCompletionAt: '',
+    notes: ''
+  });
 
   // useEffect para calcular automaticamente a distância quando origem e destino mudam
   useEffect(() => {
@@ -818,6 +836,81 @@ const LineHaulPage = () => {
     }
   };
 
+  // Buscar lista de oficinas
+  const fetchWorkshops = async () => {
+    try {
+      const res = await apiRequest('GET', '/api/workshops');
+      const response = await res.json();
+      if (response && Array.isArray(response)) {
+        setWorkshopsList(response);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar oficinas:', error);
+    }
+  };
+
+  // Abrir dialog de ordem de serviço
+  const handleOpenWorkorderDialog = async (maintenance: MaintenanceRequest) => {
+    setSelectedMaintenanceForWorkorder(maintenance);
+    setWorkorderForm({
+      workshopId: '',
+      workshopName: '',
+      serviceDescription: maintenance.description || '',
+      laborCost: '',
+      partsCost: '',
+      otherCosts: '',
+      invoiceNumber: '',
+      technicianName: '',
+      partsUsed: '',
+      expectedCompletionAt: '',
+      notes: ''
+    });
+    await fetchWorkshops();
+    setShowWorkorderDialog(true);
+  };
+
+  // Submeter formulário de ordem de serviço
+  const handleSubmitWorkorder = async () => {
+    if (!selectedMaintenanceForWorkorder) return;
+    
+    if (!workorderForm.workshopName.trim()) {
+      toast({
+        title: "Erro",
+        description: "Por favor, informe o nome da oficina",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      const res = await apiRequest('POST', `/api/line-hall/maintenance-requests/${selectedMaintenanceForWorkorder.id}/workorders`, workorderForm);
+      const response = await res.json();
+      
+      if (response.success) {
+        toast({
+          title: "Ordem de serviço criada",
+          description: "Manutenção iniciada com sucesso!"
+        });
+        setShowWorkorderDialog(false);
+        await fetchMaintenanceRequests();
+        await fetchStats();
+      } else {
+        toast({
+          title: "Erro",
+          description: response.message || "Erro ao criar ordem de serviço",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao criar ordem de serviço:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao criar ordem de serviço",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div 
       className="min-h-screen bg-cover bg-center bg-no-repeat relative"
@@ -1102,7 +1195,7 @@ const LineHaulPage = () => {
                         <Button 
                           size="sm" 
                           className="flex-1 bg-blue-500 hover:bg-blue-600"
-                          onClick={() => handleUpdateMaintenanceStatus(request.id, 'em_andamento')}
+                          onClick={() => handleOpenWorkorderDialog(request)}
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
                           Iniciar Manutenção
@@ -2461,6 +2554,192 @@ const LineHaulPage = () => {
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowOperationDetails(false)}>
                 Fechar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog de Ordem de Serviço */}
+        <Dialog open={showWorkorderDialog} onOpenChange={setShowWorkorderDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Iniciar Ordem de Serviço</DialogTitle>
+              <DialogDescription>
+                {selectedMaintenanceForWorkorder && (
+                  <span>
+                    Veículo: {selectedMaintenanceForWorkorder.vehicle_plate} | 
+                    Tipo: {selectedMaintenanceForWorkorder.maintenance_type}
+                  </span>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              {/* Oficina */}
+              <div className="space-y-2">
+                <Label htmlFor="workshop">Oficina *</Label>
+                <Select
+                  value={workorderForm.workshopId}
+                  onValueChange={(value) => {
+                    const workshop = workshopsList.find(w => w.id.toString() === value);
+                    setWorkorderForm(prev => ({
+                      ...prev,
+                      workshopId: value,
+                      workshopName: workshop ? (workshop.nome_fantasia || workshop.razao_social) : ''
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma oficina..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {workshopsList.map((workshop) => (
+                      <SelectItem key={workshop.id} value={workshop.id.toString()}>
+                        {workshop.nome_fantasia || workshop.razao_social}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {/* Campo alternativo para nome de oficina */}
+                <div className="pt-2">
+                  <Label htmlFor="workshopName">Ou informe o nome da oficina manualmente:</Label>
+                  <Input
+                    id="workshopName"
+                    value={workorderForm.workshopName}
+                    onChange={(e) => setWorkorderForm(prev => ({ ...prev, workshopName: e.target.value }))}
+                    placeholder="Nome da oficina"
+                  />
+                </div>
+              </div>
+
+              {/* Descrição do Serviço */}
+              <div className="space-y-2">
+                <Label htmlFor="serviceDescription">Descrição do Serviço</Label>
+                <textarea
+                  id="serviceDescription"
+                  className="w-full min-h-[80px] p-2 border rounded-md"
+                  value={workorderForm.serviceDescription}
+                  onChange={(e) => setWorkorderForm(prev => ({ ...prev, serviceDescription: e.target.value }))}
+                  placeholder="Descreva o serviço realizado..."
+                />
+              </div>
+
+              {/* Custos */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="laborCost">Mão de Obra (R$)</Label>
+                  <Input
+                    id="laborCost"
+                    type="number"
+                    step="0.01"
+                    value={workorderForm.laborCost}
+                    onChange={(e) => setWorkorderForm(prev => ({ ...prev, laborCost: e.target.value }))}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="partsCost">Peças (R$)</Label>
+                  <Input
+                    id="partsCost"
+                    type="number"
+                    step="0.01"
+                    value={workorderForm.partsCost}
+                    onChange={(e) => setWorkorderForm(prev => ({ ...prev, partsCost: e.target.value }))}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="otherCosts">Outros (R$)</Label>
+                  <Input
+                    id="otherCosts"
+                    type="number"
+                    step="0.01"
+                    value={workorderForm.otherCosts}
+                    onChange={(e) => setWorkorderForm(prev => ({ ...prev, otherCosts: e.target.value }))}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              {/* Total */}
+              <div className="p-3 bg-blue-50 rounded-md">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">Total Estimado:</span>
+                  <span className="text-xl font-bold text-blue-700">
+                    R$ {(
+                      parseFloat(workorderForm.laborCost || '0') +
+                      parseFloat(workorderForm.partsCost || '0') +
+                      parseFloat(workorderForm.otherCosts || '0')
+                    ).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Informações Adicionais */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="technicianName">Técnico/Mecânico</Label>
+                  <Input
+                    id="technicianName"
+                    value={workorderForm.technicianName}
+                    onChange={(e) => setWorkorderForm(prev => ({ ...prev, technicianName: e.target.value }))}
+                    placeholder="Nome do técnico"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="invoiceNumber">Nº Nota Fiscal</Label>
+                  <Input
+                    id="invoiceNumber"
+                    value={workorderForm.invoiceNumber}
+                    onChange={(e) => setWorkorderForm(prev => ({ ...prev, invoiceNumber: e.target.value }))}
+                    placeholder="Número da NF"
+                  />
+                </div>
+              </div>
+
+              {/* Peças Utilizadas */}
+              <div className="space-y-2">
+                <Label htmlFor="partsUsed">Peças Utilizadas</Label>
+                <textarea
+                  id="partsUsed"
+                  className="w-full min-h-[60px] p-2 border rounded-md"
+                  value={workorderForm.partsUsed}
+                  onChange={(e) => setWorkorderForm(prev => ({ ...prev, partsUsed: e.target.value }))}
+                  placeholder="Liste as peças utilizadas..."
+                />
+              </div>
+
+              {/* Previsão de Conclusão */}
+              <div className="space-y-2">
+                <Label htmlFor="expectedCompletionAt">Previsão de Conclusão</Label>
+                <Input
+                  id="expectedCompletionAt"
+                  type="datetime-local"
+                  value={workorderForm.expectedCompletionAt}
+                  onChange={(e) => setWorkorderForm(prev => ({ ...prev, expectedCompletionAt: e.target.value }))}
+                />
+              </div>
+
+              {/* Observações */}
+              <div className="space-y-2">
+                <Label htmlFor="notes">Observações</Label>
+                <textarea
+                  id="notes"
+                  className="w-full min-h-[60px] p-2 border rounded-md"
+                  value={workorderForm.notes}
+                  onChange={(e) => setWorkorderForm(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Observações adicionais..."
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowWorkorderDialog(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSubmitWorkorder} className="bg-blue-500 hover:bg-blue-600">
+                Iniciar Manutenção
               </Button>
             </DialogFooter>
           </DialogContent>
