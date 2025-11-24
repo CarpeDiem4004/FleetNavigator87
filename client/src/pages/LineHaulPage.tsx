@@ -267,7 +267,8 @@ const LineHaulPage = () => {
         fetchDrivers(),
         fetchChecklists(),
         fetchStats(),
-        fetchOperations()
+        fetchOperations(),
+        fetchMaintenanceRequests()
       ]);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -375,66 +376,28 @@ const LineHaulPage = () => {
 
   const fetchMaintenanceRequests = async () => {
     try {
-      // Por enquanto usando dados simulados - futuramente conectar com API real
-      const mockMaintenanceRequests: MaintenanceRequest[] = [
-        {
-          id: 1,
-          vehicle_plate: "FNJ2854",
-          vehicle_model: "Volkswagen Constellation",
-          driver_name: "Adeilton Lima Cavalcante",
-          maintenance_type: "Preventiva",
-          description: "Troca de óleo e filtros - manutenção programada",
-          status: "pendente",
-          priority: "media",
-          created_at: "2025-08-05T10:30:00Z",
-          updated_at: "2025-08-05T10:30:00Z",
-          estimated_cost: 450.00,
-          workshop_name: "Oficina Line Haul SP"
-        },
-        {
-          id: 2,
-          vehicle_plate: "ABC1234",
-          vehicle_model: "Mercedes-Benz Actros",
-          driver_name: "João Silva Santos",
-          maintenance_type: "Corretiva",
-          description: "Problema no sistema de freios - pedal está mole, necessário verificação urgente",
-          status: "em_andamento",
-          priority: "urgente",
-          created_at: "2025-08-04T14:15:00Z",
-          updated_at: "2025-08-05T08:30:00Z",
-          estimated_cost: 1200.00,
-          workshop_name: "Auto Mecânica São Paulo"
-        },
-        {
-          id: 3,
-          vehicle_plate: "XYZ5678",
-          vehicle_model: "Scania R450",
-          driver_name: "Maria Santos",
-          maintenance_type: "Preventiva",
-          description: "Revisão dos 10.000 km - troca de filtros e verificação geral",
-          status: "concluida",
-          priority: "baixa",
-          created_at: "2025-08-03T09:00:00Z",
-          updated_at: "2025-08-04T16:45:00Z",
-          estimated_cost: 680.00,
-          workshop_name: "Oficina Scania Autorizada"
-        },
-        {
-          id: 4,
-          vehicle_plate: "DEF9012",
-          vehicle_model: "Volvo FH540",
-          driver_name: "Carlos Pereira",
-          maintenance_type: "Corretiva",
-          description: "Vazamento de óleo no motor - necessário reparo imediato",
-          status: "pendente",
-          priority: "alta",
-          created_at: "2025-08-05T11:45:00Z",
-          updated_at: "2025-08-05T11:45:00Z",
-          estimated_cost: 850.00,
-          workshop_name: "Oficina Volvo"
-        }
-      ];
-      setMaintenanceRequests(mockMaintenanceRequests);
+      const res = await apiRequest('GET', '/api/line-hall/maintenance-requests');
+      const response = await res.json();
+      if (response.success && response.data) {
+        // Mapear os dados do banco para o formato esperado pela interface
+        const mappedRequests: MaintenanceRequest[] = response.data.map((req: any) => ({
+          id: req.id,
+          vehicle_plate: req.vehicle_plate,
+          vehicle_model: "Não informado", // Pode ser buscado da tabela de veículos se necessário
+          driver_name: req.motorista_nome || "Não informado",
+          maintenance_type: req.tipo_problema || "Não especificado",
+          description: req.description,
+          status: req.status,
+          priority: req.urgency === 'emergencial' ? 'urgente' : 
+                    req.urgency === 'alta' ? 'alta' :
+                    req.urgency === 'normal' ? 'media' : 'baixa',
+          created_at: req.created_at,
+          updated_at: req.updated_at,
+          estimated_cost: 0,
+          workshop_name: "Oficina Line Haul"
+        }));
+        setMaintenanceRequests(mappedRequests);
+      }
     } catch (error) {
       console.error('Erro ao buscar solicitações de manutenção:', error);
     }
