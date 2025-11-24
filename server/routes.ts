@@ -18993,7 +18993,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELECT COALESCE(placa_truck, placa_cavalo) as vehicle_plate
         FROM line_hall_operations 
         WHERE motorista_id = $1 
-        ORDER BY created_at DESC 
+        ORDER BY data_criacao DESC 
         LIMIT 1
       `;
       const operacaoResult = await pool.query(operacaoQuery, [motorista_id]);
