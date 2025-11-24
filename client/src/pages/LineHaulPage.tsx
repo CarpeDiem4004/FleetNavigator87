@@ -785,6 +785,39 @@ const LineHaulPage = () => {
     }
   };
 
+  // Função para atualizar status de solicitação de manutenção
+  const handleUpdateMaintenanceStatus = async (requestId: number, newStatus: string) => {
+    try {
+      const res = await apiRequest('PUT', `/api/line-hall/maintenance-requests/${requestId}/status`, {
+        status: newStatus
+      });
+      const response = await res.json();
+      
+      if (response.success) {
+        toast({
+          title: "Status atualizado",
+          description: `Solicitação ${newStatus === 'em_andamento' ? 'iniciada' : 'finalizada'} com sucesso!`
+        });
+        // Recarregar as solicitações
+        await fetchMaintenanceRequests();
+        await fetchStats();
+      } else {
+        toast({
+          title: "Erro",
+          description: response.message || "Erro ao atualizar status",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar status da manutenção",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div 
       className="min-h-screen bg-cover bg-center bg-no-repeat relative"
@@ -1051,18 +1084,36 @@ const LineHaulPage = () => {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" className="flex-1">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => {
+                          toast({
+                            title: "Detalhes da Solicitação",
+                            description: `Placa: ${request.vehicle_plate} | Tipo: ${request.maintenance_type} | Prioridade: ${request.priority}`
+                          });
+                        }}
+                      >
                         <Eye className="h-4 w-4 mr-1" />
                         Ver Detalhes
                       </Button>
                       {request.status === 'pendente' && (
-                        <Button size="sm" className="flex-1 bg-blue-500 hover:bg-blue-600">
+                        <Button 
+                          size="sm" 
+                          className="flex-1 bg-blue-500 hover:bg-blue-600"
+                          onClick={() => handleUpdateMaintenanceStatus(request.id, 'em_andamento')}
+                        >
                           <CheckCircle className="h-4 w-4 mr-1" />
                           Iniciar Manutenção
                         </Button>
                       )}
                       {request.status === 'em_andamento' && (
-                        <Button size="sm" className="flex-1 bg-green-500 hover:bg-green-600">
+                        <Button 
+                          size="sm" 
+                          className="flex-1 bg-green-500 hover:bg-green-600"
+                          onClick={() => handleUpdateMaintenanceStatus(request.id, 'concluida')}
+                        >
                           <CheckCircle className="h-4 w-4 mr-1" />
                           Finalizar
                         </Button>
