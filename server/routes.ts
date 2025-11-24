@@ -4166,7 +4166,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { origem, destino } = req.body;
       
+      console.log('🗺️ [CALCULATE-DISTANCE] Solicitação recebida:', { origem, destino });
+      
       if (!origem || !destino) {
+        console.log('❌ [CALCULATE-DISTANCE] Faltando origem ou destino');
         return res.status(400).json({
           success: false,
           message: 'Origem e destino são obrigatórios'
@@ -4176,6 +4179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const GOOGLE_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
       
       if (!GOOGLE_API_KEY) {
+        console.log('❌ [CALCULATE-DISTANCE] API Key não configurada');
         return res.status(500).json({
           success: false,
           message: 'API Key do Google Maps não configurada'
@@ -4184,26 +4188,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origem)}&destinations=${encodeURIComponent(destino)}&units=metric&key=${GOOGLE_API_KEY}`;
       
+      console.log('📡 [CALCULATE-DISTANCE] Chamando Google Maps API...');
       const response = await fetch(url);
       const data = await response.json();
+      
+      console.log('📊 [CALCULATE-DISTANCE] Resposta do Google Maps:', JSON.stringify(data, null, 2));
 
       if (data.rows?.[0]?.elements?.[0]?.status === 'OK') {
         const distanciaMetros = data.rows[0].elements[0].distance.value;
         const distanciaKm = Math.round(distanciaMetros / 1000);
         
+        console.log('✅ [CALCULATE-DISTANCE] Distância calculada:', distanciaKm, 'km');
         return res.status(200).json({
           success: true,
           distancia: distanciaKm,
           message: `Distância calculada: ${distanciaKm} km`
         });
       } else {
+        const status = data.rows?.[0]?.elements?.[0]?.status || 'UNKNOWN';
+        const apiStatus = data.status || 'UNKNOWN';
+        const errorMessage = data.error_message || 'Sem mensagem de erro';
+        
+        console.log('❌ [CALCULATE-DISTANCE] Falha no cálculo:', {
+          status,
+          apiStatus,
+          errorMessage,
+          fullResponse: data
+        });
+        
+        let userMessage = 'Não foi possível calcular a distância. ';
+        if (status === 'NOT_FOUND') {
+          userMessage += 'Um ou ambos os endereços não foram encontrados. Verifique a ortografia e tente novamente.';
+        } else if (status === 'ZERO_RESULTS') {
+          userMessage += 'Nenhuma rota encontrada entre esses pontos.';
+        } else if (apiStatus === 'REQUEST_DENIED') {
+          userMessage += 'Erro na API do Google Maps. Contate o administrador.';
+        } else {
+          userMessage += 'Verifique os endereços informados.';
+        }
+        
         return res.status(400).json({
           success: false,
-          message: 'Não foi possível calcular a distância. Verifique os endereços informados.'
+          message: userMessage,
+          debug: { status, apiStatus, errorMessage }
         });
       }
     } catch (error: any) {
-      console.error('Erro ao calcular distância:', error);
+      console.error('💥 [CALCULATE-DISTANCE] Erro inesperado:', error);
       return res.status(500).json({
         success: false,
         message: 'Erro ao calcular distância',
