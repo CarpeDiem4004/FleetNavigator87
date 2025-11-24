@@ -25,7 +25,8 @@ import {
   Loader2,
   RefreshCcw,
   ArrowLeft,
-  Edit
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { DriverAutocomplete } from '@/components/ui/driver-autocomplete';
 import lineHaulLayoutImage from '@assets/image_1754418722959.png';
@@ -175,6 +176,7 @@ const LineHaulPage = () => {
   const [showWorkorderDialog, setShowWorkorderDialog] = useState(false);
   const [selectedMaintenanceForWorkorder, setSelectedMaintenanceForWorkorder] = useState<MaintenanceRequest | null>(null);
   const [workshopsList, setWorkshopsList] = useState<any[]>([]);
+  const [partsList, setPartsList] = useState<Array<{ name: string; value: string }>>([]);
   const [workorderForm, setWorkorderForm] = useState({
     workshopId: '',
     workshopName: '',
@@ -849,9 +851,33 @@ const LineHaulPage = () => {
     }
   };
 
+  // Funções para gerenciar peças
+  const addPart = () => {
+    setPartsList([...partsList, { name: '', value: '' }]);
+  };
+
+  const removePart = (index: number) => {
+    setPartsList(partsList.filter((_, i) => i !== index));
+  };
+
+  const updatePart = (index: number, field: 'name' | 'value', value: string) => {
+    const newParts = [...partsList];
+    newParts[index][field] = value;
+    setPartsList(newParts);
+  };
+
+  // Calcular total de peças
+  const calculatePartsCost = () => {
+    return partsList.reduce((total, part) => {
+      const value = parseFloat(part.value || '0');
+      return total + value;
+    }, 0);
+  };
+
   // Abrir dialog de ordem de serviço
   const handleOpenWorkorderDialog = async (maintenance: MaintenanceRequest) => {
     setSelectedMaintenanceForWorkorder(maintenance);
+    setPartsList([]);
     setWorkorderForm({
       workshopId: '',
       workshopName: '',
@@ -883,7 +909,22 @@ const LineHaulPage = () => {
     }
     
     try {
-      const res = await apiRequest('POST', `/api/line-hall/maintenance-requests/${selectedMaintenanceForWorkorder.id}/workorders`, workorderForm);
+      // Montar lista de peças para o campo partsUsed
+      const partsDescription = partsList
+        .filter(part => part.name.trim())
+        .map(part => `${part.name} - R$ ${parseFloat(part.value || '0').toFixed(2)}`)
+        .join('\n');
+      
+      // Calcular total de peças
+      const totalPartsCost = calculatePartsCost().toFixed(2);
+      
+      const formData = {
+        ...workorderForm,
+        partsCost: totalPartsCost,
+        partsUsed: partsDescription || workorderForm.partsUsed
+      };
+      
+      const res = await apiRequest('POST', `/api/line-hall/maintenance-requests/${selectedMaintenanceForWorkorder.id}/workorders`, formData);
       const response = await res.json();
       
       if (response.success) {
@@ -892,6 +933,7 @@ const LineHaulPage = () => {
           description: "Manutenção iniciada com sucesso!"
         });
         setShowWorkorderDialog(false);
+        setPartsList([]);
         await fetchMaintenanceRequests();
         await fetchStats();
       } else {
@@ -2625,8 +2667,8 @@ const LineHaulPage = () => {
                 />
               </div>
 
-              {/* Custos */}
-              <div className="grid grid-cols-3 gap-4">
+              {/* Custos Fixos */}
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="laborCost">Mão de Obra (R$)</Label>
                   <Input
@@ -2635,17 +2677,6 @@ const LineHaulPage = () => {
                     step="0.01"
                     value={workorderForm.laborCost}
                     onChange={(e) => setWorkorderForm(prev => ({ ...prev, laborCost: e.target.value }))}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="partsCost">Peças (R$)</Label>
-                  <Input
-                    id="partsCost"
-                    type="number"
-                    step="0.01"
-                    value={workorderForm.partsCost}
-                    onChange={(e) => setWorkorderForm(prev => ({ ...prev, partsCost: e.target.value }))}
                     placeholder="0.00"
                   />
                 </div>
@@ -2662,14 +2693,77 @@ const LineHaulPage = () => {
                 </div>
               </div>
 
-              {/* Total */}
-              <div className="p-3 bg-blue-50 rounded-md">
+              {/* Peças - Lista Dinâmica */}
+              <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold">Total Estimado:</span>
-                  <span className="text-xl font-bold text-blue-700">
+                  <Label>Peças Utilizadas</Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={addPart}
+                    className="h-8"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Adicionar Peça
+                  </Button>
+                </div>
+                
+                {partsList.length > 0 ? (
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto border rounded-md p-2">
+                    {partsList.map((part, index) => (
+                      <div key={index} className="grid grid-cols-[1fr_120px_40px] gap-2 items-center bg-gray-50 p-2 rounded">
+                        <Input
+                          placeholder="Nome da peça"
+                          value={part.name}
+                          onChange={(e) => updatePart(index, 'name', e.target.value)}
+                          className="h-9"
+                        />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Valor"
+                          value={part.value}
+                          onChange={(e) => updatePart(index, 'value', e.target.value)}
+                          className="h-9"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => removePart(index)}
+                          className="h-9 w-9 p-0 hover:bg-red-100 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500 italic p-2 border rounded-md text-center">
+                    Nenhuma peça adicionada. Clique em "Adicionar Peça" para incluir.
+                  </div>
+                )}
+                
+                {/* Total de Peças */}
+                {partsList.length > 0 && (
+                  <div className="flex justify-between items-center bg-blue-50 p-2 rounded-md">
+                    <span className="text-sm font-medium">Total em Peças:</span>
+                    <span className="text-lg font-bold text-blue-700">
+                      R$ {calculatePartsCost().toFixed(2)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Total Geral */}
+              <div className="p-3 bg-green-50 rounded-md border-2 border-green-200">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-lg">Total Geral:</span>
+                  <span className="text-2xl font-bold text-green-700">
                     R$ {(
                       parseFloat(workorderForm.laborCost || '0') +
-                      parseFloat(workorderForm.partsCost || '0') +
+                      calculatePartsCost() +
                       parseFloat(workorderForm.otherCosts || '0')
                     ).toFixed(2)}
                   </span>
@@ -2696,18 +2790,6 @@ const LineHaulPage = () => {
                     placeholder="Número da NF"
                   />
                 </div>
-              </div>
-
-              {/* Peças Utilizadas */}
-              <div className="space-y-2">
-                <Label htmlFor="partsUsed">Peças Utilizadas</Label>
-                <textarea
-                  id="partsUsed"
-                  className="w-full min-h-[60px] p-2 border rounded-md"
-                  value={workorderForm.partsUsed}
-                  onChange={(e) => setWorkorderForm(prev => ({ ...prev, partsUsed: e.target.value }))}
-                  placeholder="Liste as peças utilizadas..."
-                />
               </div>
 
               {/* Previsão de Conclusão */}
