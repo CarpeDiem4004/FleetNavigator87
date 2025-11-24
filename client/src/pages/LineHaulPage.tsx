@@ -1429,24 +1429,33 @@ const LineHaulPage = () => {
                 <div className="text-2xl font-bold text-blue-600">{stats.garageStats.media_dias}</div>
                 <div className="text-sm text-gray-600">Média de Dias</div>
               </div>
-              <div className="text-sm text-gray-600 mb-4">Veículos Line Haul cadastrados: {vehicles.length}</div>
-              <div className="space-y-1 mb-4">
-                {vehicles.slice(0, 3).map((vehicle, index) => (
-                  <Badge key={vehicle.id} variant="outline" className="text-xs">
-                    {vehicle.plate} - {vehicle.model}
-                  </Badge>
-                ))}
-                {vehicles.length > 3 && (
-                  <Badge variant="outline" className="text-xs text-blue-600">
-                    +{vehicles.length - 3} veículos
-                  </Badge>
-                )}
-              </div>
+              
+              {/* Lista de veículos na garagem */}
+              {stats.garageStats.data && stats.garageStats.data.length > 0 ? (
+                <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
+                  {stats.garageStats.data.map((vehicle: any, index: number) => (
+                    <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded border border-gray-200">
+                      <div className="flex items-center">
+                        <Car className="h-4 w-4 mr-2 text-green-600" />
+                        <span className="font-semibold text-sm">{vehicle.plate}</span>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {Math.floor(vehicle.dias_na_garagem)} dias
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500 text-sm mb-4">
+                  Nenhum veículo na garagem
+                </div>
+              )}
+
               <div className="flex gap-2">
                 <Button 
                   size="sm" 
                   className="flex-1 bg-blue-500 hover:bg-blue-600"
-                  onClick={() => fetchVehicles()}
+                  onClick={() => fetchStats()}
                   disabled={isLoading}
                 >
                   {isLoading ? (
