@@ -43,7 +43,31 @@ const DriverAccess: React.FC = () => {
   const [showAllOperations, setShowAllOperations] = useState(false);
   const [showAllFuelRequests, setShowAllFuelRequests] = useState(false);
   const [showAllMaintenanceRequests, setShowAllMaintenanceRequests] = useState(false);
+  const [approvalNotification, setApprovalNotification] = useState<{id: number, placa: string, valor?: string, status: 'aprovada' | 'rejeitada', motivo?: string} | null>(null);
   const { toast } = useToast();
+
+  // Função para verificar se uma notificação já foi vista pelo motorista
+  const isNotificationSeen = (requestId: number): boolean => {
+    const seenNotifications = JSON.parse(localStorage.getItem('driver-seen-notifications') || '[]');
+    return seenNotifications.includes(requestId);
+  };
+
+  // Função para marcar notificação como vista
+  const markNotificationAsSeen = (requestId: number) => {
+    const seenNotifications = JSON.parse(localStorage.getItem('driver-seen-notifications') || '[]');
+    if (!seenNotifications.includes(requestId)) {
+      seenNotifications.push(requestId);
+      localStorage.setItem('driver-seen-notifications', JSON.stringify(seenNotifications));
+    }
+  };
+
+  // Função para confirmar e fechar a notificação de aprovação
+  const handleConfirmApproval = () => {
+    if (approvalNotification) {
+      markNotificationAsSeen(approvalNotification.id);
+      setApprovalNotification(null);
+    }
+  };
 
   // Trocar manifest para o PWA do motorista
   useEffect(() => {
@@ -217,28 +241,27 @@ const DriverAccess: React.FC = () => {
         setFuelRequests(data.data || []);
         saveDataLocally('driver-fuel-requests', data.data || []);
         
-        // Mostrar notificações apenas para solicitações processadas recentemente
-        const recentRequests = data.data.filter((request: any) => 
-          request.status !== 'pendente' && 
-          new Date(request.updated_at) > new Date(Date.now() - 24 * 60 * 60 * 1000) // últimas 24 horas
-        );
-        
-        recentRequests.forEach((request: any) => {
-          if (request.status === 'aprovada') {
-            toast({
-              title: "Solicitação Aprovada",
-              description: `Sua solicitação de recarga de cartão foi aprovada! Placa: ${request.veiculo_placa}`,
-              duration: 8000,
-            });
-          } else if (request.status === 'rejeitada') {
-            toast({
-              title: "Solicitação Rejeitada",
-              description: `Sua solicitação de recarga foi rejeitada. ${request.observacoes_operador ? 'Motivo: ' + request.observacoes_operador : ''}`,
-              variant: "destructive",
-              duration: 8000,
+        // Verificar se há notificações não vistas para mostrar ao motorista
+        // Só mostra uma notificação por vez (a mais recente não vista)
+        if (!approvalNotification) {
+          const unseenNotifications = (data.data || [])
+            .filter((request: any) => 
+              (request.status === 'aprovada' || request.status === 'rejeitada') && 
+              !isNotificationSeen(request.id)
+            )
+            .sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+          
+          if (unseenNotifications.length > 0) {
+            const notification = unseenNotifications[0];
+            setApprovalNotification({
+              id: notification.id,
+              placa: notification.veiculo_placa,
+              valor: notification.valor_aprovado || notification.valor_calculado,
+              status: notification.status,
+              motivo: notification.observacoes_operador || notification.motivo_negacao
             });
           }
-        });
+        }
       }
     } catch (error) {
       console.error('Erro ao buscar solicitações de recarga:', error);
@@ -548,6 +571,80 @@ const DriverAccess: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      {/* Modal de Notificação de Aprovação/Rejeição - Fica na tela até confirmar */}
+      {approvalNotification && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className={`bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 transform animate-in fade-in zoom-in duration-300 ${
+            approvalNotification.status === 'aprovada' ? 'border-t-4 border-green-500' : 'border-t-4 border-red-500'
+          }`}>
+            <div className="text-center">
+              {approvalNotification.status === 'aprovada' ? (
+                <>
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-10 h-10 text-green-600" />
+                  </div>
+                  <h2 className="text-xl font-bold text-green-700 mb-2">
+                    Solicitação Aprovada!
+                  </h2>
+                  <p className="text-gray-600 mb-2">
+                    Sua solicitação de recarga foi aprovada.
+                  </p>
+                  <div className="bg-green-50 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-gray-700">
+                      <strong>Placa:</strong> {approvalNotification.placa}
+                    </p>
+                    {approvalNotification.valor && (
+                      <p className="text-lg font-bold text-green-700 mt-1">
+                        Valor: R$ {parseFloat(approvalNotification.valor).toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500 mb-4">
+                    ✅ Você pode abastecer conforme solicitado.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <XCircle className="w-10 h-10 text-red-600" />
+                  </div>
+                  <h2 className="text-xl font-bold text-red-700 mb-2">
+                    Solicitação Rejeitada
+                  </h2>
+                  <p className="text-gray-600 mb-2">
+                    Sua solicitação de recarga foi rejeitada.
+                  </p>
+                  <div className="bg-red-50 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-gray-700">
+                      <strong>Placa:</strong> {approvalNotification.placa}
+                    </p>
+                    {approvalNotification.motivo && (
+                      <p className="text-sm text-red-600 mt-1">
+                        <strong>Motivo:</strong> {approvalNotification.motivo}
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Entre em contato com o operador para mais informações.
+                  </p>
+                </>
+              )}
+              <Button 
+                onClick={handleConfirmApproval}
+                className={`w-full py-3 text-lg font-semibold ${
+                  approvalNotification.status === 'aprovada' 
+                    ? 'bg-green-600 hover:bg-green-700' 
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+                data-testid="button-confirm-notification"
+              >
+                OK, Entendi
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* PWA Header with Status */}
       <div className="max-w-4xl mx-auto mb-4">
         <div className="flex items-center justify-between bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-sm border">
