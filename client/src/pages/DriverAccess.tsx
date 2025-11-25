@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, Truck, FileText, Wrench, MapPin, Clock, Calendar, LogOut, CreditCard, CheckCircle, XCircle, RefreshCw, Smartphone, Download, Wifi, WifiOff, Camera } from 'lucide-react';
+import { Loader2, User, Truck, FileText, Wrench, MapPin, Clock, Calendar, LogOut, CreditCard, CheckCircle, XCircle, RefreshCw, Smartphone, Download, Wifi, WifiOff, Camera, ChevronDown, ChevronUp } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { pwaManager } from '@/utils/pwa-utils';
 import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
@@ -40,6 +40,9 @@ const DriverAccess: React.FC = () => {
   const [operations, setOperations] = useState<any[]>([]);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [showAllOperations, setShowAllOperations] = useState(false);
+  const [showAllFuelRequests, setShowAllFuelRequests] = useState(false);
+  const [showAllMaintenanceRequests, setShowAllMaintenanceRequests] = useState(false);
   const { toast } = useToast();
 
   // Trocar manifest para o PWA do motorista
@@ -765,9 +768,14 @@ const DriverAccess: React.FC = () => {
         {/* Seção de Minhas Rotas/Operações */}
         <Card className="border-2 border-blue-200">
           <CardHeader className="bg-blue-50">
-            <CardTitle className="text-lg flex items-center">
-              <MapPin className="h-5 w-5 mr-2 text-blue-600" />
-              Minhas Rotas Ativas
+            <CardTitle className="text-lg flex items-center justify-between">
+              <div className="flex items-center">
+                <MapPin className="h-5 w-5 mr-2 text-blue-600" />
+                Minhas Rotas Ativas
+                {operations.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">{operations.length}</Badge>
+                )}
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
@@ -778,7 +786,7 @@ const DriverAccess: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {operations.map((operation: any) => (
+                {(showAllOperations ? operations : operations.slice(0, 1)).map((operation: any) => (
                   <div key={operation.id} className="border rounded-lg p-4 bg-white shadow-sm">
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
@@ -818,6 +826,19 @@ const DriverAccess: React.FC = () => {
                     )}
                   </div>
                 ))}
+                {operations.length > 1 && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={() => setShowAllOperations(!showAllOperations)}
+                  >
+                    {showAllOperations ? (
+                      <><ChevronUp className="h-4 w-4 mr-2" /> Mostrar Menos</>
+                    ) : (
+                      <><ChevronDown className="h-4 w-4 mr-2" /> Ver Todas ({operations.length - 1} mais)</>
+                    )}
+                  </Button>
+                )}
               </div>
             )}
           </CardContent>
@@ -826,12 +847,14 @@ const DriverAccess: React.FC = () => {
         {/* Seção de Solicitações de Recarga de Cartão */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg flex items-center">
-              <CreditCard className="h-5 w-5 mr-2 text-green-600" />
-              Minhas Solicitações de Recarga de Cartão
-              {fuelRequests.length > 0 && (
-                <RefreshCw className="h-4 w-4 ml-2 text-gray-400 animate-spin" />
-              )}
+            <CardTitle className="text-lg flex items-center justify-between">
+              <div className="flex items-center">
+                <CreditCard className="h-5 w-5 mr-2 text-green-600" />
+                Minhas Solicitações de Recarga de Cartão
+                {fuelRequests.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">{fuelRequests.length}</Badge>
+                )}
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -841,7 +864,7 @@ const DriverAccess: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {fuelRequests.map((request: any) => (
+                {(showAllFuelRequests ? fuelRequests : fuelRequests.slice(0, 1)).map((request: any) => (
                   <div key={request.id} className="border rounded-lg p-4 bg-gray-50">
                     <div className="flex justify-between items-start mb-2">
                       <div>
@@ -955,6 +978,19 @@ const DriverAccess: React.FC = () => {
                     </div>
                   </div>
                 ))}
+                {fuelRequests.length > 1 && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={() => setShowAllFuelRequests(!showAllFuelRequests)}
+                  >
+                    {showAllFuelRequests ? (
+                      <><ChevronUp className="h-4 w-4 mr-2" /> Mostrar Menos</>
+                    ) : (
+                      <><ChevronDown className="h-4 w-4 mr-2" /> Ver Todas ({fuelRequests.length - 1} mais)</>
+                    )}
+                  </Button>
+                )}
               </div>
             )}
           </CardContent>
@@ -963,9 +999,14 @@ const DriverAccess: React.FC = () => {
         {/* Seção de Solicitações de Manutenção */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg flex items-center">
-              <Wrench className="h-5 w-5 mr-2 text-blue-600" />
-              Minhas Solicitações de Manutenção
+            <CardTitle className="text-lg flex items-center justify-between">
+              <div className="flex items-center">
+                <Wrench className="h-5 w-5 mr-2 text-blue-600" />
+                Minhas Solicitações de Manutenção
+                {maintenanceRequests.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">{maintenanceRequests.length}</Badge>
+                )}
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -975,7 +1016,7 @@ const DriverAccess: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {maintenanceRequests.map((request: any) => (
+                {(showAllMaintenanceRequests ? maintenanceRequests : maintenanceRequests.slice(0, 1)).map((request: any) => (
                   <div key={request.id} className="border rounded-lg p-4 bg-gray-50">
                     <div className="flex justify-between items-start mb-2">
                       <div>
@@ -1022,6 +1063,19 @@ const DriverAccess: React.FC = () => {
                     )}
                   </div>
                 ))}
+                {maintenanceRequests.length > 1 && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={() => setShowAllMaintenanceRequests(!showAllMaintenanceRequests)}
+                  >
+                    {showAllMaintenanceRequests ? (
+                      <><ChevronUp className="h-4 w-4 mr-2" /> Mostrar Menos</>
+                    ) : (
+                      <><ChevronDown className="h-4 w-4 mr-2" /> Ver Todas ({maintenanceRequests.length - 1} mais)</>
+                    )}
+                  </Button>
+                )}
               </div>
             )}
           </CardContent>
