@@ -56,6 +56,7 @@ interface LineHallTrip {
 
 interface RouteData {
   id: number;
+  codigo?: string;
   nome_ponto_a: string;
   nome_ponto_b: string;
   km_total: number;
@@ -178,6 +179,7 @@ const LineHaulPage = () => {
 
   // Estado para formulário de nova rota
   const [newRoute, setNewRoute] = useState({
+    codigo: '',
     nome_ponto_a: '',
     nome_ponto_b: '',
     km_total: 0,
@@ -557,6 +559,7 @@ const LineHaulPage = () => {
         
         // Limpa o formulário e fecha o modal
         setNewRoute({
+          codigo: '',
           nome_ponto_a: '',
           nome_ponto_b: '',
           km_total: 0,
@@ -602,6 +605,7 @@ const LineHaulPage = () => {
         
         // Limpa o formulário e fecha o modal
         setNewRoute({
+          codigo: '',
           nome_ponto_a: '',
           nome_ponto_b: '',
           km_total: 0,
@@ -1876,6 +1880,7 @@ const LineHaulPage = () => {
                           onClick={() => {
                             setEditingRoute(route);
                             setNewRoute({
+                              codigo: route.codigo || '',
                               nome_ponto_a: route.nome_ponto_a,
                               nome_ponto_b: route.nome_ponto_b,
                               km_total: route.km_total,
@@ -1972,6 +1977,18 @@ const LineHaulPage = () => {
                 </div>
               </div>
               <div className="space-y-2">
+                <Label htmlFor="codigo">Código da Rota</Label>
+                <Input
+                  id="codigo"
+                  placeholder="Ex: LH-001, SP-RJ-01"
+                  value={newRoute.codigo}
+                  onChange={(e) => setNewRoute(prev => ({ ...prev, codigo: e.target.value }))}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Código único para identificação da rota (usado para importação em massa)
+                </p>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="km_total">Distância Total (km) *</Label>
                 <div className="relative">
                   <Input
@@ -2015,6 +2032,7 @@ const LineHaulPage = () => {
                 setShowNewRoute(false);
                 setEditingRoute(null);
                 setNewRoute({
+                  codigo: '',
                   nome_ponto_a: '',
                   nome_ponto_b: '',
                   km_total: 0,
