@@ -4244,6 +4244,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id,
           nome_ponto_a,
           nome_ponto_b,
+          codigo_origem,
+          codigo_destino,
           km_total,
           created_at,
           updated_at
@@ -4271,7 +4273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Criar nova rota do Line Hall Shopee
   app.post('/api/line-hall/routes', isAuthenticated, async (req, res) => {
     try {
-      const { nome_ponto_a, nome_ponto_b, km_total } = req.body;
+      const { nome_ponto_a, nome_ponto_b, km_total, codigo_origem, codigo_destino } = req.body;
       
       if (!nome_ponto_a || !nome_ponto_b || !km_total) {
         return res.status(400).json({
@@ -4296,13 +4298,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const query = `
         INSERT INTO line_hall_routes
-          (nome_ponto_a, nome_ponto_b, km_total, created_at, updated_at)
+          (nome_ponto_a, nome_ponto_b, km_total, codigo_origem, codigo_destino, created_at, updated_at)
         VALUES
-          ($1, $2, $3, NOW(), NOW())
+          ($1, $2, $3, $4, $5, NOW(), NOW())
         RETURNING *
       `;
       
-      const result = await pool.query(query, [nome_ponto_a, nome_ponto_b, km_total]);
+      const result = await pool.query(query, [nome_ponto_a, nome_ponto_b, km_total, codigo_origem || null, codigo_destino || null]);
       
       return res.status(201).json({
         success: true,
@@ -4405,7 +4407,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/line-hall/routes/:id', isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
-      const { nome_ponto_a, nome_ponto_b, km_total, observacoes } = req.body;
+      const { nome_ponto_a, nome_ponto_b, km_total, observacoes, codigo_origem, codigo_destino } = req.body;
       
       if (!nome_ponto_a || !nome_ponto_b || !km_total) {
         return res.status(400).json({
@@ -4441,12 +4443,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const query = `
         UPDATE line_hall_routes
-        SET nome_ponto_a = $1, nome_ponto_b = $2, km_total = $3, observacoes = $4, updated_at = NOW()
-        WHERE id = $5
+        SET nome_ponto_a = $1, nome_ponto_b = $2, km_total = $3, observacoes = $4, 
+            codigo_origem = $5, codigo_destino = $6, updated_at = NOW()
+        WHERE id = $7
         RETURNING *
       `;
       
-      const result = await pool.query(query, [nome_ponto_a, nome_ponto_b, km_total, observacoes || null, id]);
+      const result = await pool.query(query, [nome_ponto_a, nome_ponto_b, km_total, observacoes || null, codigo_origem || null, codigo_destino || null, id]);
       
       return res.status(200).json({
         success: true,

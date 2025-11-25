@@ -56,10 +56,12 @@ interface LineHallTrip {
 
 interface RouteData {
   id: number;
-  codigo?: string;
+  codigo_origem?: string;
+  codigo_destino?: string;
   nome_ponto_a: string;
   nome_ponto_b: string;
   km_total: number;
+  observacoes?: string;
 }
 
 interface Vehicle {
@@ -179,7 +181,8 @@ const LineHaulPage = () => {
 
   // Estado para formulário de nova rota
   const [newRoute, setNewRoute] = useState({
-    codigo: '',
+    codigo_origem: '',
+    codigo_destino: '',
     nome_ponto_a: '',
     nome_ponto_b: '',
     km_total: 0,
@@ -559,7 +562,8 @@ const LineHaulPage = () => {
         
         // Limpa o formulário e fecha o modal
         setNewRoute({
-          codigo: '',
+          codigo_origem: '',
+          codigo_destino: '',
           nome_ponto_a: '',
           nome_ponto_b: '',
           km_total: 0,
@@ -605,7 +609,8 @@ const LineHaulPage = () => {
         
         // Limpa o formulário e fecha o modal
         setNewRoute({
-          codigo: '',
+          codigo_origem: '',
+          codigo_destino: '',
           nome_ponto_a: '',
           nome_ponto_b: '',
           km_total: 0,
@@ -1880,7 +1885,8 @@ const LineHaulPage = () => {
                           onClick={() => {
                             setEditingRoute(route);
                             setNewRoute({
-                              codigo: route.codigo || '',
+                              codigo_origem: route.codigo_origem || '',
+                              codigo_destino: route.codigo_destino || '',
                               nome_ponto_a: route.nome_ponto_a,
                               nome_ponto_b: route.nome_ponto_b,
                               km_total: route.km_total,
@@ -1976,18 +1982,29 @@ const LineHaulPage = () => {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="codigo">Código da Rota</Label>
-                <Input
-                  id="codigo"
-                  placeholder="Ex: LH-001, SP-RJ-01"
-                  value={newRoute.codigo}
-                  onChange={(e) => setNewRoute(prev => ({ ...prev, codigo: e.target.value }))}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Código único para identificação da rota (usado para importação em massa)
-                </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="codigo_origem">Código Origem</Label>
+                  <Input
+                    id="codigo_origem"
+                    placeholder="Ex: SP01, CD-SP"
+                    value={newRoute.codigo_origem}
+                    onChange={(e) => setNewRoute(prev => ({ ...prev, codigo_origem: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="codigo_destino">Código Destino</Label>
+                  <Input
+                    id="codigo_destino"
+                    placeholder="Ex: RJ01, CD-RJ"
+                    value={newRoute.codigo_destino}
+                    onChange={(e) => setNewRoute(prev => ({ ...prev, codigo_destino: e.target.value }))}
+                  />
+                </div>
               </div>
+              <p className="text-xs text-muted-foreground -mt-2">
+                Códigos únicos para identificação dos pontos (usado para importação em massa)
+              </p>
               <div className="space-y-2">
                 <Label htmlFor="km_total">Distância Total (km) *</Label>
                 <div className="relative">
@@ -2032,7 +2049,8 @@ const LineHaulPage = () => {
                 setShowNewRoute(false);
                 setEditingRoute(null);
                 setNewRoute({
-                  codigo: '',
+                  codigo_origem: '',
+                  codigo_destino: '',
                   nome_ponto_a: '',
                   nome_ponto_b: '',
                   km_total: 0,
