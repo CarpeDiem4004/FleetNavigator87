@@ -5595,7 +5595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             COALESCE(lh.telefone_motorista, '') as telefone_celular,
             COALESCE(lh.observacoes_operador, 'Sem observações') as observacoes,
             lh.status,
-            lh.data_viagem as data_solicitacao,
+            COALESCE(lh.data_viagem::timestamp, lh.created_at) as data_solicitacao,
             lh.operador_aprovacao as atendido_por,
             lh.updated_at as data_atendimento,
             lh.created_at,
