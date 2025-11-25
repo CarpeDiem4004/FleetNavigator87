@@ -30,6 +30,7 @@ import {
   ClipboardCheck
 } from 'lucide-react';
 import { DriverAutocomplete } from '@/components/ui/driver-autocomplete';
+import { Combobox } from '@/components/ui/combobox';
 import lineHaulLayoutImage from '@assets/image_1754418722959.png';
 import { apiRequest } from '@/lib/queryClient';
 import LineHaulExecutiveDashboard from '@/components/LineHaulExecutiveDashboard';
@@ -2127,9 +2128,10 @@ const LineHaulPage = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="motorista_select">Motorista *</Label>
-                  <Select 
-                    value={newOperation.motorista_id.toString()} 
-                    onValueChange={(value) => {
+                  <Combobox
+                    options={drivers.map(d => ({ value: d.id.toString(), label: d.nome }))}
+                    value={newOperation.motorista_id > 0 ? newOperation.motorista_id.toString() : ""}
+                    onChange={(value) => {
                       const motorista = drivers.find(d => d.id.toString() === value);
                       setNewOperation(prev => ({ 
                         ...prev, 
@@ -2137,18 +2139,9 @@ const LineHaulPage = () => {
                         motorista_nome: motorista?.nome || ''
                       }));
                     }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um motorista" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {drivers.map((driver) => (
-                        <SelectItem key={driver.id} value={driver.id.toString()}>
-                          {driver.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Digite para buscar motorista..."
+                    emptyMessage="Nenhum motorista encontrado"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="tipo_veiculo">Tipo de Veículo *</Label>
