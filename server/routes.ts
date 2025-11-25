@@ -4137,8 +4137,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           END as name,
           COUNT(*) as value
         FROM line_hall_operations
-        WHERE created_at >= $1::date
-          AND created_at <= ($2::date + interval '1 day')
+        WHERE data_criacao >= $1::date
+          AND data_criacao <= ($2::date + interval '1 day')
         GROUP BY status
       `;
       const operationsResult = await pool.query(operationsQuery, [startDate, endDate]);
@@ -4193,8 +4193,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalOperationsQuery = `
         SELECT COUNT(*) as total
         FROM line_hall_operations
-        WHERE created_at >= $1::date
-          AND created_at <= ($2::date + interval '1 day')
+        WHERE data_criacao >= $1::date
+          AND data_criacao <= ($2::date + interval '1 day')
       `;
       const totalOperationsResult = await pool.query(totalOperationsQuery, [startDate, endDate]);
       

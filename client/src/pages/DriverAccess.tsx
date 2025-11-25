@@ -120,6 +120,26 @@ const DriverAccess: React.FC = () => {
     }
   };
 
+  // Buscar dados quando o driver já está logado (carregado do localStorage)
+  useEffect(() => {
+    if (driver && driver.id && isOnline) {
+      console.log('[DriverAccess] Buscando dados para motorista:', driver.id);
+      // Buscar dados do servidor
+      fetchMaintenanceRequests(driver.id);
+      fetchFuelRequests(driver.id);
+      fetchOperations(driver.id);
+      
+      // Configurar polling se não estiver configurado
+      if (!pollingInterval) {
+        const interval = setInterval(() => {
+          fetchFuelRequests(driver.id);
+          fetchOperations(driver.id);
+        }, 10000);
+        setPollingInterval(interval);
+      }
+    }
+  }, [driver?.id, isOnline]);
+
   const saveDataLocally = (key: string, data: any) => {
     try {
       localStorage.setItem(key, JSON.stringify(data));
