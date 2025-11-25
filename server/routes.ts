@@ -885,6 +885,7 @@ async function criarTabelaDriverChecklists() {
         driver_name VARCHAR(255) NOT NULL,
         vehicle_plate VARCHAR(20) NOT NULL,
         km_atual INTEGER,
+        km_final INTEGER,
         condicao_pneus VARCHAR(50),
         condicao_luzes VARCHAR(50),
         condicao_freios VARCHAR(50),
@@ -900,6 +901,9 @@ async function criarTabelaDriverChecklists() {
         viagem_id INTEGER,
         source VARCHAR(50) DEFAULT 'line_hall',
         driver_type VARCHAR(50) DEFAULT 'line_hall',
+        checklist_date DATE DEFAULT CURRENT_DATE,
+        data_inicio TIMESTAMP WITH TIME ZONE,
+        data_fim TIMESTAMP WITH TIME ZONE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
@@ -907,8 +911,34 @@ async function criarTabelaDriverChecklists() {
     
     await pool.query(createTableQuery);
     console.log("Tabela driver_checklists criada com sucesso!");
+    
+    // Adicionar colunas caso a tabela já exista sem elas
   } catch (error) {
     console.error("Erro ao criar tabela driver_checklists:", error);
+  }
+}
+
+// Função para adicionar colunas faltantes na tabela driver_checklists
+async function adicionarColunasDriverChecklists() {
+  try {
+    // Adicionar colunas que podem estar faltando
+    const alterQueries = [
+      "ALTER TABLE driver_checklists ADD COLUMN IF NOT EXISTS km_final INTEGER",
+      "ALTER TABLE driver_checklists ADD COLUMN IF NOT EXISTS checklist_date DATE DEFAULT CURRENT_DATE",
+      "ALTER TABLE driver_checklists ADD COLUMN IF NOT EXISTS data_inicio TIMESTAMP WITH TIME ZONE",
+      "ALTER TABLE driver_checklists ADD COLUMN IF NOT EXISTS data_fim TIMESTAMP WITH TIME ZONE"
+    ];
+    
+    for (const query of alterQueries) {
+      try {
+        await pool.query(query);
+      } catch (err) {
+        // Ignora erro se coluna já existir
+      }
+    }
+    console.log("Colunas de driver_checklists verificadas/adicionadas com sucesso!");
+  } catch (error) {
+    console.error("Erro ao adicionar colunas em driver_checklists:", error);
   }
 }
 
@@ -1864,6 +1894,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await criarTabelaLineHallShopee();
   await criarTabelaFuelCardRequests();
   await criarTabelaDriverChecklists();
+  await adicionarColunasDriverChecklists();
   await criarTabelaConfiguracaoTanques();
   await criarTabelaAbastecimentosSupabase();
   await criarTabelaAbastecimentosSupabaseAlt();
@@ -19278,11 +19309,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Atualizar checklist com KM final e status concluído
+      // Atualizar checklist com KM final, status concluído e datas automáticas
+      // data_inicio = created_at (quando o checklist foi iniciado)
+      // data_fim = NOW() (momento da finalização)
       const updateQuery = `
         UPDATE driver_checklists 
         SET km_final = $1,
             status = 'concluido',
+            data_inicio = COALESCE(data_inicio, created_at),
+            data_fim = NOW(),
             updated_at = NOW()
         WHERE id = $2
         RETURNING *
