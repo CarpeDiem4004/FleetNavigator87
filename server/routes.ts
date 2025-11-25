@@ -5522,7 +5522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             COALESCE(s.valor_solicitado, 0) as valor_solicitado,
             COALESCE(s.base, 'Base Principal') as base,
             COALESCE(s.id_rota, '') as id_rota,
-            COALESCE(s.origem_tipo, 'tradicional') as origem_tipo,
+            'tradicional' as origem_tipo,
             s.tipo_combustivel,
             s.litros_solicitados,
             TO_CHAR(s.data_uso, 'YYYY-MM-DD') as data_uso,
@@ -5695,7 +5695,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           SELECT 
             s.id,
             s.status,
-            COALESCE(s.origem_tipo, 'tradicional') as origem_tipo,
+            'tradicional' as origem_tipo,
             COALESCE(s.base, 'Base Principal') as base,
             COALESCE(s.placa, s.veiculo_placa, 'SEM-PLACA') as placa,
             COALESCE(s.motorista, 'Motorista não informado') as motorista,
