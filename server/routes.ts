@@ -5800,7 +5800,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             COALESCE(lh.veiculo_placa, 'SEM-PLACA') as placa,
             COALESCE(lh.km_total, 0) as km,
             'vinculado' as tipo_cartao,
-            'Line Haul' as provedor_cartao,
+            CASE 
+              WHEN LOWER(lh.bandeira_cartao) = 'ticket' THEN 'Ticket'
+              WHEN LOWER(lh.bandeira_cartao) = 'veloe' THEN 'Veloe Go'
+              ELSE COALESCE(lh.bandeira_cartao, 'Line Haul')
+            END as provedor_cartao,
             COALESCE(lh.numero_cartao, '') as numero_cartao,
             COALESCE(lh.motorista_nome, 'Motorista não informado') as motorista,
             COALESCE(lh.motorista_nome, 'Nome não informado') as solicitante,
