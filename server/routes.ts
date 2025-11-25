@@ -4973,7 +4973,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const query = `
         SELECT id, nome, cpf, telefone, base_id
         FROM motoristas 
-        WHERE base_id = 3
+        WHERE base_id = 46
         ORDER BY created_at DESC
       `;
       
