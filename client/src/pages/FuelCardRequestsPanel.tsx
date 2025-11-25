@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/lib/queryClient';
-import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, TrendingUp, TrendingDown, DollarSign, Download, Plus, Trash2, Truck, History, FileText, AlertTriangle, BarChart3 } from 'lucide-react';
+import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, TrendingUp, TrendingDown, DollarSign, Download, Plus, Trash2, Truck, History, FileText, AlertTriangle, BarChart3, Image } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
@@ -94,6 +94,9 @@ interface FuelCardSolicitation {
     valor_por_litro: number;
     valor_total: string;
   };
+  // Campos de fotos das solicitações Line Haul
+  foto_painel_path?: string;
+  foto_cartao_path?: string;
 }
 
 const FuelCardRequestsPanel: React.FC = () => {
@@ -2863,6 +2866,52 @@ const FuelCardRequestsPanel: React.FC = () => {
                             <span className="font-medium">Valor Total:</span> R$ {selectedSolicitation.calculo_detalhes.valor_total}
                           </div>
                         </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Seção de Fotos (Line Haul) */}
+                  {(selectedSolicitation.foto_painel_path || selectedSolicitation.foto_cartao_path) && (
+                    <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                      <Label className="text-purple-800 font-semibold flex items-center gap-2">
+                        <Image className="h-4 w-4" />
+                        Fotos Anexadas
+                      </Label>
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {selectedSolicitation.foto_painel_path && (
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-purple-700">Foto do Painel:</p>
+                            <a 
+                              href={selectedSolicitation.foto_painel_path} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="block"
+                            >
+                              <img 
+                                src={selectedSolicitation.foto_painel_path} 
+                                alt="Foto do Painel" 
+                                className="w-full h-40 object-cover rounded-lg border border-purple-300 hover:opacity-80 transition-opacity cursor-pointer"
+                              />
+                            </a>
+                          </div>
+                        )}
+                        {selectedSolicitation.foto_cartao_path && (
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-purple-700">Foto do Cartão:</p>
+                            <a 
+                              href={selectedSolicitation.foto_cartao_path} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="block"
+                            >
+                              <img 
+                                src={selectedSolicitation.foto_cartao_path} 
+                                alt="Foto do Cartão" 
+                                className="w-full h-40 object-cover rounded-lg border border-purple-300 hover:opacity-80 transition-opacity cursor-pointer"
+                              />
+                            </a>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
