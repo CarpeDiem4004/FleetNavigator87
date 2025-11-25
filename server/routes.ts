@@ -4109,7 +4109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ELSE 'Outros'
           END as name,
           COUNT(*) as value
-        FROM maintenance_requests_line_hall
+        FROM linehall_maintenance
         WHERE created_at >= $1::date
           AND created_at <= ($2::date + interval '1 day')
         GROUP BY status
@@ -4184,7 +4184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELECT 
           COUNT(*) as total,
           COUNT(CASE WHEN status = 'concluida' THEN 1 END) as concluidas
-        FROM maintenance_requests_line_hall
+        FROM linehall_maintenance
         WHERE created_at >= $1::date
           AND created_at <= ($2::date + interval '1 day')
       `;
