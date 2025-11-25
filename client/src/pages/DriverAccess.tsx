@@ -907,18 +907,9 @@ const DriverAccess: React.FC = () => {
                       <div>
                         <span className="font-medium">Telefone:</span> {request.telefone_motorista}
                       </div>
-                      {((request as any).valor_calculado || request.valor_solicitado) && (
-                        <div>
-                          <span className="font-medium">Valor Solicitado:</span> R$ {parseFloat((request as any).valor_calculado || request.valor_solicitado || 0).toFixed(2)}
-                        </div>
-                      )}
-                      {request.valor_aprovado ? (
-                        <div className="text-green-700 font-semibold">
-                          <span className="font-medium">Valor Aprovado:</span> R$ {parseFloat(request.valor_aprovado).toFixed(2)}
-                        </div>
-                      ) : request.status === 'aprovada' && (request as any).valor_calculado && (
-                        <div className="text-green-700 font-semibold">
-                          <span className="font-medium">Valor Aprovado:</span> R$ {parseFloat((request as any).valor_calculado).toFixed(2)}
+                      {request.status === 'aprovada' && (request.valor_aprovado || (request as any).valor_calculado || request.valor_solicitado) && (
+                        <div className="text-green-700 font-semibold col-span-2">
+                          <span className="font-medium">💰 Valor Liberado:</span> R$ {parseFloat(request.valor_aprovado || (request as any).valor_calculado || request.valor_solicitado || 0).toFixed(2)}
                         </div>
                       )}
                     </div>
