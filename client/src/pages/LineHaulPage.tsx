@@ -27,8 +27,13 @@ import {
   ArrowLeft,
   Edit,
   Trash2,
-  ClipboardCheck
+  ClipboardCheck,
+  Upload,
+  FileSpreadsheet,
+  AlertCircle,
+  CheckCircle2
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { DriverAutocomplete } from '@/components/ui/driver-autocomplete';
 import { Combobox } from '@/components/ui/combobox';
 import lineHaulLayoutImage from '@assets/image_1754418722959.png';
@@ -281,6 +286,14 @@ const LineHaulPage = () => {
   const [routeSearchTerm, setRouteSearchTerm] = useState('');
   const [isRouteDropdownOpen, setIsRouteDropdownOpen] = useState(false);
   const [pendingFuelCardRequests, setPendingFuelCardRequests] = useState(0);
+  
+  // Estados para importação em massa
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importPreview, setImportPreview] = useState<any[]>([]);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResults, setImportResults] = useState<any>(null);
+  
   const [newOperation, setNewOperation] = useState<LineHaulOperation>({
     motorista_id: 0,
     motorista_nome: '',
@@ -696,6 +709,105 @@ const LineHaulPage = () => {
     } finally {
       setIsUpdatingStatus(false);
     }
+  };
+
+  // Função para processar arquivo Excel de importação
+  const handleExcelFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImportFile(file);
+    setImportResults(null);
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+      // Ignorar primeira linha (cabeçalho) e processar dados
+      const operations = [];
+      for (let i = 1; i < jsonData.length; i++) {
+        const row = jsonData[i];
+        if (row && row.length >= 7 && row[0]) {
+          operations.push({
+            driverId: row[0],       // [codigo]nome
+            vehicleType: row[1],    // CARRETA, TRUCK
+            plate: row[2],          // placas (pode ter vírgula)
+            station: row[3],        // [codigo]origem
+            destino: row[4],        // [codigo]destino
+            sta: row[5],            // data/hora carregamento
+            ata: row[6]             // data/hora fim
+          });
+        }
+      }
+
+      setImportPreview(operations);
+      toast({
+        title: "Arquivo carregado",
+        description: `${operations.length} operações encontradas para importar`
+      });
+    } catch (error: any) {
+      console.error('Erro ao ler arquivo Excel:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível ler o arquivo Excel",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Função para executar importação em massa
+  const handleBulkImport = async () => {
+    if (importPreview.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Nenhuma operação para importar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const response = await fetch('/api/line-hall/operations/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ operations: importPreview })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setImportResults(data.results);
+        toast({
+          title: "Importação concluída!",
+          description: data.message
+        });
+        
+        // Atualizar lista de operações
+        await fetchOperations();
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error: any) {
+      console.error('Erro na importação:', error);
+      toast({
+        title: "Erro na importação",
+        description: error.message || "Erro ao importar operações",
+        variant: "destructive"
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  // Limpar importação
+  const handleClearImport = () => {
+    setImportFile(null);
+    setImportPreview([]);
+    setImportResults(null);
   };
 
   const handleCreateOperation = async () => {
@@ -1776,6 +1888,13 @@ const LineHaulPage = () => {
                   Nova Operação
                 </Button>
               </div>
+              <Button 
+                className="w-full mt-2 bg-purple-500 hover:bg-purple-600 text-white"
+                onClick={() => setShowImportDialog(true)}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Importar Excel
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -3159,6 +3278,192 @@ const LineHaulPage = () => {
               <Button onClick={handleSubmitWorkorder} className="bg-blue-500 hover:bg-blue-600">
                 Iniciar Manutenção
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog para Importação em Massa */}
+        <Dialog open={showImportDialog} onOpenChange={(open) => {
+          setShowImportDialog(open);
+          if (!open) handleClearImport();
+        }}>
+          <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center text-purple-700">
+                <FileSpreadsheet className="h-5 w-5 mr-2" />
+                Importar Operações em Massa
+              </DialogTitle>
+              <DialogDescription>
+                Importe múltiplas operações de um arquivo Excel (.xlsx)
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              {/* Instruções do formato */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-medium text-blue-800 mb-2">Formato esperado da planilha:</h4>
+                <ul className="text-sm text-blue-700 space-y-1">
+                  <li><strong>Driver ID:</strong> [CODIGO]Nome do Motorista</li>
+                  <li><strong>Vehicle (tipo):</strong> CARRETA ou TRUCK</li>
+                  <li><strong>Vehicle Plate:</strong> Placa (duas separadas por vírgula se carreta)</li>
+                  <li><strong>Station:</strong> [CODIGO]Nome da Origem</li>
+                  <li><strong>DESTINO:</strong> [CODIGO]Nome do Destino</li>
+                  <li><strong>STA:</strong> Data/hora de carregamento</li>
+                  <li><strong>ATA:</strong> Data/hora de fim</li>
+                </ul>
+              </div>
+
+              {/* Seletor de arquivo */}
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleExcelFileSelect}
+                  className="hidden"
+                  id="excel-upload"
+                />
+                <label htmlFor="excel-upload" className="cursor-pointer">
+                  <Upload className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-600">
+                    {importFile ? (
+                      <span className="text-green-600 font-medium">{importFile.name}</span>
+                    ) : (
+                      "Clique para selecionar um arquivo Excel"
+                    )}
+                  </p>
+                </label>
+              </div>
+
+              {/* Preview das operações */}
+              {importPreview.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium text-gray-800">
+                    {importPreview.length} operações encontradas:
+                  </h4>
+                  <div className="max-h-[200px] overflow-y-auto border rounded-lg">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-100 sticky top-0">
+                        <tr>
+                          <th className="p-2 text-left">#</th>
+                          <th className="p-2 text-left">Motorista</th>
+                          <th className="p-2 text-left">Veículo</th>
+                          <th className="p-2 text-left">Origem → Destino</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {importPreview.slice(0, 10).map((op, idx) => (
+                          <tr key={idx} className="border-t">
+                            <td className="p-2">{idx + 1}</td>
+                            <td className="p-2 truncate max-w-[150px]">{op.driverId}</td>
+                            <td className="p-2">{op.vehicleType}</td>
+                            <td className="p-2 truncate max-w-[200px]">
+                              {op.station?.split(']')[1] || op.station} → {op.destino?.split(']')[1] || op.destino}
+                            </td>
+                          </tr>
+                        ))}
+                        {importPreview.length > 10 && (
+                          <tr className="border-t bg-gray-50">
+                            <td colSpan={4} className="p-2 text-center text-gray-500">
+                              ... e mais {importPreview.length - 10} operações
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Resultados da importação */}
+              {importResults && (
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-800">Resultados da importação:</h4>
+                  
+                  {/* Sucesso */}
+                  {importResults.success?.length > 0 && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="flex items-center text-green-700 mb-2">
+                        <CheckCircle2 className="h-5 w-5 mr-2" />
+                        <span className="font-medium">{importResults.success.length} operações importadas com sucesso</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Motoristas criados */}
+                  {importResults.driversCreated?.length > 0 && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div className="text-blue-700 mb-2">
+                        <span className="font-medium">{importResults.driversCreated.length} novos motoristas criados:</span>
+                      </div>
+                      <ul className="text-sm text-blue-600">
+                        {importResults.driversCreated.map((d: any, i: number) => (
+                          <li key={i}>[{d.codigo}] {d.nome}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Rotas criadas */}
+                  {importResults.routesCreated?.length > 0 && (
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                      <div className="text-purple-700 mb-2">
+                        <span className="font-medium">{importResults.routesCreated.length} novas rotas criadas:</span>
+                      </div>
+                      <ul className="text-sm text-purple-600">
+                        {importResults.routesCreated.map((r: any, i: number) => (
+                          <li key={i}>{r.nome}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Erros */}
+                  {importResults.errors?.length > 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <div className="flex items-center text-red-700 mb-2">
+                        <AlertCircle className="h-5 w-5 mr-2" />
+                        <span className="font-medium">{importResults.errors.length} erros encontrados:</span>
+                      </div>
+                      <ul className="text-sm text-red-600 max-h-[100px] overflow-y-auto">
+                        {importResults.errors.map((e: any, i: number) => (
+                          <li key={i}>Linha {e.row}: {e.error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowImportDialog(false);
+                  handleClearImport();
+                }}
+              >
+                Fechar
+              </Button>
+              {importPreview.length > 0 && !importResults && (
+                <Button 
+                  onClick={handleBulkImport}
+                  disabled={isImporting}
+                  className="bg-purple-500 hover:bg-purple-600"
+                >
+                  {isImporting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Importando...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Importar {importPreview.length} Operações
+                    </>
+                  )}
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
