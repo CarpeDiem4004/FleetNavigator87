@@ -152,25 +152,47 @@ const DriverAccess: React.FC = () => {
   // Função para buscar solicitações de manutenção do motorista
   const fetchMaintenanceRequests = async (motoristaId: number) => {
     try {
-      const response = await fetch(`/api/line-hall/motorista/${motoristaId}/maintenance-requests`);
+      const response = await fetch(`/api/line-hall/motorista/${motoristaId}/maintenance-requests`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        console.error('Erro na resposta de manutenções:', response.status);
+        return;
+      }
+      
       const data = await response.json();
       
       if (data.success) {
         setMaintenanceRequests(data.requests || []);
+        saveDataLocally('driver-maintenance-requests', data.requests || []);
       }
     } catch (error) {
       console.error('Erro ao buscar solicitações de manutenção:', error);
+      const savedData = localStorage.getItem('driver-maintenance-requests');
+      if (savedData) {
+        setMaintenanceRequests(JSON.parse(savedData));
+      }
     }
   };
 
   // Função para buscar todas as solicitações de recarga do motorista
   const fetchFuelRequests = async (motoristaId: number) => {
     try {
-      const response = await fetch(`/api/line-hall/motorista/${motoristaId}/fuel-requests`);
+      const response = await fetch(`/api/line-hall/motorista/${motoristaId}/fuel-requests`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        console.error('Erro na resposta de fuel requests:', response.status);
+        return;
+      }
+      
       const data = await response.json();
       
       if (data.success) {
         setFuelRequests(data.data || []);
+        saveDataLocally('driver-fuel-requests', data.data || []);
         
         // Mostrar notificações apenas para solicitações processadas recentemente
         const recentRequests = data.data.filter((request: any) => 
@@ -197,20 +219,37 @@ const DriverAccess: React.FC = () => {
       }
     } catch (error) {
       console.error('Erro ao buscar solicitações de recarga:', error);
+      const savedData = localStorage.getItem('driver-fuel-requests');
+      if (savedData) {
+        setFuelRequests(JSON.parse(savedData));
+      }
     }
   };
 
   // Função para buscar operações do motorista
   const fetchOperations = async (motoristaId: number) => {
     try {
-      const response = await fetch(`/api/line-hall/motorista/${motoristaId}/operations`);
+      const response = await fetch(`/api/line-hall/motorista/${motoristaId}/operations`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        console.error('Erro na resposta de operações:', response.status);
+        return;
+      }
+      
       const data = await response.json();
       
       if (data.success) {
         setOperations(data.data || []);
+        saveDataLocally('driver-operations', data.data || []);
       }
     } catch (error) {
       console.error('Erro ao buscar operações:', error);
+      const savedData = localStorage.getItem('driver-operations');
+      if (savedData) {
+        setOperations(JSON.parse(savedData));
+      }
     }
   };
 
