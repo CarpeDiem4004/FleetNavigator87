@@ -1104,6 +1104,7 @@ const FuelRequestModal = ({ driver, operations, onClose }: { driver: any; operat
   const [phone, setPhone] = useState('');
   const [cardNumber, setCardNumber] = useState('');
   const [fuelTime, setFuelTime] = useState<'antes_17h' | 'apos_18h'>('antes_17h');
+  const [cardProvider, setCardProvider] = useState<'ticket' | 'veloe'>('ticket');
   const [painelPhoto, setPainelPhoto] = useState<File | null>(null);
   const [cartaoPhoto, setCartaoPhoto] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1155,6 +1156,7 @@ const FuelRequestModal = ({ driver, operations, onClose }: { driver: any; operat
       formData.append('horario_solicitacao', now.toTimeString().split(' ')[0]);
       formData.append('km_total', activeOperation?.distancia_km ? parseFloat(activeOperation.distancia_km).toString() : '150');
       formData.append('horario_abastecimento', fuelTime);
+      formData.append('bandeira_cartao', cardProvider);
       formData.append('telefone_motorista', phone);
       formData.append('status', 'pendente');
       
@@ -1301,6 +1303,23 @@ const FuelRequestModal = ({ driver, operations, onClose }: { driver: any; operat
                 >
                   <option value="antes_17h">Antes das 17h</option>
                   <option value="apos_18h">Após as 18h</option>
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="cardProvider" className="text-sm font-medium text-gray-700">
+                  Bandeira do Cartão *
+                </Label>
+                <select
+                  id="cardProvider"
+                  value={cardProvider}
+                  onChange={(e) => setCardProvider(e.target.value as 'ticket' | 'veloe')}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  required
+                  data-testid="select-card-provider"
+                >
+                  <option value="ticket">Ticket</option>
+                  <option value="veloe">Veloe</option>
                 </select>
               </div>
 

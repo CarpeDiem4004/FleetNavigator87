@@ -283,6 +283,7 @@ router.post('/fuel-card-request', upload.fields([
       veiculo_placa,
       veiculo_modelo,
       numero_cartao,
+      bandeira_cartao,
       rota_origem,
       rota_destino,
       data_solicitacao,
@@ -356,6 +357,7 @@ router.post('/fuel-card-request', upload.fields([
         veiculo_placa,
         veiculo_modelo,
         numero_cartao,
+        bandeira_cartao,
         rota_origem,
         rota_destino,
         data_viagem,
@@ -369,7 +371,7 @@ router.post('/fuel-card-request', upload.fields([
         status,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW(), NOW())
       RETURNING *
     `;
 
@@ -380,6 +382,7 @@ router.post('/fuel-card-request', upload.fields([
       veiculo_placa,
       veiculo_modelo || null,
       numero_cartao || null,
+      bandeira_cartao || 'ticket',
       rota_origem,
       rota_destino,
       data_viagem_corrigida,
