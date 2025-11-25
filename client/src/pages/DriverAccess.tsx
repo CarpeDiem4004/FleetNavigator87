@@ -1114,12 +1114,19 @@ const FuelRequestModal = ({ driver, operations, existingRequests, onClose }: { d
   // Pegar a primeira operação ativa do motorista
   const activeOperation = operations.find(op => op.status === 'em_andamento' || op.status === 'programada') || operations[0];
   
-  // Verificar se já existe solicitação pendente para esta rota
-  const hasExistingRequestForRoute = existingRequests.some(req => 
-    req.status === 'pendente' && 
-    req.rota_origem === (activeOperation?.origem || 'Rota Line Haul') &&
-    req.rota_destino === (activeOperation?.destino || 'Destino Line Haul')
-  );
+  // Verificar se já existe solicitação para esta operação (pelo ID da operação)
+  const hasExistingRequestForRoute = existingRequests.some(req => {
+    // Verificar pelo ID da operação (mais confiável)
+    if (activeOperation?.id && req.operacao_id) {
+      return req.operacao_id === activeOperation.id;
+    }
+    // Fallback: verificar pela placa e rota para solicitações antigas
+    return (
+      req.veiculo_placa === (activeOperation?.placa_truck || activeOperation?.placa_cavalo) &&
+      req.rota_origem === activeOperation?.origem &&
+      req.rota_destino === activeOperation?.destino
+    );
+  });
 
   // Pegar a placa do veículo da operação
   const placaVeiculo = activeOperation?.placa_truck || activeOperation?.placa_cavalo || driver?.placa_veiculo || 'N/A';
@@ -1168,6 +1175,9 @@ const FuelRequestModal = ({ driver, operations, existingRequests, onClose }: { d
       formData.append('veiculo_placa', placaVeiculo);
       formData.append('veiculo_modelo', driver.tipo_veiculo);
       formData.append('numero_cartao', cardNumber);
+      if (activeOperation?.id) {
+        formData.append('operacao_id', activeOperation.id.toString());
+      }
       formData.append('rota_origem', activeOperation?.origem || 'Rota Line Haul');
       formData.append('rota_destino', activeOperation?.destino || 'Destino Line Haul');
       formData.append('data_solicitacao', now.toISOString().split('T')[0]);

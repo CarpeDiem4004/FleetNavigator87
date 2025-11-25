@@ -284,6 +284,7 @@ router.post('/fuel-card-request', upload.fields([
       veiculo_modelo,
       numero_cartao,
       bandeira_cartao,
+      operacao_id,
       rota_origem,
       rota_destino,
       data_solicitacao,
@@ -348,6 +349,21 @@ router.post('/fuel-card-request', upload.fields([
       });
     }
 
+    // Verificar se já existe solicitação para esta operação
+    if (operacao_id) {
+      const existingCheck = await pool.query(
+        'SELECT id FROM linehall_fuel_card_requests WHERE operacao_id = $1',
+        [operacao_id]
+      );
+      
+      if (existingCheck.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Já existe uma solicitação de recarga para esta operação/rota.'
+        });
+      }
+    }
+
     // Inserir na tabela linehall_fuel_card_requests
     const query = `
       INSERT INTO linehall_fuel_card_requests (
@@ -358,6 +374,7 @@ router.post('/fuel-card-request', upload.fields([
         veiculo_modelo,
         numero_cartao,
         bandeira_cartao,
+        operacao_id,
         rota_origem,
         rota_destino,
         data_viagem,
@@ -371,7 +388,7 @@ router.post('/fuel-card-request', upload.fields([
         status,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW(), NOW())
       RETURNING *
     `;
 
@@ -383,6 +400,7 @@ router.post('/fuel-card-request', upload.fields([
       veiculo_modelo || null,
       numero_cartao || null,
       bandeira_cartao || 'ticket',
+      operacao_id || null,
       rota_origem,
       rota_destino,
       data_viagem_corrigida,
