@@ -1202,7 +1202,7 @@ const FuelRequestModal = ({ driver, operations, existingRequests, onClose }: { d
   const [phone, setPhone] = useState('');
   const [cardNumber, setCardNumber] = useState('');
   const [fuelTime, setFuelTime] = useState<'antes_17h' | 'apos_18h'>('antes_17h');
-  const [cardProvider, setCardProvider] = useState<'ticket' | 'veloe'>('ticket');
+  const [cardProvider, setCardProvider] = useState<'' | 'ticket' | 'veloe'>('');
   const [painelPhoto, setPainelPhoto] = useState<File | null>(null);
   const [cartaoPhoto, setCartaoPhoto] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1254,6 +1254,15 @@ const FuelRequestModal = ({ driver, operations, existingRequests, onClose }: { d
       toast({
         title: "Campo obrigatório",
         description: "Por favor, informe o número do cartão",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!cardProvider) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Por favor, selecione a bandeira do cartão",
         variant: "destructive"
       });
       return;
@@ -1450,11 +1459,12 @@ const FuelRequestModal = ({ driver, operations, existingRequests, onClose }: { d
                 <select
                   id="cardProvider"
                   value={cardProvider}
-                  onChange={(e) => setCardProvider(e.target.value as 'ticket' | 'veloe')}
+                  onChange={(e) => setCardProvider(e.target.value as '' | 'ticket' | 'veloe')}
                   className="w-full p-2 border border-gray-300 rounded-md"
                   required
                   data-testid="select-card-provider"
                 >
+                  <option value="">Selecionar</option>
                   <option value="ticket">Ticket</option>
                   <option value="veloe">Veloe</option>
                 </select>
