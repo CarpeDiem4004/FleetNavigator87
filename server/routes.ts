@@ -3966,9 +3966,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           km_atual as km_inicial,
           km_final,
           status,
-          observacoes,
+          observacoes as observations,
           created_at,
-          updated_at
+          updated_at,
+          TO_CHAR(COALESCE(checklist_date, created_at), 'YYYY-MM-DD') as checklist_date
         FROM driver_checklists
         WHERE source = 'line_hall' OR driver_type = 'line_hall'
         ORDER BY created_at DESC
