@@ -1276,6 +1276,24 @@ const FuelRequestModal = ({ driver, operations, existingRequests, onClose }: { d
       return;
     }
 
+    if (!painelPhoto) {
+      toast({
+        title: "Foto obrigatória",
+        description: "Por favor, tire uma foto do painel do veículo",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!cartaoPhoto) {
+      toast({
+        title: "Foto obrigatória",
+        description: "Por favor, tire uma foto do cartão de combustível",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -1524,47 +1542,83 @@ const FuelRequestModal = ({ driver, operations, existingRequests, onClose }: { d
                 />
               </div>
 
-              {/* Foto do Painel do Carro */}
+              {/* Foto do Painel do Carro - OBRIGATÓRIA */}
               <div>
                 <Label htmlFor="painelPhoto" className="text-sm font-medium text-gray-700 flex items-center gap-2">
                   <Camera className="w-4 h-4" />
-                  Foto do Painel do Carro
+                  Foto do Painel do Carro *
                 </Label>
                 <div className="mt-1">
-                  <Input
+                  <label 
+                    htmlFor="painelPhoto" 
+                    className={`flex items-center justify-center gap-2 p-4 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+                      painelPhoto 
+                        ? 'border-green-500 bg-green-50' 
+                        : 'border-blue-400 bg-blue-50 hover:bg-blue-100'
+                    }`}
+                  >
+                    {painelPhoto ? (
+                      <div className="text-center">
+                        <div className="text-green-600 font-medium">✓ Foto capturada</div>
+                        <p className="text-xs text-gray-500 mt-1">{painelPhoto.name}</p>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <Camera className="w-8 h-8 mx-auto text-blue-500 mb-2" />
+                        <span className="text-blue-600 font-medium">Tirar Foto do Painel</span>
+                        <p className="text-xs text-gray-500 mt-1">Toque para abrir a câmera</p>
+                      </div>
+                    )}
+                  </label>
+                  <input
                     id="painelPhoto"
                     type="file"
                     accept="image/*"
                     capture="environment"
                     onChange={(e) => setPainelPhoto(e.target.files?.[0] || null)}
-                    className="cursor-pointer"
+                    className="hidden"
                     data-testid="input-photo-painel"
                   />
-                  {painelPhoto && (
-                    <p className="text-xs text-green-600 mt-1">✓ Foto selecionada: {painelPhoto.name}</p>
-                  )}
                 </div>
               </div>
 
-              {/* Foto do Cartão */}
+              {/* Foto do Cartão - OBRIGATÓRIA */}
               <div>
                 <Label htmlFor="cartaoPhoto" className="text-sm font-medium text-gray-700 flex items-center gap-2">
                   <Camera className="w-4 h-4" />
-                  Foto do Cartão de Combustível
+                  Foto do Cartão de Combustível *
                 </Label>
                 <div className="mt-1">
-                  <Input
+                  <label 
+                    htmlFor="cartaoPhoto" 
+                    className={`flex items-center justify-center gap-2 p-4 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+                      cartaoPhoto 
+                        ? 'border-green-500 bg-green-50' 
+                        : 'border-blue-400 bg-blue-50 hover:bg-blue-100'
+                    }`}
+                  >
+                    {cartaoPhoto ? (
+                      <div className="text-center">
+                        <div className="text-green-600 font-medium">✓ Foto capturada</div>
+                        <p className="text-xs text-gray-500 mt-1">{cartaoPhoto.name}</p>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <Camera className="w-8 h-8 mx-auto text-blue-500 mb-2" />
+                        <span className="text-blue-600 font-medium">Tirar Foto do Cartão</span>
+                        <p className="text-xs text-gray-500 mt-1">Toque para abrir a câmera</p>
+                      </div>
+                    )}
+                  </label>
+                  <input
                     id="cartaoPhoto"
                     type="file"
                     accept="image/*"
                     capture="environment"
                     onChange={(e) => setCartaoPhoto(e.target.files?.[0] || null)}
-                    className="cursor-pointer"
+                    className="hidden"
                     data-testid="input-photo-cartao"
                   />
-                  {cartaoPhoto && (
-                    <p className="text-xs text-green-600 mt-1">✓ Foto selecionada: {cartaoPhoto.name}</p>
-                  )}
                 </div>
               </div>
               </div>
