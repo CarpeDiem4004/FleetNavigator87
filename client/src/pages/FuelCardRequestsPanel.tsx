@@ -531,6 +531,9 @@ const FuelCardRequestsPanel: React.FC = () => {
         params.append('fuelDate', fuelDateFilter);
       }
       
+      // Cache-busting para garantir dados atualizados
+      params.append('_t', Date.now().toString());
+      
       console.log('[FUEL-CARD-PANEL] Buscando com filtros:', {
         activeTab,
         baseFilter,
@@ -540,8 +543,14 @@ const FuelCardRequestsPanel: React.FC = () => {
         limit
       });
       
-      // OTIMIZAÇÃO: Usar endpoint público com paginação e filtros
-      const response = await fetch(`/api/public/fuel-card/solicitations?${params.toString()}`);
+      // OTIMIZAÇÃO: Usar endpoint público com paginação e filtros (sem cache)
+      const response = await fetch(`/api/public/fuel-card/solicitations?${params.toString()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       const data = await response.json();
       
       if (data.success) {
