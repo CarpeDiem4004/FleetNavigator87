@@ -26,7 +26,8 @@ import {
   RefreshCcw,
   ArrowLeft,
   Edit,
-  Trash2
+  Trash2,
+  ClipboardCheck
 } from 'lucide-react';
 import { DriverAutocomplete } from '@/components/ui/driver-autocomplete';
 import lineHaulLayoutImage from '@assets/image_1754418722959.png';
@@ -145,6 +146,8 @@ const LineHaulPage = () => {
   const [editingRoute, setEditingRoute] = useState<any>(null);
   const [showChecklists, setShowChecklists] = useState(false);
   const [checklistFilter, setChecklistFilter] = useState<'todos' | 'concluidos' | 'pendentes'>('todos');
+  const [selectedChecklist, setSelectedChecklist] = useState<DriverChecklist | null>(null);
+  const [showChecklistDetails, setShowChecklistDetails] = useState(false);
   const [showMaintenance, setShowMaintenance] = useState(false);
   const [maintenanceFilter, setMaintenanceFilter] = useState<'todos' | 'pendentes' | 'em_andamento' | 'concluidas'>('todos');
   const [showGarage, setShowGarage] = useState(false);
@@ -1078,7 +1081,16 @@ const LineHaulPage = () => {
                       </p>
                     )}
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" className="flex-1">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => {
+                          setSelectedChecklist(checklist);
+                          setShowChecklistDetails(true);
+                        }}
+                        data-testid={`btn-ver-detalhes-checklist-${checklist.id}`}
+                      >
                         <Eye className="h-4 w-4 mr-1" />
                         Ver Detalhes
                       </Button>
@@ -2595,6 +2607,113 @@ const LineHaulPage = () => {
             })()}
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowOperationDetails(false)}>
+                Fechar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog de Detalhes do Checklist */}
+        <Dialog open={showChecklistDetails} onOpenChange={setShowChecklistDetails}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ClipboardCheck className="h-5 w-5 text-blue-600" />
+                Detalhes do Checklist
+              </DialogTitle>
+              <DialogDescription>
+                Informações completas do checklist do motorista
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedChecklist && (
+              <div className="space-y-6 py-4">
+                {/* Informações do Motorista e Veículo */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-1">Motorista</p>
+                    <p className="font-semibold text-lg">{selectedChecklist.driver_name}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-1">Placa do Veículo</p>
+                    <p className="font-semibold text-lg">{selectedChecklist.vehicle_plate}</p>
+                  </div>
+                </div>
+
+                {/* Status e Data */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-1">Status</p>
+                    <Badge 
+                      variant={selectedChecklist.status === 'concluido' ? 'default' : 'secondary'}
+                      className={selectedChecklist.status === 'concluido' ? 'bg-green-500' : 'bg-yellow-500'}
+                    >
+                      {selectedChecklist.status === 'concluido' ? 'Concluído' : 'Pendente'}
+                    </Badge>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-1">Data do Checklist</p>
+                    <p className="font-semibold">{new Date(selectedChecklist.checklist_date).toLocaleDateString('pt-BR')}</p>
+                  </div>
+                </div>
+
+                {/* KM Inicial e Final */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-1">KM Inicial</p>
+                    <p className="font-semibold text-xl text-green-700">
+                      {selectedChecklist.km_inicial ? selectedChecklist.km_inicial.toLocaleString('pt-BR') : 'Não informado'}
+                    </p>
+                  </div>
+                  <div className="bg-orange-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-1">KM Final</p>
+                    <p className="font-semibold text-xl text-orange-700">
+                      {selectedChecklist.km_final ? selectedChecklist.km_final.toLocaleString('pt-BR') : 'Não informado'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* KM Rodados (se ambos disponíveis) */}
+                {selectedChecklist.km_inicial && selectedChecklist.km_final && (
+                  <div className="bg-purple-50 p-4 rounded-lg text-center">
+                    <p className="text-sm text-gray-500 mb-1">KM Rodados</p>
+                    <p className="font-bold text-2xl text-purple-700">
+                      {(selectedChecklist.km_final - selectedChecklist.km_inicial).toLocaleString('pt-BR')} km
+                    </p>
+                  </div>
+                )}
+
+                {/* Observações */}
+                {selectedChecklist.observations && (
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-2">Observações</p>
+                    <p className="text-gray-800">{selectedChecklist.observations}</p>
+                  </div>
+                )}
+
+                {/* Datas de Registro */}
+                <div className="border-t pt-4 mt-4">
+                  <p className="text-sm text-gray-500 mb-2">Informações de Registro</p>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-500">Criado em: </span>
+                      <span className="font-medium">
+                        {selectedChecklist.created_at ? new Date(selectedChecklist.created_at).toLocaleString('pt-BR') : '-'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Atualizado em: </span>
+                      <span className="font-medium">
+                        {selectedChecklist.updated_at ? new Date(selectedChecklist.updated_at).toLocaleString('pt-BR') : '-'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowChecklistDetails(false)}>
                 Fechar
               </Button>
             </DialogFooter>
