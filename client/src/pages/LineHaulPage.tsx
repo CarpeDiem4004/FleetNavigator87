@@ -273,6 +273,8 @@ const LineHaulPage = () => {
   const [newStatus, setNewStatus] = useState('');
   const [noShowJustification, setNoShowJustification] = useState('');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [routeSearchTerm, setRouteSearchTerm] = useState('');
+  const [isRouteDropdownOpen, setIsRouteDropdownOpen] = useState(false);
   const [newOperation, setNewOperation] = useState<LineHaulOperation>({
     motorista_id: 0,
     motorista_nome: '',
@@ -2218,35 +2220,82 @@ const LineHaulPage = () => {
               )}
               <div className="space-y-2">
                 <Label htmlFor="rota_select">Rota *</Label>
-                <Select 
-                  value={newOperation.rota_id > 0 ? newOperation.rota_id.toString() : ""} 
-                  onValueChange={(value) => {
-                    const rota = routes.find(r => r.id.toString() === value);
-                    console.log("Rota selecionada:", { value, rota, rota_id: parseInt(value) });
-                    setNewOperation(prev => ({ 
-                      ...prev, 
-                      rota_id: parseInt(value),
-                      rota_nome: rota ? `${rota.nome_ponto_a} → ${rota.nome_ponto_b}` : ''
-                    }));
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma rota" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {routes.length === 0 ? (
-                      <div className="p-4 text-sm text-gray-500 text-center">
-                        Nenhuma rota disponível. Cadastre rotas primeiro.
-                      </div>
-                    ) : (
-                      routes.map((route) => (
-                        <SelectItem key={route.id} value={route.id.toString()}>
-                          {route.nome_ponto_a} → {route.nome_ponto_b} ({route.km_total} km)
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <Input
+                    id="rota_select"
+                    type="text"
+                    placeholder="Digite para buscar uma rota..."
+                    value={routeSearchTerm}
+                    onChange={(e) => {
+                      setRouteSearchTerm(e.target.value);
+                      setIsRouteDropdownOpen(true);
+                    }}
+                    onFocus={() => setIsRouteDropdownOpen(true)}
+                    onBlur={() => setTimeout(() => setIsRouteDropdownOpen(false), 200)}
+                    className="w-full"
+                  />
+                  {newOperation.rota_id > 0 && !routeSearchTerm && (
+                    <div className="absolute inset-0 flex items-center px-3 pointer-events-none bg-white border rounded-md">
+                      <span className="text-sm truncate">
+                        {routes.find(r => r.id === newOperation.rota_id)?.nome_ponto_a} → {routes.find(r => r.id === newOperation.rota_id)?.nome_ponto_b}
+                      </span>
+                    </div>
+                  )}
+                  {isRouteDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                      {routes.length === 0 ? (
+                        <div className="p-4 text-sm text-gray-500 text-center">
+                          Nenhuma rota disponível. Cadastre rotas primeiro.
+                        </div>
+                      ) : (
+                        <>
+                          {routes
+                            .filter(route => {
+                              const searchLower = routeSearchTerm.toLowerCase();
+                              const routeText = `${route.nome_ponto_a} ${route.nome_ponto_b}`.toLowerCase();
+                              return routeText.includes(searchLower);
+                            })
+                            .map((route) => (
+                              <div
+                                key={route.id}
+                                className={`px-4 py-2 cursor-pointer hover:bg-blue-50 ${
+                                  newOperation.rota_id === route.id ? 'bg-blue-100' : ''
+                                }`}
+                                onClick={() => {
+                                  setNewOperation(prev => ({ 
+                                    ...prev, 
+                                    rota_id: route.id,
+                                    rota_nome: `${route.nome_ponto_a} → ${route.nome_ponto_b}`
+                                  }));
+                                  setRouteSearchTerm('');
+                                  setIsRouteDropdownOpen(false);
+                                }}
+                              >
+                                <span className="text-sm">
+                                  {route.nome_ponto_a} → {route.nome_ponto_b} ({route.km_total} km)
+                                </span>
+                              </div>
+                            ))
+                          }
+                          {routes.filter(route => {
+                            const searchLower = routeSearchTerm.toLowerCase();
+                            const routeText = `${route.nome_ponto_a} ${route.nome_ponto_b}`.toLowerCase();
+                            return routeText.includes(searchLower);
+                          }).length === 0 && (
+                            <div className="p-4 text-sm text-gray-500 text-center">
+                              Nenhuma rota encontrada para "{routeSearchTerm}"
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {newOperation.rota_id > 0 && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ Rota selecionada: {routes.find(r => r.id === newOperation.rota_id)?.nome_ponto_a} → {routes.find(r => r.id === newOperation.rota_id)?.nome_ponto_b}
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
