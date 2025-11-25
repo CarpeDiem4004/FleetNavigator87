@@ -50,6 +50,7 @@ interface Driver {
   telefone?: string;
   base_id: number;
   base_nome?: string;
+  codigo?: string;
   created_at: string;
 }
 
@@ -66,6 +67,7 @@ const DriversPage: React.FC = () => {
     cpf: '',
     telefone: '',
     base_id: '',
+    codigo: '',
   });
   const [bases, setBases] = useState<Base[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -166,6 +168,7 @@ const DriversPage: React.FC = () => {
         cpf: form.cpf,
         telefone: form.telefone,
         base_id: parseInt(form.base_id),
+        codigo: form.codigo || null,
       };
 
       let response;
@@ -212,6 +215,7 @@ const DriversPage: React.FC = () => {
         cpf: '',
         telefone: '',
         base_id: '',
+        codigo: '',
       });
       
       // Atualizar lista de motoristas
@@ -224,6 +228,7 @@ const DriversPage: React.FC = () => {
         telefone: driverResponse.telefone,
         base_id: driverResponse.base_id,
         base_nome: baseSelecionada?.name,
+        codigo: driverResponse.codigo,
         created_at: driverResponse.created_at || editingDriver?.created_at
       };
 
@@ -260,6 +265,7 @@ const DriversPage: React.FC = () => {
       cpf: driver.cpf,
       telefone: driver.telefone || '',
       base_id: driver.base_id?.toString() || '',
+      codigo: driver.codigo || '',
     });
     setActiveTab('add');
   };
@@ -272,6 +278,7 @@ const DriversPage: React.FC = () => {
       cpf: '',
       telefone: '',
       base_id: '',
+      codigo: '',
     });
   };
 
@@ -477,6 +484,23 @@ const DriversPage: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  
+                  {/* Código do Motorista - Apenas para Line Haul (base_id = 46) */}
+                  {form.base_id === '46' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="codigo">Código do Motorista</Label>
+                      <Input
+                        id="codigo"
+                        name="codigo"
+                        placeholder="Ex: LH001, MOT-001"
+                        value={form.codigo}
+                        onChange={handleChange}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Código único para identificação do motorista Line Haul
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
                 
                 <CardFooter className="flex justify-end space-x-2">
@@ -499,6 +523,7 @@ const DriversPage: React.FC = () => {
                           cpf: '',
                           telefone: '',
                           base_id: '',
+                          codigo: '',
                         });
                       }}
                     >

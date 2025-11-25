@@ -21120,7 +21120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rota para cadastro de motoristas
   app.post('/api/drivers', unifiedAuthMiddleware, async (req, res) => {
     try {
-      const { nome, cpf, telefone, base_id } = req.body;
+      const { nome, cpf, telefone, base_id, codigo } = req.body;
       
       if (!nome || !cpf || !base_id) {
         return res.status(400).json({
@@ -21142,12 +21142,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Inserir novo motorista
       const insertQuery = `
-        INSERT INTO motoristas (nome, cpf, telefone, base_id, created_at)
-        VALUES ($1, $2, $3, $4, NOW())
+        INSERT INTO motoristas (nome, cpf, telefone, base_id, codigo, created_at)
+        VALUES ($1, $2, $3, $4, $5, NOW())
         RETURNING *
       `;
       
-      const result = await pool.query(insertQuery, [nome, cpf, telefone, base_id]);
+      const result = await pool.query(insertQuery, [nome, cpf, telefone, base_id, codigo || null]);
       
       return res.status(201).json({
         success: true,
@@ -21424,7 +21424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/drivers/:id', async (req, res) => {
     try {
       const { id } = req.params;
-      const { nome, cpf, telefone, base_id } = req.body;
+      const { nome, cpf, telefone, base_id, codigo } = req.body;
       
       if (!nome || !cpf || !base_id) {
         return res.status(400).json({
@@ -21458,12 +21458,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Atualizar motorista
       const updateQuery = `
         UPDATE motoristas 
-        SET nome = $1, cpf = $2, telefone = $3, base_id = $4, updated_at = NOW()
-        WHERE id = $5
+        SET nome = $1, cpf = $2, telefone = $3, base_id = $4, codigo = $5, updated_at = NOW()
+        WHERE id = $6
         RETURNING *
       `;
       
-      const result = await pool.query(updateQuery, [nome, cpf, telefone, base_id, id]);
+      const result = await pool.query(updateQuery, [nome, cpf, telefone, base_id, codigo || null, id]);
       
       return res.status(200).json({
         success: true,
