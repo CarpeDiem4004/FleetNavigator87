@@ -131,7 +131,7 @@ const DriverAccess: React.FC = () => {
   // Função para buscar solicitações de manutenção do motorista
   const fetchMaintenanceRequests = async (motoristaId: number) => {
     try {
-      const response = await apiRequest('GET', `/api/line-hall/motorista/${motoristaId}/maintenance-requests`);
+      const response = await fetch(`/api/line-hall/motorista/${motoristaId}/maintenance-requests`);
       const data = await response.json();
       
       if (data.success) {
@@ -145,7 +145,7 @@ const DriverAccess: React.FC = () => {
   // Função para buscar todas as solicitações de recarga do motorista
   const fetchFuelRequests = async (motoristaId: number) => {
     try {
-      const response = await apiRequest('GET', `/api/line-hall/fuel-requests?motorista_id=${motoristaId}`);
+      const response = await fetch(`/api/line-hall/motorista/${motoristaId}/fuel-requests`);
       const data = await response.json();
       
       if (data.success) {
@@ -182,7 +182,7 @@ const DriverAccess: React.FC = () => {
   // Função para buscar operações do motorista
   const fetchOperations = async (motoristaId: number) => {
     try {
-      const response = await apiRequest('GET', `/api/line-hall/operations?motorista_id=${motoristaId}`);
+      const response = await fetch(`/api/line-hall/motorista/${motoristaId}/operations`);
       const data = await response.json();
       
       if (data.success) {

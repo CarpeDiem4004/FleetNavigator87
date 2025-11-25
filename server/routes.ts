@@ -19645,6 +19645,167 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Buscar operações/rotas do motorista (PWA)
+  app.get('/api/line-hall/motorista/:motoristaId/operations', async (req, res) => {
+    try {
+      const { motoristaId } = req.params;
+
+      if (!motoristaId) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID do motorista é obrigatório'
+        });
+      }
+
+      const query = `
+        SELECT 
+          lho.*,
+          lhr.nome_ponto_a as origem,
+          lhr.nome_ponto_b as destino,
+          lhr.km_total as distancia_km
+        FROM line_hall_operations lho
+        LEFT JOIN line_hall_routes lhr ON lho.rota_id = lhr.id
+        WHERE lho.motorista_id = $1
+        ORDER BY lho.data_criacao DESC
+      `;
+
+      const result = await pool.query(query, [motoristaId]);
+
+      console.log(`Operações encontradas para motorista ${motoristaId}:`, result.rows.length);
+
+      res.json({
+        success: true,
+        data: result.rows
+      });
+
+    } catch (error) {
+      console.error('Erro ao buscar operações do motorista:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
+
+  // Buscar solicitações de recarga do motorista (PWA)
+  app.get('/api/line-hall/motorista/:motoristaId/fuel-requests', async (req, res) => {
+    try {
+      const { motoristaId } = req.params;
+
+      if (!motoristaId) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID do motorista é obrigatório'
+        });
+      }
+
+      const query = `
+        SELECT 
+          id,
+          motorista_nome,
+          motorista_cpf,
+          veiculo_placa,
+          veiculo_modelo,
+          rota_origem as origem,
+          rota_destino as destino,
+          data_solicitacao,
+          horario_solicitacao,
+          km_total,
+          horario_abastecimento,
+          telefone_motorista,
+          numero_cartao,
+          valor_solicitado,
+          valor_calculado,
+          valor_aprovado,
+          status,
+          observacoes_operador,
+          motivo_negacao,
+          operador_aprovacao,
+          created_at,
+          updated_at
+        FROM linehall_fuel_card_requests
+        WHERE motorista_id = $1
+        ORDER BY created_at DESC
+      `;
+
+      const result = await pool.query(query, [motoristaId]);
+
+      console.log(`Solicitações de recarga encontradas para motorista ${motoristaId}:`, result.rows.length);
+
+      res.json({
+        success: true,
+        data: result.rows
+      });
+
+    } catch (error) {
+      console.error('Erro ao buscar solicitações de recarga do motorista:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
+
+  // Buscar checklists do motorista (PWA)
+  app.get('/api/line-hall/motorista/:motoristaId/checklists', async (req, res) => {
+    try {
+      const { motoristaId } = req.params;
+
+      if (!motoristaId) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID do motorista é obrigatório'
+        });
+      }
+
+      const query = `
+        SELECT 
+          id,
+          driver_id,
+          driver_name,
+          vehicle_plate,
+          km_atual,
+          km_final,
+          condicao_pneus,
+          condicao_luzes,
+          condicao_freios,
+          condicao_parabrisa,
+          nivel_oleo,
+          nivel_agua,
+          estrutura_cavalo,
+          estrutura_carreta,
+          avarias,
+          observacoes,
+          status,
+          checklist_date,
+          data_inicio,
+          data_fim,
+          created_at,
+          updated_at
+        FROM driver_checklists
+        WHERE driver_id = $1
+        ORDER BY created_at DESC
+      `;
+
+      const result = await pool.query(query, [motoristaId]);
+
+      console.log(`Checklists encontrados para motorista ${motoristaId}:`, result.rows.length);
+
+      res.json({
+        success: true,
+        data: result.rows
+      });
+
+    } catch (error) {
+      console.error('Erro ao buscar checklists do motorista:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
+
   app.use('/api/posto-special', postoRoutes); // Adicionando novas rotas especiais para atualização de histórico
 
   // Para debugging, adicionar rota para listar todas as tabelas relacionadas a postos
