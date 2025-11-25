@@ -1091,6 +1091,7 @@ const DriverAccess: React.FC = () => {
           <FuelRequestModal 
             driver={driver}
             operations={operations}
+            existingRequests={fuelRequests}
             onClose={() => setShowFuelRequest(false)}
           />
         )}
@@ -1100,7 +1101,7 @@ const DriverAccess: React.FC = () => {
 };
 
 // Componente do Modal de Solicitação de Recarga
-const FuelRequestModal = ({ driver, operations, onClose }: { driver: any; operations: any[]; onClose: () => void }) => {
+const FuelRequestModal = ({ driver, operations, existingRequests, onClose }: { driver: any; operations: any[]; existingRequests: any[]; onClose: () => void }) => {
   const [phone, setPhone] = useState('');
   const [cardNumber, setCardNumber] = useState('');
   const [fuelTime, setFuelTime] = useState<'antes_17h' | 'apos_18h'>('antes_17h');
@@ -1112,12 +1113,29 @@ const FuelRequestModal = ({ driver, operations, onClose }: { driver: any; operat
 
   // Pegar a primeira operação ativa do motorista
   const activeOperation = operations.find(op => op.status === 'em_andamento' || op.status === 'programada') || operations[0];
+  
+  // Verificar se já existe solicitação pendente para esta rota
+  const hasExistingRequestForRoute = existingRequests.some(req => 
+    req.status === 'pendente' && 
+    req.rota_origem === (activeOperation?.origem || 'Rota Line Haul') &&
+    req.rota_destino === (activeOperation?.destino || 'Destino Line Haul')
+  );
 
   // Pegar a placa do veículo da operação
   const placaVeiculo = activeOperation?.placa_truck || activeOperation?.placa_cavalo || driver?.placa_veiculo || 'N/A';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Verificar se já existe solicitação pendente para esta rota
+    if (hasExistingRequestForRoute) {
+      toast({
+        title: "Solicitação já existe",
+        description: "Você já possui uma solicitação pendente para esta rota. Aguarde a aprovação ou rejeição antes de solicitar novamente.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     if (!phone.trim()) {
       toast({
@@ -1222,6 +1240,18 @@ const FuelRequestModal = ({ driver, operations, onClose }: { driver: any; operat
                 ✕
               </Button>
             </div>
+
+            {/* Aviso de solicitação existente */}
+            {hasExistingRequestForRoute && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700 font-medium">
+                  ⚠️ Você já possui uma solicitação pendente para esta rota.
+                </p>
+                <p className="text-xs text-red-600 mt-1">
+                  Aguarde a aprovação ou rejeição antes de solicitar novamente.
+                </p>
+              </div>
+            )}
 
             {/* Dados do Veículo (preenchidos automaticamente) */}
             <div className="space-y-4">
@@ -1387,11 +1417,16 @@ const FuelRequestModal = ({ driver, operations, onClose }: { driver: any; operat
               <Button type="button" variant="outline" onClick={onClose} className="flex-1">
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting} className="flex-1">
+              <Button type="submit" disabled={isSubmitting || hasExistingRequestForRoute} className="flex-1">
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Enviando...
+                  </>
+                ) : hasExistingRequestForRoute ? (
+                  <>
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Já solicitado
                   </>
                 ) : (
                   <>
