@@ -2782,12 +2782,17 @@ const LineHaulPage = () => {
                 )}
 
                 {/* Observações */}
-                {selectedChecklist.observations && (
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500 mb-2">Observações</p>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 mb-2 flex items-center gap-2">
+                    <ClipboardCheck className="h-4 w-4 text-blue-600" />
+                    Observações do Motorista
+                  </p>
+                  {selectedChecklist.observations ? (
                     <p className="text-gray-800">{selectedChecklist.observations}</p>
-                  </div>
-                )}
+                  ) : (
+                    <p className="text-gray-400 italic">Nenhuma observação registrada</p>
+                  )}
+                </div>
 
                 {/* Datas de Registro */}
                 <div className="border-t pt-4 mt-4">
