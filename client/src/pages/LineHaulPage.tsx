@@ -83,6 +83,17 @@ interface DriverChecklist {
   checklist_date: string;
   status: 'pendente' | 'concluido';
   observations?: string;
+  km_inicial?: number;
+  km_final?: number;
+  condicao_pneus?: string;
+  condicao_luzes?: string;
+  condicao_freios?: string;
+  condicao_parabrisa?: string;
+  nivel_oleo?: string;
+  nivel_agua?: string;
+  estrutura_cavalo?: string;
+  estrutura_carreta?: string;
+  avarias?: string[];
   created_at: string;
   updated_at: string;
 }
@@ -2626,7 +2637,41 @@ const LineHaulPage = () => {
               </DialogDescription>
             </DialogHeader>
             
-            {selectedChecklist && (
+            {selectedChecklist && (() => {
+              const checklistItems = [
+                { key: 'condicao_pneus', label: 'Condição dos Pneus', value: selectedChecklist.condicao_pneus },
+                { key: 'condicao_luzes', label: 'Condição das Luzes', value: selectedChecklist.condicao_luzes },
+                { key: 'condicao_freios', label: 'Condição dos Freios', value: selectedChecklist.condicao_freios },
+                { key: 'condicao_parabrisa', label: 'Condição do Parabrisa', value: selectedChecklist.condicao_parabrisa },
+                { key: 'nivel_oleo', label: 'Nível do Óleo', value: selectedChecklist.nivel_oleo },
+                { key: 'nivel_agua', label: 'Nível da Água', value: selectedChecklist.nivel_agua },
+                { key: 'estrutura_cavalo', label: 'Estrutura do Cavalo', value: selectedChecklist.estrutura_cavalo },
+                { key: 'estrutura_carreta', label: 'Estrutura da Carreta', value: selectedChecklist.estrutura_carreta },
+              ];
+              
+              const itensVerificados = checklistItems.filter(item => 
+                item.value && item.value !== '' && item.value.toLowerCase() !== 'nao_verificado' && item.value.toLowerCase() !== 'não verificado'
+              );
+              const itensNaoVerificados = checklistItems.filter(item => 
+                !item.value || item.value === '' || item.value.toLowerCase() === 'nao_verificado' || item.value.toLowerCase() === 'não verificado'
+              );
+
+              const formatCondition = (value: string) => {
+                const conditions: Record<string, { text: string; color: string }> = {
+                  'bom': { text: 'Bom', color: 'text-green-600 bg-green-50' },
+                  'ok': { text: 'OK', color: 'text-green-600 bg-green-50' },
+                  'regular': { text: 'Regular', color: 'text-yellow-600 bg-yellow-50' },
+                  'ruim': { text: 'Ruim', color: 'text-red-600 bg-red-50' },
+                  'critico': { text: 'Crítico', color: 'text-red-700 bg-red-100' },
+                  'baixo': { text: 'Baixo', color: 'text-orange-600 bg-orange-50' },
+                  'normal': { text: 'Normal', color: 'text-green-600 bg-green-50' },
+                  'alto': { text: 'Alto', color: 'text-blue-600 bg-blue-50' },
+                };
+                const key = value?.toLowerCase() || '';
+                return conditions[key] || { text: value, color: 'text-gray-600 bg-gray-50' };
+              };
+
+              return (
               <div className="space-y-6 py-4">
                 {/* Informações do Motorista e Veículo */}
                 <div className="grid grid-cols-2 gap-4">
@@ -2683,6 +2728,59 @@ const LineHaulPage = () => {
                   </div>
                 )}
 
+                {/* Itens Verificados */}
+                {itensVerificados.length > 0 && (
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-3 flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      Itens Verificados ({itensVerificados.length})
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {itensVerificados.map((item) => {
+                        const condition = formatCondition(item.value || '');
+                        return (
+                          <div key={item.key} className={`p-2 rounded ${condition.color}`}>
+                            <span className="text-sm font-medium">{item.label}:</span>
+                            <span className="ml-2 text-sm font-semibold">{condition.text}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Itens Não Verificados */}
+                {itensNaoVerificados.length > 0 && (
+                  <div className="bg-red-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-3 flex items-center gap-2">
+                      <Eye className="h-4 w-4 text-red-600" />
+                      Itens Não Verificados ({itensNaoVerificados.length})
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {itensNaoVerificados.map((item) => (
+                        <div key={item.key} className="p-2 rounded bg-red-100 text-red-700">
+                          <span className="text-sm">{item.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Avarias Reportadas */}
+                {selectedChecklist.avarias && selectedChecklist.avarias.length > 0 && (
+                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                    <p className="text-sm text-gray-500 mb-2 flex items-center gap-2">
+                      <Wrench className="h-4 w-4 text-yellow-600" />
+                      Avarias Reportadas
+                    </p>
+                    <ul className="list-disc list-inside space-y-1">
+                      {selectedChecklist.avarias.map((avaria, idx) => (
+                        <li key={idx} className="text-sm text-yellow-800">{avaria}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 {/* Observações */}
                 {selectedChecklist.observations && (
                   <div className="bg-blue-50 p-4 rounded-lg">
@@ -2710,7 +2808,8 @@ const LineHaulPage = () => {
                   </div>
                 </div>
               </div>
-            )}
+              );
+            })()}
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowChecklistDetails(false)}>
