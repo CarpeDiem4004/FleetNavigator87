@@ -434,4 +434,245 @@ router.post('/fuel-card-request', upload.fields([
   }
 });
 
+// =============================================
+// IMPORTAÇÃO EM MASSA DE OPERAÇÕES LINE HAUL
+// =============================================
+
+// Função para converter data serial do Excel para string de data/hora
+function excelSerialToDateTime(serial: number): string {
+  // Excel usa 1/1/1900 como base (serial 1)
+  // JavaScript usa 1/1/1970 como base
+  const excelEpoch = new Date(1899, 11, 30); // Excel considera 0 = 30/12/1899
+  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+  const date = new Date(excelEpoch.getTime() + serial * millisecondsPerDay);
+  
+  // Formatar como DD/MM/YYYY HH:MM
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
+
+// Função para extrair código entre colchetes
+function extractCode(text: string): { code: string; name: string } | null {
+  if (!text) return null;
+  const match = text.match(/\[([^\]]+)\](.*)/);
+  if (match) {
+    return {
+      code: match[1].trim(),
+      name: match[2].trim()
+    };
+  }
+  return null;
+}
+
+// Rota para importação em massa de operações
+router.post('/operations/import', async (req, res) => {
+  console.log('[LINE-HALL-IMPORT] Iniciando importação em massa');
+  
+  try {
+    const { operations } = req.body;
+    
+    if (!operations || !Array.isArray(operations) || operations.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nenhuma operação para importar'
+      });
+    }
+
+    console.log(`[LINE-HALL-IMPORT] Processando ${operations.length} operações`);
+    
+    const results = {
+      success: [] as any[],
+      errors: [] as any[],
+      driversNotFound: [] as string[],
+      routesNotFound: [] as string[],
+      driversCreated: [] as any[],
+      routesCreated: [] as any[]
+    };
+
+    for (let i = 0; i < operations.length; i++) {
+      const op = operations[i];
+      console.log(`[LINE-HALL-IMPORT] Processando operação ${i + 1}:`, op);
+      
+      try {
+        // Extrair dados do motorista
+        const driverInfo = extractCode(op.driverId);
+        if (!driverInfo) {
+          results.errors.push({
+            row: i + 1,
+            data: op,
+            error: 'Formato inválido do motorista. Use [CODIGO]NOME'
+          });
+          continue;
+        }
+
+        // Extrair dados da origem
+        const originInfo = extractCode(op.station);
+        if (!originInfo) {
+          results.errors.push({
+            row: i + 1,
+            data: op,
+            error: 'Formato inválido da origem. Use [CODIGO]NOME'
+          });
+          continue;
+        }
+
+        // Extrair dados do destino
+        const destInfo = extractCode(op.destino);
+        if (!destInfo) {
+          results.errors.push({
+            row: i + 1,
+            data: op,
+            error: 'Formato inválido do destino. Use [CODIGO]NOME'
+          });
+          continue;
+        }
+
+        // Buscar motorista pelo código
+        let motoristaQuery = await pool.query(
+          'SELECT id, nome, cpf FROM motoristas WHERE codigo = $1',
+          [driverInfo.code]
+        );
+
+        let motorista = motoristaQuery.rows[0];
+        
+        // Se não encontrou pelo código, criar novo motorista
+        if (!motorista) {
+          console.log(`[LINE-HALL-IMPORT] Motorista não encontrado com código ${driverInfo.code}, criando novo...`);
+          
+          // Criar motorista com código (base Line Haul = 46)
+          const createMotoristaResult = await pool.query(`
+            INSERT INTO motoristas (nome, cpf, base_id, codigo, created_at)
+            VALUES ($1, $2, 46, $3, NOW())
+            RETURNING id, nome, cpf, codigo
+          `, [driverInfo.name, `IMPORT-${driverInfo.code}`, driverInfo.code]);
+          
+          motorista = createMotoristaResult.rows[0];
+          results.driversCreated.push({
+            codigo: driverInfo.code,
+            nome: driverInfo.name,
+            id: motorista.id
+          });
+          console.log(`[LINE-HALL-IMPORT] Motorista criado: ${motorista.nome} (ID: ${motorista.id})`);
+        }
+
+        // Buscar rota pelos códigos de origem e destino
+        let rotaQuery = await pool.query(
+          'SELECT id, nome_ponto_a, nome_ponto_b, km_total FROM line_hall_routes WHERE codigo_origem = $1 AND codigo_destino = $2',
+          [originInfo.code, destInfo.code]
+        );
+
+        let rota = rotaQuery.rows[0];
+        
+        // Se não encontrou a rota, criar nova
+        if (!rota) {
+          console.log(`[LINE-HALL-IMPORT] Rota não encontrada, criando nova: ${originInfo.name} -> ${destInfo.name}`);
+          
+          const createRotaResult = await pool.query(`
+            INSERT INTO line_hall_routes (nome_ponto_a, nome_ponto_b, codigo_origem, codigo_destino, km_total, created_at)
+            VALUES ($1, $2, $3, $4, $5, NOW())
+            RETURNING id, nome_ponto_a, nome_ponto_b, km_total
+          `, [originInfo.name, destInfo.name, originInfo.code, destInfo.code, 0]);
+          
+          rota = createRotaResult.rows[0];
+          results.routesCreated.push({
+            codigo_origem: originInfo.code,
+            codigo_destino: destInfo.code,
+            nome: `${originInfo.name} -> ${destInfo.name}`,
+            id: rota.id
+          });
+          console.log(`[LINE-HALL-IMPORT] Rota criada: ${rota.nome_ponto_a} -> ${rota.nome_ponto_b} (ID: ${rota.id})`);
+        }
+
+        // Processar placas (pode ter duas separadas por vírgula)
+        let placaCavalo = null;
+        let placaCarreta = null;
+        let placaTruck = null;
+        
+        if (op.plate) {
+          const placas = op.plate.split(',').map((p: string) => p.trim());
+          if (op.vehicleType?.toUpperCase() === 'CARRETA') {
+            placaCavalo = placas[0] || null;
+            placaCarreta = placas[1] || null;
+          } else {
+            placaTruck = placas[0] || null;
+          }
+        }
+
+        // Converter datas do Excel
+        const dataInicio = typeof op.sta === 'number' ? excelSerialToDateTime(op.sta) : op.sta;
+        const dataFim = typeof op.ata === 'number' ? excelSerialToDateTime(op.ata) : op.ata;
+
+        // Criar a operação
+        const insertResult = await pool.query(`
+          INSERT INTO line_hall_operations (
+            motorista_id, motorista_nome, tipo_veiculo,
+            placa_truck, placa_cavalo, placa_carreta_1,
+            rota_id, rota_nome, data_inicio, data_fim,
+            status, data_criacao, created_by
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), $12)
+          RETURNING *
+        `, [
+          motorista.id,
+          motorista.nome,
+          op.vehicleType || 'TRUCK',
+          placaTruck,
+          placaCavalo,
+          placaCarreta,
+          rota.id,
+          `${rota.nome_ponto_a} → ${rota.nome_ponto_b}`,
+          dataInicio,
+          dataFim,
+          'finalizada', // Status finalizada pois tem ATA
+          'IMPORT_EXCEL'
+        ]);
+
+        results.success.push({
+          row: i + 1,
+          operationId: insertResult.rows[0].id,
+          motorista: motorista.nome,
+          rota: `${rota.nome_ponto_a} → ${rota.nome_ponto_b}`,
+          dataInicio,
+          dataFim
+        });
+
+        console.log(`[LINE-HALL-IMPORT] Operação ${i + 1} criada com sucesso`);
+
+      } catch (opError: any) {
+        console.error(`[LINE-HALL-IMPORT] Erro na operação ${i + 1}:`, opError);
+        results.errors.push({
+          row: i + 1,
+          data: op,
+          error: opError.message || 'Erro desconhecido'
+        });
+      }
+    }
+
+    console.log('[LINE-HALL-IMPORT] Importação concluída:', {
+      successCount: results.success.length,
+      errorCount: results.errors.length,
+      driversCreated: results.driversCreated.length,
+      routesCreated: results.routesCreated.length
+    });
+
+    res.json({
+      success: true,
+      message: `Importação concluída: ${results.success.length} operações importadas, ${results.errors.length} erros`,
+      results
+    });
+
+  } catch (error: any) {
+    console.error('[LINE-HALL-IMPORT] Erro geral na importação:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao importar operações',
+      error: error.message
+    });
+  }
+});
+
 export default router;
