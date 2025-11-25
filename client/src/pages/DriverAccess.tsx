@@ -1208,8 +1208,16 @@ const FuelRequestModal = ({ driver, operations, existingRequests, onClose }: { d
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  // Pegar a primeira operação ativa do motorista
-  const activeOperation = operations.find(op => op.status === 'em_andamento' || op.status === 'programada') || operations[0];
+  // Filtrar apenas rotas ativas (não canceladas, não finalizadas)
+  const activeOperations = operations.filter(op => 
+    op.status === 'em_andamento' || op.status === 'programada' || op.status === 'Em Andamento'
+  );
+  
+  // Verificar se pode solicitar recarga (deve ter exatamente 1 rota ativa)
+  const canRequestFuel = activeOperations.length === 1;
+  
+  // Pegar a única operação ativa (se existir)
+  const activeOperation = canRequestFuel ? activeOperations[0] : null;
   
   // Verificar se já existe solicitação para esta operação (pelo ID da operação)
   const hasExistingRequestForRoute = existingRequests.some(req => {
@@ -1348,29 +1356,61 @@ const FuelRequestModal = ({ driver, operations, existingRequests, onClose }: { d
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <form onSubmit={handleSubmit}>
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">Solicitar Recarga de Cartão</h2>
-              <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-                ✕
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold">Solicitar Recarga de Cartão</h2>
+            <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+              ✕
+            </Button>
+          </div>
+
+          {/* Verificar se pode solicitar recarga */}
+          {!canRequestFuel ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <XCircle className="w-10 h-10 text-orange-600" />
+              </div>
+              {activeOperations.length === 0 ? (
+                <>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    Nenhuma Rota Ativa
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Você não possui nenhuma rota ativa no momento. 
+                    Rotas canceladas ou finalizadas não permitem solicitação de recarga.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    Múltiplas Rotas Ativas
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Você possui {activeOperations.length} rotas ativas. 
+                    A solicitação de recarga só é permitida quando há exatamente uma rota ativa.
+                  </p>
+                </>
+              )}
+              <Button onClick={onClose} variant="outline" className="mt-4">
+                Fechar
               </Button>
             </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              {/* Aviso de solicitação existente */}
+              {hasExistingRequestForRoute && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700 font-medium">
+                    ⚠️ Você já possui uma solicitação pendente para esta rota.
+                  </p>
+                  <p className="text-xs text-red-600 mt-1">
+                    Aguarde a aprovação ou rejeição antes de solicitar novamente.
+                  </p>
+                </div>
+              )}
 
-            {/* Aviso de solicitação existente */}
-            {hasExistingRequestForRoute && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-700 font-medium">
-                  ⚠️ Você já possui uma solicitação pendente para esta rota.
-                </p>
-                <p className="text-xs text-red-600 mt-1">
-                  Aguarde a aprovação ou rejeição antes de solicitar novamente.
-                </p>
-              </div>
-            )}
-
-            {/* Dados do Veículo (preenchidos automaticamente) */}
-            <div className="space-y-4">
+              {/* Dados do Veículo (preenchidos automaticamente) */}
+              <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Placa</Label>
@@ -1527,34 +1567,35 @@ const FuelRequestModal = ({ driver, operations, existingRequests, onClose }: { d
                   )}
                 </div>
               </div>
-            </div>
+              </div>
 
-            {/* Botões */}
-            <div className="flex gap-3 mt-6">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isSubmitting || hasExistingRequestForRoute} className="flex-1">
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Enviando...
-                  </>
-                ) : hasExistingRequestForRoute ? (
-                  <>
-                    <XCircle className="w-4 h-4 mr-2" />
-                    Já solicitado
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Solicitar
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </form>
+              {/* Botões */}
+              <div className="flex gap-3 mt-6">
+                <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSubmitting || hasExistingRequestForRoute} className="flex-1">
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : hasExistingRequestForRoute ? (
+                    <>
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Já solicitado
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Solicitar
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );
