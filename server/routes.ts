@@ -4071,6 +4071,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Dashboard Executivo do Line Haul
+  app.get('/api/line-hall/executive-dashboard', isAuthenticated, async (req, res) => {
+    try {
+      const { dataInicial, dataFinal } = req.query;
+      
+      // Definir período padrão (último mês)
+      const endDate = dataFinal || new Date().toISOString().split('T')[0];
+      const startDate = dataInicial || (() => {
+        const date = new Date();
+        date.setMonth(date.getMonth() - 1);
+        return date.toISOString().split('T')[0];
+      })();
+      
+      // 1. Buscar checklists por período
+      const checklistsQuery = `
+        SELECT 
+          TO_CHAR(DATE(created_at), 'YYYY-MM-DD') as date,
+          COUNT(CASE WHEN status = 'concluido' THEN 1 END) as concluidos,
+          COUNT(CASE WHEN status = 'pendente' OR status = 'em_andamento' THEN 1 END) as pendentes
+        FROM driver_checklists
+        WHERE (source = 'line_hall' OR driver_type = 'line_hall')
+          AND created_at >= $1::date
+          AND created_at <= ($2::date + interval '1 day')
+        GROUP BY DATE(created_at)
+        ORDER BY date ASC
+      `;
+      const checklistsResult = await pool.query(checklistsQuery, [startDate, endDate]);
+      
+      // 2. Buscar manutenções por status
+      const maintenanceQuery = `
+        SELECT 
+          CASE 
+            WHEN status = 'pendente' THEN 'Pendentes'
+            WHEN status = 'em_andamento' THEN 'Em Andamento'
+            WHEN status = 'concluida' THEN 'Concluídas'
+            ELSE 'Outros'
+          END as name,
+          COUNT(*) as value
+        FROM maintenance_requests_line_hall
+        WHERE created_at >= $1::date
+          AND created_at <= ($2::date + interval '1 day')
+        GROUP BY status
+      `;
+      const maintenanceResult = await pool.query(maintenanceQuery, [startDate, endDate]);
+      
+      // Mapear cores para manutenções
+      const maintenanceByStatus = maintenanceResult.rows.map(row => ({
+        name: row.name,
+        value: parseInt(row.value),
+        color: row.name === 'Pendentes' ? '#F59E0B' : 
+               row.name === 'Em Andamento' ? '#3B82F6' : 
+               row.name === 'Concluídas' ? '#10B981' : '#9CA3AF'
+      }));
+      
+      // 3. Buscar operações por status
+      const operationsQuery = `
+        SELECT 
+          CASE 
+            WHEN status = 'finalizada' THEN 'Finalizadas'
+            WHEN status = 'cancelada_cliente' THEN 'Canceladas'
+            WHEN status = 'no_show' THEN 'No Show'
+            WHEN status = 'programada' THEN 'Programadas'
+            ELSE 'Outros'
+          END as name,
+          COUNT(*) as value
+        FROM line_hall_operations
+        WHERE created_at >= $1::date
+          AND created_at <= ($2::date + interval '1 day')
+        GROUP BY status
+      `;
+      const operationsResult = await pool.query(operationsQuery, [startDate, endDate]);
+      
+      // Mapear cores para operações
+      const operationsByStatus = operationsResult.rows.map(row => ({
+        name: row.name,
+        value: parseInt(row.value),
+        color: row.name === 'Finalizadas' ? '#10B981' : 
+               row.name === 'Canceladas' ? '#F59E0B' : 
+               row.name === 'No Show' ? '#EF4444' : 
+               row.name === 'Programadas' ? '#3B82F6' : '#9CA3AF'
+      }));
+      
+      // 4. Buscar veículos na garagem
+      const vehiclesQuery = `
+        SELECT 
+          COUNT(*) as total,
+          SUM(CASE WHEN EXTRACT(DAY FROM (NOW() - entry_date)) <= 3 THEN 1 ELSE 0 END) as recentes,
+          SUM(CASE WHEN EXTRACT(DAY FROM (NOW() - entry_date)) > 3 THEN 1 ELSE 0 END) as prolongados
+        FROM vehicles_in_garage
+      `;
+      const vehiclesResult = await pool.query(vehiclesQuery);
+      
+      const vehiclesByStatus = [
+        { name: 'Recentes (≤3 dias)', value: parseInt(vehiclesResult.rows[0]?.recentes || 0), color: '#10B981' },
+        { name: 'Prolongados (>3 dias)', value: parseInt(vehiclesResult.rows[0]?.prolongados || 0), color: '#F59E0B' }
+      ].filter(v => v.value > 0);
+      
+      // 5. Calcular resumo
+      const totalChecklistsQuery = `
+        SELECT 
+          COUNT(*) as total,
+          COUNT(CASE WHEN status = 'concluido' THEN 1 END) as concluidos
+        FROM driver_checklists
+        WHERE (source = 'line_hall' OR driver_type = 'line_hall')
+          AND created_at >= $1::date
+          AND created_at <= ($2::date + interval '1 day')
+      `;
+      const totalChecklistsResult = await pool.query(totalChecklistsQuery, [startDate, endDate]);
+      
+      const totalMaintenanceQuery = `
+        SELECT 
+          COUNT(*) as total,
+          COUNT(CASE WHEN status = 'concluida' THEN 1 END) as concluidas
+        FROM maintenance_requests_line_hall
+        WHERE created_at >= $1::date
+          AND created_at <= ($2::date + interval '1 day')
+      `;
+      const totalMaintenanceResult = await pool.query(totalMaintenanceQuery, [startDate, endDate]);
+      
+      const totalOperationsQuery = `
+        SELECT COUNT(*) as total
+        FROM line_hall_operations
+        WHERE created_at >= $1::date
+          AND created_at <= ($2::date + interval '1 day')
+      `;
+      const totalOperationsResult = await pool.query(totalOperationsQuery, [startDate, endDate]);
+      
+      const totalChecklists = parseInt(totalChecklistsResult.rows[0]?.total || 0);
+      const checklistsConcluidos = parseInt(totalChecklistsResult.rows[0]?.concluidos || 0);
+      const totalMaintenance = parseInt(totalMaintenanceResult.rows[0]?.total || 0);
+      const maintenanceConcluidas = parseInt(totalMaintenanceResult.rows[0]?.concluidas || 0);
+      const totalVehicles = parseInt(vehiclesResult.rows[0]?.total || 0);
+      const totalOperations = parseInt(totalOperationsResult.rows[0]?.total || 0);
+      
+      return res.status(200).json({
+        success: true,
+        data: {
+          checklistsByPeriod: checklistsResult.rows.map(row => ({
+            date: row.date,
+            concluidos: parseInt(row.concluidos),
+            pendentes: parseInt(row.pendentes)
+          })),
+          maintenanceByStatus,
+          vehiclesByStatus,
+          operationsByStatus,
+          summary: {
+            totalChecklists,
+            totalMaintenance,
+            totalVehicles,
+            totalOperations,
+            checklistsConcluidosPercentage: totalChecklists > 0 ? (checklistsConcluidos / totalChecklists) * 100 : 0,
+            maintenanceConcluidasPercentage: totalMaintenance > 0 ? (maintenanceConcluidas / totalMaintenance) * 100 : 0
+          }
+        }
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar dados do dashboard executivo:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar dados do dashboard executivo',
+        error: error.message
+      });
+    }
+  });
+
   // Rotas do Line Hall Shopee - Gerenciar rotas cadastradas
   app.get('/api/line-hall/routes', isAuthenticated, async (req, res) => {
     try {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,7 @@ import {
 import { DriverAutocomplete } from '@/components/ui/driver-autocomplete';
 import lineHaulLayoutImage from '@assets/image_1754418722959.png';
 import { apiRequest } from '@/lib/queryClient';
+import LineHaulExecutiveDashboard from '@/components/LineHaulExecutiveDashboard';
 
 interface LineHallTrip {
   id: number;
@@ -1735,6 +1736,9 @@ const LineHaulPage = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Dashboard Executivo */}
+        <LineHaulExecutiveDashboard />
         </>
         )}
 
