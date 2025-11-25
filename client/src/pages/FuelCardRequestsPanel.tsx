@@ -135,7 +135,13 @@ const FuelCardRequestsPanel: React.FC = () => {
   const [fuelHistory, setFuelHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [solicitudeCounts, setSolicitudeCounts] = useState<Record<string, number>>({});
-  const [activeTab, setActiveTab] = useState<string>('pendentes');
+  
+  // Verificar parâmetros da URL para modo Line Haul
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialTab = urlParams.get('tab') || 'pendentes';
+  const isLineHaulMode = urlParams.get('mode') === 'linehaul';
+  
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
   
   // Estados para paginação - OTIMIZAÇÃO
   const [currentPage, setCurrentPage] = useState(1);
@@ -1752,29 +1758,40 @@ const FuelCardRequestsPanel: React.FC = () => {
         {/* Sistema de Abas com Cards de Resumo */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="flex items-center justify-between">
-            <TabsList className="grid w-auto grid-cols-4">
-              <TabsTrigger value="pendentes" className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Pendentes ({getPendingSolicitations().length})
-              </TabsTrigger>
-              <TabsTrigger value="atendidas" className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" />
-                Atendidas ({getCompletedSolicitations().length})
-              </TabsTrigger>
-              <TabsTrigger value="negadas" className="flex items-center gap-2">
-                <XCircle className="h-4 w-4 text-red-600" />
-                Negadas ({deniedSolicitations.length})
-              </TabsTrigger>
-              <TabsTrigger value="linehaul" className={`flex items-center gap-2 ${
-                hasNewLineHallRequests ? 'animate-pulse bg-blue-100 border-blue-300' : ''
-              }`}>
-                <Truck className="h-4 w-4" />
-                Line Haul ({getLineHallSolicitations().length})
-                {hasNewLineHallRequests && (
-                  <div className="ml-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
-                )}
-              </TabsTrigger>
-            </TabsList>
+            {isLineHaulMode ? (
+              /* Modo Line Haul - apenas a aba Line Haul */
+              <div className="flex items-center gap-2">
+                <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg flex items-center gap-2 font-medium">
+                  <Truck className="h-5 w-5" />
+                  Solicitações Line Haul ({getLineHallSolicitations().length})
+                </div>
+              </div>
+            ) : (
+              /* Modo normal - todas as abas */
+              <TabsList className="grid w-auto grid-cols-4">
+                <TabsTrigger value="pendentes" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Pendentes ({getPendingSolicitations().length})
+                </TabsTrigger>
+                <TabsTrigger value="atendidas" className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Atendidas ({getCompletedSolicitations().length})
+                </TabsTrigger>
+                <TabsTrigger value="negadas" className="flex items-center gap-2">
+                  <XCircle className="h-4 w-4 text-red-600" />
+                  Negadas ({deniedSolicitations.length})
+                </TabsTrigger>
+                <TabsTrigger value="linehaul" className={`flex items-center gap-2 ${
+                  hasNewLineHallRequests ? 'animate-pulse bg-blue-100 border-blue-300' : ''
+                }`}>
+                  <Truck className="h-4 w-4" />
+                  Line Haul ({getLineHallSolicitations().length})
+                  {hasNewLineHallRequests && (
+                    <div className="ml-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+            )}
           </div>
 
           {/* Cards de resumo específicos para cada aba */}

@@ -275,6 +275,7 @@ const LineHaulPage = () => {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [routeSearchTerm, setRouteSearchTerm] = useState('');
   const [isRouteDropdownOpen, setIsRouteDropdownOpen] = useState(false);
+  const [pendingFuelCardRequests, setPendingFuelCardRequests] = useState(0);
   const [newOperation, setNewOperation] = useState<LineHaulOperation>({
     motorista_id: 0,
     motorista_nome: '',
@@ -293,7 +294,28 @@ const LineHaulPage = () => {
 
   useEffect(() => {
     fetchData();
+    fetchPendingFuelCardRequests();
+    
+    // Verificar novas solicitações a cada 30 segundos
+    const interval = setInterval(() => {
+      fetchPendingFuelCardRequests();
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
+
+  // Buscar solicitações pendentes do Line Haul
+  const fetchPendingFuelCardRequests = async () => {
+    try {
+      const res = await fetch('/api/public/fuel-card/solicitations?origem_tipo=line_hall&status=Pendente&limit=100');
+      const data = await res.json();
+      if (data.success) {
+        setPendingFuelCardRequests(data.data?.length || 0);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar solicitações pendentes:', error);
+    }
+  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -1421,11 +1443,20 @@ const LineHaulPage = () => {
               Cadastrar Motorista
             </Button>
             <Button 
-              className="bg-blue-500 hover:bg-blue-600 text-white"
-              onClick={() => handleCardAction('criar-solicitacao')}
+              className={`text-white relative ${
+                pendingFuelCardRequests > 0 
+                  ? 'bg-orange-500 hover:bg-orange-600 animate-pulse' 
+                  : 'bg-blue-500 hover:bg-blue-600'
+              }`}
+              onClick={() => window.open('/fuel-cards?tab=linehaul&mode=linehaul', '_blank')}
             >
               <Settings className="h-4 w-4 mr-2" />
               Solicitações de Cartão
+              {pendingFuelCardRequests > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-bounce">
+                  {pendingFuelCardRequests}
+                </span>
+              )}
             </Button>
             <Button 
               className="bg-green-500 hover:bg-green-600 text-white"
