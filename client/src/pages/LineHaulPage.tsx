@@ -145,6 +145,66 @@ const generateRandomRoute = () => {
   return routes[Math.floor(Math.random() * routes.length)];
 };
 
+// Lista de códigos de rotas pré-cadastrados
+const ROUTE_CODES = [
+  { code: '5022', name: 'SoC_SP_Santana', full: '[5022]SoC_SP_Santana' },
+  { code: '5015', name: 'SoC_RJ_Rio de Janeiro', full: '[5015]SoC_RJ_Rio de Janeiro' },
+  { code: '5037', name: 'SoC_PR_Curitiba', full: '[5037]SoC_PR_Curitiba' },
+  { code: '6042', name: 'SoC_MG_Betim', full: '[6042]SoC_MG_Betim' },
+  { code: '8807', name: 'SoC_SP_Louveira', full: '[8807]SoC_SP_Louveira' },
+  { code: '12156', name: 'SoC_RS_Gravataí_02', full: '[12156]SoC_RS_Gravataí_02' },
+  { code: '10964', name: 'SoC_SP_São Bernardo do Campo', full: '[10964]SoC_SP_São Bernardo do Campo' },
+  { code: '10616', name: 'LM Hub_GO_Aparecida de Goiânia', full: '[10616]LM Hub_GO_Aparecida de Goiânia' },
+  { code: '6704', name: 'SoC_SP_Cravinhos', full: '[6704]SoC_SP_Cravinhos' },
+  { code: '8300', name: 'SoC_RJ_Duque de Caxias', full: '[8300]SoC_RJ_Duque de Caxias' },
+  { code: '7331', name: 'SoC_SP_Guarulhos', full: '[7331]SoC_SP_Guarulhos' },
+  { code: '11883', name: 'FM Hub_3PL_PR_Londrina_01', full: '[11883]FM Hub_3PL_PR_Londrina_01' },
+  { code: '12158', name: 'SoC_SC_Itajaí', full: '[12158]SoC_SC_Itajaí' },
+  { code: '9994', name: 'FM Hub_PR_Maringa-02', full: '[9994]FM Hub_PR_Maringa-02' },
+  { code: '7915', name: 'FM Hub_RJ_Campo Grande', full: '[7915]FM Hub_RJ_Campo Grande' },
+  { code: '5102', name: 'FM Hub_SP_São_Paulo_Artur_Alvim', full: '[5102]FM Hub_SP_São_Paulo_Artur_Alvim' },
+  { code: '11677', name: 'SoC_SP_Franco da Rocha', full: '[11677]SoC_SP_Franco da Rocha' },
+  { code: '12084', name: 'FM Hub_SP_Itaquaquecetuba', full: '[12084]FM Hub_SP_Itaquaquecetuba' },
+  { code: '6891', name: 'FM Hub_RJ_Duas Pedras_Nv Fri', full: '[6891]FM Hub_RJ_Duas Pedras_Nv Fri' },
+  { code: '12081', name: 'FM Hub_SP_Taubaté_02', full: '[12081]FM Hub_SP_Taubaté_02' },
+  { code: '12426', name: 'FM Hub_MG_SeteLagoas', full: '[12426]FM Hub_MG_SeteLagoas' },
+  { code: '10090', name: 'FM Hub_SP_Osasco_02', full: '[10090]FM Hub_SP_Osasco_02' },
+  { code: '11971', name: 'FM Hub_PR_Cascavel_02', full: '[11971]FM Hub_PR_Cascavel_02' },
+  { code: '9512', name: 'FM Hub_MG_Extrema', full: '[9512]FM Hub_MG_Extrema' },
+  { code: '10044', name: 'LM Hub_SP_Tatuí', full: '[10044]LM Hub_SP_Tatuí' },
+  { code: '6686', name: 'XPT_RJ_Itaperuna', full: '[6686]XPT_RJ_Itaperuna' },
+  { code: '9659', name: 'LM Hub_PR_Paranaguá', full: '[9659]LM Hub_PR_Paranaguá' },
+  { code: '9656', name: 'LM Hub_ES_São Mateus', full: '[9656]LM Hub_ES_São Mateus' },
+  { code: '8814', name: 'LM Hub_ES_Linhares', full: '[8814]LM Hub_ES_Linhares' },
+  { code: '6081', name: 'XPT_RS_Uruguaiana', full: '[6081]XPT_RS_Uruguaiana' },
+  { code: '5069', name: 'LM Hub_RJ_Rio de Janeiro_Campo G', full: '[5069]LM Hub_RJ_Rio de Janeiro_Campo G' },
+  { code: '11980', name: 'LM Hub_GO_Goiânia_Aeroporto', full: '[11980]LM Hub_GO_Goiânia_Aeroporto' },
+  { code: '9798', name: 'LM Hub_PR_Maringá', full: '[9798]LM Hub_PR_Maringá' },
+  { code: '5526', name: 'LM Hub_PR_Cascavel', full: '[5526]LM Hub_PR_Cascavel' },
+  { code: '12370', name: 'LM Hub_MG_Contagem 02', full: '[12370]LM Hub_MG_Contagem 02' },
+  { code: '12467', name: 'XPT_MG_Leopoldina_03', full: '[12467]XPT_MG_Leopoldina_03' },
+  { code: '5595', name: 'LM Hub_MG_Patos de Minas', full: '[5595]LM Hub_MG_Patos de Minas' },
+  { code: '7094', name: 'XPT_RS_Frederico Westphalen', full: '[7094]XPT_RS_Frederico Westphalen' },
+  { code: '5592', name: 'LM Hub_SP_Araçatuba', full: '[5592]LM Hub_SP_Araçatuba' },
+  { code: '11415', name: 'LM Hub_RJ_Mage', full: '[11415]LM Hub_RJ_Mage' },
+  { code: '6485', name: 'LM Hub_RJ_Volta Redonda', full: '[6485]LM Hub_RJ_Volta Redonda' },
+  { code: '8692', name: 'LM Hub_RJ_Duque de Caxias', full: '[8692]LM Hub_RJ_Duque de Caxias' },
+  { code: '10102', name: 'LM Hub_MG_Belo Horizonte_02', full: '[10102]LM Hub_MG_Belo Horizonte_02' },
+  { code: '10099', name: 'LM Hub_SP_Assis', full: '[10099]LM Hub_SP_Assis' },
+  { code: '8130', name: 'LM Hub_SP_Guaratinguetá', full: '[8130]LM Hub_SP_Guaratinguetá' },
+  { code: '5033', name: 'LM Hub_SP_Limeira_Campo Belo', full: '[5033]LM Hub_SP_Limeira_Campo Belo' },
+  { code: '5071', name: 'LM Hub_SP_Santos_Praia Grande', full: '[5071]LM Hub_SP_Santos_Praia Grande' },
+  { code: '8364', name: 'LM Hub_RS_Lajeado', full: '[8364]LM Hub_RS_Lajeado' },
+  { code: '10242', name: 'LM Hub_SP_VilaGuilherme', full: '[10242]LM Hub_SP_VilaGuilherme' },
+  { code: '10093', name: 'FM Hub_ES_Vila Velha', full: '[10093]FM Hub_ES_Vila Velha' },
+  { code: '10703', name: 'LM Hub_SP_Santos_PraiaGrande_02', full: '[10703]LM Hub_SP_Santos_PraiaGrande_02' },
+  { code: '8716', name: 'LM Hub_SP_Mogi Mirim', full: '[8716]LM Hub_SP_Mogi Mirim' },
+  { code: '10098', name: 'LM Hub_SP_Zimba', full: '[10098]LM Hub_SP_Zimba' },
+  { code: '5025', name: 'LM Hub_SP_Artur Alvim', full: '[5025]LM Hub_SP_Artur Alvim' },
+  { code: '12781', name: 'SoC_SP_Cumbica_Guarulhos', full: '[12781]SoC_SP_Cumbica_Guarulhos' },
+  { code: '7028', name: 'XPT_RJ_Saquarema', full: '[7028]XPT_RJ_Saquarema' }
+];
+
 const LineHaulPage = () => {
   const { toast } = useToast();
   const { user, logout } = useAuth();
@@ -2104,25 +2164,43 @@ const LineHaulPage = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="codigo_origem">Código Origem</Label>
-                  <Input
-                    id="codigo_origem"
-                    placeholder="Ex: SP01, CD-SP"
+                  <Combobox
+                    options={ROUTE_CODES.map(rc => ({ value: rc.code, label: rc.full }))}
                     value={newRoute.codigo_origem}
-                    onChange={(e) => setNewRoute(prev => ({ ...prev, codigo_origem: e.target.value }))}
+                    onChange={(value) => {
+                      const selected = ROUTE_CODES.find(rc => rc.code === value);
+                      setNewRoute(prev => ({ 
+                        ...prev, 
+                        codigo_origem: value,
+                        nome_ponto_a: selected ? selected.name.replace(/_/g, ' ') : prev.nome_ponto_a
+                      }));
+                    }}
+                    placeholder="Selecione código de origem..."
+                    searchPlaceholder="Buscar código..."
+                    emptyMessage="Código não encontrado"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="codigo_destino">Código Destino</Label>
-                  <Input
-                    id="codigo_destino"
-                    placeholder="Ex: RJ01, CD-RJ"
+                  <Combobox
+                    options={ROUTE_CODES.map(rc => ({ value: rc.code, label: rc.full }))}
                     value={newRoute.codigo_destino}
-                    onChange={(e) => setNewRoute(prev => ({ ...prev, codigo_destino: e.target.value }))}
+                    onChange={(value) => {
+                      const selected = ROUTE_CODES.find(rc => rc.code === value);
+                      setNewRoute(prev => ({ 
+                        ...prev, 
+                        codigo_destino: value,
+                        nome_ponto_b: selected ? selected.name.replace(/_/g, ' ') : prev.nome_ponto_b
+                      }));
+                    }}
+                    placeholder="Selecione código de destino..."
+                    searchPlaceholder="Buscar código..."
+                    emptyMessage="Código não encontrado"
                   />
                 </div>
               </div>
               <p className="text-xs text-muted-foreground -mt-2">
-                Códigos únicos para identificação dos pontos (usado para importação em massa)
+                Selecione os códigos pré-cadastrados (usado para importação em massa)
               </p>
               <div className="space-y-2">
                 <Label htmlFor="km_total">Distância Total (km) *</Label>
