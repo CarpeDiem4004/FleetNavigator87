@@ -42,6 +42,27 @@ const DriverAccess: React.FC = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { toast } = useToast();
 
+  // Trocar manifest para o PWA do motorista
+  useEffect(() => {
+    const existingManifest = document.querySelector('link[rel="manifest"]');
+    const driverManifestLink = document.createElement('link');
+    driverManifestLink.rel = 'manifest';
+    driverManifestLink.href = '/manifest-driver.json';
+    
+    if (existingManifest) {
+      existingManifest.remove();
+    }
+    document.head.appendChild(driverManifestLink);
+
+    return () => {
+      driverManifestLink.remove();
+      const defaultManifest = document.createElement('link');
+      defaultManifest.rel = 'manifest';
+      defaultManifest.href = '/manifest.json';
+      document.head.appendChild(defaultManifest);
+    };
+  }, []);
+
   // Initialize PWA features and cleanup polling interval
   useEffect(() => {
     // Initialize PWA features

@@ -108,6 +108,19 @@ app.get('/manifest.json', (req, res) => {
   }
 });
 
+app.get('/manifest-driver.json', (req, res) => {
+  try {
+    res.setHeader('Content-Type', 'application/manifest+json');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    const manifestPath = path.join(process.cwd(), 'public', 'manifest-driver.json');
+    console.log('[PWA] Serving manifest-driver.json from:', manifestPath);
+    res.sendFile(manifestPath);
+  } catch (error) {
+    console.error('[PWA] Error serving manifest-driver.json:', error);
+    res.status(500).json({ error: 'Failed to serve manifest-driver.json' });
+  }
+});
+
 app.get('/service-worker.js', (req, res) => {
   try {
     res.setHeader('Content-Type', 'application/javascript');
