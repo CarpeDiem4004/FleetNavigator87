@@ -5482,8 +5482,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const baseFilter = req.query.base as string;
       const searchQuery = req.query.search as string;
       const fuelDateFilter = req.query.fuelDate as string; // Data de abastecimento (data_uso)
+      const origemTipoFilter = req.query.origem_tipo as string; // Filtro por origem (line_hall, tradicional, base_system)
       
-      console.log('[PUBLIC-FUEL-CARD] Filtros aplicados:', { statusFilter, baseFilter, searchQuery, fuelDateFilter });
+      console.log('[PUBLIC-FUEL-CARD] Filtros aplicados:', { statusFilter, baseFilter, searchQuery, fuelDateFilter, origemTipoFilter });
       
       // Cache HTTP para 5 minutos (300 segundos)
       res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
@@ -5622,6 +5623,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         ) unified_data
         WHERE 1=1
+          ${origemTipoFilter ? `AND origem_tipo = '${origemTipoFilter}'` : ''}
           ${statusFilter ? `AND (
             -- Normalizar status antes de comparar
             CASE 
@@ -5729,6 +5731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           FROM linehall_fuel_card_requests lh
         ) unified_count
         WHERE 1=1
+          ${origemTipoFilter ? `AND origem_tipo = '${origemTipoFilter}'` : ''}
           ${statusFilter ? `AND (
             CASE 
               WHEN origem_tipo = 'line_hall' THEN
@@ -5791,15 +5794,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (fuelDateFilter) countParams.push(fuelDateFilter);
       if (searchQuery) countParams.push(`%${searchQuery}%`);
       
+      // Verificar se há algum filtro ativo (incluindo origem_tipo que não usa parâmetro)
+      const hasFilters = countParams.length > 0 || origemTipoFilter;
+      
       // Executar queries em paralelo
       const [countResult, filteredCountResult, result] = await Promise.all([
         pool.query(countQuery),
-        countParams.length > 0 ? pool.query(filteredCountQuery, countParams) : Promise.resolve({ rows: [{ filtered_count: 0 }] }),
+        hasFilters ? pool.query(filteredCountQuery, countParams) : Promise.resolve({ rows: [{ filtered_count: 0 }] }),
         pool.query(query, queryParams)
       ]);
       
       // Usar contagem filtrada se houver filtros, senão usar contagem total
-      const actualTotalCount = (countParams.length > 0 && filteredCountResult.rows.length > 0) 
+      const actualTotalCount = (hasFilters && filteredCountResult.rows.length > 0) 
         ? parseInt(filteredCountResult.rows[0].filtered_count)
         : parseInt(countResult.rows[0].total_solicitacoes) + parseInt(countResult.rows[0].total_requests) + parseInt(countResult.rows[0].total_line_hall);
       

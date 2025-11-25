@@ -512,7 +512,8 @@ const FuelCardRequestsPanel: React.FC = () => {
       } else if (activeTab === 'negadas') {
         params.append('status', 'Negado');
       } else if (activeTab === 'linehaul') {
-        // Line Haul não tem filtro de status específico (mostra todos do line haul)
+        // Line Haul - filtrar apenas registros com origem_tipo = 'line_hall'
+        params.append('origem_tipo', 'line_hall');
       }
       
       if (baseFilter && baseFilter !== 'all') {
