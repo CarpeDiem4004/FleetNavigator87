@@ -1702,8 +1702,8 @@ const LineHaulPage = () => {
             <CardContent>
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Operações Ativas</span>
-                  <span className="text-2xl font-bold text-blue-600">{operationsData.length}</span>
+                  <span className="text-sm font-medium">Rotas em Andamento</span>
+                  <span className="text-2xl font-bold text-blue-600">{operationsData.filter(op => op.status === 'em_andamento' || op.status === 'programada').length}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Finalizadas</span>
