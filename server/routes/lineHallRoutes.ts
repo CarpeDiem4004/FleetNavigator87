@@ -317,8 +317,11 @@ router.post('/fuel-card-request', upload.fields([
     const fotoPainelPath = files?.foto_painel?.[0]?.path || null;
     const fotoCartaoPath = files?.foto_cartao?.[0]?.path || null;
 
-    // CÁLCULO AUTOMÁTICO DO VALOR - PARÂMETROS OFICIAIS
-    // Consumo Médio Aproximado por Tipo (km/litro)
+    // =============================================
+    // CÁLCULO AUTOMÁTICO - DIESEL E ARLA 32
+    // =============================================
+    
+    // PARÂMETROS OFICIAIS - DIESEL (km/litro)
     const CONSUMO_TRUCK_LEVE = 4.0;   // vans, HR, 3/4, toco leve
     const CONSUMO_TRUCK_PESADO = 3.2; // truck 6x2
     const CONSUMO_CARRETA = 2.8;      // carreta simples
@@ -326,9 +329,23 @@ router.post('/fuel-card-request', upload.fields([
     const CONSUMO_PADRAO = 3.0;       // quando o tipo do veículo não for informado
     const PRECO_DIESEL = 6.50;        // preço do diesel por litro
     
+    // PARÂMETROS OFICIAIS - ARLA 32 (km por litro de ARLA)
+    const CONSUMO_ARLA_TRUCK_LEVE = 900;   // 1 litro para cada 900 km
+    const CONSUMO_ARLA_TRUCK_PESADO = 750; // 1 litro para cada 750 km
+    const CONSUMO_ARLA_CARRETA = 650;      // 1 litro para cada 650 km
+    const CONSUMO_ARLA_RODOTREM = 550;     // 1 litro para cada 550 km
+    const CONSUMO_ARLA_PADRAO = 700;       // quando o tipo do veículo não for informado
+    const PRECO_ARLA = 3.50;               // preço do ARLA por litro
+    
+    // Variáveis de cálculo - DIESEL
     let valor_calculado = 0;
     let litros_necessarios = 0;
     let consumo_usado = CONSUMO_PADRAO;
+    
+    // Variáveis de cálculo - ARLA
+    let litros_arla = 0;
+    let valor_arla = 0;
+    let consumo_arla_usado = CONSUMO_ARLA_PADRAO;
     
     if (km_total) {
       const km = parseFloat(km_total);
@@ -339,30 +356,45 @@ router.post('/fuel-card-request', upload.fields([
         
         if (modelo.includes('rodotrem') || modelo.includes('bitrem') || modelo.includes('carreta dupla')) {
           consumo_usado = CONSUMO_RODOTREM;
+          consumo_arla_usado = CONSUMO_ARLA_RODOTREM;
         } else if (modelo.includes('carreta') || modelo.includes('carretao')) {
           consumo_usado = CONSUMO_CARRETA;
+          consumo_arla_usado = CONSUMO_ARLA_CARRETA;
         } else if (modelo.includes('6x2') || modelo.includes('truck pesado') || modelo.includes('pesado')) {
           consumo_usado = CONSUMO_TRUCK_PESADO;
+          consumo_arla_usado = CONSUMO_ARLA_TRUCK_PESADO;
         } else if (modelo.includes('van') || modelo.includes('hr') || modelo.includes('3/4') || 
                    modelo.includes('toco') || modelo.includes('truck leve') || modelo.includes('truck')) {
           consumo_usado = CONSUMO_TRUCK_LEVE;
+          consumo_arla_usado = CONSUMO_ARLA_TRUCK_LEVE;
         } else {
           consumo_usado = CONSUMO_PADRAO;
+          consumo_arla_usado = CONSUMO_ARLA_PADRAO;
         }
       }
       
-      // Calcular litros necessários: LITROS = KM ÷ Consumo
+      // CÁLCULO DIESEL: LITROS = KM ÷ Consumo
       litros_necessarios = km / consumo_usado;
-      
-      // Valor total: VALOR = LITROS × Preço do Diesel
       valor_calculado = litros_necessarios * PRECO_DIESEL;
       
-      console.log('[LINE-HALL-FUEL-REQUEST] Cálculo automático:', {
+      // CÁLCULO ARLA 32: LITROS_ARLA = KM ÷ Consumo_ARLA
+      litros_arla = km / consumo_arla_usado;
+      valor_arla = litros_arla * PRECO_ARLA;
+      
+      console.log('[LINE-HALL-FUEL-REQUEST] Cálculo DIESEL:', {
         km: km,
         tipo_veiculo: veiculo_modelo || 'não informado',
         consumo_usado,
         litros: parseFloat(litros_necessarios.toFixed(2)),
         valor_estimado: parseFloat(valor_calculado.toFixed(2))
+      });
+      
+      console.log('[LINE-HALL-FUEL-REQUEST] Cálculo ARLA 32:', {
+        km: km,
+        tipo_veiculo: veiculo_modelo || 'não informado',
+        consumo_arla_usado,
+        litros_arla: parseFloat(litros_arla.toFixed(2)),
+        valor_estimado_arla: parseFloat(valor_arla.toFixed(2))
       });
     }
 
@@ -402,10 +434,13 @@ router.post('/fuel-card-request', upload.fields([
         foto_cartao_path,
         origem_tipo,
         valor_calculado,
+        litros_diesel,
+        litros_arla,
+        valor_arla,
         status,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, NOW(), NOW())
       RETURNING *
     `;
 
@@ -428,6 +463,9 @@ router.post('/fuel-card-request', upload.fields([
       fotoCartaoPath,
       'line_hall',
       valor_calculado.toFixed(2),
+      litros_necessarios.toFixed(2),
+      litros_arla.toFixed(2),
+      valor_arla.toFixed(2),
       status
     ];
 
@@ -437,7 +475,23 @@ router.post('/fuel-card-request', upload.fields([
 
     res.json({
       success: true,
-      data: result.rows[0],
+      data: {
+        ...result.rows[0],
+        calculo_diesel: {
+          km: km_total ? parseFloat(km_total) : 0,
+          tipo_veiculo: veiculo_modelo || 'não informado',
+          consumo_usado: consumo_usado,
+          litros: parseFloat(litros_necessarios.toFixed(2)),
+          valor_estimado: parseFloat(valor_calculado.toFixed(2))
+        },
+        calculo_arla: {
+          km: km_total ? parseFloat(km_total) : 0,
+          tipo_veiculo: veiculo_modelo || 'não informado',
+          consumo_arla_usado: consumo_arla_usado,
+          litros_arla: parseFloat(litros_arla.toFixed(2)),
+          valor_estimado_arla: parseFloat(valor_arla.toFixed(2))
+        }
+      },
       message: 'Solicitação de fuel card criada com sucesso'
     });
 
