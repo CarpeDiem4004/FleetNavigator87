@@ -856,18 +856,20 @@ const LineHaulPage = () => {
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
       // Ignorar primeira linha (cabeçalho) e processar dados
+      // Planilha pode ter 6 ou 7 colunas (ATA pode estar vazia)
       const operations = [];
       for (let i = 1; i < jsonData.length; i++) {
         const row = jsonData[i];
-        if (row && row.length >= 7 && row[0]) {
+        // Aceitar linhas com pelo menos 5 colunas (até STA) e driver ID presente
+        if (row && row.length >= 5 && row[0]) {
           operations.push({
             driverId: row[0],       // [codigo]nome
             vehicleType: row[1],    // CARRETA, TRUCK
             plate: row[2],          // placas (pode ter vírgula)
             station: row[3],        // [codigo]origem
             destino: row[4],        // [codigo]destino
-            sta: row[5],            // data/hora carregamento
-            ata: row[6]             // data/hora fim
+            sta: row[5] || null,    // data/hora carregamento (pode ser número serial do Excel)
+            ata: row[6] || null     // data/hora fim (opcional)
           });
         }
       }

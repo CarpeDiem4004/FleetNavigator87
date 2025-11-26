@@ -4637,6 +4637,304 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // POST: Verificar motoristas e rotas antes de importar operações em massa
+  app.post('/api/line-hall/operations/verify-import', isAuthenticated, async (req, res) => {
+    try {
+      const { operations } = req.body;
+
+      if (!operations || !Array.isArray(operations) || operations.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Lista de operações é obrigatória'
+        });
+      }
+
+      // Buscar todos os motoristas do Line Hall
+      const driversResult = await pool.query(
+        `SELECT id, nome, cpf, codigo FROM motoristas WHERE base_id = 46`
+      );
+      const drivers = driversResult.rows;
+
+      // Buscar todas as rotas do Line Hall
+      const routesResult = await pool.query(
+        `SELECT id, codigo, origem, destino FROM line_hall_routes`
+      );
+      const routes = routesResult.rows;
+
+      // Analisar operações
+      const driversFound: any[] = [];
+      const driversNotFound: any[] = [];
+      const routesFound: any[] = [];
+      const routesNotFound: any[] = [];
+
+      const processedDrivers = new Set();
+      const processedRoutes = new Set();
+
+      for (const op of operations) {
+        // Extrair código do motorista do formato [codigo]nome
+        const driverMatch = op.driverId?.toString().match(/\[(\d+)\](.+)/);
+        if (driverMatch) {
+          const driverCode = driverMatch[1];
+          const driverName = driverMatch[2].trim();
+          const driverKey = `${driverCode}-${driverName}`;
+          
+          if (!processedDrivers.has(driverKey)) {
+            processedDrivers.add(driverKey);
+            
+            // Verificar se motorista existe pelo código
+            const existingDriver = drivers.find(d => 
+              d.codigo === driverCode || 
+              d.cpf === driverCode ||
+              d.nome?.toLowerCase() === driverName?.toLowerCase()
+            );
+            
+            if (existingDriver) {
+              driversFound.push({ codigo: driverCode, nome: driverName, id: existingDriver.id });
+            } else {
+              driversNotFound.push({ codigo: driverCode, nome: driverName });
+            }
+          }
+        }
+
+        // Extrair códigos de origem e destino
+        const originMatch = op.station?.toString().match(/\[(\d+)\](.+)/);
+        const destMatch = op.destino?.toString().match(/\[(\d+)\](.+)/);
+        
+        if (originMatch && destMatch) {
+          const routeKey = `${originMatch[1]}-${destMatch[1]}`;
+          
+          if (!processedRoutes.has(routeKey)) {
+            processedRoutes.add(routeKey);
+            
+            // Verificar se a rota existe
+            const existingRoute = routes.find(r =>
+              r.codigo === routeKey ||
+              (r.origem?.includes(originMatch[2]?.trim()) && r.destino?.includes(destMatch[2]?.trim()))
+            );
+            
+            if (existingRoute) {
+              routesFound.push({ 
+                codigo: routeKey, 
+                origem: originMatch[2].trim(), 
+                destino: destMatch[2].trim(),
+                id: existingRoute.id 
+              });
+            } else {
+              routesNotFound.push({ 
+                codigo: routeKey, 
+                origem: originMatch[2].trim(), 
+                destino: destMatch[2].trim() 
+              });
+            }
+          }
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          total: operations.length,
+          driversFound,
+          driversNotFound,
+          routesFound,
+          routesNotFound
+        }
+      });
+    } catch (error: any) {
+      console.error('Erro ao verificar importação:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao verificar importação',
+        error: error.message
+      });
+    }
+  });
+
+  // Função auxiliar para converter número serial do Excel para data
+  function excelDateToJSDate(excelDate: number): Date {
+    // Excel epoch starts at 1900-01-01 (with bug that counts 1900 as leap year)
+    const excelEpoch = new Date(1899, 11, 30);
+    const msPerDay = 24 * 60 * 60 * 1000;
+    return new Date(excelEpoch.getTime() + excelDate * msPerDay);
+  }
+
+  // POST: Importar operações em massa do Excel
+  app.post('/api/line-hall/operations/import', isAuthenticated, async (req, res) => {
+    try {
+      const { operations } = req.body;
+
+      if (!operations || !Array.isArray(operations) || operations.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Lista de operações é obrigatória'
+        });
+      }
+
+      // Buscar todos os motoristas do Line Hall
+      const driversResult = await pool.query(
+        `SELECT id, nome, cpf, codigo FROM motoristas WHERE base_id = 46`
+      );
+      const drivers = driversResult.rows;
+
+      // Buscar todas as rotas do Line Hall
+      const routesResult = await pool.query(
+        `SELECT id, codigo, origem, destino, km_total FROM line_hall_routes`
+      );
+      const routes = routesResult.rows;
+
+      const results = {
+        success: 0,
+        failed: 0,
+        errors: [] as any[],
+        created: [] as any[],
+        driversCreated: [] as any[],
+        routesCreated: [] as any[]
+      };
+
+      for (const op of operations) {
+        try {
+          // Extrair código do motorista do formato [codigo]nome
+          const driverMatch = op.driverId?.toString().match(/\[(\d+)\](.+)/);
+          if (!driverMatch) {
+            results.failed++;
+            results.errors.push({ operation: op, error: 'Formato de motorista inválido' });
+            continue;
+          }
+
+          const driverCode = driverMatch[1];
+          const driverName = driverMatch[2].trim();
+
+          // Verificar se motorista existe
+          let driver = drivers.find(d => 
+            d.codigo === driverCode || 
+            d.cpf === driverCode ||
+            d.nome?.toLowerCase() === driverName?.toLowerCase()
+          );
+
+          // Se não existe, criar automaticamente
+          if (!driver) {
+            const createDriverQuery = `
+              INSERT INTO motoristas (nome, cpf, base_id, codigo, created_at)
+              VALUES ($1, $2, 46, $3, NOW())
+              RETURNING *
+            `;
+            const newDriver = await pool.query(createDriverQuery, [
+              driverName,
+              `IMPORT-${driverCode}`,
+              driverCode
+            ]);
+            driver = newDriver.rows[0];
+            drivers.push(driver);
+            results.driversCreated.push(driver);
+          }
+
+          // Extrair códigos de origem e destino
+          const originMatch = op.station?.toString().match(/\[(\d+)\](.+)/);
+          const destMatch = op.destino?.toString().match(/\[(\d+)\](.+)/);
+
+          if (!originMatch || !destMatch) {
+            results.failed++;
+            results.errors.push({ operation: op, error: 'Formato de origem/destino inválido' });
+            continue;
+          }
+
+          const routeKey = `${originMatch[1]}-${destMatch[1]}`;
+          const originName = originMatch[2].trim();
+          const destName = destMatch[2].trim();
+
+          // Verificar se a rota existe
+          let route = routes.find(r =>
+            r.codigo === routeKey ||
+            (r.origem?.includes(originName) && r.destino?.includes(destName))
+          );
+
+          // Se não existe, criar automaticamente
+          if (!route) {
+            const createRouteQuery = `
+              INSERT INTO line_hall_routes (codigo, origem, destino, km_total, created_at)
+              VALUES ($1, $2, $3, 0, NOW())
+              RETURNING *
+            `;
+            const newRoute = await pool.query(createRouteQuery, [routeKey, originName, destName]);
+            route = newRoute.rows[0];
+            routes.push(route);
+            results.routesCreated.push(route);
+          }
+
+          // Converter data do Excel se for número
+          let dataInicio = new Date();
+          if (op.sta) {
+            if (typeof op.sta === 'number') {
+              dataInicio = excelDateToJSDate(op.sta);
+            } else if (typeof op.sta === 'string') {
+              dataInicio = new Date(op.sta);
+            }
+          }
+
+          // Determinar tipo de veículo e placas
+          const tipoVeiculo = op.vehicleType?.toUpperCase() === 'TRUCK' ? 'truck' : 'cavalo_mecanico';
+          const placas = op.plate?.toString().split(',').map((p: string) => p.trim()) || [];
+          
+          let placaTruck = null;
+          let placaCavalo = null;
+          let placaCarreta1 = null;
+          let placaCarreta2 = null;
+
+          if (tipoVeiculo === 'truck') {
+            placaTruck = placas[0] || null;
+          } else {
+            placaCavalo = placas[0] || null;
+            placaCarreta1 = placas[1] || null;
+            placaCarreta2 = placas[2] || null;
+          }
+
+          // Criar operação
+          const createOpQuery = `
+            INSERT INTO line_hall_operations 
+            (motorista_id, motorista_nome, tipo_veiculo, placa_truck, placa_cavalo, placa_carreta_1, placa_carreta_2,
+             rota_id, rota_nome, data_inicio, status, created_by, data_criacao)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'programada', 'Importação Excel', NOW())
+            RETURNING *
+          `;
+
+          const newOp = await pool.query(createOpQuery, [
+            driver.id,
+            driver.nome,
+            tipoVeiculo,
+            placaTruck,
+            placaCavalo,
+            placaCarreta1,
+            placaCarreta2,
+            route.id,
+            `${route.origem} → ${route.destino}`,
+            dataInicio
+          ]);
+
+          results.success++;
+          results.created.push(newOp.rows[0]);
+
+        } catch (opError: any) {
+          console.error('Erro ao processar operação:', opError);
+          results.failed++;
+          results.errors.push({ operation: op, error: opError.message });
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: `${results.success} operação(ões) importada(s) com sucesso, ${results.failed} falha(s)`,
+        results
+      });
+    } catch (error: any) {
+      console.error('Erro ao importar operações:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao importar operações',
+        error: error.message
+      });
+    }
+  });
+
   // Listar todas as solicitações de manutenção do Line Hall
   app.get('/api/line-hall/maintenance-requests', isAuthenticated, async (req, res) => {
     try {
