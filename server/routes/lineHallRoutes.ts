@@ -292,8 +292,12 @@ router.post('/fuel-card-request', upload.fields([
       km_total,
       horario_abastecimento,
       telefone_motorista,
+      incluir_arla,
       status = 'pendente'
     } = req.body;
+    
+    // Verificar se deve incluir ARLA no cálculo
+    const deveIncluirArla = incluir_arla === 'true' || incluir_arla === true;
 
     // Validação
     if (!motorista_id || !motorista_nome || !veiculo_placa || !rota_origem || !rota_destino) {
@@ -377,9 +381,14 @@ router.post('/fuel-card-request', upload.fields([
       litros_necessarios = km / consumo_usado;
       valor_calculado = litros_necessarios * PRECO_DIESEL;
       
-      // CÁLCULO ARLA 32: LITROS_ARLA = KM ÷ Consumo_ARLA
-      litros_arla = km / consumo_arla_usado;
-      valor_arla = litros_arla * PRECO_ARLA;
+      // CÁLCULO ARLA 32 (apenas se solicitado): LITROS_ARLA = KM ÷ Consumo_ARLA
+      if (deveIncluirArla) {
+        litros_arla = km / consumo_arla_usado;
+        valor_arla = litros_arla * PRECO_ARLA;
+      }
+      
+      // Valor total a liberar (Diesel + ARLA se selecionado)
+      const valor_total_liberado = valor_calculado + valor_arla;
       
       console.log('[LINE-HALL-FUEL-REQUEST] Cálculo DIESEL:', {
         km: km,
@@ -389,13 +398,19 @@ router.post('/fuel-card-request', upload.fields([
         valor_estimado: parseFloat(valor_calculado.toFixed(2))
       });
       
-      console.log('[LINE-HALL-FUEL-REQUEST] Cálculo ARLA 32:', {
-        km: km,
-        tipo_veiculo: veiculo_modelo || 'não informado',
-        consumo_arla_usado,
-        litros_arla: parseFloat(litros_arla.toFixed(2)),
-        valor_estimado_arla: parseFloat(valor_arla.toFixed(2))
-      });
+      console.log('[LINE-HALL-FUEL-REQUEST] Incluir ARLA:', deveIncluirArla);
+      
+      if (deveIncluirArla) {
+        console.log('[LINE-HALL-FUEL-REQUEST] Cálculo ARLA 32:', {
+          km: km,
+          tipo_veiculo: veiculo_modelo || 'não informado',
+          consumo_arla_usado,
+          litros_arla: parseFloat(litros_arla.toFixed(2)),
+          valor_estimado_arla: parseFloat(valor_arla.toFixed(2))
+        });
+      }
+      
+      console.log('[LINE-HALL-FUEL-REQUEST] VALOR TOTAL A LIBERAR:', parseFloat(valor_total_liberado.toFixed(2)));
     }
 
     // Verificar se já existe solicitação para esta operação
@@ -412,6 +427,9 @@ router.post('/fuel-card-request', upload.fields([
         });
       }
     }
+
+    // Calcular valor total a liberar (Diesel + ARLA se selecionado)
+    const valor_total_liberado = valor_calculado + valor_arla;
 
     // Inserir na tabela linehall_fuel_card_requests
     const query = `
@@ -435,12 +453,13 @@ router.post('/fuel-card-request', upload.fields([
         origem_tipo,
         valor_calculado,
         litros_diesel,
+        incluir_arla,
         litros_arla,
         valor_arla,
         status,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, NOW(), NOW())
       RETURNING *
     `;
 
@@ -462,10 +481,11 @@ router.post('/fuel-card-request', upload.fields([
       fotoPainelPath,
       fotoCartaoPath,
       'line_hall',
-      valor_calculado.toFixed(2),
+      valor_total_liberado.toFixed(2),  // Valor total (Diesel + ARLA se incluído)
       litros_necessarios.toFixed(2),
-      litros_arla.toFixed(2),
-      valor_arla.toFixed(2),
+      deveIncluirArla,
+      deveIncluirArla ? litros_arla.toFixed(2) : '0',
+      deveIncluirArla ? valor_arla.toFixed(2) : '0',
       status
     ];
 
@@ -484,15 +504,19 @@ router.post('/fuel-card-request', upload.fields([
           litros: parseFloat(litros_necessarios.toFixed(2)),
           valor_estimado: parseFloat(valor_calculado.toFixed(2))
         },
-        calculo_arla: {
+        calculo_arla: deveIncluirArla ? {
           km: km_total ? parseFloat(km_total) : 0,
           tipo_veiculo: veiculo_modelo || 'não informado',
           consumo_arla_usado: consumo_arla_usado,
           litros_arla: parseFloat(litros_arla.toFixed(2)),
           valor_estimado_arla: parseFloat(valor_arla.toFixed(2))
-        }
+        } : null,
+        incluir_arla: deveIncluirArla,
+        valor_total_liberado: parseFloat(valor_total_liberado.toFixed(2))
       },
-      message: 'Solicitação de fuel card criada com sucesso'
+      message: deveIncluirArla 
+        ? `Solicitação criada: Diesel (R$ ${valor_calculado.toFixed(2)}) + ARLA (R$ ${valor_arla.toFixed(2)}) = Total R$ ${valor_total_liberado.toFixed(2)}`
+        : `Solicitação criada: Diesel R$ ${valor_calculado.toFixed(2)}`
     });
 
   } catch (error) {

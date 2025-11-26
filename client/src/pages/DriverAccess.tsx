@@ -1203,6 +1203,7 @@ const FuelRequestModal = ({ driver, operations, existingRequests, onClose }: { d
   const [cardNumber, setCardNumber] = useState('');
   const [fuelTime, setFuelTime] = useState<'antes_17h' | 'apos_18h'>('antes_17h');
   const [cardProvider, setCardProvider] = useState<'' | 'ticket' | 'veloe'>('');
+  const [includeArla, setIncludeArla] = useState(false);
   const [painelPhoto, setPainelPhoto] = useState<File | null>(null);
   const [cartaoPhoto, setCartaoPhoto] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1318,6 +1319,7 @@ const FuelRequestModal = ({ driver, operations, existingRequests, onClose }: { d
       formData.append('horario_abastecimento', fuelTime);
       formData.append('bandeira_cartao', cardProvider);
       formData.append('telefone_motorista', phone);
+      formData.append('incluir_arla', includeArla ? 'true' : 'false');
       formData.append('status', 'pendente');
       
       if (painelPhoto) {
@@ -1527,6 +1529,47 @@ const FuelRequestModal = ({ driver, operations, existingRequests, onClose }: { d
                   <option value="veloe">Veloe</option>
                 </select>
               </div>
+
+              {/* Switch para incluir ARLA 32 */}
+              <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex-1">
+                  <Label htmlFor="includeArla" className="text-sm font-medium text-gray-700 cursor-pointer">
+                    Incluir ARLA 32?
+                  </Label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Marque se precisar abastecer ARLA junto com o diesel
+                  </p>
+                </div>
+                <div className="ml-4">
+                  <button
+                    type="button"
+                    id="includeArla"
+                    onClick={() => setIncludeArla(!includeArla)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      includeArla ? 'bg-blue-600' : 'bg-gray-300'
+                    }`}
+                    data-testid="switch-include-arla"
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        includeArla ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Mostrar cálculo estimado se ARLA selecionado */}
+              {includeArla && activeOperation?.distancia_km && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-xs text-green-700 font-medium">
+                    ✅ ARLA será calculado automaticamente
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    Estimativa: ~{(activeOperation.distancia_km / 650).toFixed(2)} litros de ARLA
+                  </p>
+                </div>
+              )}
 
               <div>
                 <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
