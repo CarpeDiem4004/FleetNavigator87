@@ -412,6 +412,16 @@ const LineHaulPage = () => {
   const [verifyResults, setVerifyResults] = useState<any>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   
+  // Estados para cadastro de motoristas não encontrados
+  const [showDriversForm, setShowDriversForm] = useState(false);
+  const [driversToCreate, setDriversToCreate] = useState<Array<{
+    codigo: string;
+    nome: string;
+    cpf: string;
+    telefone: string;
+  }>>([]);
+  const [isCreatingDrivers, setIsCreatingDrivers] = useState(false);
+  
   const [newOperation, setNewOperation] = useState<LineHaulOperation>({
     motorista_id: 0,
     motorista_nome: '',
@@ -951,6 +961,100 @@ const LineHaulPage = () => {
     setImportPreview([]);
     setImportResults(null);
     setVerifyResults(null);
+    setShowDriversForm(false);
+    setDriversToCreate([]);
+  };
+
+  // Preparar formulário de cadastro de motoristas
+  const handlePrepareDriversForm = () => {
+    if (verifyResults?.driversNotFound?.length > 0) {
+      const drivers = verifyResults.driversNotFound.map((d: any) => ({
+        codigo: d.codigo || '',
+        nome: d.nome || '',
+        cpf: '',
+        telefone: ''
+      }));
+      setDriversToCreate(drivers);
+      setShowDriversForm(true);
+    }
+  };
+
+  // Atualizar dados de um motorista no formulário
+  const handleUpdateDriverData = (index: number, field: string, value: string) => {
+    setDriversToCreate(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  // Cadastrar motoristas antes de importar
+  const handleCreateDrivers = async () => {
+    // Validar CPFs
+    const invalidDrivers = driversToCreate.filter(d => !d.cpf || d.cpf.length < 11);
+    if (invalidDrivers.length > 0) {
+      toast({
+        title: "CPF obrigatório",
+        description: `Informe o CPF de todos os motoristas (${invalidDrivers.length} faltando)`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsCreatingDrivers(true);
+    try {
+      const response = await fetch('/api/line-hall/drivers/bulk-create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ drivers: driversToCreate })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: "Motoristas cadastrados!",
+          description: `${data.created?.length || driversToCreate.length} motorista(s) cadastrado(s) com sucesso`
+        });
+        
+        // Atualizar lista de motoristas
+        await fetchDrivers();
+        
+        // Atualizar verificação para refletir os novos motoristas
+        if (importPreview.length > 0) {
+          setIsVerifying(true);
+          try {
+            const verifyResponse = await fetch('/api/line-hall/operations/verify-import', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ operations: importPreview })
+            });
+            const verifyData = await verifyResponse.json();
+            if (verifyData.success) {
+              setVerifyResults(verifyData.data);
+            }
+          } catch (err) {
+            console.error('Erro na verificação:', err);
+          } finally {
+            setIsVerifying(false);
+          }
+        }
+        
+        setShowDriversForm(false);
+        setDriversToCreate([]);
+      } else {
+        throw new Error(data.message || 'Erro ao cadastrar motoristas');
+      }
+    } catch (error: any) {
+      console.error('Erro ao cadastrar motoristas:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao cadastrar motoristas",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingDrivers(false);
+    }
   };
 
   const handleCreateOperation = async () => {
@@ -3532,11 +3636,22 @@ const LineHaulPage = () => {
                   </div>
 
                   {/* Motoristas não encontrados */}
-                  {verifyResults.driversNotFound?.length > 0 && (
+                  {verifyResults.driversNotFound?.length > 0 && !showDriversForm && (
                     <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                      <div className="flex items-center text-orange-700 mb-2">
-                        <AlertTriangle className="h-5 w-5 mr-2" />
-                        <span className="font-medium">{verifyResults.driversNotFound.length} motorista(s) NÃO cadastrado(s):</span>
+                      <div className="flex items-center justify-between text-orange-700 mb-2">
+                        <div className="flex items-center">
+                          <AlertTriangle className="h-5 w-5 mr-2" />
+                          <span className="font-medium">{verifyResults.driversNotFound.length} motorista(s) NÃO cadastrado(s):</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-orange-500 text-orange-600 hover:bg-orange-100"
+                          onClick={handlePrepareDriversForm}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Cadastrar Agora
+                        </Button>
                       </div>
                       <div className="max-h-[120px] overflow-y-auto">
                         <ul className="text-sm text-orange-600 ml-7 space-y-1">
@@ -3549,8 +3664,76 @@ const LineHaulPage = () => {
                         </ul>
                       </div>
                       <p className="text-xs text-orange-500 mt-2 ml-7">
-                        ⚠️ Serão criados automaticamente ao importar
+                        Clique em "Cadastrar Agora" para adicionar os motoristas ou serão criados automaticamente ao importar
                       </p>
+                    </div>
+                  )}
+
+                  {/* Formulário de cadastro de motoristas */}
+                  {showDriversForm && driversToCreate.length > 0 && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium text-blue-800">Cadastrar Motoristas</h4>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setShowDriversForm(false)}
+                          className="text-blue-600"
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                        {driversToCreate.map((driver, index) => (
+                          <div key={index} className="bg-white p-3 rounded-lg border border-blue-200 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-mono">[{driver.codigo}]</span>
+                              <span className="font-medium text-gray-800">{driver.nome}</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-xs text-gray-600">CPF *</Label>
+                                <Input
+                                  placeholder="000.000.000-00"
+                                  value={driver.cpf}
+                                  onChange={(e) => handleUpdateDriverData(index, 'cpf', e.target.value)}
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs text-gray-600">Telefone</Label>
+                                <Input
+                                  placeholder="(00) 00000-0000"
+                                  value={driver.telefone}
+                                  onChange={(e) => handleUpdateDriverData(index, 'telefone', e.target.value)}
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="flex justify-end mt-3">
+                        <Button
+                          onClick={handleCreateDrivers}
+                          disabled={isCreatingDrivers}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          {isCreatingDrivers ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Cadastrando...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="h-4 w-4 mr-2" />
+                              Cadastrar {driversToCreate.length} Motorista(s)
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   )}
 

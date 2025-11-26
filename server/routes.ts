@@ -5166,6 +5166,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para cadastrar motoristas em lote do Line Hall (importação)
+  app.post('/api/line-hall/drivers/bulk-create', async (req, res) => {
+    try {
+      const { drivers } = req.body;
+
+      if (!drivers || !Array.isArray(drivers) || drivers.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Lista de motoristas é obrigatória'
+        });
+      }
+
+      const created = [];
+      const errors = [];
+
+      for (const driver of drivers) {
+        try {
+          // Validar campos obrigatórios
+          if (!driver.nome || !driver.cpf) {
+            errors.push({ driver, error: 'Nome e CPF são obrigatórios' });
+            continue;
+          }
+
+          // Limpar CPF
+          const cpfLimpo = driver.cpf.replace(/\D/g, '');
+          
+          // Verificar se o CPF já existe
+          const existingQuery = await pool.query(
+            'SELECT id FROM motoristas WHERE cpf = $1',
+            [cpfLimpo]
+          );
+          
+          if (existingQuery.rows.length > 0) {
+            errors.push({ driver, error: 'CPF já cadastrado' });
+            continue;
+          }
+
+          // Inserir motorista com base_id = 46 (Line Haul)
+          const insertQuery = `
+            INSERT INTO motoristas (nome, cpf, telefone, base_id, codigo, created_at)
+            VALUES ($1, $2, $3, 46, $4, NOW())
+            RETURNING *
+          `;
+          
+          const result = await pool.query(insertQuery, [
+            driver.nome,
+            cpfLimpo,
+            driver.telefone || null,
+            driver.codigo || null
+          ]);
+          
+          created.push(result.rows[0]);
+        } catch (err: any) {
+          console.error('Erro ao cadastrar motorista:', err);
+          errors.push({ driver, error: err.message });
+        }
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: `${created.length} motorista(s) cadastrado(s) com sucesso`,
+        created,
+        errors: errors.length > 0 ? errors : undefined
+      });
+    } catch (error: any) {
+      console.error('Erro ao cadastrar motoristas em lote:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao cadastrar motoristas',
+        error: error.message
+      });
+    }
+  });
+
   // API para solicitação de recarga de cartão de combustível por motorista do Line Hall
   app.post('/api/line-hall/fuel-card-request', async (req, res) => {
     try {
