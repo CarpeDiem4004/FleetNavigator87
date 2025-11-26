@@ -846,8 +846,10 @@ const LineHaulPage = () => {
           description: data.message
         });
         
-        // Atualizar lista de operações
+        // Atualizar lista de operações E rotas
         await fetchOperations();
+        await fetchRoutes();
+        await fetchDrivers();
       } else {
         throw new Error(data.message);
       }
@@ -3460,7 +3462,7 @@ const LineHaulPage = () => {
                   {/* Sucesso */}
                   {importResults.success?.length > 0 && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <div className="flex items-center text-green-700 mb-2">
+                      <div className="flex items-center text-green-700">
                         <CheckCircle2 className="h-5 w-5 mr-2" />
                         <span className="font-medium">{importResults.success.length} operações importadas com sucesso</span>
                       </div>
@@ -3470,12 +3472,16 @@ const LineHaulPage = () => {
                   {/* Motoristas criados */}
                   {importResults.driversCreated?.length > 0 && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <div className="text-blue-700 mb-2">
+                      <div className="flex items-center text-blue-700 mb-2">
+                        <User className="h-5 w-5 mr-2" />
                         <span className="font-medium">{importResults.driversCreated.length} novos motoristas criados:</span>
                       </div>
-                      <ul className="text-sm text-blue-600">
+                      <ul className="text-sm text-blue-600 ml-7 space-y-1">
                         {importResults.driversCreated.map((d: any, i: number) => (
-                          <li key={i}>[{d.codigo}] {d.nome}</li>
+                          <li key={i} className="flex items-center">
+                            <span className="bg-blue-100 px-2 py-0.5 rounded text-xs mr-2">[{d.codigo}]</span>
+                            {d.nome}
+                          </li>
                         ))}
                       </ul>
                     </div>
@@ -3484,14 +3490,23 @@ const LineHaulPage = () => {
                   {/* Rotas criadas */}
                   {importResults.routesCreated?.length > 0 && (
                     <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                      <div className="text-purple-700 mb-2">
+                      <div className="flex items-center text-purple-700 mb-2">
+                        <Route className="h-5 w-5 mr-2" />
                         <span className="font-medium">{importResults.routesCreated.length} novas rotas criadas:</span>
                       </div>
-                      <ul className="text-sm text-purple-600">
+                      <ul className="text-sm text-purple-600 ml-7 space-y-1">
                         {importResults.routesCreated.map((r: any, i: number) => (
-                          <li key={i}>{r.nome}</li>
+                          <li key={i} className="flex items-center">
+                            <span className="bg-purple-100 px-2 py-0.5 rounded text-xs mr-2">
+                              [{r.codigo_origem}] → [{r.codigo_destino}]
+                            </span>
+                            {r.nome}
+                          </li>
                         ))}
                       </ul>
+                      <p className="text-xs text-purple-500 mt-2 ml-7">
+                        As rotas foram adicionadas às Rotas Cadastradas (km = 0, edite para calcular distância)
+                      </p>
                     </div>
                   )}
 
@@ -3502,7 +3517,7 @@ const LineHaulPage = () => {
                         <AlertCircle className="h-5 w-5 mr-2" />
                         <span className="font-medium">{importResults.errors.length} erros encontrados:</span>
                       </div>
-                      <ul className="text-sm text-red-600 max-h-[100px] overflow-y-auto">
+                      <ul className="text-sm text-red-600 max-h-[100px] overflow-y-auto ml-7">
                         {importResults.errors.map((e: any, i: number) => (
                           <li key={i}>Linha {e.row}: {e.error}</li>
                         ))}
