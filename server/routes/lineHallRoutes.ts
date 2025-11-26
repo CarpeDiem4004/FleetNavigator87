@@ -227,9 +227,12 @@ router.get('/operations', async (req, res) => {
           lho.*,
           lhr.nome_ponto_a as origem,
           lhr.nome_ponto_b as destino,
-          lhr.km_total as distancia_km
+          lhr.km_total as distancia_km,
+          m.cpf as motorista_cpf,
+          m.codigo as motorista_codigo
         FROM line_hall_operations lho
         LEFT JOIN line_hall_routes lhr ON lho.rota_id = lhr.id
+        LEFT JOIN motoristas m ON lho.motorista_id = m.id
         WHERE lho.motorista_id = $1
         ORDER BY lho.data_criacao DESC
       `;
@@ -241,9 +244,12 @@ router.get('/operations', async (req, res) => {
           lho.*,
           lhr.nome_ponto_a as origem,
           lhr.nome_ponto_b as destino,
-          lhr.km_total as distancia_km
+          lhr.km_total as distancia_km,
+          m.cpf as motorista_cpf,
+          m.codigo as motorista_codigo
         FROM line_hall_operations lho
         LEFT JOIN line_hall_routes lhr ON lho.rota_id = lhr.id
+        LEFT JOIN motoristas m ON lho.motorista_id = m.id
         ORDER BY lho.data_criacao DESC
       `;
     }

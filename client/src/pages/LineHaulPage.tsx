@@ -371,6 +371,8 @@ const LineHaulPage = () => {
     id?: number;
     motorista_id: number;
     motorista_nome: string;
+    motorista_cpf?: string;
+    motorista_codigo?: string;
     tipo_veiculo: 'truck' | 'cavalo_mecanico';
     placa_truck?: string;
     placa_cavalo?: string;
@@ -2751,6 +2753,14 @@ const LineHaulPage = () => {
                       <div>
                         <span className="text-gray-600">ID:</span>
                         <p className="font-medium text-gray-900">#{selectedOperation.motorista_id}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">CPF:</span>
+                        <p className="font-medium text-gray-900">{selectedOperation.motorista_cpf || 'Não informado'}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Código:</span>
+                        <p className="font-medium text-gray-900">{selectedOperation.motorista_codigo || 'Não informado'}</p>
                       </div>
                     </div>
                   </div>
