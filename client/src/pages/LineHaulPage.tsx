@@ -40,6 +40,59 @@ import lineHaulLayoutImage from '@assets/image_1754418722959.png';
 import { apiRequest } from '@/lib/queryClient';
 import LineHaulExecutiveDashboard from '@/components/LineHaulExecutiveDashboard';
 
+// Função para formatar data brasileira (DD/MM/YYYY HH:MM) ou qualquer outro formato
+function formatBrazilianDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return 'Não informado';
+  
+  const str = String(dateStr).trim();
+  if (!str) return 'Não informado';
+  
+  // Se já está no formato brasileiro DD/MM/YYYY (com ou sem hora)
+  const brMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2}))?/);
+  if (brMatch) {
+    const day = brMatch[1].padStart(2, '0');
+    const month = brMatch[2].padStart(2, '0');
+    const year = brMatch[3];
+    const hours = brMatch[4] ? brMatch[4].padStart(2, '0') : null;
+    const minutes = brMatch[5] ? brMatch[5].padStart(2, '0') : null;
+    
+    if (hours && minutes) {
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    }
+    return `${day}/${month}/${year}`;
+  }
+  
+  // Se é formato ISO (YYYY-MM-DD ou YYYY-MM-DDTHH:MM:SS)
+  const isoMatch = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:T(\d{1,2}):(\d{1,2}))?/);
+  if (isoMatch) {
+    const day = isoMatch[3].padStart(2, '0');
+    const month = isoMatch[2].padStart(2, '0');
+    const year = isoMatch[1];
+    const hours = isoMatch[4] ? isoMatch[4].padStart(2, '0') : null;
+    const minutes = isoMatch[5] ? isoMatch[5].padStart(2, '0') : null;
+    
+    if (hours && minutes) {
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    }
+    return `${day}/${month}/${year}`;
+  }
+  
+  // Tenta parsear como Date
+  try {
+    const date = new Date(str);
+    if (!isNaN(date.getTime())) {
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+  } catch {
+    // Ignora erro
+  }
+  
+  return str || 'Não informado';
+}
+
 interface LineHallTrip {
   id: number;
   placa_cavalo: string;
@@ -2328,7 +2381,7 @@ const LineHaulPage = () => {
                               </>
                             )}
                             <p><span className="font-medium">Rota:</span> {operation.rota_nome}</p>
-                            <p><span className="font-medium">Data Início:</span> {new Date(operation.data_inicio).toLocaleDateString('pt-BR')}</p>
+                            <p><span className="font-medium">Data Início:</span> {formatBrazilianDate(operation.data_inicio)}</p>
                             {operation.status === 'no_show' && operation.justificativa_no_show && (
                               <p><span className="font-medium">Justificativa No Show:</span> {operation.justificativa_no_show}</p>
                             )}
@@ -2775,7 +2828,7 @@ const LineHaulPage = () => {
                         <div>
                           <span className="text-gray-600">Data Início:</span>
                           <p className="font-medium text-gray-900">
-                            {new Date(selectedOperation.data_inicio).toLocaleDateString('pt-BR')}
+                            {formatBrazilianDate(selectedOperation.data_inicio)}
                           </p>
                         </div>
                       </div>

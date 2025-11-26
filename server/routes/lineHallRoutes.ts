@@ -456,6 +456,61 @@ function excelSerialToDateTime(serial: number): string {
   return `${day}/${month}/${year} ${hours}:${minutes}`;
 }
 
+// Função para processar data de diferentes formatos
+function parseExcelDate(value: any): string | null {
+  if (!value || value === '' || value === null || value === undefined) {
+    return null;
+  }
+  
+  // Se for número (serial do Excel)
+  if (typeof value === 'number') {
+    return excelSerialToDateTime(value);
+  }
+  
+  // Se já for uma data JavaScript
+  if (value instanceof Date) {
+    const day = String(value.getDate()).padStart(2, '0');
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const year = value.getFullYear();
+    const hours = String(value.getHours()).padStart(2, '0');
+    const minutes = String(value.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  }
+  
+  // Se for string, tentar parsear
+  if (typeof value === 'string') {
+    const str = value.trim();
+    if (!str) return null;
+    
+    // Formato DD/MM/YYYY HH:MM ou DD/MM/YYYY
+    const brMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2}))?$/);
+    if (brMatch) {
+      const day = brMatch[1].padStart(2, '0');
+      const month = brMatch[2].padStart(2, '0');
+      const year = brMatch[3];
+      const hours = (brMatch[4] || '00').padStart(2, '0');
+      const minutes = (brMatch[5] || '00').padStart(2, '0');
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    }
+    
+    // Formato YYYY-MM-DD ou ISO
+    const isoMatch = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:T(\d{1,2}):(\d{1,2}))?/);
+    if (isoMatch) {
+      const day = isoMatch[3].padStart(2, '0');
+      const month = isoMatch[2].padStart(2, '0');
+      const year = isoMatch[1];
+      const hours = (isoMatch[4] || '00').padStart(2, '0');
+      const minutes = (isoMatch[5] || '00').padStart(2, '0');
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    }
+    
+    // Retorna como estava se não conseguir parsear
+    return str;
+  }
+  
+  return null;
+}
+
 // Função para extrair código entre colchetes
 function extractCode(text: string): { code: string; name: string } | null {
   if (!text) return null;
@@ -603,9 +658,14 @@ router.post('/operations/import', async (req, res) => {
           }
         }
 
-        // Converter datas do Excel
-        const dataInicio = typeof op.sta === 'number' ? excelSerialToDateTime(op.sta) : op.sta;
-        const dataFim = typeof op.ata === 'number' ? excelSerialToDateTime(op.ata) : op.ata;
+        // Converter datas do Excel usando nova função robusta
+        const dataInicio = parseExcelDate(op.sta);
+        const dataFim = parseExcelDate(op.ata);
+        
+        // Determinar status baseado na presença de ATA (data fim)
+        const operationStatus = dataFim ? 'finalizada' : 'em_andamento';
+        
+        console.log(`[LINE-HALL-IMPORT] Datas: STA=${op.sta} -> ${dataInicio}, ATA=${op.ata} -> ${dataFim}, Status=${operationStatus}`);
 
         // Criar a operação
         const insertResult = await pool.query(`
@@ -627,7 +687,7 @@ router.post('/operations/import', async (req, res) => {
           `${rota.nome_ponto_a} → ${rota.nome_ponto_b}`,
           dataInicio,
           dataFim,
-          'finalizada', // Status finalizada pois tem ATA
+          operationStatus,
           'IMPORT_EXCEL'
         ]);
 
