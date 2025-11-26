@@ -113,8 +113,11 @@ const DriversPage: React.FC = () => {
     const fetchBases = async () => {
       try {
         const response = await apiRequest('GET', '/api/bases');
-        const data = await response.json();
-        setBases(Array.isArray(data) ? data : []);
+        const result = await response.json();
+        // A API retorna {success: true, data: [...]}
+        const basesData = result.data || result;
+        console.log('Bases carregadas:', basesData?.length || 0);
+        setBases(Array.isArray(basesData) ? basesData : []);
       } catch (error) {
         console.error('Erro ao buscar bases:', error);
         toast({
