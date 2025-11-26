@@ -485,22 +485,20 @@ const DriversPage: React.FC = () => {
                     </Select>
                   </div>
                   
-                  {/* Código do Motorista - Apenas para Line Haul (base_id = 46) */}
-                  {form.base_id === '46' && (
-                    <div className="space-y-2">
-                      <Label htmlFor="codigo">Código do Motorista</Label>
-                      <Input
-                        id="codigo"
-                        name="codigo"
-                        placeholder="Ex: LH001, MOT-001"
-                        value={form.codigo}
-                        onChange={handleChange}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Código único para identificação do motorista Line Haul
-                      </p>
-                    </div>
-                  )}
+                  {/* Código do Motorista */}
+                  <div className="space-y-2">
+                    <Label htmlFor="codigo">Código do Motorista</Label>
+                    <Input
+                      id="codigo"
+                      name="codigo"
+                      placeholder="Ex: 821105"
+                      value={form.codigo}
+                      onChange={handleChange}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Código numérico para identificação (usado na importação em massa)
+                    </p>
+                  </div>
                 </CardContent>
                 
                 <CardFooter className="flex justify-end space-x-2">
