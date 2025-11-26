@@ -317,35 +317,52 @@ router.post('/fuel-card-request', upload.fields([
     const fotoPainelPath = files?.foto_painel?.[0]?.path || null;
     const fotoCartaoPath = files?.foto_cartao?.[0]?.path || null;
 
-    // CÁLCULO AUTOMÁTICO DO VALOR
-    let valor_calculado = 0;
+    // CÁLCULO AUTOMÁTICO DO VALOR - PARÂMETROS OFICIAIS
+    // Consumo Médio Aproximado por Tipo (km/litro)
+    const CONSUMO_TRUCK_LEVE = 4.0;   // vans, HR, 3/4, toco leve
+    const CONSUMO_TRUCK_PESADO = 3.2; // truck 6x2
+    const CONSUMO_CARRETA = 2.8;      // carreta simples
+    const CONSUMO_RODOTREM = 2.3;     // carreta dupla / bitrem / rodotrem
+    const CONSUMO_PADRAO = 3.0;       // quando o tipo do veículo não for informado
+    const PRECO_DIESEL = 6.50;        // preço do diesel por litro
     
-    if (km_total && veiculo_modelo) {
+    let valor_calculado = 0;
+    let litros_necessarios = 0;
+    let consumo_usado = CONSUMO_PADRAO;
+    
+    if (km_total) {
       const km = parseFloat(km_total);
-      const modelo = veiculo_modelo.toLowerCase();
       
-      // Consumo médio por tipo de veículo
-      let consumo_km_por_litro = 4; // Padrão: truck
-      if (modelo.includes('carreta') || modelo.includes('carretao')) {
-        consumo_km_por_litro = 2.5;
+      // Determinar consumo baseado no tipo do veículo
+      if (veiculo_modelo) {
+        const modelo = veiculo_modelo.toLowerCase();
+        
+        if (modelo.includes('rodotrem') || modelo.includes('bitrem') || modelo.includes('carreta dupla')) {
+          consumo_usado = CONSUMO_RODOTREM;
+        } else if (modelo.includes('carreta') || modelo.includes('carretao')) {
+          consumo_usado = CONSUMO_CARRETA;
+        } else if (modelo.includes('6x2') || modelo.includes('truck pesado') || modelo.includes('pesado')) {
+          consumo_usado = CONSUMO_TRUCK_PESADO;
+        } else if (modelo.includes('van') || modelo.includes('hr') || modelo.includes('3/4') || 
+                   modelo.includes('toco') || modelo.includes('truck leve') || modelo.includes('truck')) {
+          consumo_usado = CONSUMO_TRUCK_LEVE;
+        } else {
+          consumo_usado = CONSUMO_PADRAO;
+        }
       }
       
-      // Calcular litros necessários
-      const litros_necessarios = km / consumo_km_por_litro;
+      // Calcular litros necessários: LITROS = KM ÷ Consumo
+      litros_necessarios = km / consumo_usado;
       
-      // Preço médio do diesel (pode vir de configuração futura)
-      const preco_diesel = 6.50;
-      
-      // Valor total
-      valor_calculado = litros_necessarios * preco_diesel;
+      // Valor total: VALOR = LITROS × Preço do Diesel
+      valor_calculado = litros_necessarios * PRECO_DIESEL;
       
       console.log('[LINE-HALL-FUEL-REQUEST] Cálculo automático:', {
-        km_total: km,
-        modelo: veiculo_modelo,
-        consumo_km_por_litro,
-        litros_necessarios: litros_necessarios.toFixed(2),
-        preco_diesel,
-        valor_calculado: valor_calculado.toFixed(2)
+        km: km,
+        tipo_veiculo: veiculo_modelo || 'não informado',
+        consumo_usado,
+        litros: parseFloat(litros_necessarios.toFixed(2)),
+        valor_estimado: parseFloat(valor_calculado.toFixed(2))
       });
     }
 
