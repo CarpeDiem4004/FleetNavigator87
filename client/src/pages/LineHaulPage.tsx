@@ -31,6 +31,7 @@ import {
   Upload,
   FileSpreadsheet,
   AlertCircle,
+  AlertTriangle,
   CheckCircle2
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -408,6 +409,8 @@ const LineHaulPage = () => {
   const [importPreview, setImportPreview] = useState<any[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const [importResults, setImportResults] = useState<any>(null);
+  const [verifyResults, setVerifyResults] = useState<any>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
   
   const [newOperation, setNewOperation] = useState<LineHaulOperation>({
     motorista_id: 0,
@@ -833,6 +836,7 @@ const LineHaulPage = () => {
 
     setImportFile(file);
     setImportResults(null);
+    setVerifyResults(null);
 
     try {
       const data = await file.arrayBuffer();
@@ -859,6 +863,27 @@ const LineHaulPage = () => {
       }
 
       setImportPreview(operations);
+      
+      // Verificar motoristas e rotas automaticamente
+      if (operations.length > 0) {
+        setIsVerifying(true);
+        try {
+          const verifyResponse = await fetch('/api/line-hall/operations/verify-import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ operations })
+          });
+          const verifyData = await verifyResponse.json();
+          if (verifyData.success) {
+            setVerifyResults(verifyData.data);
+          }
+        } catch (err) {
+          console.error('Erro na verificação:', err);
+        } finally {
+          setIsVerifying(false);
+        }
+      }
+      
       toast({
         title: "Arquivo carregado",
         description: `${operations.length} operações encontradas para importar`
@@ -925,6 +950,7 @@ const LineHaulPage = () => {
     setImportFile(null);
     setImportPreview([]);
     setImportResults(null);
+    setVerifyResults(null);
   };
 
   const handleCreateOperation = async () => {
@@ -3476,6 +3502,94 @@ const LineHaulPage = () => {
                   </p>
                 </label>
               </div>
+
+              {/* Verificação prévia - Motoristas e Rotas não encontrados */}
+              {isVerifying && (
+                <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2 text-blue-500" />
+                  <span className="text-gray-600">Verificando motoristas e rotas...</span>
+                </div>
+              )}
+
+              {verifyResults && !importResults && (
+                <div className="space-y-3">
+                  {/* Resumo da verificação */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                      <p className="text-xs text-blue-600 font-medium">MOTORISTAS</p>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-green-600 font-bold">{verifyResults.summary?.driversOk || 0} cadastrados</span>
+                        <span className="text-orange-600 font-bold">{verifyResults.summary?.driversNew || 0} novos</span>
+                      </div>
+                    </div>
+                    <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                      <p className="text-xs text-purple-600 font-medium">ROTAS</p>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-green-600 font-bold">{verifyResults.summary?.routesOk || 0} cadastradas</span>
+                        <span className="text-orange-600 font-bold">{verifyResults.summary?.routesNew || 0} novas</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Motoristas não encontrados */}
+                  {verifyResults.driversNotFound?.length > 0 && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                      <div className="flex items-center text-orange-700 mb-2">
+                        <AlertTriangle className="h-5 w-5 mr-2" />
+                        <span className="font-medium">{verifyResults.driversNotFound.length} motorista(s) NÃO cadastrado(s):</span>
+                      </div>
+                      <div className="max-h-[120px] overflow-y-auto">
+                        <ul className="text-sm text-orange-600 ml-7 space-y-1">
+                          {verifyResults.driversNotFound.map((d: any, i: number) => (
+                            <li key={i} className="flex items-center">
+                              <span className="bg-orange-100 px-2 py-0.5 rounded text-xs mr-2 font-mono">[{d.codigo}]</span>
+                              {d.nome}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <p className="text-xs text-orange-500 mt-2 ml-7">
+                        ⚠️ Serão criados automaticamente ao importar
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Rotas não encontradas */}
+                  {verifyResults.routesNotFound?.length > 0 && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                      <div className="flex items-center text-amber-700 mb-2">
+                        <AlertTriangle className="h-5 w-5 mr-2" />
+                        <span className="font-medium">{verifyResults.routesNotFound.length} rota(s) NÃO cadastrada(s):</span>
+                      </div>
+                      <div className="max-h-[120px] overflow-y-auto">
+                        <ul className="text-sm text-amber-600 ml-7 space-y-1">
+                          {verifyResults.routesNotFound.map((r: any, i: number) => (
+                            <li key={i} className="flex items-center">
+                              <span className="bg-amber-100 px-2 py-0.5 rounded text-xs mr-2 font-mono">
+                                [{r.codigo_origem}] → [{r.codigo_destino}]
+                              </span>
+                              {r.origem_nome} → {r.destino_nome}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <p className="text-xs text-amber-500 mt-2 ml-7">
+                        ⚠️ Serão criadas automaticamente ao importar (km = 0)
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Tudo OK */}
+                  {verifyResults.driversNotFound?.length === 0 && verifyResults.routesNotFound?.length === 0 && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="flex items-center text-green-700">
+                        <CheckCircle2 className="h-5 w-5 mr-2" />
+                        <span className="font-medium">Todos os motoristas e rotas já estão cadastrados!</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Preview das operações */}
               {importPreview.length > 0 && (

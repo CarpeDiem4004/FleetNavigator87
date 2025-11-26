@@ -625,6 +625,112 @@ function extractCode(text: string): { code: string; name: string } | null {
   return null;
 }
 
+// Rota para verificar motoristas e rotas antes da importação
+router.post('/operations/verify-import', async (req, res) => {
+  console.log('[LINE-HALL-VERIFY] Verificando dados antes da importação');
+  
+  try {
+    const { operations } = req.body;
+    
+    if (!operations || !Array.isArray(operations) || operations.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nenhuma operação para verificar'
+      });
+    }
+
+    const driversNotFound: any[] = [];
+    const routesNotFound: any[] = [];
+    const driversFound: any[] = [];
+    const routesFound: any[] = [];
+    const uniqueDrivers = new Set<string>();
+    const uniqueRoutes = new Set<string>();
+
+    for (const op of operations) {
+      // Verificar motorista
+      const driverInfo = extractCode(op.driverId);
+      if (driverInfo && !uniqueDrivers.has(driverInfo.code)) {
+        uniqueDrivers.add(driverInfo.code);
+        
+        const motoristaQuery = await pool.query(
+          'SELECT id, nome, codigo FROM motoristas WHERE codigo = $1',
+          [driverInfo.code]
+        );
+        
+        if (motoristaQuery.rows.length === 0) {
+          driversNotFound.push({
+            codigo: driverInfo.code,
+            nome: driverInfo.name
+          });
+        } else {
+          driversFound.push({
+            codigo: driverInfo.code,
+            nome: motoristaQuery.rows[0].nome,
+            id: motoristaQuery.rows[0].id
+          });
+        }
+      }
+
+      // Verificar rota
+      const originInfo = extractCode(op.station);
+      const destInfo = extractCode(op.destino);
+      if (originInfo && destInfo) {
+        const routeKey = `${originInfo.code}-${destInfo.code}`;
+        if (!uniqueRoutes.has(routeKey)) {
+          uniqueRoutes.add(routeKey);
+          
+          const rotaQuery = await pool.query(
+            'SELECT id, nome_ponto_a, nome_ponto_b FROM line_hall_routes WHERE codigo_origem = $1 AND codigo_destino = $2',
+            [originInfo.code, destInfo.code]
+          );
+          
+          if (rotaQuery.rows.length === 0) {
+            routesNotFound.push({
+              codigo_origem: originInfo.code,
+              codigo_destino: destInfo.code,
+              origem_nome: originInfo.name,
+              destino_nome: destInfo.name
+            });
+          } else {
+            routesFound.push({
+              codigo_origem: originInfo.code,
+              codigo_destino: destInfo.code,
+              origem_nome: rotaQuery.rows[0].nome_ponto_a,
+              destino_nome: rotaQuery.rows[0].nome_ponto_b,
+              id: rotaQuery.rows[0].id
+            });
+          }
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        totalOperations: operations.length,
+        driversNotFound,
+        routesNotFound,
+        driversFound,
+        routesFound,
+        summary: {
+          driversOk: driversFound.length,
+          driversNew: driversNotFound.length,
+          routesOk: routesFound.length,
+          routesNew: routesNotFound.length
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('[LINE-HALL-VERIFY] Erro:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao verificar dados',
+      error: String(error)
+    });
+  }
+});
+
 // Rota para importação em massa de operações
 router.post('/operations/import', async (req, res) => {
   console.log('[LINE-HALL-IMPORT] Iniciando importação em massa');
