@@ -34,6 +34,10 @@ interface LineHallFuelRequest {
   km_total: number;
   horario_abastecimento: string;
   valor_calculado: string;
+  litros_diesel?: string;
+  incluir_arla?: boolean;
+  litros_arla?: string;
+  valor_arla?: string;
   cartao_combustivel?: string;
 }
 
@@ -136,13 +140,29 @@ const LineHallFuelCardRequests: React.FC = () => {
         'rejeitada': '❌ REJEITADA'
       };
 
+      // Calcular valores separados
+      const valorTotal = parseFloat(request.valor_calculado);
+      const valorArla = request.valor_arla ? parseFloat(request.valor_arla) : 0;
+      const valorDiesel = request.incluir_arla ? valorTotal - valorArla : valorTotal;
+      
+      // Construir detalhes dos valores
+      let valoresDetalhados = `💰 Diesel: R$ ${valorDiesel.toFixed(2)}`;
+      if (request.incluir_arla && valorArla > 0) {
+        valoresDetalhados += `\n💧 ARLA 32: R$ ${valorArla.toFixed(2)}`;
+        valoresDetalhados += `\n━━━━━━━━━━━━━━━━\n💵 TOTAL: R$ ${valorTotal.toFixed(2)}`;
+      } else {
+        valoresDetalhados += `\n💵 TOTAL: R$ ${valorTotal.toFixed(2)}`;
+      }
+
       const message = `🚛 ATUALIZAÇÃO - Solicitação de Cartão Combustível
 
 Status: ${statusMessages[status] || status.toUpperCase()}
 Motorista: ${request.motorista_nome}
 Veículo: ${request.veiculo_placa}
 Rota: ${request.rota_origem} → ${request.rota_destino}
-Valor: R$ ${request.valor_calculado}
+Km: ${request.km_total} km
+
+${valoresDetalhados}
 
 ${status === 'aprovada' ? '✅ Sua solicitação foi APROVADA! Você pode prosseguir com o abastecimento.' : 
   status === 'analisando' ? '⏳ Sua solicitação está sendo ANALISADA. Aguarde retorno.' : 
@@ -406,9 +426,45 @@ ${new Date().toLocaleString('pt-BR')}`;
                           <span className="font-medium text-gray-600">Quilometragem:</span>
                           <p>{request.km_total} km</p>
                         </div>
-                        <div>
-                          <span className="font-medium text-gray-600">Valor Calculado:</span>
-                          <p className="text-green-600 font-semibold">R$ {request.valor_calculado}</p>
+                        <div className="col-span-full bg-gray-50 p-3 rounded-lg border">
+                          <span className="font-medium text-gray-600 block mb-2">Valores Calculados:</span>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div>
+                              <span className="text-xs text-gray-500">Diesel</span>
+                              <p className="text-blue-600 font-semibold">
+                                {request.litros_diesel ? `${parseFloat(request.litros_diesel).toFixed(1)}L` : '-'}
+                              </p>
+                              <p className="text-sm text-gray-700">
+                                R$ {request.incluir_arla && request.valor_arla 
+                                  ? (parseFloat(request.valor_calculado) - parseFloat(request.valor_arla)).toFixed(2)
+                                  : request.valor_calculado}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-xs text-gray-500">ARLA 32</span>
+                              {request.incluir_arla ? (
+                                <>
+                                  <p className="text-purple-600 font-semibold">
+                                    {request.litros_arla ? `${parseFloat(request.litros_arla).toFixed(1)}L` : '-'}
+                                  </p>
+                                  <p className="text-sm text-gray-700">
+                                    R$ {request.valor_arla ? parseFloat(request.valor_arla).toFixed(2) : '0.00'}
+                                  </p>
+                                </>
+                              ) : (
+                                <p className="text-gray-400 text-sm">Não solicitado</p>
+                              )}
+                            </div>
+                            <div className="col-span-2 border-l pl-3">
+                              <span className="text-xs text-gray-500">TOTAL A LIBERAR</span>
+                              <p className="text-green-600 font-bold text-lg">
+                                R$ {parseFloat(request.valor_calculado).toFixed(2)}
+                              </p>
+                              {request.incluir_arla && (
+                                <span className="text-xs text-gray-500">(Diesel + ARLA)</span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                         <div>
                           <span className="font-medium text-gray-600">Horário de Abastecimento:</span>
