@@ -662,8 +662,34 @@ router.post('/operations/import', async (req, res) => {
         const dataInicio = parseExcelDate(op.sta);
         const dataFim = parseExcelDate(op.ata);
         
-        // Determinar status baseado na presença de ATA (data fim)
-        const operationStatus = dataFim ? 'finalizada' : 'em_andamento';
+        // Determinar status:
+        // - Se não tem ATA: em_andamento
+        // - Se tem ATA mas é data futura: em_andamento (viagem programada)
+        // - Se tem ATA e é data passada ou hoje: finalizada
+        let operationStatus = 'em_andamento';
+        
+        if (dataFim) {
+          // Parsear a data de fim para verificar se já passou
+          const now = new Date();
+          let endDate: Date | null = null;
+          
+          // Tentar parsear formato brasileiro (DD/MM/YYYY HH:MM)
+          const brMatch = dataFim.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2})$/);
+          if (brMatch) {
+            endDate = new Date(
+              parseInt(brMatch[3]), // ano
+              parseInt(brMatch[2]) - 1, // mês (0-indexado)
+              parseInt(brMatch[1]), // dia
+              parseInt(brMatch[4]), // hora
+              parseInt(brMatch[5])  // minuto
+            );
+          }
+          
+          // Se conseguiu parsear e a data já passou, marcar como finalizada
+          if (endDate && endDate <= now) {
+            operationStatus = 'finalizada';
+          }
+        }
         
         console.log(`[LINE-HALL-IMPORT] Datas: STA=${op.sta} -> ${dataInicio}, ATA=${op.ata} -> ${dataFim}, Status=${operationStatus}`);
 
