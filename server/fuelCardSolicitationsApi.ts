@@ -1006,7 +1006,11 @@ export async function createLineHallFuelCardRequest(req: Request, res: Response)
       horario_solicitacao,
       km_total,
       horario_abastecimento,
-      telefone_motorista
+      telefone_motorista,
+      operacao_id,
+      numero_cartao,
+      bandeira_cartao,
+      incluir_arla
     } = req.body;
 
     if (!motorista_nome || !veiculo_placa || !km_total) {
@@ -1068,20 +1072,28 @@ export async function createLineHallFuelCardRequest(req: Request, res: Response)
     const valorCalculado = litrosNecessarios * 6.50;
 
     // Inserir na tabela Line Hall (usando valores padrão para data/hora)
+    // IMPORTANTE: operacao_id vincula a solicitação a uma operação específica
+    // Isso permite que a mesma rota seja repetida em dias diferentes sem conflito
     const query = `
       INSERT INTO linehall_fuel_card_requests (
-        motorista_nome, motorista_cpf, veiculo_placa, veiculo_modelo,
+        motorista_id, motorista_nome, motorista_cpf, veiculo_placa, veiculo_modelo,
         rota_origem, rota_destino, km_total, horario_abastecimento, 
-        telefone_motorista, valor_calculado, status
+        telefone_motorista, valor_calculado, status, operacao_id,
+        numero_cartao, bandeira_cartao, incluir_arla
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pendente')
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pendente', $12, $13, $14, $15)
       RETURNING *
     `;
 
     const values = [
+      motorista_id || null,
       motorista_nome, motorista_cpf, veiculo_placa, veiculo_modelo,
       rota_origem, rota_destino, km_total, horario_abastecimento, 
-      telefone_motorista, parseFloat(valorCalculado.toFixed(2))
+      telefone_motorista, parseFloat(valorCalculado.toFixed(2)),
+      operacao_id || null,
+      numero_cartao || null,
+      bandeira_cartao || null,
+      incluir_arla || false
     ];
 
     const result = await pool.query(query, values);

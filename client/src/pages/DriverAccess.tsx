@@ -1220,18 +1220,23 @@ const FuelRequestModal = ({ driver, operations, existingRequests, onClose }: { d
   // Pegar a única operação ativa (se existir)
   const activeOperation = canRequestFuel ? activeOperations[0] : null;
   
-  // Verificar se já existe solicitação para esta operação (pelo ID da operação)
+  // Verificar se já existe solicitação PENDENTE para esta operação (pelo ID da operação)
+  // IMPORTANTE: Só bloqueia se for a MESMA operação (mesmo ID) E status pendente
   const hasExistingRequestForRoute = existingRequests.some(req => {
+    // Só considera solicitações PENDENTES
+    if (req.status !== 'pendente') {
+      return false;
+    }
+    
     // Verificar pelo ID da operação (mais confiável)
+    // Cada operação tem ID único, mesmo que seja a mesma rota em dias diferentes
     if (activeOperation?.id && req.operacao_id) {
       return req.operacao_id === activeOperation.id;
     }
-    // Fallback: verificar pela placa e rota para solicitações antigas
-    return (
-      req.veiculo_placa === (activeOperation?.placa_truck || activeOperation?.placa_cavalo) &&
-      req.rota_origem === activeOperation?.origem &&
-      req.rota_destino === activeOperation?.destino
-    );
+    
+    // Fallback apenas para solicitações antigas sem operacao_id
+    // Não usa mais a comparação por rota porque rotas se repetem
+    return false;
   });
 
   // Pegar a placa do veículo da operação
