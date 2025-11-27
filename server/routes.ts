@@ -4890,12 +4890,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             placaCarreta2 = placas[2] || null;
           }
 
+          // Detectar empresa (padrão: mercado_livre)
+          let empresa = 'mercado_livre';
+          if (op.empresa) {
+            const empresaValue = op.empresa.toString().toLowerCase().trim();
+            if (empresaValue.includes('shopee')) {
+              empresa = 'shopee';
+            }
+          }
+
           // Criar operação
           const createOpQuery = `
             INSERT INTO line_hall_operations 
             (motorista_id, motorista_nome, tipo_veiculo, placa_truck, placa_cavalo, placa_carreta_1, placa_carreta_2,
-             rota_id, rota_nome, data_inicio, status, created_by, data_criacao)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'programada', 'Importação Excel', NOW())
+             rota_id, rota_nome, data_inicio, status, created_by, data_criacao, empresa)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'programada', 'Importação Excel', NOW(), $11)
             RETURNING *
           `;
 
@@ -4909,7 +4918,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             placaCarreta2,
             route.id,
             `${route.origem} → ${route.destino}`,
-            dataInicio
+            dataInicio,
+            empresa
           ]);
 
           results.success++;

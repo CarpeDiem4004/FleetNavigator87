@@ -857,12 +857,23 @@ const LineHaulPage = () => {
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
       // Ignorar primeira linha (cabeçalho) e processar dados
-      // Planilha pode ter 6 ou 7 colunas (ATA pode estar vazia)
+      // Planilha pode ter 6, 7 ou 8 colunas (ATA e Empresa podem estar vazias)
       const operations = [];
       for (let i = 1; i < jsonData.length; i++) {
         const row = jsonData[i];
         // Aceitar linhas com pelo menos 5 colunas (até STA) e driver ID presente
         if (row && row.length >= 5 && row[0]) {
+          // Detectar empresa da coluna 8 (índice 7)
+          let empresa = 'mercado_livre';
+          if (row[7]) {
+            const empresaValue = row[7].toString().toLowerCase().trim();
+            if (empresaValue.includes('shopee')) {
+              empresa = 'shopee';
+            } else if (empresaValue.includes('mercado') || empresaValue.includes('meli')) {
+              empresa = 'mercado_livre';
+            }
+          }
+          
           operations.push({
             driverId: row[0],       // [codigo]nome
             vehicleType: row[1],    // CARRETA, TRUCK
@@ -870,7 +881,8 @@ const LineHaulPage = () => {
             station: row[3],        // [codigo]origem
             destino: row[4],        // [codigo]destino
             sta: row[5] || null,    // data/hora carregamento (pode ser número serial do Excel)
-            ata: row[6] || null     // data/hora fim (opcional)
+            ata: row[6] || null,    // data/hora fim (opcional)
+            empresa: empresa        // mercado_livre ou shopee
           });
         }
       }
@@ -3601,9 +3613,50 @@ const LineHaulPage = () => {
             </DialogHeader>
 
             <div className="space-y-4 py-4">
-              {/* Instruções do formato */}
+              {/* Instruções do formato e botão de download */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-medium text-blue-800 mb-2">Formato esperado da planilha:</h4>
+                <div className="flex justify-between items-start mb-3">
+                  <h4 className="font-medium text-blue-800">Formato esperado da planilha:</h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-white border-blue-400 text-blue-600 hover:bg-blue-50"
+                    onClick={() => {
+                      const headers = [
+                        'Driver ID (Motorista)',
+                        'Vehicle (tipo)',
+                        'Vehicle Plate Number (Placa)',
+                        'Station (inicio)',
+                        'DESTINO (fim)',
+                        'STA (data carregamento)',
+                        'ATA (data fim)',
+                        'Empresa'
+                      ];
+                      const exampleData = [
+                        '[123456]João da Silva',
+                        'CARRETA',
+                        'ABC1234,XYZ5678',
+                        '[7331]SoC_SP_Guarulhos',
+                        '[6704]SoC_SP_Cravinhos',
+                        '27/11/2025 08:00',
+                        '27/11/2025 18:00',
+                        'mercado_livre'
+                      ];
+                      const ws = XLSX.utils.aoa_to_sheet([headers, exampleData]);
+                      ws['!cols'] = headers.map(() => ({ wch: 25 }));
+                      const wb = XLSX.utils.book_new();
+                      XLSX.utils.book_append_sheet(wb, ws, 'Modelo');
+                      XLSX.writeFile(wb, 'modelo_importacao_operacoes.xlsx');
+                      toast({
+                        title: "Modelo baixado!",
+                        description: "Preencha o modelo e faça upload"
+                      });
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-1" />
+                    Baixar Modelo
+                  </Button>
+                </div>
                 <ul className="text-sm text-blue-700 space-y-1">
                   <li><strong>Driver ID:</strong> [CODIGO]Nome do Motorista</li>
                   <li><strong>Vehicle (tipo):</strong> CARRETA ou TRUCK</li>
@@ -3611,7 +3664,8 @@ const LineHaulPage = () => {
                   <li><strong>Station:</strong> [CODIGO]Nome da Origem</li>
                   <li><strong>DESTINO:</strong> [CODIGO]Nome do Destino</li>
                   <li><strong>STA:</strong> Data/hora de carregamento</li>
-                  <li><strong>ATA:</strong> Data/hora de fim</li>
+                  <li><strong>ATA:</strong> Data/hora de fim (opcional)</li>
+                  <li><strong>Empresa:</strong> <span className="bg-yellow-100 px-1 rounded">mercado_livre</span> ou <span className="bg-orange-100 px-1 rounded">shopee</span></li>
                 </ul>
               </div>
 
