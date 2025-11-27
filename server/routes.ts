@@ -4525,16 +4525,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         observacoes,
         status,
         justificativa_no_show,
-        created_by
+        created_by,
+        empresa
       } = req.body;
 
       const query = `
         INSERT INTO line_hall_operations (
           motorista_id, motorista_nome, tipo_veiculo, placa_truck, placa_cavalo,
           placa_carreta_1, placa_carreta_2, rota_id, rota_nome, data_inicio,
-          observacoes, status, justificativa_no_show, created_by
+          observacoes, status, justificativa_no_show, created_by, empresa
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         RETURNING *
       `;
 
@@ -4552,7 +4553,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         observacoes || null,
         status || 'programada',
         justificativa_no_show || null,
-        created_by || 'Sistema'
+        created_by || 'Sistema',
+        empresa || 'mercado_livre'
       ]);
 
       return res.status(200).json({

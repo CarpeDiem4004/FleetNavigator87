@@ -435,7 +435,8 @@ const LineHaulPage = () => {
     data_inicio: new Date().toISOString().split('T')[0],
     observacoes: '',
     status: 'finalizada',
-    justificativa_no_show: ''
+    justificativa_no_show: '',
+    empresa: 'mercado_livre'
   });
 
   useEffect(() => {
@@ -2606,7 +2607,6 @@ const LineHaulPage = () => {
                       setNewOperation(prev => ({ 
                         ...prev, 
                         tipo_veiculo: value,
-                        // Limpar campos quando mudar tipo
                         placa_truck: '',
                         placa_cavalo: '',
                         placa_carreta_1: '',
@@ -2623,6 +2623,33 @@ const LineHaulPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              {/* Seleção de Empresa */}
+              <div className="space-y-2">
+                <Label htmlFor="empresa">Empresa *</Label>
+                <Select 
+                  value={newOperation.empresa || 'mercado_livre'} 
+                  onValueChange={(value) => setNewOperation(prev => ({ ...prev, empresa: value }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione a empresa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mercado_livre">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                        Mercado Livre
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="shopee">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-orange-500" />
+                        Shopee
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
               {/* Campos condicionais baseado no tipo de veículo */}
