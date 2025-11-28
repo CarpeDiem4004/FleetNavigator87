@@ -23,7 +23,8 @@ import {
   AlertTriangle,
   Edit,
   Save,
-  X
+  X,
+  Plus
 } from 'lucide-react';
 import {
   Dialog,
@@ -187,6 +188,18 @@ export default function IndicadoresManutencao() {
   const [activeTab, setActiveTab] = useState('upload');
   const [editingDado, setEditingDado] = useState<Dado | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [newDadoDialogOpen, setNewDadoDialogOpen] = useState(false);
+  const [newDado, setNewDado] = useState<Partial<Dado>>({
+    placa: '',
+    modelo: '',
+    status: 'Em Manutenção',
+    oficina_debito: '',
+    km: 0,
+    relato: '',
+    data_agenda: new Date().toISOString().split('T')[0],
+    focal: '',
+    atendimento: ''
+  });
 
   // Mutation para atualizar dados em manutenção
   const updateDadoMutation = useMutation({
@@ -214,6 +227,45 @@ export default function IndicadoresManutencao() {
     if (editingDado) {
       updateDadoMutation.mutate(editingDado);
     }
+  };
+
+  // Mutation para criar nova manutenção
+  const createDadoMutation = useMutation({
+    mutationFn: async (data: Partial<Dado>) => {
+      const res = await apiRequest('POST', '/api/indicadores/dados', {
+        ...data,
+        upload_id: currentUploadId
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Sucesso', description: 'Nova manutenção registrada!' });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/dados'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/stats'] });
+      setNewDadoDialogOpen(false);
+      setNewDado({
+        placa: '',
+        modelo: '',
+        status: 'Em Manutenção',
+        oficina_debito: '',
+        km: 0,
+        relato: '',
+        data_agenda: new Date().toISOString().split('T')[0],
+        focal: '',
+        atendimento: ''
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    }
+  });
+
+  const handleCreateDado = () => {
+    if (!newDado.placa) {
+      toast({ title: 'Erro', description: 'Placa é obrigatória', variant: 'destructive' });
+      return;
+    }
+    createDadoMutation.mutate(newDado);
   };
 
   // Buscar uploads
@@ -699,11 +751,20 @@ export default function IndicadoresManutencao() {
             {/* Aba de Dados (Em Manutenção) */}
             <TabsContent value="dados">
               <Card>
-                <CardHeader>
-                  <CardTitle>Veículos em Manutenção</CardTitle>
-                  <CardDescription>
-                    Lista de veículos atualmente em manutenção
-                  </CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Veículos em Manutenção</CardTitle>
+                    <CardDescription>
+                      Lista de veículos atualmente em manutenção
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    onClick={() => setNewDadoDialogOpen(true)}
+                    data-testid="btn-nova-manutencao"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nova Manutenção
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   {dados.length > 0 ? (
@@ -1455,6 +1516,151 @@ export default function IndicadoresManutencao() {
             <Button onClick={handleSaveDado} disabled={updateDadoMutation.isPending}>
               <Save className="h-4 w-4 mr-2" />
               {updateDadoMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Nova Manutenção */}
+      <Dialog open={newDadoDialogOpen} onOpenChange={setNewDadoDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Nova Manutenção
+            </DialogTitle>
+            <DialogDescription>
+              Registre um novo veículo em manutenção
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-6 py-4">
+            {/* Dados do Veículo */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Dados do Veículo</h4>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Placa *</Label>
+                  <Input 
+                    value={newDado.placa || ''}
+                    onChange={(e) => setNewDado({...newDado, placa: e.target.value.toUpperCase()})}
+                    placeholder="ABC1234"
+                    data-testid="input-new-placa"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Modelo</Label>
+                  <Input 
+                    value={newDado.modelo || ''}
+                    onChange={(e) => setNewDado({...newDado, modelo: e.target.value})}
+                    placeholder="Ex: Master Furgão 8m³"
+                    data-testid="input-new-modelo"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>KM</Label>
+                  <Input 
+                    type="number"
+                    value={newDado.km || ''}
+                    onChange={(e) => setNewDado({...newDado, km: parseInt(e.target.value) || 0})}
+                    placeholder="0"
+                    data-testid="input-new-km"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Status e Oficina */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Status e Oficina</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select 
+                    value={newDado.status || 'Em Manutenção'}
+                    onValueChange={(value) => setNewDado({...newDado, status: value})}
+                  >
+                    <SelectTrigger data-testid="select-new-status">
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Em Manutenção">Em Manutenção</SelectItem>
+                      <SelectItem value="Em Orçamento">Em Orçamento</SelectItem>
+                      <SelectItem value="Aguardando Peça">Aguardando Peça</SelectItem>
+                      <SelectItem value="Aguardando Aprovação">Aguardando Aprovação</SelectItem>
+                      <SelectItem value="Em Execução">Em Execução</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Oficina</Label>
+                  <Input 
+                    value={newDado.oficina_debito || ''}
+                    onChange={(e) => setNewDado({...newDado, oficina_debito: e.target.value})}
+                    placeholder="Nome da oficina"
+                    data-testid="input-new-oficina"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Agendamento e Responsáveis */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Agendamento e Responsáveis</h4>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Data Agenda</Label>
+                  <Input 
+                    type="date"
+                    value={newDado.data_agenda || ''}
+                    onChange={(e) => setNewDado({...newDado, data_agenda: e.target.value})}
+                    data-testid="input-new-data-agenda"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Focal</Label>
+                  <Input 
+                    value={newDado.focal || ''}
+                    onChange={(e) => setNewDado({...newDado, focal: e.target.value})}
+                    placeholder="Nome do focal"
+                    data-testid="input-new-focal"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Atendimento</Label>
+                  <Input 
+                    value={newDado.atendimento || ''}
+                    onChange={(e) => setNewDado({...newDado, atendimento: e.target.value})}
+                    placeholder="Código de atendimento"
+                    data-testid="input-new-atendimento"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Relato do Problema */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Relato do Problema</h4>
+              <div className="space-y-2">
+                <textarea 
+                  className="w-full min-h-[120px] p-3 border rounded-md bg-background"
+                  value={newDado.relato || ''}
+                  onChange={(e) => setNewDado({...newDado, relato: e.target.value})}
+                  placeholder="Descreva o problema ou serviço a ser realizado..."
+                  data-testid="textarea-new-relato"
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setNewDadoDialogOpen(false)}>
+              <X className="h-4 w-4 mr-2" />
+              Cancelar
+            </Button>
+            <Button onClick={handleCreateDado} disabled={createDadoMutation.isPending}>
+              <Plus className="h-4 w-4 mr-2" />
+              {createDadoMutation.isPending ? 'Registrando...' : 'Registrar Manutenção'}
             </Button>
           </DialogFooter>
         </DialogContent>

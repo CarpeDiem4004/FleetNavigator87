@@ -276,6 +276,30 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
   }
 });
 
+// Criar nova manutenção
+router.post('/dados', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { upload_id, placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status } = req.body;
+
+    if (!placa) {
+      return res.status(400).json({ success: false, message: 'Placa é obrigatória' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO indicadores_dados 
+        (upload_id, placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING *`,
+      [upload_id, placa, modelo, km || null, relato, data_agenda || null, focal, oficina_debito, atendimento, status || 'Em Manutenção']
+    );
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('[INDICADORES] Erro ao criar manutenção:', error);
+    res.status(500).json({ success: false, message: 'Erro ao criar nova manutenção' });
+  }
+});
+
 // Atualizar dados em manutenção
 router.put('/dados/:id', isAuthenticated, async (req: Request, res: Response) => {
   try {
