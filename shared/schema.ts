@@ -1317,6 +1317,7 @@ export const indicadoresDados = pgTable("indicadores_dados", {
   relato: text("relato"),
   data_agenda: date("data_agenda"),
   focal: text("focal"),
+  status: text("status").default("Em Manutenção"),
   created_at: timestamp("created_at").defaultNow(),
 });
 

@@ -714,6 +714,7 @@ export default function IndicadoresManutencao() {
                             <TableHead>Placa</TableHead>
                             <TableHead>Modelo</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead>Oficina</TableHead>
                             <TableHead>KM</TableHead>
                             <TableHead>Relato</TableHead>
                             <TableHead>Data Agenda</TableHead>
@@ -737,6 +738,7 @@ export default function IndicadoresManutencao() {
                                   {dado.status || 'Em Manutenção'}
                                 </Badge>
                               </TableCell>
+                              <TableCell>{dado.oficina_debito || '-'}</TableCell>
                               <TableCell>{dado.km ? dado.km.toLocaleString() : '-'}</TableCell>
                               <TableCell className="max-w-xs truncate" title={dado.relato}>{dado.relato || '-'}</TableCell>
                               <TableCell>{formatDate(dado.data_agenda)}</TableCell>
@@ -1288,105 +1290,160 @@ export default function IndicadoresManutencao() {
 
       {/* Dialog de Edição */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar Registro de Manutenção</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Wrench className="h-5 w-5" />
+              Editar Registro de Manutenção
+            </DialogTitle>
             <DialogDescription>
               Atualize as informações do veículo em manutenção
             </DialogDescription>
           </DialogHeader>
           
           {editingDado && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Placa</Label>
-                  <Input 
-                    value={editingDado.placa || ''}
-                    onChange={(e) => setEditingDado({...editingDado, placa: e.target.value})}
-                    data-testid="input-edit-placa"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Modelo</Label>
-                  <Input 
-                    value={editingDado.modelo || ''}
-                    onChange={(e) => setEditingDado({...editingDado, modelo: e.target.value})}
-                    data-testid="input-edit-modelo"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  <Select 
-                    value={editingDado.status || 'Em Manutenção'}
-                    onValueChange={(value) => setEditingDado({...editingDado, status: value})}
-                  >
-                    <SelectTrigger data-testid="select-edit-status">
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Em Manutenção">Em Manutenção</SelectItem>
-                      <SelectItem value="Em Orçamento">Em Orçamento</SelectItem>
-                      <SelectItem value="Aguardando Peça">Aguardando Peça</SelectItem>
-                      <SelectItem value="Aguardando Aprovação">Aguardando Aprovação</SelectItem>
-                      <SelectItem value="Em Execução">Em Execução</SelectItem>
-                      <SelectItem value="Liberado">Liberado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>KM</Label>
-                  <Input 
-                    type="number"
-                    value={editingDado.km || ''}
-                    onChange={(e) => setEditingDado({...editingDado, km: parseInt(e.target.value) || 0})}
-                    data-testid="input-edit-km"
-                  />
+            <div className="grid gap-6 py-4">
+              {/* Resumo do Veículo */}
+              <div className="bg-muted p-4 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-lg font-bold">{editingDado.placa}</p>
+                    <p className="text-sm text-muted-foreground">{editingDado.modelo || 'Modelo não informado'}</p>
+                  </div>
+                  <Badge variant={
+                    editingDado.status === 'Liberado' ? 'default' :
+                    editingDado.status === 'Em Orçamento' ? 'secondary' :
+                    editingDado.status === 'Aguardando Peça' ? 'outline' :
+                    'destructive'
+                  } className="text-sm px-3 py-1">
+                    {editingDado.status || 'Em Manutenção'}
+                  </Badge>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Focal</Label>
-                  <Input 
-                    value={editingDado.focal || ''}
-                    onChange={(e) => setEditingDado({...editingDado, focal: e.target.value})}
-                    data-testid="input-edit-focal"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Atendimento</Label>
-                  <Input 
-                    value={editingDado.atendimento || ''}
-                    onChange={(e) => setEditingDado({...editingDado, atendimento: e.target.value})}
-                    data-testid="input-edit-atendimento"
-                  />
+              {/* Dados do Veículo */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Dados do Veículo</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Placa</Label>
+                    <Input 
+                      value={editingDado.placa || ''}
+                      onChange={(e) => setEditingDado({...editingDado, placa: e.target.value})}
+                      data-testid="input-edit-placa"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Modelo</Label>
+                    <Input 
+                      value={editingDado.modelo || ''}
+                      onChange={(e) => setEditingDado({...editingDado, modelo: e.target.value})}
+                      data-testid="input-edit-modelo"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>KM</Label>
+                    <Input 
+                      type="number"
+                      value={editingDado.km || ''}
+                      onChange={(e) => setEditingDado({...editingDado, km: parseInt(e.target.value) || 0})}
+                      data-testid="input-edit-km"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Relato</Label>
-                <textarea 
-                  className="w-full min-h-[100px] p-2 border rounded-md"
-                  value={editingDado.relato || ''}
-                  onChange={(e) => setEditingDado({...editingDado, relato: e.target.value})}
-                  data-testid="textarea-edit-relato"
-                />
+              {/* Status e Oficina */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Status e Oficina</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select 
+                      value={editingDado.status || 'Em Manutenção'}
+                      onValueChange={(value) => setEditingDado({...editingDado, status: value})}
+                    >
+                      <SelectTrigger data-testid="select-edit-status">
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Em Manutenção">Em Manutenção</SelectItem>
+                        <SelectItem value="Em Orçamento">Em Orçamento</SelectItem>
+                        <SelectItem value="Aguardando Peça">Aguardando Peça</SelectItem>
+                        <SelectItem value="Aguardando Aprovação">Aguardando Aprovação</SelectItem>
+                        <SelectItem value="Em Execução">Em Execução</SelectItem>
+                        <SelectItem value="Liberado">Liberado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Oficina</Label>
+                    <Input 
+                      value={editingDado.oficina_debito || ''}
+                      onChange={(e) => setEditingDado({...editingDado, oficina_debito: e.target.value})}
+                      placeholder="Nome da oficina"
+                      data-testid="input-edit-oficina"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Agendamento e Responsáveis */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Agendamento e Responsáveis</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Data Agenda</Label>
+                    <Input 
+                      type="date"
+                      value={editingDado.data_agenda || ''}
+                      onChange={(e) => setEditingDado({...editingDado, data_agenda: e.target.value})}
+                      data-testid="input-edit-data-agenda"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Focal</Label>
+                    <Input 
+                      value={editingDado.focal || ''}
+                      onChange={(e) => setEditingDado({...editingDado, focal: e.target.value})}
+                      data-testid="input-edit-focal"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Atendimento</Label>
+                    <Input 
+                      value={editingDado.atendimento || ''}
+                      onChange={(e) => setEditingDado({...editingDado, atendimento: e.target.value})}
+                      data-testid="input-edit-atendimento"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Relato do Problema */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Relato do Problema</h4>
+                <div className="space-y-2">
+                  <textarea 
+                    className="w-full min-h-[120px] p-3 border rounded-md bg-background"
+                    value={editingDado.relato || ''}
+                    onChange={(e) => setEditingDado({...editingDado, relato: e.target.value})}
+                    placeholder="Descreva o problema ou serviço a ser realizado..."
+                    data-testid="textarea-edit-relato"
+                  />
+                </div>
               </div>
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
               <X className="h-4 w-4 mr-2" />
               Cancelar
             </Button>
             <Button onClick={handleSaveDado} disabled={updateDadoMutation.isPending}>
               <Save className="h-4 w-4 mr-2" />
-              {updateDadoMutation.isPending ? 'Salvando...' : 'Salvar'}
+              {updateDadoMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
           </DialogFooter>
         </DialogContent>
