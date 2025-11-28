@@ -374,4 +374,375 @@ router.get('/veiculo/:placa', isAuthenticated, async (req: Request, res: Respons
   }
 });
 
+// =====================================================
+// ROTAS PARA MANUTENCOES_HISTORICO (NOVO FORMATO)
+// =====================================================
+
+// Upload de planilha de manutenções histórico
+router.post('/manutencoes/upload', isAuthenticated, upload.single('file'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Nenhum arquivo enviado' });
+    }
+
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer', cellDates: true });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data: any[] = xlsx.utils.sheet_to_json(worksheet);
+
+    console.log('[MANUTENCOES] Processando arquivo:', req.file.originalname);
+    console.log('[MANUTENCOES] Colunas encontradas:', data.length > 0 ? Object.keys(data[0]) : 'vazio');
+
+    let importados = 0;
+    let erros = 0;
+    const placasAtualizadas: string[] = [];
+    const errosDetalhados: string[] = [];
+
+    for (const row of data) {
+      try {
+        const placa = row['Placa'] || row['placa'] || row['PLACA'];
+        if (!placa) {
+          erros++;
+          continue;
+        }
+
+        const dataManutencao = convertExcelDate(row['Data da Manutenção'] || row['data_manutencao'] || row['Data Manutenção'] || row['Data']);
+        const tipo = row['Tipo de Manutenção'] || row['tipo'] || row['Tipo'] || row['TIPO'];
+        const descricao = row['Descrição'] || row['descricao'] || row['Descrição do Serviço'] || row['DESCRIÇÃO'];
+        const valorRaw = row['Valor'] || row['valor'] || row['VALOR'] || row['Custo'] || 0;
+        const valor = parseNumber(valorRaw);
+        const status = row['Status'] || row['status'] || row['STATUS'];
+        const oficina = row['Oficina'] || row['oficina'] || row['OFICINA'];
+        const km = parseNumber(row['KM'] || row['km'] || row['Km'] || row['Quilometragem']);
+        const dataEntrada = convertExcelDate(row['Data de Entrada'] || row['data_entrada'] || row['Data Entrada']);
+        const dataSaida = convertExcelDate(row['Data de Saída'] || row['data_saida'] || row['Data Saída']);
+        const tempoTotal = parseNumber(row['Tempo de Manutenção'] || row['tempo_total'] || row['Tempo Total'] || row['Dias']);
+        const base = row['Base'] || row['base'] || row['BASE'];
+
+        await pool.query(
+          `INSERT INTO manutencoes_historico 
+            (placa, tipo, descricao, valor, status, km, data_entrada, data_saida, tempo_total, oficina, base, data_manutencao, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+           ON CONFLICT (placa, data_manutencao, tipo) 
+           DO UPDATE SET 
+             descricao = EXCLUDED.descricao,
+             valor = EXCLUDED.valor,
+             status = EXCLUDED.status,
+             km = EXCLUDED.km,
+             data_entrada = EXCLUDED.data_entrada,
+             data_saida = EXCLUDED.data_saida,
+             tempo_total = EXCLUDED.tempo_total,
+             oficina = EXCLUDED.oficina,
+             base = EXCLUDED.base,
+             updated_at = NOW()`,
+          [placa, tipo, descricao, valor, status, km, dataEntrada, dataSaida, tempoTotal, oficina, base, dataManutencao]
+        );
+
+        if (!placasAtualizadas.includes(placa)) {
+          placasAtualizadas.push(placa);
+        }
+        importados++;
+      } catch (rowError: any) {
+        erros++;
+        errosDetalhados.push(`Linha ${importados + erros}: ${rowError.message}`);
+        console.error('[MANUTENCOES] Erro na linha:', rowError);
+      }
+    }
+
+    console.log('[MANUTENCOES] Upload concluído:', importados, 'importados,', erros, 'erros');
+
+    res.json({
+      success: true,
+      message: `Importação concluída! ${importados} registros processados.`,
+      importados,
+      erros,
+      placasAtualizadas: placasAtualizadas.length,
+      errosDetalhados: errosDetalhados.slice(0, 10)
+    });
+
+  } catch (error: any) {
+    console.error('[MANUTENCOES] Erro no upload:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao processar arquivo',
+      error: error.message
+    });
+  }
+});
+
+// Listar todas as manutenções do histórico com filtros
+router.get('/manutencoes', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { placa, base, oficina, dataInicio, dataFim, tipo, status } = req.query;
+
+    let query = `SELECT * FROM manutencoes_historico WHERE 1=1`;
+    const params: any[] = [];
+
+    if (placa) {
+      params.push(`%${placa}%`);
+      query += ` AND placa ILIKE $${params.length}`;
+    }
+    if (base) {
+      params.push(`%${base}%`);
+      query += ` AND base ILIKE $${params.length}`;
+    }
+    if (oficina) {
+      params.push(`%${oficina}%`);
+      query += ` AND oficina ILIKE $${params.length}`;
+    }
+    if (tipo) {
+      params.push(`%${tipo}%`);
+      query += ` AND tipo ILIKE $${params.length}`;
+    }
+    if (status) {
+      params.push(`%${status}%`);
+      query += ` AND status ILIKE $${params.length}`;
+    }
+    if (dataInicio) {
+      params.push(dataInicio);
+      query += ` AND data_manutencao >= $${params.length}`;
+    }
+    if (dataFim) {
+      params.push(dataFim);
+      query += ` AND data_manutencao <= $${params.length}`;
+    }
+
+    query += ` ORDER BY data_manutencao DESC NULLS LAST LIMIT 500`;
+
+    const result = await pool.query(query, params);
+    res.json({ success: true, manutencoes: result.rows });
+  } catch (error) {
+    console.error('[MANUTENCOES] Erro ao listar:', error);
+    res.status(500).json({ success: false, message: 'Erro ao buscar manutenções' });
+  }
+});
+
+// Histórico de manutenções por placa
+router.get('/manutencoes/placa/:placa', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { placa } = req.params;
+
+    // Histórico completo
+    const historico = await pool.query(
+      `SELECT * FROM manutencoes_historico 
+       WHERE UPPER(TRIM(placa)) = UPPER(TRIM($1))
+       ORDER BY data_manutencao DESC NULLS LAST`,
+      [placa]
+    );
+
+    // Estatísticas do veículo
+    const statsResult = await pool.query(
+      `SELECT 
+        COUNT(*) as total_manutencoes,
+        SUM(COALESCE(valor, 0)) as custo_total,
+        AVG(COALESCE(tempo_total, 0)) as tempo_medio,
+        SUM(COALESCE(tempo_total, 0)) as dias_parados,
+        MAX(km) as maior_km,
+        MIN(data_manutencao) as primeira_manutencao,
+        MAX(data_manutencao) as ultima_manutencao
+       FROM manutencoes_historico 
+       WHERE UPPER(TRIM(placa)) = UPPER(TRIM($1))`,
+      [placa]
+    );
+
+    // Custos por mês
+    const custosPorMes = await pool.query(
+      `SELECT 
+        TO_CHAR(data_manutencao, 'YYYY-MM') as mes,
+        SUM(COALESCE(valor, 0)) as valor_total,
+        COUNT(*) as quantidade
+       FROM manutencoes_historico 
+       WHERE UPPER(TRIM(placa)) = UPPER(TRIM($1))
+       GROUP BY TO_CHAR(data_manutencao, 'YYYY-MM')
+       ORDER BY mes DESC
+       LIMIT 12`,
+      [placa]
+    );
+
+    // Manutenções por tipo
+    const porTipo = await pool.query(
+      `SELECT 
+        COALESCE(tipo, 'Não especificado') as tipo,
+        COUNT(*) as quantidade,
+        SUM(COALESCE(valor, 0)) as valor_total
+       FROM manutencoes_historico 
+       WHERE UPPER(TRIM(placa)) = UPPER(TRIM($1))
+       GROUP BY tipo
+       ORDER BY quantidade DESC`,
+      [placa]
+    );
+
+    res.json({
+      success: true,
+      placa: placa.toUpperCase().trim(),
+      historico: historico.rows,
+      stats: statsResult.rows[0],
+      custosPorMes: custosPorMes.rows,
+      porTipo: porTipo.rows
+    });
+  } catch (error) {
+    console.error('[MANUTENCOES] Erro ao buscar placa:', error);
+    res.status(500).json({ success: false, message: 'Erro ao buscar histórico do veículo' });
+  }
+});
+
+// Dashboard - Estatísticas gerais de manutenções
+router.get('/manutencoes/dashboard', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { dataInicio, dataFim, base } = req.query;
+
+    let whereClause = '1=1';
+    const params: any[] = [];
+
+    if (dataInicio) {
+      params.push(dataInicio);
+      whereClause += ` AND data_manutencao >= $${params.length}`;
+    }
+    if (dataFim) {
+      params.push(dataFim);
+      whereClause += ` AND data_manutencao <= $${params.length}`;
+    }
+    if (base) {
+      params.push(`%${base}%`);
+      whereClause += ` AND base ILIKE $${params.length}`;
+    }
+
+    // Totais gerais
+    const totais = await pool.query(
+      `SELECT 
+        COUNT(*) as total_manutencoes,
+        COUNT(DISTINCT placa) as veiculos_atendidos,
+        SUM(COALESCE(valor, 0)) as custo_total,
+        AVG(COALESCE(valor, 0)) as custo_medio,
+        AVG(COALESCE(tempo_total, 0)) as tempo_medio,
+        SUM(COALESCE(tempo_total, 0)) as dias_parados_total
+       FROM manutencoes_historico 
+       WHERE ${whereClause}`,
+      params
+    );
+
+    // Por tipo de manutenção
+    const porTipo = await pool.query(
+      `SELECT 
+        COALESCE(tipo, 'Não especificado') as tipo,
+        COUNT(*) as quantidade,
+        SUM(COALESCE(valor, 0)) as valor_total,
+        AVG(COALESCE(tempo_total, 0)) as tempo_medio
+       FROM manutencoes_historico 
+       WHERE ${whereClause}
+       GROUP BY tipo
+       ORDER BY quantidade DESC`,
+      params
+    );
+
+    // Por oficina
+    const porOficina = await pool.query(
+      `SELECT 
+        COALESCE(oficina, 'Não especificada') as oficina,
+        COUNT(*) as quantidade,
+        SUM(COALESCE(valor, 0)) as valor_total,
+        AVG(COALESCE(tempo_total, 0)) as tempo_medio
+       FROM manutencoes_historico 
+       WHERE ${whereClause}
+       GROUP BY oficina
+       ORDER BY quantidade DESC
+       LIMIT 15`,
+      params
+    );
+
+    // Por base
+    const porBase = await pool.query(
+      `SELECT 
+        COALESCE(base, 'Não especificada') as base,
+        COUNT(*) as quantidade,
+        SUM(COALESCE(valor, 0)) as valor_total
+       FROM manutencoes_historico 
+       WHERE ${whereClause}
+       GROUP BY base
+       ORDER BY quantidade DESC`,
+      params
+    );
+
+    // Ranking de placas mais caras
+    const rankingPlacas = await pool.query(
+      `SELECT 
+        placa,
+        COUNT(*) as quantidade,
+        SUM(COALESCE(valor, 0)) as custo_total,
+        SUM(COALESCE(tempo_total, 0)) as dias_parados
+       FROM manutencoes_historico 
+       WHERE ${whereClause}
+       GROUP BY placa
+       ORDER BY custo_total DESC
+       LIMIT 20`,
+      params
+    );
+
+    // Evolução mensal
+    const evolucaoMensal = await pool.query(
+      `SELECT 
+        TO_CHAR(data_manutencao, 'YYYY-MM') as mes,
+        COUNT(*) as quantidade,
+        SUM(COALESCE(valor, 0)) as valor_total,
+        COUNT(DISTINCT placa) as veiculos
+       FROM manutencoes_historico 
+       WHERE ${whereClause} AND data_manutencao IS NOT NULL
+       GROUP BY TO_CHAR(data_manutencao, 'YYYY-MM')
+       ORDER BY mes DESC
+       LIMIT 12`,
+      params
+    );
+
+    // Status das manutenções
+    const porStatus = await pool.query(
+      `SELECT 
+        COALESCE(status, 'Não especificado') as status,
+        COUNT(*) as quantidade
+       FROM manutencoes_historico 
+       WHERE ${whereClause}
+       GROUP BY status
+       ORDER BY quantidade DESC`,
+      params
+    );
+
+    res.json({
+      success: true,
+      totais: totais.rows[0],
+      porTipo: porTipo.rows,
+      porOficina: porOficina.rows,
+      porBase: porBase.rows,
+      rankingPlacas: rankingPlacas.rows,
+      evolucaoMensal: evolucaoMensal.rows.reverse(),
+      porStatus: porStatus.rows
+    });
+  } catch (error) {
+    console.error('[MANUTENCOES] Erro no dashboard:', error);
+    res.status(500).json({ success: false, message: 'Erro ao gerar dashboard' });
+  }
+});
+
+// Listar oficinas únicas
+router.get('/manutencoes/oficinas', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `SELECT DISTINCT oficina FROM manutencoes_historico WHERE oficina IS NOT NULL ORDER BY oficina`
+    );
+    res.json({ success: true, oficinas: result.rows.map(r => r.oficina) });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Erro ao buscar oficinas' });
+  }
+});
+
+// Listar bases únicas
+router.get('/manutencoes/bases', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `SELECT DISTINCT base FROM manutencoes_historico WHERE base IS NOT NULL ORDER BY base`
+    );
+    res.json({ success: true, bases: result.rows.map(r => r.base) });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Erro ao buscar bases' });
+  }
+});
+
 export default router;
