@@ -341,6 +341,13 @@ export default function IndicadoresManutencao() {
     }
   });
 
+  // Buscar veículos cadastrados
+  const { data: vehiclesData } = useQuery<Array<{id: number, plate: string, model: string}>>({
+    queryKey: ['/api/vehicles'],
+  });
+
+  const vehicles = vehiclesData || [];
+
   // Buscar histórico por placa
   const { data: placaData, isLoading: placaLoading } = useQuery({
     queryKey: ['/api/indicadores/manutencoes/placa', searchPlaca],
@@ -1541,19 +1548,37 @@ export default function IndicadoresManutencao() {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>Placa *</Label>
-                  <Input 
+                  <Select 
                     value={newDado.placa || ''}
-                    onChange={(e) => setNewDado({...newDado, placa: e.target.value.toUpperCase()})}
-                    placeholder="ABC1234"
-                    data-testid="input-new-placa"
-                  />
+                    onValueChange={(value) => {
+                      const selectedVehicle = vehicles.find(v => v.plate === value);
+                      setNewDado({
+                        ...newDado, 
+                        placa: value,
+                        modelo: selectedVehicle?.model || newDado.modelo
+                      });
+                    }}
+                  >
+                    <SelectTrigger data-testid="select-new-placa">
+                      <SelectValue placeholder="Selecione o veículo" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {vehicles.map((vehicle) => (
+                        <SelectItem key={vehicle.id} value={vehicle.plate}>
+                          {vehicle.plate} - {vehicle.model || 'Sem modelo'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>Modelo</Label>
                   <Input 
                     value={newDado.modelo || ''}
                     onChange={(e) => setNewDado({...newDado, modelo: e.target.value})}
-                    placeholder="Ex: Master Furgão 8m³"
+                    placeholder="Preenchido automaticamente"
+                    readOnly
+                    className="bg-muted"
                     data-testid="input-new-modelo"
                   />
                 </div>
