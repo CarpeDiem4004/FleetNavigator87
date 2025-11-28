@@ -1158,34 +1158,45 @@ export default function IndicadoresManutencao() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {dashboardData.rankingPlacas.map((item, index) => {
+                            {(() => {
                               const maxCusto = Math.max(...dashboardData.rankingPlacas.map(p => Number(p.custo_total)));
-                              const percentual = maxCusto > 0 ? (Number(item.custo_total) / maxCusto) * 100 : 0;
-                              return (
-                                <TableRow key={item.placa}>
-                                  <TableCell className="font-bold">
-                                    {index + 1}º
-                                  </TableCell>
-                                  <TableCell>
-                                    <Button 
-                                      variant="link" 
-                                      className="p-0 h-auto font-medium"
-                                      onClick={() => setSearchPlaca(item.placa)}
-                                    >
-                                      {item.placa}
-                                    </Button>
-                                  </TableCell>
-                                  <TableCell className="text-center">{item.quantidade}</TableCell>
-                                  <TableCell className="text-right font-semibold text-red-600">
-                                    {formatCurrency(Number(item.custo_total))}
-                                  </TableCell>
-                                  <TableCell className="text-center">{item.dias_parados || 0}</TableCell>
-                                  <TableCell>
-                                    <Progress value={percentual} className="h-2" />
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
+                              const maxDias = Math.max(...dashboardData.rankingPlacas.map(p => Number(p.dias_parados)));
+                              const usarDias = maxCusto === 0 && maxDias > 0;
+                              
+                              const sortedData = usarDias 
+                                ? [...dashboardData.rankingPlacas].sort((a, b) => Number(b.dias_parados) - Number(a.dias_parados))
+                                : dashboardData.rankingPlacas;
+                              
+                              return sortedData.map((item, index) => {
+                                const percentual = usarDias
+                                  ? (maxDias > 0 ? (Number(item.dias_parados) / maxDias) * 100 : 0)
+                                  : (maxCusto > 0 ? (Number(item.custo_total) / maxCusto) * 100 : 0);
+                                return (
+                                  <TableRow key={item.placa}>
+                                    <TableCell className="font-bold">
+                                      {index + 1}º
+                                    </TableCell>
+                                    <TableCell>
+                                      <Button 
+                                        variant="link" 
+                                        className="p-0 h-auto font-medium"
+                                        onClick={() => setSearchPlaca(item.placa)}
+                                      >
+                                        {item.placa}
+                                      </Button>
+                                    </TableCell>
+                                    <TableCell className="text-center">{item.quantidade}</TableCell>
+                                    <TableCell className="text-right font-semibold text-red-600">
+                                      {formatCurrency(Number(item.custo_total))}
+                                    </TableCell>
+                                    <TableCell className="text-center">{item.dias_parados || 0}</TableCell>
+                                    <TableCell>
+                                      <Progress value={percentual} className="h-2" />
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              });
+                            })()}
                           </TableBody>
                         </Table>
                       </div>

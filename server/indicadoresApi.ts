@@ -697,7 +697,7 @@ router.get('/manutencoes/dashboard', isAuthenticated, async (req: Request, res: 
       params
     );
 
-    // Ranking de placas mais caras
+    // Ranking de placas mais caras (ordena por dias_parados se custo for zero)
     const rankingPlacas = await pool.query(
       `SELECT 
         placa,
@@ -707,7 +707,9 @@ router.get('/manutencoes/dashboard', isAuthenticated, async (req: Request, res: 
        FROM manutencoes_historico 
        WHERE ${whereClause}
        GROUP BY placa
-       ORDER BY custo_total DESC
+       ORDER BY 
+         CASE WHEN SUM(COALESCE(valor, 0)) > 0 THEN SUM(COALESCE(valor, 0)) ELSE 0 END DESC,
+         SUM(COALESCE(tempo_total, 0)) DESC
        LIMIT 20`,
       params
     );
