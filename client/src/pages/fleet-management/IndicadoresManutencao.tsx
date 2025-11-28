@@ -217,6 +217,80 @@ export default function IndicadoresManutencao() {
   });
   const [newPecas, setNewPecas] = useState<Array<{nome: string, valor: number}>>([{nome: '', valor: 0}]);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [selectedGrupo, setSelectedGrupo] = useState<string>('');
+  const [selectedSubgrupo, setSelectedSubgrupo] = useState<string>('');
+
+  // Grupos e Subgrupos de Manutenção
+  const gruposManutencao: Record<string, string[]> = {
+    'Motor': [
+      'Bomba de óleo',
+      'Caixa de Direção',
+      'Polia do Alternador',
+      'Silencioso (intermediário e traseiro)',
+      'Correia',
+      'Radiador',
+      'Turbina',
+      'Bomba e Bico Injetor'
+    ],
+    'Transmissão': [
+      'Articulação da caixa',
+      'Coifa da Transmissão',
+      'Cruzeta do Cardan',
+      'Embreagem',
+      'Homocinética',
+      'Manga de eixo',
+      'Retentor do diferencial/Caixa',
+      'Retentor do Volante do Motor',
+      'Rolamento de roda Diant. e Tras.',
+      'Rolamento do Cardan',
+      'Suporte da caixa de marcha'
+    ],
+    'Suspensão': [
+      'Amortecedores Diant. e Tras.',
+      'Batente do Amortecedor',
+      'Bieleta (Suspensão)',
+      'Braço auxiliar',
+      'Bucha da barra estabilizadora',
+      'Bucha do leque (Bandeja)',
+      'Coifa da suspensão',
+      'Coxim do amortecedor',
+      'Cubo de roda',
+      'Feixe de mola',
+      'Pivô da suspensão',
+      'Terminal da direção'
+    ],
+    'Freios': [
+      'Cilindro de freio',
+      'Disco de freio',
+      'Fluido de freio',
+      'Lona (sapata) de freio',
+      'Pastilha de freio',
+      'Tambor de freio'
+    ],
+    'Acessórios': [
+      'Filtro de Ar condicionado',
+      'Higienização do Ar condicionado',
+      'Troca de baterias',
+      'Bateria'
+    ],
+    'Pneu': [
+      'Pneu e Válvula do Pneu',
+      'Rolamento de roda Diant. e Tras.',
+      'Pneus'
+    ],
+    'Elétrica': [
+      'Pane elétrica',
+      'Sistema elétrico',
+      'Alternador',
+      'Motor de partida'
+    ],
+    'Revisão': [
+      'Revisão geral',
+      'Troca de óleo e filtros',
+      'Revisão freio e óleo',
+      'Revisão/Troca de óleo/freios'
+    ]
+  };
 
   // Mutation para atualizar dados em manutenção
   const updateDadoMutation = useMutation({
@@ -273,6 +347,9 @@ export default function IndicadoresManutencao() {
         atendimento: ''
       });
       setNewPecas([{nome: '', valor: 0}]);
+      setSelectedGrupo('');
+      setSelectedSubgrupo('');
+      setSelectedProjectId(null);
     },
     onError: (error: Error) => {
       toast({ title: 'Erro', description: error.message, variant: 'destructive' });
@@ -309,10 +386,28 @@ export default function IndicadoresManutencao() {
       return;
     }
     const pecasValidas = newPecas.filter(p => p.nome.trim() !== '');
+    
+    // Montar descrição com grupo e subgrupo
+    let descricaoCompleta = '';
+    if (selectedGrupo) {
+      descricaoCompleta = `[${selectedGrupo}]`;
+      if (selectedSubgrupo) {
+        descricaoCompleta += ` ${selectedSubgrupo}`;
+      }
+    }
+    if (newDado.relato) {
+      descricaoCompleta = descricaoCompleta 
+        ? `${descricaoCompleta} - ${newDado.relato}`
+        : newDado.relato;
+    }
+
     createDadoMutation.mutate({
       ...newDado,
+      relato: descricaoCompleta || newDado.relato,
+      grupo: selectedGrupo,
+      subgrupo: selectedSubgrupo,
       pecas: pecasValidas
-    });
+    } as any);
   };
 
   // Buscar uploads
@@ -1868,6 +1963,51 @@ export default function IndicadoresManutencao() {
                       <SelectItem value="">Todas as Bases</SelectItem>
                       {allBases.map((base) => (
                         <SelectItem key={base.id} value={base.name}>{base.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Grupo e Subgrupo */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Categoria da Manutenção</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Grupo</Label>
+                  <Select 
+                    value={selectedGrupo}
+                    onValueChange={(value) => {
+                      setSelectedGrupo(value);
+                      setSelectedSubgrupo('');
+                    }}
+                  >
+                    <SelectTrigger data-testid="select-new-grupo">
+                      <SelectValue placeholder="Selecione o grupo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Selecione o grupo</SelectItem>
+                      {Object.keys(gruposManutencao).map((grupo) => (
+                        <SelectItem key={grupo} value={grupo}>{grupo}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Subgrupo</Label>
+                  <Select 
+                    value={selectedSubgrupo}
+                    onValueChange={setSelectedSubgrupo}
+                    disabled={!selectedGrupo}
+                  >
+                    <SelectTrigger data-testid="select-new-subgrupo">
+                      <SelectValue placeholder={selectedGrupo ? "Selecione o subgrupo" : "Selecione o grupo primeiro"} />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      <SelectItem value="">Selecione o subgrupo</SelectItem>
+                      {selectedGrupo && gruposManutencao[selectedGrupo]?.map((subgrupo) => (
+                        <SelectItem key={subgrupo} value={subgrupo}>{subgrupo}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
