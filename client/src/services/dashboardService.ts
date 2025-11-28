@@ -207,10 +207,19 @@ export async function getRealFuelConsumption(dateParam?: string): Promise<RealFu
 }
 
 // Função para buscar dados para o dashboard executivo
-export async function fetchDashboardData(dateParam?: string): Promise<DashboardData> {
+export async function fetchDashboardData(dateParam?: string, startDate?: string, endDate?: string): Promise<DashboardData> {
   try {
-    // Adiciona parâmetro de data se fornecido - usando endpoint executivo
-    const url = dateParam ? `/api/executive/dashboard?date=${dateParam}` : '/api/executive/dashboard';
+    // Construir URL com parâmetros de data
+    let url = '/api/executive/dashboard';
+    const params = new URLSearchParams();
+    
+    if (dateParam) params.append('date', dateParam);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
     
     const response = await apiRequest('GET', url);
     
@@ -220,12 +229,15 @@ export async function fetchDashboardData(dateParam?: string): Promise<DashboardD
     
     const data = await response.json();
     
+    // O endpoint retorna diretamente os dados (sem wrapper 'data')
+    const dashboardData = data.data || data;
+    
     // Tentar buscar dados reais de quilometragem por base
     const kmPerBaseData = await getKmPerBase();
     
     if (kmPerBaseData.length > 0) {
       console.log('Dados reais de quilometragem por base integrados:', kmPerBaseData);
-      data.data.kmPerBase = kmPerBaseData;
+      dashboardData.kmPerBase = kmPerBaseData;
     }
     
     // Tentar buscar dados reais de consumo de combustível
@@ -233,10 +245,10 @@ export async function fetchDashboardData(dateParam?: string): Promise<DashboardD
     
     if (realFuelData) {
       console.log('Dados reais de consumo de combustível integrados:', realFuelData);
-      data.data.realFuelConsumption = realFuelData;
+      dashboardData.realFuelConsumption = realFuelData;
     }
     
-    return data.data;
+    return dashboardData;
   } catch (error) {
     console.error('Erro ao carregar dados do dashboard executivo:', error);
     

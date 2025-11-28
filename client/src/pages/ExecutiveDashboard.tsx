@@ -34,14 +34,29 @@ export default function ExecutiveDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
+  
+  // Estados para filtros de data inicial e final
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [startDateOpen, setStartDateOpen] = useState(false);
+  const [endDateOpen, setEndDateOpen] = useState(false);
 
   // Formatar a data para exibição no botão de calendário
   const formattedDate = date
     ? format(date, 'MMMM yyyy', { locale: ptBR })
     : 'Selecione um mês';
+  
+  // Formatar datas para filtros
+  const formattedStartDate = startDate
+    ? format(startDate, 'dd/MM/yyyy', { locale: ptBR })
+    : 'Data Inicial';
+  
+  const formattedEndDate = endDate
+    ? format(endDate, 'dd/MM/yyyy', { locale: ptBR })
+    : 'Data Final';
 
   // Função para carregar os dados do dashboard
-  const loadDashboardData = async (selectedDate?: Date) => {
+  const loadDashboardData = async (selectedDate?: Date, start?: Date, end?: Date) => {
     setLoading(true);
     setError(null);
     try {
@@ -49,7 +64,15 @@ export default function ExecutiveDashboard() {
         ? format(selectedDate, 'yyyy-MM-dd')
         : undefined;
       
-      const data = await fetchDashboardData(dateParam);
+      const startDateParam = start 
+        ? format(start, 'yyyy-MM-dd')
+        : undefined;
+      
+      const endDateParam = end 
+        ? format(end, 'yyyy-MM-dd')
+        : undefined;
+      
+      const data = await fetchDashboardData(dateParam, startDateParam, endDateParam);
       setDashboardData(data);
     } catch (err) {
       console.error('Erro ao carregar dados do dashboard:', err);
@@ -59,10 +82,10 @@ export default function ExecutiveDashboard() {
     }
   };
 
-  // Carregar dados na montagem do componente e quando a data mudar
+  // Carregar dados na montagem do componente e quando as datas mudarem
   useEffect(() => {
-    loadDashboardData(date);
-  }, [date]);
+    loadDashboardData(date, startDate, endDate);
+  }, [date, startDate, endDate]);
 
   // Função para formatar valores monetários
   const formatCurrency = (value: number): string => {
@@ -453,7 +476,7 @@ export default function ExecutiveDashboard() {
             </p>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Link href="/postos/consumo-diario">
               <Button 
                 variant="default" 
@@ -465,32 +488,72 @@ export default function ExecutiveDashboard() {
               </Button>
             </Link>
             
-            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            {/* Filtro de Data Inicial */}
+            <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   className="flex items-center gap-2"
                 >
                   <CalendarIcon className="h-4 w-4" />
-                  <span>{formattedDate}</span>
+                  <span>{formattedStartDate}</span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
                 <Calendar
                   mode="single"
-                  selected={date}
+                  selected={startDate}
                   onSelect={(newDate) => {
-                    setDate(newDate);
-                    setCalendarOpen(false);
+                    setStartDate(newDate);
+                    setStartDateOpen(false);
                   }}
                   initialFocus
                 />
               </PopoverContent>
             </Popover>
             
+            {/* Filtro de Data Final */}
+            <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                  <span>{formattedEndDate}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={endDate}
+                  onSelect={(newDate) => {
+                    setEndDate(newDate);
+                    setEndDateOpen(false);
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            
+            {/* Limpar filtros de data */}
+            {(startDate || endDate) && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  setStartDate(undefined);
+                  setEndDate(undefined);
+                }}
+                className="text-red-500 hover:text-red-700"
+              >
+                Limpar
+              </Button>
+            )}
+            
             <Button 
               variant="outline" 
-              onClick={() => loadDashboardData(date)}
+              onClick={() => loadDashboardData(date, startDate, endDate)}
             >
               Atualizar
             </Button>

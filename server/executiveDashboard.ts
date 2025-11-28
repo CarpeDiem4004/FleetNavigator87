@@ -9,14 +9,39 @@ import { ptBR } from 'date-fns/locale';
  */
 export async function getExecutiveDashboard(req: Request, res: Response) {
   try {
-    // Determinar o mês de referência com base na query ou usar o mês atual
+    // Capturar parâmetros de data
     let targetDate = new Date();
     if (req.query.date) {
       targetDate = new Date(req.query.date as string);
     }
     
+    // Parâmetros de data inicial e final para filtros
+    const startDateParam = req.query.startDate as string | undefined;
+    const endDateParam = req.query.endDate as string | undefined;
+    
+    console.log('[EXECUTIVE-DASHBOARD] Parâmetros recebidos:', { 
+      date: req.query.date, 
+      startDate: startDateParam, 
+      endDate: endDateParam 
+    });
+    
     // Formatar o mês para exibição
     const formattedMonth = format(targetDate, 'MMMM yyyy', { locale: ptBR });
+    
+    // Construir cláusula WHERE para filtro de datas
+    let dateWhereClause = '';
+    let dateWhereParams: string[] = [];
+    
+    if (startDateParam && endDateParam) {
+      dateWhereClause = `WHERE data_agenda >= $1 AND data_agenda <= $2`;
+      dateWhereParams = [startDateParam, endDateParam];
+    } else if (startDateParam) {
+      dateWhereClause = `WHERE data_agenda >= $1`;
+      dateWhereParams = [startDateParam];
+    } else if (endDateParam) {
+      dateWhereClause = `WHERE data_agenda <= $1`;
+      dateWhereParams = [endDateParam];
+    }
     
     // Consulta para estatísticas de manutenção da tabela indicadores_dados
     const maintenanceStatsQuery = `
@@ -31,7 +56,23 @@ export async function getExecutiveDashboard(req: Request, res: Response) {
         COUNT(CASE WHEN status = 'Liberado' THEN 1 END) AS liberados,
         COUNT(DISTINCT placa) AS veiculos_unicos
       FROM indicadores_dados
+      ${dateWhereClause}
     `;
+    
+    // Construir cláusula WHERE para liberados (usa data_saida)
+    let liberadosWhereClause = '';
+    let liberadosWhereParams: string[] = [];
+    
+    if (startDateParam && endDateParam) {
+      liberadosWhereClause = `WHERE data_saida >= $1 AND data_saida <= $2`;
+      liberadosWhereParams = [startDateParam, endDateParam];
+    } else if (startDateParam) {
+      liberadosWhereClause = `WHERE data_saida >= $1`;
+      liberadosWhereParams = [startDateParam];
+    } else if (endDateParam) {
+      liberadosWhereClause = `WHERE data_saida <= $1`;
+      liberadosWhereParams = [endDateParam];
+    }
     
     // Consulta para veículos liberados
     const liberadosQuery = `
@@ -40,6 +81,7 @@ export async function getExecutiveDashboard(req: Request, res: Response) {
         COUNT(CASE WHEN TRIM(tipo_manutencao) ILIKE '%preventiva%' THEN 1 END) AS preventivas,
         COUNT(CASE WHEN TRIM(tipo_manutencao) ILIKE '%corretiva%' THEN 1 END) AS corretivas
       FROM indicadores_liberado
+      ${liberadosWhereClause}
     `;
     
     // Consulta para manutenções recentes
@@ -50,6 +92,7 @@ export async function getExecutiveDashboard(req: Request, res: Response) {
         relato as descricao, data_agenda as data_inicio,
         0 as custo_total
       FROM indicadores_dados
+      ${dateWhereClause}
       ORDER BY data_agenda DESC NULLS LAST
       LIMIT 15
     `;
@@ -66,6 +109,8 @@ export async function getExecutiveDashboard(req: Request, res: Response) {
       LIMIT 10
     `;
     
+    console.log('[EXECUTIVE-DASHBOARD] Executando consultas...');
+    
     // Executar todas as consultas em paralelo
     const [
       maintenanceStatsResult,
@@ -73,11 +118,17 @@ export async function getExecutiveDashboard(req: Request, res: Response) {
       recentMaintenancesResult,
       kmPerBaseResult
     ] = await Promise.all([
-      pool.query(maintenanceStatsQuery),
-      pool.query(liberadosQuery),
-      pool.query(recentMaintenancesQuery),
+      pool.query(maintenanceStatsQuery, dateWhereParams),
+      pool.query(liberadosQuery, liberadosWhereParams),
+      pool.query(recentMaintenancesQuery, dateWhereParams),
       pool.query(kmPerBaseQuery).catch(() => ({ rows: [] }))
     ]);
+    
+    console.log('[EXECUTIVE-DASHBOARD] Resultados:', {
+      maintenanceStats: maintenanceStatsResult.rows[0],
+      liberados: liberadosResult.rows[0],
+      recentMaintenances: recentMaintenancesResult.rows.length
+    });
     
     // Processar estatísticas de manutenção
     const maintenanceStats = maintenanceStatsResult.rows[0] || {
