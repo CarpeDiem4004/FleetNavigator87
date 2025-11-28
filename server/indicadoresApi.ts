@@ -279,10 +279,29 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
 // Criar nova manutenção
 router.post('/dados', isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const { upload_id, placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status } = req.body;
+    const { upload_id, placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status, pecas } = req.body;
 
     if (!placa) {
       return res.status(400).json({ success: false, message: 'Placa é obrigatória' });
+    }
+
+    // Calcular valor total das peças
+    const valorTotal = pecas && pecas.length > 0 
+      ? pecas.reduce((sum: number, p: {nome: string, valor: number}) => sum + (p.valor || 0), 0)
+      : 0;
+
+    // Montar descrição com peças
+    let descricaoCompleta = relato || '';
+    if (pecas && pecas.length > 0) {
+      const pecasText = pecas
+        .filter((p: {nome: string, valor: number}) => p.nome?.trim())
+        .map((p: {nome: string, valor: number}) => `${p.nome} (R$ ${(p.valor || 0).toFixed(2)})`)
+        .join(', ');
+      if (pecasText) {
+        descricaoCompleta = descricaoCompleta 
+          ? `${descricaoCompleta} | Peças: ${pecasText}`
+          : `Peças: ${pecasText}`;
+      }
     }
 
     const result = await pool.query(
@@ -290,8 +309,19 @@ router.post('/dados', isAuthenticated, async (req: Request, res: Response) => {
         (upload_id, placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
-      [upload_id, placa, modelo, km || null, relato, data_agenda || null, focal, oficina_debito, atendimento, status || 'Em Manutenção']
+      [upload_id, placa, modelo, km || null, descricaoCompleta, data_agenda || null, focal, oficina_debito, atendimento, status || 'Em Manutenção']
     );
+
+    // Também registrar no histórico de manutenções com valor
+    if (valorTotal > 0) {
+      await pool.query(
+        `INSERT INTO manutencoes_historico 
+          (placa, tipo, descricao, valor, status, km, data_entrada, oficina, base, data_manutencao)
+         VALUES ($1, 'Corretiva', $2, $3, $4, $5, CURRENT_DATE, $6, 'LH01', CURRENT_DATE)
+         ON CONFLICT DO NOTHING`,
+        [placa, descricaoCompleta, valorTotal, status || 'Em Manutenção', km || 0, oficina_debito]
+      );
+    }
 
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {

@@ -215,6 +215,7 @@ export default function IndicadoresManutencao() {
     focal: '',
     atendimento: ''
   });
+  const [newPecas, setNewPecas] = useState<Array<{nome: string, valor: number}>>([{nome: '', valor: 0}]);
 
   // Mutation para atualizar dados em manutenção
   const updateDadoMutation = useMutation({
@@ -246,7 +247,7 @@ export default function IndicadoresManutencao() {
 
   // Mutation para criar nova manutenção
   const createDadoMutation = useMutation({
-    mutationFn: async (data: Partial<Dado>) => {
+    mutationFn: async (data: Partial<Dado> & { pecas?: Array<{nome: string, valor: number}> }) => {
       const res = await apiRequest('POST', '/api/indicadores/dados', {
         ...data,
         upload_id: currentUploadId
@@ -257,6 +258,7 @@ export default function IndicadoresManutencao() {
       toast({ title: 'Sucesso', description: 'Nova manutenção registrada!' });
       queryClient.invalidateQueries({ queryKey: ['/api/indicadores/dados'] });
       queryClient.invalidateQueries({ queryKey: ['/api/indicadores/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/pecas/analise'] });
       setNewDadoDialogOpen(false);
       setNewDado({
         placa: '',
@@ -269,18 +271,47 @@ export default function IndicadoresManutencao() {
         focal: '',
         atendimento: ''
       });
+      setNewPecas([{nome: '', valor: 0}]);
     },
     onError: (error: Error) => {
       toast({ title: 'Erro', description: error.message, variant: 'destructive' });
     }
   });
 
+  const addPeca = () => {
+    setNewPecas([...newPecas, {nome: '', valor: 0}]);
+  };
+
+  const removePeca = (index: number) => {
+    if (newPecas.length > 1) {
+      setNewPecas(newPecas.filter((_, i) => i !== index));
+    }
+  };
+
+  const updatePeca = (index: number, field: 'nome' | 'valor', value: string | number) => {
+    const updated = [...newPecas];
+    if (field === 'valor') {
+      updated[index][field] = typeof value === 'string' ? parseFloat(value) || 0 : value;
+    } else {
+      updated[index][field] = value as string;
+    }
+    setNewPecas(updated);
+  };
+
+  const calcularTotalPecas = () => {
+    return newPecas.reduce((sum, p) => sum + (p.valor || 0), 0);
+  };
+
   const handleCreateDado = () => {
     if (!newDado.placa) {
       toast({ title: 'Erro', description: 'Placa é obrigatória', variant: 'destructive' });
       return;
     }
-    createDadoMutation.mutate(newDado);
+    const pecasValidas = newPecas.filter(p => p.nome.trim() !== '');
+    createDadoMutation.mutate({
+      ...newDado,
+      pecas: pecasValidas
+    });
   };
 
   // Buscar uploads
@@ -1818,13 +1849,79 @@ export default function IndicadoresManutencao() {
               <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Relato do Problema</h4>
               <div className="space-y-2">
                 <textarea 
-                  className="w-full min-h-[120px] p-3 border rounded-md bg-background"
+                  className="w-full min-h-[100px] p-3 border rounded-md bg-background"
                   value={newDado.relato || ''}
                   onChange={(e) => setNewDado({...newDado, relato: e.target.value})}
                   placeholder="Descreva o problema ou serviço a ser realizado..."
                   data-testid="textarea-new-relato"
                 />
               </div>
+            </div>
+
+            {/* Peças e Valores */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Peças e Valores</h4>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={addPeca}
+                  data-testid="button-add-peca"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Adicionar Peça
+                </Button>
+              </div>
+              
+              <div className="space-y-3">
+                {newPecas.map((peca, index) => (
+                  <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                    <div className="flex-1">
+                      <Input 
+                        value={peca.nome}
+                        onChange={(e) => updatePeca(index, 'nome', e.target.value)}
+                        placeholder="Nome da peça ou serviço"
+                        data-testid={`input-peca-nome-${index}`}
+                      />
+                    </div>
+                    <div className="w-36">
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+                        <Input 
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={peca.valor || ''}
+                          onChange={(e) => updatePeca(index, 'valor', e.target.value)}
+                          placeholder="0,00"
+                          className="pl-9"
+                          data-testid={`input-peca-valor-${index}`}
+                        />
+                      </div>
+                    </div>
+                    {newPecas.length > 1 && (
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => removePeca(index)}
+                        className="text-destructive hover:text-destructive"
+                        data-testid={`button-remove-peca-${index}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {calcularTotalPecas() > 0 && (
+                <div className="flex items-center justify-end gap-2 pt-2 border-t">
+                  <span className="text-sm text-muted-foreground">Total:</span>
+                  <span className="font-bold text-lg text-primary">{formatCurrency(calcularTotalPecas())}</span>
+                </div>
+              )}
             </div>
           </div>
 
