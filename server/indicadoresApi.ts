@@ -823,4 +823,108 @@ router.get('/manutencoes/bases', isAuthenticated, async (req: Request, res: Resp
   }
 });
 
+// Análise de peças/serviços mais usados por tipo e modelo
+router.get('/pecas/analise', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    // Peças/serviços mais usados geral
+    const topGeral = await pool.query(`
+      SELECT 
+        UPPER(TRIM(descricao)) as peca,
+        COUNT(*) as quantidade,
+        SUM(valor) as custo_total
+      FROM manutencoes_historico 
+      WHERE descricao IS NOT NULL AND TRIM(descricao) != ''
+      GROUP BY UPPER(TRIM(descricao))
+      ORDER BY quantidade DESC
+      LIMIT 15
+    `);
+
+    // Por tipo de manutenção (Preventiva/Corretiva)
+    const porTipo = await pool.query(`
+      SELECT 
+        TRIM(tipo) as tipo,
+        UPPER(TRIM(descricao)) as peca,
+        COUNT(*) as quantidade,
+        SUM(valor) as custo_total
+      FROM manutencoes_historico 
+      WHERE descricao IS NOT NULL AND TRIM(descricao) != '' AND tipo IS NOT NULL
+      GROUP BY TRIM(tipo), UPPER(TRIM(descricao))
+      ORDER BY tipo, quantidade DESC
+    `);
+
+    // Por modelo de veículo
+    const porModelo = await pool.query(`
+      SELECT 
+        v.model as modelo,
+        UPPER(TRIM(mh.descricao)) as peca,
+        COUNT(*) as quantidade,
+        SUM(mh.valor) as custo_total
+      FROM manutencoes_historico mh
+      JOIN vehicles v ON UPPER(TRIM(mh.placa)) = UPPER(TRIM(v.plate))
+      WHERE mh.descricao IS NOT NULL AND TRIM(mh.descricao) != ''
+      GROUP BY v.model, UPPER(TRIM(mh.descricao))
+      ORDER BY modelo, quantidade DESC
+    `);
+
+    // Modelos únicos para filtro
+    const modelos = await pool.query(`
+      SELECT DISTINCT v.model 
+      FROM vehicles v
+      JOIN manutencoes_historico mh ON UPPER(TRIM(mh.placa)) = UPPER(TRIM(v.plate))
+      WHERE v.model IS NOT NULL
+      ORDER BY v.model
+    `);
+
+    // Agrupar por tipo
+    const preventivas: any[] = [];
+    const corretivas: any[] = [];
+    porTipo.rows.forEach((row: any) => {
+      const tipo = row.tipo?.trim().toUpperCase();
+      if (tipo === 'PREVENTIVA') {
+        preventivas.push(row);
+      } else if (tipo === 'CORRETIVA') {
+        corretivas.push(row);
+      }
+    });
+
+    // Agrupar por modelo
+    const porModeloAgrupado: Record<string, any[]> = {};
+    porModelo.rows.forEach((row: any) => {
+      const modelo = row.modelo || 'Sem modelo';
+      if (!porModeloAgrupado[modelo]) {
+        porModeloAgrupado[modelo] = [];
+      }
+      porModeloAgrupado[modelo].push({
+        peca: row.peca,
+        quantidade: parseInt(row.quantidade),
+        custo_total: parseFloat(row.custo_total) || 0
+      });
+    });
+
+    res.json({
+      success: true,
+      topGeral: topGeral.rows.map(r => ({
+        peca: r.peca,
+        quantidade: parseInt(r.quantidade),
+        custo_total: parseFloat(r.custo_total) || 0
+      })),
+      preventivas: preventivas.slice(0, 10).map(r => ({
+        peca: r.peca,
+        quantidade: parseInt(r.quantidade),
+        custo_total: parseFloat(r.custo_total) || 0
+      })),
+      corretivas: corretivas.slice(0, 10).map(r => ({
+        peca: r.peca,
+        quantidade: parseInt(r.quantidade),
+        custo_total: parseFloat(r.custo_total) || 0
+      })),
+      porModelo: porModeloAgrupado,
+      modelos: modelos.rows.map(r => r.model)
+    });
+  } catch (error) {
+    console.error('[PECAS] Erro na análise:', error);
+    res.status(500).json({ success: false, message: 'Erro ao analisar peças' });
+  }
+});
+
 export default router;

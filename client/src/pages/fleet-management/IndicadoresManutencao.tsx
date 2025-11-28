@@ -159,6 +159,20 @@ interface DashboardData {
   porStatus: Array<{ status: string; quantidade: number }>;
 }
 
+interface PecaAnalise {
+  peca: string;
+  quantidade: number;
+  custo_total: number;
+}
+
+interface PecasAnaliseData {
+  topGeral: PecaAnalise[];
+  preventivas: PecaAnalise[];
+  corretivas: PecaAnalise[];
+  porModelo: Record<string, PecaAnalise[]>;
+  modelos: string[];
+}
+
 interface ManutencaoHistorico {
   id: number;
   placa: string;
@@ -186,6 +200,7 @@ export default function IndicadoresManutencao() {
   const [searchPlaca, setSearchPlaca] = useState<string>('');
   const [dashboardBase, setDashboardBase] = useState<string>('');
   const [activeTab, setActiveTab] = useState('upload');
+  const [selectedModeloPeca, setSelectedModeloPeca] = useState<string>('');
   const [editingDado, setEditingDado] = useState<Dado | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [newDadoDialogOpen, setNewDadoDialogOpen] = useState(false);
@@ -347,6 +362,17 @@ export default function IndicadoresManutencao() {
   });
 
   const vehicles = vehiclesData || [];
+
+  // Buscar análise de peças por tipo e modelo
+  const { data: pecasAnaliseData } = useQuery<{success: boolean} & PecasAnaliseData>({
+    queryKey: ['/api/indicadores/pecas/analise'],
+    queryFn: async () => {
+      const res = await fetch('/api/indicadores/pecas/analise', { credentials: 'include' });
+      return res.json();
+    }
+  });
+
+  const pecasAnalise = pecasAnaliseData;
 
   // Buscar histórico por placa
   const { data: placaData, isLoading: placaLoading } = useQuery({
@@ -700,59 +726,183 @@ export default function IndicadoresManutencao() {
 
             {/* Aba de Peças */}
             <TabsContent value="pecas">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Controle de Estoque de Peças</CardTitle>
-                  <CardDescription>
-                    Acompanhamento diário do estoque de peças
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {pecas.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Filtro Comb.</TableHead>
-                            <TableHead>Filtro Ar</TableHead>
-                            <TableHead>Filtro Óleo</TableHead>
-                            <TableHead>Óleo 5W30</TableHead>
-                            <TableHead>Pastilha Freio D/</TableHead>
-                            <TableHead>Pastilha Freio T/</TableHead>
-                            <TableHead>Disco Freio D/</TableHead>
-                            <TableHead>Disco Freio T/</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {pecas.map((peca) => (
-                            <TableRow key={peca.id}>
-                              <TableCell className="font-medium">
-                                {formatDate(peca.data)}
-                              </TableCell>
-                              <TableCell>{peca.filtro_combustivel || '-'}</TableCell>
-                              <TableCell>{peca.filtro_ar || '-'}</TableCell>
-                              <TableCell>{peca.filtro_oleo || '-'}</TableCell>
-                              <TableCell>{peca.oleo_motor_5w30 || '-'}</TableCell>
-                              <TableCell>{peca.pastilha_freio_dianteira || '-'}</TableCell>
-                              <TableCell>{peca.pastilha_freio_traseira || '-'}</TableCell>
-                              <TableCell>{peca.disco_freio_dianteiro || '-'}</TableCell>
-                              <TableCell>{peca.disco_freio_traseiro || '-'}</TableCell>
-                            </TableRow>
+              <div className="space-y-6">
+                {/* Top Peças/Serviços Geral */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Wrench className="h-5 w-5" />
+                      Peças/Serviços Mais Utilizados
+                    </CardTitle>
+                    <CardDescription>
+                      Ranking geral de peças e serviços mais frequentes nas manutenções
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {pecasAnalise?.topGeral && pecasAnalise.topGeral.length > 0 ? (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          {pecasAnalise.topGeral.slice(0, 8).map((item, idx) => (
+                            <div key={idx} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <span className="font-bold text-lg w-8 text-center text-primary">{idx + 1}º</span>
+                                <span className="font-medium truncate max-w-[200px]">{item.peca}</span>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <Badge variant="secondary">{item.quantidade}x</Badge>
+                                {item.custo_total > 0 && (
+                                  <span className="text-sm text-muted-foreground">{formatCurrency(item.custo_total)}</span>
+                                )}
+                              </div>
+                            </div>
                           ))}
-                        </TableBody>
-                      </Table>
+                        </div>
+                        <div className="h-[300px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={pecasAnalise.topGeral.slice(0, 8)} layout="vertical">
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis type="number" />
+                              <YAxis dataKey="peca" type="category" width={120} tick={{fontSize: 11}} />
+                              <Tooltip />
+                              <Bar dataKey="quantidade" fill="#2563eb" name="Quantidade" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <FileSpreadsheet className="mx-auto h-12 w-12 text-muted-foreground" />
+                        <p className="mt-2 text-muted-foreground">
+                          Nenhum dado de manutenção disponível para análise.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Por Tipo de Manutenção */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Preventivas */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-green-600">
+                        <CheckCircle className="h-5 w-5" />
+                        Manutenções Preventivas
+                      </CardTitle>
+                      <CardDescription>Peças mais usadas em manutenções preventivas</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {pecasAnalise?.preventivas && pecasAnalise.preventivas.length > 0 ? (
+                        <div className="space-y-2">
+                          {pecasAnalise.preventivas.slice(0, 6).map((item, idx) => (
+                            <div key={idx} className="flex items-center justify-between p-2 border-b">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-green-600">{idx + 1}.</span>
+                                <span className="text-sm truncate max-w-[180px]">{item.peca}</span>
+                              </div>
+                              <Badge variant="outline" className="bg-green-50">{item.quantidade}x</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">Sem dados</p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Corretivas */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-orange-600">
+                        <AlertTriangle className="h-5 w-5" />
+                        Manutenções Corretivas
+                      </CardTitle>
+                      <CardDescription>Peças mais usadas em manutenções corretivas</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {pecasAnalise?.corretivas && pecasAnalise.corretivas.length > 0 ? (
+                        <div className="space-y-2">
+                          {pecasAnalise.corretivas.slice(0, 6).map((item, idx) => (
+                            <div key={idx} className="flex items-center justify-between p-2 border-b">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-orange-600">{idx + 1}.</span>
+                                <span className="text-sm truncate max-w-[180px]">{item.peca}</span>
+                              </div>
+                              <Badge variant="outline" className="bg-orange-50">{item.quantidade}x</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">Sem dados</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Por Modelo de Veículo */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Car className="h-5 w-5" />
+                          Peças por Modelo de Veículo
+                        </CardTitle>
+                        <CardDescription>Análise de peças mais utilizadas por modelo</CardDescription>
+                      </div>
+                      <div className="w-64">
+                        <Select value={selectedModeloPeca} onValueChange={setSelectedModeloPeca}>
+                          <SelectTrigger data-testid="select-modelo-peca">
+                            <SelectValue placeholder="Selecione um modelo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Todos os modelos</SelectItem>
+                            {pecasAnalise?.modelos?.map((modelo) => (
+                              <SelectItem key={modelo} value={modelo}>{modelo}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <FileSpreadsheet className="mx-auto h-12 w-12 text-muted-foreground" />
-                      <p className="mt-2 text-muted-foreground">
-                        Nenhum dado de peças disponível. Faça o upload de uma planilha.
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardHeader>
+                  <CardContent>
+                    {pecasAnalise?.porModelo && Object.keys(pecasAnalise.porModelo).length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {Object.entries(pecasAnalise.porModelo)
+                          .filter(([modelo]) => !selectedModeloPeca || modelo === selectedModeloPeca)
+                          .slice(0, selectedModeloPeca ? 1 : 6)
+                          .map(([modelo, pecasModelo]) => (
+                            <Card key={modelo} className="border-2">
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                  <Car className="h-4 w-4 text-primary" />
+                                  {modelo}
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="pt-0">
+                                <div className="space-y-1">
+                                  {pecasModelo.slice(0, 5).map((peca, idx) => (
+                                    <div key={idx} className="flex items-center justify-between text-sm py-1 border-b border-dashed">
+                                      <span className="truncate max-w-[140px]">{peca.peca}</span>
+                                      <Badge variant="secondary" className="ml-2">{peca.quantidade}x</Badge>
+                                    </div>
+                                  ))}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Car className="mx-auto h-12 w-12 text-muted-foreground" />
+                        <p className="mt-2 text-muted-foreground">
+                          Nenhum dado disponível por modelo.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             {/* Aba de Dados (Em Manutenção) */}
