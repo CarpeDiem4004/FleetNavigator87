@@ -32,7 +32,8 @@ import {
   FileSpreadsheet,
   AlertCircle,
   AlertTriangle,
-  CheckCircle2
+  CheckCircle2,
+  Download
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { DriverAutocomplete } from '@/components/ui/driver-autocomplete';
@@ -383,10 +384,11 @@ const LineHaulPage = () => {
     rota_nome: string;
     data_inicio: string;
     observacoes?: string;
-    status: 'finalizada' | 'cancelada_cliente' | 'no_show' | 'programada';
+    status: 'programada' | 'em_andamento' | 'finalizada' | 'cancelada_cliente' | 'no_show';
     justificativa_no_show?: string;
     data_criacao?: string;
     created_by?: string;
+    empresa?: 'mercado_livre' | 'shopee';
   }
 
   // Estados para gestão de operações

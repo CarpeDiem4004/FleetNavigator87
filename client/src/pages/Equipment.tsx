@@ -1376,6 +1376,18 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                                 >
                                   <Download className="h-4 w-4 text-green-600" />
                                 </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedTermForUpload(term);
+                                    setIsUploadDialogOpen(true);
+                                  }}
+                                  title="Substituir Termo Assinado"
+                                  data-testid={`button-reupload-term-${term.id}`}
+                                >
+                                  <Upload className="h-4 w-4 text-blue-600" />
+                                </Button>
                               </>
                             )}
 
