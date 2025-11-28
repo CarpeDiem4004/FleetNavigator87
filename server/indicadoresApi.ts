@@ -739,15 +739,33 @@ router.get('/manutencoes/dashboard', isAuthenticated, async (req: Request, res: 
       params
     );
 
+    // Converter valores para números
+    const formatNumericData = (rows: any[]) => rows.map(row => ({
+      ...row,
+      quantidade: parseInt(row.quantidade) || 0,
+      valor_total: parseFloat(row.valor_total) || 0,
+      tempo_medio: parseFloat(row.tempo_medio) || 0,
+      custo_total: parseFloat(row.custo_total) || 0,
+      dias_parados: parseInt(row.dias_parados) || 0,
+      veiculos: parseInt(row.veiculos) || 0
+    }));
+
     res.json({
       success: true,
-      totais: totais.rows[0],
-      porTipo: porTipo.rows,
-      porOficina: porOficina.rows,
-      porBase: porBase.rows,
-      rankingPlacas: rankingPlacas.rows,
-      evolucaoMensal: evolucaoMensal.rows.reverse(),
-      porStatus: porStatus.rows
+      totais: {
+        total_manutencoes: parseInt(totais.rows[0]?.total_manutencoes) || 0,
+        veiculos_atendidos: parseInt(totais.rows[0]?.veiculos_atendidos) || 0,
+        custo_total: parseFloat(totais.rows[0]?.custo_total) || 0,
+        custo_medio: parseFloat(totais.rows[0]?.custo_medio) || 0,
+        tempo_medio: parseFloat(totais.rows[0]?.tempo_medio) || 0,
+        dias_parados_total: parseInt(totais.rows[0]?.dias_parados_total) || 0
+      },
+      porTipo: formatNumericData(porTipo.rows),
+      porOficina: formatNumericData(porOficina.rows),
+      porBase: formatNumericData(porBase.rows),
+      rankingPlacas: formatNumericData(rankingPlacas.rows),
+      evolucaoMensal: formatNumericData(evolucaoMensal.rows.reverse()),
+      porStatus: formatNumericData(porStatus.rows)
     });
   } catch (error) {
     console.error('[MANUTENCOES] Erro no dashboard:', error);
