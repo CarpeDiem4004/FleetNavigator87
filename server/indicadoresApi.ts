@@ -276,6 +276,40 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
   }
 });
 
+// Atualizar dados em manutenção
+router.put('/dados/:id', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status } = req.body;
+
+    const result = await pool.query(
+      `UPDATE indicadores_dados SET 
+        placa = COALESCE($1, placa),
+        modelo = COALESCE($2, modelo),
+        km = COALESCE($3, km),
+        relato = COALESCE($4, relato),
+        data_agenda = COALESCE($5, data_agenda),
+        focal = COALESCE($6, focal),
+        oficina_debito = COALESCE($7, oficina_debito),
+        atendimento = COALESCE($8, atendimento),
+        status = COALESCE($9, status),
+        updated_at = NOW()
+       WHERE id = $10
+       RETURNING *`,
+      [placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Registro não encontrado' });
+    }
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('[INDICADORES] Erro ao atualizar dados:', error);
+    res.status(500).json({ success: false, message: 'Erro ao atualizar registro' });
+  }
+});
+
 // Buscar histórico liberado
 router.get('/liberado', isAuthenticated, async (req: Request, res: Response) => {
   try {

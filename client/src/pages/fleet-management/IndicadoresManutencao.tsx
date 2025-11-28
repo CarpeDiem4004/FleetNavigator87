@@ -20,8 +20,19 @@ import {
   Calendar,
   Building2,
   FileSpreadsheet,
-  AlertTriangle
+  AlertTriangle,
+  Edit,
+  Save,
+  X
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -93,6 +104,7 @@ interface Dado {
   focal: string;
   oficina_debito: string;
   atendimento: string;
+  status: string;
 }
 
 interface Liberado {
@@ -173,6 +185,36 @@ export default function IndicadoresManutencao() {
   const [searchPlaca, setSearchPlaca] = useState<string>('');
   const [dashboardBase, setDashboardBase] = useState<string>('');
   const [activeTab, setActiveTab] = useState('upload');
+  const [editingDado, setEditingDado] = useState<Dado | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  // Mutation para atualizar dados em manutenção
+  const updateDadoMutation = useMutation({
+    mutationFn: async (data: Partial<Dado> & { id: number }) => {
+      const res = await apiRequest('PUT', `/api/indicadores/dados/${data.id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Sucesso', description: 'Registro atualizado com sucesso!' });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/dados'] });
+      setEditDialogOpen(false);
+      setEditingDado(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    }
+  });
+
+  const handleEditDado = (dado: Dado) => {
+    setEditingDado({ ...dado });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveDado = () => {
+    if (editingDado) {
+      updateDadoMutation.mutate(editingDado);
+    }
+  };
 
   // Buscar uploads
   const { data: uploadsData, isLoading: uploadsLoading } = useQuery<{uploads: UploadRecord[]}>({
@@ -671,11 +713,13 @@ export default function IndicadoresManutencao() {
                           <TableRow>
                             <TableHead>Placa</TableHead>
                             <TableHead>Modelo</TableHead>
+                            <TableHead>Status</TableHead>
                             <TableHead>KM</TableHead>
                             <TableHead>Relato</TableHead>
                             <TableHead>Data Agenda</TableHead>
                             <TableHead>Focal</TableHead>
                             <TableHead>Atendimento</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -683,11 +727,31 @@ export default function IndicadoresManutencao() {
                             <TableRow key={dado.id}>
                               <TableCell className="font-medium">{dado.placa}</TableCell>
                               <TableCell>{dado.modelo || '-'}</TableCell>
+                              <TableCell>
+                                <Badge variant={
+                                  dado.status === 'Liberado' ? 'default' :
+                                  dado.status === 'Em Orçamento' ? 'secondary' :
+                                  dado.status === 'Aguardando Peça' ? 'outline' :
+                                  'destructive'
+                                }>
+                                  {dado.status || 'Em Manutenção'}
+                                </Badge>
+                              </TableCell>
                               <TableCell>{dado.km ? dado.km.toLocaleString() : '-'}</TableCell>
-                              <TableCell className="max-w-xs truncate">{dado.relato || '-'}</TableCell>
+                              <TableCell className="max-w-xs truncate" title={dado.relato}>{dado.relato || '-'}</TableCell>
                               <TableCell>{formatDate(dado.data_agenda)}</TableCell>
                               <TableCell>{dado.focal || '-'}</TableCell>
                               <TableCell>{dado.atendimento || '-'}</TableCell>
+                              <TableCell className="text-right">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleEditDado(dado)}
+                                  data-testid={`btn-edit-dado-${dado.id}`}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -1221,6 +1285,112 @@ export default function IndicadoresManutencao() {
           </Tabs>
         </div>
       </div>
+
+      {/* Dialog de Edição */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar Registro de Manutenção</DialogTitle>
+            <DialogDescription>
+              Atualize as informações do veículo em manutenção
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingDado && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Placa</Label>
+                  <Input 
+                    value={editingDado.placa || ''}
+                    onChange={(e) => setEditingDado({...editingDado, placa: e.target.value})}
+                    data-testid="input-edit-placa"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Modelo</Label>
+                  <Input 
+                    value={editingDado.modelo || ''}
+                    onChange={(e) => setEditingDado({...editingDado, modelo: e.target.value})}
+                    data-testid="input-edit-modelo"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select 
+                    value={editingDado.status || 'Em Manutenção'}
+                    onValueChange={(value) => setEditingDado({...editingDado, status: value})}
+                  >
+                    <SelectTrigger data-testid="select-edit-status">
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Em Manutenção">Em Manutenção</SelectItem>
+                      <SelectItem value="Em Orçamento">Em Orçamento</SelectItem>
+                      <SelectItem value="Aguardando Peça">Aguardando Peça</SelectItem>
+                      <SelectItem value="Aguardando Aprovação">Aguardando Aprovação</SelectItem>
+                      <SelectItem value="Em Execução">Em Execução</SelectItem>
+                      <SelectItem value="Liberado">Liberado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>KM</Label>
+                  <Input 
+                    type="number"
+                    value={editingDado.km || ''}
+                    onChange={(e) => setEditingDado({...editingDado, km: parseInt(e.target.value) || 0})}
+                    data-testid="input-edit-km"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Focal</Label>
+                  <Input 
+                    value={editingDado.focal || ''}
+                    onChange={(e) => setEditingDado({...editingDado, focal: e.target.value})}
+                    data-testid="input-edit-focal"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Atendimento</Label>
+                  <Input 
+                    value={editingDado.atendimento || ''}
+                    onChange={(e) => setEditingDado({...editingDado, atendimento: e.target.value})}
+                    data-testid="input-edit-atendimento"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Relato</Label>
+                <textarea 
+                  className="w-full min-h-[100px] p-2 border rounded-md"
+                  value={editingDado.relato || ''}
+                  onChange={(e) => setEditingDado({...editingDado, relato: e.target.value})}
+                  data-testid="textarea-edit-relato"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              <X className="h-4 w-4 mr-2" />
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveDado} disabled={updateDadoMutation.isPending}>
+              <Save className="h-4 w-4 mr-2" />
+              {updateDadoMutation.isPending ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
