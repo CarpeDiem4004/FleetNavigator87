@@ -78,6 +78,33 @@ export interface RealFuelConsumption {
   precos_referencia: { [key: string]: number };
 }
 
+export interface MaintenanceStats {
+  totalEmManutencao: number;
+  totalFinalizado: number;
+  emManutencao: number;
+  aguardandoPeca: number;
+  emOrcamento: number;
+  aguardandoAprovacao: number;
+  emExecucao: number;
+  liberados: number;
+  veiculosUnicos: number;
+  totalLiberados: number;
+  preventivas: number;
+  corretivas: number;
+}
+
+export interface MaintenanceRecord {
+  id: number;
+  date: string;
+  placa: string;
+  vehicle: string;
+  serviceType: string;
+  status: string;
+  oficina: string;
+  km: number;
+  cost: number;
+}
+
 export interface DashboardData {
   kpis: KPIGroup[];
   timeSeriesData: TimeSeriesData[];
@@ -89,6 +116,8 @@ export interface DashboardData {
   expenseDistribution?: Array<{category: string; value: number; color: string}>;
   topVehiclesCost?: Array<{plate: string; model: string; totalCost: number; avgCostPerKm: number; totalKm: number}>;
   recentMaintenances?: Array<{date: string; vehiclePlate: string; vehicleModel: string; base: string; status: string; cost: number}>;
+  maintenanceRecords?: MaintenanceRecord[];
+  maintenanceStats?: MaintenanceStats;
   referenceDate?: string;
   updateTime?: string;
   realFuelConsumption?: RealFuelConsumption;
@@ -180,8 +209,8 @@ export async function getRealFuelConsumption(dateParam?: string): Promise<RealFu
 // Função para buscar dados para o dashboard executivo
 export async function fetchDashboardData(dateParam?: string): Promise<DashboardData> {
   try {
-    // Adiciona parâmetro de data se fornecido
-    const url = dateParam ? `/api/dashboard?date=${dateParam}` : '/api/dashboard';
+    // Adiciona parâmetro de data se fornecido - usando endpoint executivo
+    const url = dateParam ? `/api/executive/dashboard?date=${dateParam}` : '/api/executive/dashboard';
     
     const response = await apiRequest('GET', url);
     
