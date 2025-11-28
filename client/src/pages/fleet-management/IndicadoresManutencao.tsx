@@ -216,20 +216,35 @@ export default function IndicadoresManutencao() {
   const liberado = liberadoData?.liberado || [];
 
   // Buscar dashboard de manutenções histórico
-  const { data: dashboardData, isLoading: dashboardLoading } = useQuery<DashboardData>({
+  const { data: dashboardData, isLoading: dashboardLoading } = useQuery<DashboardData | null>({
     queryKey: ['/api/indicadores/manutencoes/dashboard', { base: dashboardBase }],
-    queryFn: async () => {
+    queryFn: async (): Promise<DashboardData | null> => {
       const params = new URLSearchParams();
       if (dashboardBase) params.append('base', dashboardBase);
       const res = await fetch(`/api/indicadores/manutencoes/dashboard?${params}`, { credentials: 'include' });
       const data = await res.json();
-      return data;
+      if (data.success) {
+        return {
+          totais: data.totais,
+          porTipo: data.porTipo || [],
+          porOficina: data.porOficina || [],
+          porBase: data.porBase || [],
+          rankingPlacas: data.rankingPlacas || [],
+          evolucaoMensal: data.evolucaoMensal || [],
+          porStatus: data.porStatus || []
+        } as DashboardData;
+      }
+      return null;
     }
   });
 
   // Buscar bases disponíveis
-  const { data: basesData } = useQuery<{bases: string[]}>({
+  const { data: basesData } = useQuery<{success: boolean, bases: string[]}>({
     queryKey: ['/api/indicadores/manutencoes/bases'],
+    queryFn: async () => {
+      const res = await fetch('/api/indicadores/manutencoes/bases', { credentials: 'include' });
+      return res.json();
+    }
   });
 
   // Buscar histórico por placa
@@ -238,7 +253,8 @@ export default function IndicadoresManutencao() {
     queryFn: async () => {
       if (!searchPlaca) return null;
       const res = await fetch(`/api/indicadores/manutencoes/placa/${encodeURIComponent(searchPlaca)}`, { credentials: 'include' });
-      return res.json();
+      const data = await res.json();
+      return data;
     },
     enabled: !!searchPlaca && searchPlaca.length >= 3,
   });
@@ -304,7 +320,9 @@ export default function IndicadoresManutencao() {
         title: 'Importação concluída!',
         description: `${data.importados} registros importados, ${data.placasAtualizadas} placas atualizadas.`,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/manutencoes'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/manutencoes/dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/manutencoes/bases'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/manutencoes/placa'] });
       setSelectedFile(null);
     },
     onError: (error: Error) => {
