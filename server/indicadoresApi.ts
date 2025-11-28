@@ -279,7 +279,7 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
 // Criar nova manutenção
 router.post('/dados', isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const { upload_id, placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status, pecas } = req.body;
+    const { upload_id, placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status, pecas, base } = req.body;
 
     if (!placa) {
       return res.status(400).json({ success: false, message: 'Placa é obrigatória' });
@@ -312,16 +312,15 @@ router.post('/dados', isAuthenticated, async (req: Request, res: Response) => {
       [upload_id, placa, modelo, km || null, descricaoCompleta, data_agenda || null, focal, oficina_debito, atendimento, status || 'Em Manutenção']
     );
 
-    // Também registrar no histórico de manutenções com valor
-    if (valorTotal > 0) {
-      await pool.query(
-        `INSERT INTO manutencoes_historico 
-          (placa, tipo, descricao, valor, status, km, data_entrada, oficina, base, data_manutencao)
-         VALUES ($1, 'Corretiva', $2, $3, $4, $5, CURRENT_DATE, $6, 'LH01', CURRENT_DATE)
-         ON CONFLICT DO NOTHING`,
-        [placa, descricaoCompleta, valorTotal, status || 'Em Manutenção', km || 0, oficina_debito]
-      );
-    }
+    // Também registrar no histórico de manutenções com valor e base
+    const baseValue = base || 'LH01';
+    await pool.query(
+      `INSERT INTO manutencoes_historico 
+        (placa, tipo, descricao, valor, status, km, data_entrada, oficina, base, data_manutencao)
+       VALUES ($1, 'Corretiva', $2, $3, $4, $5, CURRENT_DATE, $6, $7, CURRENT_DATE)
+       ON CONFLICT DO NOTHING`,
+      [placa, descricaoCompleta || 'Manutenção registrada', valorTotal, status || 'Em Manutenção', km || 0, oficina_debito, baseValue]
+    );
 
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {

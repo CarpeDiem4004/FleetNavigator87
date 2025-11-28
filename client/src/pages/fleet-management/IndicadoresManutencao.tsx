@@ -1776,10 +1776,10 @@ export default function IndicadoresManutencao() {
               </div>
             </div>
 
-            {/* Status e Oficina */}
+            {/* Status, Base e Oficina */}
             <div className="space-y-4">
-              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Status e Oficina</h4>
-              <div className="grid grid-cols-2 gap-4">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Status, Base e Oficina</h4>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>Status</Label>
                   <Select 
@@ -1795,6 +1795,32 @@ export default function IndicadoresManutencao() {
                       <SelectItem value="Aguardando Peça">Aguardando Peça</SelectItem>
                       <SelectItem value="Aguardando Aprovação">Aguardando Aprovação</SelectItem>
                       <SelectItem value="Em Execução">Em Execução</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Base</Label>
+                  <Select 
+                    value={(newDado as any).base || ''}
+                    onValueChange={(value) => setNewDado({...newDado, base: value} as any)}
+                  >
+                    <SelectTrigger data-testid="select-new-base">
+                      <SelectValue placeholder="Selecione a base" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="LH01">LH01 - Line Haul</SelectItem>
+                      <SelectItem value="PTL01">PTL01 - Petlove SP</SelectItem>
+                      <SelectItem value="PTL02">PTL02 - Petlove RJ</SelectItem>
+                      <SelectItem value="PTL03">PTL03 - Petlove MG</SelectItem>
+                      <SelectItem value="PTL04">PTL04 - Petlove PR</SelectItem>
+                      <SelectItem value="PTL05">PTL05 - Petlove SC</SelectItem>
+                      <SelectItem value="PTL06">PTL06 - Petlove RS</SelectItem>
+                      <SelectItem value="PTL07">PTL07 - Petlove BA</SelectItem>
+                      <SelectItem value="PTL08">PTL08 - Petlove PE</SelectItem>
+                      <SelectItem value="PTL09">PTL09 - Petlove GO</SelectItem>
+                      {basesData?.bases?.filter(b => !['LH01', 'PTL01', 'PTL02', 'PTL03', 'PTL04', 'PTL05', 'PTL06', 'PTL07', 'PTL08', 'PTL09'].includes(b)).map((base) => (
+                        <SelectItem key={base} value={base}>{base}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
