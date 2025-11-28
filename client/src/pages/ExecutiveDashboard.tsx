@@ -512,7 +512,32 @@ export default function ExecutiveDashboard() {
           </TabsList>
           
           <TabsContent value="overview" className="space-y-6">
-            {renderKpis()}
+            {/* KPIs principais com dados de manutenção */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <KpiCard
+                title="Disponibilidade e Utilização"
+                value={dashboardData?.maintenanceStats?.veiculosUnicos || 0}
+                icon={<Truck className="h-5 w-5" />}
+                loading={loading}
+                color="primary"
+              />
+              
+              <KpiCard
+                title="Manutenção"
+                value={dashboardData?.maintenanceStats?.totalEmManutencao || 0}
+                icon={<Wrench className="h-5 w-5" />}
+                loading={loading}
+                color="warning"
+              />
+              
+              <KpiCard
+                title="Custos e Eficiência"
+                value={dashboardData?.maintenanceStats?.totalLiberados || 0}
+                icon={<TrendingUp className="h-5 w-5" />}
+                loading={loading}
+                color="success"
+              />
+            </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <ChartCard 
@@ -660,38 +685,63 @@ export default function ExecutiveDashboard() {
           </TabsContent>
           
           <TabsContent value="maintenance" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <KpiCard
-                title="Tempo Médio em Oficina"
-                value={4.2}
-                unit="dias"
-                previousValue={5.8}
-                changePercentage={-27.6}
-                trend="down"
-                isPositive={true}
-                icon={<AlertTriangle className="h-5 w-5" />}
+                title="Veículos em Manutenção"
+                value={dashboardData?.maintenanceStats?.totalEmManutencao || 0}
+                icon={<Wrench className="h-5 w-5" />}
                 loading={loading}
                 color="warning"
               />
               
               <KpiCard
-                title="Pneus Montados"
-                value={142}
-                previousValue={138}
-                changePercentage={2.9}
-                trend="up"
-                isPositive={true}
+                title="Aguardando Peça"
+                value={dashboardData?.maintenanceStats?.aguardandoPeca || 0}
+                icon={<AlertTriangle className="h-5 w-5" />}
+                loading={loading}
+                color="danger"
+              />
+              
+              <KpiCard
+                title="Em Execução"
+                value={dashboardData?.maintenanceStats?.emExecucao || 0}
                 icon={<Activity className="h-5 w-5" />}
                 loading={loading}
                 color="info"
               />
               
               <KpiCard
-                title="Solicitações Abertas/Concluídas"
-                value="12/34"
+                title="Liberados"
+                value={dashboardData?.maintenanceStats?.liberados || 0}
                 icon={<TrendingUp className="h-5 w-5" />}
                 loading={loading}
+                color="success"
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <KpiCard
+                title="Veículos Únicos"
+                value={dashboardData?.maintenanceStats?.veiculosUnicos || 0}
+                icon={<Truck className="h-5 w-5" />}
+                loading={loading}
                 color="primary"
+              />
+              
+              <KpiCard
+                title="Manutenções Preventivas"
+                value={dashboardData?.maintenanceStats?.preventivas || 0}
+                icon={<Timer className="h-5 w-5" />}
+                loading={loading}
+                color="info"
+              />
+              
+              <KpiCard
+                title="Manutenções Corretivas"
+                value={dashboardData?.maintenanceStats?.corretivas || 0}
+                icon={<Wrench className="h-5 w-5" />}
+                loading={loading}
+                color="warning"
               />
             </div>
             

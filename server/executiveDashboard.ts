@@ -343,24 +343,46 @@ export async function getExecutiveDashboard(req: Request, res: Response) {
       LIMIT 10
     `;
     
-    // 13. Consulta para manutenções recentes
+    // 13. Consulta para manutenções recentes do módulo Indicadores de Manutenção
     const recentMaintenancesQuery = `
       SELECT 
-        m.id,
-        m.data_inicio,
-        m.data_fim,
-        m.placa,
-        v.modelo,
-        m.descricao,
-        m.status,
-        m.custo_pecas + m.custo_servico AS custo_total,
-        u.base
-      FROM manutencoes m
-      JOIN veiculos v ON m.placa = v.placa
-      JOIN users u ON m.user_id = u.id
-      WHERE m.data_inicio >= $1 AND m.data_inicio <= $2
-      ORDER BY m.data_inicio DESC
-      LIMIT 10
+        id.id,
+        COALESCE(id.data_agenda, id.created_at::date) AS data_inicio,
+        id.placa,
+        id.modelo,
+        id.relato AS descricao,
+        COALESCE(id.status, 'Em Manutenção') AS status,
+        id.oficina_debito AS oficina,
+        id.km,
+        id.focal,
+        0 AS custo_total
+      FROM indicadores_dados id
+      ORDER BY COALESCE(id.data_agenda, id.created_at) DESC
+      LIMIT 15
+    `;
+    
+    // 14. Consulta para estatísticas de manutenção do módulo Indicadores
+    const maintenanceStatsQuery = `
+      SELECT 
+        COUNT(*) AS total_em_manutencao,
+        COUNT(CASE WHEN status = 'Finalizado' THEN 1 END) AS total_finalizado,
+        COUNT(CASE WHEN status = 'Em Manutenção' THEN 1 END) AS em_manutencao,
+        COUNT(CASE WHEN status = 'Aguardando Peça' THEN 1 END) AS aguardando_peca,
+        COUNT(CASE WHEN status = 'Em Orçamento' THEN 1 END) AS em_orcamento,
+        COUNT(CASE WHEN status = 'Aguardando Aprovação' THEN 1 END) AS aguardando_aprovacao,
+        COUNT(CASE WHEN status = 'Em Execução' THEN 1 END) AS em_execucao,
+        COUNT(CASE WHEN status = 'Liberado' THEN 1 END) AS liberados,
+        COUNT(DISTINCT placa) AS veiculos_unicos
+      FROM indicadores_dados
+    `;
+    
+    // 15. Consulta para veículos liberados
+    const liberadosQuery = `
+      SELECT 
+        COUNT(*) AS total_liberados,
+        COUNT(CASE WHEN tipo_manutencao ILIKE '%preventiva%' THEN 1 END) AS preventivas,
+        COUNT(CASE WHEN tipo_manutencao ILIKE '%corretiva%' THEN 1 END) AS corretivas
+      FROM indicadores_liberado
     `;
     
     // Executar todas as consultas em paralelo
@@ -387,7 +409,9 @@ export async function getExecutiveDashboard(req: Request, res: Response) {
       previousFuelByBaseResult,
       expenseDistributionResult,
       topVehiclesCostResult,
-      recentMaintenancesResult
+      recentMaintenancesResult,
+      maintenanceStatsResult,
+      liberadosResult
     ] = await Promise.all([
       pool.query(fuelExpensesQuery, [startOfCurrentMonth.toISOString(), endOfCurrentMonth.toISOString()]),
       pool.query(previousFuelExpensesQuery, [startOfPreviousMonth.toISOString(), endOfPreviousMonth.toISOString()]),
@@ -411,7 +435,9 @@ export async function getExecutiveDashboard(req: Request, res: Response) {
       pool.query(previousFuelByBaseQuery, [startOfPreviousMonth.toISOString(), endOfPreviousMonth.toISOString()]),
       pool.query(expenseDistributionQuery, [startOfCurrentMonth.toISOString(), endOfCurrentMonth.toISOString()]),
       pool.query(topVehiclesCostQuery, [startOfCurrentMonth.toISOString(), endOfCurrentMonth.toISOString()]),
-      pool.query(recentMaintenancesQuery, [startOfCurrentMonth.toISOString(), endOfCurrentMonth.toISOString()])
+      pool.query(recentMaintenancesQuery),
+      pool.query(maintenanceStatsQuery),
+      pool.query(liberadosQuery)
     ]);
     
     // Processar dados dos KPIs
@@ -510,17 +536,49 @@ export async function getExecutiveDashboard(req: Request, res: Response) {
       totalKm: parseInt(vehicle.km_total)
     }));
     
-    // Processar dados de manutenções recentes
-    const recentMaintenances = recentMaintenancesResult.rows.map(maintenance => ({
-      id: maintenance.id,
-      date: format(parseISO(maintenance.data_inicio), 'dd/MM/yyyy'),
-      vehiclePlate: maintenance.placa,
-      vehicleModel: maintenance.modelo,
-      description: maintenance.descricao,
-      status: maintenance.status,
-      cost: parseFloat(maintenance.custo_total),
-      base: maintenance.base
-    }));
+    // Processar dados de manutenções recentes do módulo Indicadores
+    const recentMaintenances = recentMaintenancesResult.rows.map(maintenance => {
+      let formattedDate = 'N/A';
+      try {
+        if (maintenance.data_inicio) {
+          const d = new Date(maintenance.data_inicio);
+          formattedDate = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+        }
+      } catch (e) {
+        formattedDate = 'N/A';
+      }
+      return {
+        id: maintenance.id,
+        date: formattedDate,
+        placa: maintenance.placa,
+        vehicle: maintenance.modelo || 'N/A',
+        serviceType: maintenance.descricao ? (maintenance.descricao.match(/\[([^\]]+)\]/) ? maintenance.descricao.match(/\[([^\]]+)\]/)[1] : maintenance.descricao.substring(0, 50)) : 'Manutenção Geral',
+        status: maintenance.status || 'Em Manutenção',
+        oficina: maintenance.oficina || 'N/A',
+        km: maintenance.km || 0,
+        cost: parseFloat(maintenance.custo_total) || 0
+      };
+    });
+
+    // Processar estatísticas de manutenção do módulo Indicadores
+    const maintenanceStats = maintenanceStatsResult.rows[0] || {
+      total_em_manutencao: 0,
+      total_finalizado: 0,
+      em_manutencao: 0,
+      aguardando_peca: 0,
+      em_orcamento: 0,
+      aguardando_aprovacao: 0,
+      em_execucao: 0,
+      liberados: 0,
+      veiculos_unicos: 0
+    };
+    
+    // Processar dados de veículos liberados
+    const liberadosStats = liberadosResult.rows[0] || {
+      total_liberados: 0,
+      preventivas: 0,
+      corretivas: 0
+    };
     
     // Montar objeto de resposta
     const dashboardData = {
@@ -617,7 +675,23 @@ export async function getExecutiveDashboard(req: Request, res: Response) {
       fuelConsumptionByBase,
       expenseDistribution: processedExpenseDistribution,
       topVehiclesCost,
-      recentMaintenances,
+      maintenanceRecords: recentMaintenances,
+      
+      // Estatísticas de manutenção do módulo Indicadores
+      maintenanceStats: {
+        totalEmManutencao: parseInt(maintenanceStats.total_em_manutencao) || 0,
+        totalFinalizado: parseInt(maintenanceStats.total_finalizado) || 0,
+        emManutencao: parseInt(maintenanceStats.em_manutencao) || 0,
+        aguardandoPeca: parseInt(maintenanceStats.aguardando_peca) || 0,
+        emOrcamento: parseInt(maintenanceStats.em_orcamento) || 0,
+        aguardandoAprovacao: parseInt(maintenanceStats.aguardando_aprovacao) || 0,
+        emExecucao: parseInt(maintenanceStats.em_execucao) || 0,
+        liberados: parseInt(maintenanceStats.liberados) || 0,
+        veiculosUnicos: parseInt(maintenanceStats.veiculos_unicos) || 0,
+        totalLiberados: parseInt(liberadosStats.total_liberados) || 0,
+        preventivas: parseInt(liberadosStats.preventivas) || 0,
+        corretivas: parseInt(liberadosStats.corretivas) || 0
+      },
       
       // Dados de referência
       referenceDate: formattedMonth,
