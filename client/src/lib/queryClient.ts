@@ -227,10 +227,27 @@ export const getQueryFn: <T>(options: {
     // 🛡️ NÃO ADICIONAR JWT - Usar apenas autenticação por sessão (cookies)
     console.log('[QueryClient] Usando apenas autenticação por sessão (cookies) para GET:', urlOrTable);
     
+    // Construir URL com parâmetros da queryKey
+    let finalUrl = urlOrTable;
+    if (params.length > 0 && typeof params[0] === 'object' && params[0] !== null) {
+      const queryParams = new URLSearchParams();
+      Object.entries(params[0] as Record<string, any>).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.append(key, String(value));
+        }
+      });
+      const queryString = queryParams.toString();
+      if (queryString) {
+        finalUrl = urlOrTable.includes('?') 
+          ? `${urlOrTable}&${queryString}`
+          : `${urlOrTable}?${queryString}`;
+      }
+    }
+    
     // Adicionar timestamp para evitar cache
-    const urlWithTimestamp = urlOrTable.includes('?') 
-      ? `${urlOrTable}&_t=${Date.now()}`
-      : `${urlOrTable}?_t=${Date.now()}`;
+    const urlWithTimestamp = finalUrl.includes('?') 
+      ? `${finalUrl}&_t=${Date.now()}`
+      : `${finalUrl}?_t=${Date.now()}`;
     
     console.log(`[QueryClient] Enviando requisição GET para ${urlWithTimestamp}`);
     let res = await fetch(urlWithTimestamp, {
@@ -253,9 +270,9 @@ export const getQueryFn: <T>(options: {
       if (resyncSuccessful) {
         console.log('[QueryClient] Sessão ressincronizada com sucesso, repetindo requisição:', urlOrTable);
         // Repetir a requisição com o mesmo token JWT se disponível
-        const retryUrlWithTimestamp = urlOrTable.includes('?') 
-          ? `${urlOrTable}&_t=${Date.now()}`
-          : `${urlOrTable}?_t=${Date.now()}`;
+        const retryUrlWithTimestamp = finalUrl.includes('?') 
+          ? `${finalUrl}&_t=${Date.now()}`
+          : `${finalUrl}?_t=${Date.now()}`;
           
         res = await fetch(retryUrlWithTimestamp, {
           credentials: "include",
