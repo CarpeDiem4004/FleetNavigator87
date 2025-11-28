@@ -405,6 +405,13 @@ export default function IndicadoresManutencao() {
 
   const pecasAnalise = pecasAnaliseData;
 
+  // Buscar todas as bases do sistema
+  const { data: allBasesData } = useQuery<Array<{id: number, name: string}>>({
+    queryKey: ['/api/bases'],
+  });
+
+  const allBases = allBasesData || [];
+
   // Buscar histórico por placa
   const { data: placaData, isLoading: placaLoading } = useQuery({
     queryKey: ['/api/indicadores/manutencoes/placa', searchPlaca],
@@ -1807,19 +1814,10 @@ export default function IndicadoresManutencao() {
                     <SelectTrigger data-testid="select-new-base">
                       <SelectValue placeholder="Selecione a base" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="LH01">LH01 - Line Haul</SelectItem>
-                      <SelectItem value="PTL01">PTL01 - Petlove SP</SelectItem>
-                      <SelectItem value="PTL02">PTL02 - Petlove RJ</SelectItem>
-                      <SelectItem value="PTL03">PTL03 - Petlove MG</SelectItem>
-                      <SelectItem value="PTL04">PTL04 - Petlove PR</SelectItem>
-                      <SelectItem value="PTL05">PTL05 - Petlove SC</SelectItem>
-                      <SelectItem value="PTL06">PTL06 - Petlove RS</SelectItem>
-                      <SelectItem value="PTL07">PTL07 - Petlove BA</SelectItem>
-                      <SelectItem value="PTL08">PTL08 - Petlove PE</SelectItem>
-                      <SelectItem value="PTL09">PTL09 - Petlove GO</SelectItem>
-                      {basesData?.bases?.filter(b => !['LH01', 'PTL01', 'PTL02', 'PTL03', 'PTL04', 'PTL05', 'PTL06', 'PTL07', 'PTL08', 'PTL09'].includes(b)).map((base) => (
-                        <SelectItem key={base} value={base}>{base}</SelectItem>
+                    <SelectContent className="max-h-[300px]">
+                      <SelectItem value="">Todas as Bases</SelectItem>
+                      {allBases.map((base) => (
+                        <SelectItem key={base.id} value={base.name}>{base.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
