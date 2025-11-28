@@ -1,0 +1,208 @@
+Esse prompt serve tanto para ler a planilha, validar, inserir e exibir no dashboard, tudo dentro da arquitetura do Murici On Fleet 2.0.
+
+✅ PROMPT PRONTO PARA IA DO REPLIT
+
+Cole exatamente assim:
+
+PROMPT — Importação de Planilha de Indicadores + Módulo de Manutenções
+
+Quero que você atualize meu sistema Murici On Fleet 2.0 no Replit com as instruções abaixo. O sistema usa:
+
+Backend: Node/Express
+
+Banco e Auth: Supabase
+
+Frontend: React
+
+Endpoint atual do upload já existe, mas preciso que você escreva todo fluxo corretamente.
+
+1. OBJETIVO
+
+Implementar importação automática de planilha Excel (.xlsx) contendo dados de:
+
+placa
+
+data da manutenção
+
+tipo de manutenção
+
+descrição
+
+valor
+
+status
+
+oficina
+
+km
+
+data de entrada
+
+data de saída
+
+tempo de manutenção
+
+base
+
+Os dados devem ser enviados ao backend, convertidos para JSON e gravados na tabela do Supabase:
+
+manutencoes_historico
+
+2. O QUE VOCÊ DEVE FAZER
+2.1. No Backend (Express)
+
+Criar/atualizar:
+
+A) Rotas
+POST /api/manutencoes/upload
+GET  /api/manutencoes
+GET  /api/manutencoes/:placa
+
+B) Requisitos da rota de upload:
+
+Receber arquivo .xlsx (multer).
+
+Ler a planilha usando xlsx.
+
+Validar colunas obrigatórias.
+
+Mapear as colunas para o formato do banco.
+
+Criar um array JSON limpo.
+
+Enviar para o Supabase com:
+
+supabase.from('manutencoes_historico').upsert(linhasProcessadas)
+
+
+Retornar resumo: total importado, erros, linhas ignoradas.
+
+C) Requisitos adicionais:
+
+Não duplicar registros (usar upsert por placa + data_manutencao).
+
+Converter datas corretamente para ISO.
+
+Converter valores numéricos.
+
+Tratar campos vazios como null.
+
+2.2. No Supabase
+
+Criar (ou confirmar) a estrutura da tabela:
+
+id (uuid)
+placa (text)
+tipo (text)
+descricao (text)
+valor (numeric)
+status (text)
+km (numeric)
+data_entrada (date)
+data_saida (date)
+tempo_total (integer)
+oficina (text)
+base (text)
+data_manutencao (date)
+created_at (timestamp)
+
+
+Criar um índice composto:
+
+unique(placa, data_manutencao)
+
+2.3. No Frontend (React)
+
+Adicionar:
+
+A) Tela de Upload (já existe, somente ajustar ação)
+
+Conectar o botão Enviar e Processar à rota POST /api/manutencoes/upload
+
+Mostrar barra de progresso
+
+Mostrar alerta de sucesso:
+
+quantidade importada
+
+placas atualizadas
+
+erros
+
+2.4 Dashboard de Manutenções
+
+Criar gráficos automáticos:
+
+Total por tipo de manutenção
+
+Total por oficina
+
+Total por base
+
+Ranking das placas mais caras
+
+Tempo médio em manutenção
+
+Manutenções concluídas vs em andamento
+
+Criar filtros:
+
+placa
+
+base
+
+data inicial – data final
+
+oficina
+
+2.5 Histórico por Placa
+
+Criar página:
+
+/manutencoes/placa/:placa
+
+
+Exibir:
+
+linha do tempo de manutenções
+
+custos acumulados
+
+KM por manutenção
+
+dias parados
+
+gráfico de barras mostrando custos por mês
+
+detalhes de cada manutenção
+
+3. LIBRARIES PARA USAR
+
+multer
+
+xlsx
+
+@supabase/supabase-js
+
+react-chartjs-2
+
+axios
+
+4. RESULTADO ESPERADO
+
+Quero que você:
+
+Gere os arquivos atualizados do backend.
+
+Crie os componentes React prontos.
+
+Monte toda a lógica da importação e exibição.
+
+Organize tudo em pastas limpas.
+
+Me entregue o código funcional.
+
+IMPORTANTE
+
+Não altere o que já funciona no sistema.
+Apenas incremente e modernize.
