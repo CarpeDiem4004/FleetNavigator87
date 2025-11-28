@@ -1749,6 +1749,7 @@ export default function IndicadoresManutencao() {
                         <SelectItem value="Aguardando Aprovação">Aguardando Aprovação</SelectItem>
                         <SelectItem value="Em Execução">Em Execução</SelectItem>
                         <SelectItem value="Liberado">Liberado</SelectItem>
+                        <SelectItem value="Finalizado">Finalizado</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1761,6 +1762,42 @@ export default function IndicadoresManutencao() {
                       data-testid="input-edit-oficina"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Datas da Manutenção */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Datas da Manutenção</h4>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Data Parada do Veículo</Label>
+                    <Input 
+                      type="date"
+                      value={(editingDado as any).data_parada || ''}
+                      onChange={(e) => setEditingDado({...editingDado, data_parada: e.target.value} as any)}
+                      data-testid="input-edit-data-parada"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Data Início Manutenção</Label>
+                    <Input 
+                      type="date"
+                      value={(editingDado as any).data_inicio_manutencao || ''}
+                      onChange={(e) => setEditingDado({...editingDado, data_inicio_manutencao: e.target.value} as any)}
+                      data-testid="input-edit-data-inicio"
+                    />
+                  </div>
+                  {editingDado.status === 'Finalizado' && (
+                    <div className="space-y-2">
+                      <Label>Data Finalização</Label>
+                      <Input 
+                        type="date"
+                        value={(editingDado as any).data_finalizacao || ''}
+                        onChange={(e) => setEditingDado({...editingDado, data_finalizacao: e.target.value} as any)}
+                        data-testid="input-edit-data-finalizacao"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1911,6 +1948,8 @@ export default function IndicadoresManutencao() {
                       <SelectItem value="Aguardando Peça">Aguardando Peça</SelectItem>
                       <SelectItem value="Aguardando Aprovação">Aguardando Aprovação</SelectItem>
                       <SelectItem value="Em Execução">Em Execução</SelectItem>
+                      <SelectItem value="Liberado">Liberado</SelectItem>
+                      <SelectItem value="Finalizado">Finalizado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1923,6 +1962,42 @@ export default function IndicadoresManutencao() {
                     data-testid="input-new-oficina"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Datas da Manutenção */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Datas da Manutenção</h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Data Parada do Veículo</Label>
+                  <Input 
+                    type="date"
+                    value={(newDado as any).data_parada || ''}
+                    onChange={(e) => setNewDado({...newDado, data_parada: e.target.value} as any)}
+                    data-testid="input-new-data-parada"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Data Início Manutenção</Label>
+                  <Input 
+                    type="date"
+                    value={(newDado as any).data_inicio_manutencao || ''}
+                    onChange={(e) => setNewDado({...newDado, data_inicio_manutencao: e.target.value} as any)}
+                    data-testid="input-new-data-inicio"
+                  />
+                </div>
+                {newDado.status === 'Finalizado' && (
+                  <div className="space-y-2">
+                    <Label>Data Finalização</Label>
+                    <Input 
+                      type="date"
+                      value={(newDado as any).data_finalizacao || ''}
+                      onChange={(e) => setNewDado({...newDado, data_finalizacao: e.target.value} as any)}
+                      data-testid="input-new-data-finalizacao"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
