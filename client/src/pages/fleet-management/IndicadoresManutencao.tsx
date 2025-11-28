@@ -216,6 +216,7 @@ export default function IndicadoresManutencao() {
     atendimento: ''
   });
   const [newPecas, setNewPecas] = useState<Array<{nome: string, valor: number}>>([{nome: '', valor: 0}]);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
 
   // Mutation para atualizar dados em manutenção
   const updateDadoMutation = useMutation({
@@ -405,9 +406,22 @@ export default function IndicadoresManutencao() {
 
   const pecasAnalise = pecasAnaliseData;
 
-  // Buscar todas as bases do sistema
-  const { data: allBasesData } = useQuery<{success: boolean, data: Array<{id: number, name: string}>}>({
-    queryKey: ['/api/bases'],
+  // Buscar todos os projetos do sistema
+  const { data: projectsData } = useQuery<{success: boolean, data: Array<{id: number, name: string}>}>({
+    queryKey: ['/api/projects'],
+  });
+
+  const allProjects = projectsData?.data || [];
+
+  // Buscar bases filtradas pelo projeto selecionado
+  const { data: allBasesData } = useQuery<{success: boolean, data: Array<{id: number, name: string, project_id: number}>}>({
+    queryKey: ['/api/bases', { project_id: selectedProjectId }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedProjectId) params.append('project_id', selectedProjectId.toString());
+      const res = await fetch(`/api/bases?${params}`, { credentials: 'include' });
+      return res.json();
+    }
   });
 
   const allBases = allBasesData?.data || [];
@@ -1783,10 +1797,10 @@ export default function IndicadoresManutencao() {
               </div>
             </div>
 
-            {/* Status, Base e Oficina */}
+            {/* Status e Oficina */}
             <div className="space-y-4">
-              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Status, Base e Oficina</h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Status e Oficina</h4>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Status</Label>
                   <Select 
@@ -1806,6 +1820,42 @@ export default function IndicadoresManutencao() {
                   </Select>
                 </div>
                 <div className="space-y-2">
+                  <Label>Oficina</Label>
+                  <Input 
+                    value={newDado.oficina_debito || ''}
+                    onChange={(e) => setNewDado({...newDado, oficina_debito: e.target.value})}
+                    placeholder="Nome da oficina"
+                    data-testid="input-new-oficina"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Projeto e Base */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Projeto e Base</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Projeto</Label>
+                  <Select 
+                    value={selectedProjectId?.toString() || ''}
+                    onValueChange={(value) => {
+                      setSelectedProjectId(value ? parseInt(value) : null);
+                      setNewDado({...newDado, base: ''} as any);
+                    }}
+                  >
+                    <SelectTrigger data-testid="select-new-project">
+                      <SelectValue placeholder="Todos os Projetos" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      <SelectItem value="">Todos os Projetos</SelectItem>
+                      {allProjects.map((project) => (
+                        <SelectItem key={project.id} value={project.id.toString()}>{project.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label>Base</Label>
                   <Select 
                     value={(newDado as any).base || ''}
@@ -1821,15 +1871,6 @@ export default function IndicadoresManutencao() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Oficina</Label>
-                  <Input 
-                    value={newDado.oficina_debito || ''}
-                    onChange={(e) => setNewDado({...newDado, oficina_debito: e.target.value})}
-                    placeholder="Nome da oficina"
-                    data-testid="input-new-oficina"
-                  />
                 </div>
               </div>
             </div>
