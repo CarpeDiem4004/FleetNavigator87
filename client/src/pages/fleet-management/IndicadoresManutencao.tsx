@@ -406,11 +406,11 @@ export default function IndicadoresManutencao() {
   const pecasAnalise = pecasAnaliseData;
 
   // Buscar todas as bases do sistema
-  const { data: allBasesData } = useQuery<Array<{id: number, name: string}>>({
+  const { data: allBasesData } = useQuery<{success: boolean, data: Array<{id: number, name: string}>}>({
     queryKey: ['/api/bases'],
   });
 
-  const allBases = allBasesData || [];
+  const allBases = allBasesData?.data || [];
 
   // Buscar histórico por placa
   const { data: placaData, isLoading: placaLoading } = useQuery({
