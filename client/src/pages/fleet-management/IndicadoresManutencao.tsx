@@ -220,6 +220,26 @@ export default function IndicadoresManutencao() {
   const [selectedGrupo, setSelectedGrupo] = useState<string>('');
   const [selectedSubgrupo, setSelectedSubgrupo] = useState<string>('');
 
+  // Lista de modelos de veículos disponíveis
+  const modelosVeiculos = [
+    'ACCELO 1016', 'ACCELO 1017', 'ACCELO 817', 'ACCELO 1316',
+    'Sprinter 313', 'DELIVERY 9.180', 'DELIVERY 13.180 6x2',
+    'FORD TRANSIT 350 FL', 'FORD TRANSIT 350 CL', 'FORD RENT',
+    'MASTER FURGAO L1', 'Fiorino Endurance Evo 1.4 2P',
+    'IVECO 35S1', 'TECTOR 170E21', 'CONSTELLATION 17.190', 'CONSTELLATION 26.320',
+    'ACTROS 2548 LS 6X2', 'ACTROS 2651 LS 6X4',
+    'VM 360', 'Atego 2426', 'Atego 2429', 'Atego 1719', 'Atego 1317',
+    'TECTOR 24-320-CL', 'FH 540',
+    'FURGAO CARGA GERAL', 'BITREM CARGA GERAL DIANTEIRO', 'BITREM CARGA GERAL TRASEIRO',
+    'E-Jumpy Furgão 2P', 'JAC iEV1200T AT 4x2 2P',
+    'Partner Rapid Business Pack 1.4 2P', 'Kangoo Z.E. MAXI 5 Lugares 2P',
+    'EXPERT-CARGO-1.5-TURBO-DIESEL', 'E-EXPERT-CARGO-1.5-TURBO-DIESEL',
+    'Ducato Chassi 2.3 2P', 'MB Accelo 815 MT 4x2 4.8 2P',
+    'CITROEN JUMPY', 'FORD/CARGO 2422 CNL',
+    '25 390 CTC 6X2', '17.190 CRM 4X2 4P', '24.280 CRM 6X2', '13.180 DRC 6X2',
+    'Foton Ewonder'
+  ];
+
   // Grupos e Subgrupos de Manutenção
   const gruposManutencao: Record<string, string[]> = {
     'Motor': [
@@ -380,7 +400,7 @@ export default function IndicadoresManutencao() {
     return newPecas.reduce((sum, p) => sum + (p.valor || 0), 0);
   };
 
-  const handleCreateDado = () => {
+  const handleCreateDado = async () => {
     if (!newDado.placa) {
       toast({ title: 'Erro', description: 'Placa é obrigatória', variant: 'destructive' });
       return;
@@ -399,6 +419,23 @@ export default function IndicadoresManutencao() {
       descricaoCompleta = descricaoCompleta 
         ? `${descricaoCompleta} - ${newDado.relato}`
         : newDado.relato;
+    }
+
+    // Se o modelo foi selecionado para um veículo sem modelo, atualizar o veículo
+    const selectedVehicle = vehicles.find(v => v.plate === newDado.placa);
+    if (selectedVehicle && newDado.modelo && (!selectedVehicle.model || selectedVehicle.model === 'Não informado')) {
+      try {
+        await fetch(`/api/vehicles/${selectedVehicle.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: newDado.modelo }),
+          credentials: 'include'
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
+        toast({ title: 'Sucesso', description: `Modelo do veículo ${newDado.placa} atualizado para ${newDado.modelo}` });
+      } catch (error) {
+        console.error('Erro ao atualizar modelo do veículo:', error);
+      }
     }
 
     createDadoMutation.mutate({
@@ -1906,15 +1943,29 @@ export default function IndicadoresManutencao() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Modelo</Label>
-                  <Input 
-                    value={newDado.modelo || ''}
-                    onChange={(e) => setNewDado({...newDado, modelo: e.target.value})}
-                    placeholder="Preenchido automaticamente"
-                    readOnly
-                    className="bg-muted"
-                    data-testid="input-new-modelo"
-                  />
+                  <Label>Modelo {(!newDado.modelo || newDado.modelo === 'Não informado') && <span className="text-orange-500 text-xs">(Selecione para atualizar)</span>}</Label>
+                  {newDado.modelo && newDado.modelo !== 'Não informado' ? (
+                    <Input 
+                      value={newDado.modelo || ''}
+                      readOnly
+                      className="bg-muted"
+                      data-testid="input-new-modelo"
+                    />
+                  ) : (
+                    <Select 
+                      value={newDado.modelo || ''}
+                      onValueChange={(value) => setNewDado({...newDado, modelo: value})}
+                    >
+                      <SelectTrigger data-testid="select-new-modelo" className="bg-orange-50 border-orange-300">
+                        <SelectValue placeholder="Selecione o modelo" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {modelosVeiculos.map((modelo) => (
+                          <SelectItem key={modelo} value={modelo}>{modelo}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>KM</Label>
