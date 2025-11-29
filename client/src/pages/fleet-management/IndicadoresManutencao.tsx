@@ -238,6 +238,15 @@ export default function IndicadoresManutencao() {
   const [bipFilterMotivo, setBipFilterMotivo] = useState<string>('');
   const [bipDateStart, setBipDateStart] = useState<string>('');
   const [bipDateEnd, setBipDateEnd] = useState<string>('');
+  const [editingBip, setEditingBip] = useState<any | null>(null);
+  const [bipEditData, setBipEditData] = useState({
+    ultimo_bip: '',
+    ml_bip: '',
+    dds_bip: '',
+    motivo: '',
+    observacao: '',
+    base_reserva: ''
+  });
 
   // Lista de modelos de veículos disponíveis
   const modelosVeiculos = [
@@ -597,6 +606,58 @@ export default function IndicadoresManutencao() {
       return res.json();
     }
   });
+
+  // Mutation para atualizar BIP
+  const updateBipMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number, data: typeof bipEditData }) => {
+      const response = await fetch(`/api/indicadores/bip/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao atualizar');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Sucesso!',
+        description: 'Registro de BIP atualizado com sucesso.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/bip'] });
+      setEditingBip(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Função para abrir modal de edição BIP
+  const handleEditBip = (item: BipData) => {
+    setEditingBip(item);
+    setBipEditData({
+      ultimo_bip: item.ultimo_bip ? new Date(item.ultimo_bip).toISOString().split('T')[0] : '',
+      ml_bip: item.ml_bip ? new Date(item.ml_bip).toISOString().split('T')[0] : '',
+      dds_bip: item.dds_bip ? new Date(item.dds_bip).toISOString().split('T')[0] : '',
+      motivo: item.motivo || '',
+      observacao: item.observacao || '',
+      base_reserva: item.base_reserva || ''
+    });
+  };
+
+  // Função para salvar edição BIP
+  const handleSaveBip = () => {
+    if (editingBip) {
+      updateBipMutation.mutate({ id: editingBip.id, data: bipEditData });
+    }
+  };
 
   // Mutation para upload original
   const uploadMutation = useMutation({
@@ -1469,6 +1530,7 @@ export default function IndicadoresManutencao() {
                               <TableHead>Motivo</TableHead>
                               <TableHead>Base Reserva</TableHead>
                               <TableHead>Observação</TableHead>
+                              <TableHead className="text-center">Ações</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1530,6 +1592,16 @@ export default function IndicadoresManutencao() {
                                     <TableCell>{item.base_reserva || '-'}</TableCell>
                                     <TableCell className="max-w-xs truncate" title={item.observacao || ''}>
                                       {item.observacao || '-'}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleEditBip(item)}
+                                        data-testid={`button-edit-bip-${item.id}`}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
                                     </TableCell>
                                   </TableRow>
                                 );
@@ -2579,6 +2651,116 @@ export default function IndicadoresManutencao() {
             <Button onClick={handleCreateDado} disabled={createDadoMutation.isPending}>
               <Plus className="h-4 w-4 mr-2" />
               {createDadoMutation.isPending ? 'Registrando...' : 'Registrar Manutenção'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Edição de BIP */}
+      <Dialog open={!!editingBip} onOpenChange={(open) => !open && setEditingBip(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Radio className="h-5 w-5" />
+              Editar BIP - {editingBip?.placa}
+            </DialogTitle>
+            <DialogDescription>
+              Atualize as datas e informações do BIP do veículo
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="ultimo_bip">Último BIP</Label>
+                <Input
+                  id="ultimo_bip"
+                  type="date"
+                  value={bipEditData.ultimo_bip}
+                  onChange={(e) => setBipEditData({...bipEditData, ultimo_bip: e.target.value})}
+                  data-testid="input-edit-ultimo-bip"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ml_bip">ML BIP</Label>
+                <Input
+                  id="ml_bip"
+                  type="date"
+                  value={bipEditData.ml_bip}
+                  onChange={(e) => setBipEditData({...bipEditData, ml_bip: e.target.value})}
+                  data-testid="input-edit-ml-bip"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="dds_bip">DDS BIP</Label>
+                <Input
+                  id="dds_bip"
+                  type="date"
+                  value={bipEditData.dds_bip}
+                  onChange={(e) => setBipEditData({...bipEditData, dds_bip: e.target.value})}
+                  data-testid="input-edit-dds-bip"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="motivo">Motivo</Label>
+                <Select 
+                  value={bipEditData.motivo} 
+                  onValueChange={(val) => setBipEditData({...bipEditData, motivo: val})}
+                >
+                  <SelectTrigger id="motivo" data-testid="select-edit-motivo">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Manutenção">Manutenção</SelectItem>
+                    <SelectItem value="Reserva">Reserva</SelectItem>
+                    <SelectItem value="Sinistro">Sinistro</SelectItem>
+                    <SelectItem value="Outros">Outros</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="base_reserva">Base Reserva</Label>
+              <Input
+                id="base_reserva"
+                value={bipEditData.base_reserva}
+                onChange={(e) => setBipEditData({...bipEditData, base_reserva: e.target.value})}
+                placeholder="Ex: PTL01, LH01..."
+                data-testid="input-edit-base-reserva"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="observacao">Observação</Label>
+              <Input
+                id="observacao"
+                value={bipEditData.observacao}
+                onChange={(e) => setBipEditData({...bipEditData, observacao: e.target.value})}
+                placeholder="Observações adicionais..."
+                data-testid="input-edit-observacao"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingBip(null)} data-testid="button-cancel-bip">
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleSaveBip} 
+              disabled={updateBipMutation.isPending}
+              data-testid="button-save-bip"
+            >
+              {updateBipMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Salvar
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

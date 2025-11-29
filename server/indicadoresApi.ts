@@ -997,4 +997,56 @@ router.get('/bip', isAuthenticated, async (req: Request, res: Response) => {
   }
 });
 
+// Atualizar dados de BIP de um veículo
+router.put('/bip/:id', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { ultimo_bip, ml_bip, dds_bip, motivo, observacao, base_reserva } = req.body;
+    
+    console.log('[BIP] Atualizando registro ID:', id, req.body);
+    
+    // Calcular dias sem BIP baseado na data do ultimo_bip
+    let dias_sem_bip = 0;
+    if (ultimo_bip) {
+      const ultimoBipDate = new Date(ultimo_bip);
+      const hoje = new Date();
+      const diffTime = Math.abs(hoje.getTime() - ultimoBipDate.getTime());
+      dias_sem_bip = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+    
+    const result = await pool.query(`
+      UPDATE indicadores_bip
+      SET 
+        ultimo_bip = $1,
+        ml_bip = $2,
+        dds_bip = $3,
+        motivo = $4,
+        observacao = $5,
+        base_reserva = $6,
+        dias_sem_bip = $7
+      WHERE id = $8
+      RETURNING *
+    `, [
+      ultimo_bip || null,
+      ml_bip || null,
+      dds_bip || null,
+      motivo || null,
+      observacao || null,
+      base_reserva || null,
+      dias_sem_bip,
+      id
+    ]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Registro não encontrado' });
+    }
+    
+    console.log('[BIP] Registro atualizado com sucesso:', result.rows[0]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('[BIP] Erro ao atualizar registro:', error);
+    res.status(500).json({ success: false, message: 'Erro ao atualizar registro de BIP' });
+  }
+});
+
 export default router;
