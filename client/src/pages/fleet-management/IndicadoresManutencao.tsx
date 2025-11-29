@@ -259,7 +259,7 @@ export default function IndicadoresManutencao() {
   const [newVehicle, setNewVehicle] = useState({
     plate: '',
     model: '',
-    ownership: 'Própria'
+    ownership: 'Murici'
   });
   const [uploadingVeiculos, setUploadingVeiculos] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -809,7 +809,7 @@ export default function IndicadoresManutencao() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/indicadores/vehicles'] });
       setShowNewVehicleModal(false);
-      setNewVehicle({ plate: '', model: '', ownership: 'Própria' });
+      setNewVehicle({ plate: '', model: '', ownership: 'Murici' });
     },
     onError: (error: Error) => {
       toast({
@@ -1999,12 +1999,12 @@ export default function IndicadoresManutencao() {
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                         <Building2 className="h-4 w-4" />
-                        Próprios
+                        Murici
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-blue-600">
-                        {cadastroVehiclesData?.data?.filter(v => v.tipo_posse === 'Própria').length || 0}
+                        {cadastroVehiclesData?.data?.filter(v => v.tipo_posse === 'Murici').length || 0}
                       </div>
                       <p className="text-xs text-muted-foreground">veículos</p>
                     </CardContent>
@@ -2034,7 +2034,7 @@ export default function IndicadoresManutencao() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-gray-600">
-                        {cadastroVehiclesData?.data?.filter(v => !v.tipo_posse || (v.tipo_posse !== 'Própria' && v.tipo_posse !== 'Locada')).length || 0}
+                        {cadastroVehiclesData?.data?.filter(v => !v.tipo_posse || (v.tipo_posse !== 'Murici' && v.tipo_posse !== 'Locada')).length || 0}
                       </div>
                       <p className="text-xs text-muted-foreground">veículos</p>
                     </CardContent>
@@ -3513,7 +3513,7 @@ export default function IndicadoresManutencao() {
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Própria">Própria</SelectItem>
+                  <SelectItem value="Murici">Murici</SelectItem>
                   <SelectItem value="Locada">Locada</SelectItem>
                 </SelectContent>
               </Select>
@@ -3524,7 +3524,7 @@ export default function IndicadoresManutencao() {
               variant="outline" 
               onClick={() => {
                 setShowNewVehicleModal(false);
-                setNewVehicle({ plate: '', model: '', ownership: 'Própria' });
+                setNewVehicle({ plate: '', model: '', ownership: 'Murici' });
               }}
               data-testid="button-cancel-new-vehicle"
             >
