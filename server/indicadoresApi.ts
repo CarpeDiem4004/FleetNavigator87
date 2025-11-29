@@ -1144,4 +1144,264 @@ router.put('/bip/:id', isAuthenticated, async (req: Request, res: Response) => {
   }
 });
 
+// ==================== MANUTENÇÕES FINALIZADAS ====================
+
+// Listar manutenções finalizadas com filtros
+router.get('/finalizadas', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { placa, oficina, tipo_manutencao, status, operacao, mes } = req.query;
+    
+    let query = 'SELECT * FROM manutencoes_finalizadas WHERE 1=1';
+    const params: any[] = [];
+    let paramIndex = 1;
+    
+    if (placa) {
+      query += ` AND UPPER(placa) LIKE UPPER($${paramIndex})`;
+      params.push(`%${placa}%`);
+      paramIndex++;
+    }
+    if (oficina) {
+      query += ` AND UPPER(oficina) LIKE UPPER($${paramIndex})`;
+      params.push(`%${oficina}%`);
+      paramIndex++;
+    }
+    if (tipo_manutencao) {
+      query += ` AND tipo_manutencao = $${paramIndex}`;
+      params.push(tipo_manutencao);
+      paramIndex++;
+    }
+    if (status) {
+      query += ` AND status = $${paramIndex}`;
+      params.push(status);
+      paramIndex++;
+    }
+    if (operacao) {
+      query += ` AND operacao = $${paramIndex}`;
+      params.push(operacao);
+      paramIndex++;
+    }
+    if (mes) {
+      query += ` AND mes_referencia = $${paramIndex}`;
+      params.push(mes);
+      paramIndex++;
+    }
+    
+    query += ' ORDER BY data_agenda DESC NULLS LAST, id DESC';
+    
+    const result = await pool.query(query, params);
+    
+    res.json({ success: true, data: result.rows, total: result.rows.length });
+  } catch (error) {
+    console.error('[FINALIZADAS] Erro ao listar:', error);
+    res.status(500).json({ success: false, message: 'Erro ao listar manutenções finalizadas' });
+  }
+});
+
+// Histórico por placa
+router.get('/finalizadas/historico/:placa', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { placa } = req.params;
+    
+    const result = await pool.query(`
+      SELECT * FROM manutencoes_finalizadas 
+      WHERE UPPER(placa) = UPPER($1)
+      ORDER BY data_agenda DESC NULLS LAST, id DESC
+    `, [placa]);
+    
+    // Calcular estatísticas da placa
+    const stats = await pool.query(`
+      SELECT 
+        COUNT(*) as total_manutencoes,
+        SUM(COALESCE(valor_orcamento, 0)) as custo_total,
+        SUM(COALESCE(dias_manutencao, 0)) as dias_parados_total,
+        AVG(COALESCE(dias_manutencao, 0)) as media_dias
+      FROM manutencoes_finalizadas 
+      WHERE UPPER(placa) = UPPER($1)
+    `, [placa]);
+    
+    res.json({ 
+      success: true, 
+      data: result.rows, 
+      stats: stats.rows[0],
+      total: result.rows.length 
+    });
+  } catch (error) {
+    console.error('[FINALIZADAS] Erro ao buscar histórico:', error);
+    res.status(500).json({ success: false, message: 'Erro ao buscar histórico da placa' });
+  }
+});
+
+// Upload de arquivo Excel de manutenções finalizadas
+router.post('/finalizadas/upload', isAuthenticated, upload.single('file'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Nenhum arquivo enviado' });
+    }
+
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer', cellDates: true });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
+    
+    const headers: any[] = data[0] as any[];
+    const rows = data.slice(1);
+    
+    console.log('[FINALIZADAS] Headers encontrados:', headers);
+    console.log('[FINALIZADAS] Total de linhas:', rows.length);
+    
+    let imported = 0;
+    let errors = 0;
+    
+    for (const row of rows) {
+      const rowData: any[] = row as any[];
+      
+      // Pular linhas vazias
+      if (!rowData[0]) continue;
+      
+      try {
+        await pool.query(`
+          INSERT INTO manutencoes_finalizadas (
+            placa, validacao, modelo, km, relato, data_agenda, focal, reparo,
+            tipo_manutencao, aprovacao, valor_orcamento, valor_negociado,
+            centro_custo, operacao, status, previsao_entrega, data_liberado,
+            dias_manutencao, status2, oficina, lider_base, mes_referencia
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+        `, [
+          rowData[0] || null,                                    // placa
+          rowData[1] || null,                                    // validacao
+          rowData[2] || null,                                    // modelo
+          parseNumber(rowData[3]),                               // km
+          rowData[4] || null,                                    // relato
+          convertExcelDate(rowData[5]),                          // data_agenda
+          rowData[6] || null,                                    // focal
+          rowData[7] || null,                                    // reparo
+          rowData[8] || null,                                    // tipo_manutencao
+          rowData[9] || null,                                    // aprovacao
+          parseNumber(rowData[10]),                              // valor_orcamento
+          parseNumber(rowData[11]),                              // valor_negociado
+          rowData[12] || null,                                   // centro_custo
+          rowData[13] || null,                                   // operacao
+          rowData[14] || null,                                   // status
+          convertExcelDate(rowData[15]),                         // previsao_entrega
+          convertExcelDate(rowData[16]),                         // data_liberado
+          parseNumber(rowData[17]),                              // dias_manutencao
+          rowData[18] || null,                                   // status2
+          rowData[19] || null,                                   // oficina
+          rowData[20] || null,                                   // lider_base
+          rowData[21] || null                                    // mes_referencia
+        ]);
+        imported++;
+      } catch (err) {
+        errors++;
+        console.error('[FINALIZADAS] Erro na linha:', rowData[0], err);
+      }
+    }
+    
+    console.log('[FINALIZADAS] Import concluído:', imported, 'registros,', errors, 'erros');
+    
+    res.json({ 
+      success: true, 
+      message: `Importação concluída: ${imported} registros importados, ${errors} erros`,
+      imported,
+      errors
+    });
+  } catch (error) {
+    console.error('[FINALIZADAS] Erro no upload:', error);
+    res.status(500).json({ success: false, message: 'Erro ao processar arquivo' });
+  }
+});
+
+// Estatísticas gerais das manutenções finalizadas
+router.get('/finalizadas/stats', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    // Totais gerais
+    const totais = await pool.query(`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(DISTINCT placa) as veiculos_unicos,
+        SUM(COALESCE(valor_orcamento, 0)) as custo_total,
+        SUM(COALESCE(dias_manutencao, 0)) as dias_parados_total,
+        AVG(COALESCE(dias_manutencao, 0)) as media_dias
+      FROM manutencoes_finalizadas
+    `);
+    
+    // Por tipo de manutenção
+    const porTipo = await pool.query(`
+      SELECT 
+        tipo_manutencao,
+        COUNT(*) as quantidade
+      FROM manutencoes_finalizadas
+      WHERE tipo_manutencao IS NOT NULL
+      GROUP BY tipo_manutencao
+      ORDER BY quantidade DESC
+    `);
+    
+    // Por oficina (top 10)
+    const porOficina = await pool.query(`
+      SELECT 
+        oficina,
+        COUNT(*) as quantidade
+      FROM manutencoes_finalizadas
+      WHERE oficina IS NOT NULL
+      GROUP BY oficina
+      ORDER BY quantidade DESC
+      LIMIT 10
+    `);
+    
+    // Por operação
+    const porOperacao = await pool.query(`
+      SELECT 
+        operacao,
+        COUNT(*) as quantidade
+      FROM manutencoes_finalizadas
+      WHERE operacao IS NOT NULL
+      GROUP BY operacao
+      ORDER BY quantidade DESC
+    `);
+    
+    // Por status2 (prazo)
+    const porPrazo = await pool.query(`
+      SELECT 
+        status2,
+        COUNT(*) as quantidade
+      FROM manutencoes_finalizadas
+      WHERE status2 IS NOT NULL
+      GROUP BY status2
+      ORDER BY quantidade DESC
+    `);
+    
+    // Meses disponíveis
+    const meses = await pool.query(`
+      SELECT DISTINCT mes_referencia
+      FROM manutencoes_finalizadas
+      WHERE mes_referencia IS NOT NULL
+      ORDER BY mes_referencia
+    `);
+    
+    res.json({ 
+      success: true,
+      totais: totais.rows[0],
+      porTipo: porTipo.rows,
+      porOficina: porOficina.rows,
+      porOperacao: porOperacao.rows,
+      porPrazo: porPrazo.rows,
+      meses: meses.rows.map(r => r.mes_referencia)
+    });
+  } catch (error) {
+    console.error('[FINALIZADAS] Erro nas estatísticas:', error);
+    res.status(500).json({ success: false, message: 'Erro ao buscar estatísticas' });
+  }
+});
+
+// Limpar tabela de manutenções finalizadas
+router.delete('/finalizadas/clear', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    await pool.query('DELETE FROM manutencoes_finalizadas');
+    res.json({ success: true, message: 'Tabela limpa com sucesso' });
+  } catch (error) {
+    console.error('[FINALIZADAS] Erro ao limpar:', error);
+    res.status(500).json({ success: false, message: 'Erro ao limpar tabela' });
+  }
+});
+
 export default router;
