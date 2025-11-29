@@ -1960,6 +1960,7 @@ export default function IndicadoresManutencao() {
                                 <TableHead>Tipo</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>D+Manut</TableHead>
+                                <TableHead className="text-right">Custo</TableHead>
                                 <TableHead>Relato</TableHead>
                               </TableRow>
                             </TableHeader>
@@ -1969,16 +1970,42 @@ export default function IndicadoresManutencao() {
                                   <TableCell>{formatDate(item.data_agenda)}</TableCell>
                                   <TableCell>{item.oficina || '-'}</TableCell>
                                   <TableCell>
-                                    <Badge variant={item.tipo_manutencao === 'Preventiva' ? 'secondary' : 'destructive'}>
+                                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
+                                      item.tipo_manutencao === 'Preventiva' 
+                                        ? 'bg-blue-100 text-blue-700 border border-blue-200' 
+                                        : 'bg-orange-100 text-orange-700 border border-orange-200'
+                                    }`}>
+                                      <Wrench className="h-3 w-3" />
                                       {item.tipo_manutencao || '-'}
-                                    </Badge>
+                                    </span>
                                   </TableCell>
                                   <TableCell>
-                                    <Badge variant={item.status2 === 'Fora do Prazo' ? 'destructive' : 'secondary'}>
+                                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
+                                      item.status2 === 'Fora do Prazo' 
+                                        ? 'bg-red-100 text-red-700 border border-red-200' 
+                                        : 'bg-green-100 text-green-700 border border-green-200'
+                                    }`}>
+                                      {item.status2 === 'Fora do Prazo' ? <AlertCircle className="h-3 w-3" /> : <CheckCircle className="h-3 w-3" />}
                                       {item.status2 || '-'}
-                                    </Badge>
+                                    </span>
                                   </TableCell>
-                                  <TableCell className="text-center">{item.dias_manutencao || 0}</TableCell>
+                                  <TableCell className="text-center">
+                                    <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${
+                                      (item.dias_manutencao || 0) > 7 
+                                        ? 'bg-red-100 text-red-700' 
+                                        : (item.dias_manutencao || 0) > 3
+                                        ? 'bg-yellow-100 text-yellow-700'
+                                        : 'bg-green-100 text-green-700'
+                                    }`}>
+                                      {item.dias_manutencao || 0}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="text-right font-medium">
+                                    {(item.valor_orcamento || item.valor_negociado) 
+                                      ? formatCurrency(Number(item.valor_negociado || item.valor_orcamento || 0))
+                                      : <span className="text-muted-foreground">-</span>
+                                    }
+                                  </TableCell>
                                   <TableCell className="max-w-xs truncate" title={item.relato}>{item.relato || '-'}</TableCell>
                                 </TableRow>
                               ))}
