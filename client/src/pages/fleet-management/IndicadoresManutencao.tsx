@@ -273,6 +273,14 @@ export default function IndicadoresManutencao() {
   const [showVeiculoDetails, setShowVeiculoDetails] = useState(false);
   const [selectedVeiculo, setSelectedVeiculo] = useState<any | null>(null);
   const [veiculoEditData, setVeiculoEditData] = useState<any>({});
+  
+  // Estado para estatísticas de distribuição de veículos
+  const [veiculosStats, setVeiculosStats] = useState<{
+    porPosse: { name: string; value: number }[];
+    porLocadora: { name: string; value: number }[];
+    porEstado: { name: string; value: number }[];
+    total: number;
+  } | null>(null);
 
   // Lista de modelos de veículos disponíveis
   const modelosVeiculos = [
@@ -573,6 +581,17 @@ export default function IndicadoresManutencao() {
       return res.json();
     }
   });
+
+  // Buscar estatísticas de distribuição de veículos
+  const { data: veiculosStatsData } = useQuery<{success: boolean, data: typeof veiculosStats}>({
+    queryKey: ['/api/veiculos/stats/distribuicao'],
+    queryFn: async () => {
+      const res = await fetch('/api/veiculos/stats/distribuicao', { credentials: 'include' });
+      return res.json();
+    }
+  });
+
+  const veiculosDistribuicao = veiculosStatsData?.data;
 
   // Buscar veículos cadastrados
   const { data: vehiclesData } = useQuery<Array<{id: number, plate: string, model: string}>>({
@@ -2619,6 +2638,107 @@ export default function IndicadoresManutencao() {
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* Gráficos de Distribuição de Veículos */}
+                <Card className="bg-gradient-to-r from-blue-50 to-green-50 border-blue-200">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Truck className="h-5 w-5 text-blue-600" />
+                      Distribuição da Frota
+                    </CardTitle>
+                    <CardDescription>Análise da composição e pulverização dos veículos</CardDescription>
+                  </CardHeader>
+                </Card>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Gráfico Murici vs Locados */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Murici vs Locados</CardTitle>
+                      <CardDescription>Distribuição por tipo de posse</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {veiculosDistribuicao?.porPosse && veiculosDistribuicao.porPosse.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={300}>
+                          <PieChart>
+                            <Pie
+                              data={veiculosDistribuicao.porPosse.map((item, idx) => ({
+                                ...item,
+                                name: `${item.name}: ${item.value} (${((item.value / (veiculosDistribuicao?.total || 1)) * 100).toFixed(1)}%)`
+                              }))}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={({ name }) => name}
+                              outerRadius={100}
+                              fill="#8884d8"
+                              dataKey="value"
+                            >
+                              {veiculosDistribuicao.porPosse.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={index === 0 ? '#f59e0b' : index === 1 ? '#3b82f6' : '#6b7280'} />
+                              ))}
+                            </Pie>
+                            <Tooltip formatter={(value: number) => [value, 'Quantidade']} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                          Nenhum dado disponível
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Gráfico por Locadora */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Distribuição por Locadora</CardTitle>
+                      <CardDescription>Quantidade de veículos por locadora</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {veiculosDistribuicao?.porLocadora && veiculosDistribuicao.porLocadora.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={veiculosDistribuicao.porLocadora.slice(0, 10)} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis type="number" />
+                            <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} />
+                            <Tooltip formatter={(value: number) => [value, 'Veículos']} />
+                            <Bar dataKey="value" fill="#3b82f6" name="Veículos" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                          Nenhum dado disponível
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Gráfico por Estado */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Pulverização por Estado (UF)</CardTitle>
+                    <CardDescription>Distribuição geográfica dos veículos</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {veiculosDistribuicao?.porEstado && veiculosDistribuicao.porEstado.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={350}>
+                        <BarChart data={veiculosDistribuicao.porEstado}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                          <YAxis />
+                          <Tooltip formatter={(value: number) => [value, 'Veículos']} />
+                          <Bar dataKey="value" fill="#22c55e" name="Veículos" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[350px] flex items-center justify-center text-muted-foreground">
+                        Nenhum dado disponível
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
                 {/* Ranking de Placas Mais Caras */}
                 <Card>
