@@ -1354,6 +1354,40 @@ export type InsertIndicadoresDados = z.infer<typeof insertIndicadoresDadosSchema
 export type IndicadoresLiberado = typeof indicadoresLiberado.$inferSelect;
 export type InsertIndicadoresLiberado = z.infer<typeof insertIndicadoresLiberadoSchema>;
 
+// ==================== MANUTENÇÕES FINALIZADAS ====================
+
+// Tabela para manutenções finalizadas (histórico completo)
+export const manutencoesFinalizadas = pgTable("manutencoes_finalizadas", {
+  id: serial("id").primaryKey(),
+  placa: text("placa").notNull(),
+  validacao: text("validacao"),
+  modelo: text("modelo"),
+  km: decimal("km", { precision: 12, scale: 3 }),
+  relato: text("relato"),
+  data_agenda: date("data_agenda"),
+  focal: text("focal"),
+  reparo: text("reparo"),
+  tipo_manutencao: text("tipo_manutencao"),
+  aprovacao: text("aprovacao"),
+  valor_orcamento: decimal("valor_orcamento", { precision: 12, scale: 2 }),
+  valor_negociado: decimal("valor_negociado", { precision: 12, scale: 2 }),
+  centro_custo: text("centro_custo"),
+  operacao: text("operacao"),
+  status: text("status"),
+  previsao_entrega: date("previsao_entrega"),
+  data_liberado: date("data_liberado"),
+  dias_manutencao: integer("dias_manutencao"),
+  status2: text("status2"),
+  oficina: text("oficina"),
+  lider_base: text("lider_base"),
+  mes_referencia: text("mes_referencia"),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+export const insertManutencoesFinalizadasSchema = createInsertSchema(manutencoesFinalizadas);
+export type ManutencoesFinalizadas = typeof manutencoesFinalizadas.$inferSelect;
+export type InsertManutencoesFinalizadas = z.infer<typeof insertManutencoesFinalizadasSchema>;
+
 // ==================== SISTEMA LINE HALL - ORDENS DE SERVIÇO ====================
 
 // Tabela para ordens de serviço detalhadas de manutenções Line Hall
