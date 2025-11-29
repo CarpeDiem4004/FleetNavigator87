@@ -447,13 +447,19 @@ router.get('/stats/distribuicao', async (req: Request, res: Response) => {
       ORDER BY quantidade DESC
     `);
     
-    // Distribuição por locadora
+    // Distribuição por locadora (unificando Murici)
     const locadoraResult = await pool.query(`
       SELECT 
-        COALESCE(NULLIF(locadora, ''), 'Murici') as locadora,
+        CASE 
+          WHEN locadora IS NULL OR locadora = '' OR LOWER(locadora) = 'murici' THEN 'Murici'
+          ELSE locadora 
+        END as locadora,
         COUNT(*) as quantidade
       FROM veiculos
-      GROUP BY locadora
+      GROUP BY CASE 
+          WHEN locadora IS NULL OR locadora = '' OR LOWER(locadora) = 'murici' THEN 'Murici'
+          ELSE locadora 
+        END
       ORDER BY quantidade DESC
     `);
     
