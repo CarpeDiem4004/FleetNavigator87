@@ -1011,6 +1011,87 @@ router.get('/bip', isAuthenticated, async (req: Request, res: Response) => {
   }
 });
 
+// Buscar veículos para aba Cadastro
+router.get('/vehicles', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    console.log('[VEHICLES] Buscando veículos...');
+    
+    const result = await pool.query(`
+      SELECT id, plate, model, ownership, status, base_id
+      FROM vehicles
+      ORDER BY plate
+    `);
+    
+    console.log('[VEHICLES] Veículos encontrados:', result.rows.length);
+    
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('[VEHICLES] Erro ao buscar veículos:', error);
+    res.status(500).json({ success: false, message: 'Erro ao buscar veículos' });
+  }
+});
+
+// Atualizar veículo (ownership)
+router.put('/vehicles/:id', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { ownership } = req.body;
+    
+    console.log('[VEHICLES] Atualizando veículo ID:', id, 'ownership:', ownership);
+    
+    const result = await pool.query(`
+      UPDATE vehicles
+      SET ownership = $1, updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `, [ownership, id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Veículo não encontrado' });
+    }
+    
+    console.log('[VEHICLES] Veículo atualizado com sucesso');
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('[VEHICLES] Erro ao atualizar veículo:', error);
+    res.status(500).json({ success: false, message: 'Erro ao atualizar veículo' });
+  }
+});
+
+// Criar novo veículo
+router.post('/vehicles', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { plate, model, ownership } = req.body;
+    
+    if (!plate) {
+      return res.status(400).json({ success: false, message: 'Placa é obrigatória' });
+    }
+    
+    console.log('[VEHICLES] Criando veículo:', plate, model, ownership);
+    
+    // Verificar se já existe
+    const existing = await pool.query('SELECT id FROM vehicles WHERE UPPER(plate) = UPPER($1)', [plate]);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ success: false, message: 'Veículo já cadastrado' });
+    }
+    
+    const result = await pool.query(`
+      INSERT INTO vehicles (plate, model, ownership, status, created_at, updated_at)
+      VALUES ($1, $2, $3, 'Ativo', NOW(), NOW())
+      RETURNING *
+    `, [plate.toUpperCase(), model || null, ownership || 'Própria']);
+    
+    console.log('[VEHICLES] Veículo criado com sucesso');
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('[VEHICLES] Erro ao criar veículo:', error);
+    res.status(500).json({ success: false, message: 'Erro ao criar veículo' });
+  }
+});
+
 // Atualizar dados de BIP de um veículo
 router.put('/bip/:id', isAuthenticated, async (req: Request, res: Response) => {
   try {

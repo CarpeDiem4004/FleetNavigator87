@@ -26,7 +26,9 @@ import {
   X,
   Plus,
   Radio,
-  MapPin
+  MapPin,
+  Truck,
+  Trash2
 } from 'lucide-react';
 import {
   Dialog,
@@ -246,6 +248,17 @@ export default function IndicadoresManutencao() {
     motivo: '',
     observacao: '',
     base_reserva: ''
+  });
+  
+  // Estados para aba Cadastro
+  const [cadastroSearchPlaca, setCadastroSearchPlaca] = useState<string>('');
+  const [cadastroFilterOwnership, setCadastroFilterOwnership] = useState<string>('');
+  const [editingVehicle, setEditingVehicle] = useState<any | null>(null);
+  const [showNewVehicleModal, setShowNewVehicleModal] = useState(false);
+  const [newVehicle, setNewVehicle] = useState({
+    plate: '',
+    model: '',
+    ownership: 'Própria'
   });
 
   // Lista de modelos de veículos disponíveis
@@ -659,6 +672,80 @@ export default function IndicadoresManutencao() {
     }
   };
 
+  // Query para buscar veículos para a aba Cadastro
+  const { data: cadastroVehiclesData, isLoading: cadastroVehiclesLoading } = useQuery<{success: boolean, data: Array<{id: number, plate: string, model: string, ownership: string, status: string, base_id: number}>}>({
+    queryKey: ['/api/indicadores/vehicles'],
+    queryFn: async () => {
+      const res = await fetch('/api/indicadores/vehicles', { credentials: 'include' });
+      return res.json();
+    }
+  });
+
+  // Mutation para atualizar veículo
+  const updateVehicleMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number, data: { ownership: string } }) => {
+      const response = await fetch(`/api/indicadores/vehicles/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao atualizar');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Sucesso!',
+        description: 'Veículo atualizado com sucesso.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/vehicles'] });
+      setEditingVehicle(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Mutation para criar veículo
+  const createVehicleMutation = useMutation({
+    mutationFn: async (data: { plate: string, model: string, ownership: string }) => {
+      const response = await fetch('/api/indicadores/vehicles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao criar veículo');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Sucesso!',
+        description: 'Veículo cadastrado com sucesso.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/vehicles'] });
+      setShowNewVehicleModal(false);
+      setNewVehicle({ plate: '', model: '', ownership: 'Própria' });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Mutation para upload original
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -876,7 +963,7 @@ export default function IndicadoresManutencao() {
           )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="upload" data-testid="tab-upload">
                 <Upload className="h-4 w-4 mr-2" />
                 Upload
@@ -896,6 +983,10 @@ export default function IndicadoresManutencao() {
               <TabsTrigger value="bip" data-testid="tab-bip">
                 <Radio className="h-4 w-4 mr-2" />
                 BIP
+              </TabsTrigger>
+              <TabsTrigger value="cadastro" data-testid="tab-cadastro">
+                <Truck className="h-4 w-4 mr-2" />
+                Cadastro
               </TabsTrigger>
               <TabsTrigger value="dashboards" data-testid="tab-dashboards">
                 <BarChart3 className="h-4 w-4 mr-2" />
@@ -1729,6 +1820,224 @@ export default function IndicadoresManutencao() {
                     </CardContent>
                   </Card>
                 )}
+              </div>
+            </TabsContent>
+
+            {/* Aba de Cadastro */}
+            <TabsContent value="cadastro">
+              <div className="space-y-6">
+                {/* Cards de Resumo Cadastro */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <Truck className="h-4 w-4" />
+                        Total Veículos
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{cadastroVehiclesData?.data?.length || 0}</div>
+                      <p className="text-xs text-muted-foreground">cadastrados</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        Próprios
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-blue-600">
+                        {cadastroVehiclesData?.data?.filter(v => v.ownership === 'Própria').length || 0}
+                      </div>
+                      <p className="text-xs text-muted-foreground">veículos</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <Car className="h-4 w-4" />
+                        Locados
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-orange-600">
+                        {cadastroVehiclesData?.data?.filter(v => v.ownership === 'Locada').length || 0}
+                      </div>
+                      <p className="text-xs text-muted-foreground">veículos</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        Sem Definição
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-gray-600">
+                        {cadastroVehiclesData?.data?.filter(v => !v.ownership || (v.ownership !== 'Própria' && v.ownership !== 'Locada')).length || 0}
+                      </div>
+                      <p className="text-xs text-muted-foreground">veículos</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Tabela de Veículos */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Truck className="h-5 w-5" />
+                          Cadastro de Veículos
+                        </CardTitle>
+                        <CardDescription>
+                          Gerencie os veículos e defina se são próprios ou locados
+                        </CardDescription>
+                      </div>
+                      <div className="flex flex-wrap gap-2 items-end">
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">Placa</label>
+                          <Input 
+                            placeholder="Buscar placa..." 
+                            value={cadastroSearchPlaca}
+                            onChange={(e) => setCadastroSearchPlaca(e.target.value.toUpperCase())}
+                            className="w-32"
+                            data-testid="input-cadastro-search-placa"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">Tipo</label>
+                          <Select value={cadastroFilterOwnership} onValueChange={setCadastroFilterOwnership}>
+                            <SelectTrigger className="w-32" data-testid="select-cadastro-ownership">
+                              <SelectValue placeholder="Todos" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">Todos</SelectItem>
+                              <SelectItem value="Própria">Própria</SelectItem>
+                              <SelectItem value="Locada">Locada</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button 
+                          onClick={() => setShowNewVehicleModal(true)}
+                          data-testid="button-new-vehicle"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Novo Veículo
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {cadastroVehiclesLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    ) : cadastroVehiclesData?.data && cadastroVehiclesData.data.length > 0 ? (
+                      <div className="rounded-md border overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="font-bold">Placa</TableHead>
+                              <TableHead>Modelo</TableHead>
+                              <TableHead className="text-center">Tipo</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead className="text-center">Ações</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {cadastroVehiclesData.data
+                              .filter((item) => {
+                                const matchPlaca = !cadastroSearchPlaca || item.plate?.toUpperCase().includes(cadastroSearchPlaca);
+                                const matchOwnership = !cadastroFilterOwnership || item.ownership === cadastroFilterOwnership;
+                                return matchPlaca && matchOwnership;
+                              })
+                              .sort((a, b) => (a.plate || '').localeCompare(b.plate || ''))
+                              .map((item) => (
+                                <TableRow key={item.id} data-testid={`cadastro-row-${item.id}`}>
+                                  <TableCell className="font-bold">{item.plate}</TableCell>
+                                  <TableCell>{item.model || '-'}</TableCell>
+                                  <TableCell className="text-center">
+                                    {editingVehicle?.id === item.id ? (
+                                      <Select 
+                                        value={editingVehicle.ownership || ''} 
+                                        onValueChange={(val) => setEditingVehicle({...editingVehicle, ownership: val})}
+                                      >
+                                        <SelectTrigger className="w-28" data-testid="select-edit-ownership">
+                                          <SelectValue placeholder="Selecione" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="Própria">Própria</SelectItem>
+                                          <SelectItem value="Locada">Locada</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    ) : (
+                                      <Badge 
+                                        variant={item.ownership === 'Própria' ? 'default' : item.ownership === 'Locada' ? 'secondary' : 'outline'}
+                                        className={item.ownership === 'Própria' ? 'bg-blue-600' : item.ownership === 'Locada' ? 'bg-orange-500 text-white' : ''}
+                                      >
+                                        {item.ownership || 'Não definido'}
+                                      </Badge>
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline">{item.status || 'Ativo'}</Badge>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    {editingVehicle?.id === item.id ? (
+                                      <div className="flex gap-1 justify-center">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => {
+                                            updateVehicleMutation.mutate({ id: item.id, data: { ownership: editingVehicle.ownership } });
+                                          }}
+                                          disabled={updateVehicleMutation.isPending}
+                                          data-testid={`button-save-vehicle-${item.id}`}
+                                        >
+                                          <Save className="h-4 w-4 text-green-600" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => setEditingVehicle(null)}
+                                          data-testid={`button-cancel-vehicle-${item.id}`}
+                                        >
+                                          <X className="h-4 w-4 text-red-600" />
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setEditingVehicle({ id: item.id, ownership: item.ownership || '' })}
+                                        data-testid={`button-edit-vehicle-${item.id}`}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <Truck className="mx-auto h-12 w-12 text-muted-foreground" />
+                        <p className="mt-2 text-muted-foreground">
+                          Nenhum veículo cadastrado.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             </TabsContent>
 
@@ -2829,6 +3138,104 @@ export default function IndicadoresManutencao() {
                 <>
                   <Save className="h-4 w-4 mr-2" />
                   Salvar
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Novo Veículo */}
+      <Dialog open={showNewVehicleModal} onOpenChange={setShowNewVehicleModal}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5" />
+              Novo Veículo
+            </DialogTitle>
+            <DialogDescription>
+              Cadastre um novo veículo na frota
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-plate">Placa *</Label>
+              <Input
+                id="new-plate"
+                value={newVehicle.plate}
+                onChange={(e) => setNewVehicle({...newVehicle, plate: e.target.value.toUpperCase()})}
+                placeholder="ABC1234"
+                maxLength={8}
+                data-testid="input-new-vehicle-plate"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-model">Modelo</Label>
+              <Select 
+                value={newVehicle.model} 
+                onValueChange={(val) => setNewVehicle({...newVehicle, model: val})}
+              >
+                <SelectTrigger id="new-model" data-testid="select-new-vehicle-model">
+                  <SelectValue placeholder="Selecione o modelo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {modelosVeiculos.map((modelo) => (
+                    <SelectItem key={modelo} value={modelo}>{modelo}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-ownership">Tipo</Label>
+              <Select 
+                value={newVehicle.ownership} 
+                onValueChange={(val) => setNewVehicle({...newVehicle, ownership: val})}
+              >
+                <SelectTrigger id="new-ownership" data-testid="select-new-vehicle-ownership">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Própria">Própria</SelectItem>
+                  <SelectItem value="Locada">Locada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowNewVehicleModal(false);
+                setNewVehicle({ plate: '', model: '', ownership: 'Própria' });
+              }}
+              data-testid="button-cancel-new-vehicle"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => {
+                if (!newVehicle.plate) {
+                  toast({
+                    title: 'Erro',
+                    description: 'Placa é obrigatória',
+                    variant: 'destructive',
+                  });
+                  return;
+                }
+                createVehicleMutation.mutate(newVehicle);
+              }}
+              disabled={createVehicleMutation.isPending}
+              data-testid="button-create-vehicle"
+            >
+              {createVehicleMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Cadastrando...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Cadastrar
                 </>
               )}
             </Button>
