@@ -443,7 +443,6 @@ router.get('/stats/distribuicao', async (req: Request, res: Response) => {
         COALESCE(tipo_posse, 'Indefinido') as tipo,
         COUNT(*) as quantidade
       FROM veiculos
-      WHERE base_id = 46
       GROUP BY tipo_posse
       ORDER BY quantidade DESC
     `);
@@ -454,7 +453,6 @@ router.get('/stats/distribuicao', async (req: Request, res: Response) => {
         COALESCE(NULLIF(locadora, ''), 'Murici') as locadora,
         COUNT(*) as quantidade
       FROM veiculos
-      WHERE base_id = 46
       GROUP BY locadora
       ORDER BY quantidade DESC
     `);
@@ -465,14 +463,13 @@ router.get('/stats/distribuicao', async (req: Request, res: Response) => {
         COALESCE(estado, 'Não informado') as estado,
         COUNT(*) as quantidade
       FROM veiculos
-      WHERE base_id = 46
       GROUP BY estado
       ORDER BY quantidade DESC
     `);
     
     // Total de veículos
     const totalResult = await pool.query(`
-      SELECT COUNT(*) as total FROM veiculos WHERE base_id = 46
+      SELECT COUNT(*) as total FROM veiculos
     `);
     
     res.json({
