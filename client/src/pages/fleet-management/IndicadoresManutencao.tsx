@@ -29,7 +29,9 @@ import {
   MapPin,
   Truck,
   Trash2,
-  Eye
+  Eye,
+  History,
+  Filter
 } from 'lucide-react';
 import {
   Dialog,
@@ -281,6 +283,17 @@ export default function IndicadoresManutencao() {
     porEstado: { name: string; value: number }[];
     total: number;
   } | null>(null);
+
+  // Estados para aba Finalizadas
+  const [finalizadasSearchPlaca, setFinalizadasSearchPlaca] = useState<string>('');
+  const [finalizadasFilterTipo, setFinalizadasFilterTipo] = useState<string>('');
+  const [finalizadasFilterOficina, setFinalizadasFilterOficina] = useState<string>('');
+  const [finalizadasFilterOperacao, setFinalizadasFilterOperacao] = useState<string>('');
+  const [finalizadasFilterMes, setFinalizadasFilterMes] = useState<string>('');
+  const [finalizadasFileToUpload, setFinalizadasFileToUpload] = useState<File | null>(null);
+  const [uploadingFinalizadas, setUploadingFinalizadas] = useState(false);
+  const [showHistoricoPlaca, setShowHistoricoPlaca] = useState(false);
+  const [selectedPlacaHistorico, setSelectedPlacaHistorico] = useState<string>('');
 
   // Lista de modelos de veículos disponíveis
   const modelosVeiculos = [
@@ -643,6 +656,40 @@ export default function IndicadoresManutencao() {
     enabled: !!searchPlaca && searchPlaca.length >= 3,
   });
 
+  // Buscar manutenções finalizadas
+  const { data: finalizadasData, isLoading: finalizadasLoading, refetch: refetchFinalizadas } = useQuery<{success: boolean, data: any[], total: number}>({
+    queryKey: ['/api/indicadores/finalizadas', { placa: finalizadasSearchPlaca, tipo: finalizadasFilterTipo, oficina: finalizadasFilterOficina, operacao: finalizadasFilterOperacao, mes: finalizadasFilterMes }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (finalizadasSearchPlaca) params.append('placa', finalizadasSearchPlaca);
+      if (finalizadasFilterTipo) params.append('tipo_manutencao', finalizadasFilterTipo);
+      if (finalizadasFilterOficina) params.append('oficina', finalizadasFilterOficina);
+      if (finalizadasFilterOperacao) params.append('operacao', finalizadasFilterOperacao);
+      if (finalizadasFilterMes) params.append('mes', finalizadasFilterMes);
+      const res = await fetch(`/api/indicadores/finalizadas?${params}`, { credentials: 'include' });
+      return res.json();
+    }
+  });
+
+  // Buscar estatísticas de manutenções finalizadas
+  const { data: finalizadasStatsData } = useQuery<{success: boolean, totais: any, porTipo: any[], porOficina: any[], porOperacao: any[], porPrazo: any[], meses: string[]}>({
+    queryKey: ['/api/indicadores/finalizadas/stats'],
+    queryFn: async () => {
+      const res = await fetch('/api/indicadores/finalizadas/stats', { credentials: 'include' });
+      return res.json();
+    }
+  });
+
+  // Buscar histórico de uma placa específica nas finalizadas
+  const { data: historicoPlacaData, isLoading: historicoPlacaLoading } = useQuery<{success: boolean, data: any[], stats: any, total: number}>({
+    queryKey: ['/api/indicadores/finalizadas/historico', selectedPlacaHistorico],
+    queryFn: async () => {
+      const res = await fetch(`/api/indicadores/finalizadas/historico/${encodeURIComponent(selectedPlacaHistorico)}`, { credentials: 'include' });
+      return res.json();
+    },
+    enabled: !!selectedPlacaHistorico && showHistoricoPlaca,
+  });
+
   // Buscar dados do BIP (rastreamento de veículos)
   const { data: bipData, isLoading: bipLoading } = useQuery<{success: boolean, data: BipData[], stats: {total: number, parados: number, emOperacao: number, mediasDiasSemBip: number, totalDiasParados: number, variacaoDiasParados: number}}>({
     queryKey: ['/api/indicadores/bip'],
@@ -932,6 +979,47 @@ export default function IndicadoresManutencao() {
     }
   };
 
+  // Função para upload de manutenções finalizadas
+  const handleFinalizadasUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingFinalizadas(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/indicadores/finalizadas/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: 'Importação concluída!',
+          description: `${data.imported} registros importados, ${data.errors} erros.`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/indicadores/finalizadas'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/indicadores/finalizadas/stats'] });
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error) {
+      toast({
+        title: 'Erro na importação',
+        description: error instanceof Error ? error.message : 'Erro ao processar arquivo',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingFinalizadas(false);
+      event.target.value = '';
+    }
+  };
+
   const formatDate = (date: string | null | undefined) => {
     if (!date) return '-';
     try {
@@ -1056,7 +1144,7 @@ export default function IndicadoresManutencao() {
           )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-8">
               <TabsTrigger value="upload" data-testid="tab-upload">
                 <Upload className="h-4 w-4 mr-2" />
                 Upload
@@ -1068,6 +1156,10 @@ export default function IndicadoresManutencao() {
               <TabsTrigger value="dados" data-testid="tab-dados">
                 <Wrench className="h-4 w-4 mr-2" />
                 Em Manutenção
+              </TabsTrigger>
+              <TabsTrigger value="finalizadas" data-testid="tab-finalizadas">
+                <History className="h-4 w-4 mr-2" />
+                Finalizadas
               </TabsTrigger>
               <TabsTrigger value="liberado" data-testid="tab-liberado">
                 <CheckCircle className="h-4 w-4 mr-2" />
@@ -1489,6 +1581,390 @@ export default function IndicadoresManutencao() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Aba de Finalizadas */}
+            <TabsContent value="finalizadas">
+              <div className="space-y-6">
+                {/* Cards de estatísticas */}
+                {finalizadasStatsData?.totais && (
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Total Manutenções
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">
+                          {Number(finalizadasStatsData.totais.total || 0).toLocaleString('pt-BR')}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Veículos Únicos
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">
+                          {Number(finalizadasStatsData.totais.veiculos_unicos || 0).toLocaleString('pt-BR')}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Custo Total
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold text-red-600">
+                          {formatCurrency(Number(finalizadasStatsData.totais.custo_total || 0))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Dias Parados Total
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">
+                          {Number(finalizadasStatsData.totais.dias_parados_total || 0).toLocaleString('pt-BR')}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Média Dias
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">
+                          {Number(finalizadasStatsData.totais.media_dias || 0).toFixed(1)}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {/* Upload e Filtros */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <History className="h-5 w-5" />
+                      Manutenções Finalizadas
+                    </CardTitle>
+                    <CardDescription>
+                      Histórico completo de manutenções finalizadas com análise por placa
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {/* Upload de arquivo */}
+                      <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex-1">
+                          <Label htmlFor="finalizadas-upload" className="text-sm font-medium">
+                            Importar Planilha de Manutenções Finalizadas
+                          </Label>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Arquivo Excel com dados de manutenções concluídas
+                          </p>
+                        </div>
+                        <div>
+                          <Input
+                            id="finalizadas-upload"
+                            type="file"
+                            accept=".xlsx,.xls"
+                            onChange={handleFinalizadasUpload}
+                            disabled={uploadingFinalizadas}
+                            className="w-64"
+                            data-testid="input-finalizadas-upload"
+                          />
+                        </div>
+                        {uploadingFinalizadas && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="h-4 w-4 animate-spin" />
+                            Processando...
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Filtros */}
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <div className="space-y-2">
+                          <Label>Buscar Placa</Label>
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Placa..."
+                              value={finalizadasSearchPlaca}
+                              onChange={(e) => setFinalizadasSearchPlaca(e.target.value.toUpperCase())}
+                              className="pl-10"
+                              data-testid="input-finalizadas-placa"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Tipo Manutenção</Label>
+                          <Select value={finalizadasFilterTipo} onValueChange={setFinalizadasFilterTipo}>
+                            <SelectTrigger data-testid="select-finalizadas-tipo">
+                              <SelectValue placeholder="Todos" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">Todos</SelectItem>
+                              <SelectItem value="Preventiva">Preventiva</SelectItem>
+                              <SelectItem value="Corretiva">Corretiva</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Oficina</Label>
+                          <Input
+                            placeholder="Filtrar oficina..."
+                            value={finalizadasFilterOficina}
+                            onChange={(e) => setFinalizadasFilterOficina(e.target.value)}
+                            data-testid="input-finalizadas-oficina"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Operação</Label>
+                          <Select value={finalizadasFilterOperacao} onValueChange={setFinalizadasFilterOperacao}>
+                            <SelectTrigger data-testid="select-finalizadas-operacao">
+                              <SelectValue placeholder="Todas" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">Todas</SelectItem>
+                              {finalizadasStatsData?.porOperacao?.map((op: any) => (
+                                <SelectItem key={op.operacao} value={op.operacao}>
+                                  {op.operacao} ({op.quantidade})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Mês</Label>
+                          <Select value={finalizadasFilterMes} onValueChange={setFinalizadasFilterMes}>
+                            <SelectTrigger data-testid="select-finalizadas-mes">
+                              <SelectValue placeholder="Todos" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">Todos os meses</SelectItem>
+                              {finalizadasStatsData?.meses?.map((mes: string) => (
+                                <SelectItem key={mes} value={mes}>{mes}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Tabela de dados */}
+                      {finalizadasLoading ? (
+                        <div className="flex items-center justify-center py-12">
+                          <Clock className="h-8 w-8 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : finalizadasData?.data && finalizadasData.data.length > 0 ? (
+                        <div className="overflow-x-auto">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-muted-foreground">
+                              {finalizadasData.total.toLocaleString('pt-BR')} registros encontrados
+                            </span>
+                          </div>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Placa</TableHead>
+                                <TableHead>Modelo</TableHead>
+                                <TableHead>Oficina</TableHead>
+                                <TableHead>Tipo</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>D+Manut</TableHead>
+                                <TableHead>Prazo</TableHead>
+                                <TableHead>Data Agenda</TableHead>
+                                <TableHead>Liberado</TableHead>
+                                <TableHead className="max-w-xs">Relato</TableHead>
+                                <TableHead>Focal</TableHead>
+                                <TableHead>Ações</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {finalizadasData.data.slice(0, 100).map((item: any) => (
+                                <TableRow key={item.id}>
+                                  <TableCell className="font-mono font-medium">{item.placa}</TableCell>
+                                  <TableCell className="max-w-[120px] truncate" title={item.modelo}>{item.modelo || '-'}</TableCell>
+                                  <TableCell className="max-w-[120px] truncate" title={item.oficina}>{item.oficina || '-'}</TableCell>
+                                  <TableCell>
+                                    <Badge variant={item.tipo_manutencao === 'Preventiva' ? 'secondary' : 'destructive'}>
+                                      {item.tipo_manutencao || '-'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={item.status === 'Em Manutenção' ? 'default' : 'outline'}>
+                                      {item.status || '-'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-center">{item.dias_manutencao || 0}</TableCell>
+                                  <TableCell>
+                                    <Badge variant={item.status2 === 'Fora do Prazo' ? 'destructive' : 'secondary'}>
+                                      {item.status2 || '-'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>{formatDate(item.data_agenda)}</TableCell>
+                                  <TableCell>{formatDate(item.data_liberado)}</TableCell>
+                                  <TableCell className="max-w-[200px] truncate" title={item.relato}>{item.relato || '-'}</TableCell>
+                                  <TableCell>{item.focal || '-'}</TableCell>
+                                  <TableCell>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedPlacaHistorico(item.placa);
+                                        setShowHistoricoPlaca(true);
+                                      }}
+                                      data-testid={`btn-historico-${item.id}`}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                          {finalizadasData.data.length > 100 && (
+                            <p className="text-sm text-muted-foreground text-center mt-4">
+                              Mostrando 100 de {finalizadasData.total.toLocaleString('pt-BR')} registros. Use os filtros para refinar a busca.
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center py-12">
+                          <History className="mx-auto h-12 w-12 text-muted-foreground" />
+                          <p className="mt-2 text-muted-foreground">
+                            Nenhuma manutenção finalizada encontrada.
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Importe uma planilha Excel para começar.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Modal de Histórico por Placa */}
+                <Dialog open={showHistoricoPlaca} onOpenChange={setShowHistoricoPlaca}>
+                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <Car className="h-5 w-5" />
+                        Histórico de Manutenções - {selectedPlacaHistorico}
+                      </DialogTitle>
+                      <DialogDescription>
+                        Todas as manutenções registradas para esta placa
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    {historicoPlacaLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Clock className="h-8 w-8 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : historicoPlacaData?.data ? (
+                      <div className="space-y-4">
+                        {/* Estatísticas da placa */}
+                        {historicoPlacaData.stats && (
+                          <div className="grid grid-cols-4 gap-4">
+                            <Card>
+                              <CardContent className="pt-4">
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold">
+                                    {historicoPlacaData.stats.total_manutencoes}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">Manutenções</p>
+                                </div>
+                              </CardContent>
+                            </Card>
+                            <Card>
+                              <CardContent className="pt-4">
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-red-600">
+                                    {formatCurrency(Number(historicoPlacaData.stats.custo_total || 0))}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">Custo Total</p>
+                                </div>
+                              </CardContent>
+                            </Card>
+                            <Card>
+                              <CardContent className="pt-4">
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold">
+                                    {historicoPlacaData.stats.dias_parados_total}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">Dias Parados</p>
+                                </div>
+                              </CardContent>
+                            </Card>
+                            <Card>
+                              <CardContent className="pt-4">
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold">
+                                    {Number(historicoPlacaData.stats.media_dias || 0).toFixed(1)}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">Média Dias</p>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        )}
+
+                        {/* Lista de manutenções */}
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Data</TableHead>
+                                <TableHead>Oficina</TableHead>
+                                <TableHead>Tipo</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>D+Manut</TableHead>
+                                <TableHead>Relato</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {historicoPlacaData.data.map((item: any) => (
+                                <TableRow key={item.id}>
+                                  <TableCell>{formatDate(item.data_agenda)}</TableCell>
+                                  <TableCell>{item.oficina || '-'}</TableCell>
+                                  <TableCell>
+                                    <Badge variant={item.tipo_manutencao === 'Preventiva' ? 'secondary' : 'destructive'}>
+                                      {item.tipo_manutencao || '-'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={item.status2 === 'Fora do Prazo' ? 'destructive' : 'secondary'}>
+                                      {item.status2 || '-'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-center">{item.dias_manutencao || 0}</TableCell>
+                                  <TableCell className="max-w-xs truncate" title={item.relato}>{item.relato || '-'}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <p className="text-muted-foreground">Nenhum histórico encontrado.</p>
+                      </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </div>
             </TabsContent>
 
             {/* Aba de Liberado */}
