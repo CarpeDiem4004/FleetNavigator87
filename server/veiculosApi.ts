@@ -434,4 +434,69 @@ router.put('/:id', async (req: Request, res: Response) => {
   }
 });
 
+// Estatísticas de veículos para dashboard
+router.get('/stats/distribuicao', async (req: Request, res: Response) => {
+  try {
+    // Distribuição por tipo de posse (Murici vs Locada)
+    const posseResult = await pool.query(`
+      SELECT 
+        COALESCE(tipo_posse, 'Indefinido') as tipo,
+        COUNT(*) as quantidade
+      FROM veiculos
+      WHERE base_id = 46
+      GROUP BY tipo_posse
+      ORDER BY quantidade DESC
+    `);
+    
+    // Distribuição por locadora
+    const locadoraResult = await pool.query(`
+      SELECT 
+        COALESCE(NULLIF(locadora, ''), 'Murici') as locadora,
+        COUNT(*) as quantidade
+      FROM veiculos
+      WHERE base_id = 46
+      GROUP BY locadora
+      ORDER BY quantidade DESC
+    `);
+    
+    // Distribuição por estado (UF)
+    const estadoResult = await pool.query(`
+      SELECT 
+        COALESCE(estado, 'Não informado') as estado,
+        COUNT(*) as quantidade
+      FROM veiculos
+      WHERE base_id = 46
+      GROUP BY estado
+      ORDER BY quantidade DESC
+    `);
+    
+    // Total de veículos
+    const totalResult = await pool.query(`
+      SELECT COUNT(*) as total FROM veiculos WHERE base_id = 46
+    `);
+    
+    res.json({
+      success: true,
+      data: {
+        porPosse: posseResult.rows.map(r => ({
+          name: r.tipo,
+          value: parseInt(r.quantidade)
+        })),
+        porLocadora: locadoraResult.rows.map(r => ({
+          name: r.locadora,
+          value: parseInt(r.quantidade)
+        })),
+        porEstado: estadoResult.rows.map(r => ({
+          name: r.estado,
+          value: parseInt(r.quantidade)
+        })),
+        total: parseInt(totalResult.rows[0].total)
+      }
+    });
+  } catch (error: any) {
+    console.error('[VEICULOS] Erro ao buscar estatísticas:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 export default router;

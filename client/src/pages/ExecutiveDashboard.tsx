@@ -27,9 +27,17 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'wouter';
 
+interface VeiculosStats {
+  porPosse: { name: string; value: number }[];
+  porLocadora: { name: string; value: number }[];
+  porEstado: { name: string; value: number }[];
+  total: number;
+}
+
 export default function ExecutiveDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [veiculosStats, setVeiculosStats] = useState<VeiculosStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -82,9 +90,23 @@ export default function ExecutiveDashboard() {
     }
   };
 
+  // Função para carregar estatísticas de veículos
+  const loadVeiculosStats = async () => {
+    try {
+      const response = await fetch('/api/veiculos/stats/distribuicao');
+      const result = await response.json();
+      if (result.success) {
+        setVeiculosStats(result.data);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar estatísticas de veículos:', err);
+    }
+  };
+
   // Carregar dados na montagem do componente e quando as datas mudarem
   useEffect(() => {
     loadDashboardData(date, startDate, endDate);
+    loadVeiculosStats();
   }, [date, startDate, endDate]);
 
   // Função para formatar valores monetários
@@ -694,54 +716,101 @@ export default function ExecutiveDashboard() {
           </TabsContent>
           
           <TabsContent value="fleet" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <KpiCard
-                title="Disponibilidade da Frota"
-                value={85}
-                unit="%"
-                previousValue={82}
-                changePercentage={3.7}
-                trend="up"
-                isPositive={true}
+                title="Total de Veículos"
+                value={veiculosStats?.total || 0}
+                icon={<Truck className="h-5 w-5" />}
+                loading={loading}
+                color="primary"
+              />
+              
+              <KpiCard
+                title="Veículos Murici"
+                value={veiculosStats?.porPosse?.find(p => p.name === 'Murici')?.value || 0}
                 icon={<Truck className="h-5 w-5" />}
                 loading={loading}
                 color="success"
               />
               
               <KpiCard
-                title="Dias Inativos (Total)"
-                value={45}
-                unit="dias"
-                previousValue={52}
-                changePercentage={-13.5}
-                trend="down"
-                isPositive={true}
-                icon={<Timer className="h-5 w-5" />}
+                title="Veículos Locados"
+                value={veiculosStats?.porPosse?.find(p => p.name === 'Locada')?.value || 0}
+                icon={<Truck className="h-5 w-5" />}
                 loading={loading}
-                color="danger"
+                color="warning"
               />
               
               <KpiCard
-                title="Consumo Médio de Combustível"
-                value={32.5}
-                unit="L/100km"
-                previousValue={34.2}
-                changePercentage={-5.0}
-                trend="down"
-                isPositive={true}
-                icon={<Droplets className="h-5 w-5" />}
+                title="Estados Atendidos"
+                value={veiculosStats?.porEstado?.length || 0}
+                icon={<BarChart2 className="h-5 w-5" />}
                 loading={loading}
                 color="info"
               />
             </div>
             
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ChartCard 
+                title="Murici vs Locados" 
+                description="Distribuição de veículos por tipo de posse"
+                loading={loading}
+                className="h-[400px]"
+              >
+                {veiculosStats?.porPosse && veiculosStats.porPosse.length > 0 ? (
+                  <PieChartComponent
+                    data={veiculosStats.porPosse.map((item, idx) => ({
+                      name: `${item.name}: ${item.value} (${((item.value / (veiculosStats?.total || 1)) * 100).toFixed(1)}%)`,
+                      value: item.value,
+                      fill: idx === 0 ? '#3b82f6' : idx === 1 ? '#f59e0b' : '#6b7280'
+                    }))}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    Sem dados disponíveis
+                  </div>
+                )}
+              </ChartCard>
+              
+              <ChartCard 
+                title="Distribuição por Locadora" 
+                description="Quantidade de veículos por locadora"
+                loading={loading}
+                className="h-[400px]"
+              >
+                {veiculosStats?.porLocadora && veiculosStats.porLocadora.length > 0 ? (
+                  <BarChartComponent
+                    data={veiculosStats.porLocadora.slice(0, 10)}
+                    dataKey="value"
+                    xAxisKey="name"
+                    barColor="#3b82f6"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    Sem dados disponíveis
+                  </div>
+                )}
+              </ChartCard>
+            </div>
+            
             <ChartCard 
-              title="Consumo de Combustível por Base" 
-              description="Litros consumidos no período por base operacional"
+              title="Distribuição por Estado (UF)" 
+              description="Pulverização dos veículos por estado"
               loading={loading}
               className="h-[400px]"
             >
-              {renderFuelConsumptionByBase()}
+              {veiculosStats?.porEstado && veiculosStats.porEstado.length > 0 ? (
+                <BarChartComponent
+                  data={veiculosStats.porEstado}
+                  dataKey="value"
+                  xAxisKey="name"
+                  barColor="#22c55e"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  Sem dados disponíveis
+                </div>
+              )}
             </ChartCard>
             
             {renderTopVehiclesCost()}
