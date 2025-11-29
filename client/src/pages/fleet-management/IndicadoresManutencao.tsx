@@ -24,7 +24,9 @@ import {
   Edit,
   Save,
   X,
-  Plus
+  Plus,
+  Radio,
+  MapPin
 } from 'lucide-react';
 import {
   Dialog,
@@ -189,6 +191,19 @@ interface ManutencaoHistorico {
   data_manutencao: string;
 }
 
+interface BipData {
+  id: number;
+  placa: string;
+  ml_bip: string | null;
+  dds_bip: string | null;
+  base_reserva: string | null;
+  ultimo_bip: string | null;
+  motivo: string | null;
+  observacao: string | null;
+  dias_sem_bip: number;
+  created_at: string;
+}
+
 const COLORS = ['#2563eb', '#16a34a', '#eab308', '#dc2626', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899'];
 
 export default function IndicadoresManutencao() {
@@ -219,6 +234,8 @@ export default function IndicadoresManutencao() {
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [selectedGrupo, setSelectedGrupo] = useState<string>('');
   const [selectedSubgrupo, setSelectedSubgrupo] = useState<string>('');
+  const [bipSearchPlaca, setBipSearchPlaca] = useState<string>('');
+  const [bipFilterMotivo, setBipFilterMotivo] = useState<string>('');
 
   // Lista de modelos de veículos disponíveis
   const modelosVeiculos = [
@@ -570,6 +587,15 @@ export default function IndicadoresManutencao() {
     enabled: !!searchPlaca && searchPlaca.length >= 3,
   });
 
+  // Buscar dados do BIP (rastreamento de veículos)
+  const { data: bipData, isLoading: bipLoading } = useQuery<{success: boolean, data: BipData[], stats: {total: number, parados: number, emOperacao: number, mediasDiasSemBip: number}}>({
+    queryKey: ['/api/indicadores/bip'],
+    queryFn: async () => {
+      const res = await fetch('/api/indicadores/bip', { credentials: 'include' });
+      return res.json();
+    }
+  });
+
   // Mutation para upload original
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -663,9 +689,15 @@ export default function IndicadoresManutencao() {
     }
   };
 
-  const formatDate = (date: string) => {
+  const formatDate = (date: string | null | undefined) => {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('pt-BR');
+    try {
+      const d = new Date(date);
+      if (isNaN(d.getTime()) || d.getFullYear() < 1900) return '-';
+      return d.toLocaleDateString('pt-BR');
+    } catch {
+      return '-';
+    }
   };
 
   const formatCurrency = (value: number) => {
@@ -746,7 +778,7 @@ export default function IndicadoresManutencao() {
           )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="upload" data-testid="tab-upload">
                 <Upload className="h-4 w-4 mr-2" />
                 Upload
@@ -762,6 +794,10 @@ export default function IndicadoresManutencao() {
               <TabsTrigger value="liberado" data-testid="tab-liberado">
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Liberado
+              </TabsTrigger>
+              <TabsTrigger value="bip" data-testid="tab-bip">
+                <Radio className="h-4 w-4 mr-2" />
+                BIP
               </TabsTrigger>
               <TabsTrigger value="dashboards" data-testid="tab-dashboards">
                 <BarChart3 className="h-4 w-4 mr-2" />
@@ -1273,6 +1309,221 @@ export default function IndicadoresManutencao() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Aba de BIP - Rastreamento de Veículos */}
+            <TabsContent value="bip">
+              <div className="space-y-6">
+                {/* Cards de Resumo BIP */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <Car className="h-4 w-4" />
+                        Total Veículos
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{bipData?.stats?.total || 0}</div>
+                      <p className="text-xs text-muted-foreground">registrados</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        Veículos Parados
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-red-600">{bipData?.stats?.parados || 0}</div>
+                      <p className="text-xs text-muted-foreground">sem BIP recente</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4" />
+                        Em Operação
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-green-600">{bipData?.stats?.emOperacao || 0}</div>
+                      <p className="text-xs text-muted-foreground">com BIP ativo</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Média Dias Parado
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-orange-600">
+                        {(bipData?.stats?.mediasDiasSemBip || 0).toFixed(1)}
+                      </div>
+                      <p className="text-xs text-muted-foreground">dias sem BIP</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Tabela de BIP */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Radio className="h-5 w-5" />
+                          Histórico de BIP por Veículo
+                        </CardTitle>
+                        <CardDescription>
+                          Rastreamento de dias de operação e tempo parado de cada veículo
+                        </CardDescription>
+                      </div>
+                      <div className="flex gap-2">
+                        <Input 
+                          placeholder="Buscar placa..." 
+                          value={bipSearchPlaca}
+                          onChange={(e) => setBipSearchPlaca(e.target.value.toUpperCase())}
+                          className="w-40"
+                          data-testid="input-bip-search-placa"
+                        />
+                        <Select value={bipFilterMotivo} onValueChange={setBipFilterMotivo}>
+                          <SelectTrigger className="w-40" data-testid="select-bip-motivo">
+                            <SelectValue placeholder="Todos motivos" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Todos</SelectItem>
+                            <SelectItem value="Manutenção">Manutenção</SelectItem>
+                            <SelectItem value="Reserva">Reserva</SelectItem>
+                            <SelectItem value="Sinistro">Sinistro</SelectItem>
+                            <SelectItem value="Outros">Outros</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {bipLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    ) : bipData?.data && bipData.data.length > 0 ? (
+                      <div className="rounded-md border overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="font-bold">Placa</TableHead>
+                              <TableHead>Último BIP</TableHead>
+                              <TableHead>ML BIP</TableHead>
+                              <TableHead>DDS BIP</TableHead>
+                              <TableHead className="text-center">Dias Parado</TableHead>
+                              <TableHead>Motivo</TableHead>
+                              <TableHead>Base Reserva</TableHead>
+                              <TableHead>Observação</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {bipData.data
+                              .filter((item) => {
+                                const matchPlaca = !bipSearchPlaca || item.placa?.toUpperCase().includes(bipSearchPlaca);
+                                const matchMotivo = !bipFilterMotivo || item.motivo?.includes(bipFilterMotivo);
+                                return matchPlaca && matchMotivo;
+                              })
+                              .sort((a, b) => (b.dias_sem_bip || 0) - (a.dias_sem_bip || 0))
+                              .slice(0, 100)
+                              .map((item) => {
+                                const diasParado = item.dias_sem_bip || 0;
+                                let statusColor = 'text-green-600';
+                                let badgeVariant: 'default' | 'secondary' | 'destructive' | 'outline' = 'default';
+                                
+                                if (diasParado > 30) {
+                                  statusColor = 'text-red-600';
+                                  badgeVariant = 'destructive';
+                                } else if (diasParado > 7) {
+                                  statusColor = 'text-orange-600';
+                                  badgeVariant = 'secondary';
+                                }
+                                
+                                return (
+                                  <TableRow key={item.id} data-testid={`bip-row-${item.id}`}>
+                                    <TableCell className="font-bold">{item.placa}</TableCell>
+                                    <TableCell>{formatDate(item.ultimo_bip)}</TableCell>
+                                    <TableCell>{formatDate(item.ml_bip)}</TableCell>
+                                    <TableCell>{formatDate(item.dds_bip)}</TableCell>
+                                    <TableCell className="text-center">
+                                      <Badge variant={badgeVariant} className={statusColor}>
+                                        {diasParado} dias
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                      <Badge variant="outline">{item.motivo || '-'}</Badge>
+                                    </TableCell>
+                                    <TableCell>{item.base_reserva || '-'}</TableCell>
+                                    <TableCell className="max-w-xs truncate" title={item.observacao || ''}>
+                                      {item.observacao || '-'}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <Radio className="mx-auto h-12 w-12 text-muted-foreground" />
+                        <p className="mt-2 text-muted-foreground">
+                          Nenhum registro de BIP encontrado.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Gráfico de Distribuição por Dias Parado */}
+                {bipData?.data && bipData.data.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Distribuição por Dias Parado</CardTitle>
+                      <CardDescription>Quantidade de veículos por faixa de dias sem BIP</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart
+                          data={(() => {
+                            const faixas = [
+                              { faixa: '0-7 dias', min: 0, max: 7, count: 0 },
+                              { faixa: '8-15 dias', min: 8, max: 15, count: 0 },
+                              { faixa: '16-30 dias', min: 16, max: 30, count: 0 },
+                              { faixa: '31-60 dias', min: 31, max: 60, count: 0 },
+                              { faixa: '61-90 dias', min: 61, max: 90, count: 0 },
+                              { faixa: '+90 dias', min: 91, max: 9999, count: 0 },
+                            ];
+                            
+                            bipData.data.forEach((item) => {
+                              const dias = item.dias_sem_bip || 0;
+                              const faixa = faixas.find(f => dias >= f.min && dias <= f.max);
+                              if (faixa) faixa.count++;
+                            });
+                            
+                            return faixas;
+                          })()}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="faixa" tick={{ fontSize: 11 }} />
+                          <YAxis />
+                          <Tooltip formatter={(value: number) => [value, 'Veículos']} />
+                          <Bar dataKey="count" fill="#2563eb" name="Veículos" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             </TabsContent>
 
             {/* Aba de Dashboards */}

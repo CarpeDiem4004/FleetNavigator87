@@ -956,4 +956,45 @@ router.get('/pecas/analise', isAuthenticated, async (req: Request, res: Response
   }
 });
 
+// Buscar dados de BIP (rastreamento de veículos)
+router.get('/bip', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    console.log('[BIP] Buscando dados de rastreamento de veículos...');
+    
+    // Buscar todos os registros de BIP
+    const bipResult = await pool.query(`
+      SELECT 
+        id, placa, ml_bip, dds_bip, base_reserva,
+        ultimo_bip, motivo, observacao, dias_sem_bip, created_at
+      FROM indicadores_bip
+      ORDER BY dias_sem_bip DESC NULLS LAST
+    `);
+    
+    // Calcular estatísticas
+    const data = bipResult.rows;
+    const total = data.length;
+    const parados = data.filter(d => (d.dias_sem_bip || 0) > 7).length;
+    const emOperacao = data.filter(d => (d.dias_sem_bip || 0) <= 7).length;
+    
+    const somasDias = data.reduce((acc, d) => acc + (d.dias_sem_bip || 0), 0);
+    const mediasDiasSemBip = total > 0 ? somasDias / total : 0;
+    
+    console.log('[BIP] Dados encontrados:', { total, parados, emOperacao, mediasDiasSemBip: mediasDiasSemBip.toFixed(1) });
+    
+    res.json({
+      success: true,
+      data: data,
+      stats: {
+        total,
+        parados,
+        emOperacao,
+        mediasDiasSemBip
+      }
+    });
+  } catch (error) {
+    console.error('[BIP] Erro ao buscar dados:', error);
+    res.status(500).json({ success: false, message: 'Erro ao buscar dados de BIP' });
+  }
+});
+
 export default router;
