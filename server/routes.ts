@@ -121,6 +121,7 @@ import { registerUsuariosSupabaseRoutes } from "./routes/usuariosSupabaseRoutes"
 import { upload as uploadConferencia, uploadRouteData, generateReport, listUploads, getUploadData, deleteUpload, exportReportToExcel } from "./conferenciaRotasApi";
 import { getRelatorioConsumo } from "./relatorioConsumoApi";
 import indicadoresApi from "./indicadoresApi";
+import veiculosApi from "./veiculosApi";
 // import { supabaseInsertHandler } from "./routes/supabaseInsertRoute"; // Desabilitado - usando versão PostgreSQL direta
 import postoSupabaseRoutes from "./routes/postoSupabaseRoutes";
 import postoRoutes from "./routes/postoRoutes.js";
@@ -1782,6 +1783,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ROTAS DE INDICADORES DE MANUTENÇÃO
   // ****************************************
   app.use('/api/indicadores', indicadoresApi);
+
+  // ****************************************
+  // ROTAS DE VEÍCULOS - IMPORTAÇÃO E LISTAGEM
+  // ****************************************
+  app.use('/api/veiculos', veiculosApi);
 
   // ENDPOINTS CRÍTICOS - Registrar primeiro para evitar interceptação pelos middlewares
   
