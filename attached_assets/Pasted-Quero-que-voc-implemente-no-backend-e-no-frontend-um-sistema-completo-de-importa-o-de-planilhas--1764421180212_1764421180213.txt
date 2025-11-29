@@ -1,0 +1,171 @@
+Quero que você implemente no backend e no frontend um sistema completo de importação de planilhas (.xlsx) para o Cadastro de Veículos, preenchendo automaticamente a lista que aparece na tela (Placa, Modelo, Tipo e Status).
+
+1. Objetivo
+
+A planilha enviada deve ser importada e transformada em registros dentro da tabela veiculos do Supabase, e deve preencher automaticamente a tela onde os veículos aparecem listados (como na imagem que enviei).
+
+2. Nomes das colunas da tabela veiculos (Supabase)
+
+Garanta que a importação preencha corretamente os seguintes campos:
+
+placa
+
+modelo
+
+marca
+
+tipo_posse (→ deve aparecer como Própria ou Locada)
+
+status
+
+categoria
+
+projeto
+
+base
+
+ano_fabricacao
+
+ano_modelo
+
+capacidade
+
+km
+
+cor
+
+tipo_combustivel
+
+chassi
+
+renavam
+
+data_inicio_operacao
+
+data_fim_operacao
+
+observacao
+
+A planilha pode ter nomes variados, mas deve ser mapeada corretamente.
+
+3. O que você deve implementar
+BACKEND
+
+Criar um endpoint:
+
+POST /api/veiculos/importar
+
+
+Ele deve:
+
+Receber o arquivo .xlsx via Multer
+
+Ler com a biblioteca xlsx
+
+Normalizar nomes de colunas:
+
+tudo minúsculo
+
+sem acentos
+
+trocar espaço/underline
+
+permitir variações (ex: "TIPO", "tipo de posse", "posse", "locado/próprio")
+
+Mapear automaticamente para as colunas do Supabase
+
+Normalizar datas e números
+
+Validar a placa
+
+Gerar array JSON com todos os veículos
+
+Fazer upsert no Supabase:
+
+supabase.from('veiculos').upsert(dados, { onConflict: 'placa' })
+
+
+Retornar um relatório:
+
+{
+  "importados": 120,
+  "atualizados": 34,
+  "ignorados": 3,
+  "erros": [
+    { "linha": 7, "motivo": "placa inválida" }
+  ]
+}
+
+4. Tipo do veículo (Própria / Locada)
+
+Criar regra automática:
+
+Se a planilha tiver coluna “tipo”, “posse”, “tipo_posse”, “locado/próprio” → converter para:
+
+Própria
+
+Locada
+
+Se vier vazio → usar "Própria" como padrão.
+
+5. FRONTEND (React)
+
+Atualizar a página de upload:
+
+Mostrar barra de progresso
+
+Mostrar relatório de importação
+
+Exibir erros da planilha
+
+Após o upload → fazer refresh automático da lista de veículos (/api/veiculos/listar)
+
+Atualizar a página Cadastro de Veículos para:
+
+Recarregar automaticamente após importação
+
+Mostrar novos veículos
+
+Atualizar veículos existentes
+
+6. Regras Obrigatórias
+
+Não permitir placa duplicada (usar upsert)
+
+Se faltar coluna importante → avisar no relatório
+
+Nunca travar o sistema
+
+Variações de nome de coluna devem ser normalizadas
+
+Datas devem vir no formato YYYY-MM-DD
+
+KM deve ser numérico, mesmo que na planilha venha com vírgula
+
+7. Entregue no final:
+
+Código completo da rota /api/veiculos/importar
+
+Funções de normalização de coluna, data, número e placa
+
+Código React da tela de upload
+
+Atualização da tela de listagem de veículos
+
+Exemplo de JSON final gerado pela importação
+
+Resultado esperado
+
+Depois que você implementar isso, quando eu enviar a planilha:
+
+📌 Todos os veículos aparecerão automaticamente na tela Cadastro de Veículos, com:
+
+Placa
+
+Modelo
+
+Tipo (Própria / Locada)
+
+Status
+
+E todos os dados completos na tabela do Supabase
