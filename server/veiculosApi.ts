@@ -78,7 +78,7 @@ function normalizePlaca(value: any): string | null {
 }
 
 function normalizeTipoPosse(value: any): string {
-  if (!value) return 'Própria';
+  if (!value) return 'Murici';
   
   const v = String(value).toLowerCase().trim();
   
@@ -86,15 +86,15 @@ function normalizeTipoPosse(value: any): string {
     return 'Locada';
   }
   
-  if (v.includes('propri') || v.includes('proprio') || v.includes('própria')) {
-    return 'Própria';
+  if (v.includes('propri') || v.includes('proprio') || v.includes('própria') || v.includes('murici')) {
+    return 'Murici';
   }
   
   if (v.length > 0) {
     return 'Locada';
   }
   
-  return 'Própria';
+  return 'Murici';
 }
 
 function normalizeStatus(value: any): string {

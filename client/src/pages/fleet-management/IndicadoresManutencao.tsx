@@ -2073,7 +2073,7 @@ export default function IndicadoresManutencao() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="">Todos</SelectItem>
-                              <SelectItem value="Própria">Própria</SelectItem>
+                              <SelectItem value="Murici">Murici</SelectItem>
                               <SelectItem value="Locada">Locada</SelectItem>
                             </SelectContent>
                           </Select>
@@ -2131,8 +2131,8 @@ export default function IndicadoresManutencao() {
                                   <TableCell className="font-bold text-blue-700">{item.placa}</TableCell>
                                   <TableCell className="text-sm">{item.modelo || '-'}</TableCell>
                                   <TableCell>
-                                    <span className={`font-medium ${item.locadora ? 'text-orange-600' : 'text-gray-500'}`}>
-                                      {item.locadora || 'Própria'}
+                                    <span className={`font-medium ${item.locadora ? 'text-orange-600' : 'text-blue-600'}`}>
+                                      {item.locadora || 'Murici'}
                                     </span>
                                   </TableCell>
                                   <TableCell>
@@ -2272,7 +2272,7 @@ export default function IndicadoresManutencao() {
                             <SelectValue placeholder="Selecione" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Própria">Própria</SelectItem>
+                            <SelectItem value="Murici">Murici</SelectItem>
                             <SelectItem value="Locada">Locada</SelectItem>
                           </SelectContent>
                         </Select>
