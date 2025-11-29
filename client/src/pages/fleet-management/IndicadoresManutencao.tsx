@@ -1145,7 +1145,7 @@ export default function IndicadoresManutencao() {
           )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-8">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="upload" data-testid="tab-upload">
                 <Upload className="h-4 w-4 mr-2" />
                 Upload
@@ -1161,10 +1161,6 @@ export default function IndicadoresManutencao() {
               <TabsTrigger value="finalizadas" data-testid="tab-finalizadas">
                 <History className="h-4 w-4 mr-2" />
                 Finalizadas
-              </TabsTrigger>
-              <TabsTrigger value="liberado" data-testid="tab-liberado">
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Liberado
               </TabsTrigger>
               <TabsTrigger value="bip" data-testid="tab-bip">
                 <Radio className="h-4 w-4 mr-2" />
@@ -2020,108 +2016,6 @@ export default function IndicadoresManutencao() {
                   </DialogContent>
                 </Dialog>
               </div>
-            </TabsContent>
-
-            {/* Aba de Liberado */}
-            <TabsContent value="liberado">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Histórico de Manutenções Liberadas</CardTitle>
-                  <CardDescription>
-                    Registro completo de manutenções concluídas
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Tipo de Manutenção</Label>
-                        <Select value={filterTipoManutencao} onValueChange={setFilterTipoManutencao}>
-                          <SelectTrigger data-testid="select-tipo-manutencao">
-                            <SelectValue placeholder="Todos os tipos" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="">Todos os tipos</SelectItem>
-                            <SelectItem value="Preventiva">Preventiva</SelectItem>
-                            <SelectItem value="Corretiva">Corretiva</SelectItem>
-                            <SelectItem value="Motor">Motor</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Placa</Label>
-                        <Input
-                          placeholder="Filtrar por placa..."
-                          value={filterPlaca}
-                          onChange={(e) => setFilterPlaca(e.target.value)}
-                          data-testid="input-filter-placa"
-                        />
-                      </div>
-                    </div>
-
-                    {liberado.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Placa</TableHead>
-                              <TableHead>Modelo</TableHead>
-                              <TableHead>Operação</TableHead>
-                              <TableHead>Tipo</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead>D+Manut</TableHead>
-                              <TableHead>Oficina</TableHead>
-                              <TableHead>Focal</TableHead>
-                              <TableHead>Centro Custo</TableHead>
-                              <TableHead>Data Agenda</TableHead>
-                              <TableHead>Liberado</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {liberado.map((item) => (
-                              <TableRow key={item.id}>
-                                <TableCell className="font-medium">{item.placa}</TableCell>
-                                <TableCell>{item.modelo || '-'}</TableCell>
-                                <TableCell>{item.operacao || '-'}</TableCell>
-                                <TableCell>
-                                  <Badge 
-                                    variant={
-                                      item.tipo_manutencao?.toLowerCase().includes('preventiva')
-                                        ? 'default'
-                                        : 'destructive'
-                                    }
-                                  >
-                                    {item.tipo_manutencao || '-'}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant={item.status2?.includes('Fora do Prazo') ? 'destructive' : 'outline'}>
-                                    {item.status2 || item.status || '-'}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>{item.d_manut || '-'}</TableCell>
-                                <TableCell className="max-w-xs truncate">{item.oficina || '-'}</TableCell>
-                                <TableCell>{item.focal || '-'}</TableCell>
-                                <TableCell>{item.centro_custo || '-'}</TableCell>
-                                <TableCell>{formatDate(item.data_agenda)}</TableCell>
-                                <TableCell>{formatDate(item.liberado)}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    ) : (
-                      <div className="text-center py-12">
-                        <CheckCircle className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <p className="mt-2 text-muted-foreground">
-                          Nenhum registro de manutenção liberada encontrado.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
             </TabsContent>
 
             {/* Aba de BIP - Rastreamento de Veículos */}
