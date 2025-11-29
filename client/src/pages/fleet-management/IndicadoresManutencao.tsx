@@ -682,7 +682,7 @@ export default function IndicadoresManutencao() {
   };
 
   // Query para buscar veículos para a aba Cadastro (tabela veiculos)
-  const { data: cadastroVehiclesData, isLoading: cadastroVehiclesLoading, refetch: refetchVeiculos } = useQuery<{success: boolean, data: Array<{id: number, placa: string, modelo: string, tipo_posse: string, status: string, categoria: string, locadora: string, ano: number}>}>({
+  const { data: cadastroVehiclesData, isLoading: cadastroVehiclesLoading, refetch: refetchVeiculos } = useQuery<{success: boolean, data: Array<{id: number, placa: string, modelo: string, tipo_posse: string, status: string, categoria: string, locadora: string, ano: number, chassi: string, renavam: string, cidade_veiculo: string, estado: string, cor: string, operacao: string, base: string, data_inicio_operacao: string}>}>({
     queryKey: ['/api/veiculos/listar'],
     queryFn: async () => {
       const res = await fetch('/api/veiculos/listar', { credentials: 'include' });
@@ -2095,9 +2095,15 @@ export default function IndicadoresManutencao() {
                             <TableRow>
                               <TableHead className="font-bold">Placa</TableHead>
                               <TableHead>Modelo</TableHead>
-                              <TableHead>Categoria</TableHead>
-                              <TableHead className="text-center">Tipo</TableHead>
-                              <TableHead>Status</TableHead>
+                              <TableHead>Chassi</TableHead>
+                              <TableHead>Renavam</TableHead>
+                              <TableHead>Cidade</TableHead>
+                              <TableHead>Estado</TableHead>
+                              <TableHead>Cor</TableHead>
+                              <TableHead>Operação</TableHead>
+                              <TableHead>Locadora</TableHead>
+                              <TableHead>Status Final</TableHead>
+                              <TableHead>SVC</TableHead>
                               <TableHead className="text-center">Ações</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -2109,70 +2115,39 @@ export default function IndicadoresManutencao() {
                                 return matchPlaca && matchOwnership;
                               })
                               .sort((a, b) => (a.placa || '').localeCompare(b.placa || ''))
+                              .slice(0, 100)
                               .map((item) => (
                                 <TableRow key={item.id} data-testid={`cadastro-row-${item.id}`}>
                                   <TableCell className="font-bold">{item.placa}</TableCell>
                                   <TableCell>{item.modelo || '-'}</TableCell>
-                                  <TableCell>{item.categoria || '-'}</TableCell>
-                                  <TableCell className="text-center">
-                                    {editingVehicle?.id === item.id ? (
-                                      <Select 
-                                        value={editingVehicle.tipo_posse || ''} 
-                                        onValueChange={(val) => setEditingVehicle({...editingVehicle, tipo_posse: val})}
-                                      >
-                                        <SelectTrigger className="w-28" data-testid="select-edit-ownership">
-                                          <SelectValue placeholder="Selecione" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="Própria">Própria</SelectItem>
-                                          <SelectItem value="Locada">Locada</SelectItem>
-                                        </SelectContent>
-                                      </Select>
+                                  <TableCell className="text-xs">{item.chassi || '-'}</TableCell>
+                                  <TableCell className="text-xs">{item.renavam || '-'}</TableCell>
+                                  <TableCell>{item.cidade_veiculo || '-'}</TableCell>
+                                  <TableCell>{item.estado || '-'}</TableCell>
+                                  <TableCell>{item.cor || '-'}</TableCell>
+                                  <TableCell>{item.operacao || '-'}</TableCell>
+                                  <TableCell>
+                                    {item.locadora ? (
+                                      <Badge className="bg-orange-500 text-white">{item.locadora}</Badge>
                                     ) : (
-                                      <Badge 
-                                        variant={item.tipo_posse === 'Própria' ? 'default' : item.tipo_posse === 'Locada' ? 'secondary' : 'outline'}
-                                        className={item.tipo_posse === 'Própria' ? 'bg-blue-600' : item.tipo_posse === 'Locada' ? 'bg-orange-500 text-white' : ''}
-                                      >
-                                        {item.tipo_posse || 'Não definido'}
-                                      </Badge>
+                                      <Badge variant="outline">Própria</Badge>
                                     )}
                                   </TableCell>
                                   <TableCell>
-                                    <Badge variant="outline">{item.status || 'Ativo'}</Badge>
+                                    <Badge variant={item.status?.includes('Ativo') || item.status?.includes('LHS') ? 'default' : 'secondary'}>
+                                      {item.status || '-'}
+                                    </Badge>
                                   </TableCell>
+                                  <TableCell>{item.base || '-'}</TableCell>
                                   <TableCell className="text-center">
-                                    {editingVehicle?.id === item.id ? (
-                                      <div className="flex gap-1 justify-center">
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => {
-                                            updateVeiculoMutation.mutate({ id: item.id, data: { tipo_posse: editingVehicle.tipo_posse } });
-                                          }}
-                                          disabled={updateVeiculoMutation.isPending}
-                                          data-testid={`button-save-vehicle-${item.id}`}
-                                        >
-                                          <Save className="h-4 w-4 text-green-600" />
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => setEditingVehicle(null)}
-                                          data-testid={`button-cancel-vehicle-${item.id}`}
-                                        >
-                                          <X className="h-4 w-4 text-red-600" />
-                                        </Button>
-                                      </div>
-                                    ) : (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => setEditingVehicle({ id: item.id, tipo_posse: item.tipo_posse || '' })}
-                                        data-testid={`button-edit-vehicle-${item.id}`}
-                                      >
-                                        <Edit className="h-4 w-4" />
-                                      </Button>
-                                    )}
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => setEditingVehicle({ id: item.id, tipo_posse: item.tipo_posse || '' })}
+                                      data-testid={`button-edit-vehicle-${item.id}`}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
                                   </TableCell>
                                 </TableRow>
                               ))}

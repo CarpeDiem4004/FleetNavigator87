@@ -149,14 +149,46 @@ function mapColumns(row: any, normalizedHeaders: { [key: string]: string }): any
     for (const variation of variations) {
       const normalized = normalizeColumnName(variation);
       for (const [origHeader, normHeader] of Object.entries(normalizedHeaders)) {
-        if (normHeader === normalized || normHeader.includes(normalized) || normalized.includes(normHeader)) {
+        // Para status, garantir match exato para evitar confusão entre status_final e status_dds
+        if (dbColumn === 'status') {
+          // Prioridade: status_final > status (ignorar status_dds)
+          if (normHeader === 'status_final' || normHeader === 'statusfinal') {
+            if (row[origHeader] !== undefined && row[origHeader] !== null && row[origHeader] !== '') {
+              mapped[dbColumn] = row[origHeader];
+              break;
+            }
+          }
+        } else if (dbColumn === 'observacao') {
+          // Capturar status_dds como observação
+          if (normHeader === 'status_dds' || normHeader === 'statusdds') {
+            if (row[origHeader] !== undefined && row[origHeader] !== null && row[origHeader] !== '') {
+              mapped[dbColumn] = `Status DDS: ${row[origHeader]}`;
+              break;
+            }
+          }
+        } else {
+          // Match normal para outros campos
+          if (normHeader === normalized || normHeader.includes(normalized) || normalized.includes(normHeader)) {
+            if (row[origHeader] !== undefined && row[origHeader] !== null && row[origHeader] !== '') {
+              mapped[dbColumn] = row[origHeader];
+              break;
+            }
+          }
+        }
+      }
+      if (mapped[dbColumn]) break;
+    }
+    
+    // Segunda passada para status se não encontrou status_final
+    if (dbColumn === 'status' && !mapped[dbColumn]) {
+      for (const [origHeader, normHeader] of Object.entries(normalizedHeaders)) {
+        if (normHeader === 'status' && !normHeader.includes('dds')) {
           if (row[origHeader] !== undefined && row[origHeader] !== null && row[origHeader] !== '') {
             mapped[dbColumn] = row[origHeader];
             break;
           }
         }
       }
-      if (mapped[dbColumn]) break;
     }
   }
   
