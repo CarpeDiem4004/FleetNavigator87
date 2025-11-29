@@ -679,34 +679,61 @@ router.get('/manutencoes/dashboard', isAuthenticated, async (req: Request, res: 
     const { dataInicio, dataFim, base } = req.query;
 
     let whereClause = '1=1';
+    let whereClauseFinalizadas = '1=1';
     const params: any[] = [];
+    const paramsFinalizadas: any[] = [];
 
     if (dataInicio) {
       params.push(dataInicio);
       whereClause += ` AND data_manutencao >= $${params.length}`;
+      paramsFinalizadas.push(dataInicio);
+      whereClauseFinalizadas += ` AND data_agenda >= $${paramsFinalizadas.length}`;
     }
     if (dataFim) {
       params.push(dataFim);
       whereClause += ` AND data_manutencao <= $${params.length}`;
+      paramsFinalizadas.push(dataFim);
+      whereClauseFinalizadas += ` AND data_agenda <= $${paramsFinalizadas.length}`;
     }
     if (base) {
       params.push(`%${base}%`);
       whereClause += ` AND base ILIKE $${params.length}`;
+      paramsFinalizadas.push(`%${base}%`);
+      whereClauseFinalizadas += ` AND operacao ILIKE $${paramsFinalizadas.length}`;
     }
 
-    // Totais gerais
-    const totais = await pool.query(
+    // Totais gerais de manutencoes_historico
+    const totaisHistorico = await pool.query(
       `SELECT 
         COUNT(*) as total_manutencoes,
         COUNT(DISTINCT placa) as veiculos_atendidos,
-        SUM(COALESCE(valor, 0)) as custo_total,
-        AVG(COALESCE(valor, 0)) as custo_medio,
         AVG(COALESCE(tempo_total, 0)) as tempo_medio,
         SUM(COALESCE(tempo_total, 0)) as dias_parados_total
        FROM manutencoes_historico 
        WHERE ${whereClause}`,
       params
     );
+
+    // Totais de custos de manutencoes_finalizadas (que tem os valores corretos)
+    const totaisCustos = await pool.query(
+      `SELECT 
+        SUM(COALESCE(valor_orcamento, valor_negociado, 0)) as custo_total,
+        AVG(COALESCE(valor_orcamento, valor_negociado, 0)) as custo_medio
+       FROM manutencoes_finalizadas 
+       WHERE ${whereClauseFinalizadas}`,
+      paramsFinalizadas
+    );
+
+    const totais = {
+      rows: [{
+        total_manutencoes: totaisHistorico.rows[0]?.total_manutencoes || 0,
+        veiculos_atendidos: totaisHistorico.rows[0]?.veiculos_atendidos || 0,
+        custo_total: totaisCustos.rows[0]?.custo_total || 0,
+        custo_medio: totaisCustos.rows[0]?.custo_medio || 0,
+        tempo_medio: totaisHistorico.rows[0]?.tempo_medio || 0,
+        dias_parados_total: totaisHistorico.rows[0]?.dias_parados_total || 0
+      }]
+    };
 
     // Por tipo de manutenção
     const porTipo = await pool.query(
@@ -750,36 +777,35 @@ router.get('/manutencoes/dashboard', isAuthenticated, async (req: Request, res: 
       params
     );
 
-    // Ranking de placas mais caras (ordena por dias_parados se custo for zero)
+    // Ranking de placas mais caras (usando custos de manutencoes_finalizadas)
     const rankingPlacas = await pool.query(
       `SELECT 
-        placa,
+        mf.placa,
         COUNT(*) as quantidade,
-        SUM(COALESCE(valor, 0)) as custo_total,
-        SUM(COALESCE(tempo_total, 0)) as dias_parados
-       FROM manutencoes_historico 
-       WHERE ${whereClause}
-       GROUP BY placa
+        SUM(COALESCE(mf.valor_orcamento, mf.valor_negociado, 0)) as custo_total,
+        SUM(COALESCE(mf.dias_manutencao, 0)) as dias_parados
+       FROM manutencoes_finalizadas mf
+       WHERE ${whereClauseFinalizadas.replace(/data_agenda/g, 'mf.data_agenda').replace(/operacao/g, 'mf.operacao')}
+       GROUP BY mf.placa
        ORDER BY 
-         CASE WHEN SUM(COALESCE(valor, 0)) > 0 THEN SUM(COALESCE(valor, 0)) ELSE 0 END DESC,
-         SUM(COALESCE(tempo_total, 0)) DESC
+         SUM(COALESCE(mf.valor_orcamento, mf.valor_negociado, 0)) DESC
        LIMIT 20`,
-      params
+      paramsFinalizadas
     );
 
-    // Evolução mensal
+    // Evolução mensal (usando custos de manutencoes_finalizadas)
     const evolucaoMensal = await pool.query(
       `SELECT 
-        TO_CHAR(data_manutencao, 'YYYY-MM') as mes,
+        TO_CHAR(data_agenda, 'YYYY-MM') as mes,
         COUNT(*) as quantidade,
-        SUM(COALESCE(valor, 0)) as valor_total,
+        SUM(COALESCE(valor_orcamento, valor_negociado, 0)) as valor_total,
         COUNT(DISTINCT placa) as veiculos
-       FROM manutencoes_historico 
-       WHERE ${whereClause} AND data_manutencao IS NOT NULL
-       GROUP BY TO_CHAR(data_manutencao, 'YYYY-MM')
+       FROM manutencoes_finalizadas 
+       WHERE ${whereClauseFinalizadas} AND data_agenda IS NOT NULL
+       GROUP BY TO_CHAR(data_agenda, 'YYYY-MM')
        ORDER BY mes DESC
        LIMIT 12`,
-      params
+      paramsFinalizadas
     );
 
     // Status das manutenções
