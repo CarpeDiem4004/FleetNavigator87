@@ -117,13 +117,13 @@ function normalizeStatus(value: any): string {
 
 const columnMappings: { [key: string]: string[] } = {
   placa: ['placa', 'plate', 'veiculo_placa', 'placa_veiculo'],
-  modelo: ['modelo', 'model', 'veiculo_modelo', 'descricao'],
+  modelo: ['modelo', 'model', 'veiculo_modelo', 'descricao', 'bau50', 'bau'],
   marca: ['marca', 'brand', 'fabricante', 'montadora'],
   tipo_posse: ['tipo_posse', 'posse', 'tipo', 'locado_proprio', 'propriedade', 'ownership'],
   locadora: ['locadora', 'locador', 'empresa_locadora', 'fornecedor'],
-  status: ['status', 'status_final', 'situacao', 'estado_operacional'],
+  status: ['status_final', 'statusfinal', 'status', 'situacao', 'estado_operacional'],
   categoria: ['categoria', 'category', 'perfil', 'perfil_cadastro', 'tipo_veiculo'],
-  projeto: ['projeto', 'project', 'cliente', 'operacao'],
+  projeto: ['projeto', 'project', 'cliente'],
   base: ['base', 'filial', 'unidade', 'svc', 'centro_custo'],
   ano_fabricacao: ['ano_fabricacao', 'ano_fab', 'fabricacao'],
   ano_modelo: ['ano_modelo', 'ano', 'ano_mod', 'year'],
@@ -133,13 +133,13 @@ const columnMappings: { [key: string]: string[] } = {
   tipo_combustivel: ['tipo_combustivel', 'combustivel', 'fuel', 'fuel_type'],
   chassi: ['chassi', 'chassis', 'numero_chassi'],
   renavam: ['renavam', 'renavan', 'cod_renavam'],
-  estado: ['estado', 'uf', 'estado_veiculo'],
-  cidade_veiculo: ['cidade', 'cidade_veiculo', 'municipio'],
+  estado: ['estado_veiculo', 'estado', 'uf'],
+  cidade_veiculo: ['cidade_veiculo', 'cidade', 'municipio'],
   rastreador: ['rastreador', 'gps', 'tracker', 'localizador'],
   operacao: ['operacao', 'operation', 'regiao', 'regional'],
-  data_inicio_operacao: ['data_inicio', 'data_inicio_operacao', 'inicio_operacao', 'data_aquisicao'],
+  data_inicio_operacao: ['data', 'data_inicio', 'data_inicio_operacao', 'inicio_operacao', 'data_aquisicao'],
   data_fim_operacao: ['data_fim', 'data_fim_operacao', 'fim_operacao', 'data_devolucao'],
-  observacao: ['observacao', 'obs', 'observacoes', 'notas', 'comentarios']
+  observacao: ['observacao', 'obs', 'observacoes', 'notas', 'comentarios', 'status_dds', 'statusdds']
 };
 
 function mapColumns(row: any, normalizedHeaders: { [key: string]: string }): any {
