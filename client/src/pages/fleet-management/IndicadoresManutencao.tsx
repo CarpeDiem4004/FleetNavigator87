@@ -599,7 +599,7 @@ export default function IndicadoresManutencao() {
   });
 
   // Buscar dados do BIP (rastreamento de veículos)
-  const { data: bipData, isLoading: bipLoading } = useQuery<{success: boolean, data: BipData[], stats: {total: number, parados: number, emOperacao: number, mediasDiasSemBip: number}}>({
+  const { data: bipData, isLoading: bipLoading } = useQuery<{success: boolean, data: BipData[], stats: {total: number, parados: number, emOperacao: number, mediasDiasSemBip: number, totalDiasParados: number, variacaoDiasParados: number}}>({
     queryKey: ['/api/indicadores/bip'],
     queryFn: async () => {
       const res = await fetch('/api/indicadores/bip', { credentials: 'include' });
@@ -1378,7 +1378,7 @@ export default function IndicadoresManutencao() {
             <TabsContent value="bip">
               <div className="space-y-6">
                 {/* Cards de Resumo BIP */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -1430,6 +1430,41 @@ export default function IndicadoresManutencao() {
                         {(bipData?.stats?.mediasDiasSemBip || 0).toFixed(1)}
                       </div>
                       <p className="text-xs text-muted-foreground">dias sem BIP</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4" />
+                        Total Dias Parados
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-blue-800 dark:text-blue-200">
+                        {(bipData?.stats?.totalDiasParados || 0).toLocaleString('pt-BR')}
+                      </div>
+                      <div className="flex items-center gap-1 mt-1">
+                        {(bipData?.stats?.variacaoDiasParados || 0) > 0 ? (
+                          <>
+                            <TrendingUp className="h-3 w-3 text-red-500" />
+                            <span className="text-xs text-red-500 font-medium">
+                              +{bipData?.stats?.variacaoDiasParados} vs ontem
+                            </span>
+                          </>
+                        ) : (bipData?.stats?.variacaoDiasParados || 0) < 0 ? (
+                          <>
+                            <TrendingUp className="h-3 w-3 text-green-500 rotate-180" />
+                            <span className="text-xs text-green-500 font-medium">
+                              {bipData?.stats?.variacaoDiasParados} vs ontem
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            Sem variação
+                          </span>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 </div>

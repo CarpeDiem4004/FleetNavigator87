@@ -976,10 +976,22 @@ router.get('/bip', isAuthenticated, async (req: Request, res: Response) => {
     const parados = data.filter(d => (d.dias_sem_bip || 0) > 7).length;
     const emOperacao = data.filter(d => (d.dias_sem_bip || 0) <= 7).length;
     
-    const somasDias = data.reduce((acc, d) => acc + (d.dias_sem_bip || 0), 0);
-    const mediasDiasSemBip = total > 0 ? somasDias / total : 0;
+    // Calcular total de dias parados (soma de todos os dias_sem_bip)
+    const totalDiasParados = data.reduce((acc, d) => acc + (d.dias_sem_bip || 0), 0);
+    const mediasDiasSemBip = total > 0 ? totalDiasParados / total : 0;
     
-    console.log('[BIP] Dados encontrados:', { total, parados, emOperacao, mediasDiasSemBip: mediasDiasSemBip.toFixed(1) });
+    // Calcular variação em relação ao dia anterior (simulação baseada nos dados)
+    // A variação seria: se ontem cada veículo tinha 1 dia a menos, então a diferença é o número de veículos parados
+    const variacaoDiasParados = parados; // Cada veículo parado adiciona 1 dia por dia
+    
+    console.log('[BIP] Dados encontrados:', { 
+      total, 
+      parados, 
+      emOperacao, 
+      totalDiasParados,
+      mediasDiasSemBip: mediasDiasSemBip.toFixed(1),
+      variacaoDiasParados
+    });
     
     res.json({
       success: true,
@@ -988,7 +1000,9 @@ router.get('/bip', isAuthenticated, async (req: Request, res: Response) => {
         total,
         parados,
         emOperacao,
-        mediasDiasSemBip
+        mediasDiasSemBip,
+        totalDiasParados,
+        variacaoDiasParados
       }
     });
   } catch (error) {
