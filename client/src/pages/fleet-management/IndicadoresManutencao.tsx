@@ -1462,10 +1462,9 @@ export default function IndicadoresManutencao() {
                   </CardHeader>
                   <CardContent>
                     {pecasAnalise?.porModelo && Object.keys(pecasAnalise.porModelo).length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {Object.entries(pecasAnalise.porModelo)
                           .filter(([modelo]) => !selectedModeloPeca || modelo === selectedModeloPeca)
-                          .slice(0, selectedModeloPeca ? 1 : 6)
                           .map(([modelo, pecasModelo]) => (
                             <Card key={modelo} className="border-2">
                               <CardHeader className="pb-2">
