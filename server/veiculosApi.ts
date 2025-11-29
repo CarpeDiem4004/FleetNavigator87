@@ -385,16 +385,43 @@ router.get('/listar', async (req: Request, res: Response) => {
 router.put('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { tipo_posse, status } = req.body;
+    const data = req.body;
     
     const result = await pool.query(`
       UPDATE veiculos SET
-        tipo_posse = COALESCE($2, tipo_posse),
-        status = COALESCE($3, status),
+        placa = COALESCE($2, placa),
+        modelo = COALESCE($3, modelo),
+        marca = COALESCE($4, marca),
+        tipo_posse = COALESCE($5, tipo_posse),
+        locadora = COALESCE($6, locadora),
+        status = COALESCE($7, status),
+        categoria = COALESCE($8, categoria),
+        projeto = COALESCE($9, projeto),
+        base = COALESCE($10, base),
+        ano_fabricacao = COALESCE($11, ano_fabricacao),
+        ano_modelo = COALESCE($12, ano_modelo),
+        km = COALESCE($13, km),
+        cor = COALESCE($14, cor),
+        tipo_combustivel = COALESCE($15, tipo_combustivel),
+        chassi = COALESCE($16, chassi),
+        renavam = COALESCE($17, renavam),
+        estado = COALESCE($18, estado),
+        cidade_veiculo = COALESCE($19, cidade_veiculo),
+        rastreador = COALESCE($20, rastreador),
+        operacao = COALESCE($21, operacao),
+        data_inicio_operacao = COALESCE($22, data_inicio_operacao),
+        observacao = COALESCE($23, observacao),
         updated_at = NOW()
       WHERE id = $1
       RETURNING *
-    `, [id, tipo_posse, status]);
+    `, [
+      id, 
+      data.placa, data.modelo, data.marca, data.tipo_posse, data.locadora,
+      data.status, data.categoria, data.projeto, data.base,
+      data.ano_fabricacao, data.ano_modelo, data.km, data.cor, data.tipo_combustivel,
+      data.chassi, data.renavam, data.estado, data.cidade_veiculo, data.rastreador,
+      data.operacao, data.data_inicio_operacao, data.observacao
+    ]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Veículo não encontrado' });

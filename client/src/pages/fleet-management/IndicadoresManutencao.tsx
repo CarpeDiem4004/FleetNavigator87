@@ -28,7 +28,8 @@ import {
   Radio,
   MapPin,
   Truck,
-  Trash2
+  Trash2,
+  Eye
 } from 'lucide-react';
 import {
   Dialog,
@@ -269,6 +270,9 @@ export default function IndicadoresManutencao() {
     ignorados: number;
     erros: { linha: number; motivo: string }[];
   } | null>(null);
+  const [showVeiculoDetails, setShowVeiculoDetails] = useState(false);
+  const [selectedVeiculo, setSelectedVeiculo] = useState<any | null>(null);
+  const [veiculoEditData, setVeiculoEditData] = useState<any>({});
 
   // Lista de modelos de veículos disponíveis
   const modelosVeiculos = [
@@ -752,7 +756,7 @@ export default function IndicadoresManutencao() {
 
   // Mutation para atualizar veículo (tabela veiculos)
   const updateVeiculoMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number, data: { tipo_posse?: string, status?: string } }) => {
+    mutationFn: async ({ id, data }: { id: number, data: any }) => {
       const response = await fetch(`/api/veiculos/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -772,6 +776,7 @@ export default function IndicadoresManutencao() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/veiculos/listar'] });
       setEditingVehicle(null);
+      setShowVeiculoDetails(false);
     },
     onError: (error: Error) => {
       toast({
@@ -2100,6 +2105,7 @@ export default function IndicadoresManutencao() {
                               <TableHead className="w-24">Cidade</TableHead>
                               <TableHead className="w-16">UF</TableHead>
                               <TableHead className="w-20">SVC</TableHead>
+                              <TableHead className="w-24 text-center">Ações</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -2114,8 +2120,13 @@ export default function IndicadoresManutencao() {
                               .map((item, index) => (
                                 <TableRow 
                                   key={item.id} 
-                                  className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}
+                                  className={`${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-blue-50 cursor-pointer`}
                                   data-testid={`cadastro-row-${item.id}`}
+                                  onClick={() => {
+                                    setSelectedVeiculo(item);
+                                    setVeiculoEditData({...item});
+                                    setShowVeiculoDetails(true);
+                                  }}
                                 >
                                   <TableCell className="font-bold text-blue-700">{item.placa}</TableCell>
                                   <TableCell className="text-sm">{item.modelo || '-'}</TableCell>
@@ -2138,6 +2149,22 @@ export default function IndicadoresManutencao() {
                                   <TableCell className="text-sm">{item.cidade_veiculo || '-'}</TableCell>
                                   <TableCell className="text-sm">{item.estado || '-'}</TableCell>
                                   <TableCell className="text-sm font-medium">{item.base || '-'}</TableCell>
+                                  <TableCell className="text-center">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedVeiculo(item);
+                                        setVeiculoEditData({...item});
+                                        setShowVeiculoDetails(true);
+                                      }}
+                                      data-testid={`button-details-${item.id}`}
+                                    >
+                                      <Eye className="h-4 w-4 mr-1" />
+                                      Detalhes
+                                    </Button>
+                                  </TableCell>
                                 </TableRow>
                               ))}
                           </TableBody>
@@ -2154,6 +2181,182 @@ export default function IndicadoresManutencao() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Modal de Detalhes do Veículo */}
+              <Dialog open={showVeiculoDetails} onOpenChange={setShowVeiculoDetails}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Truck className="h-5 w-5" />
+                      Detalhes do Veículo - {selectedVeiculo?.placa}
+                    </DialogTitle>
+                    <DialogDescription>
+                      Visualize e edite todas as informações do veículo
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  {selectedVeiculo && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
+                      <div className="space-y-2">
+                        <Label>Placa</Label>
+                        <Input 
+                          value={veiculoEditData.placa || ''} 
+                          onChange={(e) => setVeiculoEditData({...veiculoEditData, placa: e.target.value.toUpperCase()})}
+                          className="font-bold"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Modelo</Label>
+                        <Input 
+                          value={veiculoEditData.modelo || ''} 
+                          onChange={(e) => setVeiculoEditData({...veiculoEditData, modelo: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Chassi</Label>
+                        <Input 
+                          value={veiculoEditData.chassi || ''} 
+                          onChange={(e) => setVeiculoEditData({...veiculoEditData, chassi: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Renavam</Label>
+                        <Input 
+                          value={veiculoEditData.renavam || ''} 
+                          onChange={(e) => setVeiculoEditData({...veiculoEditData, renavam: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Cidade</Label>
+                        <Input 
+                          value={veiculoEditData.cidade_veiculo || ''} 
+                          onChange={(e) => setVeiculoEditData({...veiculoEditData, cidade_veiculo: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Estado (UF)</Label>
+                        <Input 
+                          value={veiculoEditData.estado || ''} 
+                          onChange={(e) => setVeiculoEditData({...veiculoEditData, estado: e.target.value.toUpperCase()})}
+                          maxLength={2}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Cor</Label>
+                        <Input 
+                          value={veiculoEditData.cor || ''} 
+                          onChange={(e) => setVeiculoEditData({...veiculoEditData, cor: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Operação</Label>
+                        <Input 
+                          value={veiculoEditData.operacao || ''} 
+                          onChange={(e) => setVeiculoEditData({...veiculoEditData, operacao: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Locadora</Label>
+                        <Input 
+                          value={veiculoEditData.locadora || ''} 
+                          onChange={(e) => setVeiculoEditData({...veiculoEditData, locadora: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Tipo de Posse</Label>
+                        <Select 
+                          value={veiculoEditData.tipo_posse || ''} 
+                          onValueChange={(val) => setVeiculoEditData({...veiculoEditData, tipo_posse: val})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Própria">Própria</SelectItem>
+                            <SelectItem value="Locada">Locada</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Status Final</Label>
+                        <Input 
+                          value={veiculoEditData.status || ''} 
+                          onChange={(e) => setVeiculoEditData({...veiculoEditData, status: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>SVC (Base)</Label>
+                        <Input 
+                          value={veiculoEditData.base || ''} 
+                          onChange={(e) => setVeiculoEditData({...veiculoEditData, base: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Categoria</Label>
+                        <Input 
+                          value={veiculoEditData.categoria || ''} 
+                          onChange={(e) => setVeiculoEditData({...veiculoEditData, categoria: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Ano Fabricação</Label>
+                        <Input 
+                          type="number"
+                          value={veiculoEditData.ano_fabricacao || ''} 
+                          onChange={(e) => setVeiculoEditData({...veiculoEditData, ano_fabricacao: parseInt(e.target.value) || null})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Ano Modelo</Label>
+                        <Input 
+                          type="number"
+                          value={veiculoEditData.ano_modelo || ''} 
+                          onChange={(e) => setVeiculoEditData({...veiculoEditData, ano_modelo: parseInt(e.target.value) || null})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>KM Atual</Label>
+                        <Input 
+                          type="number"
+                          value={veiculoEditData.km || ''} 
+                          onChange={(e) => setVeiculoEditData({...veiculoEditData, km: parseInt(e.target.value) || null})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Rastreador</Label>
+                        <Input 
+                          value={veiculoEditData.rastreador || ''} 
+                          onChange={(e) => setVeiculoEditData({...veiculoEditData, rastreador: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Data Início Operação</Label>
+                        <Input 
+                          type="date"
+                          value={veiculoEditData.data_inicio_operacao || ''} 
+                          onChange={(e) => setVeiculoEditData({...veiculoEditData, data_inicio_operacao: e.target.value})}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  <DialogFooter className="gap-2">
+                    <Button variant="outline" onClick={() => setShowVeiculoDetails(false)}>
+                      Cancelar
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        updateVeiculoMutation.mutate({ id: selectedVeiculo.id, data: veiculoEditData });
+                        setShowVeiculoDetails(false);
+                      }}
+                      disabled={updateVeiculoMutation.isPending}
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Salvar Alterações
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </TabsContent>
 
             {/* Aba de Dashboards */}
