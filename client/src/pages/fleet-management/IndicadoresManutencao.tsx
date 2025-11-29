@@ -260,6 +260,15 @@ export default function IndicadoresManutencao() {
     model: '',
     ownership: 'Própria'
   });
+  const [uploadingVeiculos, setUploadingVeiculos] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [importReport, setImportReport] = useState<{
+    total: number;
+    importados: number;
+    atualizados: number;
+    ignorados: number;
+    erros: { linha: number; motivo: string }[];
+  } | null>(null);
 
   // Lista de modelos de veículos disponíveis
   const modelosVeiculos = [
@@ -672,19 +681,79 @@ export default function IndicadoresManutencao() {
     }
   };
 
-  // Query para buscar veículos para a aba Cadastro
-  const { data: cadastroVehiclesData, isLoading: cadastroVehiclesLoading } = useQuery<{success: boolean, data: Array<{id: number, plate: string, model: string, ownership: string, status: string, base_id: number}>}>({
-    queryKey: ['/api/indicadores/vehicles'],
+  // Query para buscar veículos para a aba Cadastro (tabela veiculos)
+  const { data: cadastroVehiclesData, isLoading: cadastroVehiclesLoading, refetch: refetchVeiculos } = useQuery<{success: boolean, data: Array<{id: number, placa: string, modelo: string, tipo_posse: string, status: string, categoria: string, locadora: string, ano: number}>}>({
+    queryKey: ['/api/veiculos/listar'],
     queryFn: async () => {
-      const res = await fetch('/api/indicadores/vehicles', { credentials: 'include' });
+      const res = await fetch('/api/veiculos/listar', { credentials: 'include' });
       return res.json();
     }
   });
 
-  // Mutation para atualizar veículo
-  const updateVehicleMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number, data: { ownership: string } }) => {
-      const response = await fetch(`/api/indicadores/vehicles/${id}`, {
+  // Função de upload de planilha de veículos
+  const handleVeiculosUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingVeiculos(true);
+    setUploadProgress(0);
+    setImportReport(null);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 90));
+      }, 200);
+
+      const response = await fetch('/api/veiculos/importar', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
+      const result = await response.json();
+
+      if (result.success) {
+        setImportReport({
+          total: result.total,
+          importados: result.importados,
+          atualizados: result.atualizados,
+          ignorados: result.ignorados,
+          erros: result.erros || []
+        });
+        toast({
+          title: 'Importação concluída!',
+          description: `${result.importados} novos, ${result.atualizados} atualizados`,
+        });
+        refetchVeiculos();
+      } else {
+        toast({
+          title: 'Erro na importação',
+          description: result.message,
+          variant: 'destructive',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingVeiculos(false);
+      event.target.value = '';
+    }
+  };
+
+  // Mutation para atualizar veículo (tabela veiculos)
+  const updateVeiculoMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number, data: { tipo_posse?: string, status?: string } }) => {
+      const response = await fetch(`/api/veiculos/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -701,7 +770,7 @@ export default function IndicadoresManutencao() {
         title: 'Sucesso!',
         description: 'Veículo atualizado com sucesso.',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/vehicles'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/veiculos/listar'] });
       setEditingVehicle(null);
     },
     onError: (error: Error) => {
@@ -1826,6 +1895,86 @@ export default function IndicadoresManutencao() {
             {/* Aba de Cadastro */}
             <TabsContent value="cadastro">
               <div className="space-y-6">
+                {/* Upload de Planilha */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Upload className="h-5 w-5" />
+                      Importar Planilha de Veículos
+                    </CardTitle>
+                    <CardDescription>
+                      Envie uma planilha Excel (.xlsx) com os dados dos veículos para importação automática
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center gap-4">
+                        <label className="cursor-pointer">
+                          <Input
+                            type="file"
+                            accept=".xlsx,.xls"
+                            className="hidden"
+                            onChange={handleVeiculosUpload}
+                            disabled={uploadingVeiculos}
+                            data-testid="input-upload-veiculos"
+                          />
+                          <Button variant="outline" disabled={uploadingVeiculos} asChild>
+                            <span>
+                              <FileSpreadsheet className="h-4 w-4 mr-2" />
+                              {uploadingVeiculos ? 'Importando...' : 'Selecionar Arquivo'}
+                            </span>
+                          </Button>
+                        </label>
+                        {uploadingVeiculos && (
+                          <div className="flex-1 max-w-xs">
+                            <Progress value={uploadProgress} className="h-2" />
+                            <p className="text-xs text-muted-foreground mt-1">{uploadProgress}%</p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {importReport && (
+                        <div className="bg-muted p-4 rounded-lg">
+                          <h4 className="font-semibold mb-2">Relatório de Importação</h4>
+                          <div className="grid grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Total:</span>
+                              <span className="ml-2 font-bold">{importReport.total}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Novos:</span>
+                              <span className="ml-2 font-bold text-green-600">{importReport.importados}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Atualizados:</span>
+                              <span className="ml-2 font-bold text-blue-600">{importReport.atualizados}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Ignorados:</span>
+                              <span className="ml-2 font-bold text-orange-600">{importReport.ignorados}</span>
+                            </div>
+                          </div>
+                          {importReport.erros.length > 0 && (
+                            <div className="mt-3">
+                              <p className="text-sm text-red-600 font-semibold">Erros ({importReport.erros.length}):</p>
+                              <div className="max-h-32 overflow-y-auto mt-1">
+                                {importReport.erros.slice(0, 10).map((err, i) => (
+                                  <p key={i} className="text-xs text-red-500">
+                                    Linha {err.linha}: {err.motivo}
+                                  </p>
+                                ))}
+                                {importReport.erros.length > 10 && (
+                                  <p className="text-xs text-muted-foreground">...e mais {importReport.erros.length - 10} erros</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Cards de Resumo Cadastro */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <Card>
@@ -1850,7 +1999,7 @@ export default function IndicadoresManutencao() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-blue-600">
-                        {cadastroVehiclesData?.data?.filter(v => v.ownership === 'Própria').length || 0}
+                        {cadastroVehiclesData?.data?.filter(v => v.tipo_posse === 'Própria').length || 0}
                       </div>
                       <p className="text-xs text-muted-foreground">veículos</p>
                     </CardContent>
@@ -1865,7 +2014,7 @@ export default function IndicadoresManutencao() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-orange-600">
-                        {cadastroVehiclesData?.data?.filter(v => v.ownership === 'Locada').length || 0}
+                        {cadastroVehiclesData?.data?.filter(v => v.tipo_posse === 'Locada').length || 0}
                       </div>
                       <p className="text-xs text-muted-foreground">veículos</p>
                     </CardContent>
@@ -1880,7 +2029,7 @@ export default function IndicadoresManutencao() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-gray-600">
-                        {cadastroVehiclesData?.data?.filter(v => !v.ownership || (v.ownership !== 'Própria' && v.ownership !== 'Locada')).length || 0}
+                        {cadastroVehiclesData?.data?.filter(v => !v.tipo_posse || (v.tipo_posse !== 'Própria' && v.tipo_posse !== 'Locada')).length || 0}
                       </div>
                       <p className="text-xs text-muted-foreground">veículos</p>
                     </CardContent>
@@ -1946,6 +2095,7 @@ export default function IndicadoresManutencao() {
                             <TableRow>
                               <TableHead className="font-bold">Placa</TableHead>
                               <TableHead>Modelo</TableHead>
+                              <TableHead>Categoria</TableHead>
                               <TableHead className="text-center">Tipo</TableHead>
                               <TableHead>Status</TableHead>
                               <TableHead className="text-center">Ações</TableHead>
@@ -1954,20 +2104,21 @@ export default function IndicadoresManutencao() {
                           <TableBody>
                             {cadastroVehiclesData.data
                               .filter((item) => {
-                                const matchPlaca = !cadastroSearchPlaca || item.plate?.toUpperCase().includes(cadastroSearchPlaca);
-                                const matchOwnership = !cadastroFilterOwnership || item.ownership === cadastroFilterOwnership;
+                                const matchPlaca = !cadastroSearchPlaca || item.placa?.toUpperCase().includes(cadastroSearchPlaca);
+                                const matchOwnership = !cadastroFilterOwnership || item.tipo_posse === cadastroFilterOwnership;
                                 return matchPlaca && matchOwnership;
                               })
-                              .sort((a, b) => (a.plate || '').localeCompare(b.plate || ''))
+                              .sort((a, b) => (a.placa || '').localeCompare(b.placa || ''))
                               .map((item) => (
                                 <TableRow key={item.id} data-testid={`cadastro-row-${item.id}`}>
-                                  <TableCell className="font-bold">{item.plate}</TableCell>
-                                  <TableCell>{item.model || '-'}</TableCell>
+                                  <TableCell className="font-bold">{item.placa}</TableCell>
+                                  <TableCell>{item.modelo || '-'}</TableCell>
+                                  <TableCell>{item.categoria || '-'}</TableCell>
                                   <TableCell className="text-center">
                                     {editingVehicle?.id === item.id ? (
                                       <Select 
-                                        value={editingVehicle.ownership || ''} 
-                                        onValueChange={(val) => setEditingVehicle({...editingVehicle, ownership: val})}
+                                        value={editingVehicle.tipo_posse || ''} 
+                                        onValueChange={(val) => setEditingVehicle({...editingVehicle, tipo_posse: val})}
                                       >
                                         <SelectTrigger className="w-28" data-testid="select-edit-ownership">
                                           <SelectValue placeholder="Selecione" />
@@ -1979,10 +2130,10 @@ export default function IndicadoresManutencao() {
                                       </Select>
                                     ) : (
                                       <Badge 
-                                        variant={item.ownership === 'Própria' ? 'default' : item.ownership === 'Locada' ? 'secondary' : 'outline'}
-                                        className={item.ownership === 'Própria' ? 'bg-blue-600' : item.ownership === 'Locada' ? 'bg-orange-500 text-white' : ''}
+                                        variant={item.tipo_posse === 'Própria' ? 'default' : item.tipo_posse === 'Locada' ? 'secondary' : 'outline'}
+                                        className={item.tipo_posse === 'Própria' ? 'bg-blue-600' : item.tipo_posse === 'Locada' ? 'bg-orange-500 text-white' : ''}
                                       >
-                                        {item.ownership || 'Não definido'}
+                                        {item.tipo_posse || 'Não definido'}
                                       </Badge>
                                     )}
                                   </TableCell>
@@ -1996,9 +2147,9 @@ export default function IndicadoresManutencao() {
                                           variant="ghost"
                                           size="sm"
                                           onClick={() => {
-                                            updateVehicleMutation.mutate({ id: item.id, data: { ownership: editingVehicle.ownership } });
+                                            updateVeiculoMutation.mutate({ id: item.id, data: { tipo_posse: editingVehicle.tipo_posse } });
                                           }}
-                                          disabled={updateVehicleMutation.isPending}
+                                          disabled={updateVeiculoMutation.isPending}
                                           data-testid={`button-save-vehicle-${item.id}`}
                                         >
                                           <Save className="h-4 w-4 text-green-600" />
@@ -2016,7 +2167,7 @@ export default function IndicadoresManutencao() {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => setEditingVehicle({ id: item.id, ownership: item.ownership || '' })}
+                                        onClick={() => setEditingVehicle({ id: item.id, tipo_posse: item.tipo_posse || '' })}
                                         data-testid={`button-edit-vehicle-${item.id}`}
                                       >
                                         <Edit className="h-4 w-4" />
@@ -2032,7 +2183,7 @@ export default function IndicadoresManutencao() {
                       <div className="text-center py-12">
                         <Truck className="mx-auto h-12 w-12 text-muted-foreground" />
                         <p className="mt-2 text-muted-foreground">
-                          Nenhum veículo cadastrado.
+                          Nenhum veículo cadastrado. Importe uma planilha para começar.
                         </p>
                       </div>
                     )}
