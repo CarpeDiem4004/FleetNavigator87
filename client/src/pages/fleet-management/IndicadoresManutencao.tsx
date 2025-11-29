@@ -236,6 +236,8 @@ export default function IndicadoresManutencao() {
   const [selectedSubgrupo, setSelectedSubgrupo] = useState<string>('');
   const [bipSearchPlaca, setBipSearchPlaca] = useState<string>('');
   const [bipFilterMotivo, setBipFilterMotivo] = useState<string>('');
+  const [bipDateStart, setBipDateStart] = useState<string>('');
+  const [bipDateEnd, setBipDateEnd] = useState<string>('');
 
   // Lista de modelos de veículos disponíveis
   const modelosVeiculos = [
@@ -1384,26 +1386,67 @@ export default function IndicadoresManutencao() {
                           Rastreamento de dias de operação e tempo parado de cada veículo
                         </CardDescription>
                       </div>
-                      <div className="flex gap-2">
-                        <Input 
-                          placeholder="Buscar placa..." 
-                          value={bipSearchPlaca}
-                          onChange={(e) => setBipSearchPlaca(e.target.value.toUpperCase())}
-                          className="w-40"
-                          data-testid="input-bip-search-placa"
-                        />
-                        <Select value={bipFilterMotivo} onValueChange={setBipFilterMotivo}>
-                          <SelectTrigger className="w-40" data-testid="select-bip-motivo">
-                            <SelectValue placeholder="Todos motivos" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="">Todos</SelectItem>
-                            <SelectItem value="Manutenção">Manutenção</SelectItem>
-                            <SelectItem value="Reserva">Reserva</SelectItem>
-                            <SelectItem value="Sinistro">Sinistro</SelectItem>
-                            <SelectItem value="Outros">Outros</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="flex flex-wrap gap-2 items-end">
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">Placa</label>
+                          <Input 
+                            placeholder="Buscar placa..." 
+                            value={bipSearchPlaca}
+                            onChange={(e) => setBipSearchPlaca(e.target.value.toUpperCase())}
+                            className="w-32"
+                            data-testid="input-bip-search-placa"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">Motivo</label>
+                          <Select value={bipFilterMotivo} onValueChange={setBipFilterMotivo}>
+                            <SelectTrigger className="w-36" data-testid="select-bip-motivo">
+                              <SelectValue placeholder="Todos" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">Todos</SelectItem>
+                              <SelectItem value="Manutenção">Manutenção</SelectItem>
+                              <SelectItem value="Reserva">Reserva</SelectItem>
+                              <SelectItem value="Sinistro">Sinistro</SelectItem>
+                              <SelectItem value="Outros">Outros</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">Data Início</label>
+                          <Input 
+                            type="date"
+                            value={bipDateStart}
+                            onChange={(e) => setBipDateStart(e.target.value)}
+                            className="w-36"
+                            data-testid="input-bip-date-start"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">Data Fim</label>
+                          <Input 
+                            type="date"
+                            value={bipDateEnd}
+                            onChange={(e) => setBipDateEnd(e.target.value)}
+                            className="w-36"
+                            data-testid="input-bip-date-end"
+                          />
+                        </div>
+                        {(bipSearchPlaca || bipFilterMotivo || bipDateStart || bipDateEnd) && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              setBipSearchPlaca('');
+                              setBipFilterMotivo('');
+                              setBipDateStart('');
+                              setBipDateEnd('');
+                            }}
+                            data-testid="button-bip-clear-filters"
+                          >
+                            Limpar
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
@@ -1422,6 +1465,7 @@ export default function IndicadoresManutencao() {
                               <TableHead>ML BIP</TableHead>
                               <TableHead>DDS BIP</TableHead>
                               <TableHead className="text-center">Dias Parado</TableHead>
+                              <TableHead className="text-center">Dias Rodados</TableHead>
                               <TableHead>Motivo</TableHead>
                               <TableHead>Base Reserva</TableHead>
                               <TableHead>Observação</TableHead>
@@ -1432,21 +1476,36 @@ export default function IndicadoresManutencao() {
                               .filter((item) => {
                                 const matchPlaca = !bipSearchPlaca || item.placa?.toUpperCase().includes(bipSearchPlaca);
                                 const matchMotivo = !bipFilterMotivo || item.motivo?.includes(bipFilterMotivo);
-                                return matchPlaca && matchMotivo;
+                                
+                                let matchDateStart = true;
+                                let matchDateEnd = true;
+                                
+                                if (bipDateStart && item.ultimo_bip) {
+                                  const itemDate = new Date(item.ultimo_bip);
+                                  const startDate = new Date(bipDateStart);
+                                  matchDateStart = itemDate >= startDate;
+                                }
+                                
+                                if (bipDateEnd && item.ultimo_bip) {
+                                  const itemDate = new Date(item.ultimo_bip);
+                                  const endDate = new Date(bipDateEnd);
+                                  endDate.setHours(23, 59, 59, 999);
+                                  matchDateEnd = itemDate <= endDate;
+                                }
+                                
+                                return matchPlaca && matchMotivo && matchDateStart && matchDateEnd;
                               })
                               .sort((a, b) => (b.dias_sem_bip || 0) - (a.dias_sem_bip || 0))
                               .slice(0, 100)
                               .map((item) => {
                                 const diasParado = item.dias_sem_bip || 0;
-                                let statusColor = 'text-green-600';
-                                let badgeVariant: 'default' | 'secondary' | 'destructive' | 'outline' = 'default';
+                                const diasRodados = Math.max(0, 30 - diasParado);
                                 
+                                let bgColor = 'bg-green-100 text-green-800';
                                 if (diasParado > 30) {
-                                  statusColor = 'text-red-600';
-                                  badgeVariant = 'destructive';
+                                  bgColor = 'bg-red-100 text-red-800';
                                 } else if (diasParado > 7) {
-                                  statusColor = 'text-orange-600';
-                                  badgeVariant = 'secondary';
+                                  bgColor = 'bg-orange-100 text-orange-800';
                                 }
                                 
                                 return (
@@ -1456,9 +1515,14 @@ export default function IndicadoresManutencao() {
                                     <TableCell>{formatDate(item.ml_bip)}</TableCell>
                                     <TableCell>{formatDate(item.dds_bip)}</TableCell>
                                     <TableCell className="text-center">
-                                      <Badge variant={badgeVariant} className={statusColor}>
-                                        {diasParado} dias
-                                      </Badge>
+                                      <span className={`inline-flex items-center justify-center min-w-[60px] px-3 py-1 rounded-full text-sm font-semibold ${bgColor}`}>
+                                        {diasParado}
+                                      </span>
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      <span className="inline-flex items-center justify-center min-w-[60px] px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
+                                        {diasRodados}
+                                      </span>
                                     </TableCell>
                                     <TableCell>
                                       <Badge variant="outline">{item.motivo || '-'}</Badge>
