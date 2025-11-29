@@ -2092,19 +2092,14 @@ export default function IndicadoresManutencao() {
                       <div className="rounded-md border overflow-x-auto">
                         <Table>
                           <TableHeader>
-                            <TableRow>
-                              <TableHead className="font-bold">Placa</TableHead>
-                              <TableHead>Modelo</TableHead>
-                              <TableHead>Chassi</TableHead>
-                              <TableHead>Renavam</TableHead>
-                              <TableHead>Cidade</TableHead>
-                              <TableHead>Estado</TableHead>
-                              <TableHead>Cor</TableHead>
-                              <TableHead>Operação</TableHead>
-                              <TableHead>Locadora</TableHead>
-                              <TableHead>Status Final</TableHead>
-                              <TableHead>SVC</TableHead>
-                              <TableHead className="text-center">Ações</TableHead>
+                            <TableRow className="bg-slate-100">
+                              <TableHead className="font-bold w-24">Placa</TableHead>
+                              <TableHead className="w-40">Modelo</TableHead>
+                              <TableHead className="w-32">Locadora</TableHead>
+                              <TableHead className="w-28">Status</TableHead>
+                              <TableHead className="w-24">Cidade</TableHead>
+                              <TableHead className="w-16">UF</TableHead>
+                              <TableHead className="w-20">SVC</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -2116,39 +2111,33 @@ export default function IndicadoresManutencao() {
                               })
                               .sort((a, b) => (a.placa || '').localeCompare(b.placa || ''))
                               .slice(0, 100)
-                              .map((item) => (
-                                <TableRow key={item.id} data-testid={`cadastro-row-${item.id}`}>
-                                  <TableCell className="font-bold">{item.placa}</TableCell>
-                                  <TableCell>{item.modelo || '-'}</TableCell>
-                                  <TableCell className="text-xs">{item.chassi || '-'}</TableCell>
-                                  <TableCell className="text-xs">{item.renavam || '-'}</TableCell>
-                                  <TableCell>{item.cidade_veiculo || '-'}</TableCell>
-                                  <TableCell>{item.estado || '-'}</TableCell>
-                                  <TableCell>{item.cor || '-'}</TableCell>
-                                  <TableCell>{item.operacao || '-'}</TableCell>
+                              .map((item, index) => (
+                                <TableRow 
+                                  key={item.id} 
+                                  className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}
+                                  data-testid={`cadastro-row-${item.id}`}
+                                >
+                                  <TableCell className="font-bold text-blue-700">{item.placa}</TableCell>
+                                  <TableCell className="text-sm">{item.modelo || '-'}</TableCell>
                                   <TableCell>
-                                    {item.locadora ? (
-                                      <Badge className="bg-orange-500 text-white">{item.locadora}</Badge>
-                                    ) : (
-                                      <Badge variant="outline">Própria</Badge>
-                                    )}
+                                    <span className={`font-medium ${item.locadora ? 'text-orange-600' : 'text-gray-500'}`}>
+                                      {item.locadora || 'Própria'}
+                                    </span>
                                   </TableCell>
                                   <TableCell>
-                                    <Badge variant={item.status?.includes('Ativo') || item.status?.includes('LHS') ? 'default' : 'secondary'}>
+                                    <span className={`text-sm font-medium ${
+                                      item.status?.toLowerCase().includes('ativo') || item.status?.includes('LHS') 
+                                        ? 'text-green-600' 
+                                        : item.status?.toLowerCase().includes('devol') 
+                                          ? 'text-red-600'
+                                          : 'text-gray-600'
+                                    }`}>
                                       {item.status || '-'}
-                                    </Badge>
+                                    </span>
                                   </TableCell>
-                                  <TableCell>{item.base || '-'}</TableCell>
-                                  <TableCell className="text-center">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => setEditingVehicle({ id: item.id, tipo_posse: item.tipo_posse || '' })}
-                                      data-testid={`button-edit-vehicle-${item.id}`}
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                  </TableCell>
+                                  <TableCell className="text-sm">{item.cidade_veiculo || '-'}</TableCell>
+                                  <TableCell className="text-sm">{item.estado || '-'}</TableCell>
+                                  <TableCell className="text-sm font-medium">{item.base || '-'}</TableCell>
                                 </TableRow>
                               ))}
                           </TableBody>
