@@ -604,57 +604,70 @@ router.get('/manutencoes', isAuthenticated, async (req: Request, res: Response) 
   }
 });
 
-// Histórico de manutenções por placa
+// Histórico de manutenções por placa (usando manutencoes_finalizadas para custos corretos)
 router.get('/manutencoes/placa/:placa', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { placa } = req.params;
 
-    // Histórico completo
+    // Histórico completo da tabela manutencoes_finalizadas (tem custos reais)
     const historico = await pool.query(
-      `SELECT * FROM manutencoes_historico 
+      `SELECT 
+        id,
+        placa,
+        modelo,
+        km,
+        relato as descricao,
+        data_agenda as data_manutencao,
+        oficina,
+        tipo_manutencao as tipo,
+        status,
+        status2,
+        dias_manutencao as tempo_total,
+        COALESCE(valor_orcamento, valor_negociado, 0) as valor
+       FROM manutencoes_finalizadas 
        WHERE UPPER(TRIM(placa)) = UPPER(TRIM($1))
-       ORDER BY data_manutencao DESC NULLS LAST`,
+       ORDER BY data_agenda DESC NULLS LAST`,
       [placa]
     );
 
-    // Estatísticas do veículo
+    // Estatísticas do veículo usando manutencoes_finalizadas
     const statsResult = await pool.query(
       `SELECT 
         COUNT(*) as total_manutencoes,
-        SUM(COALESCE(valor, 0)) as custo_total,
-        AVG(COALESCE(tempo_total, 0)) as tempo_medio,
-        SUM(COALESCE(tempo_total, 0)) as dias_parados,
+        SUM(COALESCE(valor_orcamento, valor_negociado, 0)) as custo_total,
+        AVG(COALESCE(dias_manutencao, 0)) as tempo_medio,
+        SUM(COALESCE(dias_manutencao, 0)) as dias_parados,
         MAX(km) as maior_km,
-        MIN(data_manutencao) as primeira_manutencao,
-        MAX(data_manutencao) as ultima_manutencao
-       FROM manutencoes_historico 
+        MIN(data_agenda) as primeira_manutencao,
+        MAX(data_agenda) as ultima_manutencao
+       FROM manutencoes_finalizadas 
        WHERE UPPER(TRIM(placa)) = UPPER(TRIM($1))`,
       [placa]
     );
 
-    // Custos por mês
+    // Custos por mês usando manutencoes_finalizadas
     const custosPorMes = await pool.query(
       `SELECT 
-        TO_CHAR(data_manutencao, 'YYYY-MM') as mes,
-        SUM(COALESCE(valor, 0)) as valor_total,
+        TO_CHAR(data_agenda, 'YYYY-MM') as mes,
+        SUM(COALESCE(valor_orcamento, valor_negociado, 0)) as valor_total,
         COUNT(*) as quantidade
-       FROM manutencoes_historico 
+       FROM manutencoes_finalizadas 
        WHERE UPPER(TRIM(placa)) = UPPER(TRIM($1))
-       GROUP BY TO_CHAR(data_manutencao, 'YYYY-MM')
+       GROUP BY TO_CHAR(data_agenda, 'YYYY-MM')
        ORDER BY mes DESC
        LIMIT 12`,
       [placa]
     );
 
-    // Manutenções por tipo
+    // Manutenções por tipo usando manutencoes_finalizadas
     const porTipo = await pool.query(
       `SELECT 
-        COALESCE(tipo, 'Não especificado') as tipo,
+        COALESCE(tipo_manutencao, 'Não especificado') as tipo,
         COUNT(*) as quantidade,
-        SUM(COALESCE(valor, 0)) as valor_total
-       FROM manutencoes_historico 
+        SUM(COALESCE(valor_orcamento, valor_negociado, 0)) as valor_total
+       FROM manutencoes_finalizadas 
        WHERE UPPER(TRIM(placa)) = UPPER(TRIM($1))
-       GROUP BY tipo
+       GROUP BY tipo_manutencao
        ORDER BY quantidade DESC`,
       [placa]
     );
