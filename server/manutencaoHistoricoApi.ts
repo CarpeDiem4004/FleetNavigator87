@@ -193,11 +193,19 @@ router.post('/orcamento/:id/aprovar-com-senha', isAuthenticated, async (req: Req
     const nomeGestor = userData?.name || authData.user.email || 'Gestor';
     const roleUsuario = userData?.role || 'operador';
 
-    // Verificar se tem permissão de gestor (admin ou gestor)
-    if (roleUsuario !== 'admin' && roleUsuario !== 'gestor' && roleUsuario !== 'manager') {
+    // Lista de gestores autorizados a aprovar/reprovar orçamentos
+    const gestoresAutorizados = [
+      'rogerio.goncalves@muricitransportes.com.br',
+      'abner@muricitransportes.com.br',
+      'abner.silva@muricitransportes.com.br'
+    ];
+
+    // Verificar se o email está na lista de gestores autorizados
+    const emailLower = email.toLowerCase();
+    if (!gestoresAutorizados.includes(emailLower)) {
       return res.status(403).json({ 
         success: false, 
-        message: 'Usuário não possui permissão de gestor para aprovar orçamentos' 
+        message: 'Apenas Rogério e Abner podem aprovar orçamentos' 
       });
     }
 
