@@ -1722,6 +1722,7 @@ export default function IndicadoresManutencao() {
                             <TableHead>KM</TableHead>
                             <TableHead>Relato</TableHead>
                             <TableHead>Data Agenda</TableHead>
+                            <TableHead>Dias Parado</TableHead>
                             <TableHead>Focal</TableHead>
                             <TableHead>Atendimento</TableHead>
                             <TableHead className="text-right">Ações</TableHead>
@@ -1773,6 +1774,28 @@ export default function IndicadoresManutencao() {
                               <TableCell>{dado.km ? dado.km.toLocaleString() : '-'}</TableCell>
                               <TableCell className="max-w-xs truncate" title={dado.relato}>{dado.relato || '-'}</TableCell>
                               <TableCell>{formatDate(dado.data_agenda)}</TableCell>
+                              <TableCell>
+                                {dado.data_agenda ? (() => {
+                                  const dataAgenda = new Date(dado.data_agenda + 'T00:00:00');
+                                  const hoje = new Date();
+                                  hoje.setHours(0, 0, 0, 0);
+                                  const diffTime = hoje.getTime() - dataAgenda.getTime();
+                                  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                                  const diasParado = diffDays >= 0 ? diffDays : 0;
+                                  return (
+                                    <Badge 
+                                      variant="outline" 
+                                      className={
+                                        diasParado >= 7 ? 'bg-red-100 text-red-700 border-red-300' :
+                                        diasParado >= 3 ? 'bg-amber-100 text-amber-700 border-amber-300' :
+                                        'bg-green-100 text-green-700 border-green-300'
+                                      }
+                                    >
+                                      {diasParado} {diasParado === 1 ? 'dia' : 'dias'}
+                                    </Badge>
+                                  );
+                                })() : '-'}
+                              </TableCell>
                               <TableCell>{dado.focal || '-'}</TableCell>
                               <TableCell>{dado.atendimento || '-'}</TableCell>
                               <TableCell className="text-right">
