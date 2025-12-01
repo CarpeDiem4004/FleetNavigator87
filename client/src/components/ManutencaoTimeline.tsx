@@ -275,7 +275,7 @@ export function ManutencaoTimeline({ manutencaoId, placa, oficinasDisponiveis = 
                           <h4 className="font-semibold flex items-center gap-2">
                             {oficina.oficina_nome}
                             {(oficina.status === 'ativo' || oficina.is_virtual) && (
-                              <Badge className="text-xs bg-green-500 text-white hover:bg-green-600">Atual</Badge>
+                              <Badge className="text-xs bg-emerald-700 text-white font-bold px-2 py-0.5 shadow-sm">Atual</Badge>
                             )}
                           </h4>
                           <div className="text-sm text-muted-foreground mt-1">
