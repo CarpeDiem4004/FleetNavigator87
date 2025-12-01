@@ -3336,7 +3336,7 @@ export default function IndicadoresManutencao() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wrench className="h-5 w-5" />
-              Editar Registro de Manutenção
+              Editar Manutenção
             </DialogTitle>
             <DialogDescription>
               Atualize as informações do veículo em manutenção
@@ -3345,24 +3345,6 @@ export default function IndicadoresManutencao() {
           
           {editingDado && (
             <div className="grid gap-6 py-4">
-              {/* Resumo do Veículo */}
-              <div className="bg-muted p-4 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-lg font-bold">{editingDado.placa}</p>
-                    <p className="text-sm text-muted-foreground">{editingDado.modelo || 'Modelo não informado'}</p>
-                  </div>
-                  <Badge variant={
-                    editingDado.status === 'Liberado' ? 'default' :
-                    editingDado.status === 'Em Orçamento' ? 'secondary' :
-                    editingDado.status === 'Aguardando Peça' ? 'outline' :
-                    'destructive'
-                  } className="text-sm px-3 py-1">
-                    {editingDado.status || 'Em Manutenção'}
-                  </Badge>
-                </div>
-              </div>
-
               {/* Dados do Veículo */}
               <div className="space-y-4">
                 <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Dados do Veículo</h4>
@@ -3372,6 +3354,7 @@ export default function IndicadoresManutencao() {
                     <Input 
                       value={editingDado.placa || ''}
                       onChange={(e) => setEditingDado({...editingDado, placa: e.target.value})}
+                      className="bg-orange-50 border-orange-200"
                       data-testid="input-edit-placa"
                     />
                   </div>
@@ -3380,6 +3363,7 @@ export default function IndicadoresManutencao() {
                     <Input 
                       value={editingDado.modelo || ''}
                       onChange={(e) => setEditingDado({...editingDado, modelo: e.target.value})}
+                      className="bg-orange-50 border-orange-200"
                       data-testid="input-edit-modelo"
                     />
                   </div>
@@ -3389,6 +3373,7 @@ export default function IndicadoresManutencao() {
                       type="number"
                       value={editingDado.km || ''}
                       onChange={(e) => setEditingDado({...editingDado, km: parseInt(e.target.value) || 0})}
+                      className="bg-orange-50 border-orange-200"
                       data-testid="input-edit-km"
                     />
                   </div>
@@ -3405,7 +3390,7 @@ export default function IndicadoresManutencao() {
                       value={editingDado.status || 'Em Manutenção'}
                       onValueChange={(value) => setEditingDado({...editingDado, status: value})}
                     >
-                      <SelectTrigger data-testid="select-edit-status">
+                      <SelectTrigger data-testid="select-edit-status" className="bg-orange-50 border-orange-200">
                         <SelectValue placeholder="Selecione o status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -3425,6 +3410,7 @@ export default function IndicadoresManutencao() {
                       value={editingDado.oficina_debito || ''}
                       onChange={(e) => setEditingDado({...editingDado, oficina_debito: e.target.value})}
                       placeholder="Nome da oficina"
+                      className="bg-orange-50 border-orange-200"
                       data-testid="input-edit-oficina"
                     />
                   </div>
@@ -3434,13 +3420,14 @@ export default function IndicadoresManutencao() {
               {/* Datas da Manutenção */}
               <div className="space-y-4">
                 <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Datas da Manutenção</h4>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Data Parada do Veículo</Label>
                     <Input 
                       type="date"
                       value={(editingDado as any).data_parada || ''}
                       onChange={(e) => setEditingDado({...editingDado, data_parada: e.target.value} as any)}
+                      className="bg-orange-50 border-orange-200"
                       data-testid="input-edit-data-parada"
                     />
                   </div>
@@ -3450,20 +3437,10 @@ export default function IndicadoresManutencao() {
                       type="date"
                       value={(editingDado as any).data_inicio_manutencao || ''}
                       onChange={(e) => setEditingDado({...editingDado, data_inicio_manutencao: e.target.value} as any)}
+                      className="bg-orange-50 border-orange-200"
                       data-testid="input-edit-data-inicio"
                     />
                   </div>
-                  {editingDado.status === 'Finalizado' && (
-                    <div className="space-y-2">
-                      <Label>Data Finalização</Label>
-                      <Input 
-                        type="date"
-                        value={(editingDado as any).data_finalizacao || ''}
-                        onChange={(e) => setEditingDado({...editingDado, data_finalizacao: e.target.value} as any)}
-                        data-testid="input-edit-data-finalizacao"
-                      />
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -3477,6 +3454,7 @@ export default function IndicadoresManutencao() {
                       type="date"
                       value={editingDado.data_agenda || ''}
                       onChange={(e) => setEditingDado({...editingDado, data_agenda: e.target.value})}
+                      className="bg-orange-50 border-orange-200"
                       data-testid="input-edit-data-agenda"
                     />
                   </div>
@@ -3485,6 +3463,7 @@ export default function IndicadoresManutencao() {
                     <Input 
                       value={editingDado.focal || ''}
                       onChange={(e) => setEditingDado({...editingDado, focal: e.target.value})}
+                      className="bg-orange-50 border-orange-200"
                       data-testid="input-edit-focal"
                     />
                   </div>
@@ -3493,6 +3472,7 @@ export default function IndicadoresManutencao() {
                     <Input 
                       value={editingDado.atendimento || ''}
                       onChange={(e) => setEditingDado({...editingDado, atendimento: e.target.value})}
+                      className="bg-orange-50 border-orange-200"
                       data-testid="input-edit-atendimento"
                     />
                   </div>
@@ -3504,7 +3484,7 @@ export default function IndicadoresManutencao() {
                 <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Relato do Problema</h4>
                 <div className="space-y-2">
                   <textarea 
-                    className="w-full min-h-[120px] p-3 border rounded-md bg-background"
+                    className="w-full min-h-[120px] p-3 border rounded-md bg-orange-50 border-orange-200"
                     value={editingDado.relato || ''}
                     onChange={(e) => setEditingDado({...editingDado, relato: e.target.value})}
                     placeholder="Descreva o problema ou serviço a ser realizado..."
@@ -3520,7 +3500,7 @@ export default function IndicadoresManutencao() {
               <X className="h-4 w-4 mr-2" />
               Cancelar
             </Button>
-            <Button onClick={handleSaveDado} disabled={updateDadoMutation.isPending}>
+            <Button onClick={handleSaveDado} disabled={updateDadoMutation.isPending} className="bg-blue-600 hover:bg-blue-700">
               <Save className="h-4 w-4 mr-2" />
               {updateDadoMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
