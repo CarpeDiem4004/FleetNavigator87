@@ -274,11 +274,8 @@ export function ManutencaoTimeline({ manutencaoId, placa, oficinasDisponiveis = 
                         <div>
                           <h4 className="font-semibold flex items-center gap-2">
                             {oficina.oficina_nome}
-                            {oficina.status === 'ativo' && (
-                              <Badge variant="default" className="text-xs">Atual</Badge>
-                            )}
-                            {oficina.is_virtual && (
-                              <Badge variant="outline" className="text-xs text-blue-600">Oficina Atual</Badge>
+                            {(oficina.status === 'ativo' || oficina.is_virtual) && (
+                              <Badge className="text-xs bg-green-500 text-white hover:bg-green-600">Atual</Badge>
                             )}
                           </h4>
                           <div className="text-sm text-muted-foreground mt-1">
