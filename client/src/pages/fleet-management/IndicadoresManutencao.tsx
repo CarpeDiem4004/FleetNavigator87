@@ -425,15 +425,20 @@ export default function IndicadoresManutencao() {
 
   // Mutation para atualizar dados em manutenção
   const updateDadoMutation = useMutation({
-    mutationFn: async (data: Partial<Dado> & { id: number }) => {
+    mutationFn: async (data: Partial<Dado> & { id: number; pecas?: Array<{nome: string, valor: number}> }) => {
       const res = await apiRequest('PUT', `/api/indicadores/dados/${data.id}`, data);
       return res.json();
     },
-    onSuccess: () => {
-      toast({ title: 'Sucesso', description: 'Registro atualizado com sucesso!' });
+    onSuccess: (response) => {
+      const msg = response?.orcamentoCriado 
+        ? 'Registro atualizado! Orçamento enviado para aprovação.'
+        : 'Registro atualizado com sucesso!';
+      toast({ title: 'Sucesso', description: msg });
       queryClient.invalidateQueries({ queryKey: ['/api/indicadores/dados'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/pecas/analise'] });
       setEditDialogOpen(false);
       setEditingDado(null);
+      setEditPecas([{nome: '', valor: 0}]);
     },
     onError: (error: Error) => {
       toast({ title: 'Erro', description: error.message, variant: 'destructive' });
@@ -447,7 +452,12 @@ export default function IndicadoresManutencao() {
 
   const handleSaveDado = () => {
     if (editingDado) {
-      updateDadoMutation.mutate(editingDado);
+      // Incluir peças válidas para criar orçamento automático
+      const pecasValidas = editPecas.filter(p => p.nome.trim() !== '' && p.valor > 0);
+      updateDadoMutation.mutate({
+        ...editingDado,
+        pecas: pecasValidas
+      });
     }
   };
 

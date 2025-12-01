@@ -358,7 +358,7 @@ router.post('/dados', isAuthenticated, async (req: Request, res: Response) => {
 router.put('/dados/:id', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status } = req.body;
+    const { placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status, pecas } = req.body;
 
     const result = await pool.query(
       `UPDATE indicadores_dados SET 
@@ -381,7 +381,53 @@ router.put('/dados/:id', isAuthenticated, async (req: Request, res: Response) =>
       return res.status(404).json({ success: false, message: 'Registro não encontrado' });
     }
 
-    res.json({ success: true, data: result.rows[0] });
+    let orcamentoCriado = false;
+    const manutencaoData = result.rows[0];
+
+    // Se há peças e oficina, criar orçamento pendente de aprovação
+    if (pecas && pecas.length > 0 && manutencaoData.oficina_debito) {
+      // Buscar ou criar registro de oficina
+      let oficinaResult = await pool.query(
+        `SELECT id FROM manutencao_oficinas WHERE manutencao_id = $1 LIMIT 1`,
+        [id]
+      );
+
+      let manutencaoOficinaId: number;
+
+      if (oficinaResult.rows.length === 0) {
+        // Criar registro de oficina
+        const novaOficina = await pool.query(
+          `INSERT INTO manutencao_oficinas (manutencao_id, oficina_nome, km_envio, data_envio, status)
+           VALUES ($1, $2, $3, CURRENT_TIMESTAMP, 'ativa')
+           RETURNING id`,
+          [id, manutencaoData.oficina_debito, km || null]
+        );
+        manutencaoOficinaId = novaOficina.rows[0].id;
+      } else {
+        manutencaoOficinaId = oficinaResult.rows[0].id;
+      }
+
+      // Calcular valor total das peças
+      const valorTotal = pecas.reduce((sum: number, p: {nome: string, valor: number}) => sum + (p.valor || 0), 0);
+
+      // Criar descrição das peças
+      const descricaoPecas = pecas.map((p: {nome: string, valor: number}) => 
+        `${p.nome}: R$ ${p.valor.toFixed(2)}`
+      ).join('; ');
+
+      // Criar orçamento pendente de aprovação
+      await pool.query(
+        `INSERT INTO manutencao_orcamentos 
+          (manutencao_oficina_id, descricao, valor_estimado, aprovado, data_criacao)
+         VALUES ($1, $2, $3, false, CURRENT_TIMESTAMP)`,
+        [manutencaoOficinaId, descricaoPecas, valorTotal]
+      );
+
+      orcamentoCriado = true;
+      console.log(`[ORCAMENTO] Orçamento criado automaticamente para manutenção ${id}: R$ ${valorTotal}`);
+    }
+
+    res.json({ success: true, data: manutencaoData, orcamentoCriado });
   } catch (error) {
     console.error('[INDICADORES] Erro ao atualizar dados:', error);
     res.status(500).json({ success: false, message: 'Erro ao atualizar registro' });
