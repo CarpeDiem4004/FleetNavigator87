@@ -117,6 +117,9 @@ interface Dado {
   oficina_debito: string;
   atendimento: string;
   status: string;
+  total_orcamentos?: number;
+  orcamentos_pendentes?: number;
+  orcamentos_aprovados?: number;
 }
 
 interface Liberado {
@@ -1704,6 +1707,7 @@ export default function IndicadoresManutencao() {
                             <TableHead>Placa</TableHead>
                             <TableHead>Modelo</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead>Orçamento</TableHead>
                             <TableHead>Oficina</TableHead>
                             <TableHead>KM</TableHead>
                             <TableHead>Relato</TableHead>
@@ -1715,7 +1719,7 @@ export default function IndicadoresManutencao() {
                         </TableHeader>
                         <TableBody>
                           {dadosFiltrados.map((dado) => (
-                            <TableRow key={dado.id}>
+                            <TableRow key={dado.id} className={dado.orcamentos_pendentes && dado.orcamentos_pendentes > 0 ? 'bg-amber-50/50' : ''}>
                               <TableCell className="font-medium">{dado.placa}</TableCell>
                               <TableCell>{dado.modelo || '-'}</TableCell>
                               <TableCell>
@@ -1727,6 +1731,33 @@ export default function IndicadoresManutencao() {
                                 }>
                                   {dado.status || 'Em Manutenção'}
                                 </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {dado.total_orcamentos && dado.total_orcamentos > 0 ? (
+                                  <div className="flex items-center gap-1">
+                                    {dado.orcamentos_pendentes && dado.orcamentos_pendentes > 0 ? (
+                                      <Badge 
+                                        variant="outline" 
+                                        className="bg-amber-100 text-amber-700 border-amber-300 animate-pulse"
+                                        title={`${dado.orcamentos_pendentes} orçamento(s) aguardando aprovação`}
+                                      >
+                                        <AlertCircle className="h-3 w-3 mr-1" />
+                                        {dado.orcamentos_pendentes} Pendente{dado.orcamentos_pendentes > 1 ? 's' : ''}
+                                      </Badge>
+                                    ) : (
+                                      <Badge 
+                                        variant="outline" 
+                                        className="bg-green-100 text-green-700 border-green-300"
+                                        title="Todos os orçamentos aprovados"
+                                      >
+                                        <CheckCircle className="h-3 w-3 mr-1" />
+                                        Aprovado
+                                      </Badge>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">-</span>
+                                )}
                               </TableCell>
                               <TableCell>{dado.oficina_debito || '-'}</TableCell>
                               <TableCell>{dado.km ? dado.km.toLocaleString() : '-'}</TableCell>
@@ -1745,6 +1776,7 @@ export default function IndicadoresManutencao() {
                                     }}
                                     title="Histórico de Oficinas"
                                     data-testid={`btn-historico-dado-${dado.id}`}
+                                    className={dado.orcamentos_pendentes && dado.orcamentos_pendentes > 0 ? 'text-amber-600' : ''}
                                   >
                                     <History className="h-4 w-4" />
                                   </Button>

@@ -262,10 +262,25 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { uploadId } = req.query;
 
+    // Buscar dados com informação de orçamentos pendentes
     const result = await pool.query(
-      `SELECT * FROM indicadores_dados
-       WHERE upload_id = $1
-       ORDER BY data_agenda DESC NULLS LAST`,
+      `SELECT 
+        d.*,
+        COALESCE(orc.total_orcamentos, 0) as total_orcamentos,
+        COALESCE(orc.orcamentos_pendentes, 0) as orcamentos_pendentes,
+        COALESCE(orc.orcamentos_aprovados, 0) as orcamentos_aprovados
+       FROM indicadores_dados d
+       LEFT JOIN LATERAL (
+         SELECT 
+           COUNT(*) as total_orcamentos,
+           COUNT(*) FILTER (WHERE orc.aprovado = false) as orcamentos_pendentes,
+           COUNT(*) FILTER (WHERE orc.aprovado = true) as orcamentos_aprovados
+         FROM manutencao_oficinas mo
+         JOIN manutencao_orcamentos orc ON orc.manutencao_oficina_id = mo.id
+         WHERE mo.manutencao_id = d.id
+       ) orc ON true
+       WHERE d.upload_id = $1
+       ORDER BY d.data_agenda DESC NULLS LAST`,
       [uploadId || 0]
     );
 
