@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import ManutencaoTimeline from '@/components/ManutencaoTimeline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -298,6 +299,10 @@ export default function IndicadoresManutencao() {
   const [uploadingFinalizadas, setUploadingFinalizadas] = useState(false);
   const [showHistoricoPlaca, setShowHistoricoPlaca] = useState(false);
   const [selectedPlacaHistorico, setSelectedPlacaHistorico] = useState<string>('');
+  
+  // Estados para modal de histórico de oficinas/orçamentos
+  const [showTimelineModal, setShowTimelineModal] = useState(false);
+  const [selectedDadoTimeline, setSelectedDadoTimeline] = useState<Dado | null>(null);
 
   // Lista de modelos de veículos disponíveis
   const modelosVeiculos = [
@@ -1580,14 +1585,28 @@ export default function IndicadoresManutencao() {
                               <TableCell>{dado.focal || '-'}</TableCell>
                               <TableCell>{dado.atendimento || '-'}</TableCell>
                               <TableCell className="text-right">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleEditDado(dado)}
-                                  data-testid={`btn-edit-dado-${dado.id}`}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
+                                <div className="flex items-center justify-end gap-1">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedDadoTimeline(dado);
+                                      setShowTimelineModal(true);
+                                    }}
+                                    title="Histórico de Oficinas"
+                                    data-testid={`btn-historico-dado-${dado.id}`}
+                                  >
+                                    <History className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleEditDado(dado)}
+                                    data-testid={`btn-edit-dado-${dado.id}`}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -4219,6 +4238,34 @@ export default function IndicadoresManutencao() {
                   Cadastrar
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Histórico de Oficinas/Orçamentos */}
+      <Dialog open={showTimelineModal} onOpenChange={setShowTimelineModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Histórico de Oficinas - {selectedDadoTimeline?.placa}
+            </DialogTitle>
+            <DialogDescription>
+              Visualize o histórico de oficinas e orçamentos desta manutenção
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {selectedDadoTimeline && (
+              <ManutencaoTimeline 
+                manutencaoId={selectedDadoTimeline.id}
+                placa={selectedDadoTimeline.placa}
+              />
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTimelineModal(false)}>
+              Fechar
             </Button>
           </DialogFooter>
         </DialogContent>

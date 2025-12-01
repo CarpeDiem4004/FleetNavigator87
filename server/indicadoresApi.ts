@@ -322,6 +322,16 @@ router.post('/dados', isAuthenticated, async (req: Request, res: Response) => {
       [placa, descricaoCompleta || 'Manutenção registrada', valorTotal, status || 'Em Manutenção', km || 0, oficina_debito, baseValue]
     );
 
+    // Criar registro de histórico de oficina se a oficina foi informada
+    if (oficina_debito && result.rows[0]?.id) {
+      await pool.query(
+        `INSERT INTO manutencao_oficinas (manutencao_id, oficina_nome, km_envio, data_envio, status)
+         VALUES ($1, $2, $3, CURRENT_TIMESTAMP, 'ativa')
+         ON CONFLICT DO NOTHING`,
+        [result.rows[0].id, oficina_debito, km || null]
+      );
+    }
+
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('[INDICADORES] Erro ao criar manutenção:', error);
