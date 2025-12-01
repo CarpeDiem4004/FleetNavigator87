@@ -1480,7 +1480,7 @@ router.delete('/finalizadas/clear', isAuthenticated, async (req: Request, res: R
   }
 });
 
-// Buscar movimentações de manutenção (entradas e saídas)
+// Buscar movimentações de manutenção (entradas e saídas) com comparativo diário
 router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { periodo = '30' } = req.query;
@@ -1488,7 +1488,53 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
     
     console.log('[MOVIMENTACOES] Buscando movimentações dos últimos', dias, 'dias');
     
-    // Buscar veículos que ENTRARAM em manutenção no período
+    // Buscar entradas HOJE
+    const entradasHoje = await pool.query(`
+      SELECT COUNT(*) as total
+      FROM manutencoes_historico
+      WHERE DATE(data_entrada) = CURRENT_DATE
+        AND data_entrada IS NOT NULL
+    `);
+    
+    // Buscar entradas ONTEM
+    const entradasOntem = await pool.query(`
+      SELECT COUNT(*) as total
+      FROM manutencoes_historico
+      WHERE DATE(data_entrada) = CURRENT_DATE - 1
+        AND data_entrada IS NOT NULL
+    `);
+    
+    // Buscar saídas HOJE (de ambas as tabelas)
+    const saidasHojeHistorico = await pool.query(`
+      SELECT COUNT(*) as total
+      FROM manutencoes_historico
+      WHERE DATE(data_saida) = CURRENT_DATE
+        AND data_saida IS NOT NULL
+    `);
+    
+    const saidasHojeFinalizadas = await pool.query(`
+      SELECT COUNT(*) as total
+      FROM manutencoes_finalizadas
+      WHERE DATE(data_saida) = CURRENT_DATE
+        AND data_saida IS NOT NULL
+    `);
+    
+    // Buscar saídas ONTEM (de ambas as tabelas)
+    const saidasOntemHistorico = await pool.query(`
+      SELECT COUNT(*) as total
+      FROM manutencoes_historico
+      WHERE DATE(data_saida) = CURRENT_DATE - 1
+        AND data_saida IS NOT NULL
+    `);
+    
+    const saidasOntemFinalizadas = await pool.query(`
+      SELECT COUNT(*) as total
+      FROM manutencoes_finalizadas
+      WHERE DATE(data_saida) = CURRENT_DATE - 1
+        AND data_saida IS NOT NULL
+    `);
+    
+    // Buscar veículos que ENTRARAM em manutenção no período (para modal)
     const entradas = await pool.query(`
       SELECT 
         id, placa, tipo, descricao, oficina, base, operacao,
@@ -1499,7 +1545,7 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
       ORDER BY data_entrada DESC
     `);
     
-    // Buscar veículos que SAÍRAM da manutenção no período
+    // Buscar veículos que SAÍRAM da manutenção no período (para modal)
     const saidas = await pool.query(`
       SELECT 
         id, placa, tipo, descricao, oficina, base, operacao,
@@ -1526,11 +1572,32 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
     const todasSaidas = [...saidas.rows, ...saidasFinalizadas.rows]
       .sort((a, b) => new Date(b.data_saida).getTime() - new Date(a.data_saida).getTime());
     
-    console.log('[MOVIMENTACOES] Entradas:', entradas.rows.length, 'Saídas:', todasSaidas.length);
+    // Calcular totais diários
+    const entradasHojeTotal = parseInt(entradasHoje.rows[0]?.total || '0');
+    const entradasOntemTotal = parseInt(entradasOntem.rows[0]?.total || '0');
+    const saidasHojeTotal = parseInt(saidasHojeHistorico.rows[0]?.total || '0') + 
+                            parseInt(saidasHojeFinalizadas.rows[0]?.total || '0');
+    const saidasOntemTotal = parseInt(saidasOntemHistorico.rows[0]?.total || '0') + 
+                             parseInt(saidasOntemFinalizadas.rows[0]?.total || '0');
+    
+    console.log('[MOVIMENTACOES] Entradas hoje:', entradasHojeTotal, 'ontem:', entradasOntemTotal);
+    console.log('[MOVIMENTACOES] Saídas hoje:', saidasHojeTotal, 'ontem:', saidasOntemTotal);
     
     res.json({
       success: true,
       periodo: dias,
+      comparativo: {
+        entradas: {
+          hoje: entradasHojeTotal,
+          ontem: entradasOntemTotal,
+          variacao: entradasHojeTotal - entradasOntemTotal
+        },
+        saidas: {
+          hoje: saidasHojeTotal,
+          ontem: saidasOntemTotal,
+          variacao: saidasHojeTotal - saidasOntemTotal
+        }
+      },
       entradas: {
         total: entradas.rows.length,
         registros: entradas.rows

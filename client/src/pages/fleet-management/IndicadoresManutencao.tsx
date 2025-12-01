@@ -321,9 +321,8 @@ export default function IndicadoresManutencao() {
   const [showTimelineModal, setShowTimelineModal] = useState(false);
   const [selectedDadoTimeline, setSelectedDadoTimeline] = useState<Dado | null>(null);
 
-  // Estados para modais de movimentações (entradas e saídas)
-  const [showEntradasModal, setShowEntradasModal] = useState(false);
-  const [showSaidasModal, setShowSaidasModal] = useState(false);
+  // Estados para modal de movimentações (entradas e saídas)
+  const [showMovimentacoesModal, setShowMovimentacoesModal] = useState(false);
   const [movimentacoesPeriodo, setMovimentacoesPeriodo] = useState('30');
 
   // Lista de modelos de veículos disponíveis
@@ -661,10 +660,14 @@ export default function IndicadoresManutencao() {
 
   const veiculosDistribuicao = veiculosStatsData?.data;
 
-  // Buscar movimentações de manutenção (entradas e saídas)
+  // Buscar movimentações de manutenção (entradas e saídas) com comparativo diário
   const { data: movimentacoesData } = useQuery<{
     success: boolean,
     periodo: number,
+    comparativo: {
+      entradas: { hoje: number, ontem: number, variacao: number },
+      saidas: { hoje: number, ontem: number, variacao: number }
+    },
     entradas: { total: number, registros: any[] },
     saidas: { total: number, registros: any[] }
   }>({
@@ -1130,7 +1133,7 @@ export default function IndicadoresManutencao() {
 
           {/* Estatísticas Gerais */}
           {stats && (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -1160,44 +1163,82 @@ export default function IndicadoresManutencao() {
               </Card>
 
               <Card 
-                className="cursor-pointer hover:shadow-md transition-shadow bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border-red-200"
-                onClick={() => setShowEntradasModal(true)}
-                data-testid="card-entradas-manutencao"
+                className="cursor-pointer hover:shadow-md transition-shadow bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-purple-950 dark:to-indigo-900 border-purple-200 col-span-2"
+                onClick={() => setShowMovimentacoesModal(true)}
+                data-testid="card-movimentacoes-manutencao"
               >
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-red-700 dark:text-red-300 flex items-center gap-2">
-                    <ArrowDownCircle className="h-4 w-4" />
-                    Entrou Manutenção
+                  <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-300 flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    Movimentação Diária
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-red-800 dark:text-red-200">
-                    {movimentacoes?.entradas?.total || 0}
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Entradas */}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <ArrowDownCircle className="h-3 w-3 text-red-500" />
+                        <span>Entraram</span>
+                      </div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-xl font-bold text-red-600">
+                          {movimentacoes?.comparativo?.entradas?.hoje || 0}
+                        </span>
+                        <span className="text-xs text-muted-foreground">hoje</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {(movimentacoes?.comparativo?.entradas?.variacao || 0) > 0 ? (
+                          <span className="text-xs text-red-500 flex items-center">
+                            <TrendingUp className="h-3 w-3 mr-0.5" />
+                            +{movimentacoes?.comparativo?.entradas?.variacao}
+                          </span>
+                        ) : (movimentacoes?.comparativo?.entradas?.variacao || 0) < 0 ? (
+                          <span className="text-xs text-green-500 flex items-center">
+                            <TrendingUp className="h-3 w-3 mr-0.5 rotate-180" />
+                            {movimentacoes?.comparativo?.entradas?.variacao}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">=</span>
+                        )}
+                        <span className="text-xs text-muted-foreground">
+                          vs {movimentacoes?.comparativo?.entradas?.ontem || 0} ontem
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Saídas */}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <ArrowUpCircle className="h-3 w-3 text-green-500" />
+                        <span>Saíram</span>
+                      </div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-xl font-bold text-green-600">
+                          {movimentacoes?.comparativo?.saidas?.hoje || 0}
+                        </span>
+                        <span className="text-xs text-muted-foreground">hoje</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {(movimentacoes?.comparativo?.saidas?.variacao || 0) > 0 ? (
+                          <span className="text-xs text-green-500 flex items-center">
+                            <TrendingUp className="h-3 w-3 mr-0.5" />
+                            +{movimentacoes?.comparativo?.saidas?.variacao}
+                          </span>
+                        ) : (movimentacoes?.comparativo?.saidas?.variacao || 0) < 0 ? (
+                          <span className="text-xs text-red-500 flex items-center">
+                            <TrendingUp className="h-3 w-3 mr-0.5 rotate-180" />
+                            {movimentacoes?.comparativo?.saidas?.variacao}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">=</span>
+                        )}
+                        <span className="text-xs text-muted-foreground">
+                          vs {movimentacoes?.comparativo?.saidas?.ontem || 0} ontem
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                    últimos {movimentacoesPeriodo} dias
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card 
-                className="cursor-pointer hover:shadow-md transition-shadow bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200"
-                onClick={() => setShowSaidasModal(true)}
-                data-testid="card-saidas-manutencao"
-              >
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300 flex items-center gap-2">
-                    <ArrowUpCircle className="h-4 w-4" />
-                    Saiu Manutenção
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-800 dark:text-green-200">
-                    {movimentacoes?.saidas?.total || 0}
-                  </div>
-                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                    últimos {movimentacoesPeriodo} dias
-                  </p>
                 </CardContent>
               </Card>
 
@@ -4488,16 +4529,16 @@ export default function IndicadoresManutencao() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Detalhamento - Entradas em Manutenção */}
-      <Dialog open={showEntradasModal} onOpenChange={setShowEntradasModal}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      {/* Modal de Detalhamento - Movimentações de Manutenção */}
+      <Dialog open={showMovimentacoesModal} onOpenChange={setShowMovimentacoesModal}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-700">
-              <ArrowDownCircle className="h-5 w-5" />
-              Veículos que Entraram em Manutenção
+            <DialogTitle className="flex items-center gap-2 text-purple-700">
+              <TrendingUp className="h-5 w-5" />
+              Movimentações de Manutenção
             </DialogTitle>
             <DialogDescription>
-              Veículos que entraram em manutenção nos últimos {movimentacoesPeriodo} dias
+              Detalhamento das entradas e saídas de manutenção nos últimos {movimentacoesPeriodo} dias
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -4514,132 +4555,135 @@ export default function IndicadoresManutencao() {
                   <SelectItem value="90">Últimos 90 dias</SelectItem>
                 </SelectContent>
               </Select>
+              
+              {/* Resumo do comparativo */}
+              <div className="flex gap-4 ml-auto">
+                <div className="flex items-center gap-2 px-3 py-1 bg-red-50 rounded-md">
+                  <ArrowDownCircle className="h-4 w-4 text-red-500" />
+                  <span className="text-sm font-medium text-red-700">
+                    Entradas hoje: {movimentacoes?.comparativo?.entradas?.hoje || 0}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    (ontem: {movimentacoes?.comparativo?.entradas?.ontem || 0})
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1 bg-green-50 rounded-md">
+                  <ArrowUpCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-sm font-medium text-green-700">
+                    Saídas hoje: {movimentacoes?.comparativo?.saidas?.hoje || 0}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    (ontem: {movimentacoes?.comparativo?.saidas?.ontem || 0})
+                  </span>
+                </div>
+              </div>
             </div>
-            
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Placa</TableHead>
-                    <TableHead>Data Entrada</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead>Oficina</TableHead>
-                    <TableHead>Base</TableHead>
-                    <TableHead>KM</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {movimentacoes?.entradas?.registros?.length ? (
-                    movimentacoes.entradas.registros.map((item: any, idx: number) => (
-                      <TableRow key={`entrada-${idx}`}>
-                        <TableCell className="font-bold">{item.placa}</TableCell>
-                        <TableCell>{formatDate(item.data_entrada)}</TableCell>
-                        <TableCell>
-                          <Badge variant={item.tipo === 'Preventiva' ? 'default' : 'destructive'}>
-                            {item.tipo || 'N/A'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate">{item.descricao || '-'}</TableCell>
-                        <TableCell>{item.oficina || '-'}</TableCell>
-                        <TableCell>{item.base || '-'}</TableCell>
-                        <TableCell>{item.km ? item.km.toLocaleString('pt-BR') : '-'}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        Nenhum veículo entrou em manutenção no período selecionado
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEntradasModal(false)}>
-              Fechar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Modal de Detalhamento - Saídas de Manutenção */}
-      <Dialog open={showSaidasModal} onOpenChange={setShowSaidasModal}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-green-700">
-              <ArrowUpCircle className="h-5 w-5" />
-              Veículos que Saíram da Manutenção
-            </DialogTitle>
-            <DialogDescription>
-              Veículos que saíram da manutenção nos últimos {movimentacoesPeriodo} dias
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <div className="flex gap-4 mb-4">
-              <Select value={movimentacoesPeriodo} onValueChange={setMovimentacoesPeriodo}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Período" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7">Últimos 7 dias</SelectItem>
-                  <SelectItem value="15">Últimos 15 dias</SelectItem>
-                  <SelectItem value="30">Últimos 30 dias</SelectItem>
-                  <SelectItem value="60">Últimos 60 dias</SelectItem>
-                  <SelectItem value="90">Últimos 90 dias</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Placa</TableHead>
-                    <TableHead>Data Saída</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead>Oficina</TableHead>
-                    <TableHead>Tempo Total</TableHead>
-                    <TableHead>Valor</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {movimentacoes?.saidas?.registros?.length ? (
-                    movimentacoes.saidas.registros.map((item: any, idx: number) => (
-                      <TableRow key={`saida-${idx}`}>
-                        <TableCell className="font-bold">{item.placa}</TableCell>
-                        <TableCell>{formatDate(item.data_saida)}</TableCell>
-                        <TableCell>
-                          <Badge variant={item.tipo === 'Preventiva' ? 'default' : 'destructive'}>
-                            {item.tipo || 'N/A'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate">{item.descricao || '-'}</TableCell>
-                        <TableCell>{item.oficina || '-'}</TableCell>
-                        <TableCell>
-                          {item.tempo_total ? `${item.tempo_total} dias` : '-'}
-                        </TableCell>
-                        <TableCell className="text-green-600 font-medium">
-                          {item.valor ? formatCurrency(Number(item.valor)) : '-'}
-                        </TableCell>
+            <Tabs defaultValue="entradas" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="entradas" className="flex items-center gap-2">
+                  <ArrowDownCircle className="h-4 w-4 text-red-500" />
+                  Entradas ({movimentacoes?.entradas?.total || 0})
+                </TabsTrigger>
+                <TabsTrigger value="saidas" className="flex items-center gap-2">
+                  <ArrowUpCircle className="h-4 w-4 text-green-500" />
+                  Saídas ({movimentacoes?.saidas?.total || 0})
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="entradas">
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Placa</TableHead>
+                        <TableHead>Data Entrada</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead>Oficina</TableHead>
+                        <TableHead>Base</TableHead>
+                        <TableHead>KM</TableHead>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        Nenhum veículo saiu da manutenção no período selecionado
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    </TableHeader>
+                    <TableBody>
+                      {movimentacoes?.entradas?.registros?.length ? (
+                        movimentacoes.entradas.registros.map((item: any, idx: number) => (
+                          <TableRow key={`entrada-${idx}`}>
+                            <TableCell className="font-bold">{item.placa}</TableCell>
+                            <TableCell>{formatDate(item.data_entrada)}</TableCell>
+                            <TableCell>
+                              <Badge variant={item.tipo === 'Preventiva' ? 'default' : 'destructive'}>
+                                {item.tipo || 'N/A'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="max-w-xs truncate">{item.descricao || '-'}</TableCell>
+                            <TableCell>{item.oficina || '-'}</TableCell>
+                            <TableCell>{item.base || '-'}</TableCell>
+                            <TableCell>{item.km ? item.km.toLocaleString('pt-BR') : '-'}</TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                            Nenhum veículo entrou em manutenção no período selecionado
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="saidas">
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Placa</TableHead>
+                        <TableHead>Data Saída</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead>Oficina</TableHead>
+                        <TableHead>Tempo Total</TableHead>
+                        <TableHead>Valor</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {movimentacoes?.saidas?.registros?.length ? (
+                        movimentacoes.saidas.registros.map((item: any, idx: number) => (
+                          <TableRow key={`saida-${idx}`}>
+                            <TableCell className="font-bold">{item.placa}</TableCell>
+                            <TableCell>{formatDate(item.data_saida)}</TableCell>
+                            <TableCell>
+                              <Badge variant={item.tipo === 'Preventiva' ? 'default' : 'destructive'}>
+                                {item.tipo || 'N/A'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="max-w-xs truncate">{item.descricao || '-'}</TableCell>
+                            <TableCell>{item.oficina || '-'}</TableCell>
+                            <TableCell>
+                              {item.tempo_total ? `${item.tempo_total} dias` : '-'}
+                            </TableCell>
+                            <TableCell className="text-green-600 font-medium">
+                              {item.valor ? formatCurrency(Number(item.valor)) : '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                            Nenhum veículo saiu da manutenção no período selecionado
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSaidasModal(false)}>
+            <Button variant="outline" onClick={() => setShowMovimentacoesModal(false)}>
               Fechar
             </Button>
           </DialogFooter>
