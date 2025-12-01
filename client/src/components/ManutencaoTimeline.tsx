@@ -18,7 +18,10 @@ import {
   FileText,
   DollarSign,
   Wrench,
-  AlertCircle
+  AlertCircle,
+  Lock,
+  ShieldCheck,
+  User
 } from 'lucide-react';
 
 interface Orcamento {
@@ -28,6 +31,9 @@ interface Orcamento {
   valor_mao_obra: number;
   itens: any;
   aprovado: boolean;
+  aprovado_por?: string;
+  aprovado_em?: string;
+  gestor_id?: string;
   data_orcamento: string;
   observacao?: string;
 }
@@ -81,6 +87,12 @@ export function ManutencaoTimeline({ manutencaoId, placa, oficinasDisponiveis = 
     valor_mao_obra: '',
     observacao: '',
     itens: [] as { nome: string; valor: number }[]
+  });
+  const [showAprovarModal, setShowAprovarModal] = useState(false);
+  const [selectedOrcamentoAprovar, setSelectedOrcamentoAprovar] = useState<Orcamento | null>(null);
+  const [aprovarData, setAprovarData] = useState({
+    email: '',
+    senha: ''
   });
 
   const { data: historicoData, isLoading } = useQuery({
@@ -145,26 +157,53 @@ export function ManutencaoTimeline({ manutencaoId, placa, oficinasDisponiveis = 
     }
   });
 
-  const aprovarOrcamentoMutation = useMutation({
-    mutationFn: async (data: { orcamentoId: number; aprovado: boolean }) => {
+  const reprovarOrcamentoMutation = useMutation({
+    mutationFn: async (data: { orcamentoId: number }) => {
       const res = await fetch(`/api/manutencao-historico/orcamento/${data.orcamentoId}/aprovar`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ aprovado: data.aprovado })
+        body: JSON.stringify({ aprovado: false })
       });
-      if (!res.ok) throw new Error('Erro ao aprovar/reprovar orçamento');
+      if (!res.ok) throw new Error('Erro ao reprovar orçamento');
       return res.json();
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       toast({ 
         title: 'Sucesso', 
-        description: `Orçamento ${variables.aprovado ? 'aprovado' : 'reprovado'} com sucesso!` 
+        description: 'Orçamento reprovado com sucesso!' 
       });
       queryClient.invalidateQueries({ queryKey: ['/api/manutencao-historico', manutencaoId] });
     },
     onError: (error: Error) => {
       toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    }
+  });
+
+  const aprovarComSenhaMutation = useMutation({
+    mutationFn: async (data: { orcamentoId: number; email: string; senha: string }) => {
+      const res = await fetch(`/api/manutencao-historico/orcamento/${data.orcamentoId}/aprovar-com-senha`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: data.email, senha: data.senha })
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || 'Erro ao aprovar orçamento');
+      return result;
+    },
+    onSuccess: (data) => {
+      toast({ 
+        title: 'Orçamento Aprovado!', 
+        description: data.message || 'Orçamento aprovado com sucesso!'
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/manutencao-historico', manutencaoId] });
+      setShowAprovarModal(false);
+      setSelectedOrcamentoAprovar(null);
+      setAprovarData({ email: '', senha: '' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Erro na Aprovação', description: error.message, variant: 'destructive' });
     }
   });
 
@@ -328,7 +367,7 @@ export function ManutencaoTimeline({ manutencaoId, placa, oficinasDisponiveis = 
                                 key={orc.id} 
                                 className={`p-3 rounded-md border ${
                                   orc.aprovado 
-                                    ? 'bg-green-50 border-green-200' 
+                                    ? 'bg-green-50 border-green-300' 
                                     : 'bg-gray-50 border-gray-200'
                                 }`}
                               >
@@ -345,33 +384,46 @@ export function ManutencaoTimeline({ manutencaoId, placa, oficinasDisponiveis = 
                                   </div>
                                   <div className="flex items-center gap-2">
                                     {orc.aprovado ? (
-                                      <Badge variant="default" className="bg-green-500">
-                                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                                        Aprovado
-                                      </Badge>
+                                      <div className="flex flex-col items-end">
+                                        <Badge className="bg-green-600 text-white font-bold px-3 py-1">
+                                          <ShieldCheck className="h-3 w-3 mr-1" />
+                                          APROVADO
+                                        </Badge>
+                                        {orc.aprovado_por && (
+                                          <div className="text-xs text-green-700 mt-1 flex items-center gap-1">
+                                            <User className="h-3 w-3" />
+                                            <span>Por: {orc.aprovado_por}</span>
+                                            {orc.aprovado_em && (
+                                              <span className="text-muted-foreground ml-1">
+                                                em {new Date(orc.aprovado_em).toLocaleDateString('pt-BR')} às {new Date(orc.aprovado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                              </span>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
                                     ) : (
                                       <div className="flex gap-1">
                                         <Button 
                                           size="sm" 
                                           variant="outline"
-                                          className="h-7 text-xs text-green-600 hover:bg-green-50"
-                                          onClick={() => aprovarOrcamentoMutation.mutate({ 
-                                            orcamentoId: orc.id, 
-                                            aprovado: true 
-                                          })}
+                                          className="h-7 text-xs text-green-600 hover:bg-green-50 border-green-300"
+                                          onClick={() => {
+                                            setSelectedOrcamentoAprovar(orc);
+                                            setShowAprovarModal(true);
+                                          }}
                                           data-testid={`button-aprovar-${orc.id}`}
                                         >
-                                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                                          <Lock className="h-3 w-3 mr-1" />
                                           Aprovar
                                         </Button>
                                         <Button 
                                           size="sm" 
                                           variant="outline"
                                           className="h-7 text-xs text-red-500 hover:bg-red-50"
-                                          onClick={() => aprovarOrcamentoMutation.mutate({ 
-                                            orcamentoId: orc.id, 
-                                            aprovado: false 
+                                          onClick={() => reprovarOrcamentoMutation.mutate({ 
+                                            orcamentoId: orc.id 
                                           })}
+                                          disabled={reprovarOrcamentoMutation.isPending}
                                           data-testid={`button-reprovar-${orc.id}`}
                                         >
                                           <XCircle className="h-3 w-3 mr-1" />
@@ -568,6 +620,115 @@ export function ManutencaoTimeline({ manutencaoId, placa, oficinasDisponiveis = 
             >
               <Plus className="h-4 w-4 mr-2" />
               {addOrcamentoMutation.isPending ? 'Salvando...' : 'Salvar Orçamento'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Aprovação com Senha */}
+      <Dialog open={showAprovarModal} onOpenChange={(open) => {
+        setShowAprovarModal(open);
+        if (!open) {
+          setSelectedOrcamentoAprovar(null);
+          setAprovarData({ email: '', senha: '' });
+        }
+      }}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-green-600" />
+              Aprovar Orçamento
+            </DialogTitle>
+            <DialogDescription>
+              Para aprovar este orçamento, confirme sua identidade com sua senha de gestor.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedOrcamentoAprovar && (
+            <div className="py-4 space-y-4">
+              {/* Resumo do Orçamento */}
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-muted-foreground">Valor Total do Orçamento</span>
+                  <DollarSign className="h-5 w-5 text-blue-600" />
+                </div>
+                <p className="text-2xl font-bold text-blue-700">
+                  {formatCurrency(selectedOrcamentoAprovar.valor_estimado)}
+                </p>
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Peças: {formatCurrency(selectedOrcamentoAprovar.valor_pecas)} | 
+                  M.O.: {formatCurrency(selectedOrcamentoAprovar.valor_mao_obra)}
+                </div>
+              </div>
+
+              {/* Campos de Autenticação */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email-aprovar">E-mail do Gestor</Label>
+                  <Input 
+                    id="email-aprovar"
+                    type="email"
+                    value={aprovarData.email}
+                    onChange={(e) => setAprovarData({...aprovarData, email: e.target.value})}
+                    placeholder="seu.email@empresa.com"
+                    data-testid="input-email-aprovar"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="senha-aprovar">Senha</Label>
+                  <Input 
+                    id="senha-aprovar"
+                    type="password"
+                    value={aprovarData.senha}
+                    onChange={(e) => setAprovarData({...aprovarData, senha: e.target.value})}
+                    placeholder="Digite sua senha"
+                    data-testid="input-senha-aprovar"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 bg-amber-50 rounded-md border border-amber-200 text-sm text-amber-800">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Atenção</p>
+                    <p className="text-xs mt-1">
+                      Após a aprovação, este orçamento não poderá ser editado. 
+                      A aprovação será registrada com seu nome e data/hora.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowAprovarModal(false);
+                setSelectedOrcamentoAprovar(null);
+                setAprovarData({ email: '', senha: '' });
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => {
+                if (selectedOrcamentoAprovar && aprovarData.email && aprovarData.senha) {
+                  aprovarComSenhaMutation.mutate({
+                    orcamentoId: selectedOrcamentoAprovar.id,
+                    email: aprovarData.email,
+                    senha: aprovarData.senha
+                  });
+                }
+              }}
+              disabled={!aprovarData.email || !aprovarData.senha || aprovarComSenhaMutation.isPending}
+              className="bg-green-600 hover:bg-green-700"
+              data-testid="button-confirmar-aprovacao"
+            >
+              <ShieldCheck className="h-4 w-4 mr-2" />
+              {aprovarComSenhaMutation.isPending ? 'Aprovando...' : 'Confirmar Aprovação'}
             </Button>
           </DialogFooter>
         </DialogContent>
