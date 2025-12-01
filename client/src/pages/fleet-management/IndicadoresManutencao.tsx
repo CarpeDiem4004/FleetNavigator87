@@ -240,6 +240,8 @@ export default function IndicadoresManutencao() {
     focal: '',
     atendimento: ''
   });
+  const [placaSearchInput, setPlacaSearchInput] = useState<string>('');
+  const [showPlacaDropdown, setShowPlacaDropdown] = useState<boolean>(false);
   const [newPecas, setNewPecas] = useState<Array<{nome: string, valor: number}>>([{nome: '', valor: 0}]);
   const [editPecas, setEditPecas] = useState<Array<{nome: string, valor: number}>>([{nome: '', valor: 0}]);
   const [editSelectedProjectId, setEditSelectedProjectId] = useState<number | null>(null);
@@ -1677,7 +1679,11 @@ export default function IndicadoresManutencao() {
                       />
                     </div>
                     <Button 
-                      onClick={() => setNewDadoDialogOpen(true)}
+                      onClick={() => {
+                      setPlacaSearchInput('');
+                      setShowPlacaDropdown(false);
+                      setNewDadoDialogOpen(true);
+                    }}
                       data-testid="btn-nova-manutencao"
                     >
                       <Plus className="h-4 w-4 mr-2" />
@@ -3828,30 +3834,63 @@ export default function IndicadoresManutencao() {
             <div className="space-y-4">
               <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Dados do Veículo</h4>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
+                <div className="space-y-2 relative">
                   <Label>Placa *</Label>
-                  <Select 
-                    value={newDado.placa || ''}
-                    onValueChange={(value) => {
-                      const selectedVehicle = vehicles.find(v => v.plate === value);
-                      setNewDado({
-                        ...newDado, 
-                        placa: value,
-                        modelo: selectedVehicle?.model || newDado.modelo
-                      });
-                    }}
-                  >
-                    <SelectTrigger data-testid="select-new-placa">
-                      <SelectValue placeholder="Selecione o veículo" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      {vehicles.map((vehicle) => (
-                        <SelectItem key={vehicle.id} value={vehicle.plate}>
-                          {vehicle.plate} - {vehicle.model || 'Sem modelo'}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="relative">
+                    <Input
+                      value={placaSearchInput}
+                      onChange={(e) => {
+                        const value = e.target.value.toUpperCase();
+                        setPlacaSearchInput(value);
+                        setShowPlacaDropdown(value.length > 0);
+                        if (!value) {
+                          setNewDado({...newDado, placa: '', modelo: ''});
+                        }
+                      }}
+                      onFocus={() => setShowPlacaDropdown(placaSearchInput.length > 0 || vehicles.length > 0)}
+                      placeholder="Digite a placa..."
+                      data-testid="input-search-placa"
+                    />
+                    {showPlacaDropdown && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-[200px] overflow-y-auto">
+                        {vehicles
+                          .filter(v => 
+                            !placaSearchInput || 
+                            v.plate.toUpperCase().includes(placaSearchInput) ||
+                            (v.model && v.model.toUpperCase().includes(placaSearchInput))
+                          )
+                          .slice(0, 20)
+                          .map((vehicle) => (
+                            <div
+                              key={vehicle.id}
+                              className="px-3 py-2 cursor-pointer hover:bg-blue-50 text-sm border-b last:border-b-0"
+                              onClick={() => {
+                                setPlacaSearchInput(vehicle.plate);
+                                setNewDado({
+                                  ...newDado,
+                                  placa: vehicle.plate,
+                                  modelo: vehicle.model || newDado.modelo
+                                });
+                                setShowPlacaDropdown(false);
+                              }}
+                            >
+                              <span className="font-medium">{vehicle.plate}</span>
+                              <span className="text-muted-foreground ml-2">- {vehicle.model || 'Sem modelo'}</span>
+                            </div>
+                          ))
+                        }
+                        {vehicles.filter(v => 
+                          !placaSearchInput || 
+                          v.plate.toUpperCase().includes(placaSearchInput) ||
+                          (v.model && v.model.toUpperCase().includes(placaSearchInput))
+                        ).length === 0 && (
+                          <div className="px-3 py-2 text-sm text-muted-foreground">
+                            Nenhum veículo encontrado
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Modelo {(!newDado.modelo || newDado.modelo === 'Não informado') && <span className="text-orange-500 text-xs">(Selecione para atualizar)</span>}</Label>
