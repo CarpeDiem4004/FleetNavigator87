@@ -92,12 +92,37 @@ router.post('/oficina/:id/orcamento', isAuthenticated, async (req: Request, res:
     const { valor_estimado, valor_pecas, valor_mao_obra, itens, observacao } = req.body;
 
     const oficinaCheck = await pool.query(
-      'SELECT id FROM manutencao_oficinas WHERE id = $1',
+      'SELECT id, status, manutencao_id FROM manutencao_oficinas WHERE id = $1',
       [id]
     );
 
     if (oficinaCheck.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Oficina não encontrada' });
+    }
+
+    // Verificar se a oficina está ativa - não permitir adicionar orçamento em oficina finalizada
+    if (oficinaCheck.rows[0].status === 'finalizada') {
+      // Buscar a oficina ativa atual para esta manutenção
+      const oficinaAtiva = await pool.query(
+        `SELECT id, oficina_nome FROM manutencao_oficinas 
+         WHERE manutencao_id = $1 AND status = 'ativa' 
+         ORDER BY data_envio DESC LIMIT 1`,
+        [oficinaCheck.rows[0].manutencao_id]
+      );
+      
+      if (oficinaAtiva.rows.length > 0) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Esta oficina já foi trocada. O orçamento deve ser adicionado na oficina atual: ${oficinaAtiva.rows[0].oficina_nome}`,
+          oficinaAtivaId: oficinaAtiva.rows[0].id,
+          oficinaAtivaNome: oficinaAtiva.rows[0].oficina_nome
+        });
+      } else {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Esta oficina já foi finalizada e não é possível adicionar orçamentos.' 
+        });
+      }
     }
 
     const result = await pool.query(
