@@ -121,6 +121,7 @@ import { registerUsuariosSupabaseRoutes } from "./routes/usuariosSupabaseRoutes"
 import { upload as uploadConferencia, uploadRouteData, generateReport, listUploads, getUploadData, deleteUpload, exportReportToExcel } from "./conferenciaRotasApi";
 import { getRelatorioConsumo } from "./relatorioConsumoApi";
 import indicadoresApi from "./indicadoresApi";
+import manutencaoHistoricoApi from "./manutencaoHistoricoApi";
 import veiculosApi from "./veiculosApi";
 // import { supabaseInsertHandler } from "./routes/supabaseInsertRoute"; // Desabilitado - usando versão PostgreSQL direta
 import postoSupabaseRoutes from "./routes/postoSupabaseRoutes";
@@ -1783,6 +1784,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ROTAS DE INDICADORES DE MANUTENÇÃO
   // ****************************************
   app.use('/api/indicadores', indicadoresApi);
+
+  // ****************************************
+  // ROTAS DE HISTÓRICO DE MANUTENÇÃO (OFICINAS E ORÇAMENTOS)
+  // ****************************************
+  app.use('/api/manutencao-historico', manutencaoHistoricoApi);
 
   // ****************************************
   // ROTAS DE VEÍCULOS - IMPORTAÇÃO E LISTAGEM
