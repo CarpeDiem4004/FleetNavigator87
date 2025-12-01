@@ -410,17 +410,23 @@ router.put('/dados/:id', isAuthenticated, async (req: Request, res: Response) =>
       // Calcular valor total das peças
       const valorTotal = pecas.reduce((sum: number, p: {nome: string, valor: number}) => sum + (p.valor || 0), 0);
 
-      // Criar descrição das peças
+      // Criar descrição das peças para observação
       const descricaoPecas = pecas.map((p: {nome: string, valor: number}) => 
         `${p.nome}: R$ ${p.valor.toFixed(2)}`
       ).join('; ');
 
+      // Criar itens JSON para armazenar
+      const itensJson = JSON.stringify(pecas.map((p: {nome: string, valor: number}) => ({
+        descricao: p.nome,
+        valor: p.valor
+      })));
+
       // Criar orçamento pendente de aprovação
       await pool.query(
         `INSERT INTO manutencao_orcamentos 
-          (manutencao_oficina_id, descricao, valor_estimado, aprovado, data_criacao)
-         VALUES ($1, $2, $3, false, CURRENT_TIMESTAMP)`,
-        [manutencaoOficinaId, descricaoPecas, valorTotal]
+          (manutencao_oficina_id, valor_estimado, itens, observacao, aprovado, data_orcamento)
+         VALUES ($1, $2, $3::jsonb, $4, false, CURRENT_TIMESTAMP)`,
+        [manutencaoOficinaId, valorTotal, itensJson, descricaoPecas]
       );
 
       orcamentoCriado = true;
