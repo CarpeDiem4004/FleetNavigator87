@@ -222,6 +222,7 @@ export default function IndicadoresManutencao() {
   const [filterTipoManutencao, setFilterTipoManutencao] = useState<string>('');
   const [filterPlaca, setFilterPlaca] = useState<string>('');
   const [searchPlaca, setSearchPlaca] = useState<string>('');
+  const [filterPlacaEmManutencao, setFilterPlacaEmManutencao] = useState<string>('');
   const [dashboardBase, setDashboardBase] = useState<string>('');
   const [activeTab, setActiveTab] = useState('upload');
   const [selectedModeloPeca, setSelectedModeloPeca] = useState<string>('');
@@ -1664,16 +1665,32 @@ export default function IndicadoresManutencao() {
                       Lista de veículos atualmente em manutenção
                     </CardDescription>
                   </div>
-                  <Button 
-                    onClick={() => setNewDadoDialogOpen(true)}
-                    data-testid="btn-nova-manutencao"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nova Manutenção
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar por placa..."
+                        value={filterPlacaEmManutencao}
+                        onChange={(e) => setFilterPlacaEmManutencao(e.target.value.toUpperCase())}
+                        className="pl-9 w-[200px]"
+                        data-testid="input-busca-placa-manutencao"
+                      />
+                    </div>
+                    <Button 
+                      onClick={() => setNewDadoDialogOpen(true)}
+                      data-testid="btn-nova-manutencao"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nova Manutenção
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  {dados.length > 0 ? (
+                  {(() => {
+                    const dadosFiltrados = filterPlacaEmManutencao
+                      ? dados.filter(d => d.placa?.toUpperCase().includes(filterPlacaEmManutencao))
+                      : dados;
+                    return dadosFiltrados.length > 0 ? (
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
@@ -1691,7 +1708,7 @@ export default function IndicadoresManutencao() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {dados.map((dado) => (
+                          {dadosFiltrados.map((dado) => (
                             <TableRow key={dado.id}>
                               <TableCell className="font-medium">{dado.placa}</TableCell>
                               <TableCell>{dado.modelo || '-'}</TableCell>
@@ -1747,7 +1764,8 @@ export default function IndicadoresManutencao() {
                         Nenhum veículo em manutenção no momento.
                       </p>
                     </div>
-                  )}
+                  );
+                  })()}
                 </CardContent>
               </Card>
             </TabsContent>
