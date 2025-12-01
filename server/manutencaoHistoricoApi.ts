@@ -179,6 +179,21 @@ router.get('/:manutencaoId/historico', isAuthenticated, async (req: Request, res
       );
       
       if (dadosAtuais.rows.length > 0 && dadosAtuais.rows[0].oficina_debito) {
+        // Buscar valores de manutenções finalizadas para esta placa
+        const valoresFinalizados = await pool.query(
+          `SELECT 
+            COALESCE(valor_orcamento, 0) as valor_orcamento,
+            COALESCE(valor_negociado, 0) as valor_negociado,
+            oficina, created_at
+           FROM manutencoes_finalizadas 
+           WHERE placa = $1
+           ORDER BY created_at DESC
+           LIMIT 1`,
+          [dadosAtuais.rows[0].placa]
+        );
+        
+        const valoresMF = valoresFinalizados.rows[0] || null;
+        
         oficinasResult = [{
           id: null,
           manutencao_id: parseInt(manutencaoId),
@@ -190,7 +205,9 @@ router.get('/:manutencaoId/historico', isAuthenticated, async (req: Request, res
           motivo_troca: null,
           status: dadosAtuais.rows[0].status === 'Em Manutenção' ? 'ativo' : 'concluido',
           orcamentos: null,
-          is_virtual: true // Indicador de que é um registro virtual
+          is_virtual: true,
+          valor_orcamento: valoresMF?.valor_orcamento || 0,
+          valor_negociado: valoresMF?.valor_negociado || 0
         }];
       }
     }

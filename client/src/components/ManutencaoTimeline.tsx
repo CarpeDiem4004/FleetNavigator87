@@ -43,6 +43,9 @@ interface OficinaHistorico {
   motivo_troca: string | null;
   status: string;
   orcamentos: Orcamento[] | null;
+  is_virtual?: boolean;
+  valor_orcamento?: number;
+  valor_negociado?: number;
 }
 
 interface ManutencaoTimelineProps {
@@ -271,8 +274,11 @@ export function ManutencaoTimeline({ manutencaoId, placa, oficinasDisponiveis = 
                         <div>
                           <h4 className="font-semibold flex items-center gap-2">
                             {oficina.oficina_nome}
-                            {oficina.status === 'ativa' && (
+                            {oficina.status === 'ativo' && (
                               <Badge variant="default" className="text-xs">Atual</Badge>
+                            )}
+                            {oficina.is_virtual && (
+                              <Badge variant="outline" className="text-xs text-blue-600">Oficina Atual</Badge>
                             )}
                           </h4>
                           <div className="text-sm text-muted-foreground mt-1">
@@ -291,6 +297,27 @@ export function ManutencaoTimeline({ manutencaoId, placa, oficinasDisponiveis = 
                           </Badge>
                         )}
                       </div>
+
+                      {/* Exibir valores se disponíveis */}
+                      {((oficina.valor_orcamento ?? 0) > 0 || (oficina.valor_negociado ?? 0) > 0) && (
+                        <div className="flex items-center gap-4 p-2 bg-muted/50 rounded-md border">
+                          <DollarSign className="h-4 w-4 text-green-600" />
+                          <div className="flex gap-4 text-sm">
+                            {(oficina.valor_orcamento ?? 0) > 0 && (
+                              <div>
+                                <span className="text-muted-foreground">Orçamento: </span>
+                                <span className="font-semibold text-green-600">{formatCurrency(oficina.valor_orcamento ?? 0)}</span>
+                              </div>
+                            )}
+                            {(oficina.valor_negociado ?? 0) > 0 && (
+                              <div>
+                                <span className="text-muted-foreground">Negociado: </span>
+                                <span className="font-semibold text-blue-600">{formatCurrency(oficina.valor_negociado ?? 0)}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
                       {oficina.orcamentos && oficina.orcamentos.length > 0 && (
                         <div className="border-t pt-3 space-y-2">
