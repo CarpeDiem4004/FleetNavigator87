@@ -36,6 +36,7 @@ interface Orcamento {
   gestor_id?: string;
   data_orcamento: string;
   observacao?: string;
+  status_aprovacao?: 'pendente' | 'aprovado' | 'reprovado';
 }
 
 interface OficinaHistorico {
@@ -93,6 +94,13 @@ export function ManutencaoTimeline({ manutencaoId, placa, oficinasDisponiveis = 
   const [aprovarData, setAprovarData] = useState({
     email: '',
     senha: ''
+  });
+  const [showReprovarModal, setShowReprovarModal] = useState(false);
+  const [selectedOrcamentoReprovar, setSelectedOrcamentoReprovar] = useState<Orcamento | null>(null);
+  const [reprovarData, setReprovarData] = useState({
+    email: '',
+    senha: '',
+    motivo: ''
   });
 
   const { data: historicoData, isLoading } = useQuery({
@@ -158,21 +166,25 @@ export function ManutencaoTimeline({ manutencaoId, placa, oficinasDisponiveis = 
   });
 
   const reprovarOrcamentoMutation = useMutation({
-    mutationFn: async (data: { orcamentoId: number }) => {
-      const res = await fetch(`/api/manutencao-historico/orcamento/${data.orcamentoId}/aprovar`, {
-        method: 'PATCH',
+    mutationFn: async (data: { orcamentoId: number; email: string; senha: string; motivo: string }) => {
+      const res = await fetch(`/api/manutencao-historico/orcamento/${data.orcamentoId}/reprovar-com-senha`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ aprovado: false })
+        body: JSON.stringify({ email: data.email, senha: data.senha, motivo: data.motivo })
       });
-      if (!res.ok) throw new Error('Erro ao reprovar orçamento');
-      return res.json();
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || 'Erro ao reprovar orçamento');
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({ 
         title: 'Sucesso', 
-        description: 'Orçamento reprovado com sucesso!' 
+        description: data.message || 'Orçamento reprovado com sucesso!' 
       });
+      setShowReprovarModal(false);
+      setSelectedOrcamentoReprovar(null);
+      setReprovarData({ email: '', senha: '', motivo: '' });
       queryClient.invalidateQueries({ queryKey: ['/api/manutencao-historico', manutencaoId] });
     },
     onError: (error: Error) => {
@@ -373,7 +385,7 @@ export function ManutencaoTimeline({ manutencaoId, placa, oficinasDisponiveis = 
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3">
-                                    <DollarSign className={`h-4 w-4 ${orc.aprovado ? 'text-green-600' : 'text-gray-500'}`} />
+                                    <DollarSign className={`h-4 w-4 ${orc.status_aprovacao === 'aprovado' || orc.aprovado ? 'text-green-600' : orc.status_aprovacao === 'reprovado' ? 'text-red-600' : 'text-gray-500'}`} />
                                     <div>
                                       <p className="font-semibold">{formatCurrency(orc.valor_estimado)}</p>
                                       <p className="text-xs text-muted-foreground">
@@ -383,7 +395,7 @@ export function ManutencaoTimeline({ manutencaoId, placa, oficinasDisponiveis = 
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    {orc.aprovado ? (
+                                    {orc.status_aprovacao === 'aprovado' || orc.aprovado ? (
                                       <div className="flex flex-col items-end">
                                         <Badge className="bg-green-600 text-white font-bold px-3 py-1">
                                           <ShieldCheck className="h-3 w-3 mr-1" />
@@ -391,6 +403,24 @@ export function ManutencaoTimeline({ manutencaoId, placa, oficinasDisponiveis = 
                                         </Badge>
                                         {orc.aprovado_por && (
                                           <div className="text-xs text-green-700 mt-1 flex items-center gap-1">
+                                            <User className="h-3 w-3" />
+                                            <span>Por: {orc.aprovado_por}</span>
+                                            {orc.aprovado_em && (
+                                              <span className="text-muted-foreground ml-1">
+                                                em {new Date(orc.aprovado_em).toLocaleDateString('pt-BR')} às {new Date(orc.aprovado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                              </span>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : orc.status_aprovacao === 'reprovado' ? (
+                                      <div className="flex flex-col items-end">
+                                        <Badge className="bg-red-600 text-white font-bold px-3 py-1">
+                                          <XCircle className="h-3 w-3 mr-1" />
+                                          REPROVADO
+                                        </Badge>
+                                        {orc.aprovado_por && (
+                                          <div className="text-xs text-red-700 mt-1 flex items-center gap-1">
                                             <User className="h-3 w-3" />
                                             <span>Por: {orc.aprovado_por}</span>
                                             {orc.aprovado_em && (
@@ -420,9 +450,10 @@ export function ManutencaoTimeline({ manutencaoId, placa, oficinasDisponiveis = 
                                           size="sm" 
                                           variant="outline"
                                           className="h-7 text-xs text-red-500 hover:bg-red-50"
-                                          onClick={() => reprovarOrcamentoMutation.mutate({ 
-                                            orcamentoId: orc.id 
-                                          })}
+                                          onClick={() => {
+                                            setSelectedOrcamentoReprovar(orc);
+                                            setShowReprovarModal(true);
+                                          }}
                                           disabled={reprovarOrcamentoMutation.isPending}
                                           data-testid={`button-reprovar-${orc.id}`}
                                         >
@@ -729,6 +760,126 @@ export function ManutencaoTimeline({ manutencaoId, placa, oficinasDisponiveis = 
             >
               <ShieldCheck className="h-4 w-4 mr-2" />
               {aprovarComSenhaMutation.isPending ? 'Aprovando...' : 'Confirmar Aprovação'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Reprovação com Senha */}
+      <Dialog open={showReprovarModal} onOpenChange={(open) => {
+        setShowReprovarModal(open);
+        if (!open) {
+          setSelectedOrcamentoReprovar(null);
+          setReprovarData({ email: '', senha: '', motivo: '' });
+        }
+      }}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-red-600" />
+              Reprovar Orçamento
+            </DialogTitle>
+            <DialogDescription>
+              Para reprovar este orçamento, confirme sua identidade com sua senha de gestor.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedOrcamentoReprovar && (
+            <div className="py-4 space-y-4">
+              {/* Resumo do Orçamento */}
+              <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-muted-foreground">Valor do Orçamento</span>
+                  <DollarSign className="h-5 w-5 text-red-600" />
+                </div>
+                <p className="text-2xl font-bold text-red-700">
+                  {formatCurrency(selectedOrcamentoReprovar.valor_estimado)}
+                </p>
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Peças: {formatCurrency(selectedOrcamentoReprovar.valor_pecas)} | 
+                  M.O.: {formatCurrency(selectedOrcamentoReprovar.valor_mao_obra)}
+                </div>
+              </div>
+
+              {/* Campos de Autenticação */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email-reprovar">E-mail do Gestor</Label>
+                  <Input 
+                    id="email-reprovar"
+                    type="email"
+                    value={reprovarData.email}
+                    onChange={(e) => setReprovarData({...reprovarData, email: e.target.value})}
+                    placeholder="seu.email@empresa.com"
+                    data-testid="input-email-reprovar"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="senha-reprovar">Senha</Label>
+                  <Input 
+                    id="senha-reprovar"
+                    type="password"
+                    value={reprovarData.senha}
+                    onChange={(e) => setReprovarData({...reprovarData, senha: e.target.value})}
+                    placeholder="Digite sua senha"
+                    data-testid="input-senha-reprovar"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="motivo-reprovar">Motivo da Reprovação</Label>
+                  <Input 
+                    id="motivo-reprovar"
+                    type="text"
+                    value={reprovarData.motivo}
+                    onChange={(e) => setReprovarData({...reprovarData, motivo: e.target.value})}
+                    placeholder="Ex: Valor acima do mercado"
+                    data-testid="input-motivo-reprovar"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 bg-red-50 rounded-md border border-red-200 text-sm text-red-800">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Atenção</p>
+                    <p className="text-xs mt-1">
+                      A reprovação será registrada com seu nome, data/hora e motivo informado.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowReprovarModal(false);
+                setSelectedOrcamentoReprovar(null);
+                setReprovarData({ email: '', senha: '', motivo: '' });
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => {
+                if (selectedOrcamentoReprovar && reprovarData.email && reprovarData.senha) {
+                  reprovarOrcamentoMutation.mutate({
+                    orcamentoId: selectedOrcamentoReprovar.id,
+                    email: reprovarData.email,
+                    senha: reprovarData.senha,
+                    motivo: reprovarData.motivo
+                  });
+                }
+              }}
+              disabled={!reprovarData.email || !reprovarData.senha || reprovarOrcamentoMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+              data-testid="button-confirmar-reprovacao"
+            >
+              <XCircle className="h-4 w-4 mr-2" />
+              {reprovarOrcamentoMutation.isPending ? 'Reprovando...' : 'Confirmar Reprovação'}
             </Button>
           </DialogFooter>
         </DialogContent>

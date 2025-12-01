@@ -207,7 +207,8 @@ router.post('/orcamento/:id/aprovar-com-senha', isAuthenticated, async (req: Req
        SET aprovado = true, 
            aprovado_por = $2, 
            aprovado_em = CURRENT_TIMESTAMP,
-           gestor_id = $3
+           gestor_id = $3,
+           status_aprovacao = 'aprovado'
        WHERE id = $1 
        RETURNING *`,
       [id, nomeGestor, authData.user.id]
@@ -221,6 +222,96 @@ router.post('/orcamento/:id/aprovar-com-senha', isAuthenticated, async (req: Req
   } catch (error) {
     console.error('[MANUTENCAO_HISTORICO] Erro ao aprovar orçamento com senha:', error);
     res.status(500).json({ success: false, message: 'Erro ao aprovar orçamento' });
+  }
+});
+
+// Reprovar orçamento com autenticação
+router.post('/orcamento/:id/reprovar-com-senha', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { email, senha, motivo } = req.body;
+
+    if (!email || !senha) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email e senha são obrigatórios' 
+      });
+    }
+
+    // Verificar se o orçamento existe
+    const orcamentoCheck = await pool.query(
+      'SELECT * FROM manutencao_orcamentos WHERE id = $1',
+      [id]
+    );
+
+    if (orcamentoCheck.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Orçamento não encontrado' });
+    }
+
+    if (orcamentoCheck.rows[0].status_aprovacao === 'aprovado') {
+      return res.status(400).json({ success: false, message: 'Este orçamento já foi aprovado e não pode ser reprovado' });
+    }
+
+    // Validar credenciais no Supabase
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ success: false, message: 'Configuração do Supabase não encontrada' });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password: senha
+    });
+
+    if (authError || !authData.user) {
+      return res.status(401).json({ success: false, message: 'Senha incorreta ou usuário não encontrado' });
+    }
+
+    // Buscar dados do usuário
+    const { data: userData } = await supabase
+      .from('users')
+      .select('name, role')
+      .eq('id', authData.user.id)
+      .single();
+
+    const nomeGestor = userData?.name || authData.user.email || 'Gestor';
+    const roleUsuario = userData?.role || 'operador';
+
+    // Verificar se tem permissão de gestor
+    if (roleUsuario !== 'admin' && roleUsuario !== 'gestor' && roleUsuario !== 'manager') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Usuário não possui permissão de gestor para reprovar orçamentos' 
+      });
+    }
+
+    // Reprovar o orçamento
+    const result = await pool.query(
+      `UPDATE manutencao_orcamentos 
+       SET aprovado = false, 
+           aprovado_por = $2, 
+           aprovado_em = CURRENT_TIMESTAMP,
+           gestor_id = $3,
+           status_aprovacao = 'reprovado',
+           observacao = COALESCE(observacao || ' | ', '') || 'REPROVADO: ' || COALESCE($4, 'Sem motivo informado')
+       WHERE id = $1 
+       RETURNING *`,
+      [id, nomeGestor, authData.user.id, motivo || '']
+    );
+
+    res.json({ 
+      success: true, 
+      data: result.rows[0],
+      message: `Orçamento reprovado por ${nomeGestor}`
+    });
+  } catch (error) {
+    console.error('[MANUTENCAO_HISTORICO] Erro ao reprovar orçamento:', error);
+    res.status(500).json({ success: false, message: 'Erro ao reprovar orçamento' });
   }
 });
 
@@ -245,7 +336,9 @@ router.get('/:manutencaoId/historico', isAuthenticated, async (req: Request, res
               'aprovado_em', orc.aprovado_em,
               'gestor_id', orc.gestor_id,
               'data_orcamento', orc.data_orcamento,
-              'observacao', orc.observacao
+              'observacao', orc.observacao,
+              'status_aprovacao', COALESCE(orc.status_aprovacao, 
+                CASE WHEN orc.aprovado = true THEN 'aprovado' ELSE 'pendente' END)
             ) ORDER BY orc.data_orcamento
           )
           FROM manutencao_orcamentos orc
