@@ -1480,4 +1480,70 @@ router.delete('/finalizadas/clear', isAuthenticated, async (req: Request, res: R
   }
 });
 
+// Buscar movimentações de manutenção (entradas e saídas)
+router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { periodo = '30' } = req.query;
+    const dias = parseInt(periodo as string) || 30;
+    
+    console.log('[MOVIMENTACOES] Buscando movimentações dos últimos', dias, 'dias');
+    
+    // Buscar veículos que ENTRARAM em manutenção no período
+    const entradas = await pool.query(`
+      SELECT 
+        id, placa, tipo, descricao, oficina, base, operacao,
+        data_entrada, km, status
+      FROM manutencoes_historico
+      WHERE data_entrada >= CURRENT_DATE - INTERVAL '${dias} days'
+        AND data_entrada IS NOT NULL
+      ORDER BY data_entrada DESC
+    `);
+    
+    // Buscar veículos que SAÍRAM da manutenção no período
+    const saidas = await pool.query(`
+      SELECT 
+        id, placa, tipo, descricao, oficina, base, operacao,
+        data_entrada, data_saida, tempo_total, valor, status
+      FROM manutencoes_historico
+      WHERE data_saida >= CURRENT_DATE - INTERVAL '${dias} days'
+        AND data_saida IS NOT NULL
+      ORDER BY data_saida DESC
+    `);
+    
+    // Também buscar das finalizadas para saídas
+    const saidasFinalizadas = await pool.query(`
+      SELECT 
+        id, placa, tipo_manutencao as tipo, descricao, oficina_debito as oficina, 
+        base, operacao, data_entrada, data_saida, tempo_total,
+        COALESCE(valor_orcamento, valor_negociado, 0) as valor, status
+      FROM manutencoes_finalizadas
+      WHERE data_saida >= CURRENT_DATE - INTERVAL '${dias} days'
+        AND data_saida IS NOT NULL
+      ORDER BY data_saida DESC
+    `);
+    
+    // Combinar saídas de ambas as tabelas
+    const todasSaidas = [...saidas.rows, ...saidasFinalizadas.rows]
+      .sort((a, b) => new Date(b.data_saida).getTime() - new Date(a.data_saida).getTime());
+    
+    console.log('[MOVIMENTACOES] Entradas:', entradas.rows.length, 'Saídas:', todasSaidas.length);
+    
+    res.json({
+      success: true,
+      periodo: dias,
+      entradas: {
+        total: entradas.rows.length,
+        registros: entradas.rows
+      },
+      saidas: {
+        total: todasSaidas.length,
+        registros: todasSaidas
+      }
+    });
+  } catch (error) {
+    console.error('[MOVIMENTACOES] Erro ao buscar movimentações:', error);
+    res.status(500).json({ success: false, message: 'Erro ao buscar movimentações' });
+  }
+});
+
 export default router;
