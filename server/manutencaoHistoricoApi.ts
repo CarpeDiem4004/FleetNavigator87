@@ -149,6 +149,21 @@ router.post('/orcamento/:id/aprovar-com-senha', isAuthenticated, async (req: Req
       });
     }
 
+    // Lista de gestores autorizados a aprovar/reprovar orçamentos
+    const gestoresAutorizados = [
+      'rogerio.goncalves@muricitransportes.com.br',
+      'rafael.castilho@muricitransportes.com.br'
+    ];
+
+    // Verificar se o email está na lista de gestores autorizados
+    const emailLower = email.toLowerCase();
+    if (!gestoresAutorizados.includes(emailLower)) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Apenas Rogério e Rafael podem aprovar orçamentos' 
+      });
+    }
+
     // Verificar se o orçamento existe e não está aprovado
     const orcamentoCheck = await pool.query(
       'SELECT * FROM manutencao_orcamentos WHERE id = $1',
@@ -163,50 +178,25 @@ router.post('/orcamento/:id/aprovar-com-senha', isAuthenticated, async (req: Req
       return res.status(400).json({ success: false, message: 'Este orçamento já foi aprovado' });
     }
 
-    // Validar credenciais no Supabase
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return res.status(500).json({ success: false, message: 'Configuração do Supabase não encontrada' });
+    // Validar credenciais na tabela local de usuários
+    const bcrypt = await import('bcrypt');
+    const userResult = await pool.query(
+      'SELECT id, name, email, password, role FROM users WHERE LOWER(email) = $1',
+      [emailLower]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(401).json({ success: false, message: 'Usuário não encontrado' });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password: senha
-    });
+    const user = userResult.rows[0];
+    const senhaValida = await bcrypt.compare(senha, user.password);
 
-    if (authError || !authData.user) {
-      return res.status(401).json({ success: false, message: 'Senha incorreta ou usuário não encontrado' });
+    if (!senhaValida) {
+      return res.status(401).json({ success: false, message: 'Senha incorreta' });
     }
 
-    // Buscar dados do usuário
-    const { data: userData } = await supabase
-      .from('users')
-      .select('name, role')
-      .eq('id', authData.user.id)
-      .single();
-
-    const nomeGestor = userData?.name || authData.user.email || 'Gestor';
-    const roleUsuario = userData?.role || 'operador';
-
-    // Lista de gestores autorizados a aprovar/reprovar orçamentos
-    const gestoresAutorizados = [
-      'rogerio.goncalves@muricitransportes.com.br',
-      'rafael.castilho@muricitransportes.com.br'
-    ];
-
-    // Verificar se o email está na lista de gestores autorizados
-    const emailLower = email.toLowerCase();
-    if (!gestoresAutorizados.includes(emailLower)) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Apenas Rogério e Abner podem aprovar orçamentos' 
-      });
-    }
+    const nomeGestor = user.name || user.email || 'Gestor';
 
     // Aprovar o orçamento
     const result = await pool.query(
@@ -218,7 +208,7 @@ router.post('/orcamento/:id/aprovar-com-senha', isAuthenticated, async (req: Req
            status_aprovacao = 'aprovado'
        WHERE id = $1 
        RETURNING *`,
-      [id, nomeGestor, authData.user.id]
+      [id, nomeGestor, user.id]
     );
 
     res.json({ 
@@ -245,50 +235,6 @@ router.post('/orcamento/:id/reprovar-com-senha', isAuthenticated, async (req: Re
       });
     }
 
-    // Verificar se o orçamento existe
-    const orcamentoCheck = await pool.query(
-      'SELECT * FROM manutencao_orcamentos WHERE id = $1',
-      [id]
-    );
-
-    if (orcamentoCheck.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Orçamento não encontrado' });
-    }
-
-    if (orcamentoCheck.rows[0].status_aprovacao === 'aprovado') {
-      return res.status(400).json({ success: false, message: 'Este orçamento já foi aprovado e não pode ser reprovado' });
-    }
-
-    // Validar credenciais no Supabase
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return res.status(500).json({ success: false, message: 'Configuração do Supabase não encontrada' });
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password: senha
-    });
-
-    if (authError || !authData.user) {
-      return res.status(401).json({ success: false, message: 'Senha incorreta ou usuário não encontrado' });
-    }
-
-    // Buscar dados do usuário
-    const { data: userData } = await supabase
-      .from('users')
-      .select('name, role')
-      .eq('id', authData.user.id)
-      .single();
-
-    const nomeGestor = userData?.name || authData.user.email || 'Gestor';
-    const roleUsuario = userData?.role || 'operador';
-
     // Lista de gestores autorizados a aprovar/reprovar orçamentos
     const gestoresAutorizados = [
       'rogerio.goncalves@muricitransportes.com.br',
@@ -304,6 +250,40 @@ router.post('/orcamento/:id/reprovar-com-senha', isAuthenticated, async (req: Re
       });
     }
 
+    // Verificar se o orçamento existe
+    const orcamentoCheck = await pool.query(
+      'SELECT * FROM manutencao_orcamentos WHERE id = $1',
+      [id]
+    );
+
+    if (orcamentoCheck.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Orçamento não encontrado' });
+    }
+
+    if (orcamentoCheck.rows[0].status_aprovacao === 'aprovado') {
+      return res.status(400).json({ success: false, message: 'Este orçamento já foi aprovado e não pode ser reprovado' });
+    }
+
+    // Validar credenciais na tabela local de usuários
+    const bcrypt = await import('bcrypt');
+    const userResult = await pool.query(
+      'SELECT id, name, email, password, role FROM users WHERE LOWER(email) = $1',
+      [emailLower]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(401).json({ success: false, message: 'Usuário não encontrado' });
+    }
+
+    const user = userResult.rows[0];
+    const senhaValida = await bcrypt.compare(senha, user.password);
+
+    if (!senhaValida) {
+      return res.status(401).json({ success: false, message: 'Senha incorreta' });
+    }
+
+    const nomeGestor = user.name || user.email || 'Gestor';
+
     // Reprovar o orçamento
     const result = await pool.query(
       `UPDATE manutencao_orcamentos 
@@ -315,7 +295,7 @@ router.post('/orcamento/:id/reprovar-com-senha', isAuthenticated, async (req: Re
            observacao = COALESCE(observacao || ' | ', '') || 'REPROVADO: ' || COALESCE($4, 'Sem motivo informado')
        WHERE id = $1 
        RETURNING *`,
-      [id, nomeGestor, authData.user.id, motivo || '']
+      [id, nomeGestor, user.id, motivo || '']
     );
 
     res.json({ 
