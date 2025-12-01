@@ -266,7 +266,22 @@ export default function IndicadoresManutencao() {
   const [newVehicle, setNewVehicle] = useState({
     plate: '',
     model: '',
-    ownership: 'Murici'
+    ownership: 'Murici',
+    chassi: '',
+    renavam: '',
+    cidade: '',
+    estado: '',
+    cor: '',
+    operacao: '',
+    locadora: '',
+    status: 'em_operacao',
+    base: '',
+    categoria: '',
+    ano_fabricacao: '',
+    ano_modelo: '',
+    km: '',
+    rastreador: '',
+    data_inicio_operacao: ''
   });
   const [uploadingVeiculos, setUploadingVeiculos] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -888,7 +903,7 @@ export default function IndicadoresManutencao() {
 
   // Mutation para criar veículo
   const createVehicleMutation = useMutation({
-    mutationFn: async (data: { plate: string, model: string, ownership: string }) => {
+    mutationFn: async (data: typeof newVehicle) => {
       const response = await fetch('/api/indicadores/vehicles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -907,8 +922,14 @@ export default function IndicadoresManutencao() {
         description: 'Veículo cadastrado com sucesso.',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/indicadores/vehicles'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/veiculos/listar'] });
       setShowNewVehicleModal(false);
-      setNewVehicle({ plate: '', model: '', ownership: 'Murici' });
+      setNewVehicle({ 
+        plate: '', model: '', ownership: 'Murici', chassi: '', renavam: '',
+        cidade: '', estado: '', cor: '', operacao: '', locadora: '',
+        status: 'em_operacao', base: '', categoria: '', ano_fabricacao: '',
+        ano_modelo: '', km: '', rastreador: '', data_inicio_operacao: ''
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -4147,35 +4168,36 @@ export default function IndicadoresManutencao() {
 
       {/* Modal de Novo Veículo */}
       <Dialog open={showNewVehicleModal} onOpenChange={setShowNewVehicleModal}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Truck className="h-5 w-5" />
               Novo Veículo
             </DialogTitle>
             <DialogDescription>
-              Cadastre um novo veículo na frota
+              Cadastre um novo veículo na frota com todas as informações
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="new-plate">Placa *</Label>
-              <Input
-                id="new-plate"
-                value={newVehicle.plate}
+              <Label>Placa *</Label>
+              <Input 
+                value={newVehicle.plate} 
                 onChange={(e) => setNewVehicle({...newVehicle, plate: e.target.value.toUpperCase()})}
                 placeholder="ABC1234"
                 maxLength={8}
+                className="font-bold"
                 data-testid="input-new-vehicle-plate"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-model">Modelo</Label>
+              <Label>Modelo</Label>
               <Select 
                 value={newVehicle.model} 
                 onValueChange={(val) => setNewVehicle({...newVehicle, model: val})}
               >
-                <SelectTrigger id="new-model" data-testid="select-new-vehicle-model">
+                <SelectTrigger data-testid="select-new-vehicle-model">
                   <SelectValue placeholder="Selecione o modelo" />
                 </SelectTrigger>
                 <SelectContent>
@@ -4186,12 +4208,69 @@ export default function IndicadoresManutencao() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-ownership">Tipo</Label>
+              <Label>Chassi</Label>
+              <Input 
+                value={newVehicle.chassi} 
+                onChange={(e) => setNewVehicle({...newVehicle, chassi: e.target.value})}
+                placeholder="Chassi do veículo"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Renavam</Label>
+              <Input 
+                value={newVehicle.renavam} 
+                onChange={(e) => setNewVehicle({...newVehicle, renavam: e.target.value})}
+                placeholder="Código Renavam"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Cidade</Label>
+              <Input 
+                value={newVehicle.cidade} 
+                onChange={(e) => setNewVehicle({...newVehicle, cidade: e.target.value})}
+                placeholder="Cidade do veículo"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Estado (UF)</Label>
+              <Input 
+                value={newVehicle.estado} 
+                onChange={(e) => setNewVehicle({...newVehicle, estado: e.target.value.toUpperCase()})}
+                maxLength={2}
+                placeholder="SP"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Cor</Label>
+              <Input 
+                value={newVehicle.cor} 
+                onChange={(e) => setNewVehicle({...newVehicle, cor: e.target.value})}
+                placeholder="Cor do veículo"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Operação</Label>
+              <Input 
+                value={newVehicle.operacao} 
+                onChange={(e) => setNewVehicle({...newVehicle, operacao: e.target.value})}
+                placeholder="Nome da operação"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Locadora</Label>
+              <Input 
+                value={newVehicle.locadora} 
+                onChange={(e) => setNewVehicle({...newVehicle, locadora: e.target.value})}
+                placeholder="Nome da locadora"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo de Posse</Label>
               <Select 
                 value={newVehicle.ownership} 
                 onValueChange={(val) => setNewVehicle({...newVehicle, ownership: val})}
               >
-                <SelectTrigger id="new-ownership" data-testid="select-new-vehicle-ownership">
+                <SelectTrigger data-testid="select-new-vehicle-ownership">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
@@ -4200,13 +4279,86 @@ export default function IndicadoresManutencao() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Input 
+                value={newVehicle.status} 
+                onChange={(e) => setNewVehicle({...newVehicle, status: e.target.value})}
+                placeholder="em_operacao"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>SVC (Base)</Label>
+              <Input 
+                value={newVehicle.base} 
+                onChange={(e) => setNewVehicle({...newVehicle, base: e.target.value})}
+                placeholder="Base do veículo"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              <Input 
+                value={newVehicle.categoria} 
+                onChange={(e) => setNewVehicle({...newVehicle, categoria: e.target.value})}
+                placeholder="Categoria do veículo"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Ano Fabricação</Label>
+              <Input 
+                type="number"
+                value={newVehicle.ano_fabricacao} 
+                onChange={(e) => setNewVehicle({...newVehicle, ano_fabricacao: e.target.value})}
+                placeholder="2024"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Ano Modelo</Label>
+              <Input 
+                type="number"
+                value={newVehicle.ano_modelo} 
+                onChange={(e) => setNewVehicle({...newVehicle, ano_modelo: e.target.value})}
+                placeholder="2024"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>KM Atual</Label>
+              <Input 
+                type="number"
+                value={newVehicle.km} 
+                onChange={(e) => setNewVehicle({...newVehicle, km: e.target.value})}
+                placeholder="0"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Rastreador</Label>
+              <Input 
+                value={newVehicle.rastreador} 
+                onChange={(e) => setNewVehicle({...newVehicle, rastreador: e.target.value})}
+                placeholder="ID do rastreador"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Data Início Operação</Label>
+              <Input 
+                type="date"
+                value={newVehicle.data_inicio_operacao} 
+                onChange={(e) => setNewVehicle({...newVehicle, data_inicio_operacao: e.target.value})}
+              />
+            </div>
           </div>
-          <DialogFooter>
+          
+          <DialogFooter className="gap-2">
             <Button 
               variant="outline" 
               onClick={() => {
                 setShowNewVehicleModal(false);
-                setNewVehicle({ plate: '', model: '', ownership: 'Murici' });
+                setNewVehicle({ 
+                  plate: '', model: '', ownership: 'Murici', chassi: '', renavam: '',
+                  cidade: '', estado: '', cor: '', operacao: '', locadora: '',
+                  status: 'em_operacao', base: '', categoria: '', ano_fabricacao: '',
+                  ano_modelo: '', km: '', rastreador: '', data_inicio_operacao: ''
+                });
               }}
               data-testid="button-cancel-new-vehicle"
             >

@@ -1113,7 +1113,11 @@ router.put('/vehicles/:id', isAuthenticated, async (req: Request, res: Response)
 // Criar novo veículo
 router.post('/vehicles', isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const { plate, model, ownership } = req.body;
+    const { 
+      plate, model, ownership, chassi, renavam, cidade, estado, cor, 
+      operacao, locadora, status, base, categoria, ano_fabricacao, 
+      ano_modelo, km, rastreador, data_inicio_operacao 
+    } = req.body;
     
     if (!plate) {
       return res.status(400).json({ success: false, message: 'Placa é obrigatória' });
@@ -1128,10 +1132,33 @@ router.post('/vehicles', isAuthenticated, async (req: Request, res: Response) =>
     }
     
     const result = await pool.query(`
-      INSERT INTO vehicles (plate, model, ownership, status, created_at, updated_at)
-      VALUES ($1, $2, $3, 'Ativo', NOW(), NOW())
+      INSERT INTO vehicles (
+        plate, model, ownership, chassi, renavam, cidade_veiculo, estado, cor,
+        operacao, locadora, status, base, categoria, ano_fabricacao, 
+        ano_modelo, km, rastreador, data_inicio_operacao, created_at, updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW(), NOW())
       RETURNING *
-    `, [plate.toUpperCase(), model || null, ownership || 'Própria']);
+    `, [
+      plate.toUpperCase(), 
+      model || null, 
+      ownership || 'Murici',
+      chassi || null,
+      renavam || null,
+      cidade || null,
+      estado || null,
+      cor || null,
+      operacao || null,
+      locadora || null,
+      status || 'em_operacao',
+      base || null,
+      categoria || null,
+      ano_fabricacao || null,
+      ano_modelo || null,
+      km || null,
+      rastreador || null,
+      data_inicio_operacao || null
+    ]);
     
     console.log('[VEHICLES] Veículo criado com sucesso');
     res.json({ success: true, data: result.rows[0] });
