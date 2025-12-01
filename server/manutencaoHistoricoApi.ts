@@ -141,6 +141,7 @@ router.get('/:manutencaoId/historico', isAuthenticated, async (req: Request, res
   try {
     const { manutencaoId } = req.params;
 
+    // Buscar histórico de oficinas na tabela manutencao_oficinas
     const oficinas = await pool.query(
       `SELECT 
         mo.*,
@@ -166,6 +167,34 @@ router.get('/:manutencaoId/historico', isAuthenticated, async (req: Request, res
       [manutencaoId]
     );
 
+    let oficinasResult = oficinas.rows;
+
+    // Se não houver histórico, criar um registro virtual com a oficina atual do indicadores_dados
+    if (oficinasResult.length === 0) {
+      const dadosAtuais = await pool.query(
+        `SELECT id, oficina_debito, created_at, placa, status
+         FROM indicadores_dados 
+         WHERE id = $1`,
+        [manutencaoId]
+      );
+      
+      if (dadosAtuais.rows.length > 0 && dadosAtuais.rows[0].oficina_debito) {
+        oficinasResult = [{
+          id: null,
+          manutencao_id: parseInt(manutencaoId),
+          oficina_nome: dadosAtuais.rows[0].oficina_debito,
+          oficina_id: null,
+          data_envio: dadosAtuais.rows[0].created_at,
+          data_retorno: null,
+          km_envio: null,
+          motivo_troca: null,
+          status: dadosAtuais.rows[0].status === 'Em Manutenção' ? 'ativo' : 'concluido',
+          orcamentos: null,
+          is_virtual: true // Indicador de que é um registro virtual
+        }];
+      }
+    }
+
     const totalOrcamentos = await pool.query(
       `SELECT 
         COUNT(*) as total_orcamentos,
@@ -181,7 +210,7 @@ router.get('/:manutencaoId/historico', isAuthenticated, async (req: Request, res
     res.json({
       success: true,
       data: {
-        oficinas: oficinas.rows,
+        oficinas: oficinasResult,
         resumo: totalOrcamentos.rows[0] || {
           total_orcamentos: 0,
           aprovados: 0,
