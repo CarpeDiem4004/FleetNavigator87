@@ -235,6 +235,27 @@ router.post('/orcamento/:id/aprovar-com-senha', isAuthenticated, async (req: Req
       [id, nomeGestor]
     );
 
+    // Buscar o manutencao_id através da oficina para atualizar o status
+    const oficinaInfo = await pool.query(
+      `SELECT mo.manutencao_id 
+       FROM manutencao_oficinas mo
+       JOIN manutencao_orcamentos orc ON orc.manutencao_oficina_id = mo.id
+       WHERE orc.id = $1`,
+      [id]
+    );
+
+    if (oficinaInfo.rows.length > 0) {
+      const manutencaoId = oficinaInfo.rows[0].manutencao_id;
+      
+      // Atualizar o status para "Orçamento Aprovado" na tabela indicadores_dados
+      await pool.query(
+        `UPDATE indicadores_dados 
+         SET status = 'Orçamento Aprovado'
+         WHERE id = $1`,
+        [manutencaoId]
+      );
+    }
+
     res.json({ 
       success: true, 
       data: result.rows[0],
