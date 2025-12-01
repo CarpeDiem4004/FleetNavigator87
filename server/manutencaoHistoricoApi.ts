@@ -204,11 +204,10 @@ router.post('/orcamento/:id/aprovar-com-senha', isAuthenticated, async (req: Req
        SET aprovado = true, 
            aprovado_por = $2, 
            aprovado_em = CURRENT_TIMESTAMP,
-           gestor_id = $3,
            status_aprovacao = 'aprovado'
        WHERE id = $1 
        RETURNING *`,
-      [id, nomeGestor, user.id]
+      [id, nomeGestor]
     );
 
     res.json({ 
@@ -290,12 +289,11 @@ router.post('/orcamento/:id/reprovar-com-senha', isAuthenticated, async (req: Re
        SET aprovado = false, 
            aprovado_por = $2, 
            aprovado_em = CURRENT_TIMESTAMP,
-           gestor_id = $3,
            status_aprovacao = 'reprovado',
-           observacao = COALESCE(observacao || ' | ', '') || 'REPROVADO: ' || COALESCE($4, 'Sem motivo informado')
+           observacao = COALESCE(observacao || ' | ', '') || 'REPROVADO: ' || COALESCE($3, 'Sem motivo informado')
        WHERE id = $1 
        RETURNING *`,
-      [id, nomeGestor, user.id, motivo || '']
+      [id, nomeGestor, motivo || '']
     );
 
     res.json({ 
