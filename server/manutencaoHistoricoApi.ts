@@ -137,6 +137,93 @@ router.patch('/orcamento/:id/aprovar', isAuthenticated, async (req: Request, res
   }
 });
 
+router.post('/orcamento/:id/aprovar-com-senha', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { email, senha } = req.body;
+
+    if (!email || !senha) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email e senha são obrigatórios' 
+      });
+    }
+
+    // Verificar se o orçamento existe e não está aprovado
+    const orcamentoCheck = await pool.query(
+      'SELECT * FROM manutencao_orcamentos WHERE id = $1',
+      [id]
+    );
+
+    if (orcamentoCheck.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Orçamento não encontrado' });
+    }
+
+    if (orcamentoCheck.rows[0].aprovado === true) {
+      return res.status(400).json({ success: false, message: 'Este orçamento já foi aprovado' });
+    }
+
+    // Validar credenciais no Supabase
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ success: false, message: 'Configuração do Supabase não encontrada' });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password: senha
+    });
+
+    if (authError || !authData.user) {
+      return res.status(401).json({ success: false, message: 'Senha incorreta ou usuário não encontrado' });
+    }
+
+    // Buscar dados do usuário
+    const { data: userData } = await supabase
+      .from('users')
+      .select('name, role')
+      .eq('id', authData.user.id)
+      .single();
+
+    const nomeGestor = userData?.name || authData.user.email || 'Gestor';
+    const roleUsuario = userData?.role || 'operador';
+
+    // Verificar se tem permissão de gestor (admin ou gestor)
+    if (roleUsuario !== 'admin' && roleUsuario !== 'gestor' && roleUsuario !== 'manager') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Usuário não possui permissão de gestor para aprovar orçamentos' 
+      });
+    }
+
+    // Aprovar o orçamento
+    const result = await pool.query(
+      `UPDATE manutencao_orcamentos 
+       SET aprovado = true, 
+           aprovado_por = $2, 
+           aprovado_em = CURRENT_TIMESTAMP,
+           gestor_id = $3
+       WHERE id = $1 
+       RETURNING *`,
+      [id, nomeGestor, authData.user.id]
+    );
+
+    res.json({ 
+      success: true, 
+      data: result.rows[0],
+      message: `Orçamento aprovado por ${nomeGestor}`
+    });
+  } catch (error) {
+    console.error('[MANUTENCAO_HISTORICO] Erro ao aprovar orçamento com senha:', error);
+    res.status(500).json({ success: false, message: 'Erro ao aprovar orçamento' });
+  }
+});
+
 router.get('/:manutencaoId/historico', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { manutencaoId } = req.params;
@@ -154,6 +241,9 @@ router.get('/:manutencaoId/historico', isAuthenticated, async (req: Request, res
               'valor_mao_obra', orc.valor_mao_obra,
               'itens', orc.itens,
               'aprovado', orc.aprovado,
+              'aprovado_por', orc.aprovado_por,
+              'aprovado_em', orc.aprovado_em,
+              'gestor_id', orc.gestor_id,
               'data_orcamento', orc.data_orcamento,
               'observacao', orc.observacao
             ) ORDER BY orc.data_orcamento

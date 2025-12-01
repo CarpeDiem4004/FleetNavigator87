@@ -1,0 +1,77 @@
+Quero que você implemente no meu sistema Murici On Fleet 2.0 o fluxo completo de “Aprovação de Orçamento” com autenticação do gestor e registro permanente.
+
+OBJETIVO:
+Somente um gestor de frotas poderá aprovar um orçamento.  
+Ao aprovar, será exigida a senha do usuário logado.  
+Depois da aprovação, deve aparecer no histórico: “Aprovado por: NOME_DO_GESTOR – DATA/HORA”.
+
+### AJUSTES NO SUPABASE
+
+Atualize a tabela manutencao_orcamentos adicionando:
+
+- aprovado (boolean, default false)
+- aprovado_por (text)
+- aprovado_em (timestamp)
+- gestor_id (uuid)
+
+### NOVA ROTA NO BACKEND EXPRESS:
+
+POST /manutencao/orcamento/:id/aprovar
+
+Fluxo da rota:
+1. Receber:
+   - id do orçamento
+   - email do usuário
+   - senha digitada pelo gestor
+
+2. Validar a senha no Supabase Auth (signin).
+3. Validar se o usuário possui permissão de gestor.
+4. Se a senha estiver correta:
+   - atualizar o orçamento com:
+     • aprovado = true  
+     • aprovado_por = nome do usuário  
+     • aprovado_em = now()  
+     • gestor_id = user.id  
+5. Retornar sucesso.
+6. Se senha incorreta, retornar erro 401.
+
+### NO FRONT-END REACT:
+
+Criar um Modal chamado: **ModalAprovarOrcamento**
+
+Campos:
+- Mostrar valor total do orçamento
+- Input: “Digite sua senha para aprovar”
+- Botão: CONFIRMAR APROVAÇÃO
+
+Ao clicar em “Aprovar”:
+- Enviar email + senha + id do orçamento para a rota acima.
+
+Após aprovação:
+- Atualizar a tela da manutenção:
+  Exibir um selo:
+  “APROVADO”
+  Texto abaixo:
+  “Aprovado por: NOME_DO_GESTOR em DATA/HORA”
+
+### REGISTRO NO HISTÓRICO DA MANUTENÇÃO:
+
+No componente de timeline da manutenção, incluir:
+
+Evento:
+- “Orçamento aprovado pela oficina NOME_DA_OFICINA”
+- “Aprovado por: NOME – DATA/HORA”
+
+### REGRAS IMPORTANTES:
+
+- Nenhum orçamento pode ser editado após aprovado.
+- Só aparecerá o selo “APROVADO” depois que a senha do gestor for validada.
+- Orçamentos não aprovados continuam editáveis.
+- Uma manutenção só pode ter um orçamento aprovado por vez.
+
+ENTREGUE:
+- Código completo das rotas
+- Código do modal React
+- Atualização no componente da timeline
+- Atualização do Supabase
+- Código pronto para rodar no projeto atual (Vercel + Express + Supabase)
