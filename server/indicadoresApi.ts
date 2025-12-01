@@ -263,6 +263,7 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
     const { uploadId } = req.query;
 
     // Buscar dados com informação de orçamentos pendentes
+    // Pendentes = orçamentos NÃO aprovados E NÃO reprovados (status_aprovacao IS NULL ou 'pendente')
     const result = await pool.query(
       `SELECT 
         d.*,
@@ -273,7 +274,7 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
        LEFT JOIN LATERAL (
          SELECT 
            COUNT(*) as total_orcamentos,
-           COUNT(*) FILTER (WHERE orc.aprovado = false) as orcamentos_pendentes,
+           COUNT(*) FILTER (WHERE orc.aprovado = false AND (orc.status_aprovacao IS NULL OR orc.status_aprovacao = 'pendente')) as orcamentos_pendentes,
            COUNT(*) FILTER (WHERE orc.aprovado = true) as orcamentos_aprovados
          FROM manutencao_oficinas mo
          JOIN manutencao_orcamentos orc ON orc.manutencao_oficina_id = mo.id
