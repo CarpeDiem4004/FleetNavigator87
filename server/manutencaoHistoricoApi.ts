@@ -244,16 +244,25 @@ router.post('/orcamento/:id/aprovar-com-senha', isAuthenticated, async (req: Req
       [id]
     );
 
+    console.log('[ORCAMENTO_APROVACAO] Dados da oficina:', oficinaInfo.rows);
+
     if (oficinaInfo.rows.length > 0) {
       const manutencaoId = oficinaInfo.rows[0].manutencao_id;
       
+      console.log('[ORCAMENTO_APROVACAO] Atualizando status para Orçamento Aprovado, manutencao_id:', manutencaoId);
+      
       // Atualizar o status para "Orçamento Aprovado" na tabela indicadores_dados
-      await pool.query(
+      const updateResult = await pool.query(
         `UPDATE indicadores_dados 
          SET status = 'Orçamento Aprovado'
-         WHERE id = $1`,
+         WHERE id = $1
+         RETURNING id, placa, status`,
         [manutencaoId]
       );
+      
+      console.log('[ORCAMENTO_APROVACAO] Resultado da atualização:', updateResult.rows);
+    } else {
+      console.log('[ORCAMENTO_APROVACAO] Não foi possível encontrar oficina para o orçamento');
     }
 
     res.json({ 
