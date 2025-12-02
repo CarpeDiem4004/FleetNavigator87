@@ -2510,10 +2510,19 @@ export default function IndicadoresManutencao() {
                               <TableCell className="text-xs truncate" title={dado.relato}>{dado.relato || '-'}</TableCell>
                               <TableCell className="text-xs">{formatDate(dado.data_agenda)}</TableCell>
                               <TableCell>
-                                {dado.data_agenda ? (() => {
-                                  const dataAgenda = new Date(dado.data_agenda + 'T00:00:00');
+                                {(() => {
+                                  if (!dado.data_agenda) return '-';
+                                  
+                                  const dataAgendaStr = typeof dado.data_agenda === 'string' 
+                                    ? dado.data_agenda.split('T')[0] 
+                                    : String(dado.data_agenda);
+                                  
+                                  const [year, month, day] = dataAgendaStr.split('-').map(Number);
+                                  const dataAgenda = new Date(year, month - 1, day);
+                                  
                                   const hoje = new Date();
                                   hoje.setHours(0, 0, 0, 0);
+                                  
                                   const diffTime = hoje.getTime() - dataAgenda.getTime();
                                   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
                                   const diasParado = diffDays >= 0 ? diffDays : 0;
@@ -2529,7 +2538,7 @@ export default function IndicadoresManutencao() {
                                       {diasParado}d
                                     </Badge>
                                   );
-                                })() : '-'}
+                                })()}
                               </TableCell>
                               <TableCell className="text-xs truncate" title={`${dado.focal || ''} / ${dado.atendimento || ''}`}>
                                 {dado.focal || dado.atendimento || '-'}
