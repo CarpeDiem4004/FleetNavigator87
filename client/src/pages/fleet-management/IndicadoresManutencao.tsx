@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
+import { subscribeToIndicadoresUpdates, syncMaintenanceIndicators, SyncResponse } from '@/services/syncIndicators';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ManutencaoTimeline from '@/components/ManutencaoTimeline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -422,6 +423,30 @@ export default function IndicadoresManutencao() {
       'Revisão/Troca de óleo/freios'
     ]
   };
+
+  // Efeito para sincronização automática em tempo real
+  useEffect(() => {
+    console.log('[INDICADORES] Inicializando listener de sincronização automática');
+    
+    // Sincronizar ao montar o componente
+    syncMaintenanceIndicators();
+    
+    // Escutar atualizações automáticas
+    const unsubscribe = subscribeToIndicadoresUpdates((data: SyncResponse) => {
+      console.log('[INDICADORES] Dados sincronizados automaticamente:', data.syncStats);
+      
+      // Invalidar queries para atualizar a interface
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/dados'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/em-manutencao'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/resumo-custos'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/movimentacoes'] });
+    });
+    
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   // Mutation para atualizar dados em manutenção
   const updateDadoMutation = useMutation({
