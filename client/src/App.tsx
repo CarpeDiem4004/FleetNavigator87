@@ -5,12 +5,19 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { initializeTimezoneUrlFix } from "@/utils/externalTimezone";
 import { initializeBrazilTimezone } from '@/utils/timezone-brazil';
+import { initializeRealtimeSync, cleanupRealtimeSync, syncMaintenanceIndicators } from "@/services/syncIndicators";
 
 // Inicializar timezone brasileiro na inicialização do app
 // Executar após o carregamento do componente para evitar conflitos
 setTimeout(() => {
   initializeBrazilTimezone();
 }, 100);
+
+// Inicializar sincronização Realtime após carregamento
+setTimeout(() => {
+  initializeRealtimeSync();
+  syncMaintenanceIndicators();
+}, 1000);
 import NotFound from "@/pages/not-found";
 import WorkshopExternal from "@/pages/workshop-external";
 import DashboardNew from "@/pages/DashboardNew";

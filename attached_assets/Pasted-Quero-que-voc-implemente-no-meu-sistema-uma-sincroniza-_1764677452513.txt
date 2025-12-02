@@ -1,0 +1,62 @@
+Quero que você implemente no meu sistema uma sincronização automática entre o módulo “Oficina Murici” e os “Indicadores de Manutenção”.
+
+Objetivo:
+Sempre que qualquer manutenção for criada, editada, mudada de status, tiver custo atualizado ou for finalizada dentro da aba “Oficina Murici”, o sistema deve atualizar automaticamente os valores da aba “Indicadores de Manutenção”, sem eu precisar clicar em "Sincronizar Indicadores".
+
+Regras da sincronização:
+1. Toda manutenção marcada como:
+   - "Em Andamento"
+   - "Em Manutenção"
+   - "Aguardando Peça"
+   - "Liberado"
+   - "Finalizado"
+   deve refletir imediatamente nos cards e tabelas da página de Indicadores.
+
+2. Os indicadores devem calcular automaticamente:
+   - Quantidade de veículos em manutenção
+   - Quantidade de veículos liberados
+   - Total de manutenções preventivas
+   - Total de manutenções corretivas
+   - Total de dias parados (somar diferença entre data de agenda e hoje)
+   - Movimentação diária (entraram / saíram)
+   - Custo total atualizado
+
+3. Criar uma função global de sincronização chamada:
+   syncMaintenanceIndicators()
+
+4. Essa função deve ser disparada automaticamente sempre que ocorrer:
+   - insert em maintenance
+   - update em maintenance
+   - delete em maintenance
+
+5. Criar um listener usando Supabase Realtime:
+   supabase
+     .channel("maintenance-sync")
+     .on("postgres_changes", { event: "*", schema: "public", table: "maintenance" }, () => {
+         syncMaintenanceIndicators();
+     })
+     .subscribe();
+
+6. A função syncMaintenanceIndicators() deve:
+   - Consultar a tabela maintenance no Supabase
+   - Recalcular todos os indicadores
+   - Atualizar no frontend imediatamente
+   - Atualizar cache/local state (Zustand/Context/API) para evitar recarregar tudo
+
+7. Remover a necessidade do botão “Sincronizar Indicadores”.
+   Deixar apenas como redundância, mas o sistema deve sincronizar sozinho.
+
+8. No backend (Express.js):
+   Criar rota:
+     GET /indicators/update
+   Essa rota recalcula e retorna os novos indicadores.
+   O frontend chama essa rota dentro da função syncMaintenanceIndicators().
+
+9. Garantir que o módulo “Indicadores de Manutenção” sempre exiba os mesmos dados da “Oficina Murici”, sem delay.
+
+Estrutura esperada:
+- /server/routes/indicators.js -> cálculo dos indicadores
+- /client/src/services/syncIndicators.js -> função global syncMaintenanceIndicators()
+- Listener realtime no layout principal: App.jsx
+
+Preciso que você escreva todo o código necessário e atualize os arquivos automaticamente.

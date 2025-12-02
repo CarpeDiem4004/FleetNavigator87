@@ -1886,4 +1886,220 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
   }
 });
 
+// ============================================
+// ROTA PRINCIPAL: Recalcular todos os indicadores (GET /api/indicadores/update)
+// Sincroniza dados do Supabase automaticamente
+// ============================================
+router.get('/update', async (req: Request, res: Response) => {
+  try {
+    console.log('[INDICADORES] Recalculando todos os indicadores...');
+
+    if (!supabaseClient) {
+      console.log('[INDICADORES] Cliente Supabase não configurado, usando apenas PostgreSQL');
+    }
+
+    // Buscar upload_id mais recente
+    const uploadResult = await pool.query(
+      'SELECT id FROM indicadores_uploads ORDER BY upload_date DESC LIMIT 1'
+    );
+    const uploadId = uploadResult.rows[0]?.id || 1;
+
+    // 1. Se tiver Supabase, sincronizar manutenções ativas
+    let syncStats = { novos: 0, atualizados: 0, finalizados: 0 };
+    
+    if (supabaseClient) {
+      // Buscar TODAS as manutenções do Supabase
+      const { data: manutencoesSupabase, error: supabaseError } = await supabaseClient
+        .from('oficina_murici_manutencoes')
+        .select('*');
+
+      if (!supabaseError && manutencoesSupabase) {
+        console.log(`[INDICADORES] Total de manutenções no Supabase: ${manutencoesSupabase.length}`);
+        
+        for (const manutencao of manutencoesSupabase) {
+          // Mapear status
+          let indicadorStatus = 'Em Manutenção';
+          if (manutencao.status === 'aguardando_peca') {
+            indicadorStatus = 'Aguardando Peças';
+          } else if (manutencao.status === 'finalizado') {
+            indicadorStatus = 'Liberado';
+          }
+
+          // Verificar se já existe nos indicadores (por placa e status ativo)
+          const existeResult = await pool.query(
+            `SELECT id, status FROM indicadores_dados 
+             WHERE placa = $1 
+             AND status IN ('Em Manutenção', 'Aguardando Peças', 'Em Execução', 'Orçamento Aprovado')`,
+            [manutencao.placa]
+          );
+
+          // Buscar modelo do veículo
+          const veiculoResult = await pool.query(
+            'SELECT modelo FROM veiculos WHERE placa = $1',
+            [manutencao.placa]
+          );
+          const modeloVeiculo = veiculoResult.rows[0]?.modelo || '';
+
+          if (manutencao.status === 'finalizado') {
+            // Se finalizado no Supabase, marcar como Liberado nos indicadores
+            if (existeResult.rows.length > 0) {
+              await pool.query(
+                `UPDATE indicadores_dados 
+                 SET status = 'Liberado',
+                     updated_at = NOW()
+                 WHERE id = $1`,
+                [existeResult.rows[0].id]
+              );
+              syncStats.finalizados++;
+            }
+          } else if (existeResult.rows.length > 0) {
+            // Atualizar registro existente
+            await pool.query(
+              `UPDATE indicadores_dados 
+               SET km = COALESCE($1, km),
+                   relato = COALESCE($2, relato),
+                   focal = COALESCE($3, focal),
+                   status = $4,
+                   modelo = COALESCE($5, modelo),
+                   updated_at = NOW()
+               WHERE id = $6`,
+              [
+                manutencao.km || null,
+                manutencao.descricao_manutencao || '',
+                manutencao.mecanico || '',
+                indicadorStatus,
+                modeloVeiculo,
+                existeResult.rows[0].id
+              ]
+            );
+            syncStats.atualizados++;
+          } else if (manutencao.status !== 'finalizado') {
+            // Inserir novo registro (apenas se não finalizado)
+            await pool.query(
+              `INSERT INTO indicadores_dados (
+                upload_id, placa, modelo, km, relato, data_agenda, 
+                oficina_debito, focal, status, created_at
+              ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW()
+              )`,
+              [
+                uploadId, 
+                manutencao.placa, 
+                modeloVeiculo, 
+                manutencao.km || null, 
+                manutencao.descricao_manutencao || '', 
+                manutencao.prazo || new Date().toISOString().split('T')[0],
+                'Oficina Murici', 
+                manutencao.mecanico || '',
+                indicadorStatus
+              ]
+            );
+            syncStats.novos++;
+          }
+        }
+      }
+    }
+
+    // 2. Calcular indicadores
+    // Veículos em manutenção
+    const emManutencaoResult = await pool.query(`
+      SELECT COUNT(*) as total FROM indicadores_dados 
+      WHERE status IN ('Em Manutenção', 'Aguardando Peças', 'Em Execução', 'Orçamento Aprovado')
+    `);
+    
+    // Veículos liberados (hoje e nos últimos 7 dias)
+    const liberadosHojeResult = await pool.query(`
+      SELECT COUNT(*) as total FROM indicadores_dados 
+      WHERE status = 'Liberado' 
+      AND DATE(updated_at) = CURRENT_DATE
+    `);
+    
+    const liberadosSemanaResult = await pool.query(`
+      SELECT COUNT(*) as total FROM indicadores_dados 
+      WHERE status = 'Liberado' 
+      AND updated_at >= CURRENT_DATE - INTERVAL '7 days'
+    `);
+    
+    // Manutenções preventivas e corretivas (do PostgreSQL historico)
+    const preventivasResult = await pool.query(`
+      SELECT COUNT(*) as total FROM manutencoes_historico 
+      WHERE LOWER(tipo) LIKE '%preventiv%'
+    `);
+    
+    const corretivasResult = await pool.query(`
+      SELECT COUNT(*) as total FROM manutencoes_historico 
+      WHERE LOWER(tipo) LIKE '%corretiv%' OR LOWER(tipo) NOT LIKE '%preventiv%'
+    `);
+    
+    // Dias parados (soma de dias entre data_agenda e hoje)
+    const diasParadosResult = await pool.query(`
+      SELECT COALESCE(SUM(
+        CASE 
+          WHEN data_agenda IS NOT NULL 
+          THEN EXTRACT(DAY FROM CURRENT_DATE - data_agenda::date)
+          ELSE 0 
+        END
+      ), 0) as total
+      FROM indicadores_dados 
+      WHERE status IN ('Em Manutenção', 'Aguardando Peças', 'Em Execução')
+    `);
+    
+    // Movimentação diária
+    const entradasHojeResult = await pool.query(`
+      SELECT COUNT(*) as total FROM manutencoes_historico 
+      WHERE DATE(data_entrada) = CURRENT_DATE
+    `);
+    
+    const saidasHojeHistorico = await pool.query(`
+      SELECT COUNT(*) as total FROM manutencoes_historico 
+      WHERE DATE(data_saida) = CURRENT_DATE
+    `);
+    
+    const saidasHojeFinalizadas = await pool.query(`
+      SELECT COUNT(*) as total FROM manutencoes_finalizadas 
+      WHERE DATE(data_saida) = CURRENT_DATE
+    `);
+    
+    // Custo total (usar manutencoes_finalizadas que tem os custos reais)
+    const custoTotalResult = await pool.query(`
+      SELECT COALESCE(SUM(COALESCE(valor_orcamento, valor_negociado, 0)), 0) as total 
+      FROM manutencoes_finalizadas
+    `);
+
+    // Construir resposta
+    const indicadores = {
+      veiculosEmManutencao: parseInt(emManutencaoResult.rows[0]?.total || '0'),
+      veiculosLiberados: parseInt(liberadosSemanaResult.rows[0]?.total || '0'),
+      veiculosLiberadosHoje: parseInt(liberadosHojeResult.rows[0]?.total || '0'),
+      manutencoesPreventivas: parseInt(preventivasResult.rows[0]?.total || '0'),
+      manutencoesCorretivas: parseInt(corretivasResult.rows[0]?.total || '0'),
+      diasParados: Math.round(parseFloat(diasParadosResult.rows[0]?.total || '0')),
+      movimentacao: {
+        entraram: parseInt(entradasHojeResult.rows[0]?.total || '0'),
+        sairam: parseInt(saidasHojeHistorico.rows[0]?.total || '0') + 
+                parseInt(saidasHojeFinalizadas.rows[0]?.total || '0')
+      },
+      custoTotal: parseFloat(custoTotalResult.rows[0]?.total || '0'),
+      sincronizacao: {
+        novos: syncStats.novos,
+        atualizados: syncStats.atualizados,
+        finalizados: syncStats.finalizados,
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    console.log('[INDICADORES] Indicadores calculados:', indicadores);
+    
+    res.json({
+      success: true,
+      indicadores,
+      syncStats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('[INDICADORES] Erro ao recalcular indicadores:', error);
+    res.status(500).json({ success: false, message: 'Erro ao recalcular indicadores' });
+  }
+});
+
 export default router;
