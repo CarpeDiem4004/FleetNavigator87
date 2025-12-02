@@ -1870,12 +1870,12 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
         AND data_liberado IS NOT NULL
     `);
     
-    // Também contar finalizações de indicadores_dados
+    // Também contar finalizações de indicadores_dados - usar data_finalizacao apenas
     const saidasHojeIndicadores = await pool.query(`
       SELECT COUNT(*) as total
       FROM indicadores_dados
       WHERE status = 'Finalizado'
-        AND (DATE(data_finalizacao) = CURRENT_DATE OR DATE(updated_at) = CURRENT_DATE)
+        AND DATE(data_finalizacao) = CURRENT_DATE
     `);
     
     // Buscar saídas ONTEM (de ambas as tabelas)
@@ -1893,12 +1893,12 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
         AND data_liberado IS NOT NULL
     `);
     
-    // Também contar finalizações de indicadores_dados de ontem
+    // Também contar finalizações de indicadores_dados de ontem - usar data_finalizacao apenas
     const saidasOntemIndicadores = await pool.query(`
       SELECT COUNT(*) as total
       FROM indicadores_dados
       WHERE status = 'Finalizado'
-        AND (DATE(data_finalizacao) = CURRENT_DATE - 1 OR DATE(updated_at) = CURRENT_DATE - 1)
+        AND DATE(data_finalizacao) = CURRENT_DATE - 1
     `);
     
     // Buscar veículos que ENTRARAM em manutenção HOJE (para modal)
@@ -1935,22 +1935,22 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
       ORDER BY data_liberado DESC
     `);
     
-    // Buscar saídas de indicadores_dados de HOJE (finalizados)
+    // Buscar saídas de indicadores_dados de HOJE (finalizados) - usar data_finalizacao apenas
     const saidasIndicadores = await pool.query(`
       SELECT 
         id, placa, 'Corretiva' as tipo, relato as descricao, oficina_debito as oficina, 
         '' as base, '' as operacao, data_agenda as data_entrada, 
-        COALESCE(data_finalizacao, updated_at::date) as data_saida,
+        data_finalizacao as data_saida,
         CASE 
-          WHEN data_agenda IS NOT NULL 
-          THEN GREATEST(0, COALESCE(data_finalizacao, CURRENT_DATE) - data_agenda)::integer
+          WHEN data_agenda IS NOT NULL AND data_finalizacao IS NOT NULL
+          THEN GREATEST(0, data_finalizacao - data_agenda)::integer
           ELSE 0 
         END as tempo_total,
         0 as valor, status
       FROM indicadores_dados
       WHERE status = 'Finalizado'
-        AND (DATE(data_finalizacao) = CURRENT_DATE OR DATE(updated_at) = CURRENT_DATE)
-      ORDER BY COALESCE(data_finalizacao, updated_at::date) DESC
+        AND DATE(data_finalizacao) = CURRENT_DATE
+      ORDER BY data_finalizacao DESC
     `);
     
     // Combinar saídas de todas as tabelas
