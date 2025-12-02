@@ -385,7 +385,7 @@ router.post('/sync-all-oficina-murici', isAuthenticated, async (req: Request, re
             modeloVeiculo, 
             manutencao.km || null, 
             manutencao.descricao_manutencao || '', 
-            manutencao.prazo || new Date().toISOString().split('T')[0],
+            manutencao.created_at ? new Date(manutencao.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             'Oficina Murici', 
             manutencao.mecanico || '',
             indicadorStatus
@@ -2016,10 +2016,10 @@ router.get('/update', async (req: Request, res: Response) => {
           );
           const modeloVeiculo = veiculoResult.rows[0]?.modelo || '';
 
-          // Usar data_hora_inicio como data de início da manutenção (para calcular dias parados)
+          // Usar data_hora_inicio ou created_at como data de início da manutenção (para calcular dias parados)
           const dataInicio = manutencao.data_hora_inicio 
             ? manutencao.data_hora_inicio.split('T')[0] 
-            : (manutencao.prazo || new Date().toISOString().split('T')[0]);
+            : (manutencao.created_at ? new Date(manutencao.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
 
           if (existeResult.rows.length > 0) {
             // Já existe registro para esta placa - apenas atualizar
