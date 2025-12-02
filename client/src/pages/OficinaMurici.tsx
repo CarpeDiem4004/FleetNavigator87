@@ -973,6 +973,7 @@ const OficinaMurici: React.FC = () => {
                     <TableHead>Mecânico</TableHead>
                     <TableHead>Prazo</TableHead>
                     <TableHead>Início</TableHead>
+                    <TableHead>Finalização</TableHead>
                     <TableHead>Custo</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -980,7 +981,7 @@ const OficinaMurici: React.FC = () => {
                 <TableBody>
                   {filteredManutencoes.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="h-24 text-center">
+                      <TableCell colSpan={10} className="h-24 text-center">
                         Nenhuma manutenção encontrada.
                       </TableCell>
                     </TableRow>
@@ -1003,6 +1004,9 @@ const OficinaMurici: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           {manutencao.data_hora_inicio ? formatDateTime(manutencao.data_hora_inicio) : '-'}
+                        </TableCell>
+                        <TableCell>
+                          {manutencao.data_hora_fim ? formatDateTime(manutencao.data_hora_fim) : '-'}
                         </TableCell>
                         <TableCell>
                           {manutencao.custo_total ? formatCurrency(manutencao.custo_total) : '-'}
