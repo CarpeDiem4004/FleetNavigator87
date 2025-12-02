@@ -263,14 +263,14 @@ router.get('/pecas', isAuthenticated, async (req: Request, res: Response) => {
   }
 });
 
-// Buscar dados em manutenção (exclui veículos liberados - esses vão para aba Finalizadas)
+// Buscar dados em manutenção (exclui veículos finalizados - esses vão para aba Finalizadas)
 router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { uploadId } = req.query;
 
     // Buscar dados com informação de orçamentos pendentes
     // Pendentes = orçamentos NÃO aprovados E NÃO reprovados (status_aprovacao IS NULL ou 'pendente')
-    // IMPORTANTE: Exclui veículos com status 'Liberado' - esses aparecem na aba Finalizadas
+    // IMPORTANTE: Exclui veículos com status 'Finalizado' - esses aparecem na aba Finalizadas
     const result = await pool.query(
       `SELECT 
         d.*,
@@ -288,7 +288,7 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
          WHERE mo.manutencao_id = d.id
        ) orc ON true
        WHERE d.upload_id = $1
-         AND (d.status IS NULL OR d.status != 'Liberado')
+         AND (d.status IS NULL OR d.status != 'Finalizado')
        ORDER BY d.data_agenda DESC NULLS LAST`,
       [uploadId || 0]
     );
@@ -566,7 +566,7 @@ router.post('/dados', isAuthenticated, async (req: Request, res: Response) => {
 router.put('/dados/:id', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status, pecas } = req.body;
+    const { placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status, pecas, data_finalizacao } = req.body;
 
     const result = await pool.query(
       `UPDATE indicadores_dados SET 
@@ -579,10 +579,11 @@ router.put('/dados/:id', isAuthenticated, async (req: Request, res: Response) =>
         oficina_debito = COALESCE($7, oficina_debito),
         atendimento = COALESCE($8, atendimento),
         status = COALESCE($9, status),
+        data_finalizacao = COALESCE($11, data_finalizacao),
         updated_at = NOW()
        WHERE id = $10
        RETURNING *`,
-      [placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status, id]
+      [placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status, id, data_finalizacao]
     );
 
     if (result.rows.length === 0) {
@@ -684,9 +685,9 @@ router.get('/stats', isAuthenticated, async (req: Request, res: Response) => {
 
     const statsQuery = await pool.query(
       `SELECT 
-        (SELECT COUNT(*) FROM indicadores_dados WHERE upload_id = $1 AND (status IS NULL OR status != 'Liberado')) as total_em_manutencao,
+        (SELECT COUNT(*) FROM indicadores_dados WHERE upload_id = $1 AND (status IS NULL OR status != 'Finalizado')) as total_em_manutencao,
         (SELECT COUNT(*) FROM indicadores_liberado WHERE upload_id = $1) as total_liberado,
-        (SELECT COUNT(DISTINCT placa) FROM indicadores_dados WHERE upload_id = $1 AND (status IS NULL OR status != 'Liberado')) as veiculos_unicos_manutencao,
+        (SELECT COUNT(DISTINCT placa) FROM indicadores_dados WHERE upload_id = $1 AND (status IS NULL OR status != 'Finalizado')) as veiculos_unicos_manutencao,
         (SELECT COUNT(DISTINCT placa) FROM indicadores_liberado WHERE upload_id = $1) as veiculos_unicos_liberado,
         (SELECT COUNT(*) FROM indicadores_liberado WHERE upload_id = $1 AND tipo_manutencao ILIKE '%preventiva%') as preventivas,
         (SELECT COUNT(*) FROM indicadores_liberado WHERE upload_id = $1 AND tipo_manutencao ILIKE '%corretiva%') as corretivas
@@ -1577,7 +1578,7 @@ router.get('/finalizadas', isAuthenticated, async (req: Request, res: Response) 
           TO_CHAR(updated_at, 'YYYY-MM') as mes_referencia,
           created_at
         FROM indicadores_dados 
-        WHERE status = 'Liberado' 
+        WHERE status = 'Finalizado' 
           AND oficina_debito = 'Oficina Murici'
       `;
       
@@ -1999,7 +2000,7 @@ router.get('/update', async (req: Request, res: Response) => {
           if (manutencao.status === 'aguardando_peca') {
             indicadorStatus = 'Aguardando Peças';
           } else if (manutencao.status === 'finalizado') {
-            indicadorStatus = 'Liberado';
+            indicadorStatus = 'Finalizado';
           }
 
           // Verificar se já existe nos indicadores (por placa - qualquer status)
@@ -2099,16 +2100,16 @@ router.get('/update', async (req: Request, res: Response) => {
       WHERE status IN ('Em Manutenção', 'Aguardando Peças', 'Em Execução', 'Orçamento Aprovado')
     `);
     
-    // Veículos liberados (hoje e nos últimos 7 dias)
+    // Veículos finalizados (hoje e nos últimos 7 dias)
     const liberadosHojeResult = await pool.query(`
       SELECT COUNT(*) as total FROM indicadores_dados 
-      WHERE status = 'Liberado' 
+      WHERE status = 'Finalizado' 
       AND DATE(updated_at) = CURRENT_DATE
     `);
     
     const liberadosSemanaResult = await pool.query(`
       SELECT COUNT(*) as total FROM indicadores_dados 
-      WHERE status = 'Liberado' 
+      WHERE status = 'Finalizado' 
       AND updated_at >= CURRENT_DATE - INTERVAL '7 days'
     `);
     
@@ -2141,13 +2142,13 @@ router.get('/update', async (req: Request, res: Response) => {
     const entradasHojeResult = await pool.query(`
       SELECT COUNT(*) as total FROM indicadores_dados 
       WHERE DATE(created_at AT TIME ZONE 'America/Sao_Paulo') = (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date
-      AND status != 'Liberado'
+      AND status != 'Finalizado'
     `);
     
-    // Saíram: veículos liberados hoje (status = 'Liberado' e updated_at de hoje)
+    // Saíram: veículos finalizados hoje (status = 'Finalizado' e updated_at de hoje)
     const saidasHojeResult = await pool.query(`
       SELECT COUNT(*) as total FROM indicadores_dados 
-      WHERE status = 'Liberado'
+      WHERE status = 'Finalizado'
       AND DATE(updated_at AT TIME ZONE 'America/Sao_Paulo') = (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date
     `);
     

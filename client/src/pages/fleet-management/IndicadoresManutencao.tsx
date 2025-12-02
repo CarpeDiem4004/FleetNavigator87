@@ -120,6 +120,7 @@ interface Dado {
   oficina_debito: string;
   atendimento: string;
   status: string;
+  data_finalizacao?: string;
   total_orcamentos?: number;
   orcamentos_pendentes?: number;
   orcamentos_aprovados?: number;
@@ -2468,7 +2469,7 @@ export default function IndicadoresManutencao() {
                                 <Badge 
                                   variant="outline"
                                   className={`text-xs px-1.5 py-0.5 ${
-                                    dado.status === 'Liberado' 
+                                    dado.status === 'Finalizado' 
                                       ? 'bg-green-100 text-green-700 border-green-300' 
                                       : dado.status === 'Aguardando Peças' || dado.status === 'Aguardando Peça'
                                       ? 'bg-amber-100 text-amber-700 border-amber-300'
@@ -4416,7 +4417,6 @@ export default function IndicadoresManutencao() {
                         <SelectItem value="Aguardando Peça">Aguardando Peça</SelectItem>
                         <SelectItem value="Aguardando Aprovação">Aguardando Aprovação</SelectItem>
                         <SelectItem value="Em Execução">Em Execução</SelectItem>
-                        <SelectItem value="Liberado">Liberado</SelectItem>
                         <SelectItem value="Finalizado">Finalizado</SelectItem>
                       </SelectContent>
                     </Select>
@@ -4464,7 +4464,7 @@ export default function IndicadoresManutencao() {
               {/* Datas da Manutenção */}
               <div className="space-y-4">
                 <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Datas da Manutenção</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label>Data Parada do Veículo</Label>
                     <Input 
@@ -4485,6 +4485,18 @@ export default function IndicadoresManutencao() {
                       data-testid="input-edit-data-inicio"
                     />
                   </div>
+                  {editingDado.status === 'Finalizado' && (
+                    <div className="space-y-2">
+                      <Label>Data Finalização</Label>
+                      <Input 
+                        type="date"
+                        value={(editingDado as any).data_finalizacao || ''}
+                        onChange={(e) => setEditingDado({...editingDado, data_finalizacao: e.target.value} as any)}
+                        className="bg-orange-50 border-orange-200"
+                        data-testid="input-edit-data-finalizacao"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -4796,7 +4808,6 @@ export default function IndicadoresManutencao() {
                       <SelectItem value="Aguardando Peça">Aguardando Peça</SelectItem>
                       <SelectItem value="Aguardando Aprovação">Aguardando Aprovação</SelectItem>
                       <SelectItem value="Em Execução">Em Execução</SelectItem>
-                      <SelectItem value="Liberado">Liberado</SelectItem>
                       <SelectItem value="Finalizado">Finalizado</SelectItem>
                     </SelectContent>
                   </Select>
