@@ -397,7 +397,7 @@ export const useBasePermission = (): BasePermissionHook => {
       user.role === 'CEO' ||
       user.role?.toLowerCase() === 'gerente_geral' ||
       user.role === 'gerente_geral' ||
-      (user.email && ['joao.paulo@muricionfleet.com', 'regio@muricionfleet.com', 'andre.rosa@muricionfleet.com', 'admin@muricionfleet.com'].includes(user.email.toLowerCase()))
+      (user.email && ['joao.paulo@muricionfleet.com', 'regio@muricionfleet.com', 'andre.rosa@muricionfleet.com', 'admin@muricionfleet.com', 'rogerio.goncalves@muricionfleet.com', 'rogerio.goncalves@muricitransportes.com.br'].includes(user.email.toLowerCase()))
     );
     
     if (isAdmin) {
@@ -762,7 +762,7 @@ export const useBasePermission = (): BasePermissionHook => {
       user.role?.toUpperCase() === 'ADMIN' ||
       user.role === 'admin' ||
       user.role === 'ADMIN' ||
-      (user.email && ['joao.paulo@muricionfleet.com', 'regio@muricionfleet.com', 'andre.rosa@muricionfleet.com', 'admin@muricionfleet.com'].includes(user.email.toLowerCase()))
+      (user.email && ['joao.paulo@muricionfleet.com', 'regio@muricionfleet.com', 'andre.rosa@muricionfleet.com', 'admin@muricionfleet.com', 'rogerio.goncalves@muricionfleet.com', 'rogerio.goncalves@muricitransportes.com.br'].includes(user.email.toLowerCase()))
     );
     
     if (!user.baseId && !user.basename && !isAdminUser) {
