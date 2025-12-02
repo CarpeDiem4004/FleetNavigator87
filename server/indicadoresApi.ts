@@ -684,9 +684,9 @@ router.get('/stats', isAuthenticated, async (req: Request, res: Response) => {
 
     const statsQuery = await pool.query(
       `SELECT 
-        (SELECT COUNT(*) FROM indicadores_dados WHERE upload_id = $1) as total_em_manutencao,
+        (SELECT COUNT(*) FROM indicadores_dados WHERE upload_id = $1 AND (status IS NULL OR status != 'Liberado')) as total_em_manutencao,
         (SELECT COUNT(*) FROM indicadores_liberado WHERE upload_id = $1) as total_liberado,
-        (SELECT COUNT(DISTINCT placa) FROM indicadores_dados WHERE upload_id = $1) as veiculos_unicos_manutencao,
+        (SELECT COUNT(DISTINCT placa) FROM indicadores_dados WHERE upload_id = $1 AND (status IS NULL OR status != 'Liberado')) as veiculos_unicos_manutencao,
         (SELECT COUNT(DISTINCT placa) FROM indicadores_liberado WHERE upload_id = $1) as veiculos_unicos_liberado,
         (SELECT COUNT(*) FROM indicadores_liberado WHERE upload_id = $1 AND tipo_manutencao ILIKE '%preventiva%') as preventivas,
         (SELECT COUNT(*) FROM indicadores_liberado WHERE upload_id = $1 AND tipo_manutencao ILIKE '%corretiva%') as corretivas
