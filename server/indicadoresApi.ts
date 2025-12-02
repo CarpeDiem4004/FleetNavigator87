@@ -2119,17 +2119,22 @@ router.get('/update', async (req: Request, res: Response) => {
       WHERE status IN ('Em Manutenção', 'Aguardando Peças', 'Em Execução')
     `);
     
-    // Movimentação diária
+    // Movimentação diária - Usar indicadores_dados (sincronizado do Supabase)
+    // Entraram: veículos que entraram em manutenção hoje (created_at de hoje com status em manutenção)
     const entradasHojeResult = await pool.query(`
-      SELECT COUNT(*) as total FROM manutencoes_historico 
-      WHERE DATE(data_entrada) = CURRENT_DATE
+      SELECT COUNT(*) as total FROM indicadores_dados 
+      WHERE DATE(created_at AT TIME ZONE 'America/Sao_Paulo') = (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date
+      AND status != 'Liberado'
     `);
     
-    const saidasHojeHistorico = await pool.query(`
-      SELECT COUNT(*) as total FROM manutencoes_historico 
-      WHERE DATE(data_saida) = CURRENT_DATE
+    // Saíram: veículos liberados hoje (status = 'Liberado' e updated_at de hoje)
+    const saidasHojeResult = await pool.query(`
+      SELECT COUNT(*) as total FROM indicadores_dados 
+      WHERE status = 'Liberado'
+      AND DATE(updated_at AT TIME ZONE 'America/Sao_Paulo') = (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date
     `);
     
+    // Também contar finalizações do dia
     const saidasHojeFinalizadas = await pool.query(`
       SELECT COUNT(*) as total FROM manutencoes_finalizadas 
       WHERE DATE(data_liberado) = CURRENT_DATE
@@ -2151,7 +2156,7 @@ router.get('/update', async (req: Request, res: Response) => {
       diasParados: Math.round(parseFloat(diasParadosResult.rows[0]?.total || '0')),
       movimentacao: {
         entraram: parseInt(entradasHojeResult.rows[0]?.total || '0'),
-        sairam: parseInt(saidasHojeHistorico.rows[0]?.total || '0') + 
+        sairam: parseInt(saidasHojeResult.rows[0]?.total || '0') + 
                 parseInt(saidasHojeFinalizadas.rows[0]?.total || '0')
       },
       custoTotal: parseFloat(custoTotalResult.rows[0]?.total || '0'),
