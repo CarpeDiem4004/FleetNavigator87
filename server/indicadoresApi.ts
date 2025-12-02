@@ -1951,6 +1951,27 @@ router.get('/update', async (req: Request, res: Response) => {
                 [existeResult.rows[0].id]
               );
               syncStats.finalizados++;
+            } else {
+              // Inserir como Liberado se não existir (manutenção finalizada antes da sincronização)
+              await pool.query(
+                `INSERT INTO indicadores_dados (
+                  upload_id, placa, modelo, km, relato, data_agenda, 
+                  oficina_debito, focal, status, created_at, updated_at
+                ) VALUES (
+                  $1, $2, $3, $4, $5, $6, $7, $8, 'Liberado', NOW(), NOW()
+                )`,
+                [
+                  uploadId, 
+                  manutencao.placa, 
+                  modeloVeiculo, 
+                  manutencao.km || null, 
+                  manutencao.descricao_manutencao || '', 
+                  manutencao.prazo || new Date().toISOString().split('T')[0],
+                  'Oficina Murici', 
+                  manutencao.mecanico || ''
+                ]
+              );
+              syncStats.finalizados++;
             }
           } else if (existeResult.rows.length > 0) {
             // Atualizar registro existente
@@ -2036,7 +2057,7 @@ router.get('/update', async (req: Request, res: Response) => {
       SELECT COALESCE(SUM(
         CASE 
           WHEN data_agenda IS NOT NULL 
-          THEN EXTRACT(DAY FROM CURRENT_DATE - data_agenda::date)
+          THEN (CURRENT_DATE - data_agenda)::integer
           ELSE 0 
         END
       ), 0) as total
@@ -2057,7 +2078,7 @@ router.get('/update', async (req: Request, res: Response) => {
     
     const saidasHojeFinalizadas = await pool.query(`
       SELECT COUNT(*) as total FROM manutencoes_finalizadas 
-      WHERE DATE(data_saida) = CURRENT_DATE
+      WHERE DATE(data_liberado) = CURRENT_DATE
     `);
     
     // Custo total (usar manutencoes_finalizadas que tem os custos reais)
