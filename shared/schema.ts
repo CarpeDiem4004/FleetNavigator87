@@ -1388,6 +1388,62 @@ export const insertManutencoesFinalizadasSchema = createInsertSchema(manutencoes
 export type ManutencoesFinalizadas = typeof manutencoesFinalizadas.$inferSelect;
 export type InsertManutencoesFinalizadas = z.infer<typeof insertManutencoesFinalizadasSchema>;
 
+// ==================== SISTEMA DE FORNECEDORES ====================
+
+// Enum para categoria de fornecedor
+export const fornecedorCategoriaEnum = pgEnum('fornecedor_categoria', [
+  'oficina_mecanica',
+  'funilaria',
+  'eletrica',
+  'pneus',
+  'pecas',
+  'combustivel',
+  'lubrificantes',
+  'acessorios',
+  'outros'
+]);
+
+// Tabela de fornecedores
+export const fornecedores = pgTable("fornecedores", {
+  id: serial("id").primaryKey(),
+  nome: text("nome").notNull(),
+  cnpj: text("cnpj"),
+  categoria: text("categoria").default('oficina_mecanica'),
+  tipo_servico: text("tipo_servico"),
+  contato_nome: text("contato_nome"),
+  contato_telefone: text("contato_telefone"),
+  contato_email: text("contato_email"),
+  endereco: text("endereco"),
+  cidade: text("cidade"),
+  estado: text("estado"),
+  cep: text("cep"),
+  observacoes: text("observacoes"),
+  is_parceiro: boolean("is_parceiro").default(false),
+  ativo: boolean("ativo").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export const insertFornecedorSchema = createInsertSchema(fornecedores, {
+  nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  cnpj: z.string().optional().nullable(),
+  categoria: z.string().optional().nullable(),
+  tipo_servico: z.string().optional().nullable(),
+  contato_nome: z.string().optional().nullable(),
+  contato_telefone: z.string().optional().nullable(),
+  contato_email: z.string().email("Email inválido").optional().nullable().or(z.literal("")),
+  endereco: z.string().optional().nullable(),
+  cidade: z.string().optional().nullable(),
+  estado: z.string().optional().nullable(),
+  cep: z.string().optional().nullable(),
+  observacoes: z.string().optional().nullable(),
+  is_parceiro: z.boolean().optional(),
+  ativo: z.boolean().optional(),
+}).omit({ id: true, created_at: true, updated_at: true });
+
+export type Fornecedor = typeof fornecedores.$inferSelect;
+export type InsertFornecedor = z.infer<typeof insertFornecedorSchema>;
+
 // ==================== SISTEMA LINE HALL - ORDENS DE SERVIÇO ====================
 
 // Tabela para ordens de serviço detalhadas de manutenções Line Hall
