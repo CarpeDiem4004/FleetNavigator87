@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import AppLayout from '@/components/layout/AppLayout';
 import { subscribeToIndicadoresUpdates, syncMaintenanceIndicators, SyncResponse } from '@/services/syncIndicators';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,7 +37,8 @@ import {
   History,
   Filter,
   ArrowDownCircle,
-  ArrowUpCircle
+  ArrowUpCircle,
+  Download
 } from 'lucide-react';
 import {
   Dialog,
@@ -1884,6 +1886,86 @@ export default function IndicadoresManutencao() {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
   };
 
+  // Função para exportar dados de Em Manutenção para Excel
+  const exportEmManutencaoToExcel = () => {
+    const dadosParaExportar = filterPlacaEmManutencao
+      ? dados.filter(d => d.placa?.toUpperCase().includes(filterPlacaEmManutencao))
+      : dados;
+
+    const dataExport = dadosParaExportar.map((dado) => {
+      const dataAgenda = dado.data_agenda ? new Date(dado.data_agenda + 'T00:00:00') : null;
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const diffTime = dataAgenda ? hoje.getTime() - dataAgenda.getTime() : 0;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const diasParado = diffDays >= 0 ? diffDays : 0;
+
+      return {
+        'Placa': dado.placa || '',
+        'Modelo': dado.modelo || '',
+        'Status': dado.status || 'Em Manutenção',
+        'Oficina': dado.oficina_debito || '',
+        'Relato': dado.relato || '',
+        'Data Início': formatDate(dado.data_agenda),
+        'Dias Parado': diasParado,
+        'Responsável': dado.focal || dado.atendimento || '',
+        'KM': dado.km || ''
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Em Manutenção');
+    XLSX.writeFile(workbook, `veiculos_em_manutencao_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    toast({
+      title: 'Download concluído',
+      description: `${dataExport.length} registros exportados para Excel.`,
+    });
+  };
+
+  // Função para exportar dados de Finalizadas para Excel
+  const exportFinalizadasToExcel = () => {
+    if (!finalizadasData?.data) return;
+
+    let dadosFiltrados = finalizadasData.data;
+    
+    if (finalizadasSearchPlaca) {
+      dadosFiltrados = dadosFiltrados.filter(d => d.placa?.toUpperCase().includes(finalizadasSearchPlaca));
+    }
+    if (finalizadasFilterTipo) {
+      dadosFiltrados = dadosFiltrados.filter(d => d.tipo === finalizadasFilterTipo);
+    }
+    if (finalizadasFilterOficina) {
+      dadosFiltrados = dadosFiltrados.filter(d => d.oficina?.toLowerCase().includes(finalizadasFilterOficina.toLowerCase()));
+    }
+
+    const dataExport = dadosFiltrados.map((item: any) => ({
+      'Placa': item.placa || '',
+      'Modelo': item.modelo || '',
+      'Tipo': item.tipo || '',
+      'Oficina': item.oficina || '',
+      'Descrição': item.descricao || '',
+      'Data Entrada': formatDate(item.data_entrada),
+      'Data Saída': formatDate(item.data_saida),
+      'Dias Parado': item.dias_parado || 0,
+      'Valor Peças': formatCurrency(item.valor_pecas || 0),
+      'Valor MO': formatCurrency(item.valor_mo || 0),
+      'Valor Total': formatCurrency(item.valor_total || 0),
+      'Operação': item.operacao || ''
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Finalizadas');
+    XLSX.writeFile(workbook, `manutencoes_finalizadas_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    toast({
+      title: 'Download concluído',
+      description: `${dataExport.length} registros exportados para Excel.`,
+    });
+  };
+
   return (
     <AppLayout>
       <div className="container mx-auto py-6">
@@ -2306,6 +2388,14 @@ export default function IndicadoresManutencao() {
                       />
                     </div>
                     <Button 
+                      variant="outline"
+                      onClick={exportEmManutencaoToExcel}
+                      data-testid="btn-download-manutencao"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Baixar Excel
+                    </Button>
+                    <Button 
                       onClick={() => {
                       setPlacaSearchInput('');
                       setShowPlacaDropdown(false);
@@ -2530,14 +2620,24 @@ export default function IndicadoresManutencao() {
 
                 {/* Upload e Filtros */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <History className="h-5 w-5" />
-                      Manutenções Finalizadas
-                    </CardTitle>
-                    <CardDescription>
-                      Histórico completo de manutenções finalizadas com análise por placa
-                    </CardDescription>
+                  <CardHeader className="flex flex-row items-start justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <History className="h-5 w-5" />
+                        Manutenções Finalizadas
+                      </CardTitle>
+                      <CardDescription>
+                        Histórico completo de manutenções finalizadas com análise por placa
+                      </CardDescription>
+                    </div>
+                    <Button 
+                      variant="outline"
+                      onClick={exportFinalizadasToExcel}
+                      data-testid="btn-download-finalizadas"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Baixar Excel
+                    </Button>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
