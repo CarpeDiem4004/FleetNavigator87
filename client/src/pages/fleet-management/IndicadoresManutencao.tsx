@@ -1746,7 +1746,7 @@ export default function IndicadoresManutencao() {
                             <TableHead>Oficina</TableHead>
                             <TableHead>KM</TableHead>
                             <TableHead>Relato</TableHead>
-                            <TableHead>Data Agenda</TableHead>
+                            <TableHead>Data Início</TableHead>
                             <TableHead>Dias Parado</TableHead>
                             <TableHead>Focal</TableHead>
                             <TableHead>Atendimento</TableHead>

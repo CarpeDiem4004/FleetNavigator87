@@ -1939,6 +1939,11 @@ router.get('/update', async (req: Request, res: Response) => {
           );
           const modeloVeiculo = veiculoResult.rows[0]?.modelo || '';
 
+          // Usar data_hora_inicio como data de início da manutenção (para calcular dias parados)
+          const dataInicio = manutencao.data_hora_inicio 
+            ? manutencao.data_hora_inicio.split('T')[0] 
+            : (manutencao.prazo || new Date().toISOString().split('T')[0]);
+
           if (existeResult.rows.length > 0) {
             // Já existe registro para esta placa - apenas atualizar
             await pool.query(
@@ -1948,14 +1953,16 @@ router.get('/update', async (req: Request, res: Response) => {
                    focal = COALESCE($3, focal),
                    status = $4,
                    modelo = COALESCE($5, modelo),
+                   data_agenda = COALESCE($6, data_agenda),
                    updated_at = NOW()
-               WHERE id = $6`,
+               WHERE id = $7`,
               [
                 manutencao.km || null,
                 manutencao.descricao_manutencao || '',
                 manutencao.mecanico || '',
                 indicadorStatus,
                 modeloVeiculo,
+                dataInicio,
                 existeResult.rows[0].id
               ]
             );
@@ -1979,7 +1986,7 @@ router.get('/update', async (req: Request, res: Response) => {
                 modeloVeiculo, 
                 manutencao.km || null, 
                 manutencao.descricao_manutencao || '', 
-                manutencao.prazo || new Date().toISOString().split('T')[0],
+                dataInicio,
                 'Oficina Murici', 
                 manutencao.mecanico || '',
                 indicadorStatus
