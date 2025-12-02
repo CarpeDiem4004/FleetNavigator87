@@ -774,6 +774,33 @@ const OficinaMurici: React.FC = () => {
           </div>
           
           <div className="flex gap-2">
+            <Button 
+              onClick={async () => {
+                try {
+                  const res = await apiRequest('POST', '/api/indicadores/sync-all-oficina-murici');
+                  const data = await res.json();
+                  if (data.success) {
+                    toast({
+                      title: 'Sincronização concluída',
+                      description: data.message
+                    });
+                  } else {
+                    throw new Error(data.message);
+                  }
+                } catch (error: any) {
+                  toast({
+                    title: 'Erro na sincronização',
+                    description: error.message || 'Erro ao sincronizar com Indicadores',
+                    variant: 'destructive'
+                  });
+                }
+              }}
+              variant="secondary"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Sincronizar Indicadores
+            </Button>
+            
             <Button onClick={exportToExcel}>
               <FileDownload className="h-4 w-4 mr-2" />
               Exportar Excel
