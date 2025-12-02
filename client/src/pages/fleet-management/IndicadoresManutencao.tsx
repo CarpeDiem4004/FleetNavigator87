@@ -1904,7 +1904,11 @@ export default function IndicadoresManutencao() {
   const formatDate = (date: string | null | undefined) => {
     if (!date) return '-';
     try {
-      const d = new Date(date);
+      // Para datas no formato YYYY-MM-DD, adicionar T12:00:00 para evitar problemas de timezone
+      const dateStr = typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/) 
+        ? `${date}T12:00:00` 
+        : date;
+      const d = new Date(dateStr);
       if (isNaN(d.getTime()) || d.getFullYear() < 1900) return '-';
       return d.toLocaleDateString('pt-BR');
     } catch {
