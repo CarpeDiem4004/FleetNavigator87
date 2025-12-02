@@ -263,13 +263,14 @@ router.get('/pecas', isAuthenticated, async (req: Request, res: Response) => {
   }
 });
 
-// Buscar dados em manutenção
+// Buscar dados em manutenção (exclui veículos liberados - esses vão para aba Finalizadas)
 router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { uploadId } = req.query;
 
     // Buscar dados com informação de orçamentos pendentes
     // Pendentes = orçamentos NÃO aprovados E NÃO reprovados (status_aprovacao IS NULL ou 'pendente')
+    // IMPORTANTE: Exclui veículos com status 'Liberado' - esses aparecem na aba Finalizadas
     const result = await pool.query(
       `SELECT 
         d.*,
@@ -287,6 +288,7 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
          WHERE mo.manutencao_id = d.id
        ) orc ON true
        WHERE d.upload_id = $1
+         AND (d.status IS NULL OR d.status != 'Liberado')
        ORDER BY d.data_agenda DESC NULLS LAST`,
       [uploadId || 0]
     );
@@ -1495,51 +1497,124 @@ router.put('/bip/:id', isAuthenticated, async (req: Request, res: Response) => {
 
 // ==================== MANUTENÇÕES FINALIZADAS ====================
 
-// Listar manutenções finalizadas com filtros
+// Listar manutenções finalizadas com filtros (inclui veículos liberados da Oficina Murici)
 router.get('/finalizadas', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { placa, oficina, tipo_manutencao, status, operacao, mes } = req.query;
     
-    let query = 'SELECT * FROM manutencoes_finalizadas WHERE 1=1';
-    const params: any[] = [];
+    // Primeiro buscar manutenções finalizadas da tabela principal
+    let queryFinalizadas = 'SELECT * FROM manutencoes_finalizadas WHERE 1=1';
+    const paramsFinalizadas: any[] = [];
     let paramIndex = 1;
     
     if (placa) {
-      query += ` AND UPPER(placa) LIKE UPPER($${paramIndex})`;
-      params.push(`%${placa}%`);
+      queryFinalizadas += ` AND UPPER(placa) LIKE UPPER($${paramIndex})`;
+      paramsFinalizadas.push(`%${placa}%`);
       paramIndex++;
     }
     if (oficina) {
-      query += ` AND UPPER(oficina) LIKE UPPER($${paramIndex})`;
-      params.push(`%${oficina}%`);
+      queryFinalizadas += ` AND UPPER(oficina) LIKE UPPER($${paramIndex})`;
+      paramsFinalizadas.push(`%${oficina}%`);
       paramIndex++;
     }
     if (tipo_manutencao) {
-      query += ` AND tipo_manutencao = $${paramIndex}`;
-      params.push(tipo_manutencao);
+      queryFinalizadas += ` AND tipo_manutencao = $${paramIndex}`;
+      paramsFinalizadas.push(tipo_manutencao);
       paramIndex++;
     }
     if (status) {
-      query += ` AND status = $${paramIndex}`;
-      params.push(status);
+      queryFinalizadas += ` AND status = $${paramIndex}`;
+      paramsFinalizadas.push(status);
       paramIndex++;
     }
     if (operacao) {
-      query += ` AND operacao = $${paramIndex}`;
-      params.push(operacao);
+      queryFinalizadas += ` AND operacao = $${paramIndex}`;
+      paramsFinalizadas.push(operacao);
       paramIndex++;
     }
     if (mes) {
-      query += ` AND mes_referencia = $${paramIndex}`;
-      params.push(mes);
+      queryFinalizadas += ` AND mes_referencia = $${paramIndex}`;
+      paramsFinalizadas.push(mes);
       paramIndex++;
     }
     
-    query += ' ORDER BY data_agenda DESC NULLS LAST, id DESC';
+    queryFinalizadas += ' ORDER BY data_agenda DESC NULLS LAST, id DESC';
     
-    const result = await pool.query(query, params);
+    const resultFinalizadas = await pool.query(queryFinalizadas, paramsFinalizadas);
     
-    res.json({ success: true, data: result.rows, total: result.rows.length });
+    // Buscar veículos liberados da Oficina Murici (indicadores_dados)
+    // Só inclui se não há filtro de tipo_manutencao (pois não tem esse campo)
+    // e não há filtro de operação (também não tem)
+    let resultOficinaMurici: any[] = [];
+    
+    // Verificar se deve incluir veículos da Oficina Murici
+    const incluirOficinaMurici = !tipo_manutencao && !operacao && 
+      (!oficina || oficina.toString().toUpperCase().includes('MURICI'));
+    
+    if (incluirOficinaMurici) {
+      let queryMurici = `
+        SELECT 
+          id,
+          placa,
+          modelo,
+          km,
+          relato,
+          data_agenda,
+          focal,
+          oficina_debito as oficina,
+          'Corretiva' as tipo_manutencao,
+          0 as valor_orcamento,
+          '' as operacao,
+          status,
+          updated_at as data_liberado,
+          CASE 
+            WHEN data_agenda IS NOT NULL 
+            THEN GREATEST(0, DATE_PART('day', updated_at - data_agenda::timestamp))::integer
+            ELSE 0 
+          END as dias_manutencao,
+          TO_CHAR(updated_at, 'YYYY-MM') as mes_referencia,
+          created_at
+        FROM indicadores_dados 
+        WHERE status = 'Liberado' 
+          AND oficina_debito = 'Oficina Murici'
+      `;
+      
+      const paramsMurici: any[] = [];
+      let paramMuriciIdx = 1;
+      
+      if (placa) {
+        queryMurici += ` AND UPPER(placa) LIKE UPPER($${paramMuriciIdx})`;
+        paramsMurici.push(`%${placa}%`);
+        paramMuriciIdx++;
+      }
+      if (mes) {
+        queryMurici += ` AND TO_CHAR(updated_at, 'YYYY-MM') = $${paramMuriciIdx}`;
+        paramsMurici.push(mes);
+        paramMuriciIdx++;
+      }
+      
+      queryMurici += ' ORDER BY data_agenda DESC NULLS LAST';
+      
+      const muriciResult = await pool.query(queryMurici, paramsMurici);
+      
+      // Filtrar duplicatas: excluir veículos que já existem em manutencoes_finalizadas
+      const placasFinalizadas = new Set(resultFinalizadas.rows.map((r: any) => r.placa?.toUpperCase()));
+      resultOficinaMurici = muriciResult.rows.filter((r: any) => 
+        !placasFinalizadas.has(r.placa?.toUpperCase())
+      );
+    }
+    
+    // Combinar resultados
+    const allData = [...resultFinalizadas.rows, ...resultOficinaMurici];
+    
+    // Ordenar por data
+    allData.sort((a, b) => {
+      const dateA = a.data_agenda ? new Date(a.data_agenda).getTime() : 0;
+      const dateB = b.data_agenda ? new Date(b.data_agenda).getTime() : 0;
+      return dateB - dateA;
+    });
+    
+    res.json({ success: true, data: allData, total: allData.length });
   } catch (error) {
     console.error('[FINALIZADAS] Erro ao listar:', error);
     res.status(500).json({ success: false, message: 'Erro ao listar manutenções finalizadas' });
