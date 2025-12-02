@@ -292,6 +292,62 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
   }
 });
 
+// Sincronizar manutenção da Oficina Murici com Indicadores
+router.post('/sync-oficina-murici', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { placa, modelo, km, relato, oficina, mecanico } = req.body;
+
+    if (!placa) {
+      return res.status(400).json({ success: false, message: 'Placa é obrigatória' });
+    }
+
+    console.log('[INDICADORES] Sincronizando manutenção da Oficina Murici:', placa);
+
+    // Buscar upload_id mais recente
+    const uploadResult = await pool.query(
+      'SELECT id FROM indicadores_uploads ORDER BY data_upload DESC LIMIT 1'
+    );
+    const uploadId = uploadResult.rows[0]?.id || 1;
+
+    // Verificar se já existe registro para esta placa em manutenção ativa
+    const existeResult = await pool.query(
+      `SELECT id FROM indicadores_dados 
+       WHERE placa = $1 AND status IN ('Em Manutenção', 'Em Execução', 'Orçamento Aprovado')`,
+      [placa]
+    );
+
+    if (existeResult.rows.length > 0) {
+      console.log('[INDICADORES] Veículo já existe nos Indicadores:', placa);
+      return res.json({ success: true, message: 'Veículo já existe nos Indicadores', exists: true });
+    }
+
+    // Buscar informações do veículo
+    const veiculoResult = await pool.query(
+      'SELECT modelo FROM veiculos WHERE placa = $1',
+      [placa]
+    );
+    const modeloVeiculo = veiculoResult.rows[0]?.modelo || modelo || '';
+
+    // Inserir no indicadores_dados
+    const result = await pool.query(
+      `INSERT INTO indicadores_dados (
+        upload_id, placa, modelo, km, relato, data_agenda, 
+        oficina_debito, focal, status, created_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, CURRENT_DATE, $6, $7, 'Em Manutenção', NOW()
+      ) RETURNING *`,
+      [uploadId, placa, modeloVeiculo, km || null, relato || '', oficina || 'Oficina Murici', mecanico || '']
+    );
+
+    console.log('[INDICADORES] Manutenção sincronizada com sucesso:', result.rows[0]);
+
+    res.json({ success: true, data: result.rows[0], message: 'Manutenção sincronizada com Indicadores' });
+  } catch (error) {
+    console.error('[INDICADORES] Erro ao sincronizar manutenção da Oficina Murici:', error);
+    res.status(500).json({ success: false, message: 'Erro ao sincronizar manutenção' });
+  }
+});
+
 // Criar nova manutenção
 router.post('/dados', isAuthenticated, async (req: Request, res: Response) => {
   try {

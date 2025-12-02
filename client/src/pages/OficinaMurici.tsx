@@ -287,6 +287,21 @@ const OficinaMurici: React.FC = () => {
           throw new Error(`Erro ao criar: ${insertError.message}`);
         }
         
+        // Sincronizar com Indicadores de Manutenção
+        try {
+          await apiRequest('POST', '/api/indicadores/sync-oficina-murici', {
+            placa: currentManutencao.placa,
+            modelo: '', 
+            km: Number(currentManutencao.km) || 0,
+            relato: currentManutencao.descricao_manutencao,
+            oficina: 'Oficina Murici',
+            mecanico: currentManutencao.mecanico
+          });
+          console.log('Sincronizado com Indicadores de Manutenção');
+        } catch (syncError) {
+          console.warn('Erro ao sincronizar com Indicadores (não crítico):', syncError);
+        }
+        
         toast({
           title: 'Manutenção cadastrada',
           description: `Manutenção do veículo ${currentManutencao.placa} registrada com sucesso.`
