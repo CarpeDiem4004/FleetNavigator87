@@ -2467,33 +2467,31 @@ export default function IndicadoresManutencao() {
                       ? dados.filter(d => d.placa?.toUpperCase().includes(filterPlacaEmManutencao))
                       : dados;
                     return dadosFiltrados.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <Table>
+                    <div className="w-full">
+                      <Table className="table-fixed w-full">
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Placa</TableHead>
-                            <TableHead>Modelo</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Orçamento</TableHead>
-                            <TableHead>Oficina</TableHead>
-                            <TableHead>KM</TableHead>
-                            <TableHead>Relato</TableHead>
-                            <TableHead>Data Início</TableHead>
-                            <TableHead>Dias Parado</TableHead>
-                            <TableHead>Focal</TableHead>
-                            <TableHead>Atendimento</TableHead>
-                            <TableHead className="text-right">Ações</TableHead>
+                            <TableHead className="w-[80px]">Placa</TableHead>
+                            <TableHead className="w-[100px]">Modelo</TableHead>
+                            <TableHead className="w-[100px]">Status</TableHead>
+                            <TableHead className="w-[90px]">Orçamento</TableHead>
+                            <TableHead className="w-[120px]">Oficina</TableHead>
+                            <TableHead className="w-[150px]">Relato</TableHead>
+                            <TableHead className="w-[80px]">Início</TableHead>
+                            <TableHead className="w-[70px]">Dias</TableHead>
+                            <TableHead className="w-[100px]">Responsável</TableHead>
+                            <TableHead className="w-[60px] text-right">Ações</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {dadosFiltrados.map((dado) => (
                             <TableRow key={dado.id} className={dado.orcamentos_pendentes && dado.orcamentos_pendentes > 0 ? 'bg-amber-50/50' : ''}>
-                              <TableCell className="font-medium">{dado.placa}</TableCell>
-                              <TableCell>{dado.modelo || '-'}</TableCell>
+                              <TableCell className="font-medium text-xs">{dado.placa}</TableCell>
+                              <TableCell className="text-xs truncate" title={dado.modelo}>{dado.modelo || '-'}</TableCell>
                               <TableCell>
                                 <Badge 
                                   variant="outline"
-                                  className={
+                                  className={`text-xs px-1.5 py-0.5 ${
                                     dado.status === 'Liberado' 
                                       ? 'bg-green-100 text-green-700 border-green-300' 
                                       : dado.status === 'Aguardando Peças' || dado.status === 'Aguardando Peça'
@@ -2501,31 +2499,30 @@ export default function IndicadoresManutencao() {
                                       : dado.status === 'Em Orçamento' || dado.status === 'Orçamento Aprovado'
                                       ? 'bg-purple-100 text-purple-700 border-purple-300'
                                       : 'bg-blue-100 text-blue-700 border-blue-300'
-                                  }
+                                  }`}
                                 >
-                                  {dado.status || 'Em Manutenção'}
+                                  {dado.status || 'Em Manut.'}
                                 </Badge>
                               </TableCell>
                               <TableCell>
                                 {dado.total_orcamentos && dado.total_orcamentos > 0 ? (
-                                  <div className="flex items-center gap-1">
+                                  <div className="flex items-center">
                                     {dado.orcamentos_pendentes && dado.orcamentos_pendentes > 0 ? (
                                       <Badge 
                                         variant="outline" 
-                                        className="bg-amber-100 text-amber-700 border-amber-300 animate-pulse"
+                                        className="bg-amber-100 text-amber-700 border-amber-300 animate-pulse text-xs px-1.5"
                                         title={`${dado.orcamentos_pendentes} orçamento(s) aguardando aprovação`}
                                       >
-                                        <AlertCircle className="h-3 w-3 mr-1" />
-                                        {dado.orcamentos_pendentes} Pendente{dado.orcamentos_pendentes > 1 ? 's' : ''}
+                                        <AlertCircle className="h-3 w-3 mr-0.5" />
+                                        {dado.orcamentos_pendentes}
                                       </Badge>
                                     ) : (
                                       <Badge 
                                         variant="outline" 
-                                        className="bg-green-100 text-green-700 border-green-300"
+                                        className="bg-green-100 text-green-700 border-green-300 text-xs px-1.5"
                                         title="Todos os orçamentos aprovados"
                                       >
-                                        <CheckCircle className="h-3 w-3 mr-1" />
-                                        Aprovado
+                                        <CheckCircle className="h-3 w-3" />
                                       </Badge>
                                     )}
                                   </div>
@@ -2533,10 +2530,9 @@ export default function IndicadoresManutencao() {
                                   <span className="text-muted-foreground text-xs">-</span>
                                 )}
                               </TableCell>
-                              <TableCell>{dado.oficina_debito || '-'}</TableCell>
-                              <TableCell>{dado.km ? dado.km.toLocaleString() : '-'}</TableCell>
-                              <TableCell className="max-w-xs truncate" title={dado.relato}>{dado.relato || '-'}</TableCell>
-                              <TableCell>{formatDate(dado.data_agenda)}</TableCell>
+                              <TableCell className="text-xs truncate" title={dado.oficina_debito}>{dado.oficina_debito || '-'}</TableCell>
+                              <TableCell className="text-xs truncate" title={dado.relato}>{dado.relato || '-'}</TableCell>
+                              <TableCell className="text-xs">{formatDate(dado.data_agenda)}</TableCell>
                               <TableCell>
                                 {dado.data_agenda ? (() => {
                                   const dataAgenda = new Date(dado.data_agenda + 'T00:00:00');
@@ -2548,41 +2544,43 @@ export default function IndicadoresManutencao() {
                                   return (
                                     <Badge 
                                       variant="outline" 
-                                      className={
+                                      className={`text-xs px-1.5 py-0.5 ${
                                         diasParado >= 7 ? 'bg-red-100 text-red-700 border-red-300' :
                                         diasParado >= 3 ? 'bg-amber-100 text-amber-700 border-amber-300' :
                                         'bg-green-100 text-green-700 border-green-300'
-                                      }
+                                      }`}
                                     >
-                                      {diasParado} {diasParado === 1 ? 'dia' : 'dias'}
+                                      {diasParado}d
                                     </Badge>
                                   );
                                 })() : '-'}
                               </TableCell>
-                              <TableCell>{dado.focal || '-'}</TableCell>
-                              <TableCell>{dado.atendimento || '-'}</TableCell>
+                              <TableCell className="text-xs truncate" title={`${dado.focal || ''} / ${dado.atendimento || ''}`}>
+                                {dado.focal || dado.atendimento || '-'}
+                              </TableCell>
                               <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-1">
+                                <div className="flex items-center justify-end gap-0.5">
                                   <Button 
                                     variant="ghost" 
                                     size="sm"
+                                    className="h-7 w-7 p-0"
                                     onClick={() => {
                                       setSelectedDadoTimeline(dado);
                                       setShowTimelineModal(true);
                                     }}
                                     title="Histórico de Oficinas"
                                     data-testid={`btn-historico-dado-${dado.id}`}
-                                    className={dado.orcamentos_pendentes && dado.orcamentos_pendentes > 0 ? 'text-amber-600' : ''}
                                   >
-                                    <History className="h-4 w-4" />
+                                    <History className="h-3.5 w-3.5" />
                                   </Button>
                                   <Button 
                                     variant="ghost" 
                                     size="sm"
+                                    className="h-7 w-7 p-0"
                                     onClick={() => handleEditDado(dado)}
                                     data-testid={`btn-edit-dado-${dado.id}`}
                                   >
-                                    <Edit className="h-4 w-4" />
+                                    <Edit className="h-3.5 w-3.5" />
                                   </Button>
                                 </div>
                               </TableCell>
