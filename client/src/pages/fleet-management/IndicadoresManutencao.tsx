@@ -2098,15 +2098,9 @@ export default function IndicadoresManutencao() {
                                     </span>
                                   </TableCell>
                                   <TableCell>
-                                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
-                                      item.status === 'Em Manutenção' 
-                                        ? 'bg-yellow-100 text-yellow-700 border border-yellow-200'
-                                        : item.status === 'Liberado'
-                                        ? 'bg-green-100 text-green-700 border border-green-200'
-                                        : 'bg-gray-100 text-gray-600 border border-gray-200'
-                                    }`}>
-                                      {item.status === 'Liberado' ? <CheckCircle className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                                      {item.status || '-'}
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+                                      <CheckCircle className="h-3 w-3" />
+                                      {item.status_exibicao || 'Finalizado'}
                                     </span>
                                   </TableCell>
                                   <TableCell className="text-center">

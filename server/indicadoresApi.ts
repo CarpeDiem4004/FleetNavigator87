@@ -1503,7 +1503,8 @@ router.get('/finalizadas', isAuthenticated, async (req: Request, res: Response) 
     const { placa, oficina, tipo_manutencao, status, operacao, mes } = req.query;
     
     // Primeiro buscar manutenções finalizadas da tabela principal
-    let queryFinalizadas = 'SELECT * FROM manutencoes_finalizadas WHERE 1=1';
+    // Normalizar status para "Finalizado" na aba de finalizadas
+    let queryFinalizadas = `SELECT *, 'Finalizado' as status_exibicao FROM manutencoes_finalizadas WHERE 1=1`;
     const paramsFinalizadas: any[] = [];
     let paramIndex = 1;
     
@@ -1566,6 +1567,7 @@ router.get('/finalizadas', isAuthenticated, async (req: Request, res: Response) 
           0 as valor_orcamento,
           '' as operacao,
           status,
+          'Finalizado' as status_exibicao,
           updated_at as data_liberado,
           CASE 
             WHEN data_agenda IS NOT NULL 
