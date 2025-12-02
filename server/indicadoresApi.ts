@@ -1855,7 +1855,7 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
         AND data_entrada IS NOT NULL
     `);
     
-    // Buscar saídas HOJE (de ambas as tabelas)
+    // Buscar saídas HOJE (de todas as tabelas)
     const saidasHojeHistorico = await pool.query(`
       SELECT COUNT(*) as total
       FROM manutencoes_historico
@@ -1868,6 +1868,14 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
       FROM manutencoes_finalizadas
       WHERE DATE(data_saida) = CURRENT_DATE
         AND data_saida IS NOT NULL
+    `);
+    
+    // Também contar finalizações de indicadores_dados
+    const saidasHojeIndicadores = await pool.query(`
+      SELECT COUNT(*) as total
+      FROM indicadores_dados
+      WHERE status = 'Finalizado'
+        AND (DATE(data_finalizacao) = CURRENT_DATE OR DATE(updated_at) = CURRENT_DATE)
     `);
     
     // Buscar saídas ONTEM (de ambas as tabelas)
@@ -1883,6 +1891,14 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
       FROM manutencoes_finalizadas
       WHERE DATE(data_saida) = CURRENT_DATE - 1
         AND data_saida IS NOT NULL
+    `);
+    
+    // Também contar finalizações de indicadores_dados de ontem
+    const saidasOntemIndicadores = await pool.query(`
+      SELECT COUNT(*) as total
+      FROM indicadores_dados
+      WHERE status = 'Finalizado'
+        AND (DATE(data_finalizacao) = CURRENT_DATE - 1 OR DATE(updated_at) = CURRENT_DATE - 1)
     `);
     
     // Buscar veículos que ENTRARAM em manutenção no período (para modal)
@@ -1919,17 +1935,38 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
       ORDER BY data_saida DESC
     `);
     
-    // Combinar saídas de ambas as tabelas
-    const todasSaidas = [...saidas.rows, ...saidasFinalizadas.rows]
+    // Buscar saídas de indicadores_dados (finalizados)
+    const saidasIndicadores = await pool.query(`
+      SELECT 
+        id, placa, 'Corretiva' as tipo, relato as descricao, oficina_debito as oficina, 
+        '' as base, '' as operacao, data_agenda as data_entrada, 
+        COALESCE(data_finalizacao, updated_at::date) as data_saida,
+        CASE 
+          WHEN data_agenda IS NOT NULL 
+          THEN GREATEST(0, COALESCE(data_finalizacao, CURRENT_DATE) - data_agenda)::integer
+          ELSE 0 
+        END as tempo_total,
+        0 as valor, status
+      FROM indicadores_dados
+      WHERE status = 'Finalizado'
+        AND (data_finalizacao >= CURRENT_DATE - INTERVAL '${dias} days' 
+             OR updated_at >= CURRENT_DATE - INTERVAL '${dias} days')
+      ORDER BY COALESCE(data_finalizacao, updated_at::date) DESC
+    `);
+    
+    // Combinar saídas de todas as tabelas
+    const todasSaidas = [...saidas.rows, ...saidasFinalizadas.rows, ...saidasIndicadores.rows]
       .sort((a, b) => new Date(b.data_saida).getTime() - new Date(a.data_saida).getTime());
     
     // Calcular totais diários
     const entradasHojeTotal = parseInt(entradasHoje.rows[0]?.total || '0');
     const entradasOntemTotal = parseInt(entradasOntem.rows[0]?.total || '0');
     const saidasHojeTotal = parseInt(saidasHojeHistorico.rows[0]?.total || '0') + 
-                            parseInt(saidasHojeFinalizadas.rows[0]?.total || '0');
+                            parseInt(saidasHojeFinalizadas.rows[0]?.total || '0') +
+                            parseInt(saidasHojeIndicadores.rows[0]?.total || '0');
     const saidasOntemTotal = parseInt(saidasOntemHistorico.rows[0]?.total || '0') + 
-                             parseInt(saidasOntemFinalizadas.rows[0]?.total || '0');
+                             parseInt(saidasOntemFinalizadas.rows[0]?.total || '0') +
+                             parseInt(saidasOntemIndicadores.rows[0]?.total || '0');
     
     console.log('[MOVIMENTACOES] Entradas hoje:', entradasHojeTotal, 'ontem:', entradasOntemTotal);
     console.log('[MOVIMENTACOES] Saídas hoje:', saidasHojeTotal, 'ontem:', saidasOntemTotal);
