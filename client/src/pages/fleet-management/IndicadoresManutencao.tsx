@@ -219,6 +219,734 @@ interface BipData {
 
 const COLORS = ['#2563eb', '#16a34a', '#eab308', '#dc2626', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899'];
 
+// Interface para Fornecedores
+interface Fornecedor {
+  id: number;
+  nome: string;
+  cnpj: string | null;
+  categoria: string | null;
+  tipo_servico: string | null;
+  contato_nome: string | null;
+  contato_telefone: string | null;
+  contato_email: string | null;
+  endereco: string | null;
+  cidade: string | null;
+  estado: string | null;
+  cep: string | null;
+  observacoes: string | null;
+  is_parceiro: boolean;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+const CATEGORIAS_FORNECEDOR = [
+  { value: 'oficina_mecanica', label: 'Oficina Mecânica' },
+  { value: 'funilaria', label: 'Funilaria' },
+  { value: 'eletrica', label: 'Elétrica' },
+  { value: 'pneus', label: 'Pneus' },
+  { value: 'pecas', label: 'Peças' },
+  { value: 'combustivel', label: 'Combustível' },
+  { value: 'lubrificantes', label: 'Lubrificantes' },
+  { value: 'acessorios', label: 'Acessórios' },
+  { value: 'outros', label: 'Outros' },
+];
+
+const ESTADOS_BR = [
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 
+  'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+];
+
+// Componente de aba Fornecedores
+function FornecedoresTab() {
+  const { toast } = useToast();
+  const [searchNome, setSearchNome] = useState('');
+  const [filterCategoria, setFilterCategoria] = useState('');
+  const [filterAtivo, setFilterAtivo] = useState('');
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedFornecedor, setSelectedFornecedor] = useState<Fornecedor | null>(null);
+  const [formData, setFormData] = useState({
+    nome: '',
+    cnpj: '',
+    categoria: 'oficina_mecanica',
+    tipo_servico: '',
+    contato_nome: '',
+    contato_telefone: '',
+    contato_email: '',
+    endereco: '',
+    cidade: '',
+    estado: '',
+    cep: '',
+    observacoes: '',
+    is_parceiro: false,
+    ativo: true
+  });
+
+  // Query para listar fornecedores
+  const { data: fornecedoresData, isLoading, refetch } = useQuery<{success: boolean, data: Fornecedor[], total: number}>({
+    queryKey: ['/api/indicadores/fornecedores', { search: searchNome, categoria: filterCategoria, ativo: filterAtivo }],
+  });
+
+  // Mutation para criar fornecedor
+  const createMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      const response = await apiRequest('POST', '/api/indicadores/fornecedores', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Sucesso', description: 'Fornecedor cadastrado com sucesso!' });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/fornecedores'] });
+      setShowNewModal(false);
+      resetForm();
+    },
+    onError: (error: any) => {
+      toast({ title: 'Erro', description: error.message || 'Erro ao cadastrar fornecedor', variant: 'destructive' });
+    }
+  });
+
+  // Mutation para atualizar fornecedor
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number, data: typeof formData }) => {
+      const response = await apiRequest('PATCH', `/api/indicadores/fornecedores/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Sucesso', description: 'Fornecedor atualizado com sucesso!' });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/fornecedores'] });
+      setShowEditModal(false);
+      setSelectedFornecedor(null);
+    },
+    onError: (error: any) => {
+      toast({ title: 'Erro', description: error.message || 'Erro ao atualizar fornecedor', variant: 'destructive' });
+    }
+  });
+
+  // Mutation para deletar fornecedor
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest('DELETE', `/api/indicadores/fornecedores/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Sucesso', description: 'Fornecedor removido com sucesso!' });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/fornecedores'] });
+      setShowDeleteConfirm(false);
+      setSelectedFornecedor(null);
+    },
+    onError: (error: any) => {
+      toast({ title: 'Erro', description: error.message || 'Erro ao remover fornecedor', variant: 'destructive' });
+    }
+  });
+
+  const resetForm = () => {
+    setFormData({
+      nome: '',
+      cnpj: '',
+      categoria: 'oficina_mecanica',
+      tipo_servico: '',
+      contato_nome: '',
+      contato_telefone: '',
+      contato_email: '',
+      endereco: '',
+      cidade: '',
+      estado: '',
+      cep: '',
+      observacoes: '',
+      is_parceiro: false,
+      ativo: true
+    });
+  };
+
+  const handleEdit = (fornecedor: Fornecedor) => {
+    setSelectedFornecedor(fornecedor);
+    setFormData({
+      nome: fornecedor.nome || '',
+      cnpj: fornecedor.cnpj || '',
+      categoria: fornecedor.categoria || 'oficina_mecanica',
+      tipo_servico: fornecedor.tipo_servico || '',
+      contato_nome: fornecedor.contato_nome || '',
+      contato_telefone: fornecedor.contato_telefone || '',
+      contato_email: fornecedor.contato_email || '',
+      endereco: fornecedor.endereco || '',
+      cidade: fornecedor.cidade || '',
+      estado: fornecedor.estado || '',
+      cep: fornecedor.cep || '',
+      observacoes: fornecedor.observacoes || '',
+      is_parceiro: fornecedor.is_parceiro || false,
+      ativo: fornecedor.ativo !== false
+    });
+    setShowEditModal(true);
+  };
+
+  const handleDelete = (fornecedor: Fornecedor) => {
+    setSelectedFornecedor(fornecedor);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleSubmitNew = () => {
+    if (!formData.nome.trim()) {
+      toast({ title: 'Erro', description: 'Nome é obrigatório', variant: 'destructive' });
+      return;
+    }
+    createMutation.mutate(formData);
+  };
+
+  const handleSubmitEdit = () => {
+    if (!formData.nome.trim() || !selectedFornecedor) {
+      toast({ title: 'Erro', description: 'Nome é obrigatório', variant: 'destructive' });
+      return;
+    }
+    updateMutation.mutate({ id: selectedFornecedor.id, data: formData });
+  };
+
+  const getCategoriaLabel = (value: string) => {
+    const cat = CATEGORIAS_FORNECEDOR.find(c => c.value === value);
+    return cat?.label || value;
+  };
+
+  const fornecedores = fornecedoresData?.data || [];
+
+  return (
+    <div className="space-y-6">
+      {/* Header com busca e botão novo */}
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+        <div className="flex flex-col md:flex-row gap-3 flex-1">
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, CNPJ ou cidade..."
+              value={searchNome}
+              onChange={(e) => setSearchNome(e.target.value)}
+              className="pl-9"
+              data-testid="input-search-fornecedor"
+            />
+          </div>
+          <Select value={filterCategoria} onValueChange={setFilterCategoria}>
+            <SelectTrigger className="w-full md:w-48" data-testid="select-categoria-filter">
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todas Categorias</SelectItem>
+              {CATEGORIAS_FORNECEDOR.map(cat => (
+                <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterAtivo} onValueChange={setFilterAtivo}>
+            <SelectTrigger className="w-full md:w-36" data-testid="select-ativo-filter">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="true">Ativo</SelectItem>
+              <SelectItem value="false">Inativo</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button onClick={() => { resetForm(); setShowNewModal(true); }} data-testid="button-novo-fornecedor">
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Fornecedor
+        </Button>
+      </div>
+
+      {/* Contadores */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="text-2xl font-bold">{fornecedores.length}</p>
+                <p className="text-xs text-muted-foreground">Total Fornecedores</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <div>
+                <p className="text-2xl font-bold">{fornecedores.filter(f => f.ativo).length}</p>
+                <p className="text-xs text-muted-foreground">Ativos</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2">
+              <Wrench className="h-5 w-5 text-orange-600" />
+              <div>
+                <p className="text-2xl font-bold">{fornecedores.filter(f => f.categoria === 'oficina_mecanica').length}</p>
+                <p className="text-xs text-muted-foreground">Oficinas</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-purple-600" />
+              <div>
+                <p className="text-2xl font-bold">{fornecedores.filter(f => f.is_parceiro).length}</p>
+                <p className="text-xs text-muted-foreground">Parceiros</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabela de fornecedores */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5" />
+            Lista de Fornecedores
+          </CardTitle>
+          <CardDescription>
+            Gerencie os fornecedores do sistema de manutenção
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : fornecedores.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nenhum fornecedor encontrado</p>
+              <p className="text-sm">Clique em "Novo Fornecedor" para cadastrar</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>CNPJ</TableHead>
+                    <TableHead>Categoria</TableHead>
+                    <TableHead>Cidade/UF</TableHead>
+                    <TableHead>Contato</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {fornecedores.map((fornecedor) => (
+                    <TableRow key={fornecedor.id} data-testid={`row-fornecedor-${fornecedor.id}`}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {fornecedor.nome}
+                          {fornecedor.is_parceiro && (
+                            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                              Parceiro
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {fornecedor.cnpj || '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          {getCategoriaLabel(fornecedor.categoria || '')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {fornecedor.cidade && fornecedor.estado 
+                          ? `${fornecedor.cidade}/${fornecedor.estado}`
+                          : fornecedor.cidade || fornecedor.estado || '-'}
+                      </TableCell>
+                      <TableCell>
+                        {fornecedor.contato_telefone || fornecedor.contato_email || '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={fornecedor.ativo ? 'default' : 'secondary'} className={fornecedor.ativo ? 'bg-green-600' : ''}>
+                          {fornecedor.ativo ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(fornecedor)}
+                            data-testid={`button-edit-fornecedor-${fornecedor.id}`}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(fornecedor)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            data-testid={`button-delete-fornecedor-${fornecedor.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Modal Novo Fornecedor */}
+      <Dialog open={showNewModal} onOpenChange={setShowNewModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Novo Fornecedor</DialogTitle>
+            <DialogDescription>
+              Cadastre um novo fornecedor no sistema
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+            <div className="md:col-span-2">
+              <Label>Nome *</Label>
+              <Input
+                value={formData.nome}
+                onChange={(e) => setFormData({...formData, nome: e.target.value})}
+                placeholder="Nome do fornecedor"
+                data-testid="input-fornecedor-nome"
+              />
+            </div>
+            <div>
+              <Label>CNPJ</Label>
+              <Input
+                value={formData.cnpj}
+                onChange={(e) => setFormData({...formData, cnpj: e.target.value})}
+                placeholder="00.000.000/0000-00"
+                data-testid="input-fornecedor-cnpj"
+              />
+            </div>
+            <div>
+              <Label>Categoria</Label>
+              <Select value={formData.categoria} onValueChange={(v) => setFormData({...formData, categoria: v})}>
+                <SelectTrigger data-testid="select-fornecedor-categoria">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIAS_FORNECEDOR.map(cat => (
+                    <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-2">
+              <Label>Tipo de Serviço</Label>
+              <Input
+                value={formData.tipo_servico}
+                onChange={(e) => setFormData({...formData, tipo_servico: e.target.value})}
+                placeholder="Ex: Manutenção preventiva, reparo de motor..."
+                data-testid="input-fornecedor-tipo-servico"
+              />
+            </div>
+            <div>
+              <Label>Nome do Contato</Label>
+              <Input
+                value={formData.contato_nome}
+                onChange={(e) => setFormData({...formData, contato_nome: e.target.value})}
+                placeholder="Nome"
+                data-testid="input-fornecedor-contato-nome"
+              />
+            </div>
+            <div>
+              <Label>Telefone</Label>
+              <Input
+                value={formData.contato_telefone}
+                onChange={(e) => setFormData({...formData, contato_telefone: e.target.value})}
+                placeholder="(00) 00000-0000"
+                data-testid="input-fornecedor-telefone"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={formData.contato_email}
+                onChange={(e) => setFormData({...formData, contato_email: e.target.value})}
+                placeholder="email@exemplo.com"
+                data-testid="input-fornecedor-email"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Label>Endereço</Label>
+              <Input
+                value={formData.endereco}
+                onChange={(e) => setFormData({...formData, endereco: e.target.value})}
+                placeholder="Rua, número, bairro"
+                data-testid="input-fornecedor-endereco"
+              />
+            </div>
+            <div>
+              <Label>Cidade</Label>
+              <Input
+                value={formData.cidade}
+                onChange={(e) => setFormData({...formData, cidade: e.target.value})}
+                placeholder="Cidade"
+                data-testid="input-fornecedor-cidade"
+              />
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Label>Estado</Label>
+                <Select value={formData.estado} onValueChange={(v) => setFormData({...formData, estado: v})}>
+                  <SelectTrigger data-testid="select-fornecedor-estado">
+                    <SelectValue placeholder="UF" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ESTADOS_BR.map(uf => (
+                      <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <Label>CEP</Label>
+                <Input
+                  value={formData.cep}
+                  onChange={(e) => setFormData({...formData, cep: e.target.value})}
+                  placeholder="00000-000"
+                  data-testid="input-fornecedor-cep"
+                />
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <Label>Observações</Label>
+              <Input
+                value={formData.observacoes}
+                onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
+                placeholder="Observações adicionais"
+                data-testid="input-fornecedor-observacoes"
+              />
+            </div>
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.is_parceiro}
+                  onChange={(e) => setFormData({...formData, is_parceiro: e.target.checked})}
+                  className="w-4 h-4 rounded"
+                  data-testid="checkbox-fornecedor-parceiro"
+                />
+                <span className="text-sm">É Parceiro</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.ativo}
+                  onChange={(e) => setFormData({...formData, ativo: e.target.checked})}
+                  className="w-4 h-4 rounded"
+                  data-testid="checkbox-fornecedor-ativo"
+                />
+                <span className="text-sm">Ativo</span>
+              </label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewModal(false)}>Cancelar</Button>
+            <Button onClick={handleSubmitNew} disabled={createMutation.isPending} data-testid="button-submit-novo-fornecedor">
+              {createMutation.isPending ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Editar Fornecedor */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Fornecedor</DialogTitle>
+            <DialogDescription>
+              Atualize os dados do fornecedor
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+            <div className="md:col-span-2">
+              <Label>Nome *</Label>
+              <Input
+                value={formData.nome}
+                onChange={(e) => setFormData({...formData, nome: e.target.value})}
+                placeholder="Nome do fornecedor"
+                data-testid="input-edit-fornecedor-nome"
+              />
+            </div>
+            <div>
+              <Label>CNPJ</Label>
+              <Input
+                value={formData.cnpj}
+                onChange={(e) => setFormData({...formData, cnpj: e.target.value})}
+                placeholder="00.000.000/0000-00"
+                data-testid="input-edit-fornecedor-cnpj"
+              />
+            </div>
+            <div>
+              <Label>Categoria</Label>
+              <Select value={formData.categoria} onValueChange={(v) => setFormData({...formData, categoria: v})}>
+                <SelectTrigger data-testid="select-edit-fornecedor-categoria">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIAS_FORNECEDOR.map(cat => (
+                    <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-2">
+              <Label>Tipo de Serviço</Label>
+              <Input
+                value={formData.tipo_servico}
+                onChange={(e) => setFormData({...formData, tipo_servico: e.target.value})}
+                placeholder="Ex: Manutenção preventiva, reparo de motor..."
+                data-testid="input-edit-fornecedor-tipo-servico"
+              />
+            </div>
+            <div>
+              <Label>Nome do Contato</Label>
+              <Input
+                value={formData.contato_nome}
+                onChange={(e) => setFormData({...formData, contato_nome: e.target.value})}
+                placeholder="Nome"
+                data-testid="input-edit-fornecedor-contato-nome"
+              />
+            </div>
+            <div>
+              <Label>Telefone</Label>
+              <Input
+                value={formData.contato_telefone}
+                onChange={(e) => setFormData({...formData, contato_telefone: e.target.value})}
+                placeholder="(00) 00000-0000"
+                data-testid="input-edit-fornecedor-telefone"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={formData.contato_email}
+                onChange={(e) => setFormData({...formData, contato_email: e.target.value})}
+                placeholder="email@exemplo.com"
+                data-testid="input-edit-fornecedor-email"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Label>Endereço</Label>
+              <Input
+                value={formData.endereco}
+                onChange={(e) => setFormData({...formData, endereco: e.target.value})}
+                placeholder="Rua, número, bairro"
+                data-testid="input-edit-fornecedor-endereco"
+              />
+            </div>
+            <div>
+              <Label>Cidade</Label>
+              <Input
+                value={formData.cidade}
+                onChange={(e) => setFormData({...formData, cidade: e.target.value})}
+                placeholder="Cidade"
+                data-testid="input-edit-fornecedor-cidade"
+              />
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Label>Estado</Label>
+                <Select value={formData.estado} onValueChange={(v) => setFormData({...formData, estado: v})}>
+                  <SelectTrigger data-testid="select-edit-fornecedor-estado">
+                    <SelectValue placeholder="UF" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ESTADOS_BR.map(uf => (
+                      <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <Label>CEP</Label>
+                <Input
+                  value={formData.cep}
+                  onChange={(e) => setFormData({...formData, cep: e.target.value})}
+                  placeholder="00000-000"
+                  data-testid="input-edit-fornecedor-cep"
+                />
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <Label>Observações</Label>
+              <Input
+                value={formData.observacoes}
+                onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
+                placeholder="Observações adicionais"
+                data-testid="input-edit-fornecedor-observacoes"
+              />
+            </div>
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.is_parceiro}
+                  onChange={(e) => setFormData({...formData, is_parceiro: e.target.checked})}
+                  className="w-4 h-4 rounded"
+                  data-testid="checkbox-edit-fornecedor-parceiro"
+                />
+                <span className="text-sm">É Parceiro</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.ativo}
+                  onChange={(e) => setFormData({...formData, ativo: e.target.checked})}
+                  className="w-4 h-4 rounded"
+                  data-testid="checkbox-edit-fornecedor-ativo"
+                />
+                <span className="text-sm">Ativo</span>
+              </label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditModal(false)}>Cancelar</Button>
+            <Button onClick={handleSubmitEdit} disabled={updateMutation.isPending} data-testid="button-submit-edit-fornecedor">
+              {updateMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Confirmar Exclusão */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
+            <DialogDescription>
+              Deseja realmente remover o fornecedor "{selectedFornecedor?.nome}"? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>Cancelar</Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => selectedFornecedor && deleteMutation.mutate(selectedFornecedor.id)}
+              disabled={deleteMutation.isPending}
+              data-testid="button-confirm-delete-fornecedor"
+            >
+              {deleteMutation.isPending ? 'Removendo...' : 'Remover'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 export default function IndicadoresManutencao() {
   const { toast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -1345,7 +2073,7 @@ export default function IndicadoresManutencao() {
           )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-8">
               <TabsTrigger value="upload" data-testid="tab-upload">
                 <Upload className="h-4 w-4 mr-2" />
                 Upload
@@ -1365,6 +2093,10 @@ export default function IndicadoresManutencao() {
               <TabsTrigger value="bip" data-testid="tab-bip">
                 <Radio className="h-4 w-4 mr-2" />
                 BIP
+              </TabsTrigger>
+              <TabsTrigger value="fornecedores" data-testid="tab-fornecedores">
+                <Building2 className="h-4 w-4 mr-2" />
+                Fornecedores
               </TabsTrigger>
               <TabsTrigger value="cadastro" data-testid="tab-cadastro">
                 <Truck className="h-4 w-4 mr-2" />
@@ -2626,6 +3358,11 @@ export default function IndicadoresManutencao() {
                   </Card>
                 )}
               </div>
+            </TabsContent>
+
+            {/* Aba de Fornecedores */}
+            <TabsContent value="fornecedores">
+              <FornecedoresTab />
             </TabsContent>
 
             {/* Aba de Cadastro */}
