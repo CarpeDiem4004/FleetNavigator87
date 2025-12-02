@@ -106,6 +106,7 @@ const OficinaMurici: React.FC = () => {
   const [activeTab, setActiveTab] = useState('todas');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [statusOriginal, setStatusOriginal] = useState<string | null>(null);
   
   // Hook de autenticação para verificar permissões
   const { user } = useAuth();
@@ -124,10 +125,49 @@ const OficinaMurici: React.FC = () => {
   
   const { toast } = useToast();
   
-  // Carregar dados da API
+  // Carregar dados da API e preencher datas de finalização ausentes
   useEffect(() => {
+    backfillDataFinalizacao();
     fetchManutencoes();
   }, []);
+  
+  // Preencher datas de finalização para registros finalizados que não têm
+  const backfillDataFinalizacao = async () => {
+    try {
+      const supabase = createSupabaseClient();
+      
+      // Buscar registros finalizados sem data_hora_fim
+      const { data: registrosSemData, error: fetchError } = await supabase
+        .from('oficina_murici_manutencoes')
+        .select('id')
+        .eq('status', 'finalizado')
+        .is('data_hora_fim', null);
+      
+      if (fetchError) {
+        console.error('Erro ao buscar registros para backfill:', fetchError);
+        return;
+      }
+      
+      if (registrosSemData && registrosSemData.length > 0) {
+        console.log(`[Backfill] Encontrados ${registrosSemData.length} registros finalizados sem data de finalização`);
+        
+        // Atualizar cada registro com a data atual
+        const { error: updateError } = await supabase
+          .from('oficina_murici_manutencoes')
+          .update({ data_hora_fim: new Date().toISOString() })
+          .eq('status', 'finalizado')
+          .is('data_hora_fim', null);
+        
+        if (updateError) {
+          console.error('Erro ao fazer backfill de datas:', updateError);
+        } else {
+          console.log(`[Backfill] ${registrosSemData.length} registros atualizados com data de finalização`);
+        }
+      }
+    } catch (error) {
+      console.error('Erro no backfill de datas de finalização:', error);
+    }
+  };
   
   const fetchManutencoes = async () => {
     setIsLoading(true);
@@ -250,6 +290,9 @@ const OficinaMurici: React.FC = () => {
       };
 
       if (isEditMode && currentManutencao.id) {
+        // Verificar se houve transição de status para "finalizado"
+        const transitouParaFinalizado = currentManutencao.status === 'finalizado' && statusOriginal !== 'finalizado';
+        
         // Atualizar manutenção existente
         const { error: updateError } = await supabase
           .from('oficina_murici_manutencoes')
@@ -258,7 +301,8 @@ const OficinaMurici: React.FC = () => {
             ...(currentManutencao.data_hora_inicio && {
               data_hora_inicio: currentManutencao.data_hora_inicio
             }),
-            ...(currentManutencao.status === 'finalizado' && {
+            // Só define data_hora_fim se houver transição para finalizado
+            ...(transitouParaFinalizado && {
               data_hora_fim: new Date().toISOString()
             })
           })
@@ -429,6 +473,7 @@ const OficinaMurici: React.FC = () => {
       prazo: manutencao.prazo ? manutencao.prazo.split('T')[0] : new Date().toISOString().split('T')[0],
       data_hora_inicio: manutencao.data_hora_inicio || undefined
     });
+    setStatusOriginal(manutencao.status);
     setIsEditMode(true);
     setIsDialogOpen(true);
   };
@@ -583,6 +628,7 @@ const OficinaMurici: React.FC = () => {
       custo_total: 0
     });
     setIsEditMode(false);
+    setStatusOriginal(null);
   };
   
   // Abrir diálogo de nova manutenção
