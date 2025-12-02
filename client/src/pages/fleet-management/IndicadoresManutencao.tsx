@@ -1759,12 +1759,18 @@ export default function IndicadoresManutencao() {
                               <TableCell className="font-medium">{dado.placa}</TableCell>
                               <TableCell>{dado.modelo || '-'}</TableCell>
                               <TableCell>
-                                <Badge variant={
-                                  dado.status === 'Liberado' ? 'default' :
-                                  dado.status === 'Em Orçamento' ? 'secondary' :
-                                  dado.status === 'Aguardando Peça' ? 'outline' :
-                                  'destructive'
-                                }>
+                                <Badge 
+                                  variant="outline"
+                                  className={
+                                    dado.status === 'Liberado' 
+                                      ? 'bg-green-100 text-green-700 border-green-300' 
+                                      : dado.status === 'Aguardando Peças' || dado.status === 'Aguardando Peça'
+                                      ? 'bg-amber-100 text-amber-700 border-amber-300'
+                                      : dado.status === 'Em Orçamento' || dado.status === 'Orçamento Aprovado'
+                                      ? 'bg-purple-100 text-purple-700 border-purple-300'
+                                      : 'bg-blue-100 text-blue-700 border-blue-300'
+                                  }
+                                >
                                   {dado.status || 'Em Manutenção'}
                                 </Badge>
                               </TableCell>
