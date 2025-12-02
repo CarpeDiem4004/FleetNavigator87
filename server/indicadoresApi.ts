@@ -2,6 +2,12 @@ import { Router, Request, Response } from 'express';
 import { pool } from './db';
 import multer from 'multer';
 import xlsx from 'xlsx';
+import { createClient } from '@supabase/supabase-js';
+
+// Cliente Supabase para sincronização
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseClient = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 // Middleware para verificar autenticação
 function isAuthenticated(req: Request, res: Response, next: any) {
@@ -292,10 +298,14 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
   }
 });
 
-// Sincronizar TODAS as manutenções da Oficina Murici com Indicadores
+// Sincronizar TODAS as manutenções da Oficina Murici com Indicadores (busca do Supabase)
 router.post('/sync-all-oficina-murici', isAuthenticated, async (req: Request, res: Response) => {
   try {
-    console.log('[INDICADORES] Sincronizando TODAS as manutenções da Oficina Murici');
+    console.log('[INDICADORES] Sincronizando TODAS as manutenções da Oficina Murici do Supabase');
+
+    if (!supabaseClient) {
+      return res.status(500).json({ success: false, message: 'Cliente Supabase não configurado' });
+    }
 
     // Buscar upload_id mais recente
     const uploadResult = await pool.query(
@@ -303,17 +313,33 @@ router.post('/sync-all-oficina-murici', isAuthenticated, async (req: Request, re
     );
     const uploadId = uploadResult.rows[0]?.id || 1;
 
-    // Buscar todas as manutenções da Oficina Murici que não estão nos Indicadores
-    const manutencoesPendentes = await pool.query(`
-      SELECT om.* FROM oficina_murici_manutencoes om
-      LEFT JOIN indicadores_dados id ON om.placa = id.placa 
-        AND id.status IN ('Em Manutenção', 'Em Execução', 'Orçamento Aprovado')
-      WHERE id.placa IS NULL 
-        AND om.status IN ('em_andamento', 'aguardando_peca')
-    `);
+    // Buscar manutenções ativas do Supabase
+    const { data: manutencoesSupabase, error: supabaseError } = await supabaseClient
+      .from('oficina_murici_manutencoes')
+      .select('*')
+      .in('status', ['em_andamento', 'aguardando_peca']);
+
+    if (supabaseError) {
+      console.error('[INDICADORES] Erro ao buscar do Supabase:', supabaseError);
+      throw new Error(`Erro Supabase: ${supabaseError.message}`);
+    }
+
+    console.log(`[INDICADORES] Encontradas ${manutencoesSupabase?.length || 0} manutenções ativas no Supabase`);
 
     let sincronizados = 0;
-    for (const manutencao of manutencoesPendentes.rows) {
+    let atualizados = 0;
+
+    for (const manutencao of (manutencoesSupabase || [])) {
+      // Mapear status
+      const indicadorStatus = manutencao.status === 'aguardando_peca' ? 'Aguardando Peças' : 'Em Manutenção';
+
+      // Verificar se já existe nos indicadores
+      const existeResult = await pool.query(
+        `SELECT id FROM indicadores_dados 
+         WHERE placa = $1 AND status IN ('Em Manutenção', 'Aguardando Peças', 'Em Execução')`,
+        [manutencao.placa]
+      );
+
       // Buscar modelo do veículo
       const veiculoResult = await pool.query(
         'SELECT modelo FROM veiculos WHERE placa = $1',
@@ -321,33 +347,59 @@ router.post('/sync-all-oficina-murici', isAuthenticated, async (req: Request, re
       );
       const modeloVeiculo = veiculoResult.rows[0]?.modelo || '';
 
-      // Inserir no indicadores_dados
-      await pool.query(
-        `INSERT INTO indicadores_dados (
-          upload_id, placa, modelo, km, relato, data_agenda, 
-          oficina_debito, focal, status, created_at
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, 'Em Manutenção', NOW()
-        )`,
-        [
-          uploadId, 
-          manutencao.placa, 
-          modeloVeiculo, 
-          manutencao.km || null, 
-          manutencao.descricao_manutencao || '', 
-          manutencao.prazo || new Date().toISOString().split('T')[0],
-          'Oficina Murici', 
-          manutencao.mecanico || ''
-        ]
-      );
-      sincronizados++;
+      if (existeResult.rows.length > 0) {
+        // Atualizar registro existente
+        await pool.query(
+          `UPDATE indicadores_dados 
+           SET km = COALESCE($1, km),
+               relato = COALESCE($2, relato),
+               focal = COALESCE($3, focal),
+               status = $4,
+               modelo = COALESCE($5, modelo),
+               updated_at = NOW()
+           WHERE id = $6`,
+          [
+            manutencao.km || null,
+            manutencao.descricao_manutencao || '',
+            manutencao.mecanico || '',
+            indicadorStatus,
+            modeloVeiculo,
+            existeResult.rows[0].id
+          ]
+        );
+        atualizados++;
+      } else {
+        // Inserir novo registro
+        await pool.query(
+          `INSERT INTO indicadores_dados (
+            upload_id, placa, modelo, km, relato, data_agenda, 
+            oficina_debito, focal, status, created_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW()
+          )`,
+          [
+            uploadId, 
+            manutencao.placa, 
+            modeloVeiculo, 
+            manutencao.km || null, 
+            manutencao.descricao_manutencao || '', 
+            manutencao.prazo || new Date().toISOString().split('T')[0],
+            'Oficina Murici', 
+            manutencao.mecanico || '',
+            indicadorStatus
+          ]
+        );
+        sincronizados++;
+      }
     }
 
-    console.log(`[INDICADORES] ${sincronizados} manutenções sincronizadas da Oficina Murici`);
+    console.log(`[INDICADORES] ${sincronizados} criados, ${atualizados} atualizados da Oficina Murici`);
     res.json({ 
       success: true, 
-      message: `${sincronizados} manutenções sincronizadas com sucesso`,
-      total: sincronizados
+      message: `${sincronizados} novos registros criados, ${atualizados} atualizados`,
+      total: sincronizados + atualizados,
+      novos: sincronizados,
+      atualizados: atualizados
     });
   } catch (error) {
     console.error('[INDICADORES] Erro ao sincronizar manutenções da Oficina Murici:', error);
