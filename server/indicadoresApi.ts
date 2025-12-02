@@ -1925,11 +1925,10 @@ router.get('/update', async (req: Request, res: Response) => {
             indicadorStatus = 'Liberado';
           }
 
-          // Verificar se já existe nos indicadores (por placa e status ativo)
+          // Verificar se já existe nos indicadores (por placa - qualquer status)
           const existeResult = await pool.query(
             `SELECT id, status FROM indicadores_dados 
-             WHERE placa = $1 
-             AND status IN ('Em Manutenção', 'Aguardando Peças', 'Em Execução', 'Orçamento Aprovado')`,
+             WHERE placa = $1`,
             [manutencao.placa]
           );
 
@@ -1940,41 +1939,8 @@ router.get('/update', async (req: Request, res: Response) => {
           );
           const modeloVeiculo = veiculoResult.rows[0]?.modelo || '';
 
-          if (manutencao.status === 'finalizado') {
-            // Se finalizado no Supabase, marcar como Liberado nos indicadores
-            if (existeResult.rows.length > 0) {
-              await pool.query(
-                `UPDATE indicadores_dados 
-                 SET status = 'Liberado',
-                     updated_at = NOW()
-                 WHERE id = $1`,
-                [existeResult.rows[0].id]
-              );
-              syncStats.finalizados++;
-            } else {
-              // Inserir como Liberado se não existir (manutenção finalizada antes da sincronização)
-              await pool.query(
-                `INSERT INTO indicadores_dados (
-                  upload_id, placa, modelo, km, relato, data_agenda, 
-                  oficina_debito, focal, status, created_at, updated_at
-                ) VALUES (
-                  $1, $2, $3, $4, $5, $6, $7, $8, 'Liberado', NOW(), NOW()
-                )`,
-                [
-                  uploadId, 
-                  manutencao.placa, 
-                  modeloVeiculo, 
-                  manutencao.km || null, 
-                  manutencao.descricao_manutencao || '', 
-                  manutencao.prazo || new Date().toISOString().split('T')[0],
-                  'Oficina Murici', 
-                  manutencao.mecanico || ''
-                ]
-              );
-              syncStats.finalizados++;
-            }
-          } else if (existeResult.rows.length > 0) {
-            // Atualizar registro existente
+          if (existeResult.rows.length > 0) {
+            // Já existe registro para esta placa - apenas atualizar
             await pool.query(
               `UPDATE indicadores_dados 
                SET km = COALESCE($1, km),
@@ -1993,9 +1959,13 @@ router.get('/update', async (req: Request, res: Response) => {
                 existeResult.rows[0].id
               ]
             );
-            syncStats.atualizados++;
-          } else if (manutencao.status !== 'finalizado') {
-            // Inserir novo registro (apenas se não finalizado)
+            if (manutencao.status === 'finalizado') {
+              syncStats.finalizados++;
+            } else {
+              syncStats.atualizados++;
+            }
+          } else {
+            // Inserir novo registro
             await pool.query(
               `INSERT INTO indicadores_dados (
                 upload_id, placa, modelo, km, relato, data_agenda, 
