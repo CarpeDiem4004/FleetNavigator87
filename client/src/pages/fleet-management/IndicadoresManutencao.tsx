@@ -1596,6 +1596,35 @@ export default function IndicadoresManutencao() {
     }
   };
 
+  // Query para buscar fornecedores para autocomplete de oficinas
+  const { data: oficinasData } = useQuery<{success: boolean, data: Array<{id: number, nome: string, cnpj?: string, categoria?: string}>}>({
+    queryKey: ['/api/indicadores/fornecedores', { ativo: 'true' }],
+    queryFn: async () => {
+      const res = await fetch('/api/indicadores/fornecedores?ativo=true', { credentials: 'include' });
+      return res.json();
+    }
+  });
+
+  // Lista de oficinas para autocomplete (extrai nomes dos fornecedores)
+  const oficinasOptions = oficinasData?.data?.map(f => ({
+    value: f.nome,
+    label: f.nome
+  })) || [];
+
+  // Estado para controlar autocomplete de oficina
+  const [oficinaSearch, setOficinaSearch] = useState('');
+  const [showOficinaDropdown, setShowOficinaDropdown] = useState(false);
+  const [editOficinaSearch, setEditOficinaSearch] = useState('');
+  const [showEditOficinaDropdown, setShowEditOficinaDropdown] = useState(false);
+
+  // Filtrar oficinas baseado na busca
+  const filteredOficinas = oficinasOptions.filter(o => 
+    o.label.toLowerCase().includes(oficinaSearch.toLowerCase())
+  );
+  const filteredEditOficinas = oficinasOptions.filter(o => 
+    o.label.toLowerCase().includes(editOficinaSearch.toLowerCase())
+  );
+
   // Query para buscar veículos para a aba Cadastro (tabela veiculos)
   const { data: cadastroVehiclesData, isLoading: cadastroVehiclesLoading, refetch: refetchVeiculos } = useQuery<{success: boolean, data: Array<{id: number, placa: string, modelo: string, tipo_posse: string, status: string, categoria: string, locadora: string, ano: number, chassi: string, renavam: string, cidade_veiculo: string, estado: string, cor: string, operacao: string, base: string, data_inicio_operacao: string}>}>({
     queryKey: ['/api/veiculos/listar'],
@@ -4383,15 +4412,42 @@ export default function IndicadoresManutencao() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 relative">
                     <Label>Oficina</Label>
-                    <Input 
-                      value={editingDado.oficina_debito || ''}
-                      onChange={(e) => setEditingDado({...editingDado, oficina_debito: e.target.value})}
-                      placeholder="Nome da oficina"
-                      className="bg-orange-50 border-orange-200"
-                      data-testid="input-edit-oficina"
-                    />
+                    <div className="relative">
+                      <Input 
+                        value={editingDado.oficina_debito || ''}
+                        onChange={(e) => {
+                          setEditingDado({...editingDado, oficina_debito: e.target.value});
+                          setEditOficinaSearch(e.target.value);
+                          setShowEditOficinaDropdown(true);
+                        }}
+                        onFocus={() => {
+                          setEditOficinaSearch(editingDado.oficina_debito || '');
+                          setShowEditOficinaDropdown(true);
+                        }}
+                        onBlur={() => setTimeout(() => setShowEditOficinaDropdown(false), 200)}
+                        placeholder="Digite para buscar oficina"
+                        className="bg-orange-50 border-orange-200"
+                        data-testid="input-edit-oficina"
+                      />
+                      {showEditOficinaDropdown && filteredEditOficinas.length > 0 && (
+                        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                          {filteredEditOficinas.slice(0, 10).map((oficina, idx) => (
+                            <div
+                              key={idx}
+                              className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm"
+                              onMouseDown={() => {
+                                setEditingDado({...editingDado, oficina_debito: oficina.value});
+                                setShowEditOficinaDropdown(false);
+                              }}
+                            >
+                              {oficina.label}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -4736,14 +4792,41 @@ export default function IndicadoresManutencao() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 relative">
                   <Label>Oficina</Label>
-                  <Input 
-                    value={newDado.oficina_debito || ''}
-                    onChange={(e) => setNewDado({...newDado, oficina_debito: e.target.value})}
-                    placeholder="Nome da oficina"
-                    data-testid="input-new-oficina"
-                  />
+                  <div className="relative">
+                    <Input 
+                      value={newDado.oficina_debito || ''}
+                      onChange={(e) => {
+                        setNewDado({...newDado, oficina_debito: e.target.value});
+                        setOficinaSearch(e.target.value);
+                        setShowOficinaDropdown(true);
+                      }}
+                      onFocus={() => {
+                        setOficinaSearch(newDado.oficina_debito || '');
+                        setShowOficinaDropdown(true);
+                      }}
+                      onBlur={() => setTimeout(() => setShowOficinaDropdown(false), 200)}
+                      placeholder="Digite para buscar oficina"
+                      data-testid="input-new-oficina"
+                    />
+                    {showOficinaDropdown && filteredOficinas.length > 0 && (
+                      <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                        {filteredOficinas.slice(0, 10).map((oficina, idx) => (
+                          <div
+                            key={idx}
+                            className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm"
+                            onMouseDown={() => {
+                              setNewDado({...newDado, oficina_debito: oficina.value});
+                              setShowOficinaDropdown(false);
+                            }}
+                          >
+                            {oficina.label}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
