@@ -956,7 +956,7 @@ export default function IndicadoresManutencao() {
   const [searchPlaca, setSearchPlaca] = useState<string>('');
   const [filterPlacaEmManutencao, setFilterPlacaEmManutencao] = useState<string>('');
   const [dashboardBase, setDashboardBase] = useState<string>('');
-  const [activeTab, setActiveTab] = useState('upload');
+  const [activeTab, setActiveTab] = useState('dados');
   const [selectedModeloPeca, setSelectedModeloPeca] = useState<string>('');
   const [editingDado, setEditingDado] = useState<Dado | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -2073,11 +2073,7 @@ export default function IndicadoresManutencao() {
           )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-8">
-              <TabsTrigger value="upload" data-testid="tab-upload">
-                <Upload className="h-4 w-4 mr-2" />
-                Upload
-              </TabsTrigger>
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="pecas" data-testid="tab-pecas">
                 <Package className="h-4 w-4 mr-2" />
                 Peças
@@ -2107,86 +2103,6 @@ export default function IndicadoresManutencao() {
                 Dashboards
               </TabsTrigger>
             </TabsList>
-
-            {/* Aba de Upload */}
-            <TabsContent value="upload">
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Upload de Planilha de Indicadores</CardTitle>
-                    <CardDescription>
-                      Envie a planilha Excel com dados de Peças, Dados e Liberado
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="file">Arquivo Excel (.xlsx)</Label>
-                        <Input
-                          id="file"
-                          type="file"
-                          accept=".xlsx,.xls"
-                          onChange={handleFileChange}
-                          disabled={uploadMutation.isPending}
-                          data-testid="input-file-indicadores"
-                        />
-                        {selectedFile && (
-                          <p className="text-sm text-muted-foreground">
-                            Arquivo selecionado: {selectedFile.name}
-                          </p>
-                        )}
-                      </div>
-
-                      <Button
-                        onClick={handleUpload}
-                        disabled={!selectedFile || uploadMutation.isPending}
-                        className="w-full"
-                        data-testid="button-upload-indicadores"
-                      >
-                        {uploadMutation.isPending ? (
-                          <>Processando...</>
-                        ) : (
-                          <>
-                            <Upload className="mr-2 h-4 w-4" />
-                            Enviar e Processar
-                          </>
-                        )}
-                      </Button>
-
-                      {uploads.length > 0 && (
-                        <div className="mt-6">
-                          <h3 className="text-lg font-semibold mb-2">Histórico de Uploads</h3>
-                          <div className="space-y-2 max-h-64 overflow-y-auto">
-                            {uploads.map((upload) => (
-                              <div
-                                key={upload.id}
-                                className={`p-3 border rounded-lg cursor-pointer hover:bg-accent ${
-                                  currentUploadId === upload.id ? 'bg-accent border-primary' : ''
-                                }`}
-                                onClick={() => setSelectedUploadId(upload.id)}
-                                data-testid={`upload-item-${upload.id}`}
-                              >
-                                <div className="flex justify-between items-center">
-                                  <div>
-                                    <p className="font-medium">{upload.filename}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {formatDate(upload.upload_date)} - {upload.total_records} registros
-                                    </p>
-                                  </div>
-                                  {currentUploadId === upload.id && (
-                                    <Badge variant="default">Selecionado</Badge>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
 
             {/* Aba de Peças */}
             <TabsContent value="pecas">
