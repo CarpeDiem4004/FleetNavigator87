@@ -1904,11 +1904,13 @@ export default function IndicadoresManutencao() {
   const formatDate = (date: string | null | undefined) => {
     if (!date) return '-';
     try {
-      // Para datas no formato YYYY-MM-DD, adicionar T12:00:00 para evitar problemas de timezone
-      const dateStr = typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/) 
-        ? `${date}T12:00:00` 
-        : date;
-      const d = new Date(dateStr);
+      // Para datas no formato YYYY-MM-DD, formatar diretamente sem usar new Date para evitar problemas de timezone
+      if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = date.split('-');
+        return `${day}/${month}/${year}`;
+      }
+      // Para outros formatos (com timestamp), usar new Date com timezone do Brasil
+      const d = new Date(date);
       if (isNaN(d.getTime()) || d.getFullYear() < 1900) return '-';
       return d.toLocaleDateString('pt-BR');
     } catch {
