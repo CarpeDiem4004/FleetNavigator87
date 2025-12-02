@@ -1977,6 +1977,11 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
     console.log('[MOVIMENTACOES] Entradas hoje:', entradasHojeTotal, 'ontem:', entradasOntemTotal);
     console.log('[MOVIMENTACOES] Saídas hoje:', saidasHojeTotal, 'ontem:', saidasOntemTotal);
     
+    // Debug: mostrar primeiras 3 datas retornadas para verificar formato
+    if (todasSaidas.length > 0) {
+      console.log('[MOVIMENTACOES-DEBUG] Primeiras datas de saída:', todasSaidas.slice(0, 3).map(s => ({ placa: s.placa, data_saida: s.data_saida })));
+    }
+    
     res.json({
       success: true,
       periodo: dias,
