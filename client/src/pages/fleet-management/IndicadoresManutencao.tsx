@@ -5480,26 +5480,13 @@ export default function IndicadoresManutencao() {
               Movimentações de Manutenção
             </DialogTitle>
             <DialogDescription>
-              Detalhamento das entradas e saídas de manutenção nos últimos {movimentacoesPeriodo} dias
+              Detalhamento das entradas e saídas de manutenção de hoje
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="flex gap-4 mb-4">
-              <Select value={movimentacoesPeriodo} onValueChange={setMovimentacoesPeriodo}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Período" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7">Últimos 7 dias</SelectItem>
-                  <SelectItem value="15">Últimos 15 dias</SelectItem>
-                  <SelectItem value="30">Últimos 30 dias</SelectItem>
-                  <SelectItem value="60">Últimos 60 dias</SelectItem>
-                  <SelectItem value="90">Últimos 90 dias</SelectItem>
-                </SelectContent>
-              </Select>
-              
               {/* Resumo do comparativo */}
-              <div className="flex gap-4 ml-auto">
+              <div className="flex gap-4">
                 <div className="flex items-center gap-2 px-3 py-1 bg-red-50 rounded-md">
                   <ArrowDownCircle className="h-4 w-4 text-red-500" />
                   <span className="text-sm font-medium text-red-700">
@@ -5567,7 +5554,7 @@ export default function IndicadoresManutencao() {
                       ) : (
                         <TableRow>
                           <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                            Nenhum veículo entrou em manutenção no período selecionado
+                            Nenhum veículo entrou em manutenção hoje
                           </TableCell>
                         </TableRow>
                       )}
@@ -5614,7 +5601,7 @@ export default function IndicadoresManutencao() {
                       ) : (
                         <TableRow>
                           <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                            Nenhum veículo saiu da manutenção no período selecionado
+                            Nenhum veículo saiu da manutenção hoje
                           </TableCell>
                         </TableRow>
                       )}
