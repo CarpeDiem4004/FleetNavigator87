@@ -1905,7 +1905,8 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
     const entradas = await pool.query(`
       SELECT 
         id, placa, tipo, descricao, oficina, base, operacao,
-        data_entrada, km, status
+        to_char(data_entrada, 'YYYY-MM-DD') as data_entrada, 
+        km, status
       FROM manutencoes_historico
       WHERE DATE(data_entrada) = CURRENT_DATE
         AND data_entrada IS NOT NULL
@@ -1916,7 +1917,9 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
     const saidas = await pool.query(`
       SELECT 
         id, placa, tipo, descricao, oficina, base, operacao,
-        data_entrada, data_saida, tempo_total, valor, status
+        to_char(data_entrada, 'YYYY-MM-DD') as data_entrada, 
+        to_char(data_saida, 'YYYY-MM-DD') as data_saida, 
+        tempo_total, valor, status
       FROM manutencoes_historico
       WHERE DATE(data_saida) = CURRENT_DATE
         AND data_saida IS NOT NULL
@@ -1927,7 +1930,10 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
     const saidasFinalizadas = await pool.query(`
       SELECT 
         id, placa, tipo_manutencao as tipo, relato as descricao, oficina as oficina, 
-        '' as base, operacao, data_agenda as data_entrada, data_liberado as data_saida, dias_manutencao as tempo_total,
+        '' as base, operacao, 
+        to_char(data_agenda, 'YYYY-MM-DD') as data_entrada, 
+        to_char(data_liberado, 'YYYY-MM-DD') as data_saida, 
+        dias_manutencao as tempo_total,
         COALESCE(valor_orcamento, valor_negociado, 0) as valor, status
       FROM manutencoes_finalizadas
       WHERE DATE(data_liberado) = CURRENT_DATE
@@ -1939,8 +1945,9 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
     const saidasIndicadores = await pool.query(`
       SELECT 
         id, placa, 'Corretiva' as tipo, relato as descricao, oficina_debito as oficina, 
-        '' as base, '' as operacao, data_agenda as data_entrada, 
-        data_finalizacao as data_saida,
+        '' as base, '' as operacao, 
+        to_char(data_agenda, 'YYYY-MM-DD') as data_entrada, 
+        to_char(data_finalizacao, 'YYYY-MM-DD') as data_saida,
         CASE 
           WHEN data_agenda IS NOT NULL AND data_finalizacao IS NOT NULL
           THEN GREATEST(0, data_finalizacao - data_agenda)::integer
@@ -1953,9 +1960,9 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
       ORDER BY data_finalizacao DESC
     `);
     
-    // Combinar saídas de todas as tabelas
+    // Combinar saídas de todas as tabelas (ordenar por string para evitar problemas de timezone)
     const todasSaidas = [...saidas.rows, ...saidasFinalizadas.rows, ...saidasIndicadores.rows]
-      .sort((a, b) => new Date(b.data_saida).getTime() - new Date(a.data_saida).getTime());
+      .sort((a, b) => (b.data_saida || '').localeCompare(a.data_saida || ''));
     
     // Calcular totais diários
     const entradasHojeTotal = parseInt(entradasHoje.rows[0]?.total || '0');
