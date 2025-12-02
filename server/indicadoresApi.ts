@@ -1866,8 +1866,8 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
     const saidasHojeFinalizadas = await pool.query(`
       SELECT COUNT(*) as total
       FROM manutencoes_finalizadas
-      WHERE DATE(data_saida) = CURRENT_DATE
-        AND data_saida IS NOT NULL
+      WHERE DATE(data_liberado) = CURRENT_DATE
+        AND data_liberado IS NOT NULL
     `);
     
     // Também contar finalizações de indicadores_dados
@@ -1889,8 +1889,8 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
     const saidasOntemFinalizadas = await pool.query(`
       SELECT COUNT(*) as total
       FROM manutencoes_finalizadas
-      WHERE DATE(data_saida) = CURRENT_DATE - 1
-        AND data_saida IS NOT NULL
+      WHERE DATE(data_liberado) = CURRENT_DATE - 1
+        AND data_liberado IS NOT NULL
     `);
     
     // Também contar finalizações de indicadores_dados de ontem
@@ -1926,13 +1926,13 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
     // Também buscar das finalizadas para saídas
     const saidasFinalizadas = await pool.query(`
       SELECT 
-        id, placa, tipo_manutencao as tipo, descricao, oficina_debito as oficina, 
-        base, operacao, data_entrada, data_saida, tempo_total,
+        id, placa, tipo_manutencao as tipo, relato as descricao, oficina as oficina, 
+        '' as base, operacao, data_agenda as data_entrada, data_liberado as data_saida, dias_manutencao as tempo_total,
         COALESCE(valor_orcamento, valor_negociado, 0) as valor, status
       FROM manutencoes_finalizadas
-      WHERE data_saida >= CURRENT_DATE - INTERVAL '${dias} days'
-        AND data_saida IS NOT NULL
-      ORDER BY data_saida DESC
+      WHERE data_liberado >= CURRENT_DATE - INTERVAL '${dias} days'
+        AND data_liberado IS NOT NULL
+      ORDER BY data_liberado DESC
     `);
     
     // Buscar saídas de indicadores_dados (finalizados)
