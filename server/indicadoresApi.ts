@@ -1901,41 +1901,41 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
         AND (DATE(data_finalizacao) = CURRENT_DATE - 1 OR DATE(updated_at) = CURRENT_DATE - 1)
     `);
     
-    // Buscar veículos que ENTRARAM em manutenção no período (para modal)
+    // Buscar veículos que ENTRARAM em manutenção HOJE (para modal)
     const entradas = await pool.query(`
       SELECT 
         id, placa, tipo, descricao, oficina, base, operacao,
         data_entrada, km, status
       FROM manutencoes_historico
-      WHERE data_entrada >= CURRENT_DATE - INTERVAL '${dias} days'
+      WHERE DATE(data_entrada) = CURRENT_DATE
         AND data_entrada IS NOT NULL
       ORDER BY data_entrada DESC
     `);
     
-    // Buscar veículos que SAÍRAM da manutenção no período (para modal)
+    // Buscar veículos que SAÍRAM da manutenção HOJE (para modal)
     const saidas = await pool.query(`
       SELECT 
         id, placa, tipo, descricao, oficina, base, operacao,
         data_entrada, data_saida, tempo_total, valor, status
       FROM manutencoes_historico
-      WHERE data_saida >= CURRENT_DATE - INTERVAL '${dias} days'
+      WHERE DATE(data_saida) = CURRENT_DATE
         AND data_saida IS NOT NULL
       ORDER BY data_saida DESC
     `);
     
-    // Também buscar das finalizadas para saídas
+    // Também buscar das finalizadas para saídas de HOJE
     const saidasFinalizadas = await pool.query(`
       SELECT 
         id, placa, tipo_manutencao as tipo, relato as descricao, oficina as oficina, 
         '' as base, operacao, data_agenda as data_entrada, data_liberado as data_saida, dias_manutencao as tempo_total,
         COALESCE(valor_orcamento, valor_negociado, 0) as valor, status
       FROM manutencoes_finalizadas
-      WHERE data_liberado >= CURRENT_DATE - INTERVAL '${dias} days'
+      WHERE DATE(data_liberado) = CURRENT_DATE
         AND data_liberado IS NOT NULL
       ORDER BY data_liberado DESC
     `);
     
-    // Buscar saídas de indicadores_dados (finalizados)
+    // Buscar saídas de indicadores_dados de HOJE (finalizados)
     const saidasIndicadores = await pool.query(`
       SELECT 
         id, placa, 'Corretiva' as tipo, relato as descricao, oficina_debito as oficina, 
@@ -1949,8 +1949,7 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
         0 as valor, status
       FROM indicadores_dados
       WHERE status = 'Finalizado'
-        AND (data_finalizacao >= CURRENT_DATE - INTERVAL '${dias} days' 
-             OR updated_at >= CURRENT_DATE - INTERVAL '${dias} days')
+        AND (DATE(data_finalizacao) = CURRENT_DATE OR DATE(updated_at) = CURRENT_DATE)
       ORDER BY COALESCE(data_finalizacao, updated_at::date) DESC
     `);
     
