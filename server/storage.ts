@@ -1298,6 +1298,59 @@ export class DatabaseStorage implements IStorage {
       } catch (vehicleError) {
         console.error("⚠️ [SYNC] Erro ao atualizar status do veículo (não crítico):", vehicleError);
       }
+
+      // 4️⃣ SINCRONIZAR COM INDICADORES DE MANUTENÇÃO
+      try {
+        const placa = maintenanceData.vehiclePlate || maintenanceData.placa;
+        
+        // Buscar upload_id mais recente
+        const uploadResult = await pool.query(
+          'SELECT id FROM indicadores_uploads ORDER BY data_upload DESC LIMIT 1'
+        );
+        const uploadId = uploadResult.rows[0]?.id || 1;
+        
+        // Verificar se já existe registro para esta placa
+        const existeResult = await pool.query(
+          'SELECT id FROM indicadores_dados WHERE placa = $1 AND status IN ($2, $3, $4)',
+          [placa, 'Em Manutenção', 'Em Execução', 'Orçamento Aprovado']
+        );
+        
+        if (existeResult.rows.length === 0) {
+          // Buscar informações do veículo
+          const veiculoResult = await pool.query(
+            'SELECT modelo, km FROM veiculos WHERE placa = $1',
+            [placa]
+          );
+          const modelo = veiculoResult.rows[0]?.modelo || '';
+          const km = veiculoResult.rows[0]?.km || null;
+          
+          // Inserir no indicadores_dados
+          const indicadorQuery = `
+            INSERT INTO indicadores_dados (
+              upload_id, placa, modelo, km, relato, data_agenda, 
+              oficina_debito, status, created_at
+            ) VALUES (
+              $1, $2, $3, $4, $5, CURRENT_DATE, $6, 'Em Manutenção', NOW()
+            ) RETURNING *
+          `;
+          
+          const indicadorValues = [
+            uploadId,
+            placa,
+            modelo,
+            km,
+            maintenanceData.description || maintenanceData.descricao || '',
+            'Oficina Murici'
+          ];
+          
+          const indicadorResult = await pool.query(indicadorQuery, indicadorValues);
+          console.log("✅ [SYNC] Registro criado nos Indicadores de Manutenção:", indicadorResult.rows[0]);
+        } else {
+          console.log("ℹ️ [SYNC] Veículo já existe nos Indicadores de Manutenção");
+        }
+      } catch (indicadorError) {
+        console.error("⚠️ [SYNC] Erro ao sincronizar com Indicadores de Manutenção (não crítico):", indicadorError);
+      }
       
       // Converter o objeto retornado pelo banco para o formato esperado
       return {
