@@ -2110,7 +2110,7 @@ export default function IndicadoresManutencao() {
 
             {/* Aba de Upload */}
             <TabsContent value="upload">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-6">
                 <Card>
                   <CardHeader>
                     <CardTitle>Upload de Planilha de Indicadores</CardTitle>
@@ -2182,65 +2182,6 @@ export default function IndicadoresManutencao() {
                           </div>
                         </div>
                       )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Upload de Histórico de Manutenções</CardTitle>
-                    <CardDescription>
-                      Planilha com: Placa, Data, Tipo, Descrição, Valor, Status, Oficina, KM, Base
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="file-historico">Arquivo Excel (.xlsx)</Label>
-                        <Input
-                          id="file-historico"
-                          type="file"
-                          accept=".xlsx,.xls"
-                          onChange={handleFileChange}
-                          disabled={uploadManutencoesHistoricoMutation.isPending}
-                          data-testid="input-file-historico"
-                        />
-                      </div>
-
-                      <Button
-                        onClick={handleUploadHistorico}
-                        disabled={!selectedFile || uploadManutencoesHistoricoMutation.isPending}
-                        className="w-full"
-                        variant="secondary"
-                        data-testid="button-upload-historico"
-                      >
-                        {uploadManutencoesHistoricoMutation.isPending ? (
-                          <>Importando...</>
-                        ) : (
-                          <>
-                            <FileSpreadsheet className="mr-2 h-4 w-4" />
-                            Importar Histórico
-                          </>
-                        )}
-                      </Button>
-
-                      <div className="p-4 bg-muted rounded-lg text-sm">
-                        <p className="font-medium mb-2">Colunas esperadas:</p>
-                        <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                          <li>Placa</li>
-                          <li>Data da Manutenção</li>
-                          <li>Tipo de Manutenção</li>
-                          <li>Descrição</li>
-                          <li>Valor</li>
-                          <li>Status</li>
-                          <li>Oficina</li>
-                          <li>KM</li>
-                          <li>Data de Entrada</li>
-                          <li>Data de Saída</li>
-                          <li>Tempo de Manutenção (dias)</li>
-                          <li>Base</li>
-                        </ul>
-                      </div>
                     </div>
                   </CardContent>
                 </Card>
