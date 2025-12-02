@@ -2177,4 +2177,251 @@ router.get('/update', async (req: Request, res: Response) => {
   }
 });
 
+// ==================== CRUD DE FORNECEDORES ====================
+
+// Listar todos os fornecedores
+router.get('/fornecedores', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { ativo, categoria, search } = req.query;
+    
+    let query = 'SELECT * FROM fornecedores WHERE 1=1';
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (ativo !== undefined && ativo !== '') {
+      query += ` AND ativo = $${paramIndex}`;
+      params.push(ativo === 'true');
+      paramIndex++;
+    }
+
+    if (categoria && categoria !== '') {
+      query += ` AND categoria = $${paramIndex}`;
+      params.push(categoria);
+      paramIndex++;
+    }
+
+    if (search && search !== '') {
+      query += ` AND (LOWER(nome) LIKE $${paramIndex} OR LOWER(cnpj) LIKE $${paramIndex} OR LOWER(cidade) LIKE $${paramIndex})`;
+      params.push(`%${String(search).toLowerCase()}%`);
+      paramIndex++;
+    }
+
+    query += ' ORDER BY nome ASC';
+
+    const result = await pool.query(query, params);
+    
+    res.json({
+      success: true,
+      data: result.rows,
+      total: result.rows.length
+    });
+  } catch (error) {
+    console.error('[FORNECEDORES] Erro ao listar fornecedores:', error);
+    res.status(500).json({ success: false, message: 'Erro ao listar fornecedores' });
+  }
+});
+
+// Buscar fornecedor por ID
+router.get('/fornecedores/:id', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await pool.query(
+      'SELECT * FROM fornecedores WHERE id = $1',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Fornecedor não encontrado' });
+    }
+
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('[FORNECEDORES] Erro ao buscar fornecedor:', error);
+    res.status(500).json({ success: false, message: 'Erro ao buscar fornecedor' });
+  }
+});
+
+// Criar novo fornecedor
+router.post('/fornecedores', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const {
+      nome,
+      cnpj,
+      categoria,
+      tipo_servico,
+      contato_nome,
+      contato_telefone,
+      contato_email,
+      endereco,
+      cidade,
+      estado,
+      cep,
+      observacoes,
+      is_parceiro,
+      ativo
+    } = req.body;
+
+    if (!nome || nome.trim().length < 2) {
+      return res.status(400).json({ success: false, message: 'Nome é obrigatório e deve ter pelo menos 2 caracteres' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO fornecedores (
+        nome, cnpj, categoria, tipo_servico, contato_nome, contato_telefone,
+        contato_email, endereco, cidade, estado, cep, observacoes, is_parceiro, ativo
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      RETURNING *`,
+      [
+        nome.trim(),
+        cnpj || null,
+        categoria || 'oficina_mecanica',
+        tipo_servico || null,
+        contato_nome || null,
+        contato_telefone || null,
+        contato_email || null,
+        endereco || null,
+        cidade || null,
+        estado || null,
+        cep || null,
+        observacoes || null,
+        is_parceiro ?? false,
+        ativo ?? true
+      ]
+    );
+
+    res.status(201).json({
+      success: true,
+      data: result.rows[0],
+      message: 'Fornecedor cadastrado com sucesso'
+    });
+  } catch (error) {
+    console.error('[FORNECEDORES] Erro ao criar fornecedor:', error);
+    res.status(500).json({ success: false, message: 'Erro ao criar fornecedor' });
+  }
+});
+
+// Atualizar fornecedor
+router.patch('/fornecedores/:id', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const {
+      nome,
+      cnpj,
+      categoria,
+      tipo_servico,
+      contato_nome,
+      contato_telefone,
+      contato_email,
+      endereco,
+      cidade,
+      estado,
+      cep,
+      observacoes,
+      is_parceiro,
+      ativo
+    } = req.body;
+
+    // Verificar se o fornecedor existe
+    const existing = await pool.query('SELECT id FROM fornecedores WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Fornecedor não encontrado' });
+    }
+
+    const result = await pool.query(
+      `UPDATE fornecedores SET
+        nome = COALESCE($1, nome),
+        cnpj = $2,
+        categoria = COALESCE($3, categoria),
+        tipo_servico = $4,
+        contato_nome = $5,
+        contato_telefone = $6,
+        contato_email = $7,
+        endereco = $8,
+        cidade = $9,
+        estado = $10,
+        cep = $11,
+        observacoes = $12,
+        is_parceiro = COALESCE($13, is_parceiro),
+        ativo = COALESCE($14, ativo),
+        updated_at = NOW()
+      WHERE id = $15
+      RETURNING *`,
+      [
+        nome?.trim(),
+        cnpj,
+        categoria,
+        tipo_servico,
+        contato_nome,
+        contato_telefone,
+        contato_email,
+        endereco,
+        cidade,
+        estado,
+        cep,
+        observacoes,
+        is_parceiro,
+        ativo,
+        id
+      ]
+    );
+
+    res.json({
+      success: true,
+      data: result.rows[0],
+      message: 'Fornecedor atualizado com sucesso'
+    });
+  } catch (error) {
+    console.error('[FORNECEDORES] Erro ao atualizar fornecedor:', error);
+    res.status(500).json({ success: false, message: 'Erro ao atualizar fornecedor' });
+  }
+});
+
+// Deletar fornecedor
+router.delete('/fornecedores/:id', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Verificar se o fornecedor existe
+    const existing = await pool.query('SELECT id FROM fornecedores WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Fornecedor não encontrado' });
+    }
+
+    await pool.query('DELETE FROM fornecedores WHERE id = $1', [id]);
+
+    res.json({
+      success: true,
+      message: 'Fornecedor removido com sucesso'
+    });
+  } catch (error) {
+    console.error('[FORNECEDORES] Erro ao deletar fornecedor:', error);
+    res.status(500).json({ success: false, message: 'Erro ao deletar fornecedor' });
+  }
+});
+
+// Listar oficinas únicas das manutenções finalizadas (para importar como fornecedores)
+router.get('/fornecedores/oficinas/disponiveis', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(`
+      SELECT DISTINCT oficina as nome, COUNT(*) as total_manutencoes
+      FROM manutencoes_finalizadas 
+      WHERE oficina IS NOT NULL AND oficina != ''
+      GROUP BY oficina
+      ORDER BY total_manutencoes DESC
+    `);
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('[FORNECEDORES] Erro ao listar oficinas disponíveis:', error);
+    res.status(500).json({ success: false, message: 'Erro ao listar oficinas' });
+  }
+});
+
 export default router;
