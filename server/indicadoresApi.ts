@@ -2017,12 +2017,29 @@ router.get('/update', async (req: Request, res: Response) => {
           const modeloVeiculo = veiculoResult.rows[0]?.modelo || '';
 
           // Usar data_hora_inicio ou created_at como data de início da manutenção (para calcular dias parados)
-          const dataInicio = manutencao.data_hora_inicio 
-            ? manutencao.data_hora_inicio.split('T')[0] 
-            : (manutencao.created_at ? new Date(manutencao.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+          // Proteção: se data_hora_inicio for muito antiga (mais de 30 dias antes do created_at) ou no futuro, usar created_at
+          let dataInicio = new Date().toISOString().split('T')[0];
+          const createdAtDate = manutencao.created_at ? new Date(manutencao.created_at) : new Date();
+          
+          if (manutencao.data_hora_inicio) {
+            const dataHoraInicioDate = new Date(manutencao.data_hora_inicio);
+            const hoje = new Date();
+            const diffFromCreated = Math.abs(createdAtDate.getTime() - dataHoraInicioDate.getTime()) / (1000 * 60 * 60 * 24);
+            
+            // Se data_hora_inicio está dentro de 30 dias do created_at e não é futura, usar ela
+            if (diffFromCreated <= 30 && dataHoraInicioDate <= hoje) {
+              dataInicio = manutencao.data_hora_inicio.split('T')[0];
+            } else {
+              // Caso contrário, usar created_at do Supabase
+              dataInicio = createdAtDate.toISOString().split('T')[0];
+            }
+          } else {
+            // Se não tem data_hora_inicio, usar created_at
+            dataInicio = createdAtDate.toISOString().split('T')[0];
+          }
 
           if (existeResult.rows.length > 0) {
-            // Já existe registro para esta placa - apenas atualizar
+            // Já existe registro para esta placa - SEMPRE atualizar data_agenda com data correta de parada
             await pool.query(
               `UPDATE indicadores_dados 
                SET km = COALESCE($1, km),
@@ -2030,7 +2047,7 @@ router.get('/update', async (req: Request, res: Response) => {
                    focal = COALESCE($3, focal),
                    status = $4,
                    modelo = COALESCE($5, modelo),
-                   data_agenda = COALESCE($6, data_agenda),
+                   data_agenda = $6,
                    updated_at = NOW()
                WHERE id = $7`,
               [
