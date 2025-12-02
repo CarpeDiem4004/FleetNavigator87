@@ -269,6 +269,23 @@ const OficinaMurici: React.FC = () => {
           throw new Error(`Erro ao atualizar: ${updateError.message}`);
         }
         
+        // Sincronizar atualização com Indicadores de Manutenção
+        try {
+          await apiRequest('POST', '/api/indicadores/sync-oficina-murici', {
+            placa: currentManutencao.placa,
+            modelo: '', 
+            km: Number(currentManutencao.km) || 0,
+            relato: currentManutencao.descricao_manutencao,
+            oficina: 'Oficina Murici',
+            mecanico: currentManutencao.mecanico,
+            status: currentManutencao.status,
+            custo_total: custoTotalCalculado
+          });
+          console.log('Atualização sincronizada com Indicadores de Manutenção');
+        } catch (syncError) {
+          console.warn('Erro ao sincronizar atualização com Indicadores (não crítico):', syncError);
+        }
+        
         toast({
           title: 'Manutenção atualizada',
           description: `Manutenção do veículo ${currentManutencao.placa} atualizada com sucesso.`
@@ -295,7 +312,9 @@ const OficinaMurici: React.FC = () => {
             km: Number(currentManutencao.km) || 0,
             relato: currentManutencao.descricao_manutencao,
             oficina: 'Oficina Murici',
-            mecanico: currentManutencao.mecanico
+            mecanico: currentManutencao.mecanico,
+            status: currentManutencao.status,
+            custo_total: custoTotalCalculado
           });
           console.log('Sincronizado com Indicadores de Manutenção');
         } catch (syncError) {
