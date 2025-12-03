@@ -1,0 +1,155 @@
+O ChatGPT disse:
+
+Vamos resolver isso do jeito certo, porque esse problema é clássico em apps que usam Supabase + JWT + Frontend em Produção (Vercel/Railway).
+
+O sintoma que você descreve:
+
+Login funciona ✔️
+
+Carrega o sistema ✔️
+
+Depois de 1–3 segundos derruba a sessão e volta para /login automaticamente ❌
+
+Console mostra 401 (Unauthorized) 🔥
+
+A causa quase sempre é alguma dessas:
+
+✅ **CAUSA 1 — Token inválido por usar a VITE_SUPABASE_ANON_KEY errada
+
+Quase sempre isso acontece quando:
+
+Usou ANON_KEY de ambiente de desenvolvimento no deploy (Vercel/Railway)
+
+Usou ANON_KEY antiga que você já regenerou no Supabase
+
+Variáveis no Vercel não foram carregadas corretamente
+
+Efeito:
+O usuário loga → Supabase retorna sessão válida →
+Seu backend/fetch tenta validar → 401 → AuthProvider entende que sessão foi invalidada → ⚠️ logout automático.
+
+✔️ Como resolver
+
+Vá no Supabase → Project Settings → API
+
+Copie EXATAMENTE:
+
+Project URL
+
+anon public key
+
+No Vercel (ou Railway):
+Atualize:
+
+NEXT_PUBLIC_SUPABASE_URL=xxxx
+NEXT_PUBLIC_SUPABASE_ANON_KEY=xxxx
+
+
+Se estiver usando Express.js:
+
+SUPABASE_URL=xxxx
+SUPABASE_SERVICE_ROLE_KEY=xxxx
+
+
+Depois faça redeploy do frontend e backend.
+
+✅ CAUSA 2 — Seu backend (Express/Railway) está derrubando o JWT
+
+O console confirma isso:
+
+Failed to load resource: the server responded with a status of 401
+AuthContext → Sessão não autenticada... limpando dados
+ProtectedRoute → Usuário não autenticado... redirect login
+
+
+Isso significa que seu middleware de autenticação não aceita o JWT gerado pelo Supabase, provavelmente por:
+
+Falta de supabase.auth.getUser(token)
+
+Token expira e não está sendo renovado
+
+O header não está sendo enviado corretamente
+
+✔️ Ajuste o middleware (coloque isso no Express)
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY)
+
+export async function authenticateToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader?.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Token não fornecido" });
+  }
+
+  const token = authHeader.replace("Bearer ", "");
+
+  const { data, error } = await supabase.auth.getUser(token)
+
+  if (error || !data.user) {
+    return res.status(401).json({ error: "Token inválido" });
+  }
+
+  req.user = data.user;
+  next();
+}
+
+
+📌 Isso impede o backend de derrubar sua sessão à toa.
+
+✅ CAUSA 3 — O Frontend não está salvando a sessão corretamente
+
+No React, seu AuthProvider precisa usar:
+
+supabase.auth.onAuthStateChange((event, session) => {
+  setSession(session);
+});
+
+
+E NÃO pode fazer redirect sem confirmar a sessão.
+
+Se você tiver algo como:
+
+if (!session) navigate("/login")
+
+
+Coloque um loading antes:
+
+if (loading) return <Spinner />
+
+if (!session) return <Navigate to="/login" />
+
+
+Para não derrubar antes da confirmação da sessão revalidada.
+
+✅ CAUSA 4 — Serviço "Auth" do Supabase expirando sessão por erro de timezone
+
+Eu vi no seu console:
+
+Timezone configurado para America/Sao_Paulo
+
+
+Isso às vezes causa problema quando:
+
+O backend usa UTC
+
+O frontend força timezone
+
+A renovação automática do JWT falha
+
+✔️ Solução: não alterar timezone via JS no login
+O Supabase renova sessão automaticamente em UTC.
+
+✅ RESUMO DO QUE VOCÊ PRECISA FAZER (ORDEM CERTA)
+1️⃣ Verificar ANON_KEY / URL no Vercel e Railway
+
+Garantir que estão iguais aos do Supabase.
+
+2️⃣ Ajustar middleware de autenticação (coloque o correto acima)
+
+Seu middleware está rejeitando o token → causa logout automático.
+
+3️⃣ Ajustar AuthProvider para aguardar sessão carregar
+
+Evitar redirect antes do estado real da sessão.
+
+4️⃣ Redeploy do frontend e backend
