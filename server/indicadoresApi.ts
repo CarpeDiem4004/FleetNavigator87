@@ -566,7 +566,7 @@ router.post('/dados', isAuthenticated, async (req: Request, res: Response) => {
 router.put('/dados/:id', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status, pecas, data_finalizacao } = req.body;
+    const { placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status, pecas, data_finalizacao, data_parada, data_inicio_manutencao, tipo_manutencao } = req.body;
 
     const result = await pool.query(
       `UPDATE indicadores_dados SET 
@@ -580,10 +580,13 @@ router.put('/dados/:id', isAuthenticated, async (req: Request, res: Response) =>
         atendimento = COALESCE($8, atendimento),
         status = COALESCE($9, status),
         data_finalizacao = COALESCE($11, data_finalizacao),
+        data_parada = COALESCE($12, data_parada),
+        data_inicio_manutencao = COALESCE($13, data_inicio_manutencao),
+        tipo_manutencao = COALESCE($14, tipo_manutencao),
         updated_at = NOW()
        WHERE id = $10
        RETURNING *`,
-      [placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status, id, data_finalizacao]
+      [placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status, id, data_finalizacao, data_parada, data_inicio_manutencao, tipo_manutencao]
     );
 
     if (result.rows.length === 0) {
