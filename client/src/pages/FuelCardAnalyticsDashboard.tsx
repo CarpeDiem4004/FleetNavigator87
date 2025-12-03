@@ -241,10 +241,12 @@ const FuelCardAnalyticsDashboard = () => {
   }, [analytics]);
 
   const chartDataOperadora = useMemo(() => {
-    return analytics?.graficos.porOperadora.map(item => ({
-      name: item.operadora,
-      value: parseFloat(item.total),
-    })) || [];
+    return analytics?.graficos.porOperadora
+      .filter(item => item.operadora.toLowerCase() !== 'alelo')
+      .map(item => ({
+        name: item.operadora,
+        value: parseFloat(item.total),
+      })) || [];
   }, [analytics]);
 
   return (
