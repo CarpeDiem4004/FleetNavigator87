@@ -4795,10 +4795,10 @@ export default function IndicadoresManutencao() {
               </div>
             </div>
 
-            {/* Status e Oficina */}
+            {/* Status, Tipo e Oficina */}
             <div className="space-y-4">
-              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Status e Oficina</h4>
-              <div className="grid grid-cols-2 gap-4">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Status, Tipo e Oficina</h4>
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>Status</Label>
                   <Select 
@@ -4815,6 +4815,21 @@ export default function IndicadoresManutencao() {
                       <SelectItem value="Aguardando Aprovação">Aguardando Aprovação</SelectItem>
                       <SelectItem value="Em Execução">Em Execução</SelectItem>
                       <SelectItem value="Finalizado">Finalizado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Tipo de Manutenção *</Label>
+                  <Select 
+                    value={newDado.tipo_manutencao || ''}
+                    onValueChange={(value) => setNewDado({...newDado, tipo_manutencao: value})}
+                  >
+                    <SelectTrigger data-testid="select-new-tipo-manutencao">
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Corretiva">Corretiva</SelectItem>
+                      <SelectItem value="Preventiva">Preventiva</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
