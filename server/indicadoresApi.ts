@@ -1839,20 +1839,38 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
     
     console.log('[MOVIMENTACOES] Buscando movimentações dos últimos', dias, 'dias');
     
-    // Buscar entradas HOJE
-    const entradasHoje = await pool.query(`
+    // Buscar entradas HOJE (manutencoes_historico)
+    const entradasHojeHistorico = await pool.query(`
       SELECT COUNT(*) as total
       FROM manutencoes_historico
       WHERE DATE(data_entrada) = CURRENT_DATE
         AND data_entrada IS NOT NULL
     `);
     
-    // Buscar entradas ONTEM
-    const entradasOntem = await pool.query(`
+    // Buscar entradas HOJE (indicadores_dados - sincronizado do Supabase/Oficina Murici)
+    const entradasHojeIndicadores = await pool.query(`
+      SELECT COUNT(*) as total
+      FROM indicadores_dados
+      WHERE DATE(data_agenda) = CURRENT_DATE
+        AND data_agenda IS NOT NULL
+        AND status != 'Finalizado'
+    `);
+    
+    // Buscar entradas ONTEM (manutencoes_historico)
+    const entradasOntemHistorico = await pool.query(`
       SELECT COUNT(*) as total
       FROM manutencoes_historico
       WHERE DATE(data_entrada) = CURRENT_DATE - 1
         AND data_entrada IS NOT NULL
+    `);
+    
+    // Buscar entradas ONTEM (indicadores_dados)
+    const entradasOntemIndicadores = await pool.query(`
+      SELECT COUNT(*) as total
+      FROM indicadores_dados
+      WHERE DATE(data_agenda) = CURRENT_DATE - 1
+        AND data_agenda IS NOT NULL
+        AND status != 'Finalizado'
     `);
     
     // Buscar saídas HOJE (de todas as tabelas)
@@ -1901,8 +1919,8 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
         AND DATE(data_finalizacao) = CURRENT_DATE - 1
     `);
     
-    // Buscar veículos que ENTRARAM em manutenção HOJE (para modal)
-    const entradas = await pool.query(`
+    // Buscar veículos que ENTRARAM em manutenção HOJE (para modal) - manutencoes_historico
+    const entradasHistorico = await pool.query(`
       SELECT 
         id, placa, tipo, descricao, oficina, base, operacao,
         to_char(data_entrada, 'YYYY-MM-DD') as data_entrada, 
@@ -1912,6 +1930,24 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
         AND data_entrada IS NOT NULL
       ORDER BY data_entrada DESC
     `);
+    
+    // Buscar veículos que ENTRARAM em manutenção HOJE (para modal) - indicadores_dados (Oficina Murici)
+    const entradasIndicadores = await pool.query(`
+      SELECT 
+        id, placa, 'Corretiva' as tipo, relato as descricao, oficina_debito as oficina, 
+        '' as base, '' as operacao,
+        to_char(data_agenda, 'YYYY-MM-DD') as data_entrada, 
+        0 as km, status
+      FROM indicadores_dados
+      WHERE DATE(data_agenda) = CURRENT_DATE
+        AND data_agenda IS NOT NULL
+        AND status != 'Finalizado'
+      ORDER BY data_agenda DESC
+    `);
+    
+    // Combinar entradas de todas as tabelas
+    const todasEntradas = [...entradasHistorico.rows, ...entradasIndicadores.rows]
+      .sort((a, b) => (b.data_entrada || '').localeCompare(a.data_entrada || ''));
     
     // Buscar veículos que SAÍRAM da manutenção HOJE (para modal)
     const saidas = await pool.query(`
@@ -1964,9 +2000,11 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
     const todasSaidas = [...saidas.rows, ...saidasFinalizadas.rows, ...saidasIndicadores.rows]
       .sort((a, b) => (b.data_saida || '').localeCompare(a.data_saida || ''));
     
-    // Calcular totais diários
-    const entradasHojeTotal = parseInt(entradasHoje.rows[0]?.total || '0');
-    const entradasOntemTotal = parseInt(entradasOntem.rows[0]?.total || '0');
+    // Calcular totais diários (incluindo todas as fontes de dados)
+    const entradasHojeTotal = parseInt(entradasHojeHistorico.rows[0]?.total || '0') +
+                               parseInt(entradasHojeIndicadores.rows[0]?.total || '0');
+    const entradasOntemTotal = parseInt(entradasOntemHistorico.rows[0]?.total || '0') +
+                                parseInt(entradasOntemIndicadores.rows[0]?.total || '0');
     const saidasHojeTotal = parseInt(saidasHojeHistorico.rows[0]?.total || '0') + 
                             parseInt(saidasHojeFinalizadas.rows[0]?.total || '0') +
                             parseInt(saidasHojeIndicadores.rows[0]?.total || '0');
@@ -1998,8 +2036,8 @@ router.get('/movimentacoes', isAuthenticated, async (req: Request, res: Response
         }
       },
       entradas: {
-        total: entradas.rows.length,
-        registros: entradas.rows
+        total: todasEntradas.length,
+        registros: todasEntradas
       },
       saidas: {
         total: todasSaidas.length,
