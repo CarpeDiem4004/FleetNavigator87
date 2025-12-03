@@ -15,20 +15,32 @@ export default function fixCookieSession(req: Request, res: Response, next: Next
   if (req.session.cookie) {
     req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias
     
-    // CORREÇÃO DEFINITIVA: Para Replit, sempre usar secure=true + sameSite=none
-    const isReplit = req.hostname.includes('replit.dev') || req.hostname.includes('replit.app') || req.hostname.includes('picard.replit');
+    // CORREÇÃO CRÍTICA: Verificar o protocolo REAL da requisição
+    // O 'x-forwarded-proto' indica o protocolo original quando atrás de proxy
+    const forwardedProto = req.headers['x-forwarded-proto'] as string | undefined;
+    const isHttps = req.secure || forwardedProto === 'https';
+    
+    // Verificar se é ambiente Replit pelo hostname OU pelas variáveis de ambiente
+    const isReplitHost = req.hostname.includes('replit.dev') || req.hostname.includes('replit.app') || req.hostname.includes('picard.replit');
+    const isReplitEnv = Boolean(process.env.REPL_ID || process.env.REPL_SLUG);
+    
+    // Verificar se é localhost (acesso direto sem HTTPS)
+    const isLocalhost = req.hostname === 'localhost' || req.hostname === '127.0.0.1' || req.hostname.startsWith('192.168.');
     
     // Log para diagnóstico
-    console.log(`[Cookie Middleware] hostname: ${req.hostname}, isReplit: ${isReplit}`);
+    console.log(`[Cookie Middleware] hostname: ${req.hostname}, isHttps: ${isHttps}, isReplitHost: ${isReplitHost}, isLocalhost: ${isLocalhost}`);
     
-    if (isReplit) {
+    // REGRA: Se for HTTPS E (Replit host OU ambiente Replit), usar secure=true
+    // Caso contrário (localhost HTTP), usar secure=false
+    if (isHttps && (isReplitHost || isReplitEnv)) {
       req.session.cookie.secure = true; // REQUERIDO para sameSite=none no navegador
       req.session.cookie.sameSite = 'none'; // PERMITIR cross-origin cookies
-      console.log('[Cookie Middleware] Configurado para Replit: secure=true, sameSite=none');
+      console.log('[Cookie Middleware] Configurado para Replit HTTPS: secure=true, sameSite=none');
     } else {
-      req.session.cookie.secure = false; // Para desenvolvimento local
-      req.session.cookie.sameSite = 'lax'; // Para desenvolvimento local
-      console.log('[Cookie Middleware] Configurado para localhost: secure=false, sameSite=lax');
+      // Para localhost ou HTTP: usar configuração que funciona sem HTTPS
+      req.session.cookie.secure = false; // Funciona com HTTP
+      req.session.cookie.sameSite = 'lax'; // Mais seguro para HTTP
+      console.log('[Cookie Middleware] Configurado para HTTP/localhost: secure=false, sameSite=lax');
     }
     req.session.cookie.httpOnly = true; // SEGURANÇA: Prevenir acesso JavaScript aos cookies
 

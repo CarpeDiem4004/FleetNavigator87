@@ -195,6 +195,9 @@ export function setupAuth(app: Express) {
   
   console.log(`[Auth Setup] Ambiente Replit detectado: ${isReplitEnv}`);
   
+  // CORREÇÃO CRÍTICA: Definir cookie como 'auto' - o middleware fixCookieSession
+  // ajustará secure/sameSite baseado no protocolo REAL da requisição (HTTP vs HTTPS)
+  // Isso resolve o problema de acessar via 127.0.0.1 (HTTP) no ambiente Replit
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || (process.env.NODE_ENV !== 'production' ? 
       'dev_temp_secret_' + Date.now().toString() : 
@@ -203,17 +206,19 @@ export function setupAuth(app: Express) {
     saveUninitialized: true, // Garante que a sessão seja salva mesmo que não modificada
     store: sessionStore,
     cookie: {
-      secure: isReplitEnv, // true em Replit, false em localhost
+      // Iniciar com secure: 'auto' para permitir que o middleware ajuste
+      // baseado no protocolo real da requisição (HTTPS = secure, HTTP = não secure)
+      secure: 'auto' as any, // Será ajustado pelo middleware baseado no protocolo
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dias para maior persistência
-      sameSite: isReplitEnv ? 'none' : 'lax', // none em Replit para cross-origin, lax em localhost
+      sameSite: 'lax', // Default lax, será ajustado para 'none' se HTTPS
       httpOnly: true,
       path: '/'
     }
   };
   
   console.log(`Configuração da sessão: 
-  - Secure: ${isReplitEnv}
-  - SameSite: ${isReplitEnv ? 'none' : 'lax'}
+  - Secure: auto (ajustado por middleware baseado no protocolo)
+  - SameSite: lax (ajustado para none se HTTPS)
   - MaxAge: ${30 * 24 * 60 * 60 * 1000}ms (30 dias)
   - Store: ${!useMemoryStore ? 'PostgreSQL' : 'Memory'}
   - Environment: ${isReplitEnv ? 'Replit' : 'Local'}`);
@@ -242,19 +247,22 @@ export function setupAuth(app: Express) {
       } else if (isDev) {
         // Para ambiente de desenvolvimento/teste
         
-        // CORREÇÃO DEFINITIVA: Detectar qualquer hostname com '.replit.'
-        const isReplit = req.hostname.includes('.replit.');
+        // CORREÇÃO CRÍTICA: Verificar o protocolo REAL da requisição
+        const forwardedProto = req.headers['x-forwarded-proto'] as string | undefined;
+        const isHttps = req.secure || forwardedProto === 'https';
+        const isReplitHost = req.hostname.includes('.replit.');
         
-        console.log(`[Cookie Middleware] hostname: ${req.hostname}, isReplit: ${isReplit}`);
+        console.log(`[Cookie Middleware/Auth] hostname: ${req.hostname}, isHttps: ${isHttps}, isReplitHost: ${isReplitHost}`);
         
-        if (isReplit) {
+        // Só usar secure=true se for HTTPS E host Replit
+        if (isHttps && isReplitHost) {
           (req.session as any).cookie.secure = true; // REQUERIDO para sameSite=none
           (req.session as any).cookie.sameSite = 'none'; // PERMITIR cross-origin
-          console.log('[Cookie Middleware] Configurado para Replit: secure=true, sameSite=none');
+          console.log('[Cookie Middleware/Auth] Configurado para Replit HTTPS: secure=true, sameSite=none');
         } else {
-          (req.session as any).cookie.secure = false; // Para desenvolvimento local
-          (req.session as any).cookie.sameSite = 'lax'; // Para desenvolvimento local
-          console.log('[Cookie Middleware] Configurado para localhost: secure=false, sameSite=lax');
+          (req.session as any).cookie.secure = false; // Para HTTP/localhost
+          (req.session as any).cookie.sameSite = 'lax'; // Funciona sem HTTPS
+          console.log('[Cookie Middleware/Auth] Configurado para HTTP/localhost: secure=false, sameSite=lax');
         }
         (req.session as any).cookie.httpOnly = true; // SEGURANÇA: Prevenir XSS
       }
