@@ -121,6 +121,9 @@ interface Dado {
   atendimento: string;
   status: string;
   data_finalizacao?: string;
+  data_parada?: string;
+  data_inicio_manutencao?: string;
+  tipo_manutencao?: string;
   total_orcamentos?: number;
   orcamentos_pendentes?: number;
   orcamentos_aprovados?: number;
@@ -1915,6 +1918,29 @@ export default function IndicadoresManutencao() {
       return d.toLocaleDateString('pt-BR');
     } catch {
       return '-';
+    }
+  };
+
+  // Função para formatar data ISO para input HTML (yyyy-MM-dd)
+  const formatDateForInput = (date: string | null | undefined): string => {
+    if (!date) return '';
+    try {
+      // Já está no formato correto
+      if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return date;
+      }
+      // Data com timestamp ISO - extrair apenas a parte da data
+      if (typeof date === 'string' && date.includes('T')) {
+        return date.split('T')[0];
+      }
+      // Tentar converter para Date e extrair
+      const d = new Date(date);
+      if (!isNaN(d.getTime())) {
+        return d.toISOString().split('T')[0];
+      }
+      return '';
+    } catch {
+      return '';
     }
   };
 
@@ -4475,7 +4501,7 @@ export default function IndicadoresManutencao() {
                     <Label>Data Parada do Veículo</Label>
                     <Input 
                       type="date"
-                      value={(editingDado as any).data_parada || ''}
+                      value={formatDateForInput((editingDado as any).data_parada)}
                       onChange={(e) => setEditingDado({...editingDado, data_parada: e.target.value} as any)}
                       className="bg-orange-50 border-orange-200"
                       data-testid="input-edit-data-parada"
@@ -4485,7 +4511,7 @@ export default function IndicadoresManutencao() {
                     <Label>Data Início Manutenção</Label>
                     <Input 
                       type="date"
-                      value={(editingDado as any).data_inicio_manutencao || ''}
+                      value={formatDateForInput((editingDado as any).data_inicio_manutencao)}
                       onChange={(e) => setEditingDado({...editingDado, data_inicio_manutencao: e.target.value} as any)}
                       className="bg-orange-50 border-orange-200"
                       data-testid="input-edit-data-inicio"
@@ -4496,7 +4522,7 @@ export default function IndicadoresManutencao() {
                       <Label>Data Finalização</Label>
                       <Input 
                         type="date"
-                        value={(editingDado as any).data_finalizacao || ''}
+                        value={formatDateForInput((editingDado as any).data_finalizacao)}
                         onChange={(e) => setEditingDado({...editingDado, data_finalizacao: e.target.value} as any)}
                         className="bg-orange-50 border-orange-200"
                         data-testid="input-edit-data-finalizacao"
@@ -4514,7 +4540,7 @@ export default function IndicadoresManutencao() {
                     <Label>Data Agenda</Label>
                     <Input 
                       type="date"
-                      value={editingDado.data_agenda || ''}
+                      value={formatDateForInput(editingDado.data_agenda)}
                       onChange={(e) => setEditingDado({...editingDado, data_agenda: e.target.value})}
                       className="bg-orange-50 border-orange-200"
                       data-testid="input-edit-data-agenda"
