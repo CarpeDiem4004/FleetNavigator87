@@ -68,8 +68,12 @@ export default function fixCookieSession(req: Request, res: Response, next: Next
     // Configurar o header para permitir cookies de qualquer origem
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     
-    // Garantir que Access-Control-Allow-Origin seja configurado
-    const origin = req.headers.origin || '*';
+    // CORREÇÃO CRÍTICA: Nunca usar '*' com credentials=true
+    // O navegador rejeita cookies quando Access-Control-Allow-Origin é '*' com credentials
+    // Usar a origem real da requisição ou construir a partir do host
+    const forwardedProto = req.headers['x-forwarded-proto'] as string | undefined;
+    const protocol = forwardedProto === 'https' || req.secure ? 'https' : 'http';
+    const origin = req.headers.origin || `${protocol}://${req.headers.host}`;
     res.setHeader('Access-Control-Allow-Origin', origin);
     
     // Configurar headers adicionais para melhorar a compatibilidade de CORS
