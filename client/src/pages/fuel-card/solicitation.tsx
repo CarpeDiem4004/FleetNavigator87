@@ -422,6 +422,14 @@ export default function FuelCardSolicitation() {
                   <p className="text-blue-800">Devem ser feitas no mesmo dia, até às 12h00.</p>
                 </div>
               </div>
+
+              <div className="flex items-start gap-3 mt-2 pt-2 border-t border-blue-300">
+                <span className="text-2xl">⚠️</span>
+                <div>
+                  <p className="font-semibold text-blue-900">Manutenção do Sistema (Segunda a Sexta):</p>
+                  <p className="text-blue-800">De segunda a sexta-feira, às 16h30 pontualmente, é realizada a manutenção do sistema dos cartões. Durante esse processo, os saldos são zerados automaticamente. Portanto, utilizem os valores disponíveis antes desse horário para evitar qualquer transtorno.</p>
+                </div>
+              </div>
             </div>
             
             <div className="space-y-3 bg-red-50 p-4 rounded-lg border border-red-200">
