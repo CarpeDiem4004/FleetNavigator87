@@ -196,3 +196,119 @@ export async function exportFuelCardSolicitationsToCSV(req: Request, res: Respon
     });
   }
 }
+
+/**
+ * Exporta solicitações VELOE no formato "Carga Complementar Massiva"
+ * - Filtra apenas solicitações com provedor_cartao = 'Veloe Go'
+ * - Agrupa por placa, somando valores
+ * - Bases repetidas são concatenadas no campo Observação
+ */
+export async function exportVeloeToExcel(req: Request, res: Response) {
+  try {
+    const { data_inicio, data_fim } = req.query;
+    
+    console.log('[EXPORT-VELOE] Iniciando exportação Veloe');
+    console.log('[EXPORT-VELOE] Filtros:', { data_inicio, data_fim });
+
+    // Construir query com filtros de data
+    let whereClause = `WHERE LOWER(provedor_cartao) LIKE '%veloe%' AND status = 'aprovada'`;
+    const queryParams: any[] = [];
+    
+    if (data_inicio) {
+      queryParams.push(data_inicio);
+      whereClause += ` AND data_uso >= $${queryParams.length}`;
+    }
+    
+    if (data_fim) {
+      queryParams.push(data_fim);
+      whereClause += ` AND data_uso <= $${queryParams.length}`;
+    }
+
+    // Query para buscar solicitações Veloe agrupadas por placa
+    const query = `
+      SELECT 
+        placa,
+        SUM(COALESCE(valor_solicitado, 0)) as valor_total,
+        STRING_AGG(DISTINCT COALESCE(base, 'Base não identificada'), ', ') as bases
+      FROM solicitacoes_fuel_card
+      ${whereClause}
+      GROUP BY placa
+      ORDER BY placa
+    `;
+
+    const result = await pool.query(query, queryParams);
+    console.log('[EXPORT-VELOE] Total de placas agrupadas:', result.rows.length);
+
+    // Criar planilha Excel no formato Veloe
+    const XLSX = require('xlsx');
+    
+    // Dados do cabeçalho com instruções
+    const instructions = [
+      ['Carga Complementar Massiva'],
+      [''],
+      ['Instruções de preenchimento:'],
+      ['- Formato de exportação .xlsx'],
+      ['- Os campos obrigatórios estão sinalizados com um asterisco (*).'],
+      ['- Em caso de dúvida verifique as instruções de preenchimento em cada campo.'],
+      ['- Inicie o preenchimento da planilha a partir da primeira linha.'],
+      ['- O preenchimento da planilha deverá ser realizado de forma sequencial.'],
+      ['']
+    ];
+
+    // Cabeçalho da tabela de dados
+    const header = ['CPF/Placa*', 'Tipo de alteração*', 'Valor para alteração*', 'Observação'];
+
+    // Dados das solicitações
+    const dataRows = result.rows.map((row: any) => [
+      row.placa || '',
+      'DEBITO',
+      `R$ ${parseFloat(row.valor_total || 0).toFixed(2).replace('.', ',')}`,
+      row.bases || ''
+    ]);
+
+    // Criar worksheet
+    const wsData = [
+      ...instructions,
+      header,
+      ...dataRows
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Configurar largura das colunas
+    ws['!cols'] = [
+      { wch: 15 },  // CPF/Placa
+      { wch: 20 },  // Tipo de alteração
+      { wch: 20 },  // Valor para alteração
+      { wch: 50 }   // Observação
+    ];
+
+    // Criar workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Carga Veloe');
+
+    // Gerar buffer
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    // Gerar nome do arquivo com data
+    const dataHoje = new Date().toISOString().split('T')[0];
+    const fileName = `veloe_carga_complementar_${dataHoje}.xlsx`;
+
+    // Configurar headers para download
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+
+    console.log('[EXPORT-VELOE] Enviando arquivo:', fileName);
+    res.send(buffer);
+
+  } catch (error: any) {
+    console.error('[EXPORT-VELOE] Erro ao exportar Veloe:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao gerar arquivo Veloe',
+      error: error.message
+    });
+  }
+}

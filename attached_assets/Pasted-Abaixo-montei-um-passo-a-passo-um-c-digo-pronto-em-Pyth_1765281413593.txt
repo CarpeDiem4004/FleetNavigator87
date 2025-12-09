@@ -1,0 +1,125 @@
+Abaixo montei um passo a passo + um código pronto em Python (para o Replit) que faz exatamente o que você descreveu:
+
+Lê a planilha original.
+
+Filtra somente os cartões VELOE.
+
+Agrupa cartões repetidos.
+
+Soma os valores de cada cartão.
+
+Junta os nomes das bases repetidas no campo Observação.
+
+Gera uma nova planilha já no layout do print, pronta para importação no sistema VELOE.
+
+Você só precisa informar o dia desejado e ele gera automaticamente a planilha daquele dia.
+
+✅ 1. Estrutura esperada da sua planilha
+
+Sua planilha deve ter algo parecido com:
+
+CPF/Placa	Tipo de alteração	Valor	Observação
+
+E dentro do campo Observação ou Tipo de Alteração deve existir algo que permita identificar que é VELOE
+(ex.: “cartão veloe”, “veloe”, “tag veloe”, etc.)
+
+Se precisar, eu ajusto para o seu padrão.
+
+✅ 2. Código Python pronto para colocar no Replit
+
+Cole esse código em um arquivo processar_veloe.py:
+
+import pandas as pd
+from datetime import datetime
+
+# -----------------------------
+# CONFIGURAÇÕES DO USUÁRIO
+# -----------------------------
+CAMPO_CARTAO = "CPF/Placa"
+CAMPO_VALOR = "Valor"
+CAMPO_OBS = "Observação"
+CAMPO_TIPO = "Tipo de alteração"
+
+PALAVRA_CHAVE = "veloe"   # usado para identificar cartões VELOE
+
+# -----------------------------
+# PROCESSAMENTO
+# -----------------------------
+def processar_planilha(input_path, dia_filtrar):
+    df = pd.read_excel(input_path)
+
+    # Filtrar somente os VELOE
+    df_veloe = df[df.apply(lambda row:
+        PALAVRA_CHAVE.lower() in str(row[CAMPO_OBS]).lower()
+        or PALAVRA_CHAVE.lower() in str(row[CAMPO_TIPO]).lower(),
+        axis=1
+    )]
+
+    # Filtrar por dia (se existir campo Data na planilha)
+    if "Data" in df_veloe.columns:
+        df_veloe = df_veloe[df_veloe["Data"] == dia_filtrar]
+
+    # Agrupar cartões duplicados e somar valores
+    df_grouped = (
+        df_veloe.groupby(CAMPO_CARTAO)
+        .agg({
+            CAMPO_VALOR: "sum",
+            CAMPO_OBS: lambda x: ", ".join(set(map(str, x)))
+        })
+        .reset_index()
+    )
+
+    # Montar planilha no layout VELOE
+    df_saida = pd.DataFrame({
+        "CPF/Placa*": df_grouped[CAMPO_CARTAO],
+        "Tipo de alteração*": "DEBITO",   # coloque aqui o tipo padrão da VELOE
+        "Valor para alteração*": df_grouped[CAMPO_VALOR],
+        "Observação": df_grouped[CAMPO_OBS],
+    })
+
+    # Salvar arquivo final
+    nome_arquivo = f"veloe_processado_{dia_filtrar}.xlsx"
+    df_saida.to_excel(nome_arquivo, index=False)
+
+    print(f"Planilha gerada: {nome_arquivo}")
+
+
+# -----------------------------
+# EXECUÇÃO
+# -----------------------------
+if __name__ == "__main__":
+    arquivo_entrada = "solicitacoes.xlsx"  # renomeie o arquivo no Replit
+    dia = input("Digite o dia (AAAA-MM-DD): ")
+
+    try:
+        dia_data = datetime.strptime(dia, "%Y-%m-%d").date()
+    except:
+        print("Data inválida. Use o formato AAAA-MM-DD.")
+        exit()
+
+    processar_planilha(arquivo_entrada, dia_data)
+
+✅ 3. Como usar no Replit
+
+Suba o arquivo solicitacoes.xlsx no Replit.
+
+Suba o arquivo processar_veloe.py também.
+
+Instale o pandas:
+
+pip install pandas openpyxl
+
+
+Rode o script:
+
+python processar_veloe.py
+
+
+Digite a data desejada.
+
+Ele vai gerar automaticamente:
+
+veloe_processado_2025-12-09.xlsx
+
+
+No layout igual ao print.
