@@ -253,7 +253,7 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
     // Dados das solicitações
     const dataRows = result.rows.map((row: any) => [
       row.placa || '',
-      'DEBITO',
+      'ADICIONAR',
       parseFloat(row.valor_total || 0).toFixed(2).replace('.', ','),
       row.bases || ''
     ]);
