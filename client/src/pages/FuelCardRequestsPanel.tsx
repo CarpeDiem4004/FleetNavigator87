@@ -971,6 +971,42 @@ const FuelCardRequestsPanel: React.FC = () => {
     }
   };
 
+  // Função para exportar solicitações Ticket (apenas pendentes do dia atual)
+  const handleExportTicket = async () => {
+    try {
+      console.log('[EXPORT-TICKET] Iniciando exportação Ticket...');
+
+      const response = await apiRequest('GET', `/api/fuel-card-solicitations/export-ticket`);
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ticket_recarga_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        toast({
+          title: 'Exportação Ticket concluída',
+          description: 'Planilha Ticket gerada com sucesso (pendentes do dia)',
+        });
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao gerar planilha');
+      }
+    } catch (error: any) {
+      console.error('[EXPORT-TICKET] Erro:', error);
+      toast({
+        title: 'Erro na exportação Ticket',
+        description: error.message || 'Não foi possível gerar a planilha Ticket',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleDownloadByDateRange = async () => {
     if (!startDate || !endDate) {
       toast({
@@ -1539,6 +1575,16 @@ const FuelCardRequestsPanel: React.FC = () => {
             >
               <Download className="h-4 w-4" />
               Exportar Veloe
+            </Button>
+
+            <Button 
+              onClick={handleExportTicket} 
+              variant="outline" 
+              className="flex items-center gap-2 bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100"
+              data-testid="button-export-ticket"
+            >
+              <Download className="h-4 w-4" />
+              Exportar Ticket
             </Button>
           </div>
         </div>

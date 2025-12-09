@@ -97,7 +97,7 @@ import {
 } from "./fuelCardSolicitationsApi";
 import { getFuelCardAnalytics } from "./fuelCardAnalyticsApi";
 import { getFuelConsumptionReport, getBasesForFilter } from "./routes/fuelConsumptionReportApi";
-import { exportFuelCardSolicitationsToCSV, exportVeloeToExcel } from "./fuelCardExportAlternative";
+import { exportFuelCardSolicitationsToCSV, exportVeloeToExcel, exportTicketCards } from "./fuelCardExportAlternative";
 import { getBaseDisplayName } from "@shared/baseNormalization";
 import { 
   getProjects, 
@@ -13391,6 +13391,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/fuel-card-solicitations/export-csv', isAuthenticated, exportFuelCardSolicitationsToCSV);
   // Rota para exportação Veloe no formato "Carga Complementar Massiva"
   app.get('/api/fuel-card-solicitations/export-veloe', isAuthenticated, exportVeloeToExcel);
+  // Rota para exportação Ticket - formato simples PLACA/VALOR (pendentes do dia)
+  app.get('/api/fuel-card-solicitations/export-ticket', isAuthenticated, exportTicketCards);
   app.get('/api/fuel-card-solicitations/:id', isAuthenticated, getFuelCardSolicitationById);
   app.post('/api/fuel-card-solicitations', createFuelCardSolicitation);
   app.put('/api/fuel-card-solicitations/:id/status', isAuthenticated, updateFuelCardSolicitationStatus);

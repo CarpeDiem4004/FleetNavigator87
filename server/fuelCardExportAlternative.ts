@@ -303,3 +303,101 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
     });
   }
 }
+
+// Exportação Ticket - formato simples com PLACA e VALOR
+export async function exportTicketCards(req: Request, res: Response) {
+  try {
+    console.log('[EXPORT-TICKET] Iniciando exportação Ticket');
+    
+    // Data de hoje no formato YYYY-MM-DD (timezone Brasil)
+    const hoje = new Date();
+    hoje.setHours(hoje.getHours() - 3); // Ajuste UTC-3
+    const dataHoje = hoje.toISOString().split('T')[0];
+    
+    console.log('[EXPORT-TICKET] Filtrando pendentes do dia:', dataHoje);
+
+    // Buscar apenas solicitações PENDENTES do DIA ATUAL, agrupadas por placa
+    const query = `
+      SELECT 
+        placa,
+        SUM(valor_solicitado) as valor_total
+      FROM solicitacoes_cartao_combustivel
+      WHERE LOWER(provedor_cartao) LIKE '%ticket%' 
+        AND LOWER(status) = 'pendente'
+        AND DATE(created_at AT TIME ZONE 'America/Sao_Paulo') = $1
+      GROUP BY placa
+      ORDER BY placa
+    `;
+
+    const result = await pool.query(query, [dataHoje]);
+    
+    console.log('[EXPORT-TICKET] Registros encontrados:', result.rows.length);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Nenhuma solicitação Ticket pendente encontrada para hoje'
+      });
+    }
+
+    // Cabeçalho
+    const header = ['PLACA', 'VALOR'];
+
+    // Dados das solicitações - PLACA como texto, VALOR como número
+    const dataRows = result.rows.map((row: any) => [
+      row.placa || '',
+      parseFloat(row.valor_total || 0)  // Número sem formatação
+    ]);
+
+    // Criar worksheet
+    const wsData = [
+      header,
+      ...dataRows
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Configurar formato das colunas
+    // Coluna A (PLACA) como texto, Coluna B (VALOR) como número
+    ws['!cols'] = [
+      { wch: 12 },  // PLACA
+      { wch: 12 }   // VALOR
+    ];
+
+    // Aplicar formato numérico para coluna VALOR (B)
+    for (let i = 2; i <= result.rows.length + 1; i++) {
+      const cellRef = `B${i}`;
+      if (ws[cellRef]) {
+        ws[cellRef].t = 'n';  // Tipo numérico
+        ws[cellRef].z = '#,##0.00';  // Formato número com 2 decimais
+      }
+    }
+
+    // Criar workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Ticket');
+
+    // Gerar buffer
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    // Gerar nome do arquivo com data
+    const fileName = `ticket_recarga_${dataHoje}.xlsx`;
+
+    // Configurar headers para download
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+
+    console.log('[EXPORT-TICKET] Enviando arquivo:', fileName);
+    res.send(buffer);
+
+  } catch (error: any) {
+    console.error('[EXPORT-TICKET] Erro ao exportar Ticket:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao gerar arquivo Ticket',
+      error: error.message
+    });
+  }
+}
