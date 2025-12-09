@@ -342,11 +342,12 @@ export async function exportTicketCards(req: Request, res: Response) {
     
     console.log('[EXPORT-TICKET] Filtrando pendentes do dia:', dataHoje);
 
-    // Buscar apenas solicitações PENDENTES do DIA ATUAL, agrupadas por placa
+    // Buscar apenas solicitações PENDENTES do DIA ATUAL, agrupadas por placa (com bases)
     const query = `
       SELECT 
         placa,
-        SUM(COALESCE(valor_solicitado, 0)) as valor_total
+        SUM(COALESCE(valor_solicitado, 0)) as valor_total,
+        STRING_AGG(DISTINCT COALESCE(base, 'Base não identificada'), ', ') as bases
       FROM solicitacoes_fuel_card
       WHERE LOWER(provedor_cartao) LIKE '%ticket%' 
         AND LOWER(status) = 'pendente'
@@ -366,13 +367,14 @@ export async function exportTicketCards(req: Request, res: Response) {
       });
     }
 
-    // Cabeçalho
-    const header = ['PLACA', 'VALOR'];
+    // Cabeçalho com coluna de Bases
+    const header = ['PLACA', 'VALOR', 'Bases'];
 
-    // Dados das solicitações - PLACA como texto, VALOR como número
+    // Dados das solicitações - PLACA como texto, VALOR como número, Bases como texto
     const dataRows = result.rows.map((row: any) => [
       row.placa || '',
-      parseFloat(row.valor_total || 0)  // Número sem formatação
+      parseFloat(row.valor_total || 0),  // Número sem formatação
+      row.bases || ''  // Bases concatenadas
     ]);
 
     // Criar worksheet
@@ -384,10 +386,10 @@ export async function exportTicketCards(req: Request, res: Response) {
     const ws = XLSX.utils.aoa_to_sheet(wsData);
 
     // Configurar formato das colunas
-    // Coluna A (PLACA) como texto, Coluna B (VALOR) como número
     ws['!cols'] = [
       { wch: 12 },  // PLACA
-      { wch: 12 }   // VALOR
+      { wch: 12 },  // VALOR
+      { wch: 40 }   // Bases
     ];
 
     // Aplicar formato numérico para coluna VALOR (B)
