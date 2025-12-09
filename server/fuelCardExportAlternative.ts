@@ -212,8 +212,8 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
     console.log('[EXPORT-VELOE] Filtros:', { data_inicio, data_fim });
 
     // Construir query com filtros de data
-    // Status válidos: 'atendido', 'Recarga Efetuada' (status de cartões processados)
-    let whereClause = `WHERE LOWER(provedor_cartao) LIKE '%veloe%' AND LOWER(status) IN ('atendido', 'recarga efetuada', 'aprovada', 'liberada')`;
+    // Buscar apenas solicitações PENDENTES para realizar as recargas
+    let whereClause = `WHERE LOWER(provedor_cartao) LIKE '%veloe%' AND LOWER(status) = 'pendente'`;
     const queryParams: any[] = [];
     
     if (data_inicio) {
