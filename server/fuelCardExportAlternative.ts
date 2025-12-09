@@ -346,8 +346,8 @@ export async function exportTicketCards(req: Request, res: Response) {
     const query = `
       SELECT 
         placa,
-        SUM(valor_solicitado) as valor_total
-      FROM solicitacoes_cartao_combustivel
+        SUM(COALESCE(valor_solicitado, 0)) as valor_total
+      FROM solicitacoes_fuel_card
       WHERE LOWER(provedor_cartao) LIKE '%ticket%' 
         AND LOWER(status) = 'pendente'
         AND DATE(created_at AT TIME ZONE 'America/Sao_Paulo') = $1
