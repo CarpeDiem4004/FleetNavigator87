@@ -245,34 +245,21 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
     console.log('[EXPORT-VELOE] Total de placas agrupadas:', result.rows.length);
 
     // Criar planilha Excel no formato Veloe
+    // Formato exato para importação no sistema Veloe (sem instruções, apenas cabeçalho e dados)
     
-    // Dados do cabeçalho com instruções
-    const instructions = [
-      ['Carga Complementar Massiva'],
-      [''],
-      ['Instruções de preenchimento:'],
-      ['- Formato de exportação .xlsx'],
-      ['- Os campos obrigatórios estão sinalizados com um asterisco (*).'],
-      ['- Em caso de dúvida verifique as instruções de preenchimento em cada campo.'],
-      ['- Inicie o preenchimento da planilha a partir da primeira linha.'],
-      ['- O preenchimento da planilha deverá ser realizado de forma sequencial.'],
-      ['']
-    ];
-
-    // Cabeçalho da tabela de dados
+    // Cabeçalho da tabela de dados (linha 1)
     const header = ['CPF/Placa*', 'Tipo de alteração*', 'Valor para alteração*', 'Observação'];
 
     // Dados das solicitações
     const dataRows = result.rows.map((row: any) => [
       row.placa || '',
       'DEBITO',
-      `R$ ${parseFloat(row.valor_total || 0).toFixed(2).replace('.', ',')}`,
+      parseFloat(row.valor_total || 0).toFixed(2).replace('.', ','),
       row.bases || ''
     ]);
 
-    // Criar worksheet
+    // Criar worksheet apenas com cabeçalho e dados (formato limpo para importação)
     const wsData = [
-      ...instructions,
       header,
       ...dataRows
     ];
@@ -283,7 +270,7 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
     ws['!cols'] = [
       { wch: 15 },  // CPF/Placa
       { wch: 20 },  // Tipo de alteração
-      { wch: 20 },  // Valor para alteração
+      { wch: 25 },  // Valor para alteração
       { wch: 50 }   // Observação
     ];
 
