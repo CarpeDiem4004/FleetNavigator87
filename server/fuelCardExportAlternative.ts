@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { pool } from './db';
+import * as XLSX from 'xlsx';
 
 /**
  * Exporta solicitações de cartão de combustível em formato CSV
@@ -240,7 +241,6 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
     console.log('[EXPORT-VELOE] Total de placas agrupadas:', result.rows.length);
 
     // Criar planilha Excel no formato Veloe
-    const XLSX = require('xlsx');
     
     // Dados do cabeçalho com instruções
     const instructions = [
