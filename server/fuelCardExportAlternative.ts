@@ -250,12 +250,12 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
     // Cabeçalho da tabela de dados (linha 1)
     const header = ['CPF/Placa*', 'Tipo de alteração*', 'Valor para alteração*', 'Observação'];
 
-    // Dados das solicitações
+    // Dados das solicitações - PLACA e TIPO como texto, VALOR como número formatado moeda
     const dataRows = result.rows.map((row: any) => [
-      row.placa || '',
-      'ADICIONAR',
-      parseFloat(row.valor_total || 0).toFixed(2).replace('.', ','),
-      row.bases || ''
+      String(row.placa || ''),     // Placa como texto
+      'ADICIONAR',                  // Tipo de alteração como texto
+      parseFloat(row.valor_total || 0),  // Valor como número (Excel formatará como moeda)
+      String(row.bases || '')       // Observação como texto
     ]);
 
     // Criar worksheet apenas com cabeçalho e dados (formato limpo para importação)
@@ -265,6 +265,32 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Forçar colunas A e B como texto, C como número formatado moeda
+    const totalRows = result.rows.length + 1; // +1 para cabeçalho
+    for (let i = 2; i <= totalRows; i++) {
+      // Coluna A (Placa) - texto
+      const cellA = `A${i}`;
+      if (ws[cellA]) {
+        ws[cellA].t = 's';  // Tipo string/texto
+      }
+      // Coluna B (Tipo de alteração) - texto
+      const cellB = `B${i}`;
+      if (ws[cellB]) {
+        ws[cellB].t = 's';  // Tipo string/texto
+      }
+      // Coluna C (Valor) - número com formato moeda
+      const cellC = `C${i}`;
+      if (ws[cellC]) {
+        ws[cellC].t = 'n';  // Tipo numérico
+        ws[cellC].z = '#.##0,00';  // Formato moeda brasileiro
+      }
+      // Coluna D (Observação) - texto
+      const cellD = `D${i}`;
+      if (ws[cellD]) {
+        ws[cellD].t = 's';  // Tipo string/texto
+      }
+    }
 
     // Configurar largura das colunas
     ws['!cols'] = [
