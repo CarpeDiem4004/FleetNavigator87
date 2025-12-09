@@ -921,6 +921,56 @@ const FuelCardRequestsPanel: React.FC = () => {
     }
   };
 
+  // Função para exportar solicitações Veloe no formato "Carga Complementar Massiva"
+  const handleExportVeloe = async () => {
+    if (!startDate || !endDate) {
+      toast({
+        title: 'Erro de validação',
+        description: 'Selecione as datas de início e fim para exportar Veloe',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      console.log('[EXPORT-VELOE] Iniciando exportação Veloe...');
+      
+      const queryParams = new URLSearchParams({
+        data_inicio: startDate,
+        data_fim: endDate
+      });
+
+      const response = await apiRequest('GET', `/api/fuel-card-solicitations/export-veloe?${queryParams}`);
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `veloe_carga_complementar_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        toast({
+          title: 'Exportação Veloe concluída',
+          description: 'Planilha Veloe gerada com sucesso no formato "Carga Complementar Massiva"',
+        });
+      } else {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+    } catch (error) {
+      console.error('[EXPORT-VELOE] Erro:', error);
+      toast({
+        title: 'Erro na exportação Veloe',
+        description: 'Não foi possível gerar a planilha Veloe',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleDownloadByDateRange = async () => {
     if (!startDate || !endDate) {
       toast({
@@ -1478,6 +1528,17 @@ const FuelCardRequestsPanel: React.FC = () => {
             <Button onClick={handleExportExcel} variant="outline" className="flex items-center gap-2">
               <Download className="h-4 w-4" />
               Baixar Relatório Excel
+            </Button>
+
+            <Button 
+              onClick={handleExportVeloe} 
+              variant="outline" 
+              className="flex items-center gap-2 bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
+              disabled={!startDate || !endDate}
+              data-testid="button-export-veloe"
+            >
+              <Download className="h-4 w-4" />
+              Exportar Veloe
             </Button>
           </div>
         </div>
