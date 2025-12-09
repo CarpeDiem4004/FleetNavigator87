@@ -226,16 +226,17 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
       whereClause += ` AND data_uso <= $${queryParams.length}`;
     }
 
-    // Query para buscar solicitações Veloe agrupadas por placa
+    // Query para buscar solicitações Veloe agrupadas por PLACA DO CARTÃO (numero_cartao)
+    // numero_cartao = placa do cartão que vai receber o saldo
     const query = `
       SELECT 
-        placa,
+        COALESCE(NULLIF(TRIM(numero_cartao), ''), placa) as placa_cartao,
         SUM(COALESCE(valor_solicitado, 0)) as valor_total,
         STRING_AGG(DISTINCT COALESCE(base, 'Base não identificada'), ', ') as bases
       FROM solicitacoes_fuel_card
       ${whereClause}
-      GROUP BY placa
-      ORDER BY placa
+      GROUP BY COALESCE(NULLIF(TRIM(numero_cartao), ''), placa)
+      ORDER BY placa_cartao
     `;
     
     console.log('[EXPORT-VELOE] Query:', query);
@@ -250,12 +251,12 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
     // Cabeçalho da tabela de dados (linha 1)
     const header = ['CPF/Placa*', 'Tipo de alteração*', 'Valor para alteração*', 'Observação'];
 
-    // Dados das solicitações - PLACA e TIPO como texto, VALOR como número formatado moeda
+    // Dados das solicitações - PLACA DO CARTÃO e TIPO como texto, VALOR como número formatado moeda
     const dataRows = result.rows.map((row: any) => [
-      String(row.placa || ''),     // Placa como texto
-      'ADICIONAR',                  // Tipo de alteração como texto
-      parseFloat(row.valor_total || 0),  // Valor como número (Excel formatará como moeda)
-      String(row.bases || '')       // Observação como texto
+      String(row.placa_cartao || ''),     // Placa do cartão como texto
+      'ADICIONAR',                         // Tipo de alteração como texto
+      parseFloat(row.valor_total || 0),    // Valor como número (Excel formatará como moeda)
+      String(row.bases || '')              // Observação como texto
     ]);
 
     // Criar worksheet apenas com cabeçalho e dados (formato limpo para importação)
@@ -342,18 +343,19 @@ export async function exportTicketCards(req: Request, res: Response) {
     
     console.log('[EXPORT-TICKET] Filtrando pendentes do dia:', dataHoje);
 
-    // Buscar apenas solicitações PENDENTES do DIA ATUAL, agrupadas por placa (com bases)
+    // Buscar apenas solicitações PENDENTES do DIA ATUAL, agrupadas por PLACA DO CARTÃO (numero_cartao)
+    // numero_cartao = placa do cartão que vai receber o saldo
     const query = `
       SELECT 
-        placa,
+        COALESCE(NULLIF(TRIM(numero_cartao), ''), placa) as placa_cartao,
         SUM(COALESCE(valor_solicitado, 0)) as valor_total,
         STRING_AGG(DISTINCT COALESCE(base, 'Base não identificada'), ', ') as bases
       FROM solicitacoes_fuel_card
       WHERE LOWER(provedor_cartao) LIKE '%ticket%' 
         AND LOWER(status) = 'pendente'
         AND DATE(created_at AT TIME ZONE 'America/Sao_Paulo') = $1
-      GROUP BY placa
-      ORDER BY placa
+      GROUP BY COALESCE(NULLIF(TRIM(numero_cartao), ''), placa)
+      ORDER BY placa_cartao
     `;
 
     const result = await pool.query(query, [dataHoje]);
@@ -370,11 +372,11 @@ export async function exportTicketCards(req: Request, res: Response) {
     // Cabeçalho com coluna de Bases
     const header = ['PLACA', 'VALOR', 'Bases'];
 
-    // Dados das solicitações - PLACA como texto, VALOR como número, Bases como texto
+    // Dados das solicitações - PLACA DO CARTÃO como texto, VALOR como número, Bases como texto
     const dataRows = result.rows.map((row: any) => [
-      row.placa || '',
-      parseFloat(row.valor_total || 0),  // Número sem formatação
-      row.bases || ''  // Bases concatenadas
+      row.placa_cartao || '',              // Placa do cartão que vai receber o saldo
+      parseFloat(row.valor_total || 0),    // Número sem formatação
+      row.bases || ''                       // Bases concatenadas
     ]);
 
     // Criar worksheet
