@@ -334,9 +334,26 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
 // Exportação Ticket - formato simples com PLACA e VALOR
 export async function exportTicketCards(req: Request, res: Response) {
   try {
+    const { data_inicio, data_fim } = req.query;
+    
     console.log('[EXPORT-TICKET] Iniciando exportação Ticket');
+    console.log('[EXPORT-TICKET] Filtros:', { data_inicio, data_fim });
 
-    // Buscar TODAS as solicitações PENDENTES, agrupadas por PLACA DO CARTÃO (numero_cartao)
+    // Construir query com filtros de data (usando data_uso como referência)
+    let whereClause = `WHERE LOWER(provedor_cartao) LIKE '%ticket%' AND LOWER(status) = 'pendente'`;
+    const queryParams: any[] = [];
+    
+    if (data_inicio) {
+      queryParams.push(data_inicio);
+      whereClause += ` AND data_uso >= $${queryParams.length}`;
+    }
+    
+    if (data_fim) {
+      queryParams.push(data_fim);
+      whereClause += ` AND data_uso <= $${queryParams.length}`;
+    }
+
+    // Buscar solicitações PENDENTES agrupadas por PLACA DO CARTÃO (numero_cartao)
     // numero_cartao = placa do cartão que vai receber o saldo
     const query = `
       SELECT 
@@ -344,13 +361,15 @@ export async function exportTicketCards(req: Request, res: Response) {
         SUM(COALESCE(valor_solicitado, 0)) as valor_total,
         STRING_AGG(DISTINCT COALESCE(base, 'Base não identificada'), ', ') as bases
       FROM solicitacoes_fuel_card
-      WHERE LOWER(provedor_cartao) LIKE '%ticket%' 
-        AND LOWER(status) = 'pendente'
+      ${whereClause}
       GROUP BY COALESCE(NULLIF(TRIM(numero_cartao), ''), placa)
       ORDER BY placa_cartao
     `;
+    
+    console.log('[EXPORT-TICKET] Query:', query);
+    console.log('[EXPORT-TICKET] Params:', queryParams);
 
-    const result = await pool.query(query);
+    const result = await pool.query(query, queryParams);
     
     console.log('[EXPORT-TICKET] Registros encontrados:', result.rows.length);
 

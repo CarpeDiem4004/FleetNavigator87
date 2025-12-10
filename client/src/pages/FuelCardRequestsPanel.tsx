@@ -971,19 +971,33 @@ const FuelCardRequestsPanel: React.FC = () => {
     }
   };
 
-  // Função para exportar solicitações Ticket (apenas pendentes do dia atual)
+  // Função para exportar solicitações Ticket (pendentes filtradas por data)
   const handleExportTicket = async () => {
+    if (!startDate || !endDate) {
+      toast({
+        title: 'Erro de validação',
+        description: 'Selecione as datas de início e fim para exportar Ticket',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       console.log('[EXPORT-TICKET] Iniciando exportação Ticket...');
+      
+      const queryParams = new URLSearchParams({
+        data_inicio: startDate,
+        data_fim: endDate
+      });
 
-      const response = await apiRequest('GET', `/api/fuel-card-solicitations/export-ticket`);
+      const response = await apiRequest('GET', `/api/fuel-card-solicitations/export-ticket?${queryParams}`);
       
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `ticket_recarga_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+        a.download = `ticket_recarga_${startDate}_${endDate}.xlsx`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -991,7 +1005,7 @@ const FuelCardRequestsPanel: React.FC = () => {
         
         toast({
           title: 'Exportação Ticket concluída',
-          description: 'Planilha Ticket gerada com sucesso (pendentes do dia)',
+          description: `Planilha Ticket gerada com sucesso (${startDate} a ${endDate})`,
         });
       } else {
         const errorData = await response.json();
@@ -1581,6 +1595,7 @@ const FuelCardRequestsPanel: React.FC = () => {
               onClick={handleExportTicket} 
               variant="outline" 
               className="flex items-center gap-2 bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100"
+              disabled={!startDate || !endDate}
               data-testid="button-export-ticket"
             >
               <Download className="h-4 w-4" />
