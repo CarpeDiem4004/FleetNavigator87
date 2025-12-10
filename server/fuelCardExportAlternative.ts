@@ -403,6 +403,7 @@ export async function exportTicketCards(req: Request, res: Response) {
     const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 
     // Gerar nome do arquivo com data
+    const dataHoje = new Date().toISOString().split('T')[0];
     const fileName = `ticket_recarga_${dataHoje}.xlsx`;
 
     // Configurar headers para download
