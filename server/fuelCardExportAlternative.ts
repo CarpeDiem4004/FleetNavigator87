@@ -335,15 +335,8 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
 export async function exportTicketCards(req: Request, res: Response) {
   try {
     console.log('[EXPORT-TICKET] Iniciando exportação Ticket');
-    
-    // Data de hoje no formato YYYY-MM-DD (timezone Brasil)
-    const hoje = new Date();
-    hoje.setHours(hoje.getHours() - 3); // Ajuste UTC-3
-    const dataHoje = hoje.toISOString().split('T')[0];
-    
-    console.log('[EXPORT-TICKET] Filtrando pendentes do dia:', dataHoje);
 
-    // Buscar apenas solicitações PENDENTES do DIA ATUAL, agrupadas por PLACA DO CARTÃO (numero_cartao)
+    // Buscar TODAS as solicitações PENDENTES, agrupadas por PLACA DO CARTÃO (numero_cartao)
     // numero_cartao = placa do cartão que vai receber o saldo
     const query = `
       SELECT 
@@ -353,19 +346,18 @@ export async function exportTicketCards(req: Request, res: Response) {
       FROM solicitacoes_fuel_card
       WHERE LOWER(provedor_cartao) LIKE '%ticket%' 
         AND LOWER(status) = 'pendente'
-        AND DATE(created_at AT TIME ZONE 'America/Sao_Paulo') = $1
       GROUP BY COALESCE(NULLIF(TRIM(numero_cartao), ''), placa)
       ORDER BY placa_cartao
     `;
 
-    const result = await pool.query(query, [dataHoje]);
+    const result = await pool.query(query);
     
     console.log('[EXPORT-TICKET] Registros encontrados:', result.rows.length);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Nenhuma solicitação Ticket pendente encontrada para hoje'
+        message: 'Nenhuma solicitação Ticket pendente encontrada'
       });
     }
 
