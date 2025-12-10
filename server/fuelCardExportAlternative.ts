@@ -228,14 +228,15 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
 
     // Query para buscar solicitações Veloe agrupadas por PLACA DO CARTÃO (numero_cartao)
     // numero_cartao = placa do cartão que vai receber o saldo
+    // UPPER(REPLACE(...)) para normalizar placas removendo espaços e convertendo para maiúsculas
     const query = `
       SELECT 
-        COALESCE(NULLIF(TRIM(numero_cartao), ''), placa) as placa_cartao,
+        UPPER(REPLACE(COALESCE(NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')) as placa_cartao,
         SUM(COALESCE(valor_solicitado, 0)) as valor_total,
         STRING_AGG(DISTINCT COALESCE(base, 'Base não identificada'), ', ') as bases
       FROM solicitacoes_fuel_card
       ${whereClause}
-      GROUP BY COALESCE(NULLIF(TRIM(numero_cartao), ''), placa)
+      GROUP BY UPPER(REPLACE(COALESCE(NULLIF(TRIM(numero_cartao), ''), placa), ' ', ''))
       ORDER BY placa_cartao
     `;
     
@@ -251,9 +252,12 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
     // Cabeçalho da tabela de dados (linha 1)
     const header = ['CPF/Placa*', 'Tipo de alteração*', 'Valor para alteração*', 'Observação'];
 
-    // Dados das solicitações - PLACA DO CARTÃO e TIPO como texto (UPPERCASE), VALOR como número formatado moeda
+    // Função para normalizar placa: remove espaços e converte para maiúsculas
+    const normalizePlaca = (placa: string) => String(placa || '').replace(/\s+/g, '').toUpperCase();
+    
+    // Dados das solicitações - PLACA DO CARTÃO e TIPO como texto (UPPERCASE sem espaços), VALOR como número formatado moeda
     const dataRows = result.rows.map((row: any) => [
-      String(row.placa_cartao || '').toUpperCase(),     // Placa do cartão em caixa alta
+      normalizePlaca(row.placa_cartao),                  // Placa do cartão normalizada (sem espaços, maiúsculas)
       'ADICIONAR',                                       // Tipo de alteração (já em caixa alta)
       parseFloat(row.valor_total || 0),                  // Valor como número (Excel formatará como moeda)
       String(row.bases || '').toUpperCase()              // Observação em caixa alta
@@ -355,14 +359,15 @@ export async function exportTicketCards(req: Request, res: Response) {
 
     // Buscar solicitações PENDENTES agrupadas por PLACA DO CARTÃO (numero_cartao)
     // numero_cartao = placa do cartão que vai receber o saldo
+    // UPPER(REPLACE(...)) para normalizar placas removendo espaços e convertendo para maiúsculas
     const query = `
       SELECT 
-        COALESCE(NULLIF(TRIM(numero_cartao), ''), placa) as placa_cartao,
+        UPPER(REPLACE(COALESCE(NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')) as placa_cartao,
         SUM(COALESCE(valor_solicitado, 0)) as valor_total,
         STRING_AGG(DISTINCT COALESCE(base, 'Base não identificada'), ', ') as bases
       FROM solicitacoes_fuel_card
       ${whereClause}
-      GROUP BY COALESCE(NULLIF(TRIM(numero_cartao), ''), placa)
+      GROUP BY UPPER(REPLACE(COALESCE(NULLIF(TRIM(numero_cartao), ''), placa), ' ', ''))
       ORDER BY placa_cartao
     `;
     
@@ -383,9 +388,12 @@ export async function exportTicketCards(req: Request, res: Response) {
     // Cabeçalho com coluna de Bases
     const header = ['PLACA', 'VALOR', 'Bases'];
 
-    // Dados das solicitações - PLACA DO CARTÃO como texto (UPPERCASE), VALOR como número, Bases como texto (UPPERCASE)
+    // Função para normalizar placa: remove espaços e converte para maiúsculas
+    const normalizePlaca = (placa: string) => String(placa || '').replace(/\s+/g, '').toUpperCase();
+
+    // Dados das solicitações - PLACA DO CARTÃO normalizada (sem espaços, maiúsculas), VALOR como número, Bases como texto (UPPERCASE)
     const dataRows = result.rows.map((row: any) => [
-      String(row.placa_cartao || '').toUpperCase(),    // Placa do cartão em caixa alta
+      normalizePlaca(row.placa_cartao),                 // Placa do cartão normalizada (sem espaços, maiúsculas)
       parseFloat(row.valor_total || 0),                 // Número sem formatação
       String(row.bases || '').toUpperCase()             // Bases em caixa alta
     ]);
