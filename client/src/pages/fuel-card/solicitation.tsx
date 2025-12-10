@@ -684,7 +684,7 @@ export default function FuelCardSolicitation() {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="AM">AM - Manhã</SelectItem>
-                            <SelectItem value="PM">PM - Tarde/Noite</SelectItem>
+                            <SelectItem value="PM">PM - Tarde</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormDescription className="text-xs">
