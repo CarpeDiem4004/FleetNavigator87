@@ -251,12 +251,12 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
     // Cabeçalho da tabela de dados (linha 1)
     const header = ['CPF/Placa*', 'Tipo de alteração*', 'Valor para alteração*', 'Observação'];
 
-    // Dados das solicitações - PLACA DO CARTÃO e TIPO como texto, VALOR como número formatado moeda
+    // Dados das solicitações - PLACA DO CARTÃO e TIPO como texto (UPPERCASE), VALOR como número formatado moeda
     const dataRows = result.rows.map((row: any) => [
-      String(row.placa_cartao || ''),     // Placa do cartão como texto
-      'ADICIONAR',                         // Tipo de alteração como texto
-      parseFloat(row.valor_total || 0),    // Valor como número (Excel formatará como moeda)
-      String(row.bases || '')              // Observação como texto
+      String(row.placa_cartao || '').toUpperCase(),     // Placa do cartão em caixa alta
+      'ADICIONAR',                                       // Tipo de alteração (já em caixa alta)
+      parseFloat(row.valor_total || 0),                  // Valor como número (Excel formatará como moeda)
+      String(row.bases || '').toUpperCase()              // Observação em caixa alta
     ]);
 
     // Criar worksheet apenas com cabeçalho e dados (formato limpo para importação)
@@ -372,11 +372,11 @@ export async function exportTicketCards(req: Request, res: Response) {
     // Cabeçalho com coluna de Bases
     const header = ['PLACA', 'VALOR', 'Bases'];
 
-    // Dados das solicitações - PLACA DO CARTÃO como texto, VALOR como número, Bases como texto
+    // Dados das solicitações - PLACA DO CARTÃO como texto (UPPERCASE), VALOR como número, Bases como texto (UPPERCASE)
     const dataRows = result.rows.map((row: any) => [
-      row.placa_cartao || '',              // Placa do cartão que vai receber o saldo
-      parseFloat(row.valor_total || 0),    // Número sem formatação
-      row.bases || ''                       // Bases concatenadas
+      String(row.placa_cartao || '').toUpperCase(),    // Placa do cartão em caixa alta
+      parseFloat(row.valor_total || 0),                 // Número sem formatação
+      String(row.bases || '').toUpperCase()             // Bases em caixa alta
     ]);
 
     // Criar worksheet
