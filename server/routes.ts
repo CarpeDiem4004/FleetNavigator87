@@ -22894,29 +22894,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Verificar se a solicitação existe
-      const checkQuery = 'SELECT * FROM linehall_fuel_card_requests WHERE id = $1';
-      const checkResult = await pool.query(checkQuery, [id]);
+      // Buscar no Supabase - tabela fuel_card_solicitations (onde ficam as solicitações Line Haul)
+      const { data: checkData, error: checkError } = await supabase
+        .from('fuel_card_solicitations')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-      if (checkResult.rows.length === 0) {
+      if (checkError || !checkData) {
+        console.log('[DELETE-LINE-HALL] Solicitação não encontrada no Supabase:', checkError);
         return res.status(404).json({
           success: false,
           message: 'Solicitação não encontrada'
         });
       }
 
-      // Executar a exclusão
-      const deleteQuery = 'DELETE FROM linehall_fuel_card_requests WHERE id = $1';
-      const deleteResult = await pool.query(deleteQuery, [id]);
+      // Executar a exclusão no Supabase
+      const { error: deleteError } = await supabase
+        .from('fuel_card_solicitations')
+        .delete()
+        .eq('id', id);
 
-      if (deleteResult.rowCount === 0) {
-        return res.status(404).json({
+      if (deleteError) {
+        console.error('[DELETE-LINE-HALL] Erro ao excluir no Supabase:', deleteError);
+        return res.status(500).json({
           success: false,
-          message: 'Solicitação não encontrada para exclusão'
+          message: 'Erro ao excluir solicitação',
+          error: deleteError.message
         });
       }
 
-      console.log(`[DELETE-LINE-HALL] Solicitação ${id} excluída com sucesso pelo usuário ${user.email}`);
+      console.log(`[DELETE-LINE-HALL] Solicitação ${id} excluída com sucesso do Supabase pelo usuário ${user?.email}`);
 
       res.status(200).json({
         success: true,
