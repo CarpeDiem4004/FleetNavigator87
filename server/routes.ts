@@ -7808,10 +7808,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Temporariamente sem autenticação para testes
-  app.delete("/api/vehicles/:id", async (req, res) => {
+  // Rota de exclusão de veículos - PROTEGIDA com autenticação e auditoria
+  app.delete("/api/vehicles/:id", isAuthenticated, async (req, res) => {
     try {
-      console.log(`DELETE /api/vehicles/${req.params.id} - Excluindo veículo`);
+      console.log(`DELETE /api/vehicles/${req.params.id} - Tentativa de exclusão de veículo`);
       
       const vehicleId = parseInt(req.params.id);
       const vehicle = await storage.getVehicle(vehicleId);
@@ -7820,10 +7820,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Vehicle not found" });
       }
       
-      // Remover verificações de permissão para testes
+      // Verificar permissões - apenas admin ou gestor de frota pode excluir
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const isFleetManagement = req.user.baseId === 12;
+      if (req.user.role !== 'admin' && !isFleetManagement) {
+        console.log(`[SECURITY] Usuário ${req.user.username} (role: ${req.user.role}) tentou excluir veículo ${vehicle.plate} sem permissão`);
+        return res.status(403).json({ message: "Apenas administradores podem excluir veículos" });
+      }
+      
+      // Registrar auditoria ANTES da exclusão
+      try {
+        await pool.query(`
+          INSERT INTO system_audit_log (table_name, record_id, action, old_values, changed_by, changed_at, ip_address, user_agent, reason)
+          VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7, $8)
+        `, [
+          'vehicles',
+          vehicleId.toString(),
+          'DELETE',
+          JSON.stringify({ plate: vehicle.plate, model: vehicle.model, baseId: vehicle.baseId }),
+          req.user.username || req.user.id.toString(),
+          req.ip || 'unknown',
+          req.headers['user-agent'] || 'unknown',
+          'Exclusão manual via interface'
+        ]);
+        console.log(`[AUDIT] Exclusão de veículo ${vehicle.plate} registrada por ${req.user.username}`);
+      } catch (auditError) {
+        console.error('[AUDIT] Erro ao registrar auditoria:', auditError);
+      }
       
       const success = await storage.deleteVehicle(vehicleId);
-      console.log(`Veículo ${vehicleId} excluído com sucesso`);
+      console.log(`Veículo ${vehicleId} (${vehicle.plate}) excluído por ${req.user.username}`);
       return res.status(200).json({ message: "Vehicle deleted successfully" });
     } catch (error) {
       console.error("Error deleting vehicle:", error);
