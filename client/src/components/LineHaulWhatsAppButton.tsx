@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { MessageCircle, Phone, Send, CheckCircle } from 'lucide-react';
+import { MessageCircle, Phone, Send, CheckCircle, XCircle } from 'lucide-react';
 import { openWhatsAppWeb, isValidPhoneNumber } from '@/lib/whatsapp-utils';
 
 interface LineHaulWhatsAppButtonProps {
@@ -23,6 +23,7 @@ interface LineHaulWhatsAppButtonProps {
     cartao_combustivel?: string;
     provedor_cartao?: string;
     km_total?: number;
+    motivo_negacao?: string;
     calculo_detalhes?: {
       km_rota?: number;
       km_total?: number;
@@ -51,8 +52,9 @@ const LineHaulWhatsAppButton: React.FC<LineHaulWhatsAppButtonProps> = ({
     return `R$ ${numValue.toFixed(2).replace('.', ',')}`;
   };
 
+  const isNegado = solicitation.status?.toLowerCase() === 'negado';
+
   const generateBalanceConfirmationMessage = () => {
-    const cartao = solicitation.numero_cartao || solicitation.cartao_combustivel || solicitation.placa;
     const rota = solicitation.rota_origem && solicitation.rota_destino 
       ? `${solicitation.rota_origem.toUpperCase()} → ${solicitation.rota_destino.toUpperCase()}`
       : 'Não informada';
@@ -79,10 +81,31 @@ Abastecimentos programados para *após as 16h30* terão o saldo disponibilizado 
 Boa viagem! 🚛`;
   };
 
+  const generateDeniedMessage = () => {
+    const rota = solicitation.rota_origem && solicitation.rota_destino 
+      ? `${solicitation.rota_origem.toUpperCase()} → ${solicitation.rota_destino.toUpperCase()}`
+      : 'Não informada';
+    const motivo = solicitation.motivo_negacao || 'Não especificado';
+    
+    return `❌ *SOLICITAÇÃO NEGADA - LINE HAUL*
+
+Olá ${solicitation.motorista || 'Motorista'},
+
+Infelizmente sua solicitação de abastecimento foi *negada*.
+
+📋 *Detalhes da Solicitação:*
+• Rota: ${rota}
+
+📝 *Motivo da Negação:*
+${motivo}
+
+Se tiver dúvidas, entre em contato com a equipe.`;
+  };
+
   const handleOpenDialog = () => {
     const extractedPhone = solicitation.telefone_motorista || solicitation.telefone_celular || '';
     setPhoneNumber(extractedPhone);
-    setMessage(generateBalanceConfirmationMessage());
+    setMessage(isNegado ? generateDeniedMessage() : generateBalanceConfirmationMessage());
     setIsDialogOpen(true);
   };
 
@@ -144,37 +167,50 @@ Boa viagem! 🚛`;
         <Button 
           variant={variant} 
           size={size} 
-          className={`${className} text-green-600 hover:text-green-700 hover:bg-green-50`}
+          className={`${className} ${isNegado ? 'text-red-600 hover:text-red-700 hover:bg-red-50' : 'text-green-600 hover:text-green-700 hover:bg-green-50'}`}
           onClick={handleOpenDialog}
           data-testid="button-linehaul-whatsapp"
         >
           <MessageCircle className="h-4 w-4 mr-1" />
-          Avisar Saldo
+          {isNegado ? 'Avisar Negação' : 'Avisar Saldo'}
         </Button>
       </DialogTrigger>
       
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center">
-            <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
-            Avisar Saldo no Cartão
+            {isNegado ? (
+              <XCircle className="h-5 w-5 mr-2 text-red-600" />
+            ) : (
+              <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
+            )}
+            {isNegado ? 'Avisar Negação da Solicitação' : 'Avisar Saldo no Cartão'}
           </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
-          <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-            <div className="text-sm text-green-800">
+          <div className={`p-3 rounded-lg border ${isNegado ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+            <div className={`text-sm ${isNegado ? 'text-red-800' : 'text-green-800'}`}>
               <strong>Motorista:</strong> {solicitation.motorista || 'Não informado'}
             </div>
-            <div className="text-sm text-green-800">
-              <strong>Cartão:</strong> {solicitation.numero_cartao || solicitation.cartao_combustivel || solicitation.placa}
-            </div>
-            <div className="text-sm text-green-800">
-              <strong>Valor:</strong> {formatCurrency(solicitation.valor_solicitado)}
-            </div>
+            {!isNegado && (
+              <>
+                <div className="text-sm text-green-800">
+                  <strong>Cartão:</strong> {solicitation.numero_cartao || solicitation.cartao_combustivel || solicitation.placa}
+                </div>
+                <div className="text-sm text-green-800">
+                  <strong>Valor:</strong> {formatCurrency(solicitation.valor_solicitado)}
+                </div>
+              </>
+            )}
             {solicitation.rota_origem && solicitation.rota_destino && (
-              <div className="text-sm text-green-800">
+              <div className={`text-sm ${isNegado ? 'text-red-800' : 'text-green-800'}`}>
                 <strong>Rota:</strong> {solicitation.rota_origem} → {solicitation.rota_destino}
+              </div>
+            )}
+            {isNegado && solicitation.motivo_negacao && (
+              <div className="text-sm text-red-800 mt-2">
+                <strong>Motivo:</strong> {solicitation.motivo_negacao}
               </div>
             )}
           </div>
@@ -225,7 +261,7 @@ Boa viagem! 🚛`;
             </Button>
             <Button 
               onClick={handleSendWhatsApp}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+              className={`flex-1 text-white ${isNegado ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
               data-testid="button-send-linehaul-whatsapp"
             >
               <Send className="h-4 w-4 mr-2" />
