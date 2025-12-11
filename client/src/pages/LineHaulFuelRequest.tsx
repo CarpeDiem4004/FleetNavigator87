@@ -171,9 +171,15 @@ export default function LineHaulFuelRequest() {
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               Solicitação Enviada!
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-4">
               Sua solicitação foi registrada e será analisada pelo operador. O valor do abastecimento será calculado automaticamente com base na rota.
             </p>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <p className="text-green-800 text-sm font-medium flex items-center gap-2">
+                <span className="text-lg">📱</span>
+                Você receberá uma mensagem automática via WhatsApp assim que o saldo for colocado no cartão.
+              </p>
+            </div>
             <Button 
               onClick={() => {
                 setSubmitted(false);
