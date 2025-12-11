@@ -13,6 +13,63 @@ interface VehiclePlate {
   modelo?: string;
 }
 
+// Lista de rotas organizadas (Cidade – UF)
+const ROTAS_LINE_HAUL = [
+  "Aparecida – SP",
+  "Araçatuba – SP",
+  "Araucária – PR",
+  "Araraquara – SP",
+  "Artur Alvim – SP",
+  "Assis – SP",
+  "Bauru – SP",
+  "Belo Horizonte – MG",
+  "Betim – MG",
+  "Campo Grande – MS",
+  "Cascavel – PR",
+  "Cordovil – RJ",
+  "Cravinhos – SP",
+  "Curitiba – PR",
+  "Duque de Caxias – RJ",
+  "Franca – SP",
+  "Franco da Rocha – SP",
+  "Goiânia – GO",
+  "Guaratinguetá – SP",
+  "Guarulhos – SP",
+  "Itajaí – SC",
+  "Itapeva – MG",
+  "Itapeva – SP",
+  "Itaquaquecetuba – SP",
+  "Itirapina – SP",
+  "Itupeva – SP",
+  "Limeira – SP",
+  "Louveira – SP",
+  "Maringá – PR",
+  "Mogi Guaçu – SP",
+  "Mogi Mirim – SP",
+  "Osasco – SP",
+  "Patos de Minas – MG",
+  "Ponta Grossa – PR",
+  "Praia Grande – SP",
+  "Ribeirão Preto – SP",
+  "Rio de Janeiro – RJ",
+  "Santana de Parnaíba – SP",
+  "Santo André – SP",
+  "São Bernardo ABC – SP",
+  "São Bernardo do Campo – SP",
+  "São Carlos – SP",
+  "São João de Meriti – RJ",
+  "São José – SC",
+  "São José do Rio Preto – SP",
+  "São Paulo – SP",
+  "Sete Lagoas – MG",
+  "Tatuí – SP",
+  "Toledo – PR",
+  "Tremembé – MG",
+  "Três Lagoas – MS",
+  "Tuiuti – SP",
+  "Uberaba – MG",
+];
+
 export default function LineHaulFuelRequest() {
   const { toast } = useToast();
   
@@ -39,6 +96,16 @@ export default function LineHaulFuelRequest() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const plateInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // Estados para autocomplete de rotas
+  const [filteredOrigins, setFilteredOrigins] = useState<string[]>([]);
+  const [filteredDestinations, setFilteredDestinations] = useState<string[]>([]);
+  const [showOriginSuggestions, setShowOriginSuggestions] = useState(false);
+  const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
+  const originInputRef = useRef<HTMLInputElement>(null);
+  const originSuggestionsRef = useRef<HTMLDivElement>(null);
+  const destinationInputRef = useRef<HTMLInputElement>(null);
+  const destinationSuggestionsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function loadPlates() {
@@ -72,6 +139,7 @@ export default function LineHaulFuelRequest() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
+      // Fechar sugestões de placa
       if (
         suggestionsRef.current && 
         !suggestionsRef.current.contains(event.target as Node) &&
@@ -80,10 +148,56 @@ export default function LineHaulFuelRequest() {
       ) {
         setShowSuggestions(false);
       }
+      // Fechar sugestões de origem
+      if (
+        originSuggestionsRef.current && 
+        !originSuggestionsRef.current.contains(event.target as Node) &&
+        originInputRef.current &&
+        !originInputRef.current.contains(event.target as Node)
+      ) {
+        setShowOriginSuggestions(false);
+      }
+      // Fechar sugestões de destino
+      if (
+        destinationSuggestionsRef.current && 
+        !destinationSuggestionsRef.current.contains(event.target as Node) &&
+        destinationInputRef.current &&
+        !destinationInputRef.current.contains(event.target as Node)
+      ) {
+        setShowDestinationSuggestions(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Filtrar rotas de origem conforme digita
+  useEffect(() => {
+    if (form.localInicio.length >= 1) {
+      const filtered = ROTAS_LINE_HAUL.filter(rota => 
+        rota.toLowerCase().includes(form.localInicio.toLowerCase())
+      ).slice(0, 8);
+      setFilteredOrigins(filtered);
+      setShowOriginSuggestions(filtered.length > 0);
+    } else {
+      setFilteredOrigins([]);
+      setShowOriginSuggestions(false);
+    }
+  }, [form.localInicio]);
+
+  // Filtrar rotas de destino conforme digita
+  useEffect(() => {
+    if (form.destino.length >= 1) {
+      const filtered = ROTAS_LINE_HAUL.filter(rota => 
+        rota.toLowerCase().includes(form.destino.toLowerCase())
+      ).slice(0, 8);
+      setFilteredDestinations(filtered);
+      setShowDestinationSuggestions(filtered.length > 0);
+    } else {
+      setFilteredDestinations([]);
+      setShowDestinationSuggestions(false);
+    }
+  }, [form.destino]);
 
   function selectPlate(plate: VehiclePlate) {
     setForm({ ...form, placa: plate.placa });
@@ -323,36 +437,92 @@ export default function LineHaulFuelRequest() {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 relative">
                 <Label htmlFor="localInicio" className="flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
                   Local de Início *
                 </Label>
                 <Input
+                  ref={originInputRef}
                   id="localInicio"
                   type="text"
-                  placeholder="Cidade/Estado de partida"
+                  placeholder="Digite para buscar..."
                   value={form.localInicio}
                   onChange={(e) => setForm({ ...form, localInicio: e.target.value })}
+                  onFocus={() => {
+                    if (form.localInicio.length >= 1 && filteredOrigins.length > 0) {
+                      setShowOriginSuggestions(true);
+                    }
+                  }}
                   required
+                  autoComplete="off"
                   data-testid="input-origin"
                 />
+                {showOriginSuggestions && filteredOrigins.length > 0 && (
+                  <div
+                    ref={originSuggestionsRef}
+                    className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto"
+                  >
+                    {filteredOrigins.map((rota, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => {
+                          setForm({ ...form, localInicio: rota });
+                          setShowOriginSuggestions(false);
+                        }}
+                        className="w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
+                      >
+                        <MapPin className="h-4 w-4 text-blue-600" />
+                        <span className="text-gray-900">{rota}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 relative">
                 <Label htmlFor="destino" className="flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
                   Destino *
                 </Label>
                 <Input
+                  ref={destinationInputRef}
                   id="destino"
                   type="text"
-                  placeholder="Cidade/Estado de destino"
+                  placeholder="Digite para buscar..."
                   value={form.destino}
                   onChange={(e) => setForm({ ...form, destino: e.target.value })}
+                  onFocus={() => {
+                    if (form.destino.length >= 1 && filteredDestinations.length > 0) {
+                      setShowDestinationSuggestions(true);
+                    }
+                  }}
                   required
+                  autoComplete="off"
                   data-testid="input-destination"
                 />
+                {showDestinationSuggestions && filteredDestinations.length > 0 && (
+                  <div
+                    ref={destinationSuggestionsRef}
+                    className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto"
+                  >
+                    {filteredDestinations.map((rota, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => {
+                          setForm({ ...form, destino: rota });
+                          setShowDestinationSuggestions(false);
+                        }}
+                        className="w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
+                      >
+                        <MapPin className="h-4 w-4 text-green-600" />
+                        <span className="text-gray-900">{rota}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
