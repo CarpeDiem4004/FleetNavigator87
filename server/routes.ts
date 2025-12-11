@@ -25450,49 +25450,67 @@ async function createFuelRequestNotification(fuelRequest) {
       // Validação: pelo menos numeroCartao ou placaVeiculo é obrigatório
       if (!numeroCartao && !placaVeiculo) {
         return res.status(400).json({
+          codigoEntidade: 0,
+          codigoErro: "VALIDATION_ERROR",
           sucesso: false,
           mensagem: 'É obrigatório informar o número do cartão ou a placa do veículo'
         });
       }
 
       // Validação de campos obrigatórios
-      if (!codigoCredito || !codigoCliente || !codigoProduto || !valorCredito || !dataValidade || dataLiberacao === undefined) {
+      if (codigoCredito === undefined || codigoCliente === undefined || 
+          codigoProduto === undefined || valorCredito === undefined || 
+          !dataValidade || dataLiberacao === undefined) {
         return res.status(400).json({
+          codigoEntidade: 0,
+          codigoErro: "VALIDATION_ERROR",
           sucesso: false,
           mensagem: 'Campos obrigatórios: codigoCredito, codigoCliente, codigoProduto, valorCredito, dataValidade, dataLiberacao'
         });
       }
 
-      // Montar o payload conforme API TicketLog
-      const payloadTicketLog = {
+      // Montar o payload exatamente conforme o manual TicketLog
+      const payloadTicketLog: any = {
         codigoCredito: parseInt(codigoCredito),
         codigoCliente: parseInt(codigoCliente),
         codigoProduto: parseInt(codigoProduto),
         valorCredito: parseFloat(valorCredito),
-        numeroCartao: numeroCartao ? parseInt(numeroCartao) : null,
-        placaVeiculo: placaVeiculo || null,
-        dataValidade: dataValidade, // formato string "YYYY-MM-DD"
+        dataValidade: dataValidade,
         dataLiberacao: parseInt(dataLiberacao)
       };
 
+      // Adicionar numeroCartao ou placaVeiculo (pelo menos um obrigatório)
+      if (numeroCartao) {
+        payloadTicketLog.numeroCartao = parseInt(numeroCartao);
+      }
+      if (placaVeiculo) {
+        payloadTicketLog.placaVeiculo = String(placaVeiculo).toUpperCase();
+      }
+
       console.log('[TICKETLOG] Payload para API externa:', payloadTicketLog);
 
-      // URL base da API TicketLog (configurar via variável de ambiente)
-      const TICKETLOG_API_URL = process.env.TICKETLOG_API_URL || 'https://api.ticketlog.com.br';
-      const TICKETLOG_API_KEY = process.env.TICKETLOG_API_KEY || '';
-      const TICKETLOG_CLIENT_ID = process.env.TICKETLOG_CLIENT_ID || '';
+      // Token de autenticação TicketLog
+      const TICKETLOG_TOKEN = process.env.TICKETLOG_TOKEN || '';
+      
+      if (!TICKETLOG_TOKEN) {
+        console.error('[TICKETLOG] Token não configurado');
+        return res.status(500).json({
+          codigoEntidade: 0,
+          codigoErro: "CONFIG_ERROR",
+          sucesso: false,
+          mensagem: 'Token TicketLog não configurado no servidor'
+        });
+      }
 
       let retornoApi: any = null;
 
       try {
-        // Fazer requisição para a API TicketLog
-        const response = await fetch(`${TICKETLOG_API_URL}/ticketlog-servicos/ebs/credito`, {
+        // URL de produção TicketLog
+        const response = await fetch('https://srv1.ticketlog.com.br/ticketlog-servicos/ebs/credito', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${TICKETLOG_API_KEY}`,
-            'X-Client-ID': TICKETLOG_CLIENT_ID
-            // Adicionar outros headers de autenticação conforme necessário
+            'Authorization': `Bearer ${TICKETLOG_TOKEN}`
           },
           body: JSON.stringify(payloadTicketLog)
         });
@@ -25503,54 +25521,53 @@ async function createFuelRequestNotification(fuelRequest) {
       } catch (apiError: any) {
         console.error('[TICKETLOG] Erro ao chamar API externa:', apiError);
         retornoApi = {
-          codigoEntidade: null,
+          codigoEntidade: 0,
           codigoErro: 'ERRO_COMUNICACAO',
           sucesso: false,
           mensagem: `Erro de comunicação com API TicketLog: ${apiError.message}`
         };
       }
 
-      // Salvar no banco de dados (PostgreSQL local)
-      const insertQuery = `
-        INSERT INTO creditos_ticketlog (
-          codigo_credito, codigo_cliente, codigo_produto, numero_cartao, 
-          placa_veiculo, valor_credito, data_validade, data_liberacao, 
-          retorno_api, sucesso, created_at
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
-        RETURNING id
-      `;
-      
-      const insertResult = await pool.query(insertQuery, [
-        parseInt(codigoCredito),
-        parseInt(codigoCliente),
-        parseInt(codigoProduto),
-        numeroCartao ? parseInt(numeroCartao) : null,
-        placaVeiculo || null,
-        parseFloat(valorCredito),
-        dataValidade,
-        parseInt(dataLiberacao),
-        JSON.stringify(retornoApi),
-        retornoApi?.sucesso || false
-      ]);
+      // Salvar no Supabase
+      try {
+        const { data: insertData, error: insertError } = await supabase
+          .from('creditos_ticketlog')
+          .insert({
+            codigo_cliente: parseInt(codigoCliente),
+            numero_cartao: numeroCartao ? String(numeroCartao) : null,
+            placa_veiculo: placaVeiculo ? String(placaVeiculo).toUpperCase() : null,
+            valor_credito: parseFloat(valorCredito),
+            data_validade: dataValidade,
+            data_liberacao: parseInt(dataLiberacao),
+            retorno_api: retornoApi
+          })
+          .select('id')
+          .single();
 
-      console.log('[TICKETLOG] Registro salvo no banco, ID:', insertResult.rows[0]?.id);
+        if (insertError) {
+          console.error('[TICKETLOG] Erro ao salvar no Supabase:', insertError);
+        } else {
+          console.log('[TICKETLOG] Registro salvo no Supabase, ID:', insertData?.id);
+        }
+      } catch (dbError: any) {
+        console.error('[TICKETLOG] Erro ao salvar no banco:', dbError);
+      }
 
-      // Retornar a resposta no mesmo formato da API TicketLog
+      // Retornar a resposta exatamente no formato TicketLog
       res.json({
-        codigoEntidade: retornoApi?.codigoEntidade || null,
-        codigoErro: retornoApi?.codigoErro || null,
+        codigoEntidade: retornoApi?.codigoEntidade || 0,
+        codigoErro: retornoApi?.codigoErro || '',
         sucesso: retornoApi?.sucesso || false,
-        mensagem: retornoApi?.mensagem || 'Processamento concluído',
-        registroId: insertResult.rows[0]?.id
+        mensagem: retornoApi?.mensagem || 'Processamento concluído'
       });
 
     } catch (error: any) {
       console.error('[TICKETLOG] Erro geral:', error);
       res.status(500).json({
+        codigoEntidade: 0,
+        codigoErro: 'INTERNAL_ERROR',
         sucesso: false,
-        mensagem: 'Erro ao enviar crédito para TicketLog',
-        detalhes: error.message
+        mensagem: 'Erro ao enviar crédito para TicketLog'
       });
     }
   });
@@ -25560,18 +25577,20 @@ async function createFuelRequestNotification(fuelRequest) {
     try {
       const { limit = 50, offset = 0 } = req.query;
       
-      const query = `
-        SELECT * FROM creditos_ticketlog 
-        ORDER BY created_at DESC 
-        LIMIT $1 OFFSET $2
-      `;
+      const { data, error } = await supabase
+        .from('creditos_ticketlog')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .range(parseInt(offset as string), parseInt(offset as string) + parseInt(limit as string) - 1);
       
-      const result = await pool.query(query, [parseInt(limit as string), parseInt(offset as string)]);
+      if (error) {
+        throw error;
+      }
       
       res.json({
         success: true,
-        data: result.rows,
-        total: result.rows.length
+        data: data || [],
+        total: data?.length || 0
       });
     } catch (error: any) {
       console.error('[TICKETLOG] Erro ao listar créditos:', error);
