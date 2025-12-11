@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, Fuel, Camera, Check, Truck, MapPin, Phone, User, Clock, Package } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2, Fuel, Camera, Check, Truck, MapPin, Phone, User, Clock, Package, Calculator, Droplets } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function LineHaulFuelRequest() {
@@ -21,12 +22,74 @@ export default function LineHaulFuelRequest() {
     horarioAbastecimento: "",
     operacao: "mercado_livre" as "mercado_livre" | "shopee",
     provedorCartao: "veloe" as "veloe" | "ticket",
+    arla: false,
   });
 
   const [fotoPainel, setFotoPainel] = useState<File | null>(null);
   const [fotoCartao, setFotoCartao] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [calculando, setCalculando] = useState(false);
+  const [rotaCalculada, setRotaCalculada] = useState<{
+    distancia_km: number;
+    valor_sugerido: number;
+    detalhes?: { litros_estimados: number; preco_diesel: number; };
+  } | null>(null);
+
+  async function calcularRota() {
+    if (!form.localInicio || !form.destino) {
+      toast({
+        title: "Preencha os campos",
+        description: "Informe o local de início e destino para calcular a rota.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCalculando(true);
+    try {
+      const response = await fetch("/api/linehaul/calculate-route", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          origem: form.localInicio,
+          destino: form.destino,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        let valorFinal = data.valor_sugerido;
+        if (form.arla) {
+          valorFinal += 50;
+        }
+        setRotaCalculada({
+          ...data,
+          valor_sugerido: valorFinal,
+        });
+        toast({
+          title: "Rota calculada!",
+          description: `Distância: ${data.distancia_km} km - Valor sugerido: R$ ${valorFinal}`,
+        });
+      } else {
+        toast({
+          title: "Erro no cálculo",
+          description: data.message || "Não foi possível calcular a rota.",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      console.error("Erro ao calcular rota:", err);
+      toast({
+        title: "Erro",
+        description: "Falha ao calcular a rota. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setCalculando(false);
+    }
+  }
 
   async function uploadImage(file: File, path: string): Promise<string | null> {
     try {
@@ -87,6 +150,9 @@ export default function LineHaulFuelRequest() {
             horario_abastecimento: form.horarioAbastecimento,
             operacao: form.operacao,
             provedor_cartao: form.provedorCartao,
+            arla: form.arla,
+            distancia_km: rotaCalculada?.distancia_km || null,
+            valor_sugerido: rotaCalculada?.valor_sugerido || null,
             foto_painel_url: painelUrl,
             foto_cartao_url: cartaoUrl,
             status: "pendente",
@@ -139,7 +205,9 @@ export default function LineHaulFuelRequest() {
                   horarioAbastecimento: "",
                   operacao: "mercado_livre",
                   provedorCartao: "veloe",
+                  arla: false,
                 });
+                setRotaCalculada(null);
                 setFotoPainel(null);
                 setFotoCartao(null);
               }}
@@ -256,6 +324,65 @@ export default function LineHaulFuelRequest() {
                   data-testid="input-destination"
                 />
               </div>
+
+              <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <Checkbox
+                  id="arla"
+                  checked={form.arla}
+                  onCheckedChange={(checked) => setForm({ ...form, arla: checked === true })}
+                  data-testid="checkbox-arla"
+                />
+                <Label htmlFor="arla" className="flex items-center gap-2 cursor-pointer">
+                  <Droplets className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <span className="font-semibold text-blue-900">Precisa de ARLA?</span>
+                    <p className="text-xs text-blue-600">Adiciona R$ 50 ao valor sugerido</p>
+                  </div>
+                </Label>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={calcularRota}
+                disabled={calculando || !form.localInicio || !form.destino}
+                className="w-full h-12 border-2 border-green-500 text-green-700 hover:bg-green-50"
+                data-testid="button-calculate-route"
+              >
+                {calculando ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Calculando...
+                  </>
+                ) : (
+                  <>
+                    <Calculator className="mr-2 h-5 w-5" />
+                    Calcular Rota e Valor
+                  </>
+                )}
+              </Button>
+
+              {rotaCalculada && (
+                <div className="p-4 bg-green-50 rounded-lg border-2 border-green-500">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Check className="h-5 w-5 text-green-600" />
+                    <span className="font-bold text-green-800">Rota Calculada!</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div className="bg-white p-3 rounded-lg">
+                      <p className="text-sm text-gray-500">Distância</p>
+                      <p className="text-2xl font-bold text-gray-900">{rotaCalculada.distancia_km} km</p>
+                    </div>
+                    <div className="bg-white p-3 rounded-lg">
+                      <p className="text-sm text-gray-500">Valor Sugerido</p>
+                      <p className="text-2xl font-bold text-green-600">R$ {rotaCalculada.valor_sugerido}</p>
+                    </div>
+                  </div>
+                  {form.arla && (
+                    <p className="text-xs text-center mt-2 text-blue-600">* Inclui R$ 50 para ARLA</p>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="horario" className="flex items-center gap-2">

@@ -4334,6 +4334,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Calcular distância para solicitação de abastecimento Line Haul (rota pública)
+  app.post('/api/linehaul/calculate-route', async (req, res) => {
+    try {
+      const { origem, destino } = req.body;
+      
+      console.log('🗺️ [LINEHAUL-ROUTE] Calculando rota:', { origem, destino });
+      
+      if (!origem || !destino) {
+        return res.status(400).json({
+          success: false,
+          message: 'Origem e destino são obrigatórios'
+        });
+      }
+
+      const GOOGLE_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+      
+      if (!GOOGLE_API_KEY) {
+        return res.status(500).json({
+          success: false,
+          message: 'API Key do Google Maps não configurada'
+        });
+      }
+
+      const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origem)}&destinations=${encodeURIComponent(destino)}&units=metric&key=${GOOGLE_API_KEY}`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.rows?.[0]?.elements?.[0]?.status === 'OK') {
+        const distanciaMetros = data.rows[0].elements[0].distance.value;
+        const distanciaKm = Math.round(distanciaMetros / 1000);
+        
+        // Cálculo do valor sugerido:
+        // Consumo médio: 3 km/litro para caminhão
+        // Preço médio diesel: R$ 6,50/litro
+        // Margem de segurança: 10%
+        const consumoMedio = 3; // km/litro
+        const precoDiesel = 6.50; // R$/litro
+        const litrosNecessarios = distanciaKm / consumoMedio;
+        const valorBase = litrosNecessarios * precoDiesel;
+        const valorComMargem = Math.ceil(valorBase * 1.1 / 10) * 10; // Arredonda para múltiplo de 10
+        
+        console.log('✅ [LINEHAUL-ROUTE] Distância:', distanciaKm, 'km, Valor sugerido: R$', valorComMargem);
+        
+        return res.status(200).json({
+          success: true,
+          distancia_km: distanciaKm,
+          valor_sugerido: valorComMargem,
+          detalhes: {
+            litros_estimados: Math.round(litrosNecessarios),
+            preco_diesel: precoDiesel,
+            consumo_medio: consumoMedio
+          }
+        });
+      } else {
+        const status = data.rows?.[0]?.elements?.[0]?.status || 'UNKNOWN';
+        console.log('❌ [LINEHAUL-ROUTE] Falha no cálculo:', status);
+        
+        return res.status(400).json({
+          success: false,
+          message: 'Não foi possível calcular a rota. Verifique os endereços.'
+        });
+      }
+    } catch (error: any) {
+      console.error('💥 [LINEHAUL-ROUTE] Erro:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao calcular rota'
+      });
+    }
+  });
+
   // Calcular distância entre dois pontos usando Google Maps Distance Matrix API
   app.post('/api/line-hall/calculate-distance', isAuthenticated, async (req, res) => {
     try {
