@@ -7036,6 +7036,205 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // POST - Criar solicitação de abastecimento Line Haul (acesso público - formulário motorista)
+  app.post('/api/public/linehaul/fuel-request', async (req, res) => {
+    try {
+      const {
+        motorista_nome,
+        telefone_motorista,
+        veiculo_placa,
+        rota_origem,
+        rota_destino,
+        horario_abastecimento,
+        operacao,
+        provedor_cartao,
+        incluir_arla,
+        data_solicitacao,
+        horario_solicitacao
+      } = req.body;
+
+      console.log('[LINEHAUL-PUBLIC-REQUEST] Recebendo solicitação:', {
+        motorista_nome,
+        veiculo_placa,
+        rota_origem,
+        rota_destino,
+        operacao,
+        provedor_cartao,
+        incluir_arla
+      });
+
+      // Validações básicas
+      if (!motorista_nome || !veiculo_placa || !rota_origem || !rota_destino) {
+        return res.status(400).json({
+          success: false,
+          message: 'Campos obrigatórios: nome do motorista, placa, origem e destino'
+        });
+      }
+
+      const plateClean = veiculo_placa.replace(/\s/g, '').toUpperCase();
+
+      // Buscar veículo para obter modelo e cartão
+      const vehicleQuery = `
+        SELECT id, placa, modelo, cartao_abastecimento, status
+        FROM veiculos 
+        WHERE UPPER(REPLACE(placa, ' ', '')) = $1
+        LIMIT 1
+      `;
+      const vehicleResult = await pool.query(vehicleQuery, [plateClean]);
+
+      if (vehicleResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Veículo não encontrado. Verifique a placa informada.'
+        });
+      }
+
+      const vehicle = vehicleResult.rows[0];
+
+      if (vehicle.status === 'em_manutencao') {
+        return res.status(403).json({
+          success: false,
+          message: 'Veículo em manutenção. Não é possível solicitar abastecimento.'
+        });
+      }
+
+      // Buscar distância na tabela de rotas
+      let kmTotal = 0;
+      const routeQuery = `
+        SELECT km_total 
+        FROM line_hall_routes 
+        WHERE LOWER(origem) LIKE LOWER($1) 
+          AND LOWER(destino) LIKE LOWER($2)
+        LIMIT 1
+      `;
+      const routeResult = await pool.query(routeQuery, [`%${rota_origem}%`, `%${rota_destino}%`]);
+
+      if (routeResult.rows.length > 0) {
+        kmTotal = routeResult.rows[0].km_total || 0;
+        console.log('[LINEHAUL-PUBLIC-REQUEST] Rota encontrada, km:', kmTotal);
+      } else {
+        console.log('[LINEHAUL-PUBLIC-REQUEST] Rota não encontrada, km será calculado manualmente');
+      }
+
+      // Calcular valor baseado no modelo do veículo
+      function getConsumoByModel(modelo: string): number {
+        if (!modelo) return 2.5;
+        const modeloLower = modelo.toLowerCase();
+        const consumos: Record<string, number> = {
+          'iveco': 2.5,
+          'volvo': 2.7,
+          'constellation': 2.0,
+          'mercedes': 2.5,
+          'man': 2.6,
+          'scania': 2.7,
+          'daf': 2.7
+        };
+        for (const [marca, consumo] of Object.entries(consumos)) {
+          if (modeloLower.includes(marca)) return consumo;
+        }
+        return 2.5;
+      }
+
+      const consumo = getConsumoByModel(vehicle.modelo || '');
+      const precoLitro = 6.50;
+      const kmAcrescimo = 30;
+      let valorCalculado = 0;
+
+      if (kmTotal > 0) {
+        valorCalculado = ((kmTotal + kmAcrescimo) / consumo) * precoLitro;
+      }
+
+      // Adicionar R$50 para ARLA se solicitado
+      if (incluir_arla) {
+        valorCalculado += 50;
+      }
+
+      valorCalculado = parseFloat(valorCalculado.toFixed(2));
+
+      // Mapear provedor do cartão
+      const provedorMap: Record<string, string> = {
+        'veloe': 'Veloe Go',
+        'ticket': 'Ticket'
+      };
+      const provedorFormatado = provedorMap[provedor_cartao?.toLowerCase()] || provedor_cartao || 'Veloe Go';
+
+      // Mapear operação para observação
+      const operacaoMap: Record<string, string> = {
+        'mercado_livre': 'Mercado Livre',
+        'shopee': 'Shopee'
+      };
+      const operacaoFormatada = operacaoMap[operacao] || operacao || 'Line Haul';
+
+      // Construir detalhes do cálculo
+      const calculoDetalhes = {
+        km_rota: kmTotal,
+        km_acrescimo: kmAcrescimo,
+        km_total: kmTotal + kmAcrescimo,
+        consumo_medio: consumo,
+        litros_necessarios: ((kmTotal + kmAcrescimo) / consumo).toFixed(2),
+        valor_por_litro: precoLitro,
+        valor_arla: incluir_arla ? 50 : 0,
+        valor_total: valorCalculado.toFixed(2)
+      };
+
+      // Inserir na tabela solicitacoes_fuel_card com origem_tipo = 'line_hall'
+      const insertQuery = `
+        INSERT INTO solicitacoes_fuel_card (
+          placa, numero_cartao, motorista, telefone_celular,
+          valor_solicitado, provedor_cartao, status, data_solicitacao,
+          origem_tipo, rota_origem, rota_destino, km_total, valor_calculado,
+          horario_abastecimento, calculo_detalhes, observacoes, veiculo_modelo
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, 'Pendente', $7,
+          'line_hall', $8, $9, $10, $11, $12, $13, $14, $15
+        )
+        RETURNING *
+      `;
+
+      const observacao = `Operação: ${operacaoFormatada}${incluir_arla ? ' | ARLA: Sim' : ''}`;
+
+      const result = await pool.query(insertQuery, [
+        plateClean,
+        vehicle.cartao_abastecimento || plateClean,
+        motorista_nome,
+        telefone_motorista || '',
+        valorCalculado,
+        provedorFormatado,
+        data_solicitacao || new Date().toISOString().split('T')[0],
+        rota_origem,
+        rota_destino,
+        kmTotal,
+        valorCalculado,
+        horario_abastecimento || '',
+        JSON.stringify(calculoDetalhes),
+        observacao,
+        vehicle.modelo || ''
+      ]);
+
+      console.log('[LINEHAUL-PUBLIC-REQUEST] Solicitação criada:', result.rows[0].id);
+
+      return res.status(201).json({
+        success: true,
+        message: 'Solicitação de abastecimento enviada com sucesso',
+        data: {
+          id: result.rows[0].id,
+          placa: plateClean,
+          km_total: kmTotal,
+          valor_calculado: valorCalculado,
+          calculo: calculoDetalhes
+        }
+      });
+
+    } catch (error: any) {
+      console.error('[LINEHAUL-PUBLIC-REQUEST] Erro:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao processar solicitação',
+        error: error.message
+      });
+    }
+  });
+
   // GET - Obter detalhes de uma solicitação específica
   app.get('/api/fuel-card/:id', isAuthenticated, async (req, res) => {
     try {

@@ -1,17 +1,15 @@
 import { useState } from "react";
-import { getSupabaseClient } from "@/lib/supabase-compat";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Fuel, Camera, Check, Truck, MapPin, Phone, User, Clock, Package, Calculator, Droplets } from "lucide-react";
+import { Loader2, Fuel, Camera, Check, Truck, MapPin, Phone, User, Clock, Package, Droplets } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function LineHaulFuelRequest() {
   const { toast } = useToast();
-  const supabase = getSupabaseClient();
   
   const [form, setForm] = useState({
     nome: "",
@@ -29,144 +27,44 @@ export default function LineHaulFuelRequest() {
   const [fotoCartao, setFotoCartao] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [calculando, setCalculando] = useState(false);
-  const [rotaCalculada, setRotaCalculada] = useState<{
-    distancia_km: number;
-    valor_sugerido: number;
-    detalhes?: { litros_estimados: number; preco_diesel: number; };
-  } | null>(null);
-
-  async function calcularRota() {
-    if (!form.localInicio || !form.destino) {
-      toast({
-        title: "Preencha os campos",
-        description: "Informe o local de início e destino para calcular a rota.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setCalculando(true);
-    try {
-      const response = await fetch("/api/linehaul/calculate-route", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          origem: form.localInicio,
-          destino: form.destino,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        let valorFinal = data.valor_sugerido;
-        if (form.arla) {
-          valorFinal += 50;
-        }
-        setRotaCalculada({
-          ...data,
-          valor_sugerido: valorFinal,
-        });
-        toast({
-          title: "Rota calculada!",
-          description: `Distância: ${data.distancia_km} km - Valor sugerido: R$ ${valorFinal}`,
-        });
-      } else {
-        toast({
-          title: "Erro no cálculo",
-          description: data.message || "Não foi possível calcular a rota.",
-          variant: "destructive",
-        });
-      }
-    } catch (err) {
-      console.error("Erro ao calcular rota:", err);
-      toast({
-        title: "Erro",
-        description: "Falha ao calcular a rota. Tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setCalculando(false);
-    }
-  }
-
-  async function uploadImage(file: File, path: string): Promise<string | null> {
-    try {
-      const { data, error } = await supabase.storage
-        .from("linehaul_uploads")
-        .upload(path, file, { upsert: true });
-
-      if (error) {
-        console.error("Erro no upload:", error);
-        return null;
-      }
-
-      const { data: urlData } = supabase.storage
-        .from("linehaul_uploads")
-        .getPublicUrl(path);
-
-      return urlData?.publicUrl || null;
-    } catch (err) {
-      console.error("Erro ao fazer upload:", err);
-      return null;
-    }
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
 
     try {
-      let painelUrl: string | null = null;
-      let cartaoUrl: string | null = null;
-
-      const timestamp = Date.now();
       const plateClean = form.placa.replace(/\s/g, "").toUpperCase();
 
-      if (fotoPainel) {
-        painelUrl = await uploadImage(
-          fotoPainel,
-          `painel_${plateClean}_${timestamp}.jpg`
-        );
-      }
-
-      if (fotoCartao) {
-        cartaoUrl = await uploadImage(
-          fotoCartao,
-          `cartao_${plateClean}_${timestamp}.jpg`
-        );
-      }
-
-      const { error } = await supabase
-        .from("linehaul_abastecimento_solicitacoes")
-        .insert([
-          {
-            nome_motorista: form.nome,
-            telefone: form.telefone,
-            placa_veiculo: plateClean,
-            local_inicio: form.localInicio,
-            destino: form.destino,
-            horario_abastecimento: form.horarioAbastecimento,
-            operacao: form.operacao,
-            provedor_cartao: form.provedorCartao,
-            arla: form.arla,
-            distancia_km: rotaCalculada?.distancia_km || null,
-            valor_sugerido: rotaCalculada?.valor_sugerido || null,
-            foto_painel_url: painelUrl,
-            foto_cartao_url: cartaoUrl,
-            status: "pendente",
-          },
-        ]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Solicitação enviada!",
-        description: "Sua solicitação de abastecimento foi registrada com sucesso.",
+      const response = await fetch("/api/public/linehaul/fuel-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          motorista_nome: form.nome,
+          telefone_motorista: form.telefone,
+          veiculo_placa: plateClean,
+          rota_origem: form.localInicio,
+          rota_destino: form.destino,
+          horario_abastecimento: form.horarioAbastecimento,
+          operacao: form.operacao,
+          provedor_cartao: form.provedorCartao,
+          incluir_arla: form.arla,
+          data_solicitacao: new Date().toISOString().split('T')[0],
+          horario_solicitacao: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+          status: 'pendente'
+        }),
       });
 
-      setSubmitted(true);
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: "Solicitação enviada!",
+          description: "Sua solicitação foi registrada e será analisada pelo operador.",
+        });
+        setSubmitted(true);
+      } else {
+        throw new Error(data.message || "Erro ao enviar solicitação");
+      }
     } catch (err: any) {
       console.error("Erro ao enviar:", err);
       toast({
@@ -191,7 +89,7 @@ export default function LineHaulFuelRequest() {
               Solicitação Enviada!
             </h2>
             <p className="text-gray-600 mb-6">
-              Sua solicitação de abastecimento foi registrada com sucesso.
+              Sua solicitação foi registrada e será analisada pelo operador. O valor do abastecimento será calculado automaticamente com base na rota.
             </p>
             <Button 
               onClick={() => {
@@ -207,7 +105,6 @@ export default function LineHaulFuelRequest() {
                   provedorCartao: "veloe",
                   arla: false,
                 });
-                setRotaCalculada(null);
                 setFotoPainel(null);
                 setFotoCartao(null);
               }}
@@ -325,65 +222,6 @@ export default function LineHaulFuelRequest() {
                 />
               </div>
 
-              <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <Checkbox
-                  id="arla"
-                  checked={form.arla}
-                  onCheckedChange={(checked) => setForm({ ...form, arla: checked === true })}
-                  data-testid="checkbox-arla"
-                />
-                <Label htmlFor="arla" className="flex items-center gap-2 cursor-pointer">
-                  <Droplets className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <span className="font-semibold text-blue-900">Precisa de ARLA?</span>
-                    <p className="text-xs text-blue-600">Adiciona R$ 50 ao valor sugerido</p>
-                  </div>
-                </Label>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={calcularRota}
-                disabled={calculando || !form.localInicio || !form.destino}
-                className="w-full h-12 border-2 border-green-500 text-green-700 hover:bg-green-50"
-                data-testid="button-calculate-route"
-              >
-                {calculando ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Calculando...
-                  </>
-                ) : (
-                  <>
-                    <Calculator className="mr-2 h-5 w-5" />
-                    Calcular Rota e Valor
-                  </>
-                )}
-              </Button>
-
-              {rotaCalculada && (
-                <div className="p-4 bg-green-50 rounded-lg border-2 border-green-500">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Check className="h-5 w-5 text-green-600" />
-                    <span className="font-bold text-green-800">Rota Calculada!</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div className="bg-white p-3 rounded-lg">
-                      <p className="text-sm text-gray-500">Distância</p>
-                      <p className="text-2xl font-bold text-gray-900">{rotaCalculada.distancia_km} km</p>
-                    </div>
-                    <div className="bg-white p-3 rounded-lg">
-                      <p className="text-sm text-gray-500">Valor Sugerido</p>
-                      <p className="text-2xl font-bold text-green-600">R$ {rotaCalculada.valor_sugerido}</p>
-                    </div>
-                  </div>
-                  {form.arla && (
-                    <p className="text-xs text-center mt-2 text-blue-600">* Inclui R$ 50 para ARLA</p>
-                  )}
-                </div>
-              )}
-
               <div className="space-y-2">
                 <Label htmlFor="horario" className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
@@ -489,10 +327,26 @@ export default function LineHaulFuelRequest() {
                 </RadioGroup>
               </div>
 
+              <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <Checkbox
+                  id="arla"
+                  checked={form.arla}
+                  onCheckedChange={(checked) => setForm({ ...form, arla: checked === true })}
+                  data-testid="checkbox-arla"
+                />
+                <Label htmlFor="arla" className="flex items-center gap-2 cursor-pointer">
+                  <Droplets className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <span className="font-semibold text-blue-900">Precisa de ARLA?</span>
+                    <p className="text-xs text-blue-600">Marque se precisar abastecer ARLA</p>
+                  </div>
+                </Label>
+              </div>
+
               <div className="space-y-2 pt-2">
                 <Label className="flex items-center gap-2">
                   <Camera className="h-4 w-4" />
-                  Foto do Painel (Km)
+                  Foto do Painel (Km) - Opcional
                 </Label>
                 <div className="relative">
                   <input
@@ -522,7 +376,7 @@ export default function LineHaulFuelRequest() {
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Camera className="h-4 w-4" />
-                  Foto do Cartão
+                  Foto do Cartão - Opcional
                 </Label>
                 <div className="relative">
                   <input
@@ -547,6 +401,12 @@ export default function LineHaulFuelRequest() {
                     {fotoCartao && <Check className="h-6 w-6 text-green-600" />}
                   </div>
                 </div>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg border text-center">
+                <p className="text-sm text-gray-600">
+                  O <strong>valor do abastecimento</strong> será calculado automaticamente pelo sistema com base na rota informada.
+                </p>
               </div>
 
               <Button
