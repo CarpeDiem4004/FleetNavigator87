@@ -25429,6 +25429,159 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
+  // ===== ROTAS API TICKETLOG - CRÉDITOS =====
+  
+  // POST /api/ticketlog/credito - Enviar crédito para cartão TicketLog
+  app.post('/api/ticketlog/credito', isAuthenticated, async (req, res) => {
+    try {
+      console.log('[TICKETLOG] Recebendo solicitação de crédito:', req.body);
+      
+      const {
+        codigoCredito,
+        codigoCliente,
+        codigoProduto,
+        valorCredito,
+        numeroCartao,
+        placaVeiculo,
+        dataValidade,
+        dataLiberacao
+      } = req.body;
+
+      // Validação: pelo menos numeroCartao ou placaVeiculo é obrigatório
+      if (!numeroCartao && !placaVeiculo) {
+        return res.status(400).json({
+          sucesso: false,
+          mensagem: 'É obrigatório informar o número do cartão ou a placa do veículo'
+        });
+      }
+
+      // Validação de campos obrigatórios
+      if (!codigoCredito || !codigoCliente || !codigoProduto || !valorCredito || !dataValidade || dataLiberacao === undefined) {
+        return res.status(400).json({
+          sucesso: false,
+          mensagem: 'Campos obrigatórios: codigoCredito, codigoCliente, codigoProduto, valorCredito, dataValidade, dataLiberacao'
+        });
+      }
+
+      // Montar o payload conforme API TicketLog
+      const payloadTicketLog = {
+        codigoCredito: parseInt(codigoCredito),
+        codigoCliente: parseInt(codigoCliente),
+        codigoProduto: parseInt(codigoProduto),
+        valorCredito: parseFloat(valorCredito),
+        numeroCartao: numeroCartao ? parseInt(numeroCartao) : null,
+        placaVeiculo: placaVeiculo || null,
+        dataValidade: dataValidade, // formato string "YYYY-MM-DD"
+        dataLiberacao: parseInt(dataLiberacao)
+      };
+
+      console.log('[TICKETLOG] Payload para API externa:', payloadTicketLog);
+
+      // URL base da API TicketLog (configurar via variável de ambiente)
+      const TICKETLOG_API_URL = process.env.TICKETLOG_API_URL || 'https://api.ticketlog.com.br';
+      const TICKETLOG_API_KEY = process.env.TICKETLOG_API_KEY || '';
+      const TICKETLOG_CLIENT_ID = process.env.TICKETLOG_CLIENT_ID || '';
+
+      let retornoApi: any = null;
+
+      try {
+        // Fazer requisição para a API TicketLog
+        const response = await fetch(`${TICKETLOG_API_URL}/ticketlog-servicos/ebs/credito`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${TICKETLOG_API_KEY}`,
+            'X-Client-ID': TICKETLOG_CLIENT_ID
+            // Adicionar outros headers de autenticação conforme necessário
+          },
+          body: JSON.stringify(payloadTicketLog)
+        });
+
+        retornoApi = await response.json();
+        console.log('[TICKETLOG] Resposta da API externa:', retornoApi);
+
+      } catch (apiError: any) {
+        console.error('[TICKETLOG] Erro ao chamar API externa:', apiError);
+        retornoApi = {
+          codigoEntidade: null,
+          codigoErro: 'ERRO_COMUNICACAO',
+          sucesso: false,
+          mensagem: `Erro de comunicação com API TicketLog: ${apiError.message}`
+        };
+      }
+
+      // Salvar no banco de dados (PostgreSQL local)
+      const insertQuery = `
+        INSERT INTO creditos_ticketlog (
+          codigo_credito, codigo_cliente, codigo_produto, numero_cartao, 
+          placa_veiculo, valor_credito, data_validade, data_liberacao, 
+          retorno_api, sucesso, created_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+        RETURNING id
+      `;
+      
+      const insertResult = await pool.query(insertQuery, [
+        parseInt(codigoCredito),
+        parseInt(codigoCliente),
+        parseInt(codigoProduto),
+        numeroCartao ? parseInt(numeroCartao) : null,
+        placaVeiculo || null,
+        parseFloat(valorCredito),
+        dataValidade,
+        parseInt(dataLiberacao),
+        JSON.stringify(retornoApi),
+        retornoApi?.sucesso || false
+      ]);
+
+      console.log('[TICKETLOG] Registro salvo no banco, ID:', insertResult.rows[0]?.id);
+
+      // Retornar a resposta no mesmo formato da API TicketLog
+      res.json({
+        codigoEntidade: retornoApi?.codigoEntidade || null,
+        codigoErro: retornoApi?.codigoErro || null,
+        sucesso: retornoApi?.sucesso || false,
+        mensagem: retornoApi?.mensagem || 'Processamento concluído',
+        registroId: insertResult.rows[0]?.id
+      });
+
+    } catch (error: any) {
+      console.error('[TICKETLOG] Erro geral:', error);
+      res.status(500).json({
+        sucesso: false,
+        mensagem: 'Erro ao enviar crédito para TicketLog',
+        detalhes: error.message
+      });
+    }
+  });
+
+  // GET /api/ticketlog/creditos - Listar histórico de créditos enviados
+  app.get('/api/ticketlog/creditos', isAuthenticated, async (req, res) => {
+    try {
+      const { limit = 50, offset = 0 } = req.query;
+      
+      const query = `
+        SELECT * FROM creditos_ticketlog 
+        ORDER BY created_at DESC 
+        LIMIT $1 OFFSET $2
+      `;
+      
+      const result = await pool.query(query, [parseInt(limit as string), parseInt(offset as string)]);
+      
+      res.json({
+        success: true,
+        data: result.rows,
+        total: result.rows.length
+      });
+    } catch (error: any) {
+      console.error('[TICKETLOG] Erro ao listar créditos:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao listar créditos'
+      });
+    }
+  });
+
   // Rotas de autenticação JWT que estão faltando
   // Verificar se um token JWT é válido
   app.get('/api/hybrid/auth/verify', (req, res) => {
