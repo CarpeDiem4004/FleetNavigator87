@@ -22894,27 +22894,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Verificar se a solicitação existe na tabela solicitacoes_fuel_card (PostgreSQL local)
-      const checkQuery = `
-        SELECT id, origem_tipo, placa, motorista 
+      // Primeiro, tentar encontrar na tabela solicitacoes_fuel_card
+      const checkQuery1 = `
+        SELECT id, origem_tipo, placa, motorista, 'solicitacoes_fuel_card' as tabela
         FROM solicitacoes_fuel_card 
         WHERE id = $1 AND origem_tipo = 'line_hall'
       `;
-      const checkResult = await pool.query(checkQuery, [id]);
+      const checkResult1 = await pool.query(checkQuery1, [id]);
 
-      if (checkResult.rows.length === 0) {
-        console.log('[DELETE-LINE-HALL] Solicitação não encontrada na tabela solicitacoes_fuel_card');
+      // Se não encontrou, verificar na tabela linehall_fuel_card_requests
+      let foundInTable = '';
+      let foundRecord = null;
+
+      if (checkResult1.rows.length > 0) {
+        foundInTable = 'solicitacoes_fuel_card';
+        foundRecord = checkResult1.rows[0];
+      } else {
+        const checkQuery2 = `
+          SELECT id, 'line_hall' as origem_tipo, veiculo_placa as placa, motorista_nome as motorista, 'linehall_fuel_card_requests' as tabela
+          FROM linehall_fuel_card_requests 
+          WHERE id = $1
+        `;
+        const checkResult2 = await pool.query(checkQuery2, [id]);
+        
+        if (checkResult2.rows.length > 0) {
+          foundInTable = 'linehall_fuel_card_requests';
+          foundRecord = checkResult2.rows[0];
+        }
+      }
+
+      if (!foundRecord) {
+        console.log('[DELETE-LINE-HALL] Solicitação não encontrada em nenhuma tabela');
         return res.status(404).json({
           success: false,
           message: 'Solicitação não encontrada'
         });
       }
 
-      console.log('[DELETE-LINE-HALL] Solicitação encontrada:', checkResult.rows[0]);
+      console.log('[DELETE-LINE-HALL] Solicitação encontrada na tabela', foundInTable, ':', foundRecord);
 
-      // Executar a exclusão no PostgreSQL local
-      const deleteQuery = 'DELETE FROM solicitacoes_fuel_card WHERE id = $1 AND origem_tipo = $2';
-      const deleteResult = await pool.query(deleteQuery, [id, 'line_hall']);
+      // Executar a exclusão na tabela correta
+      let deleteResult;
+      if (foundInTable === 'solicitacoes_fuel_card') {
+        const deleteQuery = 'DELETE FROM solicitacoes_fuel_card WHERE id = $1 AND origem_tipo = $2';
+        deleteResult = await pool.query(deleteQuery, [id, 'line_hall']);
+      } else {
+        const deleteQuery = 'DELETE FROM linehall_fuel_card_requests WHERE id = $1';
+        deleteResult = await pool.query(deleteQuery, [id]);
+      }
 
       if (deleteResult.rowCount === 0) {
         console.error('[DELETE-LINE-HALL] Falha ao excluir - nenhuma linha afetada');
