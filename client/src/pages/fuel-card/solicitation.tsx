@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -889,30 +890,25 @@ export default function FuelCardSolicitation() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Base</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          value={field.value}
-                          disabled={!selectedProject || selectedProject.bases.length === 0}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={
-                                !selectedProject 
-                                  ? "Selecione um projeto primeiro"
-                                  : selectedProject.bases.length === 0 
-                                    ? "Nenhuma base disponível"
-                                    : "Selecione uma base"
-                              } />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {selectedProject?.bases.map((base) => (
-                              <SelectItem key={base.id} value={base.id.toString()}>
-                                {getBaseDisplayName(base.base_name)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <Combobox
+                            options={selectedProject?.bases.map((base) => ({
+                              value: base.id.toString(),
+                              label: getBaseDisplayName(base.base_name)
+                            })) || []}
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder={
+                              !selectedProject 
+                                ? "Selecione um projeto primeiro"
+                                : selectedProject.bases.length === 0 
+                                  ? "Nenhuma base disponível"
+                                  : "Digite para buscar uma base..."
+                            }
+                            emptyMessage="Nenhuma base encontrada"
+                            disabled={!selectedProject || selectedProject.bases.length === 0}
+                          />
+                        </FormControl>
                         <FormDescription>
                           Base onde o veículo está alocado
                         </FormDescription>
