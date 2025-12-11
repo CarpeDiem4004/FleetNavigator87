@@ -7163,13 +7163,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Buscar distância na tabela de rotas
+      // Buscar distância na tabela de rotas (tenta ambas as direções)
       let kmTotal = 0;
       const routeQuery = `
         SELECT km_total 
         FROM line_hall_routes 
-        WHERE LOWER(origem) LIKE LOWER($1) 
-          AND LOWER(destino) LIKE LOWER($2)
+        WHERE (LOWER(origem) LIKE LOWER($1) AND LOWER(destino) LIKE LOWER($2))
+           OR (LOWER(origem) LIKE LOWER($2) AND LOWER(destino) LIKE LOWER($1))
         LIMIT 1
       `;
       const routeResult = await pool.query(routeQuery, [`%${rota_origem}%`, `%${rota_destino}%`]);
@@ -7178,7 +7178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         kmTotal = routeResult.rows[0].km_total || 0;
         console.log('[LINEHAUL-PUBLIC-REQUEST] Rota encontrada, km:', kmTotal);
       } else {
-        console.log('[LINEHAUL-PUBLIC-REQUEST] Rota não encontrada, km será calculado manualmente');
+        console.log('[LINEHAUL-PUBLIC-REQUEST] Rota não encontrada em nenhuma direção, km será calculado manualmente');
       }
 
       // Calcular valor baseado no modelo do veículo
