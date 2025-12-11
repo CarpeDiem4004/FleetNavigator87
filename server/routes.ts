@@ -22894,8 +22894,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Criar cliente Supabase
+      const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
+      const supabaseKey = process.env.VITE_SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+      
+      if (!supabaseKey) {
+        console.error('[DELETE-LINE-HALL] Chave Supabase não configurada');
+        return res.status(500).json({
+          success: false,
+          message: 'Erro de configuração do servidor'
+        });
+      }
+
+      const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
       // Buscar no Supabase - tabela fuel_card_solicitations (onde ficam as solicitações Line Haul)
-      const { data: checkData, error: checkError } = await supabase
+      const { data: checkData, error: checkError } = await supabaseClient
         .from('fuel_card_solicitations')
         .select('*')
         .eq('id', id)
@@ -22910,7 +22924,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Executar a exclusão no Supabase
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await supabaseClient
         .from('fuel_card_solicitations')
         .delete()
         .eq('id', id);
