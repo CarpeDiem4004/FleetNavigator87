@@ -319,20 +319,29 @@ export default function LineHaulFuelRequest() {
                   <Camera className="h-4 w-4" />
                   Foto do Painel (Km)
                 </Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={(e) => setFotoPainel(e.target.files?.[0] || null)}
-                  className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  data-testid="input-photo-panel"
-                />
-                {fotoPainel && (
-                  <p className="text-sm text-green-600 flex items-center gap-1">
-                    <Check className="h-4 w-4" />
-                    {fotoPainel.name}
-                  </p>
-                )}
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={(e) => setFotoPainel(e.target.files?.[0] || null)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    data-testid="input-photo-panel"
+                    id="foto-painel"
+                  />
+                  <div className={`flex items-center justify-center gap-3 p-4 rounded-lg border-2 border-dashed transition-all ${fotoPainel ? 'border-green-500 bg-green-50' : 'border-blue-300 bg-blue-50 hover:bg-blue-100'}`}>
+                    <Camera className={`h-8 w-8 ${fotoPainel ? 'text-green-600' : 'text-blue-600'}`} />
+                    <div className="text-left">
+                      <p className={`font-semibold ${fotoPainel ? 'text-green-700' : 'text-blue-700'}`}>
+                        {fotoPainel ? 'Foto capturada!' : 'Tirar Foto do Painel'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {fotoPainel ? fotoPainel.name : 'Toque para abrir a câmera'}
+                      </p>
+                    </div>
+                    {fotoPainel && <Check className="h-6 w-6 text-green-600" />}
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -340,20 +349,29 @@ export default function LineHaulFuelRequest() {
                   <Camera className="h-4 w-4" />
                   Foto do Cartão
                 </Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={(e) => setFotoCartao(e.target.files?.[0] || null)}
-                  className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  data-testid="input-photo-card"
-                />
-                {fotoCartao && (
-                  <p className="text-sm text-green-600 flex items-center gap-1">
-                    <Check className="h-4 w-4" />
-                    {fotoCartao.name}
-                  </p>
-                )}
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={(e) => setFotoCartao(e.target.files?.[0] || null)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    data-testid="input-photo-card"
+                    id="foto-cartao"
+                  />
+                  <div className={`flex items-center justify-center gap-3 p-4 rounded-lg border-2 border-dashed transition-all ${fotoCartao ? 'border-green-500 bg-green-50' : 'border-orange-300 bg-orange-50 hover:bg-orange-100'}`}>
+                    <Camera className={`h-8 w-8 ${fotoCartao ? 'text-green-600' : 'text-orange-600'}`} />
+                    <div className="text-left">
+                      <p className={`font-semibold ${fotoCartao ? 'text-green-700' : 'text-orange-700'}`}>
+                        {fotoCartao ? 'Foto capturada!' : 'Tirar Foto do Cartão'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {fotoCartao ? fotoCartao.name : 'Toque para abrir a câmera'}
+                      </p>
+                    </div>
+                    {fotoCartao && <Check className="h-6 w-6 text-green-600" />}
+                  </div>
+                </div>
               </div>
 
               <Button
