@@ -67,7 +67,6 @@ Olá ${solicitation.motorista || 'Motorista'},
 O saldo foi colocado no seu cartão ${provedor}!
 
 📋 *Detalhes:*
-• Cartão: *${cartao}*
 • Valor: *${valor}*
 • Rota: ${rota}
 • KM: ${km} km
