@@ -7191,7 +7191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const routeResult = await pool.query(routeQuery, [`%${origemNorm}%`, `%${destinoNorm}%`]);
 
       if (routeResult.rows.length > 0) {
-        kmTotal = routeResult.rows[0].km_total || 0;
+        kmTotal = Math.round(parseFloat(routeResult.rows[0].km_total) || 0);
         console.log('[LINEHAUL-PUBLIC-REQUEST] Rota encontrada na tabela, km:', kmTotal);
       } else {
         // Se não encontrar na tabela, calcular via Google Maps API
