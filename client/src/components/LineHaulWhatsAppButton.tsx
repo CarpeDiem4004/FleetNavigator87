@@ -72,7 +72,10 @@ O saldo foi colocado no seu cartão ${provedor}!
 • Rota: ${rota}
 • KM: ${km} km
 
-⚠️ *Importante:* Confirme o saldo no aplicativo do cartão antes de abastecer.
+⚠️ *ATENÇÃO:*
+Todos os saldos são zerados automaticamente às *16h30*.
+Se a solicitação for para abastecer *antes das 16h30*, o abastecimento deve ser realizado dentro desse horário.
+Abastecimentos programados para *após as 16h30* terão o saldo disponibilizado somente a partir das *17h*.
 
 Boa viagem! 🚛`;
   };
