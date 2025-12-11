@@ -23,7 +23,7 @@ interface LineHaulWhatsAppButtonProps {
     cartao_combustivel?: string;
     provedor_cartao?: string;
     km_total?: number;
-    motivo_negacao?: string;
+    motivo_negacao?: string | null;
     calculo_detalhes?: {
       km_rota?: number;
       km_total?: number;
