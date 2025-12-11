@@ -22894,51 +22894,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Criar cliente Supabase
-      const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
-      const supabaseKey = process.env.VITE_SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-      
-      if (!supabaseKey) {
-        console.error('[DELETE-LINE-HALL] Chave Supabase não configurada');
-        return res.status(500).json({
-          success: false,
-          message: 'Erro de configuração do servidor'
-        });
-      }
+      // Verificar se a solicitação existe na tabela solicitacoes_fuel_card (PostgreSQL local)
+      const checkQuery = `
+        SELECT id, origem_tipo, placa, motorista 
+        FROM solicitacoes_fuel_card 
+        WHERE id = $1 AND origem_tipo = 'line_hall'
+      `;
+      const checkResult = await pool.query(checkQuery, [id]);
 
-      const supabaseClient = createClient(supabaseUrl, supabaseKey);
-
-      // Buscar no Supabase - tabela fuel_card_solicitations (onde ficam as solicitações Line Haul)
-      const { data: checkData, error: checkError } = await supabaseClient
-        .from('fuel_card_solicitations')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (checkError || !checkData) {
-        console.log('[DELETE-LINE-HALL] Solicitação não encontrada no Supabase:', checkError);
+      if (checkResult.rows.length === 0) {
+        console.log('[DELETE-LINE-HALL] Solicitação não encontrada na tabela solicitacoes_fuel_card');
         return res.status(404).json({
           success: false,
           message: 'Solicitação não encontrada'
         });
       }
 
-      // Executar a exclusão no Supabase
-      const { error: deleteError } = await supabaseClient
-        .from('fuel_card_solicitations')
-        .delete()
-        .eq('id', id);
+      console.log('[DELETE-LINE-HALL] Solicitação encontrada:', checkResult.rows[0]);
 
-      if (deleteError) {
-        console.error('[DELETE-LINE-HALL] Erro ao excluir no Supabase:', deleteError);
+      // Executar a exclusão no PostgreSQL local
+      const deleteQuery = 'DELETE FROM solicitacoes_fuel_card WHERE id = $1 AND origem_tipo = $2';
+      const deleteResult = await pool.query(deleteQuery, [id, 'line_hall']);
+
+      if (deleteResult.rowCount === 0) {
+        console.error('[DELETE-LINE-HALL] Falha ao excluir - nenhuma linha afetada');
         return res.status(500).json({
           success: false,
-          message: 'Erro ao excluir solicitação',
-          error: deleteError.message
+          message: 'Erro ao excluir solicitação'
         });
       }
 
-      console.log(`[DELETE-LINE-HALL] Solicitação ${id} excluída com sucesso do Supabase pelo usuário ${user?.email}`);
+      console.log(`[DELETE-LINE-HALL] Solicitação ${id} excluída com sucesso pelo usuário ${user?.email}`);
 
       res.status(200).json({
         success: true,
