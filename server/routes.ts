@@ -298,9 +298,8 @@ const uploadLineHaulPhotos = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
       const uploadDir = './uploads/linehaul';
-      const fs = require('fs');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
+      if (!fsSync.existsSync(uploadDir)) {
+        fsSync.mkdirSync(uploadDir, { recursive: true });
       }
       cb(null, uploadDir);
     },
