@@ -6231,23 +6231,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             COALESCE(s.valor_solicitado, 0) as valor_solicitado,
             COALESCE(s.base, 'Base Principal') as base,
             COALESCE(s.id_rota, '') as id_rota,
-            'tradicional' as origem_tipo,
+            COALESCE(s.origem_tipo, 'tradicional') as origem_tipo,
             s.tipo_combustivel,
             s.litros_solicitados,
             TO_CHAR(s.data_uso, 'YYYY-MM-DD') as data_uso,
             s.turno,
-            NULL::varchar as veiculo_modelo,
-            NULL::varchar as rota_origem,
-            NULL::varchar as rota_destino,
-            s.km as km_total,
-            NULL::varchar as telefone_motorista,
-            NULL::varchar as horario_abastecimento,
-            COALESCE(s.valor_solicitado, 0) as valor_calculado,
-            NULL::json as calculo_detalhes,
+            s.veiculo_modelo,
+            s.rota_origem,
+            s.rota_destino,
+            COALESCE(s.km_total, s.km) as km_total,
+            s.telefone_celular as telefone_motorista,
+            s.horario_abastecimento,
+            COALESCE(s.valor_calculado, s.valor_solicitado, 0) as valor_calculado,
+            s.calculo_detalhes,
             COALESCE(v.cartao_abastecimento, s.numero_cartao, '') as cartao_combustivel,
             s.motivo_negacao,
-            NULL::text as foto_painel_path,
-            NULL::text as foto_cartao_path
+            s.foto_painel_path,
+            s.foto_cartao_path
           FROM solicitacoes_fuel_card s
           LEFT JOIN veiculos v ON s.placa = v.placa
 
@@ -6414,7 +6414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           SELECT 
             s.id,
             s.status,
-            'tradicional' as origem_tipo,
+            COALESCE(s.origem_tipo, 'tradicional') as origem_tipo,
             COALESCE(s.base, 'Base Principal') as base,
             COALESCE(s.placa, s.veiculo_placa, 'SEM-PLACA') as placa,
             COALESCE(s.motorista, 'Motorista não informado') as motorista,
