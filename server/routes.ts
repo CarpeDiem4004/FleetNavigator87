@@ -7163,17 +7163,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Buscar distância na tabela de rotas (tenta ambas as direções)
+      // Função para remover acentos e normalizar strings
+      function normalizeString(str: string): string {
+        return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+      }
+
+      const origemNorm = normalizeString(rota_origem);
+      const destinoNorm = normalizeString(rota_destino);
+
+      console.log('[LINEHAUL-PUBLIC-REQUEST] Buscando rota:', origemNorm, '→', destinoNorm);
+
+      // Buscar distância na tabela de rotas (tenta ambas as direções, sem acentos)
       let kmTotal = 0;
       let fonteKm = 'tabela';
       const routeQuery = `
-        SELECT km_total 
+        SELECT km_total, origem, destino
         FROM line_hall_routes 
-        WHERE (LOWER(origem) LIKE LOWER($1) AND LOWER(destino) LIKE LOWER($2))
-           OR (LOWER(origem) LIKE LOWER($2) AND LOWER(destino) LIKE LOWER($1))
+        WHERE (
+          LOWER(TRANSLATE(origem, 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ', 'aaaaaeeeeiiiioooooouuuucAAAAAEEEEIIIIOOOOOUUUUC')) LIKE $1 
+          AND LOWER(TRANSLATE(destino, 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ', 'aaaaaeeeeiiiioooooouuuucAAAAAEEEEIIIIOOOOOUUUUC')) LIKE $2
+        ) OR (
+          LOWER(TRANSLATE(origem, 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ', 'aaaaaeeeeiiiioooooouuuucAAAAAEEEEIIIIOOOOOUUUUC')) LIKE $2 
+          AND LOWER(TRANSLATE(destino, 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ', 'aaaaaeeeeiiiioooooouuuucAAAAAEEEEIIIIOOOOOUUUUC')) LIKE $1
+        )
         LIMIT 1
       `;
-      const routeResult = await pool.query(routeQuery, [`%${rota_origem}%`, `%${rota_destino}%`]);
+      const routeResult = await pool.query(routeQuery, [`%${origemNorm}%`, `%${destinoNorm}%`]);
 
       if (routeResult.rows.length > 0) {
         kmTotal = routeResult.rows[0].km_total || 0;
