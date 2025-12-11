@@ -21,6 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import FuelCardRequestForm from '@/components/FuelCardRequestForm';
 import WhatsAppResponseButton from '@/components/WhatsAppResponseButton';
+import LineHaulWhatsAppButton from '@/components/LineHaulWhatsAppButton';
 import { useLocation } from 'wouter';
 import { generateBatchApprovalMessage, openWhatsAppWeb, isValidPhoneNumber } from '@/lib/whatsapp-utils';
 import { cleanBaseName } from '@/lib/base-utils';
@@ -2799,14 +2800,12 @@ const FuelCardRequestsPanel: React.FC = () => {
                               Histórico
                             </Button>
                             
-                            {/* Botão WhatsApp apenas para solicitações do Line Haul */}
-                            {solicitacao.telefone_motorista && (
-                              <WhatsAppResponseButton 
-                                solicitation={solicitacao}
-                                variant="outline"
-                                size="sm"
-                              />
-                            )}
+                            {/* Botão WhatsApp para avisar saldo no cartão - Line Haul */}
+                            <LineHaulWhatsAppButton 
+                              solicitation={solicitacao}
+                              variant="outline"
+                              size="sm"
+                            />
                           </div>
                         </div>
 
@@ -3147,12 +3146,22 @@ const FuelCardRequestsPanel: React.FC = () => {
                             {updatingStatus ? 'Salvando...' : 'Salvar Alterações'}
                           </Button>
                           
-                          <WhatsAppResponseButton 
-                            solicitation={selectedSolicitation}
-                            variant="outline"
-                            size="lg"
-                            className="px-4"
-                          />
+                          {/* Botão WhatsApp: LineHaul usa botão específico para avisar saldo */}
+                          {selectedSolicitation.origem_tipo === 'line_hall' ? (
+                            <LineHaulWhatsAppButton 
+                              solicitation={selectedSolicitation}
+                              variant="outline"
+                              size="lg"
+                              className="px-4"
+                            />
+                          ) : (
+                            <WhatsAppResponseButton 
+                              solicitation={selectedSolicitation}
+                              variant="outline"
+                              size="lg"
+                              className="px-4"
+                            />
+                          )}
                         </div>
                       </div>
                     </div>
