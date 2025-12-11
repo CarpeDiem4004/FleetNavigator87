@@ -2806,6 +2806,19 @@ const FuelCardRequestsPanel: React.FC = () => {
                               variant="outline"
                               size="sm"
                             />
+                            
+                            {/* Botão Excluir - apenas para admin */}
+                            {user?.role === 'admin' && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDeleteSolicitation(solicitacao)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                title="Excluir solicitação"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
                         </div>
 
