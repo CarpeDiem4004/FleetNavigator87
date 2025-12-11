@@ -67,8 +67,8 @@ export function Combobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
-        <Command>
+      <PopoverContent className="w-full p-0" style={{ width: 'var(--radix-popover-trigger-width)' }}>
+        <Command shouldFilter={false}>
           <CommandInput 
             placeholder="Buscar..." 
             onValueChange={setSearchTerm}
@@ -79,7 +79,7 @@ export function Combobox({
             {filteredOptions.map((option) => (
               <CommandItem
                 key={option.value}
-                value={option.value}
+                value={option.label}
                 onSelect={() => {
                   onChange(option.value)
                   setOpen(false)
