@@ -3095,75 +3095,113 @@ const FuelCardRequestsPanel: React.FC = () => {
                     <div className="bg-gray-50 p-4 rounded-lg border space-y-4">
                       <h3 className="font-semibold text-lg text-gray-900">Controle de Status</h3>
                       
-                      <div className="space-y-3">
-                        <div className="space-y-2">
-                          <Label htmlFor="status" className="text-sm font-medium">Alterar Status da Solicitação</Label>
-                          <Select value={editedStatus} onValueChange={setEditedStatus}>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Selecione o novo status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Pendente">🟡 Pendente</SelectItem>
-                              <SelectItem value="Em Análise">🔵 Em Análise</SelectItem>
-                              <SelectItem value="Recarga Efetuada">🟢 Recarga Efetuada</SelectItem>
-                              <SelectItem value="Negado">🔴 Negado</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        {/* Campo de Motivo da Negação - aparece quando status for "Negado" */}
-                        {editedStatus === 'Negado' && (
-                          <div className="space-y-2">
-                            <Label htmlFor="motivo-negacao" className="text-sm font-medium text-red-700">
-                              Motivo da Negação *
-                            </Label>
-                            <textarea
-                              id="motivo-negacao"
-                              value={motivoNegacao}
-                              onChange={(e) => setMotivoNegacao(e.target.value)}
-                              className="w-full min-h-[100px] p-3 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-red-50"
-                              placeholder="Descreva o motivo da negação desta solicitação..."
-                            />
-                            <p className="text-xs text-red-600">* Campo obrigatório para negação</p>
+                      {/* Verificar se o status já é final (Recarga Efetuada ou Negado) */}
+                      {(selectedSolicitation.status === 'Recarga Efetuada' || selectedSolicitation.status === 'Negado') ? (
+                        <div className="space-y-3">
+                          {/* Status bloqueado - exibir apenas informação */}
+                          <div className={`p-4 rounded-lg border-2 ${selectedSolicitation.status === 'Negado' ? 'bg-red-50 border-red-300' : 'bg-green-50 border-green-300'}`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              {selectedSolicitation.status === 'Negado' ? (
+                                <span className="text-red-700 font-semibold">🔴 Status: Negado</span>
+                              ) : (
+                                <span className="text-green-700 font-semibold">🟢 Status: Recarga Efetuada</span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              O status desta solicitação já foi definido e não pode mais ser alterado.
+                            </p>
                           </div>
-                        )}
-                        
-                        {/* Exibir motivo de negação existente */}
-                        {selectedSolicitation.motivo_negacao && (
-                          <div className="space-y-2 p-3 bg-red-50 border border-red-200 rounded-md">
-                            <Label className="text-sm font-medium text-red-700">Motivo da Negação Registrado</Label>
-                            <p className="text-sm text-red-900">{selectedSolicitation.motivo_negacao}</p>
-                          </div>
-                        )}
-                        
-                        <div className="flex gap-2">
-                          <Button 
-                            onClick={handleStatusUpdate} 
-                            className="flex-1 bg-blue-600 hover:bg-blue-700" 
-                            disabled={updatingStatus || editedStatus === selectedSolicitation.status}
-                            size="lg"
-                          >
-                            {updatingStatus ? 'Salvando...' : 'Salvar Alterações'}
-                          </Button>
                           
-                          {/* Botão WhatsApp: LineHaul usa botão específico para avisar saldo */}
-                          {selectedSolicitation.origem_tipo === 'line_hall' ? (
-                            <LineHaulWhatsAppButton 
-                              solicitation={selectedSolicitation}
-                              variant="outline"
-                              size="lg"
-                              className="px-4"
-                            />
-                          ) : (
-                            <WhatsAppResponseButton 
-                              solicitation={selectedSolicitation}
-                              variant="outline"
-                              size="lg"
-                              className="px-4"
-                            />
+                          {/* Exibir motivo de negação se existir */}
+                          {selectedSolicitation.motivo_negacao && (
+                            <div className="space-y-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                              <Label className="text-sm font-medium text-red-700">Motivo da Negação Registrado</Label>
+                              <p className="text-sm text-red-900">{selectedSolicitation.motivo_negacao}</p>
+                            </div>
                           )}
+                          
+                          {/* Botão WhatsApp ainda disponível */}
+                          <div className="flex justify-end">
+                            {selectedSolicitation.origem_tipo === 'line_hall' ? (
+                              <LineHaulWhatsAppButton 
+                                solicitation={selectedSolicitation}
+                                variant="outline"
+                                size="lg"
+                                className="px-4"
+                              />
+                            ) : (
+                              <WhatsAppResponseButton 
+                                solicitation={selectedSolicitation}
+                                variant="outline"
+                                size="lg"
+                                className="px-4"
+                              />
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <Label htmlFor="status" className="text-sm font-medium">Alterar Status da Solicitação</Label>
+                            <Select value={editedStatus} onValueChange={setEditedStatus}>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Selecione o novo status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Pendente">🟡 Pendente</SelectItem>
+                                <SelectItem value="Em Análise">🔵 Em Análise</SelectItem>
+                                <SelectItem value="Recarga Efetuada">🟢 Recarga Efetuada</SelectItem>
+                                <SelectItem value="Negado">🔴 Negado</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          {/* Campo de Motivo da Negação - aparece quando status for "Negado" */}
+                          {editedStatus === 'Negado' && (
+                            <div className="space-y-2">
+                              <Label htmlFor="motivo-negacao" className="text-sm font-medium text-red-700">
+                                Motivo da Negação *
+                              </Label>
+                              <textarea
+                                id="motivo-negacao"
+                                value={motivoNegacao}
+                                onChange={(e) => setMotivoNegacao(e.target.value)}
+                                className="w-full min-h-[100px] p-3 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-red-50"
+                                placeholder="Descreva o motivo da negação desta solicitação..."
+                              />
+                              <p className="text-xs text-red-600">* Campo obrigatório para negação</p>
+                            </div>
+                          )}
+                          
+                          <div className="flex gap-2">
+                            <Button 
+                              onClick={handleStatusUpdate} 
+                              className="flex-1 bg-blue-600 hover:bg-blue-700" 
+                              disabled={updatingStatus || editedStatus === selectedSolicitation.status}
+                              size="lg"
+                            >
+                              {updatingStatus ? 'Salvando...' : 'Salvar Alterações'}
+                            </Button>
+                            
+                            {/* Botão WhatsApp: LineHaul usa botão específico para avisar saldo */}
+                            {selectedSolicitation.origem_tipo === 'line_hall' ? (
+                              <LineHaulWhatsAppButton 
+                                solicitation={selectedSolicitation}
+                                variant="outline"
+                                size="lg"
+                                className="px-4"
+                              />
+                            ) : (
+                              <WhatsAppResponseButton 
+                                solicitation={selectedSolicitation}
+                                variant="outline"
+                                size="lg"
+                                className="px-4"
+                              />
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
