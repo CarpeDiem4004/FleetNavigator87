@@ -7065,6 +7065,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET - Listar veículos Line Haul para autocomplete (acesso público)
+  app.get('/api/public/linehaul/vehicles', async (req, res) => {
+    try {
+      const query = `
+        SELECT DISTINCT placa, modelo 
+        FROM veiculos 
+        WHERE placa IS NOT NULL 
+          AND placa != ''
+          AND status != 'inativo'
+        ORDER BY placa
+        LIMIT 500
+      `;
+      const result = await pool.query(query);
+      
+      return res.json({
+        success: true,
+        vehicles: result.rows
+      });
+    } catch (error: any) {
+      console.error('[LINEHAUL-VEHICLES] Erro ao buscar veículos:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar veículos',
+        vehicles: []
+      });
+    }
+  });
+
   // POST - Criar solicitação de abastecimento Line Haul (acesso público - formulário motorista)
   app.post('/api/public/linehaul/fuel-request', uploadLineHaulPhotos.fields([
     { name: 'foto_painel', maxCount: 1 },

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Fuel, Camera, Check, Truck, MapPin, Phone, User, Clock, Package, Droplets, Gauge } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+interface VehiclePlate {
+  placa: string;
+  modelo?: string;
+}
 
 export default function LineHaulFuelRequest() {
   const { toast } = useToast();
@@ -28,6 +33,62 @@ export default function LineHaulFuelRequest() {
   const [fotoCartao, setFotoCartao] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  
+  const [allPlates, setAllPlates] = useState<VehiclePlate[]>([]);
+  const [filteredPlates, setFilteredPlates] = useState<VehiclePlate[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const plateInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    async function loadPlates() {
+      try {
+        const response = await fetch("/api/public/linehaul/vehicles");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && Array.isArray(data.vehicles)) {
+            setAllPlates(data.vehicles);
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao carregar placas:", err);
+      }
+    }
+    loadPlates();
+  }, []);
+
+  useEffect(() => {
+    if (form.placa.length >= 1 && allPlates.length > 0) {
+      const filtered = allPlates.filter(v => 
+        v.placa.toUpperCase().includes(form.placa.toUpperCase())
+      ).slice(0, 8);
+      setFilteredPlates(filtered);
+      setShowSuggestions(filtered.length > 0);
+    } else {
+      setFilteredPlates([]);
+      setShowSuggestions(false);
+    }
+  }, [form.placa, allPlates]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        suggestionsRef.current && 
+        !suggestionsRef.current.contains(event.target as Node) &&
+        plateInputRef.current &&
+        !plateInputRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  function selectPlate(plate: VehiclePlate) {
+    setForm({ ...form, placa: plate.placa });
+    setShowSuggestions(false);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -196,21 +257,47 @@ export default function LineHaulFuelRequest() {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 relative">
                 <Label htmlFor="placa" className="flex items-center gap-2">
                   <Truck className="h-4 w-4" />
                   Placa do Veículo *
                 </Label>
                 <Input
+                  ref={plateInputRef}
                   id="placa"
                   type="text"
-                  placeholder="ABC1D23"
+                  placeholder="Digite para buscar..."
                   value={form.placa}
                   onChange={(e) => setForm({ ...form, placa: e.target.value.toUpperCase() })}
+                  onFocus={() => {
+                    if (filteredPlates.length > 0) setShowSuggestions(true);
+                  }}
                   required
                   maxLength={7}
+                  autoComplete="off"
                   data-testid="input-plate"
                 />
+                {showSuggestions && filteredPlates.length > 0 && (
+                  <div 
+                    ref={suggestionsRef}
+                    className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+                  >
+                    {filteredPlates.map((plate, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => selectPlate(plate)}
+                        className="w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
+                      >
+                        <Truck className="h-4 w-4 text-blue-600" />
+                        <span className="font-semibold text-gray-900">{plate.placa}</span>
+                        {plate.modelo && (
+                          <span className="text-sm text-gray-500">({plate.modelo})</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
