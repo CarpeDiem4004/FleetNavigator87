@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, Fuel, Camera, Check, Truck, MapPin, Phone, User, Clock } from "lucide-react";
+import { Loader2, Fuel, Camera, Check, Truck, MapPin, Phone, User, Clock, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function LineHaulFuelRequest() {
@@ -19,6 +19,7 @@ export default function LineHaulFuelRequest() {
     localInicio: "",
     destino: "",
     horarioAbastecimento: "",
+    operacao: "mercado_livre" as "mercado_livre" | "shopee",
     provedorCartao: "veloe" as "veloe" | "ticket",
   });
 
@@ -84,6 +85,7 @@ export default function LineHaulFuelRequest() {
             local_inicio: form.localInicio,
             destino: form.destino,
             horario_abastecimento: form.horarioAbastecimento,
+            operacao: form.operacao,
             provedor_cartao: form.provedorCartao,
             foto_painel_url: painelUrl,
             foto_cartao_url: cartaoUrl,
@@ -135,6 +137,7 @@ export default function LineHaulFuelRequest() {
                   localInicio: "",
                   destino: "",
                   horarioAbastecimento: "",
+                  operacao: "mercado_livre",
                   provedorCartao: "veloe",
                 });
                 setFotoPainel(null);
@@ -267,6 +270,51 @@ export default function LineHaulFuelRequest() {
                   required
                   data-testid="input-datetime"
                 />
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <Label className="flex items-center gap-2 text-base font-semibold">
+                  <Package className="h-4 w-4" />
+                  Operação
+                </Label>
+                <RadioGroup
+                  value={form.operacao}
+                  onValueChange={(value: "mercado_livre" | "shopee") => 
+                    setForm({ ...form, operacao: value })
+                  }
+                  className="grid grid-cols-2 gap-4"
+                >
+                  <div className="relative">
+                    <RadioGroupItem
+                      value="mercado_livre"
+                      id="mercado_livre"
+                      className="peer sr-only"
+                    />
+                    <Label
+                      htmlFor="mercado_livre"
+                      className="flex flex-col items-center justify-center rounded-lg border-2 border-gray-200 bg-white p-4 hover:bg-gray-50 peer-data-[state=checked]:border-yellow-500 peer-data-[state=checked]:bg-yellow-50 cursor-pointer transition-all"
+                      data-testid="radio-mercado-livre"
+                    >
+                      <span className="text-lg font-bold text-yellow-600">MERCADO LIVRE</span>
+                      <span className="text-xs text-gray-500 mt-1">Operação ML</span>
+                    </Label>
+                  </div>
+                  <div className="relative">
+                    <RadioGroupItem
+                      value="shopee"
+                      id="shopee"
+                      className="peer sr-only"
+                    />
+                    <Label
+                      htmlFor="shopee"
+                      className="flex flex-col items-center justify-center rounded-lg border-2 border-gray-200 bg-white p-4 hover:bg-gray-50 peer-data-[state=checked]:border-orange-500 peer-data-[state=checked]:bg-orange-50 cursor-pointer transition-all"
+                      data-testid="radio-shopee"
+                    >
+                      <span className="text-lg font-bold text-orange-600">SHOPEE</span>
+                      <span className="text-xs text-gray-500 mt-1">Operação Shopee</span>
+                    </Label>
+                  </div>
+                </RadioGroup>
               </div>
 
               <div className="space-y-3 pt-2">
