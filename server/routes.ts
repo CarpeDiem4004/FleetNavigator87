@@ -7165,6 +7165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Buscar distância na tabela de rotas (tenta ambas as direções)
       let kmTotal = 0;
+      let fonteKm = 'tabela';
       const routeQuery = `
         SELECT km_total 
         FROM line_hall_routes 
@@ -7176,9 +7177,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (routeResult.rows.length > 0) {
         kmTotal = routeResult.rows[0].km_total || 0;
-        console.log('[LINEHAUL-PUBLIC-REQUEST] Rota encontrada, km:', kmTotal);
+        console.log('[LINEHAUL-PUBLIC-REQUEST] Rota encontrada na tabela, km:', kmTotal);
       } else {
-        console.log('[LINEHAUL-PUBLIC-REQUEST] Rota não encontrada em nenhuma direção, km será calculado manualmente');
+        // Se não encontrar na tabela, calcular via Google Maps API
+        console.log('[LINEHAUL-PUBLIC-REQUEST] Rota não encontrada na tabela, calculando via Google Maps...');
+        try {
+          const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
+          if (googleMapsApiKey) {
+            const origemEncoded = encodeURIComponent(`${rota_origem}, Brasil`);
+            const destinoEncoded = encodeURIComponent(`${rota_destino}, Brasil`);
+            const distanceUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origemEncoded}&destinations=${destinoEncoded}&key=${googleMapsApiKey}&language=pt-BR`;
+            
+            const distanceResponse = await fetch(distanceUrl);
+            const distanceData = await distanceResponse.json();
+            
+            console.log('[LINEHAUL-PUBLIC-REQUEST] Google Maps response:', JSON.stringify(distanceData));
+            
+            if (distanceData.status === 'OK' && 
+                distanceData.rows?.[0]?.elements?.[0]?.status === 'OK' &&
+                distanceData.rows[0].elements[0].distance?.value) {
+              kmTotal = Math.round(distanceData.rows[0].elements[0].distance.value / 1000);
+              fonteKm = 'google_maps';
+              console.log('[LINEHAUL-PUBLIC-REQUEST] Distância calculada via Google Maps:', kmTotal, 'km');
+            } else {
+              console.log('[LINEHAUL-PUBLIC-REQUEST] Google Maps não retornou distância válida');
+            }
+          } else {
+            console.log('[LINEHAUL-PUBLIC-REQUEST] GOOGLE_MAPS_API_KEY não configurada');
+          }
+        } catch (googleError) {
+          console.error('[LINEHAUL-PUBLIC-REQUEST] Erro ao calcular via Google Maps:', googleError);
+        }
       }
 
       // Calcular valor baseado no modelo do veículo
@@ -7239,7 +7268,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         litros_necessarios: ((kmTotal + kmAcrescimo) / consumo).toFixed(2),
         valor_por_litro: precoLitro,
         valor_arla: incluir_arla ? 50 : 0,
-        valor_total: valorCalculado.toFixed(2)
+        valor_total: valorCalculado.toFixed(2),
+        fonte_km: fonteKm
       };
 
       // Inserir na tabela solicitacoes_fuel_card com origem_tipo = 'line_hall'
