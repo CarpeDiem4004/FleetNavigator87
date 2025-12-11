@@ -293,6 +293,36 @@ const uploadMaintenanceImport = multer({
   }
 });
 
+// Configuração específica para upload de fotos Line Haul
+const uploadLineHaulPhotos = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      const uploadDir = './uploads/linehaul';
+      const fs = require('fs');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const ext = file.originalname.split('.').pop();
+      cb(null, `${file.fieldname}-${uniqueSuffix}.${ext}`);
+    }
+  }),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB por foto
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas imagens (JPEG, PNG, WebP) são permitidas'), false);
+    }
+  }
+});
+
 // Definindo funções middleware para compatibilidade com o código existente
 const isAdmin = adminMiddleware;  
 const hasMaintenanceAccess = maintenanceAccessMiddleware;
@@ -7037,12 +7067,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // POST - Criar solicitação de abastecimento Line Haul (acesso público - formulário motorista)
-  app.post('/api/public/linehaul/fuel-request', async (req, res) => {
+  app.post('/api/public/linehaul/fuel-request', uploadLineHaulPhotos.fields([
+    { name: 'foto_painel', maxCount: 1 },
+    { name: 'foto_cartao', maxCount: 1 }
+  ]), async (req, res) => {
     try {
       const {
         motorista_nome,
         telefone_motorista,
         veiculo_placa,
+        km_veiculo,
         rota_origem,
         rota_destino,
         horario_abastecimento,
@@ -7052,6 +7086,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data_solicitacao,
         horario_solicitacao
       } = req.body;
+
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      const fotoPainelPath = files?.foto_painel?.[0]?.path || null;
+      const fotoCartaoPath = files?.foto_cartao?.[0]?.path || null;
 
       console.log('[LINEHAUL-PUBLIC-REQUEST] Recebendo solicitação:', {
         motorista_nome,
@@ -7145,7 +7183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Adicionar R$50 para ARLA se solicitado
-      if (incluir_arla) {
+      if (incluir_arla === 'true' || incluir_arla === true) {
         valorCalculado += 50;
       }
 
@@ -7183,15 +7221,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           placa, numero_cartao, motorista, telefone_celular,
           valor_solicitado, provedor_cartao, status, data_solicitacao,
           origem_tipo, rota_origem, rota_destino, km_total, valor_calculado,
-          horario_abastecimento, calculo_detalhes, observacoes, veiculo_modelo
+          horario_abastecimento, calculo_detalhes, observacoes, veiculo_modelo,
+          km_veiculo, foto_painel_path, foto_cartao_path
         ) VALUES (
           $1, $2, $3, $4, $5, $6, 'Pendente', $7,
-          'line_hall', $8, $9, $10, $11, $12, $13, $14, $15
+          'line_hall', $8, $9, $10, $11, $12, $13, $14, $15,
+          $16, $17, $18
         )
         RETURNING *
       `;
 
-      const observacao = `Operação: ${operacaoFormatada}${incluir_arla ? ' | ARLA: Sim' : ''}`;
+      const observacao = `Operação: ${operacaoFormatada}${incluir_arla === 'true' ? ' | ARLA: Sim' : ''}`;
 
       const result = await pool.query(insertQuery, [
         plateClean,
@@ -7208,7 +7248,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         horario_abastecimento || '',
         JSON.stringify(calculoDetalhes),
         observacao,
-        vehicle.modelo || ''
+        vehicle.modelo || '',
+        parseInt(km_veiculo) || 0,
+        fotoPainelPath,
+        fotoCartaoPath
       ]);
 
       console.log('[LINEHAUL-PUBLIC-REQUEST] Solicitação criada:', result.rows[0].id);

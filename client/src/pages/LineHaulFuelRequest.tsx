@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Fuel, Camera, Check, Truck, MapPin, Phone, User, Clock, Package, Droplets } from "lucide-react";
+import { Loader2, Fuel, Camera, Check, Truck, MapPin, Phone, User, Clock, Package, Droplets, Gauge } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function LineHaulFuelRequest() {
@@ -15,6 +15,7 @@ export default function LineHaulFuelRequest() {
     nome: "",
     telefone: "",
     placa: "",
+    kmVeiculo: "",
     localInicio: "",
     destino: "",
     horarioAbastecimento: "",
@@ -30,28 +31,49 @@ export default function LineHaulFuelRequest() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    
+    if (!fotoPainel) {
+      toast({
+        title: "Foto obrigatória",
+        description: "Por favor, tire uma foto do painel (km).",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!fotoCartao) {
+      toast({
+        title: "Foto obrigatória",
+        description: "Por favor, tire uma foto do cartão.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       const plateClean = form.placa.replace(/\s/g, "").toUpperCase();
 
+      const formData = new FormData();
+      formData.append("motorista_nome", form.nome);
+      formData.append("telefone_motorista", form.telefone);
+      formData.append("veiculo_placa", plateClean);
+      formData.append("km_veiculo", form.kmVeiculo);
+      formData.append("rota_origem", form.localInicio);
+      formData.append("rota_destino", form.destino);
+      formData.append("horario_abastecimento", form.horarioAbastecimento);
+      formData.append("operacao", form.operacao);
+      formData.append("provedor_cartao", form.provedorCartao);
+      formData.append("incluir_arla", form.arla ? "true" : "false");
+      formData.append("data_solicitacao", new Date().toISOString().split('T')[0]);
+      formData.append("horario_solicitacao", new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+      formData.append("foto_painel", fotoPainel);
+      formData.append("foto_cartao", fotoCartao);
+
       const response = await fetch("/api/public/linehaul/fuel-request", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          motorista_nome: form.nome,
-          telefone_motorista: form.telefone,
-          veiculo_placa: plateClean,
-          rota_origem: form.localInicio,
-          rota_destino: form.destino,
-          horario_abastecimento: form.horarioAbastecimento,
-          operacao: form.operacao,
-          provedor_cartao: form.provedorCartao,
-          incluir_arla: form.arla,
-          data_solicitacao: new Date().toISOString().split('T')[0],
-          horario_solicitacao: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-          status: 'pendente'
-        }),
+        body: formData,
       });
 
       const data = await response.json();
@@ -98,6 +120,7 @@ export default function LineHaulFuelRequest() {
                   nome: "",
                   telefone: "",
                   placa: "",
+                  kmVeiculo: "",
                   localInicio: "",
                   destino: "",
                   horarioAbastecimento: "",
@@ -144,7 +167,7 @@ export default function LineHaulFuelRequest() {
               <div className="space-y-2">
                 <Label htmlFor="nome" className="flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  Nome do Motorista
+                  Nome do Motorista *
                 </Label>
                 <Input
                   id="nome"
@@ -160,7 +183,7 @@ export default function LineHaulFuelRequest() {
               <div className="space-y-2">
                 <Label htmlFor="telefone" className="flex items-center gap-2">
                   <Phone className="h-4 w-4" />
-                  Telefone
+                  Telefone *
                 </Label>
                 <Input
                   id="telefone"
@@ -176,7 +199,7 @@ export default function LineHaulFuelRequest() {
               <div className="space-y-2">
                 <Label htmlFor="placa" className="flex items-center gap-2">
                   <Truck className="h-4 w-4" />
-                  Placa do Veículo
+                  Placa do Veículo *
                 </Label>
                 <Input
                   id="placa"
@@ -191,9 +214,26 @@ export default function LineHaulFuelRequest() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="kmVeiculo" className="flex items-center gap-2">
+                  <Gauge className="h-4 w-4" />
+                  Km do Veículo *
+                </Label>
+                <Input
+                  id="kmVeiculo"
+                  type="number"
+                  placeholder="Ex: 150000"
+                  value={form.kmVeiculo}
+                  onChange={(e) => setForm({ ...form, kmVeiculo: e.target.value })}
+                  required
+                  min={0}
+                  data-testid="input-km"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="localInicio" className="flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
-                  Local de Início
+                  Local de Início *
                 </Label>
                 <Input
                   id="localInicio"
@@ -209,7 +249,7 @@ export default function LineHaulFuelRequest() {
               <div className="space-y-2">
                 <Label htmlFor="destino" className="flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
-                  Destino
+                  Destino *
                 </Label>
                 <Input
                   id="destino"
@@ -225,7 +265,7 @@ export default function LineHaulFuelRequest() {
               <div className="space-y-2">
                 <Label htmlFor="horario" className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
-                  Horário Previsto do Abastecimento
+                  Horário Previsto do Abastecimento *
                 </Label>
                 <Input
                   id="horario"
@@ -240,7 +280,7 @@ export default function LineHaulFuelRequest() {
               <div className="space-y-3 pt-2">
                 <Label className="flex items-center gap-2 text-base font-semibold">
                   <Package className="h-4 w-4" />
-                  Operação
+                  Operação *
                 </Label>
                 <RadioGroup
                   value={form.operacao}
@@ -285,7 +325,7 @@ export default function LineHaulFuelRequest() {
               <div className="space-y-3 pt-2">
                 <Label className="flex items-center gap-2 text-base font-semibold">
                   <Fuel className="h-4 w-4" />
-                  Tipo de Cartão
+                  Tipo de Cartão *
                 </Label>
                 <RadioGroup
                   value={form.provedorCartao}
@@ -344,9 +384,9 @@ export default function LineHaulFuelRequest() {
               </div>
 
               <div className="space-y-2 pt-2">
-                <Label className="flex items-center gap-2">
+                <Label className="flex items-center gap-2 text-red-600 font-semibold">
                   <Camera className="h-4 w-4" />
-                  Foto do Painel (Km) - Opcional
+                  Foto do Painel (Km) * OBRIGATÓRIA
                 </Label>
                 <div className="relative">
                   <input
@@ -357,11 +397,12 @@ export default function LineHaulFuelRequest() {
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     data-testid="input-photo-panel"
                     id="foto-painel"
+                    required
                   />
-                  <div className={`flex items-center justify-center gap-3 p-4 rounded-lg border-2 border-dashed transition-all ${fotoPainel ? 'border-green-500 bg-green-50' : 'border-blue-300 bg-blue-50 hover:bg-blue-100'}`}>
-                    <Camera className={`h-8 w-8 ${fotoPainel ? 'text-green-600' : 'text-blue-600'}`} />
+                  <div className={`flex items-center justify-center gap-3 p-4 rounded-lg border-2 border-dashed transition-all ${fotoPainel ? 'border-green-500 bg-green-50' : 'border-red-300 bg-red-50 hover:bg-red-100'}`}>
+                    <Camera className={`h-8 w-8 ${fotoPainel ? 'text-green-600' : 'text-red-600'}`} />
                     <div className="text-left">
-                      <p className={`font-semibold ${fotoPainel ? 'text-green-700' : 'text-blue-700'}`}>
+                      <p className={`font-semibold ${fotoPainel ? 'text-green-700' : 'text-red-700'}`}>
                         {fotoPainel ? 'Foto capturada!' : 'Tirar Foto do Painel'}
                       </p>
                       <p className="text-xs text-gray-500">
@@ -374,9 +415,9 @@ export default function LineHaulFuelRequest() {
               </div>
 
               <div className="space-y-2">
-                <Label className="flex items-center gap-2">
+                <Label className="flex items-center gap-2 text-red-600 font-semibold">
                   <Camera className="h-4 w-4" />
-                  Foto do Cartão - Opcional
+                  Foto do Cartão * OBRIGATÓRIA
                 </Label>
                 <div className="relative">
                   <input
@@ -387,11 +428,12 @@ export default function LineHaulFuelRequest() {
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     data-testid="input-photo-card"
                     id="foto-cartao"
+                    required
                   />
-                  <div className={`flex items-center justify-center gap-3 p-4 rounded-lg border-2 border-dashed transition-all ${fotoCartao ? 'border-green-500 bg-green-50' : 'border-orange-300 bg-orange-50 hover:bg-orange-100'}`}>
-                    <Camera className={`h-8 w-8 ${fotoCartao ? 'text-green-600' : 'text-orange-600'}`} />
+                  <div className={`flex items-center justify-center gap-3 p-4 rounded-lg border-2 border-dashed transition-all ${fotoCartao ? 'border-green-500 bg-green-50' : 'border-red-300 bg-red-50 hover:bg-red-100'}`}>
+                    <Camera className={`h-8 w-8 ${fotoCartao ? 'text-green-600' : 'text-red-600'}`} />
                     <div className="text-left">
-                      <p className={`font-semibold ${fotoCartao ? 'text-green-700' : 'text-orange-700'}`}>
+                      <p className={`font-semibold ${fotoCartao ? 'text-green-700' : 'text-red-700'}`}>
                         {fotoCartao ? 'Foto capturada!' : 'Tirar Foto do Cartão'}
                       </p>
                       <p className="text-xs text-gray-500">
@@ -412,7 +454,7 @@ export default function LineHaulFuelRequest() {
               <Button
                 type="submit"
                 className="w-full mt-6 h-12 text-lg"
-                disabled={loading}
+                disabled={loading || !fotoPainel || !fotoCartao}
                 data-testid="button-submit"
               >
                 {loading ? (
