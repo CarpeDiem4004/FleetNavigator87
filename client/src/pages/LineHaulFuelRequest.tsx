@@ -80,6 +80,7 @@ export default function LineHaulFuelRequest() {
     kmVeiculo: "",
     localInicio: "",
     destino: "",
+    dataAbastecimento: "",
     horarioAbastecimento: "",
     operacao: "mercado_livre" as "mercado_livre" | "shopee",
     provedorCartao: "veloe" as "veloe" | "ticket",
@@ -237,6 +238,7 @@ export default function LineHaulFuelRequest() {
       formData.append("km_veiculo", form.kmVeiculo);
       formData.append("rota_origem", form.localInicio);
       formData.append("rota_destino", form.destino);
+      formData.append("data_abastecimento", form.dataAbastecimento);
       formData.append("horario_abastecimento", form.horarioAbastecimento);
       formData.append("operacao", form.operacao);
       formData.append("provedor_cartao", form.provedorCartao);
@@ -304,6 +306,7 @@ export default function LineHaulFuelRequest() {
                   kmVeiculo: "",
                   localInicio: "",
                   destino: "",
+                  dataAbastecimento: "",
                   horarioAbastecimento: "",
                   operacao: "mercado_livre",
                   provedorCartao: "veloe",
@@ -526,18 +529,41 @@ export default function LineHaulFuelRequest() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="horario" className="flex items-center gap-2">
+                <Label htmlFor="dataAbastecimento" className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
-                  Horário Previsto do Abastecimento *
+                  Data do Abastecimento *
                 </Label>
                 <Input
+                  id="dataAbastecimento"
+                  type="date"
+                  value={form.dataAbastecimento}
+                  onChange={(e) => setForm({ ...form, dataAbastecimento: e.target.value })}
+                  required
+                  data-testid="input-date"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="horario" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Horário Previsto *
+                </Label>
+                <select
                   id="horario"
-                  type="datetime-local"
                   value={form.horarioAbastecimento}
                   onChange={(e) => setForm({ ...form, horarioAbastecimento: e.target.value })}
                   required
-                  data-testid="input-datetime"
-                />
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  data-testid="select-horario"
+                >
+                  <option value="">Selecione o horário</option>
+                  <option value="08:00">08:00</option>
+                  <option value="10:00">10:00</option>
+                  <option value="12:00">12:00</option>
+                  <option value="14:00">14:00</option>
+                  <option value="16:00">16:00</option>
+                  <option value="Após 18h">Após 18h</option>
+                </select>
               </div>
 
               <div className="space-y-3 pt-2">
