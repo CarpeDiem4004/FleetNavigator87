@@ -245,24 +245,58 @@ const FuelCardRequestsPanel: React.FC = () => {
   };
 
   // Função para detectar placas com múltiplas solicitações no mesmo dia (por data de uso)
+  // Regra especial: Diesel + Arla no mesmo dia NÃO conta como repetição
   const getDailyPlateRepeats = () => {
     const dailyRepeats: Record<string, Record<string, number>> = {};
+    const dailyCombustibles: Record<string, Record<string, Set<string>>> = {};
     
     solicitations.forEach(solicitation => {
       // Usar data_uso ao invés de data_solicitacao para detectar duplicatas
       const dataUso = solicitation.data_uso || solicitation.data_solicitacao;
       const date = new Date(dataUso).toDateString();
       const placa = solicitation.placa;
+      const combustivel = (solicitation.tipo_combustivel || '').toLowerCase().trim();
       
       if (!dailyRepeats[placa]) {
         dailyRepeats[placa] = {};
+      }
+      
+      if (!dailyCombustibles[placa]) {
+        dailyCombustibles[placa] = {};
       }
       
       if (!dailyRepeats[placa][date]) {
         dailyRepeats[placa][date] = 0;
       }
       
+      if (!dailyCombustibles[placa][date]) {
+        dailyCombustibles[placa][date] = new Set();
+      }
+      
       dailyRepeats[placa][date]++;
+      if (combustivel) {
+        dailyCombustibles[placa][date].add(combustivel);
+      }
+    });
+    
+    // Aplicar regra: se tem apenas Diesel + Arla, não considerar como repetição
+    Object.keys(dailyRepeats).forEach(placa => {
+      Object.keys(dailyRepeats[placa]).forEach(date => {
+        const combustiveis = dailyCombustibles[placa]?.[date] || new Set();
+        const count = dailyRepeats[placa][date];
+        
+        // Verificar se é caso de Diesel + Arla (exatamente 2 solicitações com esses dois combustíveis)
+        if (count === 2 && combustiveis.size === 2) {
+          const tipos = Array.from(combustiveis);
+          const temDiesel = tipos.some(t => t.includes('diesel') || t.includes('s10') || t.includes('s500'));
+          const temArla = tipos.some(t => t.includes('arla'));
+          
+          if (temDiesel && temArla) {
+            // Não é repetição - zerar contagem para 1 (cada um conta como único)
+            dailyRepeats[placa][date] = 1;
+          }
+        }
+      });
     });
     
     return dailyRepeats;
@@ -2058,11 +2092,16 @@ const FuelCardRequestsPanel: React.FC = () => {
                     >
                       <div className="flex flex-wrap items-center gap-3">
                         {/* Placa e Indicador */}
-                        <div className="flex-shrink-0" style={{minWidth: '120px'}}>
+                        <div className="flex-shrink-0" style={{minWidth: '140px'}}>
                           <div className="flex items-center">
                             {index < 5 && <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>}
                             <div>
-                              <p className="text-sm font-bold text-gray-900">{solicitacao.placa}</p>
+                              <p className="text-sm font-bold text-gray-900">
+                                {solicitacao.placa}
+                                {solicitacao.tipo_combustivel && (
+                                  <span className="text-sm font-bold text-gray-900"> - {solicitacao.tipo_combustivel}</span>
+                                )}
+                              </p>
                               <p className="text-xs text-gray-500">Placa</p>
                               
                               {/* Alerta para placas com múltiplas solicitações no mesmo dia (por data de uso) */}
@@ -2335,7 +2374,12 @@ const FuelCardRequestsPanel: React.FC = () => {
                       <div className="flex flex-wrap items-center gap-3">
                         {/* Placa */}
                         <div className="flex-shrink-0" style={{minWidth: '120px'}}>
-                          <p className="font-medium text-lg">{solicitacao.placa}</p>
+                          <p className="font-medium text-lg">
+                            {solicitacao.placa}
+                            {solicitacao.tipo_combustivel && (
+                              <span className="font-medium text-lg"> - {solicitacao.tipo_combustivel}</span>
+                            )}
+                          </p>
                           <p className="text-xs text-gray-500">Placa</p>
                         </div>
 
@@ -2558,7 +2602,12 @@ const FuelCardRequestsPanel: React.FC = () => {
                       <div className="flex flex-wrap items-center gap-3">
                         {/* Placa */}
                         <div className="flex-shrink-0" style={{minWidth: '120px'}}>
-                          <p className="font-medium text-lg">{solicitacao.placa}</p>
+                          <p className="font-medium text-lg">
+                            {solicitacao.placa}
+                            {solicitacao.tipo_combustivel && (
+                              <span className="font-medium text-lg"> - {solicitacao.tipo_combustivel}</span>
+                            )}
+                          </p>
                           <p className="text-xs text-gray-500">Placa</p>
                         </div>
 
