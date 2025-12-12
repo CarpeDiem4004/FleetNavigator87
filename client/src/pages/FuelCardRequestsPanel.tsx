@@ -2150,11 +2150,23 @@ const FuelCardRequestsPanel: React.FC = () => {
                               Histórico
                             </Button>
                             
-                            <WhatsAppResponseButton 
-                              solicitation={solicitacao}
-                              variant="outline"
-                              size="sm"
-                            />
+                            {/* Badge do Provedor do Cartão */}
+                            {solicitacao.provedor_cartao && (
+                              <Badge 
+                                variant="outline"
+                                className={
+                                  solicitacao.provedor_cartao.toLowerCase().includes('veloe') 
+                                    ? 'bg-purple-100 text-purple-700 border-purple-300 font-medium'
+                                    : solicitacao.provedor_cartao.toLowerCase().includes('ticket')
+                                      ? 'bg-green-100 text-green-700 border-green-300 font-medium'
+                                      : 'bg-gray-100 text-gray-700 border-gray-300 font-medium'
+                                }
+                              >
+                                💳 {solicitacao.provedor_cartao.toLowerCase().includes('veloe') ? 'Veloe' : 
+                                    solicitacao.provedor_cartao.toLowerCase().includes('ticket') ? 'Ticket' : 
+                                    solicitacao.provedor_cartao}
+                              </Badge>
+                            )}
                             
                             {(user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
                               <Button 
@@ -2391,11 +2403,23 @@ const FuelCardRequestsPanel: React.FC = () => {
                               Histórico
                             </Button>
                             
-                            <WhatsAppResponseButton 
-                              solicitation={solicitacao}
-                              variant="outline"
-                              size="sm"
-                            />
+                            {/* Badge do Provedor do Cartão */}
+                            {solicitacao.provedor_cartao && (
+                              <Badge 
+                                variant="outline"
+                                className={
+                                  solicitacao.provedor_cartao.toLowerCase().includes('veloe') 
+                                    ? 'bg-purple-100 text-purple-700 border-purple-300 font-medium'
+                                    : solicitacao.provedor_cartao.toLowerCase().includes('ticket')
+                                      ? 'bg-green-100 text-green-700 border-green-300 font-medium'
+                                      : 'bg-gray-100 text-gray-700 border-gray-300 font-medium'
+                                }
+                              >
+                                💳 {solicitacao.provedor_cartao.toLowerCase().includes('veloe') ? 'Veloe' : 
+                                    solicitacao.provedor_cartao.toLowerCase().includes('ticket') ? 'Ticket' : 
+                                    solicitacao.provedor_cartao}
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </div>
