@@ -1553,9 +1553,9 @@ const FuelCardRequestsPanel: React.FC = () => {
     <AppLayout>
       <div className="container mx-auto py-6">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-xl font-bold tracking-tight whitespace-nowrap">
             <CreditCard className="inline-block mr-2" />
-            Painel de Solicitações de Cartão de Abastecimento
+            Painel de Solicitações
           </h1>
           <div className="flex items-center gap-3">
             {(user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
