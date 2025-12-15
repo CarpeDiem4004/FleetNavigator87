@@ -2090,30 +2090,23 @@ const FuelCardRequestsPanel: React.FC = () => {
                               : 'bg-white border-gray-200'
                       }`}
                     >
-                      <div className="flex flex-wrap items-center gap-3">
-                        {/* Placa e Indicador */}
-                        <div className="flex-shrink-0" style={{minWidth: '140px'}}>
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        {/* Placa e Indicador - 1 col */}
+                        <div className="col-span-1">
                           <div className="flex items-center">
-                            {index < 5 && <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>}
+                            {index < 5 && <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-1"></span>}
                             <div>
                               <p className="text-sm font-bold text-gray-900">
                                 {solicitacao.placa}
-                                {solicitacao.tipo_combustivel && (
-                                  <span className="text-sm font-bold text-gray-900"> - {solicitacao.tipo_combustivel}</span>
-                                )}
                               </p>
-                              <p className="text-xs text-gray-500">Placa</p>
-                              
-                              {/* Alerta para placas com múltiplas solicitações no mesmo dia (por data de uso) */}
+                              <p className="text-xs text-gray-600">{solicitacao.tipo_combustivel || '-'}</p>
                               {hasMultipleRequestsToday(solicitacao.placa, solicitacao.data_uso || solicitacao.data_solicitacao) && (
-                                <Badge variant="destructive" className="text-xs bg-red-500 text-white mt-1">
-                                  ⚠️ {getDailyRequestCount(solicitacao.placa, solicitacao.data_uso || solicitacao.data_solicitacao)}x
+                                <Badge variant="destructive" className="text-xs bg-red-500 text-white">
+                                  {getDailyRequestCount(solicitacao.placa, solicitacao.data_uso || solicitacao.data_solicitacao)}x
                                 </Badge>
                               )}
-                              
-                              {/* Badge de contagem total geral */}
                               {solicitudeCounts[solicitacao.placa] > 1 && !hasMultipleRequestsToday(solicitacao.placa, solicitacao.data_uso || solicitacao.data_solicitacao) && (
-                                <Badge variant="secondary" className="text-xs mt-1">
+                                <Badge variant="secondary" className="text-xs">
                                   {solicitudeCounts[solicitacao.placa]}x
                                 </Badge>
                               )}
@@ -2121,22 +2114,22 @@ const FuelCardRequestsPanel: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Dados do Solicitante */}
-                        <div className="border-2 border-red-500 bg-red-50 p-2 rounded flex-shrink-0" style={{minWidth: '180px'}}>
+                        {/* Dados do Solicitante - 2 cols */}
+                        <div className="col-span-2 border-2 border-red-500 bg-red-50 p-2 rounded h-full">
                           <p className="text-xs text-red-600 font-bold mb-1">👤 DADOS DO SOLICITANTE</p>
                           <p className="text-sm font-medium text-gray-900 truncate">{solicitacao.solicitante || solicitacao.requested_by || 'Nome não informado'}</p>
                           <p className="text-xs text-gray-700 font-medium truncate">{solicitacao.telefone_celular || (solicitacao as any).driver_phone || 'Telefone não informado'}</p>
                         </div>
 
-                        {/* Dados do Motorista do Veículo */}
-                        <div className="border-2 border-blue-500 bg-blue-50 p-2 rounded flex-shrink-0" style={{minWidth: '200px'}}>
+                        {/* Dados do Motorista do Veículo - 2 cols */}
+                        <div className="col-span-2 border-2 border-blue-500 bg-blue-50 p-2 rounded h-full">
                           <p className="text-xs text-blue-600 font-bold mb-1">🚛 MOTORISTA DO VEÍCULO</p>
                           <p className="text-sm font-medium text-gray-900 truncate">{solicitacao.motorista || (solicitacao as any).driver_name || 'Motorista não informado'}</p>
                           <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_solicitado)} - {solicitacao.km_total || solicitacao.km_veiculo || (solicitacao as any).km || '-'} km</p>
                         </div>
 
-                        {/* Operação e Base */}
-                        <div className="flex-shrink-0" style={{minWidth: '120px'}}>
+                        {/* Operação e Base - 1 col */}
+                        <div className="col-span-1 text-center">
                           <Badge variant="outline" className={
                             solicitacao.origem_tipo === 'line_hall' 
                               ? "bg-blue-100 text-blue-800 mb-1" 
@@ -2147,8 +2140,8 @@ const FuelCardRequestsPanel: React.FC = () => {
                           <p className="text-xs text-gray-500 truncate">{solicitacao.base || '-'}</p>
                         </div>
 
-                        {/* Data de Abastecimento */}
-                        <div className="border-2 border-orange-500 bg-orange-50 p-2 rounded flex-shrink-0" style={{minWidth: '160px'}}>
+                        {/* Data de Abastecimento - 2 cols */}
+                        <div className="col-span-2 border-2 border-orange-500 bg-orange-50 p-2 rounded h-full">
                           <p className="text-xs text-orange-600 font-bold mb-1">📅 DATA DE ABASTECIMENTO</p>
                           {solicitacao.data_uso ? (
                             <p className="text-sm font-bold text-orange-900">
@@ -2160,14 +2153,14 @@ const FuelCardRequestsPanel: React.FC = () => {
                           )}
                         </div>
 
-                        {/* Status */}
-                        <div className="flex-shrink-0">
+                        {/* Status - 1 col */}
+                        <div className="col-span-1 text-center">
                           {getStatusBadge(solicitacao.status)}
                           <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</p>
                         </div>
 
-                        {/* Ações */}
-                        <div className="flex-shrink-0 ml-auto">
+                        {/* Ações - 2 cols */}
+                        <div className="col-span-2 text-right">
                           <div className="flex gap-2">
                             <Button 
                               variant="outline" 
