@@ -80,7 +80,6 @@ export default function LineHaulFuelRequest() {
     kmVeiculo: "",
     localInicio: "",
     destino: "",
-    dataAbastecimento: "",
     horarioAbastecimento: "",
     operacao: "mercado_livre" as "mercado_livre" | "shopee",
     provedorCartao: "veloe" as "veloe" | "ticket",
@@ -238,7 +237,7 @@ export default function LineHaulFuelRequest() {
       formData.append("km_veiculo", form.kmVeiculo);
       formData.append("rota_origem", form.localInicio);
       formData.append("rota_destino", form.destino);
-      formData.append("data_abastecimento", form.dataAbastecimento);
+      formData.append("data_abastecimento", new Date().toISOString().split('T')[0]);
       formData.append("horario_abastecimento", form.horarioAbastecimento);
       formData.append("operacao", form.operacao);
       formData.append("provedor_cartao", form.provedorCartao);
@@ -306,7 +305,6 @@ export default function LineHaulFuelRequest() {
                   kmVeiculo: "",
                   localInicio: "",
                   destino: "",
-                  dataAbastecimento: "",
                   horarioAbastecimento: "",
                   operacao: "mercado_livre",
                   provedorCartao: "veloe",
@@ -526,21 +524,6 @@ export default function LineHaulFuelRequest() {
                     ))}
                   </div>
                 )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="dataAbastecimento" className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Data do Abastecimento *
-                </Label>
-                <Input
-                  id="dataAbastecimento"
-                  type="date"
-                  value={form.dataAbastecimento}
-                  onChange={(e) => setForm({ ...form, dataAbastecimento: e.target.value })}
-                  required
-                  data-testid="input-date"
-                />
               </div>
 
               <div className="space-y-2">
