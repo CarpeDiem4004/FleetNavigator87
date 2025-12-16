@@ -1822,6 +1822,9 @@ export default function LineHallShopeePage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        
+        </div>
+      </div>
     </MainLayoutSimple>
   );
 }
