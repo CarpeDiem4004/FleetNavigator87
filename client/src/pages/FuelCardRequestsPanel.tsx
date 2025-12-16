@@ -474,17 +474,13 @@ const FuelCardRequestsPanel: React.FC = () => {
   }, [solicitations, activeTab]);
 
   const lineHaulSolicitations = useMemo(() => {
-    // Se estamos na aba de line haul, todos os dados já são line haul
     // Ordenar por data de criação (mais recentes primeiro)
     const sortByCreatedAt = (list: FuelCardSolicitation[]) => 
       [...list].sort((a, b) => new Date(b.created_at || b.data_solicitacao).getTime() - new Date(a.created_at || a.data_solicitacao).getTime());
     
-    if (activeTab === 'linehaul' || activeTab === 'linehaul_pendentes' || activeTab === 'linehaul_atendidas' || activeTab === 'linehaul_negadas') {
-      return sortByCreatedAt(solicitations);
-    }
-    // Fallback para compatibilidade (filtro local) - também ordenado
+    // SEMPRE filtrar por origem_tipo = 'line_hall' para abas Line Haul
     return sortByCreatedAt(solicitations.filter(s => s.origem_tipo === 'line_hall'));
-  }, [solicitations, activeTab]);
+  }, [solicitations]);
 
   // Filtros Line Haul por status
   const lineHaulPendentes = useMemo(() => 
