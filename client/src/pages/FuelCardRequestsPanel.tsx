@@ -142,8 +142,8 @@ const FuelCardRequestsPanel: React.FC = () => {
   
   // Verificar parâmetros da URL para modo Line Haul
   const urlParams = new URLSearchParams(window.location.search);
-  const initialTab = urlParams.get('tab') || 'pendentes';
   const isLineHaulMode = urlParams.get('mode') === 'linehaul';
+  const initialTab = isLineHaulMode ? 'linehaul_pendentes' : (urlParams.get('tab') || 'pendentes');
   
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   
@@ -479,12 +479,25 @@ const FuelCardRequestsPanel: React.FC = () => {
     const sortByCreatedAt = (list: FuelCardSolicitation[]) => 
       [...list].sort((a, b) => new Date(b.created_at || b.data_solicitacao).getTime() - new Date(a.created_at || a.data_solicitacao).getTime());
     
-    if (activeTab === 'linehaul') {
+    if (activeTab === 'linehaul' || activeTab === 'linehaul_pendentes' || activeTab === 'linehaul_atendidas' || activeTab === 'linehaul_negadas') {
       return sortByCreatedAt(solicitations);
     }
     // Fallback para compatibilidade (filtro local) - também ordenado
     return sortByCreatedAt(solicitations.filter(s => s.origem_tipo === 'line_hall'));
   }, [solicitations, activeTab]);
+
+  // Filtros Line Haul por status
+  const lineHaulPendentes = useMemo(() => 
+    lineHaulSolicitations.filter(s => s.status === 'Pendente' || s.status === 'pendente'),
+  [lineHaulSolicitations]);
+
+  const lineHaulAtendidas = useMemo(() => 
+    lineHaulSolicitations.filter(s => s.status === 'Recarga Efetuada' || s.status === 'atendido' || s.status === 'aprovada'),
+  [lineHaulSolicitations]);
+
+  const lineHaulNegadas = useMemo(() => 
+    lineHaulSolicitations.filter(s => s.status === 'Negado' || s.status === 'rejeitada'),
+  [lineHaulSolicitations]);
 
   // Função legacy para compatibilidade
   const getPendingSolicitations = useCallback(() => pendingSolicitations, [pendingSolicitations]);
@@ -1938,13 +1951,21 @@ const FuelCardRequestsPanel: React.FC = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="flex items-center justify-between">
             {isLineHaulMode ? (
-              /* Modo Line Haul - apenas a aba Line Haul */
-              <div className="flex items-center gap-2">
-                <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg flex items-center gap-2 font-medium">
-                  <Truck className="h-5 w-5" />
-                  Solicitações Line Haul ({getLineHallSolicitations().length})
-                </div>
-              </div>
+              /* Modo Line Haul - abas separadas por status */
+              <TabsList className="grid w-auto grid-cols-3">
+                <TabsTrigger value="linehaul_pendentes" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-orange-600" />
+                  Pendentes ({lineHaulPendentes.length})
+                </TabsTrigger>
+                <TabsTrigger value="linehaul_atendidas" className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  Atendidas ({lineHaulAtendidas.length})
+                </TabsTrigger>
+                <TabsTrigger value="linehaul_negadas" className="flex items-center gap-2">
+                  <XCircle className="h-4 w-4 text-red-600" />
+                  Negadas ({lineHaulNegadas.length})
+                </TabsTrigger>
+              </TabsList>
             ) : (
               /* Modo normal - todas as abas */
               <TabsList className="grid w-auto grid-cols-4">
@@ -2928,6 +2949,262 @@ const FuelCardRequestsPanel: React.FC = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      {/* Abas separadas Line Haul - Pendentes */}
+      <TabsContent value="linehaul_pendentes" className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pendentes Line Haul</CardTitle>
+              <Clock className="h-4 w-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">{lineHaulPendentes.length}</div>
+              <p className="text-xs text-muted-foreground">Aguardando processamento</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Valor Total Pendente</CardTitle>
+              <DollarSign className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(getTotalValue(lineHaulPendentes))}</div>
+              <p className="text-xs text-muted-foreground">Valor pendente de aprovação</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Line Haul</CardTitle>
+              <Truck className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{lineHaulSolicitations.length}</div>
+              <p className="text-xs text-muted-foreground">Todas as solicitações</p>
+            </CardContent>
+          </Card>
+        </div>
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex justify-between">
+              <div>
+                <CardTitle>Solicitações Pendentes - Line Haul</CardTitle>
+                <CardDescription>Mostrando {lineHaulPendentes.length} solicitações pendentes</CardDescription>
+              </div>
+              <Button onClick={fetchSolicitations} variant="outline" size="sm">Atualizar</Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {lineHaulPendentes.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">Nenhuma solicitação pendente.</div>
+            ) : (
+              <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                {lineHaulPendentes.map((solicitacao, index) => (
+                  <div key={`${solicitacao.id}-pending-${index}`} className="p-4 rounded-lg border bg-orange-50 border-orange-200 border-l-4 border-l-orange-500">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                      <div className="lg:col-span-3">
+                        <p className="font-medium text-lg">{solicitacao.placa}</p>
+                        <p className="text-sm text-gray-600">{solicitacao.motorista || 'Motorista não informado'}</p>
+                        <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_calculado || solicitacao.valor_solicitado)} - {solicitacao.km_total || '-'} km</p>
+                        {solicitacao.rota_origem && solicitacao.rota_destino && (
+                          <p className="text-xs text-blue-600">{solicitacao.rota_origem} → {solicitacao.rota_destino}</p>
+                        )}
+                      </div>
+                      <div className="lg:col-span-2">
+                        <Badge variant="outline" className="bg-blue-100 text-blue-800 mb-1">Line Haul</Badge>
+                        <p className="text-xs text-gray-500 truncate">{solicitacao.veiculo_modelo || '-'}</p>
+                      </div>
+                      <div className="lg:col-span-2">
+                        {getStatusBadge(solicitacao.status)}
+                        <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.created_at || solicitacao.data_solicitacao)}</p>
+                        {solicitacao.horario_abastecimento && (
+                          <p className="text-xs text-blue-600">Horário: {solicitacao.horario_abastecimento}</p>
+                        )}
+                      </div>
+                      <div className="lg:col-span-5">
+                        <div className="flex flex-wrap gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleOpenSolicitation(solicitacao)} className="text-xs">Visualizar</Button>
+                          <Button variant="outline" size="sm" onClick={() => handleViewFuelHistory(solicitacao.placa)} className="text-xs"><History className="w-3 h-3 mr-1" />Histórico</Button>
+                          <LineHaulWhatsAppButton solicitation={solicitacao} variant="outline" size="sm" />
+                          {user?.role === 'admin' && (
+                            <Button variant="outline" size="sm" onClick={() => handleDeleteSolicitation(solicitacao)} className="text-red-600 hover:text-red-700 hover:bg-red-50"><Trash2 className="h-3 w-3" /></Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      {/* Abas separadas Line Haul - Atendidas */}
+      <TabsContent value="linehaul_atendidas" className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Atendidas Line Haul</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{lineHaulAtendidas.length}</div>
+              <p className="text-xs text-muted-foreground">Recargas efetuadas</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Valor Total Atendido</CardTitle>
+              <DollarSign className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(getTotalValue(lineHaulAtendidas))}</div>
+              <p className="text-xs text-muted-foreground">Valor das recargas</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Line Haul</CardTitle>
+              <Truck className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{lineHaulSolicitations.length}</div>
+              <p className="text-xs text-muted-foreground">Todas as solicitações</p>
+            </CardContent>
+          </Card>
+        </div>
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex justify-between">
+              <div>
+                <CardTitle>Solicitações Atendidas - Line Haul</CardTitle>
+                <CardDescription>Mostrando {lineHaulAtendidas.length} solicitações atendidas</CardDescription>
+              </div>
+              <Button onClick={fetchSolicitations} variant="outline" size="sm">Atualizar</Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {lineHaulAtendidas.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">Nenhuma solicitação atendida.</div>
+            ) : (
+              <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                {lineHaulAtendidas.map((solicitacao, index) => (
+                  <div key={`${solicitacao.id}-attended-${index}`} className="p-4 rounded-lg border bg-green-50 border-green-200 border-l-4 border-l-green-500">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                      <div className="lg:col-span-3">
+                        <p className="font-medium text-lg">{solicitacao.placa}</p>
+                        <p className="text-sm text-gray-600">{solicitacao.motorista || 'Motorista não informado'}</p>
+                        <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_calculado || solicitacao.valor_solicitado)} - {solicitacao.km_total || '-'} km</p>
+                      </div>
+                      <div className="lg:col-span-2">
+                        <Badge variant="outline" className="bg-green-100 text-green-800 mb-1">Atendida</Badge>
+                        <p className="text-xs text-gray-500 truncate">{solicitacao.veiculo_modelo || '-'}</p>
+                      </div>
+                      <div className="lg:col-span-2">
+                        {getStatusBadge(solicitacao.status)}
+                        <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.created_at || solicitacao.data_solicitacao)}</p>
+                        {solicitacao.data_atendimento && (
+                          <p className="text-xs text-green-600 font-medium">Atendido: {formatDate(solicitacao.data_atendimento).split(',')[0]}</p>
+                        )}
+                      </div>
+                      <div className="lg:col-span-5">
+                        <div className="flex flex-wrap gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleOpenSolicitation(solicitacao)} className="text-xs">Visualizar</Button>
+                          <Button variant="outline" size="sm" onClick={() => handleViewFuelHistory(solicitacao.placa)} className="text-xs"><History className="w-3 h-3 mr-1" />Histórico</Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      {/* Abas separadas Line Haul - Negadas */}
+      <TabsContent value="linehaul_negadas" className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Negadas Line Haul</CardTitle>
+              <XCircle className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{lineHaulNegadas.length}</div>
+              <p className="text-xs text-muted-foreground">Solicitações negadas</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Valor Total Negado</CardTitle>
+              <DollarSign className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{formatCurrency(getTotalValue(lineHaulNegadas))}</div>
+              <p className="text-xs text-muted-foreground">Valor das negações</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Line Haul</CardTitle>
+              <Truck className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{lineHaulSolicitations.length}</div>
+              <p className="text-xs text-muted-foreground">Todas as solicitações</p>
+            </CardContent>
+          </Card>
+        </div>
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex justify-between">
+              <div>
+                <CardTitle>Solicitações Negadas - Line Haul</CardTitle>
+                <CardDescription>Mostrando {lineHaulNegadas.length} solicitações negadas</CardDescription>
+              </div>
+              <Button onClick={fetchSolicitations} variant="outline" size="sm">Atualizar</Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {lineHaulNegadas.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">Nenhuma solicitação negada.</div>
+            ) : (
+              <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                {lineHaulNegadas.map((solicitacao, index) => (
+                  <div key={`${solicitacao.id}-denied-${index}`} className="p-4 rounded-lg border bg-red-50 border-red-200 border-l-4 border-l-red-500">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                      <div className="lg:col-span-3">
+                        <p className="font-medium text-lg">{solicitacao.placa}</p>
+                        <p className="text-sm text-gray-600">{solicitacao.motorista || 'Motorista não informado'}</p>
+                        <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_calculado || solicitacao.valor_solicitado)} - {solicitacao.km_total || '-'} km</p>
+                      </div>
+                      <div className="lg:col-span-2">
+                        <Badge variant="outline" className="bg-red-100 text-red-800 mb-1">Negada</Badge>
+                        <p className="text-xs text-gray-500 truncate">{solicitacao.veiculo_modelo || '-'}</p>
+                      </div>
+                      <div className="lg:col-span-2">
+                        {getStatusBadge(solicitacao.status)}
+                        <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.created_at || solicitacao.data_solicitacao)}</p>
+                        {solicitacao.motivo_negacao && (
+                          <p className="text-xs text-red-600 font-medium">Motivo: {solicitacao.motivo_negacao}</p>
+                        )}
+                      </div>
+                      <div className="lg:col-span-5">
+                        <div className="flex flex-wrap gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleOpenSolicitation(solicitacao)} className="text-xs">Visualizar</Button>
+                          <Button variant="outline" size="sm" onClick={() => handleViewFuelHistory(solicitacao.placa)} className="text-xs"><History className="w-3 h-3 mr-1" />Histórico</Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
