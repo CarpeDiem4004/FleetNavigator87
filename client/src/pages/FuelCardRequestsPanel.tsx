@@ -492,7 +492,7 @@ const FuelCardRequestsPanel: React.FC = () => {
   [lineHaulSolicitations]);
 
   const lineHaulNegadas = useMemo(() => 
-    lineHaulSolicitations.filter(s => s.status === 'Negado' || s.status === 'rejeitada'),
+    lineHaulSolicitations.filter(s => s.status === 'Negado' || s.status === 'rejeitada' || s.status === 'rejeitado'),
   [lineHaulSolicitations]);
 
   // Função legacy para compatibilidade
