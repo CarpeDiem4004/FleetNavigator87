@@ -1835,7 +1835,7 @@ const LineHaulPage = () => {
                   ? 'bg-orange-500 hover:bg-orange-600 animate-pulse' 
                   : 'bg-blue-500 hover:bg-blue-600'
               }`}
-              onClick={() => setLocation('/fuel-cards?tab=linehaul&mode=linehaul')}
+              onClick={() => setLocation('/fuel-cards?tab=linehaul_pendentes&mode=linehaul')}
             >
               <Settings className="h-4 w-4 mr-2" />
               Solicitações de Cartão
