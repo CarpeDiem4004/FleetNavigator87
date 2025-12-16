@@ -787,7 +787,7 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
       success: true,
       message: `Status atualizado para ${status}`,
       data: result.rows[0],
-      isLineHall,
+      isTradicional,
       isGPBase
     });
   } catch (error: any) {
