@@ -2810,10 +2810,7 @@ const FuelCardRequestsPanel: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">
-                {getLineHallSolicitations().filter(s => 
-                  s.status === 'Pendente' || s.status === 'pendente' || 
-                  s.status === 'Em Análise' || s.status === 'em_analise'
-                ).length}
+                {lineHaulPendentes.length}
               </div>
               <p className="text-xs text-muted-foreground">Aguardando processamento</p>
             </CardContent>
@@ -2824,9 +2821,9 @@ const FuelCardRequestsPanel: React.FC = () => {
           <CardHeader className="pb-3">
             <div className="flex justify-between">
               <div>
-                <CardTitle>Solicitações Line Haul</CardTitle>
+                <CardTitle>Solicitações Line Haul Pendentes</CardTitle>
                 <CardDescription>
-                  Mostrando {getLineHallSolicitations().length} solicitações do Line Haul
+                  Mostrando {lineHaulPendentes.length} solicitações pendentes do Line Haul
                 </CardDescription>
               </div>
               <div className="flex gap-2">
@@ -2859,14 +2856,14 @@ const FuelCardRequestsPanel: React.FC = () => {
                   Tentar novamente
                 </Button>
               </div>
-            ) : getLineHallSolicitations().length === 0 ? (
+            ) : lineHaulPendentes.length === 0 ? (
               <div className="text-center py-10 text-muted-foreground">
-                Nenhuma solicitação do Line Haul encontrada.
+                Nenhuma solicitação pendente do Line Haul.
               </div>
             ) : (
               <div className="space-y-3">
                 <div className="max-h-[600px] overflow-y-auto">
-                  {getLineHallSolicitations().map((solicitacao, index) => (
+                  {lineHaulPendentes.map((solicitacao, index) => (
                     <div 
                       key={`${solicitacao.id}-${solicitacao.origem_tipo}-${index}`} 
                       className="p-4 rounded-lg border transition-all duration-200 hover:shadow-md bg-blue-50 border-blue-200 border-l-4 border-l-blue-500"
