@@ -3184,8 +3184,8 @@ const FuelCardRequestsPanel: React.FC = () => {
                   
                   <Separator />
                   
-                  {/* Seção de Controle de Status - Disponível para todos os usuários autenticados que acessam esta página */}
-                  {user && (
+                  {/* Seção de Controle de Status - Sempre visível pois página já é protegida */}
+                  {true && (
                     <div className="bg-gray-50 p-4 rounded-lg border space-y-4">
                       <h3 className="font-semibold text-lg text-gray-900">Controle de Status</h3>
                       
