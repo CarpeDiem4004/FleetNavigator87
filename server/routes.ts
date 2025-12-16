@@ -177,6 +177,7 @@ import fuelReceiptRoutes from './routes/fuelReceiptRoutes.js';
 import { setupPostPaidRoutes } from './routes/postpaid.js';
 // Importação do cliente Supabase para armazenamento de arquivos
 import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from './services/supabaseAdmin';
 // Importação das rotas de diagnóstico já feita acima
 // Importação dos middlewares antigos para compatibilidade com código existente
 import { 
@@ -293,22 +294,9 @@ const uploadMaintenanceImport = multer({
   }
 });
 
-// Configuração específica para upload de fotos Line Haul
+// Configuração específica para upload de fotos Line Haul - usando memoryStorage para upload no Supabase
 const uploadLineHaulPhotos = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      const uploadDir = './uploads/linehaul';
-      if (!fsSync.existsSync(uploadDir)) {
-        fsSync.mkdirSync(uploadDir, { recursive: true });
-      }
-      cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const ext = file.originalname.split('.').pop();
-      cb(null, `${file.fieldname}-${uniqueSuffix}.${ext}`);
-    }
-  }),
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB por foto
   },
@@ -321,6 +309,53 @@ const uploadLineHaulPhotos = multer({
     }
   }
 });
+
+// Função auxiliar para fazer upload de foto no Supabase Storage
+async function uploadPhotoToSupabase(buffer: Buffer, filename: string, mimetype: string): Promise<string | null> {
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    const bucketName = 'linehaul-photos';
+    const timestamp = Date.now();
+    const uniqueSuffix = Math.round(Math.random() * 1E9);
+    const ext = filename.split('.').pop() || 'jpg';
+    const safePath = `uploads/${timestamp}-${uniqueSuffix}.${ext}`;
+
+    // Tentar criar o bucket se não existir
+    const { data: buckets } = await supabaseAdmin.storage.listBuckets();
+    const bucketExists = buckets?.some(b => b.name === bucketName);
+    
+    if (!bucketExists) {
+      await supabaseAdmin.storage.createBucket(bucketName, {
+        public: true,
+        fileSizeLimit: 10485760, // 10MB
+      });
+    }
+
+    // Fazer upload do arquivo
+    const { data, error: uploadError } = await supabaseAdmin.storage
+      .from(bucketName)
+      .upload(safePath, buffer, {
+        contentType: mimetype,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('[LINEHAUL-UPLOAD] Erro ao fazer upload:', uploadError);
+      return null;
+    }
+
+    // Obter URL pública do arquivo
+    const { data: publicUrlData } = supabaseAdmin.storage
+      .from(bucketName)
+      .getPublicUrl(safePath);
+
+    console.log('[LINEHAUL-UPLOAD] Upload concluído:', publicUrlData.publicUrl);
+    return publicUrlData.publicUrl;
+  } catch (error) {
+    console.error('[LINEHAUL-UPLOAD] Erro:', error);
+    return null;
+  }
+}
 
 // Definindo funções middleware para compatibilidade com o código existente
 const isAdmin = adminMiddleware;  
@@ -7122,8 +7157,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } = req.body;
 
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      const fotoPainelPath = files?.foto_painel?.[0]?.path || null;
-      const fotoCartaoPath = files?.foto_cartao?.[0]?.path || null;
+      
+      // Upload das fotos para o Supabase Storage (persistente)
+      let fotoPainelPath: string | null = null;
+      let fotoCartaoPath: string | null = null;
+      
+      if (files?.foto_painel?.[0]) {
+        const file = files.foto_painel[0];
+        fotoPainelPath = await uploadPhotoToSupabase(file.buffer, `foto_painel_${file.originalname}`, file.mimetype);
+      }
+      
+      if (files?.foto_cartao?.[0]) {
+        const file = files.foto_cartao[0];
+        fotoCartaoPath = await uploadPhotoToSupabase(file.buffer, `foto_cartao_${file.originalname}`, file.mimetype);
+      }
 
       console.log('[LINEHAUL-PUBLIC-REQUEST] Recebendo solicitação:', {
         motorista_nome,

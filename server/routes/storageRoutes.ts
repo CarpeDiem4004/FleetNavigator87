@@ -15,7 +15,8 @@ const ALLOWED_BUCKETS = [
   'notas-fiscais',
   'orcamentos',
   'anexos',
-  'budget-attachments'
+  'budget-attachments',
+  'linehaul-photos'
 ];
 
 // Tipos de arquivo permitidos
