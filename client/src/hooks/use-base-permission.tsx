@@ -448,13 +448,17 @@ export const useBasePermission = (): BasePermissionHook => {
       return true;
     }
     
-    // Line Hall Role - acesso EXCLUSIVO ao Line Hall e Cartão de Abastecimento
+    // Line Hall Role - acesso ao Line Hall e operações relacionadas
     if (user.role === 'line_hall') {
       // Rotas permitidas para o role line_hall
       const allowedRoutes = [
-        '/line-hall-shopee',        // Página do Line Hall
-        '/fuel-card-requests',      // Painel de Solicitações de Cartão
-        '/linehaul-abastecimento'   // Formulário público de abastecimento
+        '/line-hall-shopee',          // Página principal do Line Hall
+        '/line-hall-fuel-requests',   // Solicitações de combustível Line Hall
+        '/fuel-card-requests',        // Painel de Solicitações de Cartão
+        '/linehaul-abastecimento',    // Formulário público de abastecimento
+        '/vehicles',                  // Cadastro de veículos (necessário para Line Hall)
+        '/drivers',                   // Cadastro de motoristas (necessário para Line Hall)
+        '/line-hall'                  // Rotas do Line Hall
       ];
       
       // Verificar se a rota atual está na lista de permitidas
