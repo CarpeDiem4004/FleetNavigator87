@@ -98,6 +98,9 @@ interface FuelCardSolicitation {
   // Campos de fotos das solicitações Line Haul
   foto_painel_path?: string;
   foto_cartao_path?: string;
+  // Timestamp real da criação da solicitação
+  created_at?: string;
+  placa_cartao?: string;
 }
 
 const FuelCardRequestsPanel: React.FC = () => {
@@ -321,7 +324,7 @@ const FuelCardRequestsPanel: React.FC = () => {
   const getLastRequestForPlate = useCallback((placa: string): FuelCardSolicitation | null => {
     const plateSolicitations = solicitations
       .filter(s => s.placa === placa)
-      .sort((a, b) => new Date(b.data_solicitacao).getTime() - new Date(a.data_solicitacao).getTime());
+      .sort((a, b) => new Date(b.created_at || b.data_solicitacao).getTime() - new Date(a.created_at || a.data_solicitacao).getTime());
     
     return plateSolicitations.length > 0 ? plateSolicitations[0] : null;
   }, [solicitations]);
@@ -340,7 +343,7 @@ const FuelCardRequestsPanel: React.FC = () => {
         s.id !== currentSolicitation.id &&
         new Date(s.data_solicitacao) < new Date(currentSolicitation.data_solicitacao)
       )
-      .sort((a, b) => new Date(b.data_solicitacao).getTime() - new Date(a.data_solicitacao).getTime());
+      .sort((a, b) => new Date(b.created_at || b.data_solicitacao).getTime() - new Date(a.created_at || a.data_solicitacao).getTime());
     
     if (previousSolicitations.length === 0) return null;
     
@@ -2171,7 +2174,10 @@ const FuelCardRequestsPanel: React.FC = () => {
                         {/* Status - 1 col */}
                         <div className="col-span-1 text-center">
                           {getStatusBadge(solicitacao.status)}
-                          <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</p>
+                          <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.created_at || solicitacao.data_solicitacao)}</p>
+                          {solicitacao.horario_abastecimento && (
+                            <p className="text-xs text-blue-600">Horário: {solicitacao.horario_abastecimento === 'antes_17h' ? 'Antes 17h' : solicitacao.horario_abastecimento === 'apos_18h' ? 'Após 18h' : solicitacao.horario_abastecimento}</p>
+                          )}
                         </div>
 
                         {/* Ações - 2 cols */}
@@ -2426,7 +2432,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                         {/* Status e Data */}
                         <div className="flex-shrink-0">
                           {getStatusBadge(solicitacao.status)}
-                          <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</p>
+                          <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.created_at || solicitacao.data_solicitacao)}</p>
                           {solicitacao.data_atendimento && (
                             <p className="text-xs text-green-600 font-medium">Atendido: {formatDate(solicitacao.data_atendimento).split(',')[0]}</p>
                           )}
@@ -2654,7 +2660,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                         {/* Status e Data */}
                         <div className="flex-shrink-0">
                           {getStatusBadge(solicitacao.status)}
-                          <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</p>
+                          <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.created_at || solicitacao.data_solicitacao)}</p>
                           {solicitacao.data_atendimento && (
                             <p className="text-xs text-red-600 font-medium">Negado: {formatDate(solicitacao.data_atendimento).split(',')[0]}</p>
                           )}
@@ -2849,7 +2855,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                         {/* Status e Data */}
                         <div className="lg:col-span-2">
                           {getStatusBadge(solicitacao.status)}
-                          <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</p>
+                          <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.created_at || solicitacao.data_solicitacao)}</p>
                           {solicitacao.data_atendimento && (
                             <p className="text-xs text-green-600 font-medium">Atendido: {formatDate(solicitacao.data_atendimento).split(',')[0]}</p>
                           )}
