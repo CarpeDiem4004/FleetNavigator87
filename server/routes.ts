@@ -7158,18 +7158,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
       
-      // Upload das fotos para o Supabase Storage (persistente)
+      // Upload das fotos para o Supabase Storage (persistente) - fotos são opcionais
       let fotoPainelPath: string | null = null;
       let fotoCartaoPath: string | null = null;
       
+      // Tentar fazer upload das fotos, mas continuar mesmo se falhar
       if (files?.foto_painel?.[0]) {
-        const file = files.foto_painel[0];
-        fotoPainelPath = await uploadPhotoToSupabase(file.buffer, `foto_painel_${file.originalname}`, file.mimetype);
+        try {
+          const file = files.foto_painel[0];
+          const uploadResult = await uploadPhotoToSupabase(file.buffer, `foto_painel_${file.originalname}`, file.mimetype);
+          if (uploadResult) {
+            fotoPainelPath = uploadResult;
+            console.log('[LINEHAUL-PUBLIC-REQUEST] Foto do painel enviada com sucesso:', fotoPainelPath);
+          } else {
+            console.warn('[LINEHAUL-PUBLIC-REQUEST] Falha no upload da foto do painel - continuando sem foto');
+          }
+        } catch (uploadError) {
+          console.error('[LINEHAUL-PUBLIC-REQUEST] Erro no upload da foto do painel:', uploadError);
+          // Continua sem a foto - não é crítico
+        }
       }
       
       if (files?.foto_cartao?.[0]) {
-        const file = files.foto_cartao[0];
-        fotoCartaoPath = await uploadPhotoToSupabase(file.buffer, `foto_cartao_${file.originalname}`, file.mimetype);
+        try {
+          const file = files.foto_cartao[0];
+          const uploadResult = await uploadPhotoToSupabase(file.buffer, `foto_cartao_${file.originalname}`, file.mimetype);
+          if (uploadResult) {
+            fotoCartaoPath = uploadResult;
+            console.log('[LINEHAUL-PUBLIC-REQUEST] Foto do cartão enviada com sucesso:', fotoCartaoPath);
+          } else {
+            console.warn('[LINEHAUL-PUBLIC-REQUEST] Falha no upload da foto do cartão - continuando sem foto');
+          }
+        } catch (uploadError) {
+          console.error('[LINEHAUL-PUBLIC-REQUEST] Erro no upload da foto do cartão:', uploadError);
+          // Continua sem a foto - não é crítico
+        }
       }
 
       console.log('[LINEHAUL-PUBLIC-REQUEST] Recebendo solicitação:', {
