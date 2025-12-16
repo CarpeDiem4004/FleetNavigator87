@@ -156,6 +156,21 @@ const FuelCardRequestsPanel: React.FC = () => {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   
+  // Debug: log user role para verificar permissões
+  useEffect(() => {
+    if (user) {
+      console.log('[FUEL-CARD-PANEL] Usuário logado:', { 
+        name: user.name, 
+        email: user.email, 
+        role: user.role, 
+        roleNormalized: user.role?.toLowerCase(),
+        isLineHall: user.role?.toLowerCase() === 'line_hall',
+        isAdmin: user.role?.toLowerCase() === 'admin',
+        isGestorCombustivel: user.role?.toLowerCase() === 'gestor_combustivel'
+      });
+    }
+  }, [user]);
+  
   useEffect(() => {
     fetchSolicitations();
     fetchProjects();
