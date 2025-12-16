@@ -3170,7 +3170,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                   <Separator />
                   
                   {/* Seção de Controle de Status */}
-                  {(user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
+                  {(user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'gestor_combustivel' || user?.role?.toLowerCase() === 'line_hall') && (
                     <div className="bg-gray-50 p-4 rounded-lg border space-y-4">
                       <h3 className="font-semibold text-lg text-gray-900">Controle de Status</h3>
                       
