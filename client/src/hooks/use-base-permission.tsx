@@ -458,6 +458,7 @@ export const useBasePermission = (): BasePermissionHook => {
         '/line-hall-maintenance',     // Manutenção Line Hall
         '/line-hall-checklists',      // Checklists Line Hall
         '/fuel-card-requests',        // Painel de Solicitações de Cartão
+        '/fuel-cards',                // Painel de Gestão de Cartões (rota alternativa)
         '/linehaul-abastecimento',    // Formulário público de abastecimento
         '/vehicles',                  // Cadastro de veículos (necessário para Line Hall)
         '/drivers',                   // Cadastro de motoristas (necessário para Line Hall)
