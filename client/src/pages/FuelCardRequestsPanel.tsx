@@ -3446,7 +3446,13 @@ const FuelCardRequestsPanel: React.FC = () => {
                                 src={selectedSolicitation.foto_painel_path.startsWith('/') || selectedSolicitation.foto_painel_path.startsWith('http') ? selectedSolicitation.foto_painel_path : `/${selectedSolicitation.foto_painel_path}`} 
                                 alt="Foto do Painel" 
                                 className="w-full h-40 object-cover rounded-lg border border-purple-300 hover:opacity-80 transition-opacity cursor-pointer"
-                                onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.png'; (e.target as HTMLImageElement).alt = 'Imagem não disponível'; }}
+                                onError={(e) => { 
+                                  const img = e.target as HTMLImageElement;
+                                  const parent = img.parentElement;
+                                  if (parent) {
+                                    parent.innerHTML = '<div class="w-full h-40 flex items-center justify-center bg-gray-100 rounded-lg border border-gray-300 text-gray-500 text-sm">Foto não disponível</div>';
+                                  }
+                                }}
                               />
                             </a>
                           </div>
@@ -3464,7 +3470,13 @@ const FuelCardRequestsPanel: React.FC = () => {
                                 src={selectedSolicitation.foto_cartao_path.startsWith('/') || selectedSolicitation.foto_cartao_path.startsWith('http') ? selectedSolicitation.foto_cartao_path : `/${selectedSolicitation.foto_cartao_path}`} 
                                 alt="Foto do Cartão" 
                                 className="w-full h-40 object-cover rounded-lg border border-purple-300 hover:opacity-80 transition-opacity cursor-pointer"
-                                onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.png'; (e.target as HTMLImageElement).alt = 'Imagem não disponível'; }}
+                                onError={(e) => { 
+                                  const img = e.target as HTMLImageElement;
+                                  const parent = img.parentElement;
+                                  if (parent) {
+                                    parent.innerHTML = '<div class="w-full h-40 flex items-center justify-center bg-gray-100 rounded-lg border border-gray-300 text-gray-500 text-sm">Foto não disponível</div>';
+                                  }
+                                }}
                               />
                             </a>
                           </div>
