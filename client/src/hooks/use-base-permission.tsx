@@ -448,24 +448,19 @@ export const useBasePermission = (): BasePermissionHook => {
       return true;
     }
     
-    // Line Hall Role - acesso completo a todas as funcionalidades do sistema
+    // Line Hall Role - acesso EXCLUSIVO ao Line Hall e Cartão de Abastecimento
     if (user.role === 'line_hall') {
-      // Para o role line_hall (Aline Ribeiro), dar acesso completo ao sistema exceto rotas administrativas específicas
-      const restrictedRoutes = [
-        '/users',      // Página de usuários - só para admin
-        '/admin',      // Rotas de admin
-        '/admin/utils' // Utilitários de admin
+      // Rotas permitidas para o role line_hall
+      const allowedRoutes = [
+        '/line-hall-shopee',        // Página do Line Hall
+        '/fuel-card-requests',      // Painel de Solicitações de Cartão
+        '/linehaul-abastecimento'   // Formulário público de abastecimento
       ];
       
-      // Se for uma rota restrita, negar acesso
-      if (restrictedRoutes.some(restrictedRoute => route.startsWith(restrictedRoute))) {
-        console.log(`Line Hall role denied access to restricted admin route: ${route}`);
-        return false;
-      }
-      
-      // Para todas as outras rotas, conceder acesso total
-      console.log(`Line Hall role granted access to route: ${route} (role=${user.role})`);
-      return true;
+      // Verificar se a rota atual está na lista de permitidas
+      const hasAccess = allowedRoutes.some(allowedRoute => route === allowedRoute || route.startsWith(allowedRoute));
+      console.log(`Line Hall role permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      return hasAccess;
     }
     
     // Line Hall Base - permite acesso somente ao Line Hall e bloqueia outras rotas específicas

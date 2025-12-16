@@ -196,22 +196,22 @@ const SidebarSimplified: React.FC<SidebarProps> = ({ open, setOpen }) => {
   
   // Lista unificada de todos os itens de navegação com controle de roles
   const allMenuItems: NavItem[] = [
-    { name: 'Dashboard', href: '/', icon: Gauge, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_combustivel', 'gestor_equipamentos'] },
-    { name: 'Equipamentos', href: '#', icon: Package, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_equipamentos'], subItems: [
+    { name: 'Dashboard', href: '/', icon: Gauge, roles: ['admin', 'gestor_frota', 'gestor_combustivel', 'gestor_equipamentos'] },
+    { name: 'Equipamentos', href: '#', icon: Package, roles: ['admin', 'gestor_frota', 'gestor_equipamentos'], subItems: [
       { name: 'Gestão de Equipamentos', href: '/equipment', icon: Package },
       { name: 'Solicitar Equipamento', href: '/equipment/request', icon: FileText },
       { name: 'Gerenciar Solicitações', href: '/equipment/requests/admin', icon: Settings, roles: ['admin', 'gestor_equipamentos'] }
     ]},
-    { name: 'Dashboard Executivo', href: '/executive-dashboard', icon: BarChart4, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_equipamentos'] },
-    { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_combustivel'] },
-    { name: 'Veículos', href: '/vehicles', icon: Truck, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_equipamentos'] },
-    { name: 'Motoristas', href: '/drivers', icon: Users, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_equipamentos'] },
-    { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_equipamentos'] },
-    { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_equipamentos'] },
-    { name: 'Pneus', href: '/tires', icon: CircleDot, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_equipamentos'] },
+    { name: 'Dashboard Executivo', href: '/executive-dashboard', icon: BarChart4, roles: ['admin', 'gestor_frota', 'gestor_equipamentos'] },
+    { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4, roles: ['admin', 'gestor_frota', 'gestor_combustivel'] },
+    { name: 'Veículos', href: '/vehicles', icon: Truck, roles: ['admin', 'gestor_frota', 'gestor_equipamentos'] },
+    { name: 'Motoristas', href: '/drivers', icon: Users, roles: ['admin', 'gestor_frota', 'gestor_equipamentos'] },
+    { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText, roles: ['admin', 'gestor_frota', 'gestor_equipamentos'] },
+    { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench, roles: ['admin', 'gestor_frota', 'gestor_equipamentos'] },
+    { name: 'Pneus', href: '/tires', icon: CircleDot, roles: ['admin', 'gestor_frota', 'gestor_equipamentos'] },
     
     // Menu de Abastecimentos com submenu
-    { name: 'Abastecimentos', href: '#', icon: Fuel, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_combustivel'], subItems: [
+    { name: 'Abastecimentos', href: '#', icon: Fuel, roles: ['admin', 'gestor_frota', 'gestor_combustivel'], subItems: [
       { name: 'Posto Osasco V2', href: '/posto/osasco_v2', icon: Fuel },
       { name: 'Posto Alair V2', href: '/posto/alair_v2', icon: Fuel },
       { name: 'Posto Campinas V2', href: '/posto/campinas_v2', icon: Fuel },
@@ -227,17 +227,17 @@ const SidebarSimplified: React.FC<SidebarProps> = ({ open, setOpen }) => {
     ]},
     
     // Postos Externos
-    { name: 'Postos Externos', href: '#', icon: Droplets, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_combustivel'], subItems: [
+    { name: 'Postos Externos', href: '#', icon: Droplets, roles: ['admin', 'gestor_frota', 'gestor_combustivel'], subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
     ]},
     
-    // Item de menu separado para Cartão de Abastecimento
+    // Item de menu separado para Cartão de Abastecimento (line_hall tem acesso)
     { name: 'Cartão', href: '#', icon: CreditCard, roles: ['admin', 'gestor_frota', 'line_hall', 'gestor_combustivel'], subItems: [
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList },
-      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard }
+      { name: 'Sistema Pós-Pago', href: '/admin/abastecimento-pos-pago', icon: CreditCard, roles: ['admin', 'gestor_frota', 'gestor_combustivel'] }
     ]},
     
-    { name: 'Multas', href: '/fines', icon: AlertTriangle, roles: ['admin', 'gestor_frota', 'line_hall'] },
+    { name: 'Multas', href: '/fines', icon: AlertTriangle, roles: ['admin', 'gestor_frota'] },
     { name: 'Line Hall', href: '/line-hall-shopee', icon: Map, roles: ['admin', 'gestor_frota', 'line_hall'] },
     
     // Gestão de Frotas (só para gestores de frota)
@@ -248,7 +248,7 @@ const SidebarSimplified: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package, roles: ['admin', 'gestor_frota'] },
     
     // Parceiros de Guincho
-    { name: 'Parceiros de Guincho', href: '#', icon: Truck, roles: ['admin', 'gestor_frota', 'line_hall'], subItems: [
+    { name: 'Parceiros de Guincho', href: '#', icon: Truck, roles: ['admin', 'gestor_frota'], subItems: [
       { name: 'Parceiros', href: '/fleet-management/towing-partners', icon: Truck },
       { name: 'Solicitações', href: '/fleet-management/towing-partners/requests', icon: FileText },
       { name: 'Pagamentos', href: '/fleet-management/towing-partners-payments', icon: CreditCard }
@@ -261,7 +261,7 @@ const SidebarSimplified: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Segurança do Trabalho', href: '/work-safety', icon: ShieldAlert, roles: ['admin', 'gestor_frota'] },
     
     // Submenu para Bases
-    { name: 'Bases', href: '#', icon: Warehouse, roles: ['admin', 'gestor_frota', 'line_hall'], subItems: baseItems },
+    { name: 'Bases', href: '#', icon: Warehouse, roles: ['admin', 'gestor_frota'], subItems: baseItems },
     { name: 'Usuários', href: '/users', icon: Users, roles: ['admin'] },
   ];
   
