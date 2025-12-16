@@ -59,3 +59,39 @@ The system is built with a React/TypeScript frontend and a Node.js/Express backe
 - **TypeScript**: For type safety.
 - **ESLint/Prettier**: For code quality and formatting.
 - **jsPDF**: For PDF generation.
+
+## Line Haul Configuration
+
+### Line Haul Users (role: line_hall)
+Os seguintes usuários têm acesso ao sistema Line Haul com as credenciais:
+- **Aline Ribeiro**: aline.ribeiro@muricitransportes.com.br (senha: Aline@2025)
+- **Nayara**: nayara@muricitransportes.com.br (senha: Nayara@2025)
+- **Ingrid**: ingrid@muricitransportes.com.br (senha: Ingrid@2025)
+- **Suellen**: suellen@muricitransportes.com.br (senha: Suellen@2025)
+
+### Line Haul Permissions
+Usuários com role `line_hall` têm acesso às seguintes rotas:
+- `/line-haul` - Página principal do Line Haul (dashboard completo)
+- `/line-hall-shopee` - Página secundária
+- `/line-hall-fuel-requests` - Solicitações de combustível
+- `/line-hall-maintenance` - Gerenciamento de manutenção
+- `/line-hall-checklists` - Checklists de motoristas
+- `/fuel-card-requests` - Painel de solicitações de cartão
+- `/fuel-cards` - Gestão de cartões de combustível
+- `/linehaul-abastecimento` - Formulário público de abastecimento
+- `/vehicles` - Cadastro de veículos
+- `/drivers` - Cadastro de motoristas
+- `/stopped-vehicles` - Veículos parados
+
+### Line Haul Login Redirect
+Usuários com role `line_hall` são automaticamente redirecionados para `/line-haul` após o login (configurado em `client/src/pages/SignIn.tsx`).
+
+### Database Tables for Line Haul
+- `solicitacoes_fuel_card` - Tabela principal para solicitações (origem_tipo='line_hall')
+- `linehall_fuel_card_requests` - Tabela legada
+
+### Important Files
+- `client/src/pages/LineHaulPage.tsx` - Página principal do Line Haul
+- `client/src/pages/FuelCardRequestsPanel.tsx` - Painel de gestão de cartões
+- `client/src/hooks/use-base-permission.tsx` - Controle de permissões (linhas 454-474)
+- `client/src/pages/SignIn.tsx` - Lógica de redirecionamento após login
