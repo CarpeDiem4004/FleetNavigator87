@@ -208,6 +208,15 @@ export default function LineHaulFuelRequest() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     
+    if (!form.kmVeiculo || form.kmVeiculo.trim() === '' || parseInt(form.kmVeiculo) <= 0) {
+      toast({
+        title: "KM obrigatório",
+        description: "Por favor, informe a quilometragem do veículo.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (!fotoPainel) {
       toast({
         title: "Foto obrigatória",
