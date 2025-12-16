@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -263,6 +264,7 @@ const ROUTE_CODES = [
 const LineHaulPage = () => {
   const { toast } = useToast();
   const { user, logout } = useAuth();
+  const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -1833,7 +1835,7 @@ const LineHaulPage = () => {
                   ? 'bg-orange-500 hover:bg-orange-600 animate-pulse' 
                   : 'bg-blue-500 hover:bg-blue-600'
               }`}
-              onClick={() => window.open('/fuel-cards?tab=linehaul&mode=linehaul', '_blank')}
+              onClick={() => setLocation('/fuel-cards?tab=linehaul&mode=linehaul')}
             >
               <Settings className="h-4 w-4 mr-2" />
               Solicitações de Cartão
