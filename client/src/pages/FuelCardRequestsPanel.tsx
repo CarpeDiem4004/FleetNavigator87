@@ -899,6 +899,22 @@ const FuelCardRequestsPanel: React.FC = () => {
         // Limpar o motivo após salvar
         setMotivoNegacao('');
         
+        // Navegar automaticamente para a aba correspondente após atualizar
+        const isLineHallRequest = selectedSolicitation.origem_tipo === 'line_hall';
+        if (isLineHallRequest) {
+          if (editedStatus === 'Recarga Efetuada') {
+            setActiveTab('linehaul_atendidas');
+          } else if (editedStatus === 'Negado') {
+            setActiveTab('linehaul_negadas');
+          }
+        } else {
+          if (editedStatus === 'Recarga Efetuada') {
+            setActiveTab('atendidas');
+          } else if (editedStatus === 'Negado') {
+            setActiveTab('negadas');
+          }
+        }
+        
         toast({
           title: 'Sucesso',
           description: 'Status da solicitação atualizado com sucesso'
