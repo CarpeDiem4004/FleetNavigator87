@@ -452,12 +452,16 @@ export const useBasePermission = (): BasePermissionHook => {
     if (user.role === 'line_hall') {
       // Rotas permitidas para o role line_hall
       const allowedRoutes = [
-        '/line-hall-shopee',          // Página principal do Line Hall
+        '/line-haul',                 // Página principal do Line Haul (completa)
+        '/line-hall-shopee',          // Página secundária do Line Hall
         '/line-hall-fuel-requests',   // Solicitações de combustível Line Hall
+        '/line-hall-maintenance',     // Manutenção Line Hall
+        '/line-hall-checklists',      // Checklists Line Hall
         '/fuel-card-requests',        // Painel de Solicitações de Cartão
         '/linehaul-abastecimento',    // Formulário público de abastecimento
         '/vehicles',                  // Cadastro de veículos (necessário para Line Hall)
         '/drivers',                   // Cadastro de motoristas (necessário para Line Hall)
+        '/stopped-vehicles',          // Veículos parados
         '/line-hall'                  // Rotas do Line Hall
       ];
       
