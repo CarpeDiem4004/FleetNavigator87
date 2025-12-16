@@ -31,6 +31,8 @@ export default function SignIn({ oficina = false }: SignInProps) {
       // Se for usuário de oficina, redirecionar para dashboard da oficina
       if (user.role === 'oficina') {
         navigate('/oficina/dashboard');
+      } else if (user.role === 'line_hall') {
+        navigate('/line-hall-shopee');
       } else {
         navigate('/');
       }
@@ -139,6 +141,8 @@ export default function SignIn({ oficina = false }: SignInProps) {
           // Redirecionar com base no tipo de usuário
           if (user.role === 'oficina') {
             navigate('/oficina/dashboard');
+          } else if (user.role === 'line_hall') {
+            navigate('/line-hall-shopee');
           } else if (user.basename === "Gestão de Frotas") {
             navigate('/fleet-management');
           } else {
@@ -175,6 +179,8 @@ export default function SignIn({ oficina = false }: SignInProps) {
           // Redirecionar com base no tipo de usuário
           if (user.role === 'oficina') {
             navigate('/oficina/dashboard');
+          } else if (user.role === 'line_hall') {
+            navigate('/line-hall-shopee');
           } else if (user.basename === "Gestão de Frotas") {
             navigate('/fleet-management');
           } else {
