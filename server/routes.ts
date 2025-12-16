@@ -7111,7 +7111,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         provedor_cartao,
         incluir_arla,
         data_solicitacao,
-        horario_solicitacao
+        horario_solicitacao,
+        placa_cartao
       } = req.body;
 
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
@@ -7294,11 +7295,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           valor_solicitado, provedor_cartao, status, data_solicitacao,
           origem_tipo, rota_origem, rota_destino, km_total, valor_calculado,
           horario_abastecimento, calculo_detalhes, observacoes, veiculo_modelo,
-          km_veiculo, foto_painel_path, foto_cartao_path
+          km_veiculo, foto_painel_path, foto_cartao_path, placa_cartao
         ) VALUES (
           $1, $2, $3, $4, $5, $6, 'Pendente', $7,
           'line_hall', $8, $9, $10, $11, $12, $13, $14, $15,
-          $16, $17, $18
+          $16, $17, $18, $19
         )
         RETURNING *
       `;
@@ -7323,7 +7324,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         vehicle.modelo || '',
         parseInt(km_veiculo) || 0,
         fotoPainelPath,
-        fotoCartaoPath
+        fotoCartaoPath,
+        placa_cartao || null
       ]);
 
       console.log('[LINEHAUL-PUBLIC-REQUEST] Solicitação criada:', result.rows[0].id);

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Fuel, Camera, Check, Truck, MapPin, Phone, User, Clock, Package, Droplets, Gauge } from "lucide-react";
+import { Loader2, Fuel, Camera, Check, Truck, MapPin, Phone, User, Clock, Package, Droplets, Gauge, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface VehiclePlate {
@@ -84,6 +84,7 @@ export default function LineHaulFuelRequest() {
     operacao: "mercado_livre" as "mercado_livre" | "shopee",
     provedorCartao: "veloe" as "veloe" | "ticket",
     arla: false,
+    placaCartao: "",
   });
 
   const [fotoPainel, setFotoPainel] = useState<File | null>(null);
@@ -246,6 +247,9 @@ export default function LineHaulFuelRequest() {
       formData.append("horario_solicitacao", new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
       formData.append("foto_painel", fotoPainel);
       formData.append("foto_cartao", fotoCartao);
+      if (form.placaCartao) {
+        formData.append("placa_cartao", form.placaCartao);
+      }
 
       const response = await fetch("/api/public/linehaul/fuel-request", {
         method: "POST",
@@ -715,6 +719,25 @@ export default function LineHaulFuelRequest() {
                     {fotoCartao && <Check className="h-6 w-6 text-green-600" />}
                   </div>
                 </div>
+              </div>
+
+              {/* Campo para Placa do Cartão que vai receber o saldo */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-blue-600 font-semibold">
+                  <CreditCard className="h-4 w-4" />
+                  Placa do Cartão (Recebe o Saldo)
+                </Label>
+                <Input
+                  type="text"
+                  placeholder="Digite a placa do cartão..."
+                  value={form.placaCartao}
+                  onChange={(e) => setForm({ ...form, placaCartao: e.target.value.toUpperCase() })}
+                  className="uppercase"
+                  data-testid="input-placa-cartao"
+                />
+                <p className="text-xs text-gray-500">
+                  Informe a placa do cartão que receberá o crédito (se diferente da placa do veículo)
+                </p>
               </div>
 
               <div className="bg-gray-50 p-4 rounded-lg border text-center">
