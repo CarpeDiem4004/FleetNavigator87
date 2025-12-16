@@ -448,8 +448,8 @@ export const useBasePermission = (): BasePermissionHook => {
       return true;
     }
     
-    // Line Hall Role - acesso ao Line Hall e operações relacionadas
-    if (user.role === 'line_hall') {
+    // Line Hall Role - acesso ao Line Hall e operações relacionadas (case-insensitive)
+    if (user.role?.toLowerCase() === 'line_hall') {
       // Rotas permitidas para o role line_hall
       const allowedRoutes = [
         '/line-haul',                 // Página principal do Line Haul (completa)
