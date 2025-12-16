@@ -1968,7 +1968,7 @@ const FuelCardRequestsPanel: React.FC = () => {
               </TabsList>
             ) : (
               /* Modo normal - todas as abas */
-              <TabsList className="grid w-auto grid-cols-4">
+              <TabsList className="grid w-auto grid-cols-7">
                 <TabsTrigger value="pendentes" className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
                   Pendentes ({getPendingSolicitations().length})
@@ -1989,6 +1989,18 @@ const FuelCardRequestsPanel: React.FC = () => {
                   {hasNewLineHallRequests && (
                     <div className="ml-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
                   )}
+                </TabsTrigger>
+                <TabsTrigger value="linehaul_pendentes" className="flex items-center gap-2 bg-orange-50">
+                  <Clock className="h-4 w-4 text-orange-600" />
+                  LH Pend ({lineHaulPendentes.length})
+                </TabsTrigger>
+                <TabsTrigger value="linehaul_atendidas" className="flex items-center gap-2 bg-green-50">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  LH Atend ({lineHaulAtendidas.length})
+                </TabsTrigger>
+                <TabsTrigger value="linehaul_negadas" className="flex items-center gap-2 bg-red-50">
+                  <XCircle className="h-4 w-4 text-red-600" />
+                  LH Neg ({lineHaulNegadas.length})
                 </TabsTrigger>
               </TabsList>
             )}
