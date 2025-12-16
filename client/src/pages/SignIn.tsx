@@ -138,10 +138,11 @@ export default function SignIn({ oficina = false }: SignInProps) {
             description: `Bem-vindo, ${user?.name || email}!`,
           });
           
-          // Redirecionar com base no tipo de usuário
-          if (user.role === 'oficina') {
+          // Redirecionar com base no tipo de usuário (case-insensitive)
+          const userRole = user.role?.toLowerCase();
+          if (userRole === 'oficina') {
             navigate('/oficina/dashboard');
-          } else if (user.role === 'line_hall') {
+          } else if (userRole === 'line_hall') {
             navigate('/line-haul');
           } else if (user.basename === "Gestão de Frotas") {
             navigate('/fleet-management');
@@ -176,10 +177,11 @@ export default function SignIn({ oficina = false }: SignInProps) {
             description: `Bem-vindo, ${user?.name || email}!`,
           });
           
-          // Redirecionar com base no tipo de usuário
-          if (user.role === 'oficina') {
+          // Redirecionar com base no tipo de usuário (case-insensitive)
+          const userRole2 = user.role?.toLowerCase();
+          if (userRole2 === 'oficina') {
             navigate('/oficina/dashboard');
-          } else if (user.role === 'line_hall') {
+          } else if (userRole2 === 'line_hall') {
             navigate('/line-haul');
           } else if (user.basename === "Gestão de Frotas") {
             navigate('/fleet-management');
