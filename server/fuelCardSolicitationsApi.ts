@@ -615,36 +615,30 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
       });
     }
     
-    // Primeiro, determinar se é solicitação tradicional, Line Hall ou GP Base
-    let isLineHall = origem_tipo === 'line_hall';
+    // IMPORTANTE: Todas as solicitações com origem_tipo = 'line_hall' estão em solicitacoes_fuel_card
+    // A tabela linehall_fuel_card_requests é legada e não deve ser usada
     let isGPBase = origem_tipo === 'base_system';
+    let isTradicional = !isGPBase; // Line Hall está em solicitacoes_fuel_card com origem_tipo = 'line_hall'
     
-    if (!isLineHall && !isGPBase) {
-      // Tentar determinar pela existência na tabela tradicional
+    if (!isGPBase) {
+      // Verificar se existe na tabela principal (inclui Line Hall via origem_tipo)
       const checkTradicionalQuery = `SELECT * FROM solicitacoes_fuel_card WHERE id = $1`;
       const checkTradicionalResult = await pool.query(checkTradicionalQuery, [id]);
       
       if (checkTradicionalResult.rowCount === 0) {
-        // Verificar se existe na tabela Line Hall
-        const checkLineHallQuery = `SELECT * FROM linehall_fuel_card_requests WHERE id = $1`;
-        const checkLineHallResult = await pool.query(checkLineHallQuery, [id]);
+        // Verificar se existe na tabela GP Base (fuel_card_requests)
+        const checkGPBaseQuery = `SELECT * FROM fuel_card_requests WHERE id = $1`;
+        const checkGPBaseResult = await pool.query(checkGPBaseQuery, [id]);
         
-        if (checkLineHallResult.rowCount === 0) {
-          // Verificar se existe na tabela GP Base (fuel_card_requests)
-          const checkGPBaseQuery = `SELECT * FROM fuel_card_requests WHERE id = $1`;
-          const checkGPBaseResult = await pool.query(checkGPBaseQuery, [id]);
-          
-          if (checkGPBaseResult.rowCount === 0) {
-            return res.status(404).json({
-              success: false,
-              message: 'Solicitação não encontrada'
-            });
-          }
-          
-          isGPBase = true;
-        } else {
-          isLineHall = true;
+        if (checkGPBaseResult.rowCount === 0) {
+          return res.status(404).json({
+            success: false,
+            message: 'Solicitação não encontrada'
+          });
         }
+        
+        isGPBase = true;
+        isTradicional = false;
       }
     }
     
@@ -653,46 +647,9 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
     let tableName;
     let statusField;
     
-    console.log(`📊 [UPDATE-STATUS] Tipo detectado - isLineHall: ${isLineHall}, isGPBase: ${isGPBase}`);
+    console.log(`📊 [UPDATE-STATUS] Tipo detectado - isTradicional: ${isTradicional}, isGPBase: ${isGPBase}, origem_tipo: ${origem_tipo}`);
     
-    if (isLineHall) {
-      // Lógica para solicitações Line Hall
-      tableName = 'linehall_fuel_card_requests';
-      console.log(`🔶 [UPDATE-STATUS] Usando tabela Line Hall`);
-      
-      // Mapear status para Line Hall
-      const lineHallStatus = mapStatusToLineHall(status);
-      
-      if (lineHallStatus === 'aprovada') {
-        query = `
-          UPDATE ${tableName} 
-          SET 
-            status = $1, 
-            operador_aprovacao = $2, 
-            updated_at = NOW()
-          WHERE id = $3
-          RETURNING *
-        `;
-        values = [lineHallStatus, user?.name || 'Sistema', id];
-      } else {
-        // Para status negado, usar motivo_negacao nas observações do operador
-        const observacoes = lineHallStatus === 'rejeitada' && motivo_negacao 
-          ? motivo_negacao 
-          : (req.body.observacoes || '');
-        
-        query = `
-          UPDATE ${tableName} 
-          SET 
-            status = $1,
-            operador_aprovacao = $2,
-            observacoes_operador = $3,
-            updated_at = NOW()
-          WHERE id = $4
-          RETURNING *
-        `;
-        values = [lineHallStatus, user?.name || 'Sistema', observacoes, id];
-      }
-    } else if (isGPBase) {
+    if (isGPBase) {
       // Lógica para solicitações GP Base (fuel_card_requests)
       tableName = 'fuel_card_requests';
       console.log(`🔷 [UPDATE-STATUS] Usando tabela GP Base`);
