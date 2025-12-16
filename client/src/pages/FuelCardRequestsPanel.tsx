@@ -3437,15 +3437,16 @@ const FuelCardRequestsPanel: React.FC = () => {
                           <div className="space-y-2">
                             <p className="text-sm font-medium text-purple-700">Foto do Painel:</p>
                             <a 
-                              href={selectedSolicitation.foto_painel_path} 
+                              href={selectedSolicitation.foto_painel_path.startsWith('/') || selectedSolicitation.foto_painel_path.startsWith('http') ? selectedSolicitation.foto_painel_path : `/${selectedSolicitation.foto_painel_path}`} 
                               target="_blank" 
                               rel="noopener noreferrer"
                               className="block"
                             >
                               <img 
-                                src={selectedSolicitation.foto_painel_path} 
+                                src={selectedSolicitation.foto_painel_path.startsWith('/') || selectedSolicitation.foto_painel_path.startsWith('http') ? selectedSolicitation.foto_painel_path : `/${selectedSolicitation.foto_painel_path}`} 
                                 alt="Foto do Painel" 
                                 className="w-full h-40 object-cover rounded-lg border border-purple-300 hover:opacity-80 transition-opacity cursor-pointer"
+                                onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.png'; (e.target as HTMLImageElement).alt = 'Imagem não disponível'; }}
                               />
                             </a>
                           </div>
@@ -3454,15 +3455,16 @@ const FuelCardRequestsPanel: React.FC = () => {
                           <div className="space-y-2">
                             <p className="text-sm font-medium text-purple-700">Foto do Cartão:</p>
                             <a 
-                              href={selectedSolicitation.foto_cartao_path} 
+                              href={selectedSolicitation.foto_cartao_path.startsWith('/') || selectedSolicitation.foto_cartao_path.startsWith('http') ? selectedSolicitation.foto_cartao_path : `/${selectedSolicitation.foto_cartao_path}`} 
                               target="_blank" 
                               rel="noopener noreferrer"
                               className="block"
                             >
                               <img 
-                                src={selectedSolicitation.foto_cartao_path} 
+                                src={selectedSolicitation.foto_cartao_path.startsWith('/') || selectedSolicitation.foto_cartao_path.startsWith('http') ? selectedSolicitation.foto_cartao_path : `/${selectedSolicitation.foto_cartao_path}`} 
                                 alt="Foto do Cartão" 
                                 className="w-full h-40 object-cover rounded-lg border border-purple-300 hover:opacity-80 transition-opacity cursor-pointer"
+                                onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.png'; (e.target as HTMLImageElement).alt = 'Imagem não disponível'; }}
                               />
                             </a>
                           </div>
