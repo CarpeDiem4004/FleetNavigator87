@@ -1025,7 +1025,7 @@ const FuelCardRequestsPanel: React.FC = () => {
   };
 
   // Função para exportar solicitações Veloe no formato "Carga Complementar Massiva"
-  const handleExportVeloe = async () => {
+  const handleExportVeloe = async (onlyLineHall: boolean = false) => {
     if (!startDate || !endDate) {
       toast({
         title: 'Erro de validação',
@@ -1036,11 +1036,12 @@ const FuelCardRequestsPanel: React.FC = () => {
     }
 
     try {
-      console.log('[EXPORT-VELOE] Iniciando exportação Veloe...');
+      console.log('[EXPORT-VELOE] Iniciando exportação Veloe...', { onlyLineHall });
       
       const queryParams = new URLSearchParams({
         data_inicio: startDate,
-        data_fim: endDate
+        data_fim: endDate,
+        ...(onlyLineHall && { origem: 'line_hall' })
       });
 
       const response = await apiRequest('GET', `/api/fuel-card-solicitations/export-veloe?${queryParams}`);
@@ -1050,15 +1051,15 @@ const FuelCardRequestsPanel: React.FC = () => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `veloe_carga_complementar_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+        a.download = `veloe_${onlyLineHall ? 'line_hall_' : ''}carga_complementar_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
         
         toast({
-          title: 'Exportação Veloe concluída',
-          description: 'Planilha Veloe gerada com sucesso no formato "Carga Complementar Massiva"',
+          title: `Exportação Veloe ${onlyLineHall ? 'Line Haul ' : ''}concluída`,
+          description: `Planilha Veloe ${onlyLineHall ? 'Line Haul ' : ''}gerada com sucesso`,
         });
       } else {
         const errorText = await response.text();
@@ -1083,7 +1084,7 @@ const FuelCardRequestsPanel: React.FC = () => {
   };
 
   // Função para exportar solicitações Ticket (pendentes filtradas por data)
-  const handleExportTicket = async () => {
+  const handleExportTicket = async (onlyLineHall: boolean = false) => {
     if (!startDate || !endDate) {
       toast({
         title: 'Erro de validação',
@@ -1094,11 +1095,12 @@ const FuelCardRequestsPanel: React.FC = () => {
     }
 
     try {
-      console.log('[EXPORT-TICKET] Iniciando exportação Ticket...');
+      console.log('[EXPORT-TICKET] Iniciando exportação Ticket...', { onlyLineHall });
       
       const queryParams = new URLSearchParams({
         data_inicio: startDate,
-        data_fim: endDate
+        data_fim: endDate,
+        ...(onlyLineHall && { origem: 'line_hall' })
       });
 
       const response = await apiRequest('GET', `/api/fuel-card-solicitations/export-ticket?${queryParams}`);
@@ -1108,15 +1110,15 @@ const FuelCardRequestsPanel: React.FC = () => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `ticket_recarga_${startDate}_${endDate}.xlsx`;
+        a.download = `ticket_${onlyLineHall ? 'line_hall_' : ''}recarga_${startDate}_${endDate}.xlsx`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
         
         toast({
-          title: 'Exportação Ticket concluída',
-          description: `Planilha Ticket gerada com sucesso (${startDate} a ${endDate})`,
+          title: `Exportação Ticket ${onlyLineHall ? 'Line Haul ' : ''}concluída`,
+          description: `Planilha Ticket ${onlyLineHall ? 'Line Haul ' : ''}gerada com sucesso`,
         });
       } else {
         const errorData = await response.json();
@@ -1704,25 +1706,47 @@ const FuelCardRequestsPanel: React.FC = () => {
             </Button>
 
             <Button 
-              onClick={handleExportVeloe} 
+              onClick={() => handleExportVeloe(false)} 
               variant="outline" 
               className="flex items-center gap-2 bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
               disabled={!startDate || !endDate}
               data-testid="button-export-veloe"
             >
               <Download className="h-4 w-4" />
-              Exportar Veloe
+              Veloe (Todos)
             </Button>
 
             <Button 
-              onClick={handleExportTicket} 
+              onClick={() => handleExportVeloe(true)} 
+              variant="outline" 
+              className="flex items-center gap-2 bg-emerald-50 border-emerald-400 text-emerald-700 hover:bg-emerald-100"
+              disabled={!startDate || !endDate}
+              data-testid="button-export-veloe-linehall"
+            >
+              <Download className="h-4 w-4" />
+              Veloe Line Haul
+            </Button>
+
+            <Button 
+              onClick={() => handleExportTicket(false)} 
               variant="outline" 
               className="flex items-center gap-2 bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100"
               disabled={!startDate || !endDate}
               data-testid="button-export-ticket"
             >
               <Download className="h-4 w-4" />
-              Exportar Ticket
+              Ticket (Todos)
+            </Button>
+
+            <Button 
+              onClick={() => handleExportTicket(true)} 
+              variant="outline" 
+              className="flex items-center gap-2 bg-amber-50 border-amber-400 text-amber-700 hover:bg-amber-100"
+              disabled={!startDate || !endDate}
+              data-testid="button-export-ticket-linehall"
+            >
+              <Download className="h-4 w-4" />
+              Ticket Line Haul
             </Button>
           </div>
         </div>

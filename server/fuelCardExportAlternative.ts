@@ -206,15 +206,21 @@ export async function exportFuelCardSolicitationsToCSV(req: Request, res: Respon
  */
 export async function exportVeloeToExcel(req: Request, res: Response) {
   try {
-    const { data_inicio, data_fim } = req.query;
+    const { data_inicio, data_fim, origem } = req.query;
     
     console.log('[EXPORT-VELOE] Iniciando exportação Veloe');
-    console.log('[EXPORT-VELOE] Filtros:', { data_inicio, data_fim });
+    console.log('[EXPORT-VELOE] Filtros:', { data_inicio, data_fim, origem });
 
     // Construir query com filtros de data
     // Buscar apenas solicitações PENDENTES para realizar as recargas
     let whereClause = `WHERE LOWER(provedor_cartao) LIKE '%veloe%' AND LOWER(status) = 'pendente'`;
     const queryParams: any[] = [];
+    
+    // Filtro por origem (line_hall, etc.)
+    if (origem) {
+      queryParams.push(String(origem).toLowerCase());
+      whereClause += ` AND LOWER(origem_tipo) = $${queryParams.length}`;
+    }
     
     if (data_inicio) {
       queryParams.push(data_inicio);
@@ -338,14 +344,20 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
 // Exportação Ticket - formato simples com PLACA e VALOR
 export async function exportTicketCards(req: Request, res: Response) {
   try {
-    const { data_inicio, data_fim } = req.query;
+    const { data_inicio, data_fim, origem } = req.query;
     
     console.log('[EXPORT-TICKET] Iniciando exportação Ticket');
-    console.log('[EXPORT-TICKET] Filtros:', { data_inicio, data_fim });
+    console.log('[EXPORT-TICKET] Filtros:', { data_inicio, data_fim, origem });
 
     // Construir query com filtros de data (usando data_uso como referência)
     let whereClause = `WHERE LOWER(provedor_cartao) LIKE '%ticket%' AND LOWER(status) = 'pendente'`;
     const queryParams: any[] = [];
+    
+    // Filtro por origem (line_hall, etc.)
+    if (origem) {
+      queryParams.push(String(origem).toLowerCase());
+      whereClause += ` AND LOWER(origem_tipo) = $${queryParams.length}`;
+    }
     
     if (data_inicio) {
       queryParams.push(data_inicio);
