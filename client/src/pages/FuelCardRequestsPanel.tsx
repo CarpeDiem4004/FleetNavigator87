@@ -2954,9 +2954,21 @@ const FuelCardRequestsPanel: React.FC = () => {
 
                         {/* Operação e Base */}
                         <div className="lg:col-span-2">
-                          <Badge variant="outline" className="bg-blue-100 text-blue-800 mb-1">
-                            Line Haul
-                          </Badge>
+                          <div className="flex flex-wrap gap-1 mb-1">
+                            <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                              Line Haul
+                            </Badge>
+                            {solicitacao.provedor_cartao && (
+                              <Badge 
+                                variant="outline" 
+                                className={solicitacao.provedor_cartao?.toLowerCase().includes('veloe') 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-orange-100 text-orange-800 border-orange-300'}
+                              >
+                                {solicitacao.provedor_cartao?.toLowerCase().includes('veloe') ? 'Veloe' : 'Ticket'}
+                              </Badge>
+                            )}
+                          </div>
                           <p className="text-xs text-gray-500 truncate">{solicitacao.base || '-'}</p>
                           {solicitacao.veiculo_modelo && (
                             <p className="text-xs text-gray-600">{solicitacao.veiculo_modelo}</p>
@@ -3102,7 +3114,14 @@ const FuelCardRequestsPanel: React.FC = () => {
                         )}
                       </div>
                       <div className="lg:col-span-2">
-                        <Badge variant="outline" className="bg-blue-100 text-blue-800 mb-1">Line Haul</Badge>
+                        <div className="flex flex-wrap gap-1 mb-1">
+                          <Badge variant="outline" className="bg-blue-100 text-blue-800">Line Haul</Badge>
+                          {solicitacao.provedor_cartao && (
+                            <Badge variant="outline" className={solicitacao.provedor_cartao?.toLowerCase().includes('veloe') ? 'bg-green-100 text-green-800 border-green-300' : 'bg-orange-100 text-orange-800 border-orange-300'}>
+                              {solicitacao.provedor_cartao?.toLowerCase().includes('veloe') ? 'Veloe' : 'Ticket'}
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-xs text-gray-500 truncate">{solicitacao.veiculo_modelo || '-'}</p>
                       </div>
                       <div className="lg:col-span-2">
@@ -3189,7 +3208,14 @@ const FuelCardRequestsPanel: React.FC = () => {
                         <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_calculado || solicitacao.valor_solicitado)} - {solicitacao.km_total || '-'} km</p>
                       </div>
                       <div className="lg:col-span-2">
-                        <Badge variant="outline" className="bg-green-100 text-green-800 mb-1">Atendida</Badge>
+                        <div className="flex flex-wrap gap-1 mb-1">
+                          <Badge variant="outline" className="bg-green-100 text-green-800">Atendida</Badge>
+                          {solicitacao.provedor_cartao && (
+                            <Badge variant="outline" className={solicitacao.provedor_cartao?.toLowerCase().includes('veloe') ? 'bg-green-100 text-green-800 border-green-300' : 'bg-orange-100 text-orange-800 border-orange-300'}>
+                              {solicitacao.provedor_cartao?.toLowerCase().includes('veloe') ? 'Veloe' : 'Ticket'}
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-xs text-gray-500 truncate">{solicitacao.veiculo_modelo || '-'}</p>
                       </div>
                       <div className="lg:col-span-2">
@@ -3272,7 +3298,14 @@ const FuelCardRequestsPanel: React.FC = () => {
                         <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_calculado || solicitacao.valor_solicitado)} - {solicitacao.km_total || '-'} km</p>
                       </div>
                       <div className="lg:col-span-2">
-                        <Badge variant="outline" className="bg-red-100 text-red-800 mb-1">Negada</Badge>
+                        <div className="flex flex-wrap gap-1 mb-1">
+                          <Badge variant="outline" className="bg-red-100 text-red-800">Negada</Badge>
+                          {solicitacao.provedor_cartao && (
+                            <Badge variant="outline" className={solicitacao.provedor_cartao?.toLowerCase().includes('veloe') ? 'bg-green-100 text-green-800 border-green-300' : 'bg-orange-100 text-orange-800 border-orange-300'}>
+                              {solicitacao.provedor_cartao?.toLowerCase().includes('veloe') ? 'Veloe' : 'Ticket'}
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-xs text-gray-500 truncate">{solicitacao.veiculo_modelo || '-'}</p>
                       </div>
                       <div className="lg:col-span-2">
