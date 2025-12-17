@@ -511,8 +511,16 @@ const FuelCardRequestsPanel: React.FC = () => {
       });
     }
     
+    // Aplicar filtro de horário de abastecimento se definido
+    if (horarioFilter !== 'all') {
+      filtered = filtered.filter(s => {
+        if (!s.horario_abastecimento) return false;
+        return s.horario_abastecimento === horarioFilter;
+      });
+    }
+    
     return sortByCreatedAt(filtered);
-  }, [solicitations, dateFilter, fuelDateFilter]);
+  }, [solicitations, dateFilter, fuelDateFilter, horarioFilter]);
 
   // Filtros Line Haul por status
   const lineHaulPendentes = useMemo(() => 
