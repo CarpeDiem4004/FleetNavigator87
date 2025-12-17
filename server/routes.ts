@@ -7217,7 +7217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Buscar veículo para obter modelo e cartão (tabela vehicles)
       const vehicleQuery = `
-        SELECT id, plate as placa, model as modelo, fuel_card as cartao_abastecimento, status
+        SELECT id, plate as placa, model as modelo, cartao_abastecimento, status
         FROM vehicles 
         WHERE UPPER(REPLACE(plate, ' ', '')) = $1
         LIMIT 1
