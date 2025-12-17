@@ -7116,7 +7116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           AND plate != ''
           AND status != 'inativo'
         ORDER BY plate
-        LIMIT 500
+        LIMIT 5000
       `;
       const result = await pool.query(query);
       
