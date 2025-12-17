@@ -162,13 +162,13 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           s.litros_solicitados,
           TO_CHAR(s.data_uso, 'YYYY-MM-DD') as data_uso,
           s.turno,
-          -- Campos específicos do Line Hall (NULL para solicitações tradicionais)
-          NULL::varchar as veiculo_modelo,
-          NULL::varchar as rota_origem,
-          NULL::varchar as rota_destino,
-          s.km as km_total,
-          NULL::varchar as telefone_motorista,
-          NULL::varchar as horario_abastecimento,
+          -- Campos específicos do Line Hall (incluir dados reais se existirem)
+          s.veiculo_modelo,
+          s.rota_origem,
+          s.rota_destino,
+          COALESCE(s.km_total, s.km) as km_total,
+          s.telefone_celular as telefone_motorista,
+          s.horario_abastecimento,
           COALESCE(s.valor_solicitado, 0) as valor_calculado,
           NULL::json as calculo_detalhes,
           -- Incluir cartão combustível do veículo
