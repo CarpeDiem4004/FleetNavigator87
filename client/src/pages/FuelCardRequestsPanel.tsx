@@ -1545,6 +1545,47 @@ const FuelCardRequestsPanel: React.FC = () => {
     }).format(value);
   };
 
+  // Função para detectar placas repetidas no mesmo dia
+  const getRepeatedPlacasToday = (solicitacoes: any[]) => {
+    const today = new Date();
+    const todayStr = format(today, 'yyyy-MM-dd');
+    
+    // Agrupar por placa e data
+    const placasByDate: Record<string, number> = {};
+    
+    solicitacoes.forEach(sol => {
+      const dataStr = sol.data_solicitacao || sol.created_at;
+      if (!dataStr) return;
+      
+      try {
+        const solDate = new Date(dataStr);
+        const solDateStr = format(solDate, 'yyyy-MM-dd');
+        
+        // Só conta se for do dia de hoje
+        if (solDateStr === todayStr) {
+          const key = `${sol.placa}_${solDateStr}`;
+          placasByDate[key] = (placasByDate[key] || 0) + 1;
+        }
+      } catch (e) {
+        // Ignora erros de parsing
+      }
+    });
+    
+    // Retorna placas que aparecem mais de uma vez hoje
+    const repeated = new Set<string>();
+    Object.entries(placasByDate).forEach(([key, count]) => {
+      if (count > 1) {
+        const placa = key.split('_')[0];
+        repeated.add(placa);
+      }
+    });
+    
+    return repeated;
+  };
+
+  // Detectar placas repetidas Line Haul pendentes
+  const repeatedPlacasLineHaul = getRepeatedPlacasToday(lineHaulPendentes);
+
   // Funções para calcular estatísticas
   // Get filtered bases based on selected project
   const getFilteredBases = () => {
@@ -3143,7 +3184,15 @@ const FuelCardRequestsPanel: React.FC = () => {
                   <div key={`${solicitacao.id}-pending-${index}`} className="p-4 rounded-lg border bg-orange-50 border-orange-200 border-l-4 border-l-orange-500">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
                       <div className="lg:col-span-3">
-                        <p className="font-medium text-lg">{solicitacao.placa}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-lg">{solicitacao.placa}</p>
+                          {repeatedPlacasLineHaul.has(solicitacao.placa) && (
+                            <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300 animate-pulse">
+                              <AlertCircle className="w-3 h-3 mr-1" />
+                              Repetida Hoje
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-sm text-gray-600">{solicitacao.motorista || 'Motorista não informado'}</p>
                         <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_calculado || solicitacao.valor_solicitado)} - {solicitacao.km_total || '-'} km</p>
                         {solicitacao.rota_origem && solicitacao.rota_destino && (
