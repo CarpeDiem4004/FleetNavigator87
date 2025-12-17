@@ -375,11 +375,10 @@ const FuelCardRequestsPanel: React.FC = () => {
       
       // Filtro por data de solicitação (convertendo para timezone do Brasil)
       if (dateFilter) {
-        // Usar toLocaleDateString para obter a data no fuso horário de Brasília
-        const solTimestamp = new Date(sol.data_solicitacao);
-        const brasilDateStr = solTimestamp.toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+        // Extrair apenas a parte da data (YYYY-MM-DD) da string de solicitação
+        const solDateStr = sol.data_solicitacao.split('T')[0];
         
-        if (brasilDateStr !== dateFilter) {
+        if (solDateStr !== dateFilter) {
           return false;
         }
       }
@@ -482,10 +481,9 @@ const FuelCardRequestsPanel: React.FC = () => {
     // Aplicar filtro de data de solicitação se definido
     if (dateFilter) {
       filtered = filtered.filter(s => {
-        // Usar toLocaleDateString para obter a data no fuso horário de Brasília
-        const solTimestamp = new Date(s.data_solicitacao);
-        const brasilDateStr = solTimestamp.toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
-        return brasilDateStr === dateFilter;
+        // Extrair apenas a parte da data (YYYY-MM-DD) da string de solicitação
+        const solDateStr = s.data_solicitacao.split('T')[0];
+        return solDateStr === dateFilter;
       });
     }
     
