@@ -7215,11 +7215,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const plateClean = veiculo_placa.replace(/\s/g, '').toUpperCase();
 
-      // Buscar veículo para obter modelo e cartão
+      // Buscar veículo para obter modelo e cartão (tabela vehicles)
       const vehicleQuery = `
-        SELECT id, placa, modelo, cartao_abastecimento, status
-        FROM veiculos 
-        WHERE UPPER(REPLACE(placa, ' ', '')) = $1
+        SELECT id, plate as placa, model as modelo, fuel_card as cartao_abastecimento, status
+        FROM vehicles 
+        WHERE UPPER(REPLACE(plate, ' ', '')) = $1
         LIMIT 1
       `;
       const vehicleResult = await pool.query(vehicleQuery, [plateClean]);
