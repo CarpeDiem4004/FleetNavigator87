@@ -7419,11 +7419,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error: any) {
-      console.error('[LINEHAUL-PUBLIC-REQUEST] Erro:', error);
+      console.error('[LINEHAUL-PUBLIC-REQUEST] Erro completo:', error);
+      console.error('[LINEHAUL-PUBLIC-REQUEST] Stack:', error.stack);
       return res.status(500).json({
         success: false,
         message: 'Erro ao processar solicitação',
-        error: error.message
+        error: error.message,
+        detail: error.detail || null
       });
     }
   });
