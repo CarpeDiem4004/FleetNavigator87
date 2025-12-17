@@ -396,13 +396,6 @@ export async function exportTicketCards(req: Request, res: Response) {
     
     console.log('[EXPORT-TICKET] Registros encontrados:', result.rows.length);
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Nenhuma solicitação Ticket pendente encontrada'
-      });
-    }
-
     // Cabeçalho com coluna de Bases
     const header = ['PLACA', 'VALOR', 'Bases'];
 
