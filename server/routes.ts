@@ -8188,7 +8188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: req.body.status || 'em_operacao',
         baseId: req.body.baseId ? parseInt(req.body.baseId) : 12,
         fuelType: req.body.fuelType?.toString().trim() || null,
-        consumoMedioKmL: req.body.mediaConsumoCombutivel ? parseFloat(req.body.mediaConsumoCombutivel) : null,
+        consumoMedioKmL: req.body.mediaConsumoCombutivel ? String(req.body.mediaConsumoCombutivel) : null,
         ownership: req.body.ownership === 'proprio' ? 'murici' : (req.body.ownership || 'murici'),
         crlvUrl: req.body.crlvUrl || null,
         anttUrl: req.body.anttUrl || null,
