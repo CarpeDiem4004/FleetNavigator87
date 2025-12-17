@@ -375,13 +375,11 @@ const FuelCardRequestsPanel: React.FC = () => {
       
       // Filtro por data de solicitação (convertendo para timezone do Brasil)
       if (dateFilter) {
-        // Converter timestamp UTC para data local do Brasil (UTC-3)
+        // Usar toLocaleDateString para obter a data no fuso horário de Brasília
         const solTimestamp = new Date(sol.data_solicitacao);
-        // Subtrair 3 horas para ajustar de UTC para horário do Brasil
-        const brasilDate = new Date(solTimestamp.getTime() - 3 * 60 * 60 * 1000);
-        const solDate = brasilDate.toISOString().split('T')[0];
+        const brasilDateStr = solTimestamp.toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
         
-        if (solDate !== dateFilter) {
+        if (brasilDateStr !== dateFilter) {
           return false;
         }
       }
@@ -484,10 +482,10 @@ const FuelCardRequestsPanel: React.FC = () => {
     // Aplicar filtro de data de solicitação se definido
     if (dateFilter) {
       filtered = filtered.filter(s => {
+        // Usar toLocaleDateString para obter a data no fuso horário de Brasília
         const solTimestamp = new Date(s.data_solicitacao);
-        const brasilDate = new Date(solTimestamp.getTime() - 3 * 60 * 60 * 1000);
-        const solDate = brasilDate.toISOString().split('T')[0];
-        return solDate === dateFilter;
+        const brasilDateStr = solTimestamp.toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+        return brasilDateStr === dateFilter;
       });
     }
     
