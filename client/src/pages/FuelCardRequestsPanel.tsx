@@ -479,8 +479,33 @@ const FuelCardRequestsPanel: React.FC = () => {
       [...list].sort((a, b) => new Date(b.created_at || b.data_solicitacao).getTime() - new Date(a.created_at || a.data_solicitacao).getTime());
     
     // SEMPRE filtrar por origem_tipo = 'line_hall' para abas Line Haul
-    return sortByCreatedAt(solicitations.filter(s => s.origem_tipo === 'line_hall'));
-  }, [solicitations]);
+    let filtered = solicitations.filter(s => s.origem_tipo === 'line_hall');
+    
+    // Aplicar filtro de data de solicitação se definido
+    if (dateFilter) {
+      filtered = filtered.filter(s => {
+        const solTimestamp = new Date(s.data_solicitacao);
+        const brasilDate = new Date(solTimestamp.getTime() - 3 * 60 * 60 * 1000);
+        const solDate = brasilDate.toISOString().split('T')[0];
+        return solDate === dateFilter;
+      });
+    }
+    
+    // Aplicar filtro de data de abastecimento se definido
+    if (fuelDateFilter) {
+      filtered = filtered.filter(s => {
+        if (!s.data_uso) return false;
+        const localDate = parseLocalDate(s.data_uso);
+        const year = localDate.getFullYear();
+        const month = String(localDate.getMonth() + 1).padStart(2, '0');
+        const day = String(localDate.getDate()).padStart(2, '0');
+        const fuelDate = `${year}-${month}-${day}`;
+        return fuelDate === fuelDateFilter;
+      });
+    }
+    
+    return sortByCreatedAt(filtered);
+  }, [solicitations, dateFilter, fuelDateFilter]);
 
   // Filtros Line Haul por status
   const lineHaulPendentes = useMemo(() => 
