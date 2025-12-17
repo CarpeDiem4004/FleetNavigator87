@@ -8180,7 +8180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Ajustar os dados para o esquema da tabela se necessário
       const vehicleData = {
-        plate: req.body.plate?.toString().trim(),
+        plate: req.body.plate?.toString().trim().toUpperCase(),
         model: req.body.model?.toString().trim() || null,
         make: req.body.make?.toString().trim() || null,
         year: req.body.year ? parseInt(req.body.year) : null,
@@ -8192,7 +8192,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ownership: req.body.ownership === 'proprio' ? 'murici' : (req.body.ownership || 'murici'),
         crlvUrl: req.body.crlvUrl || null,
         anttUrl: req.body.anttUrl || null,
-        cartaoAbastecimento: req.body.cartaoAbastecimento || null
+        cartaoAbastecimento: req.body.cartaoAbastecimento || null,
+        isTemporary: req.body.isTemporary === true || req.body.isTemporary === 'true',
+        deactivationDate: req.body.deactivationDate || null
       };
       
       console.log("Dados ajustados:", JSON.stringify(vehicleData, null, 2));
