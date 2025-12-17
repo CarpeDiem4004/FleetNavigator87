@@ -400,17 +400,26 @@ export default function LineHaulFuelRequest() {
                   ref={plateInputRef}
                   id="placa"
                   type="text"
-                  placeholder="Digite para buscar..."
+                  placeholder="ABC1D23"
                   value={form.placa}
-                  onChange={(e) => setForm({ ...form, placa: e.target.value.toUpperCase() })}
+                  onChange={(e) => {
+                    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
+                    setForm({ ...form, placa: value });
+                  }}
                   onFocus={() => {
                     if (filteredPlates.length > 0) setShowSuggestions(true);
                   }}
                   required
                   maxLength={7}
                   autoComplete="off"
+                  className={form.placa && form.placa.length !== 7 ? 'border-red-500 focus:ring-red-500' : ''}
                   data-testid="input-plate"
                 />
+                {form.placa && form.placa.length !== 7 && (
+                  <p className="text-xs text-red-500 font-medium">
+                    A placa deve ter exatamente 7 caracteres
+                  </p>
+                )}
                 {showSuggestions && filteredPlates.length > 0 && (
                   <div 
                     ref={suggestionsRef}
@@ -738,12 +747,21 @@ export default function LineHaulFuelRequest() {
                 </Label>
                 <Input
                   type="text"
-                  placeholder="Digite a placa do cartão..."
+                  placeholder="ABC1D23"
                   value={form.placaCartao}
-                  onChange={(e) => setForm({ ...form, placaCartao: e.target.value.toUpperCase() })}
-                  className="uppercase"
+                  onChange={(e) => {
+                    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
+                    setForm({ ...form, placaCartao: value });
+                  }}
+                  maxLength={7}
+                  className={`uppercase ${form.placaCartao && form.placaCartao.length !== 7 ? 'border-red-500 focus:ring-red-500' : ''}`}
                   data-testid="input-placa-cartao"
                 />
+                {form.placaCartao && form.placaCartao.length !== 7 && (
+                  <p className="text-xs text-red-500 font-medium">
+                    A placa deve ter exatamente 7 caracteres (ex: ABC1D23)
+                  </p>
+                )}
                 <p className="text-xs text-gray-500">
                   Informe a placa do cartão que receberá o crédito (se diferente da placa do veículo)
                 </p>
