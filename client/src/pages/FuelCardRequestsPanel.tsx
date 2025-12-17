@@ -1066,9 +1066,17 @@ const FuelCardRequestsPanel: React.FC = () => {
       }
     } catch (error) {
       console.error('[EXPORT-VELOE] Erro:', error);
+      
+      let errorMessage = 'Não foi possível gerar a planilha Veloe';
+      if (error instanceof Error) {
+        if (error.message.includes('401')) {
+          errorMessage = 'Sessão expirada. Faça logout e login novamente.';
+        }
+      }
+      
       toast({
         title: 'Erro na exportação Veloe',
-        description: 'Não foi possível gerar a planilha Veloe',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
@@ -1116,9 +1124,15 @@ const FuelCardRequestsPanel: React.FC = () => {
       }
     } catch (error: any) {
       console.error('[EXPORT-TICKET] Erro:', error);
+      
+      let errorMessage = error.message || 'Não foi possível gerar a planilha Ticket';
+      if (error.message?.includes('401')) {
+        errorMessage = 'Sessão expirada. Faça logout e login novamente.';
+      }
+      
       toast({
         title: 'Erro na exportação Ticket',
-        description: error.message || 'Não foi possível gerar a planilha Ticket',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
