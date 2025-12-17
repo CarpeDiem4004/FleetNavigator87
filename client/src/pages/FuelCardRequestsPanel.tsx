@@ -3929,8 +3929,8 @@ const FuelCardRequestsPanel: React.FC = () => {
                           )}
                         </div>
                         
-                        {/* Rota Line Haul */}
-                        {isCardRequest && (item.rota_origem || item.rota_destino) && (
+                        {/* Rota Line Haul - mostrar para todas solicitações de recarga Line Haul */}
+                        {isCardRequest && item.origem_tipo === 'line_hall' && (
                           <div className="mt-3 pt-3 border-t border-gray-200">
                             <div className="flex items-center gap-2 text-sm">
                               <span className="text-gray-500">Rota:</span>
