@@ -217,9 +217,12 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
     const queryParams: any[] = [];
     
     // Filtro por origem (line_hall, etc.)
-    if (origem) {
-      queryParams.push(String(origem).toLowerCase());
-      whereClause += ` AND LOWER(origem_tipo) = $${queryParams.length}`;
+    if (origem === 'line_hall') {
+      // Quando origem=line_hall, filtrar APENAS line_hall
+      whereClause += ` AND LOWER(COALESCE(origem_tipo, '')) = 'line_hall'`;
+    } else {
+      // Quando não especificado (Todos), EXCLUIR line_hall
+      whereClause += ` AND (LOWER(COALESCE(origem_tipo, '')) != 'line_hall' OR origem_tipo IS NULL)`;
     }
     
     if (data_inicio) {
@@ -354,9 +357,12 @@ export async function exportTicketCards(req: Request, res: Response) {
     const queryParams: any[] = [];
     
     // Filtro por origem (line_hall, etc.)
-    if (origem) {
-      queryParams.push(String(origem).toLowerCase());
-      whereClause += ` AND LOWER(origem_tipo) = $${queryParams.length}`;
+    if (origem === 'line_hall') {
+      // Quando origem=line_hall, filtrar APENAS line_hall
+      whereClause += ` AND LOWER(COALESCE(origem_tipo, '')) = 'line_hall'`;
+    } else {
+      // Quando não especificado (Todos), EXCLUIR line_hall
+      whereClause += ` AND (LOWER(COALESCE(origem_tipo, '')) != 'line_hall' OR origem_tipo IS NULL)`;
     }
     
     if (data_inicio) {

@@ -1713,7 +1713,7 @@ const FuelCardRequestsPanel: React.FC = () => {
               data-testid="button-export-veloe"
             >
               <Download className="h-4 w-4" />
-              Veloe (Todos)
+              Veloe (Bases)
             </Button>
 
             <Button 
@@ -1735,7 +1735,7 @@ const FuelCardRequestsPanel: React.FC = () => {
               data-testid="button-export-ticket"
             >
               <Download className="h-4 w-4" />
-              Ticket (Todos)
+              Ticket (Bases)
             </Button>
 
             <Button 
