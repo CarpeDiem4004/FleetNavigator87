@@ -112,6 +112,7 @@ const FuelCardRequestsPanel: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('');
   const [fuelDateFilter, setFuelDateFilter] = useState<string>(''); // Filtro por data de abastecimento
+  const [horarioFilter, setHorarioFilter] = useState<string>('all'); // Filtro por horário de abastecimento
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [projectFilter, setProjectFilter] = useState<string>('all');
   const [baseFilter, setBaseFilter] = useState<string>('all');
@@ -418,6 +419,16 @@ const FuelCardRequestsPanel: React.FC = () => {
         return false;
       }
       
+      // Filtro por horário de abastecimento
+      if (horarioFilter !== 'all') {
+        if (!sol.horario_abastecimento) {
+          return false;
+        }
+        if (sol.horario_abastecimento !== horarioFilter) {
+          return false;
+        }
+      }
+      
       // Filtro por busca
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -433,7 +444,7 @@ const FuelCardRequestsPanel: React.FC = () => {
       
       return true;
     });
-  }, [solicitations, searchQuery, statusFilter, projectFilter, baseFilter, dateFilter, fuelDateFilter, projects]);
+  }, [solicitations, searchQuery, statusFilter, projectFilter, baseFilter, dateFilter, fuelDateFilter, horarioFilter, projects]);
 
   // Agora os dados já vêm filtrados do backend por aba
   const pendingSolicitations = useMemo(() => {
@@ -2005,6 +2016,24 @@ const FuelCardRequestsPanel: React.FC = () => {
                   placeholder="Todas as Bases"
                   emptyMessage="Nenhuma base encontrada."
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="horario-filter">Horário Abastecimento</Label>
+                <Select value={horarioFilter} onValueChange={setHorarioFilter}>
+                  <SelectTrigger id="horario-filter" data-testid="select-horario-filter">
+                    <SelectValue placeholder="Todos os Horários" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Horários</SelectItem>
+                    <SelectItem value="08:00">08:00</SelectItem>
+                    <SelectItem value="10:00">10:00</SelectItem>
+                    <SelectItem value="12:00">12:00</SelectItem>
+                    <SelectItem value="14:00">14:00</SelectItem>
+                    <SelectItem value="16:00">16:00</SelectItem>
+                    <SelectItem value="Após 18h">Após 18h</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="space-y-2">
