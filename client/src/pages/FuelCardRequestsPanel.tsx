@@ -3929,6 +3929,18 @@ const FuelCardRequestsPanel: React.FC = () => {
                           )}
                         </div>
                         
+                        {/* Rota Line Haul */}
+                        {isCardRequest && (item.rota_origem || item.rota_destino) && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-gray-500">Rota:</span>
+                              <span className="font-medium text-blue-600">
+                                {item.rota_origem || 'Não informado'} → {item.rota_destino || 'Não informado'}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Informações Adicionais */}
                         {(item.motorista || item.observacoes || (isCardRequest && item.tipo_cartao)) && (
                           <div className="mt-3 pt-3 border-t border-gray-200">
