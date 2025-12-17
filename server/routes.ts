@@ -7110,12 +7110,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/public/linehaul/vehicles', async (req, res) => {
     try {
       const query = `
-        SELECT DISTINCT placa, modelo 
-        FROM veiculos 
-        WHERE placa IS NOT NULL 
-          AND placa != ''
+        SELECT DISTINCT plate as placa, model as modelo 
+        FROM vehicles 
+        WHERE plate IS NOT NULL 
+          AND plate != ''
           AND status != 'inativo'
-        ORDER BY placa
+        ORDER BY plate
         LIMIT 500
       `;
       const result = await pool.query(query);
