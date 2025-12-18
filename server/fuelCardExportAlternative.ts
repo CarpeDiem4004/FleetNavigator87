@@ -237,11 +237,17 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
 
     // Query para buscar solicitações Veloe agrupadas por PLACA DO CARTÃO (numero_cartao)
     // Line Haul usa data_solicitacao (data_uso é NULL), então usamos COALESCE
+    // Para Line Haul, a observação mostra a rota (origem → destino); para Bases, mostra o nome da base
     const query = `
       SELECT 
         UPPER(REPLACE(COALESCE(NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')) as placa_cartao,
         SUM(COALESCE(valor_solicitado, 0)) as valor_total,
-        STRING_AGG(DISTINCT COALESCE(base, 'Base não identificada'), ', ') as bases
+        STRING_AGG(DISTINCT 
+          CASE 
+            WHEN LOWER(COALESCE(origem_tipo, '')) = 'line_hall' 
+            THEN CONCAT(COALESCE(rota_origem, 'N/I'), ' → ', COALESCE(rota_destino, 'N/I'))
+            ELSE COALESCE(base, 'Base não identificada')
+          END, ', ') as bases
       FROM solicitacoes_fuel_card
       WHERE LOWER(provedor_cartao) LIKE '%veloe%' 
         AND LOWER(status) = 'pendente'
@@ -379,11 +385,17 @@ export async function exportTicketCards(req: Request, res: Response) {
 
     // Buscar solicitações PENDENTES agrupadas por PLACA DO CARTÃO
     // Line Haul usa data_solicitacao (data_uso é NULL), então usamos COALESCE
+    // Para Line Haul, a observação mostra a rota (origem → destino); para Bases, mostra o nome da base
     const query = `
       SELECT 
         UPPER(REPLACE(COALESCE(NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')) as placa_cartao,
         SUM(COALESCE(valor_solicitado, 0)) as valor_total,
-        STRING_AGG(DISTINCT COALESCE(base, 'Base não identificada'), ', ') as bases
+        STRING_AGG(DISTINCT 
+          CASE 
+            WHEN LOWER(COALESCE(origem_tipo, '')) = 'line_hall' 
+            THEN CONCAT(COALESCE(rota_origem, 'N/I'), ' → ', COALESCE(rota_destino, 'N/I'))
+            ELSE COALESCE(base, 'Base não identificada')
+          END, ', ') as bases
       FROM solicitacoes_fuel_card
       WHERE LOWER(provedor_cartao) LIKE '%ticket%' 
         AND LOWER(status) = 'pendente'
