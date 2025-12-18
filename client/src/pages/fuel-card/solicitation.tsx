@@ -794,7 +794,26 @@ export default function FuelCardSolicitation() {
                       <FormItem>
                         <FormLabel>Placa do Cartão</FormLabel>
                         <FormControl>
-                          <Input placeholder="PLACA ORIGINAL DO CARTAO" {...field} />
+                          <Input 
+                            placeholder="ABC1D23" 
+                            value={field.value}
+                            onChange={(e) => {
+                              let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                              if (value.length > 7) return;
+                              
+                              const rules = [
+                                /[A-Z]/, /[A-Z]/, /[A-Z]/, /[0-9]/, /[A-Z0-9]/, /[0-9]/, /[0-9]/
+                              ];
+                              
+                              for (let i = 0; i < value.length; i++) {
+                                if (!rules[i].test(value[i])) return;
+                              }
+                              
+                              field.onChange(value);
+                            }}
+                            maxLength={7}
+                            className="uppercase"
+                          />
                         </FormControl>
                         <FormDescription>
                           Informe a placa impressa do cartão que irá usar para abastecer
