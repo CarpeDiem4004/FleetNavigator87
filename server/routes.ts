@@ -7147,7 +7147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Buscar rota na tabela line_hall_routes usando os nomes dos pontos
+      // Primeiro: Buscar rota na tabela line_hall_routes usando os nomes dos pontos
       const query = `
         SELECT km_total 
         FROM line_hall_routes 
@@ -7159,16 +7159,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await pool.query(query, [`%${origem}%`, `%${destino}%`]);
       
       if (result.rows.length > 0 && result.rows[0].km_total > 0) {
+        console.log(`[LINEHAUL-ROUTE-DISTANCE] Rota encontrada no banco: ${origem} -> ${destino} = ${result.rows[0].km_total} km`);
         return res.json({
           success: true,
-          distancia_km: parseFloat(result.rows[0].km_total) || 0
+          distancia_km: parseFloat(result.rows[0].km_total) || 0,
+          fonte: 'banco'
         });
+      }
+      
+      // Segundo: Se não encontrou no banco, buscar via Google Maps Distance Matrix API
+      const googleApiKey = process.env.GOOGLE_MAPS_API_KEY;
+      if (googleApiKey) {
+        try {
+          const origemEncoded = encodeURIComponent(String(origem) + ', Brasil');
+          const destinoEncoded = encodeURIComponent(String(destino) + ', Brasil');
+          const googleUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origemEncoded}&destinations=${destinoEncoded}&mode=driving&language=pt-BR&key=${googleApiKey}`;
+          
+          console.log(`[LINEHAUL-ROUTE-DISTANCE] Consultando Google Maps API: ${origem} -> ${destino}`);
+          
+          const googleResponse = await fetch(googleUrl);
+          const googleData = await googleResponse.json() as {
+            status: string;
+            rows?: Array<{
+              elements?: Array<{
+                status: string;
+                distance?: { value: number; text: string };
+              }>;
+            }>;
+          };
+          
+          if (googleData.status === 'OK' && 
+              googleData.rows?.[0]?.elements?.[0]?.status === 'OK' &&
+              googleData.rows[0].elements[0].distance) {
+            const distanciaMetros = googleData.rows[0].elements[0].distance.value;
+            const distanciaKm = Math.round(distanciaMetros / 1000);
+            
+            console.log(`[LINEHAUL-ROUTE-DISTANCE] Google Maps retornou: ${distanciaKm} km para ${origem} -> ${destino}`);
+            
+            return res.json({
+              success: true,
+              distancia_km: distanciaKm,
+              fonte: 'google'
+            });
+          } else {
+            console.log(`[LINEHAUL-ROUTE-DISTANCE] Google Maps não encontrou rota: ${origem} -> ${destino}`, googleData);
+          }
+        } catch (googleError) {
+          console.error('[LINEHAUL-ROUTE-DISTANCE] Erro ao consultar Google Maps:', googleError);
+        }
       }
       
       return res.json({
         success: true,
         distancia_km: 0,
-        message: 'Rota não encontrada no sistema'
+        message: 'Rota não encontrada'
       });
     } catch (error: any) {
       console.error('[LINEHAUL-ROUTE-DISTANCE] Erro ao buscar distância:', error);
