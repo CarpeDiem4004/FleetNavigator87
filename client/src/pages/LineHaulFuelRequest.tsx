@@ -946,20 +946,32 @@ export default function LineHaulFuelRequest() {
                   placeholder="ABC1D23"
                   value={form.placaCartao}
                   onChange={(e) => {
-                    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
+                    let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                    if (value.length > 7) return;
+                    
+                    // Regras posição por posição para placa brasileira
+                    const rules = [
+                      /[A-Z]/, // 1ª letra
+                      /[A-Z]/, // 2ª letra
+                      /[A-Z]/, // 3ª letra
+                      /[0-9]/, // 4º número
+                      /[A-Z0-9]/, // 5º (número antigo OU letra Mercosul)
+                      /[0-9]/, // 6º número
+                      /[0-9]/, // 7º número
+                    ];
+                    
+                    for (let i = 0; i < value.length; i++) {
+                      if (!rules[i].test(value[i])) {
+                        return; // Bloqueia digitação inválida
+                      }
+                    }
+                    
                     setForm({ ...form, placaCartao: value });
                   }}
                   maxLength={7}
-                  pattern="^([A-Z]{3}[0-9]{4}|[A-Z]{3}[0-9][A-Z][0-9]{2})$"
-                  title="Placa inválida. Use formato ABC1234 ou ABC1D23"
-                  className={`uppercase ${form.placaCartao && !isPlacaCartaoValida ? 'border-red-500 focus:ring-red-500' : ''}`}
+                  className="uppercase"
                   data-testid="input-placa-cartao"
                 />
-                {form.placaCartao && !isPlacaCartaoValida && (
-                  <p className="text-xs text-red-500 font-medium">
-                    Placa inválida. Use formato ABC1234 (antigo) ou ABC1D23 (Mercosul)
-                  </p>
-                )}
                 <p className="text-xs text-gray-500">
                   Informe a placa do cartão que receberá o crédito (se diferente da placa do veículo)
                 </p>
