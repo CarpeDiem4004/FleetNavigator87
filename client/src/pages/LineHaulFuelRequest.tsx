@@ -410,9 +410,9 @@ export default function LineHaulFuelRequest() {
               </div>
 
               {/* Contato de Emergência */}
-              <div className="bg-blue-100 border border-blue-300 rounded-lg p-4">
-                <p className="text-blue-800 text-sm flex items-start gap-2">
-                  <PhoneCall className="h-5 w-5 text-blue-600 flex-shrink-0" />
+              <div className="bg-gray-100 border border-gray-300 rounded-lg p-4">
+                <p className="text-gray-700 text-sm flex items-start gap-2">
+                  <PhoneCall className="h-5 w-5 text-gray-600 flex-shrink-0" />
                   <span>
                     Em caso de qualquer ocorrência, por mais simples que pareça, <strong>acione imediatamente nosso time</strong>. 📞🤝
                   </span>
@@ -422,7 +422,7 @@ export default function LineHaulFuelRequest() {
           </ScrollArea>
 
           {/* Checkbox e Botão - sempre visíveis na parte inferior */}
-          <div className="p-4 border-t bg-white space-y-3">
+          <div className="p-4 bg-white space-y-3">
             {/* Checkbox de Aceite */}
             <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg border-2 border-green-300">
               <Checkbox
