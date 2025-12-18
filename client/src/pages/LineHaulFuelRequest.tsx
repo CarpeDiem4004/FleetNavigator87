@@ -418,42 +418,43 @@ export default function LineHaulFuelRequest() {
                   </span>
                 </p>
               </div>
-
-              {/* Checkbox de Aceite */}
-              <div className="flex items-center space-x-3 p-4 bg-gray-100 rounded-lg border-2 border-gray-300 mt-4">
-                <Checkbox
-                  id="ciente"
-                  checked={checkboxCiente}
-                  onCheckedChange={(checked) => setCheckboxCiente(checked === true)}
-                  className="h-6 w-6"
-                  data-testid="checkbox-ciente"
-                />
-                <Label htmlFor="ciente" className="cursor-pointer text-gray-800 font-medium">
-                  ☑ Li e estou ciente
-                </Label>
-              </div>
             </CardContent>
           </ScrollArea>
 
-          {/* Botão Continuar */}
-          <div className="p-4 border-t bg-gray-50 rounded-b-lg">
+          {/* Checkbox e Botão - sempre visíveis na parte inferior */}
+          <div className="p-4 border-t bg-white space-y-3">
+            {/* Checkbox de Aceite */}
+            <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg border-2 border-green-300">
+              <Checkbox
+                id="ciente"
+                checked={checkboxCiente}
+                onCheckedChange={(checked) => setCheckboxCiente(checked === true)}
+                className="h-6 w-6 border-2 border-green-500 data-[state=checked]:bg-green-600"
+                data-testid="checkbox-ciente"
+              />
+              <Label htmlFor="ciente" className="cursor-pointer text-green-800 font-semibold text-base">
+                Li e estou ciente
+              </Label>
+            </div>
+
+            {/* Botão Continuar */}
             <Button
               onClick={handleAceitarConscientizacao}
               disabled={!checkboxCiente}
-              className={`w-full h-12 text-lg font-semibold transition-all ${
+              className={`w-full h-14 text-lg font-bold transition-all ${
                 checkboxCiente 
-                  ? 'bg-green-600 hover:bg-green-700 text-white' 
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg' 
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
               data-testid="button-continuar-solicitacao"
             >
               {checkboxCiente ? (
                 <>
-                  <Check className="mr-2 h-5 w-5" />
+                  <Check className="mr-2 h-6 w-6" />
                   Continuar para Solicitação
                 </>
               ) : (
-                'Marque "Li e estou ciente" para continuar'
+                'Marque acima para continuar'
               )}
             </Button>
           </div>
