@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Fuel, Camera, Check, Truck, MapPin, Phone, User, Clock, Package, Droplets, Gauge, CreditCard } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Loader2, Fuel, Camera, Check, Truck, MapPin, Phone, User, Clock, Package, Droplets, Gauge, CreditCard, AlertCircle, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface VehiclePlate {
@@ -91,6 +92,7 @@ export default function LineHaulFuelRequest() {
   const [fotoCartao, setFotoCartao] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   
   const [allPlates, setAllPlates] = useState<VehiclePlate[]>([]);
   const [filteredPlates, setFilteredPlates] = useState<VehiclePlate[]>([]);
@@ -205,7 +207,7 @@ export default function LineHaulFuelRequest() {
     setShowSuggestions(false);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     
     if (!form.kmVeiculo || form.kmVeiculo.trim() === '' || parseInt(form.kmVeiculo) <= 0) {
@@ -235,6 +237,11 @@ export default function LineHaulFuelRequest() {
       return;
     }
 
+    setShowConfirmation(true);
+  }
+
+  async function confirmSubmit() {
+    setShowConfirmation(false);
     setLoading(true);
 
     try {
@@ -254,8 +261,8 @@ export default function LineHaulFuelRequest() {
       formData.append("incluir_arla", form.arla ? "true" : "false");
       formData.append("data_solicitacao", new Date().toISOString().split('T')[0]);
       formData.append("horario_solicitacao", new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
-      formData.append("foto_painel", fotoPainel);
-      formData.append("foto_cartao", fotoCartao);
+      formData.append("foto_painel", fotoPainel!);
+      formData.append("foto_cartao", fotoCartao!);
       if (form.placaCartao) {
         formData.append("placa_cartao", form.placaCartao);
       }
@@ -799,6 +806,92 @@ export default function LineHaulFuelRequest() {
           Line Haul - Gestão de Frota
         </p>
       </div>
+
+      <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-500" />
+              Confirmar Solicitação
+            </DialogTitle>
+            <DialogDescription>
+              Por favor, verifique os dados antes de enviar:
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3 py-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Motorista:</span>
+                <span className="font-medium text-gray-900">{form.nome}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Placa:</span>
+                <span className="font-medium text-gray-900">{form.placa}</span>
+              </div>
+              <div className="flex justify-between items-center border-t border-blue-200 pt-2 mt-2">
+                <span className="text-sm text-gray-600 font-medium">KM do Veículo:</span>
+                <span className="font-bold text-lg text-blue-600">{parseInt(form.kmVeiculo || '0').toLocaleString('pt-BR')} km</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Origem:</span>
+                <span className="font-medium text-gray-900">{form.localInicio}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Destino:</span>
+                <span className="font-medium text-gray-900">{form.destino}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Horário:</span>
+                <span className="font-medium text-gray-900">{form.horarioAbastecimento}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Operação:</span>
+                <span className="font-medium text-gray-900">{form.operacao === 'mercado_livre' ? 'Mercado Livre' : 'Shopee'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Cartão:</span>
+                <span className="font-medium text-gray-900">{form.provedorCartao === 'veloe' ? 'Veloe Go' : 'Ticket Log'}</span>
+              </div>
+              {form.arla && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Arla:</span>
+                  <span className="font-medium text-green-600">Incluir R$ 50,00</span>
+                </div>
+              )}
+            </div>
+            
+            <p className="text-sm text-amber-600 text-center font-medium">
+              Está tudo correto?
+            </p>
+          </div>
+          
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmation(false)}
+              className="flex-1"
+              data-testid="button-edit"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+            <Button
+              onClick={confirmSubmit}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+              disabled={loading}
+              data-testid="button-confirm"
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Check className="h-4 w-4 mr-2" />
+              )}
+              Confirmar e Enviar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
