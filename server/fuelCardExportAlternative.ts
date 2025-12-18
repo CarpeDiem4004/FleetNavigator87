@@ -276,7 +276,7 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
     const dataRows = result.rows.map((row: any) => [
       normalizePlaca(row.placa_cartao),                  // Placa do cartão normalizada (sem espaços, maiúsculas)
       'ADICIONAR',                                       // Tipo de alteração (já em caixa alta)
-      parseFloat(row.valor_total || 0),                  // Valor como número (Excel formatará como moeda)
+      Math.round(parseFloat(row.valor_total || 0) * 100) / 100,  // Valor com máximo 2 casas decimais
       String(row.bases || '').toUpperCase()              // Observação em caixa alta
     ]);
 
@@ -421,7 +421,7 @@ export async function exportTicketCards(req: Request, res: Response) {
     // Dados das solicitações - PLACA DO CARTÃO normalizada (sem espaços, maiúsculas), VALOR como número, Bases como texto (UPPERCASE)
     const dataRows = result.rows.map((row: any) => [
       normalizePlaca(row.placa_cartao),                 // Placa do cartão normalizada (sem espaços, maiúsculas)
-      parseFloat(row.valor_total || 0),                 // Número sem formatação
+      Math.round(parseFloat(row.valor_total || 0) * 100) / 100,  // Valor com máximo 2 casas decimais
       String(row.bases || '').toUpperCase()             // Bases em caixa alta
     ]);
 
