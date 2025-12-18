@@ -410,9 +410,9 @@ export default function LineHaulFuelRequest() {
               </div>
 
               {/* Contato de Emergência */}
-              <div className="bg-gray-100 border border-gray-300 rounded-lg p-4">
-                <p className="text-gray-700 text-sm flex items-start gap-2">
-                  <PhoneCall className="h-5 w-5 text-gray-600 flex-shrink-0" />
+              <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                <p className="text-red-800 text-sm flex items-start gap-2 font-medium">
+                  <PhoneCall className="h-5 w-5 text-red-600 flex-shrink-0" />
                   <span>
                     Em caso de qualquer ocorrência, por mais simples que pareça, <strong>acione imediatamente nosso time</strong>. 📞🤝
                   </span>
