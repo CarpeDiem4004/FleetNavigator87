@@ -7134,6 +7134,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET - Buscar distância da rota Line Haul (acesso público)
+  app.get('/api/public/linehaul/route-distance', async (req, res) => {
+    try {
+      const { origem, destino } = req.query;
+      
+      if (!origem || !destino) {
+        return res.json({
+          success: false,
+          message: 'Origem e destino são obrigatórios',
+          distancia_km: 0
+        });
+      }
+
+      // Buscar rota na tabela line_hall_routes usando os nomes dos pontos
+      const query = `
+        SELECT km_total 
+        FROM line_hall_routes 
+        WHERE (LOWER(nome_ponto_a) LIKE LOWER($1) AND LOWER(nome_ponto_b) LIKE LOWER($2))
+           OR (LOWER(nome_ponto_b) LIKE LOWER($1) AND LOWER(nome_ponto_a) LIKE LOWER($2))
+        LIMIT 1
+      `;
+      
+      const result = await pool.query(query, [`%${origem}%`, `%${destino}%`]);
+      
+      if (result.rows.length > 0 && result.rows[0].km_total > 0) {
+        return res.json({
+          success: true,
+          distancia_km: parseFloat(result.rows[0].km_total) || 0
+        });
+      }
+      
+      return res.json({
+        success: true,
+        distancia_km: 0,
+        message: 'Rota não encontrada no sistema'
+      });
+    } catch (error: any) {
+      console.error('[LINEHAUL-ROUTE-DISTANCE] Erro ao buscar distância:', error);
+      return res.json({
+        success: false,
+        message: 'Erro ao buscar distância',
+        distancia_km: 0
+      });
+    }
+  });
+
   // POST - Criar solicitação de abastecimento Line Haul (acesso público - formulário motorista)
   app.post('/api/public/linehaul/fuel-request', uploadLineHaulPhotos.fields([
     { name: 'foto_painel', maxCount: 1 },

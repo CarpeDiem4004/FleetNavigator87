@@ -93,6 +93,8 @@ export default function LineHaulFuelRequest() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [routeDistance, setRouteDistance] = useState<number>(0);
+  const [loadingDistance, setLoadingDistance] = useState(false);
   
   const [allPlates, setAllPlates] = useState<VehiclePlate[]>([]);
   const [filteredPlates, setFilteredPlates] = useState<VehiclePlate[]>([]);
@@ -207,7 +209,7 @@ export default function LineHaulFuelRequest() {
     setShowSuggestions(false);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     
     if (!form.kmVeiculo || form.kmVeiculo.trim() === '' || parseInt(form.kmVeiculo) <= 0) {
@@ -235,6 +237,23 @@ export default function LineHaulFuelRequest() {
         variant: "destructive",
       });
       return;
+    }
+
+    // Buscar distância da rota antes de mostrar confirmação
+    setLoadingDistance(true);
+    try {
+      const response = await fetch(`/api/public/linehaul/route-distance?origem=${encodeURIComponent(form.localInicio)}&destino=${encodeURIComponent(form.destino)}`);
+      const data = await response.json();
+      if (data.success && data.distancia_km > 0) {
+        setRouteDistance(data.distancia_km);
+      } else {
+        setRouteDistance(0);
+      }
+    } catch (err) {
+      console.error("Erro ao buscar distância:", err);
+      setRouteDistance(0);
+    } finally {
+      setLoadingDistance(false);
     }
 
     setShowConfirmation(true);
@@ -826,7 +845,7 @@ export default function LineHaulFuelRequest() {
                 <span className="font-medium text-gray-900">{form.nome}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Placa:</span>
+                <span className="text-sm text-gray-600">Placa Veículo:</span>
                 <span className="font-medium text-gray-900">{form.placa}</span>
               </div>
               <div className="flex justify-between items-center border-t border-blue-200 pt-2 mt-2">
@@ -841,6 +860,12 @@ export default function LineHaulFuelRequest() {
                 <span className="text-sm text-gray-600">Destino:</span>
                 <span className="font-medium text-gray-900">{form.destino}</span>
               </div>
+              {routeDistance > 0 && (
+                <div className="flex justify-between items-center bg-green-100 rounded px-2 py-1">
+                  <span className="text-sm text-green-700 font-medium">Distância da Rota:</span>
+                  <span className="font-bold text-lg text-green-700">{routeDistance.toLocaleString('pt-BR')} km</span>
+                </div>
+              )}
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Horário:</span>
                 <span className="font-medium text-gray-900">{form.horarioAbastecimento}</span>
@@ -850,8 +875,12 @@ export default function LineHaulFuelRequest() {
                 <span className="font-medium text-gray-900">{form.operacao === 'mercado_livre' ? 'Mercado Livre' : 'Shopee'}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Cartão:</span>
+                <span className="text-sm text-gray-600">Tipo Cartão:</span>
                 <span className="font-medium text-gray-900">{form.provedorCartao === 'veloe' ? 'Veloe Go' : 'Ticket Log'}</span>
+              </div>
+              <div className="flex justify-between items-center border-t border-blue-200 pt-2 mt-2 bg-amber-50 rounded px-2 py-1">
+                <span className="text-sm text-amber-700 font-medium">Placa do Cartão (Saldo):</span>
+                <span className="font-bold text-amber-800">{form.placaCartao || form.placa}</span>
               </div>
               {form.arla && (
                 <div className="flex justify-between items-center">
