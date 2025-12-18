@@ -276,9 +276,8 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
     `;
     
     console.log('[EXPORT-VELOE] Query:', query);
-    console.log('[EXPORT-VELOE] Params:', queryParams);
 
-    const result = await pool.query(query, queryParams);
+    const result = await pool.query(query);
     console.log('[EXPORT-VELOE] Total de placas agrupadas:', result.rows.length);
 
     // Criar planilha Excel no formato Veloe
@@ -442,9 +441,8 @@ export async function exportTicketCards(req: Request, res: Response) {
     `;
     
     console.log('[EXPORT-TICKET] Query:', query);
-    console.log('[EXPORT-TICKET] Params:', queryParams);
 
-    const result = await pool.query(query, queryParams);
+    const result = await pool.query(query);
     
     console.log('[EXPORT-TICKET] Registros encontrados:', result.rows.length);
 
