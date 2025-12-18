@@ -849,6 +849,10 @@ export default function LineHaulFuelRequest() {
                 <span className="font-medium text-gray-900">{form.placa}</span>
               </div>
               <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">KM do Veículo:</span>
+                <span className="font-medium text-gray-900">{parseInt(form.kmVeiculo || '0').toLocaleString('pt-BR')} km</span>
+              </div>
+              <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Origem:</span>
                 <span className="font-medium text-gray-900">{form.localInicio}</span>
               </div>
@@ -865,10 +869,6 @@ export default function LineHaulFuelRequest() {
                       ? 'Calculando...' 
                       : 'Não cadastrada'}
                 </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Odômetro Atual:</span>
-                <span className="font-medium text-gray-900">{parseInt(form.kmVeiculo || '0').toLocaleString('pt-BR')} km</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Horário:</span>
