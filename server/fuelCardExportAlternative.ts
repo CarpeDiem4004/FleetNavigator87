@@ -236,16 +236,42 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
     }
 
     // Query para buscar solicitações Veloe agrupadas por PLACA DO CARTÃO (numero_cartao)
-    // numero_cartao = placa do cartão que vai receber o saldo
-    // UPPER(REPLACE(...)) para normalizar placas removendo espaços e convertendo para maiúsculas
+    // Inclui dados de ambas as tabelas: solicitacoes_fuel_card e linehall_fuel_card_requests
     const query = `
+      WITH all_veloe_requests AS (
+        -- Solicitações tradicionais (solicitacoes_fuel_card)
+        SELECT 
+          UPPER(REPLACE(COALESCE(NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')) as placa_cartao,
+          COALESCE(valor_solicitado, 0) as valor,
+          COALESCE(base, 'Base não identificada') as base,
+          COALESCE(origem_tipo, 'tradicional') as origem_tipo,
+          data_uso
+        FROM solicitacoes_fuel_card
+        WHERE LOWER(provedor_cartao) LIKE '%veloe%' AND LOWER(status) = 'pendente'
+        
+        UNION ALL
+        
+        -- Solicitações Line Haul (linehall_fuel_card_requests)
+        SELECT 
+          UPPER(REPLACE(COALESCE(NULLIF(TRIM(lh.numero_cartao), ''), v.cartao_abastecimento, lh.veiculo_placa), ' ', '')) as placa_cartao,
+          COALESCE(lh.valor_calculado, 0) as valor,
+          CONCAT(COALESCE(lh.rota_origem, 'N/I'), ' → ', COALESCE(lh.rota_destino, 'N/I')) as base,
+          'line_hall' as origem_tipo,
+          lh.data_viagem as data_uso
+        FROM linehall_fuel_card_requests lh
+        LEFT JOIN veiculos v ON lh.veiculo_placa = v.placa
+        WHERE LOWER(COALESCE(lh.bandeira_cartao, '')) LIKE '%veloe%' AND LOWER(lh.status) = 'pendente'
+      )
       SELECT 
-        UPPER(REPLACE(COALESCE(NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')) as placa_cartao,
-        SUM(COALESCE(valor_solicitado, 0)) as valor_total,
-        STRING_AGG(DISTINCT COALESCE(base, 'Base não identificada'), ', ') as bases
-      FROM solicitacoes_fuel_card
-      ${whereClause}
-      GROUP BY UPPER(REPLACE(COALESCE(NULLIF(TRIM(numero_cartao), ''), placa), ' ', ''))
+        placa_cartao,
+        SUM(valor) as valor_total,
+        STRING_AGG(DISTINCT base, ', ') as bases
+      FROM all_veloe_requests
+      WHERE 1=1
+        ${origem === 'line_hall' ? `AND LOWER(COALESCE(origem_tipo, '')) = 'line_hall'` : `AND (LOWER(COALESCE(origem_tipo, '')) != 'line_hall' OR origem_tipo IS NULL)`}
+        ${data_inicio ? `AND data_uso >= '${data_inicio}'` : ''}
+        ${data_fim ? `AND data_uso <= '${data_fim}'` : ''}
+      GROUP BY placa_cartao
       ORDER BY placa_cartao
     `;
     
@@ -375,17 +401,43 @@ export async function exportTicketCards(req: Request, res: Response) {
       whereClause += ` AND data_uso <= $${queryParams.length}`;
     }
 
-    // Buscar solicitações PENDENTES agrupadas por PLACA DO CARTÃO (numero_cartao)
-    // numero_cartao = placa do cartão que vai receber o saldo
-    // UPPER(REPLACE(...)) para normalizar placas removendo espaços e convertendo para maiúsculas
+    // Buscar solicitações PENDENTES agrupadas por PLACA DO CARTÃO
+    // Inclui dados de ambas as tabelas: solicitacoes_fuel_card e linehall_fuel_card_requests
     const query = `
+      WITH all_ticket_requests AS (
+        -- Solicitações tradicionais (solicitacoes_fuel_card)
+        SELECT 
+          UPPER(REPLACE(COALESCE(NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')) as placa_cartao,
+          COALESCE(valor_solicitado, 0) as valor,
+          COALESCE(base, 'Base não identificada') as base,
+          COALESCE(origem_tipo, 'tradicional') as origem_tipo,
+          data_uso
+        FROM solicitacoes_fuel_card
+        WHERE LOWER(provedor_cartao) LIKE '%ticket%' AND LOWER(status) = 'pendente'
+        
+        UNION ALL
+        
+        -- Solicitações Line Haul (linehall_fuel_card_requests)
+        SELECT 
+          UPPER(REPLACE(COALESCE(NULLIF(TRIM(lh.numero_cartao), ''), v.cartao_abastecimento, lh.veiculo_placa), ' ', '')) as placa_cartao,
+          COALESCE(lh.valor_calculado, 0) as valor,
+          CONCAT(COALESCE(lh.rota_origem, 'N/I'), ' → ', COALESCE(lh.rota_destino, 'N/I')) as base,
+          'line_hall' as origem_tipo,
+          lh.data_viagem as data_uso
+        FROM linehall_fuel_card_requests lh
+        LEFT JOIN veiculos v ON lh.veiculo_placa = v.placa
+        WHERE LOWER(COALESCE(lh.bandeira_cartao, '')) LIKE '%ticket%' AND LOWER(lh.status) = 'pendente'
+      )
       SELECT 
-        UPPER(REPLACE(COALESCE(NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')) as placa_cartao,
-        SUM(COALESCE(valor_solicitado, 0)) as valor_total,
-        STRING_AGG(DISTINCT COALESCE(base, 'Base não identificada'), ', ') as bases
-      FROM solicitacoes_fuel_card
-      ${whereClause}
-      GROUP BY UPPER(REPLACE(COALESCE(NULLIF(TRIM(numero_cartao), ''), placa), ' ', ''))
+        placa_cartao,
+        SUM(valor) as valor_total,
+        STRING_AGG(DISTINCT base, ', ') as bases
+      FROM all_ticket_requests
+      WHERE 1=1
+        ${origem === 'line_hall' ? `AND LOWER(COALESCE(origem_tipo, '')) = 'line_hall'` : `AND (LOWER(COALESCE(origem_tipo, '')) != 'line_hall' OR origem_tipo IS NULL)`}
+        ${data_inicio ? `AND data_uso >= '${data_inicio}'` : ''}
+        ${data_fim ? `AND data_uso <= '${data_fim}'` : ''}
+      GROUP BY placa_cartao
       ORDER BY placa_cartao
     `;
     
