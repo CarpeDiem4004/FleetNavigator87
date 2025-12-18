@@ -848,10 +848,6 @@ export default function LineHaulFuelRequest() {
                 <span className="text-sm text-gray-600">Placa Veículo:</span>
                 <span className="font-medium text-gray-900">{form.placa}</span>
               </div>
-              <div className="flex justify-between items-center border-t border-blue-200 pt-2 mt-2">
-                <span className="text-sm text-gray-600 font-medium">KM do Veículo:</span>
-                <span className="font-bold text-lg text-blue-600">{parseInt(form.kmVeiculo || '0').toLocaleString('pt-BR')} km</span>
-              </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Origem:</span>
                 <span className="font-medium text-gray-900">{form.localInicio}</span>
@@ -860,12 +856,20 @@ export default function LineHaulFuelRequest() {
                 <span className="text-sm text-gray-600">Destino:</span>
                 <span className="font-medium text-gray-900">{form.destino}</span>
               </div>
-              {routeDistance > 0 && (
-                <div className="flex justify-between items-center bg-green-100 rounded px-2 py-1">
-                  <span className="text-sm text-green-700 font-medium">Distância da Rota:</span>
-                  <span className="font-bold text-lg text-green-700">{routeDistance.toLocaleString('pt-BR')} km</span>
-                </div>
-              )}
+              <div className="flex justify-between items-center border-t border-blue-200 pt-2 mt-2 bg-blue-100 rounded px-2 py-1">
+                <span className="text-sm text-blue-700 font-medium">KM da Rota:</span>
+                <span className="font-bold text-lg text-blue-700">
+                  {routeDistance > 0 
+                    ? `${routeDistance.toLocaleString('pt-BR')} km` 
+                    : loadingDistance 
+                      ? 'Calculando...' 
+                      : 'Não cadastrada'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Odômetro Atual:</span>
+                <span className="font-medium text-gray-900">{parseInt(form.kmVeiculo || '0').toLocaleString('pt-BR')} km</span>
+              </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Horário:</span>
                 <span className="font-medium text-gray-900">{form.horarioAbastecimento}</span>
