@@ -2929,14 +2929,31 @@ const FuelCardRequestsPanel: React.FC = () => {
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Valor Total Line Haul</CardTitle>
-              <DollarSign className="h-4 w-4 text-blue-600" />
+              <CardTitle className="text-sm font-medium">Valor Total Pendente</CardTitle>
+              <DollarSign className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {formatCurrency(getTotalValue(getLineHallSolicitations()))}
-              </div>
-              <p className="text-xs text-muted-foreground">Valor total das solicitações Line Haul</p>
+              {(() => {
+                const values = getValuesByCardType(lineHaulPendentes);
+                return (
+                  <div className="space-y-2">
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatCurrency(values.total)}
+                    </div>
+                    <div className="flex flex-col gap-1 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-orange-600 font-medium">Ticket:</span>
+                        <span className="font-bold text-orange-700">{formatCurrency(values.ticket)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-green-600 font-medium">Veloe Go:</span>
+                        <span className="font-bold text-green-700">{formatCurrency(values.veloeGo)}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">Valor pendente de aprovação</p>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
           
@@ -3150,8 +3167,27 @@ const FuelCardRequestsPanel: React.FC = () => {
               <DollarSign className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(getTotalValue(lineHaulPendentes))}</div>
-              <p className="text-xs text-muted-foreground">Valor pendente de aprovação</p>
+              {(() => {
+                const values = getValuesByCardType(lineHaulPendentes);
+                return (
+                  <div className="space-y-2">
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatCurrency(values.total)}
+                    </div>
+                    <div className="flex flex-col gap-1 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-orange-600 font-medium">Ticket:</span>
+                        <span className="font-bold text-orange-700">{formatCurrency(values.ticket)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-green-600 font-medium">Veloe Go:</span>
+                        <span className="font-bold text-green-700">{formatCurrency(values.veloeGo)}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">Valor pendente de aprovação</p>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
           <Card>
