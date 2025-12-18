@@ -409,20 +409,21 @@ export default function LineHaulFuelRequest() {
                 </p>
               </div>
 
-              {/* Contato de Emergência */}
-              <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
-                <p className="text-red-800 text-sm flex items-start gap-2 font-medium">
-                  <PhoneCall className="h-5 w-5 text-red-600 flex-shrink-0" />
-                  <span>
-                    Em caso de qualquer ocorrência, por mais simples que pareça, <strong>acione imediatamente nosso time</strong>. 📞🤝
-                  </span>
-                </p>
-              </div>
             </CardContent>
           </ScrollArea>
 
-          {/* Checkbox e Botão - sempre visíveis na parte inferior */}
-          <div className="p-4 bg-white space-y-3">
+          {/* Área fixa inferior - sempre visível */}
+          <div className="p-4 bg-white space-y-3 border-t">
+            {/* Contato de Emergência */}
+            <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3">
+              <p className="text-red-800 text-sm flex items-start gap-2 font-medium">
+                <PhoneCall className="h-5 w-5 text-red-600 flex-shrink-0" />
+                <span>
+                  Em caso de qualquer ocorrência, por mais simples que pareça, <strong>acione imediatamente nosso time</strong>. 📞🤝
+                </span>
+              </p>
+            </div>
+
             {/* Checkbox de Aceite */}
             <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg border-2 border-green-300">
               <Checkbox
