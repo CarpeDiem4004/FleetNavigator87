@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Fuel, Camera, Check, Truck, MapPin, Phone, User, Clock, Package, Droplets, Gauge, CreditCard, AlertCircle, Edit } from "lucide-react";
+import { Loader2, Fuel, Camera, Check, Truck, MapPin, Phone, User, Clock, Package, Droplets, Gauge, CreditCard, AlertCircle, Edit, Shield, Heart, BookOpen, PhoneCall, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface VehiclePlate {
   placa: string;
@@ -73,6 +74,17 @@ const ROTAS_LINE_HAUL = [
 
 export default function LineHaulFuelRequest() {
   const { toast } = useToast();
+  
+  // Estado para tela de conscientização - verifica sessionStorage
+  const [aceitouConscientizacao, setAceitouConscientizacao] = useState(() => {
+    return sessionStorage.getItem('linehaul_conscientizacao_aceita') === 'true';
+  });
+  const [checkboxCiente, setCheckboxCiente] = useState(false);
+  
+  const handleAceitarConscientizacao = () => {
+    sessionStorage.setItem('linehaul_conscientizacao_aceita', 'true');
+    setAceitouConscientizacao(true);
+  };
   
   const [form, setForm] = useState({
     nome: "",
@@ -312,6 +324,142 @@ export default function LineHaulFuelRequest() {
     } finally {
       setLoading(false);
     }
+  }
+
+  // Tela de Conscientização Obrigatória
+  if (!aceitouConscientizacao) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4">
+        <Card className="w-full max-w-lg shadow-2xl border-0">
+          <CardHeader className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-t-lg pb-6">
+            <div className="flex justify-center mb-3">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                <Shield className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <CardTitle className="text-center text-xl font-bold">
+              Segurança em Primeiro Lugar
+            </CardTitle>
+          </CardHeader>
+          
+          <ScrollArea className="max-h-[60vh]">
+            <CardContent className="pt-6 pb-4 space-y-5">
+              {/* Mensagem Principal */}
+              <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
+                <p className="text-lg font-semibold text-green-800 text-center italic">
+                  "Seu destino mais importante é voltar para casa em segurança."
+                </p>
+              </div>
+
+              {/* Dicas de Segurança */}
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-gray-700 text-sm">
+                    <strong>Respeite o limite de velocidade</strong>
+                  </p>
+                </div>
+                
+                <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-gray-700 text-sm">
+                    <strong>Mantenha a distância segura:</strong> o tempo de reação do veículo é influenciado pelo peso e tamanho. Dê espaço para a segurança.
+                  </p>
+                </div>
+                
+                <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-gray-700 text-sm">
+                    <strong>Faça pausas e descanse:</strong> cansaço aumenta o risco de acidentes.
+                  </p>
+                </div>
+              </div>
+
+              {/* Seção de Treinamentos */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <BookOpen className="h-5 w-5 text-amber-600" />
+                  <h3 className="font-bold text-amber-800">Treinamentos</h3>
+                </div>
+                
+                <div className="space-y-2 text-sm text-gray-700">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <p>Realize os treinamentos obrigatórios no <strong>App Logistic</strong> — o Meli disponibiliza novos temas com frequência, fique atento.</p>
+                  </div>
+                  
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p>Realize os treinamentos obrigatórios do <strong>SEST SENAT</strong></p>
+                      <ul className="ml-4 mt-1 space-y-1 text-gray-600">
+                        <li>• Direção Defensiva</li>
+                        <li>• Como evitar acidentes em rodovias</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mensagem Emocional */}
+              <div className="bg-green-100 border border-green-300 rounded-lg p-4 text-center">
+                <p className="text-green-800 font-semibold text-lg flex items-center justify-center gap-2">
+                  <Heart className="h-5 w-5 text-green-600" />
+                  Alguém espera por você. Dirija com SEGURANÇA. 💚
+                </p>
+              </div>
+
+              {/* Contato de Emergência */}
+              <div className="bg-blue-100 border border-blue-300 rounded-lg p-4">
+                <p className="text-blue-800 text-sm flex items-start gap-2">
+                  <PhoneCall className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                  <span>
+                    Em caso de qualquer ocorrência, por mais simples que pareça, <strong>acione imediatamente nosso time</strong>. 📞🤝
+                  </span>
+                </p>
+              </div>
+
+              {/* Checkbox de Aceite */}
+              <div className="flex items-center space-x-3 p-4 bg-gray-100 rounded-lg border-2 border-gray-300 mt-4">
+                <Checkbox
+                  id="ciente"
+                  checked={checkboxCiente}
+                  onCheckedChange={(checked) => setCheckboxCiente(checked === true)}
+                  className="h-6 w-6"
+                  data-testid="checkbox-ciente"
+                />
+                <Label htmlFor="ciente" className="cursor-pointer text-gray-800 font-medium">
+                  ☑ Li e estou ciente
+                </Label>
+              </div>
+            </CardContent>
+          </ScrollArea>
+
+          {/* Botão Continuar */}
+          <div className="p-4 border-t bg-gray-50 rounded-b-lg">
+            <Button
+              onClick={handleAceitarConscientizacao}
+              disabled={!checkboxCiente}
+              className={`w-full h-12 text-lg font-semibold transition-all ${
+                checkboxCiente 
+                  ? 'bg-green-600 hover:bg-green-700 text-white' 
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+              data-testid="button-continuar-solicitacao"
+            >
+              {checkboxCiente ? (
+                <>
+                  <Check className="mr-2 h-5 w-5" />
+                  Continuar para Solicitação
+                </>
+              ) : (
+                'Marque "Li e estou ciente" para continuar'
+              )}
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
   }
 
   if (submitted) {
