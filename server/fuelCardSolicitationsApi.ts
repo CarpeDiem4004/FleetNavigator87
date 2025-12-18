@@ -67,7 +67,7 @@ function getConsumoByModel(modelo: string): number {
 let cacheData: { data: any[], timestamp: number } | null = null;
 const CACHE_TTL = 30000; // 30 segundos
 
-// Limpar cache após correção dos campos
+// Limpar cache após correção de ordenação FIFO (mais antigas primeiro)
 cacheData = null;
 
 export async function getFuelCardSolicitations(req: Request, res: Response) {
@@ -285,7 +285,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           WHEN status IN ('em_analise', 'aprovada', 'approved') THEN 2
           ELSE 3
         END,
-        data_solicitacao DESC NULLS LAST
+        data_solicitacao ASC NULLS LAST
     `;
     
     const result = await pool.query(query);
