@@ -3291,8 +3291,27 @@ const FuelCardRequestsPanel: React.FC = () => {
               <DollarSign className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(getTotalValue(lineHaulAtendidas))}</div>
-              <p className="text-xs text-muted-foreground">Valor das recargas</p>
+              {(() => {
+                const values = getValuesByCardType(lineHaulAtendidas);
+                return (
+                  <div className="space-y-2">
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatCurrency(values.total)}
+                    </div>
+                    <div className="flex flex-col gap-1 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-orange-600 font-medium">Ticket:</span>
+                        <span className="font-bold text-orange-700">{formatCurrency(values.ticket)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-green-600 font-medium">Veloe Go:</span>
+                        <span className="font-bold text-green-700">{formatCurrency(values.veloeGo)}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">Valor das recargas</p>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
           <Card>
