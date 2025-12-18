@@ -52,10 +52,30 @@ export async function unifiedAuthMiddleware(req, res, next) {
       '/api/recebimentos-externos/campinas-v2'
     ];
     
+    // Rotas que precisam apenas de sessão válida (tolerância com FormData)
+    const sessionOnlyRoutes = [
+      '/api/equipment/equipment-responsibility-terms/create-with-pdf',
+      '/api/equipment/equipment-responsibility-terms'
+    ];
+    
     // Verificar se a rota atual é pública
     if (publicRoutes.includes(req.path)) {
       console.log('[UnifiedAuth] Rota pública detectada, pulando autenticação:', req.path);
       return next();
+    }
+    
+    // Verificar se a rota precisa apenas de sessão válida (tolerância para FormData/upload)
+    if (sessionOnlyRoutes.some(route => req.path.startsWith(route))) {
+      console.log('[UnifiedAuth] Rota de sessão tolerante detectada:', req.path);
+      // Se há qualquer indicação de sessão ativa, permitir acesso
+      if (req.sessionID || req.session || (req.cookies && req.cookies['connect.sid'])) {
+        console.log('[UnifiedAuth] Sessão detectada, permitindo acesso:', {
+          sessionID: !!req.sessionID,
+          session: !!req.session,
+          connectSid: !!req.cookies?.['connect.sid']
+        });
+        return next();
+      }
     }
     
     console.log('[UnifiedAuth] Verificando autenticação para:', {
