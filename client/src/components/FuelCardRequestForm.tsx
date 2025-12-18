@@ -456,9 +456,34 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
               <Input
                 id="numero_cartao"
                 value={formData.numero_cartao}
-                onChange={(e) => setFormData(prev => ({ ...prev, numero_cartao: e.target.value }))}
-                placeholder="0000"
+                onChange={(e) => {
+                  let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                  if (value.length > 7) return;
+                  
+                  // Regras posição por posição para placa brasileira
+                  const rules = [
+                    /[A-Z]/, // 1ª letra
+                    /[A-Z]/, // 2ª letra
+                    /[A-Z]/, // 3ª letra
+                    /[0-9]/, // 4º número
+                    /[A-Z0-9]/, // 5º (número antigo OU letra Mercosul)
+                    /[0-9]/, // 6º número
+                    /[0-9]/, // 7º número
+                  ];
+                  
+                  for (let i = 0; i < value.length; i++) {
+                    if (!rules[i].test(value[i])) {
+                      return; // Bloqueia digitação inválida
+                    }
+                  }
+                  
+                  setFormData(prev => ({ ...prev, numero_cartao: value }));
+                }}
+                placeholder="ABC1D23"
+                maxLength={7}
+                className="uppercase"
               />
+              <p className="text-xs text-muted-foreground">Informe a placa original do cartão que irá usar para abastecer</p>
             </div>
           </div>
 
