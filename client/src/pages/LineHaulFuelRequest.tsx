@@ -107,6 +107,15 @@ export default function LineHaulFuelRequest() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [routeDistance, setRouteDistance] = useState<number>(0);
   const [loadingDistance, setLoadingDistance] = useState(false);
+
+  // Validação de placa brasileira (antiga ABC1234 ou Mercosul ABC1D23)
+  const validarPlaca = (placa: string): boolean => {
+    if (!placa) return true; // Campo opcional, vazio é válido
+    const regex = /^([A-Z]{3}[0-9]{4}|[A-Z]{3}[0-9][A-Z][0-9]{2})$/;
+    return regex.test(placa.toUpperCase());
+  };
+
+  const isPlacaCartaoValida = validarPlaca(form.placaCartao);
   
   const [allPlates, setAllPlates] = useState<VehiclePlate[]>([]);
   const [filteredPlates, setFilteredPlates] = useState<VehiclePlate[]>([]);
@@ -246,6 +255,16 @@ export default function LineHaulFuelRequest() {
       toast({
         title: "Foto obrigatória",
         description: "Por favor, tire uma foto do cartão.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar placa do cartão se preenchida
+    if (form.placaCartao && !validarPlaca(form.placaCartao)) {
+      toast({
+        title: "Placa inválida",
+        description: "A placa do cartão deve estar no formato ABC1234 (antigo) ou ABC1D23 (Mercosul).",
         variant: "destructive",
       });
       return;
@@ -498,6 +517,7 @@ export default function LineHaulFuelRequest() {
                   operacao: "mercado_livre",
                   provedorCartao: "veloe",
                   arla: false,
+                  placaCartao: "",
                 });
                 setFotoPainel(null);
                 setFotoCartao(null);
@@ -930,12 +950,14 @@ export default function LineHaulFuelRequest() {
                     setForm({ ...form, placaCartao: value });
                   }}
                   maxLength={7}
-                  className={`uppercase ${form.placaCartao && form.placaCartao.length !== 7 ? 'border-red-500 focus:ring-red-500' : ''}`}
+                  pattern="^([A-Z]{3}[0-9]{4}|[A-Z]{3}[0-9][A-Z][0-9]{2})$"
+                  title="Placa inválida. Use formato ABC1234 ou ABC1D23"
+                  className={`uppercase ${form.placaCartao && !isPlacaCartaoValida ? 'border-red-500 focus:ring-red-500' : ''}`}
                   data-testid="input-placa-cartao"
                 />
-                {form.placaCartao && form.placaCartao.length !== 7 && (
+                {form.placaCartao && !isPlacaCartaoValida && (
                   <p className="text-xs text-red-500 font-medium">
-                    A placa deve ter exatamente 7 caracteres (ex: ABC1D23)
+                    Placa inválida. Use formato ABC1234 (antigo) ou ABC1D23 (Mercosul)
                   </p>
                 )}
                 <p className="text-xs text-gray-500">
