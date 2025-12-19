@@ -9,8 +9,8 @@ import { pool } from '../db';
 // Dados de teste removidos - sistema usa apenas dados reais
 
 // Configuração do Supabase
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_SERVICE_KEY || '';
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || '';
 
 // Verificar que as chaves do Supabase estão presentes
 if (!supabaseUrl || !supabaseKey) {
@@ -21,7 +21,8 @@ console.log('TowingPartnersRoutes - Inicializando cliente Supabase com URL:',
   supabaseUrl ? `${supabaseUrl.substring(0, 15)}...` : 'não definida');
 console.log('TowingPartnersRoutes - Chave de serviço disponível:', !!supabaseKey);
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Só cria o cliente se tiver as credenciais
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null as any;
 
 const router = Router();
 

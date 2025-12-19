@@ -9,13 +9,13 @@ import session from 'express-session';
 const router = Router();
 
 // Configuração do Supabase
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
-const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_KEY || '';
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || '';
 
-// Criar dois clientes: um com a chave anônima e outro com a chave de serviço
-const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey);
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Criar clientes somente se as credenciais estiverem disponíveis
+const supabaseAnon = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null as any;
+const supabase = supabaseUrl && supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null as any;
 
 // JWT Secret - IMPORTANTE: Devemos usar a chave ANON do Supabase
 // O Supabase espera que os tokens sejam assinados com a chave ANON

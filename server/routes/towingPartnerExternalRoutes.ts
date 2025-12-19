@@ -10,9 +10,9 @@ import { createClient } from '@supabase/supabase-js';
 const router = express.Router();
 
 // Configurar cliente Supabase
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || '';
+const supabase = supabaseUrl && supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null as any;
 
 // Tabela para armazenar tokens de acesso
 const TOKENS_TABLE = 'towing_access_tokens';

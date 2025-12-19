@@ -11,19 +11,19 @@ export class SupabaseAdapter {
   private supabase;
   
   private constructor() {
-    if (!process.env.VITE_SUPABASE_URL || !process.env.VITE_SUPABASE_SERVICE_KEY) {
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || '';
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error('Variáveis de ambiente do Supabase não definidas');
     }
     
     // Cria o cliente Supabase com a service key
-    this.supabase = createClient(
-      process.env.VITE_SUPABASE_URL,
-      process.env.VITE_SUPABASE_SERVICE_KEY
-    );
+    this.supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // Registra informações para debug
-    console.log(`Adaptador Supabase inicializado para: ${process.env.VITE_SUPABASE_URL.substring(0, 15)}...`);
-    console.log(`Chave de acesso disponível: ${process.env.VITE_SUPABASE_SERVICE_KEY ? 'Sim' : 'Não'}`);
+    console.log(`Adaptador Supabase inicializado para: ${supabaseUrl.substring(0, 15)}...`);
+    console.log(`Chave de acesso disponível: ${supabaseServiceKey ? 'Sim' : 'Não'}`);
   }
   
   /**
