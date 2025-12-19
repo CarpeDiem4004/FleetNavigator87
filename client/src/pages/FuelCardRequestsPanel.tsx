@@ -1545,33 +1545,28 @@ const FuelCardRequestsPanel: React.FC = () => {
     }).format(value);
   };
 
-  // Função para detectar placas repetidas no mesmo dia
+  // Função para detectar placas repetidas no mesmo dia (qualquer dia, não apenas hoje)
   const getRepeatedPlacasToday = (solicitacoes: any[]) => {
-    const today = new Date();
-    const todayStr = format(today, 'yyyy-MM-dd');
-    
-    // Agrupar por placa e data
+    // Agrupar por placa e data de solicitação
     const placasByDate: Record<string, number> = {};
     
     solicitacoes.forEach(sol => {
       const dataStr = sol.data_solicitacao || sol.created_at;
-      if (!dataStr) return;
+      if (!dataStr || !sol.placa) return;
       
       try {
         const solDate = new Date(dataStr);
         const solDateStr = format(solDate, 'yyyy-MM-dd');
         
-        // Só conta se for do dia de hoje
-        if (solDateStr === todayStr) {
-          const key = `${sol.placa}_${solDateStr}`;
-          placasByDate[key] = (placasByDate[key] || 0) + 1;
-        }
+        // Conta todas as solicitações por placa+data (qualquer dia)
+        const key = `${sol.placa}_${solDateStr}`;
+        placasByDate[key] = (placasByDate[key] || 0) + 1;
       } catch (e) {
         // Ignora erros de parsing
       }
     });
     
-    // Retorna placas que aparecem mais de uma vez hoje
+    // Retorna placas que aparecem mais de uma vez no mesmo dia
     const repeated = new Set<string>();
     Object.entries(placasByDate).forEach(([key, count]) => {
       if (count > 1) {
