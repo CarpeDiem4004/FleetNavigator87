@@ -116,6 +116,19 @@ export default function LineHaulFuelRequest() {
   };
 
   const isPlacaCartaoValida = validarPlaca(form.placaCartao);
+
+  // Função para verificar se um horário deve estar desabilitado (já passou)
+  const isHorarioPassado = (horario: string): boolean => {
+    if (!horario || horario === "Após 18h") return false; // "Após 18h" sempre liberado
+    
+    const agora = new Date();
+    const horaAtual = agora.getHours() + agora.getMinutes() / 60;
+    
+    const [hora, minuto] = horario.split(":").map(Number);
+    const horarioOpcao = hora + (minuto || 0) / 60;
+    
+    return horarioOpcao <= horaAtual;
+  };
   
   const [allPlates, setAllPlates] = useState<VehiclePlate[]>([]);
   const [filteredPlates, setFilteredPlates] = useState<VehiclePlate[]>([]);
@@ -758,11 +771,11 @@ export default function LineHaulFuelRequest() {
                   data-testid="select-horario"
                 >
                   <option value="">Selecione o horário</option>
-                  <option value="08:00">08:00</option>
-                  <option value="10:00">10:00</option>
-                  <option value="12:00">12:00</option>
-                  <option value="14:00">14:00</option>
-                  <option value="16:00">16:00</option>
+                  <option value="08:00" disabled={isHorarioPassado("08:00")}>08:00 {isHorarioPassado("08:00") ? "(indisponível)" : ""}</option>
+                  <option value="10:00" disabled={isHorarioPassado("10:00")}>10:00 {isHorarioPassado("10:00") ? "(indisponível)" : ""}</option>
+                  <option value="12:00" disabled={isHorarioPassado("12:00")}>12:00 {isHorarioPassado("12:00") ? "(indisponível)" : ""}</option>
+                  <option value="14:00" disabled={isHorarioPassado("14:00")}>14:00 {isHorarioPassado("14:00") ? "(indisponível)" : ""}</option>
+                  <option value="16:00" disabled={isHorarioPassado("16:00")}>16:00 {isHorarioPassado("16:00") ? "(indisponível)" : ""}</option>
                   <option value="Após 18h">Após 18h</option>
                 </select>
               </div>
