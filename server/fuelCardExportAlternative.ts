@@ -235,12 +235,13 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
       whereClause += ` AND data_uso <= $${queryParams.length}`;
     }
 
-    // Query para buscar solicitações Veloe agrupadas por PLACA DO CARTÃO (numero_cartao)
+    // Query para buscar solicitações Veloe agrupadas por PLACA DO CARTÃO
+    // Prioriza: placa_cartao (Line Haul) -> numero_cartao -> placa (fallback)
     // Line Haul usa data_solicitacao (data_uso é NULL), então usamos COALESCE
     // Para Line Haul, a observação mostra a rota (origem → destino); para Bases, mostra o nome da base
     const query = `
       SELECT 
-        UPPER(REPLACE(COALESCE(NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')) as placa_cartao,
+        UPPER(REPLACE(COALESCE(NULLIF(TRIM(placa_cartao), ''), NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')) as placa_cartao,
         SUM(COALESCE(valor_solicitado, 0)) as valor_total,
         STRING_AGG(DISTINCT 
           CASE 
@@ -254,7 +255,7 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
         ${origem === 'line_hall' ? `AND LOWER(COALESCE(origem_tipo, '')) = 'line_hall'` : `AND (LOWER(COALESCE(origem_tipo, '')) != 'line_hall' OR origem_tipo IS NULL)`}
         ${data_inicio ? `AND COALESCE(data_uso, data_solicitacao) >= '${data_inicio}'` : ''}
         ${data_fim ? `AND COALESCE(data_uso, data_solicitacao) <= '${data_fim}'` : ''}
-      GROUP BY UPPER(REPLACE(COALESCE(NULLIF(TRIM(numero_cartao), ''), placa), ' ', ''))
+      GROUP BY UPPER(REPLACE(COALESCE(NULLIF(TRIM(placa_cartao), ''), NULLIF(TRIM(numero_cartao), ''), placa), ' ', ''))
       ORDER BY placa_cartao
     `;
     
@@ -384,11 +385,12 @@ export async function exportTicketCards(req: Request, res: Response) {
     }
 
     // Buscar solicitações PENDENTES agrupadas por PLACA DO CARTÃO
+    // Prioriza: placa_cartao (Line Haul) -> numero_cartao -> placa (fallback)
     // Line Haul usa data_solicitacao (data_uso é NULL), então usamos COALESCE
     // Para Line Haul, a observação mostra a rota (origem → destino); para Bases, mostra o nome da base
     const query = `
       SELECT 
-        UPPER(REPLACE(COALESCE(NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')) as placa_cartao,
+        UPPER(REPLACE(COALESCE(NULLIF(TRIM(placa_cartao), ''), NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')) as placa_cartao,
         SUM(COALESCE(valor_solicitado, 0)) as valor_total,
         STRING_AGG(DISTINCT 
           CASE 
@@ -402,7 +404,7 @@ export async function exportTicketCards(req: Request, res: Response) {
         ${origem === 'line_hall' ? `AND LOWER(COALESCE(origem_tipo, '')) = 'line_hall'` : `AND (LOWER(COALESCE(origem_tipo, '')) != 'line_hall' OR origem_tipo IS NULL)`}
         ${data_inicio ? `AND COALESCE(data_uso, data_solicitacao) >= '${data_inicio}'` : ''}
         ${data_fim ? `AND COALESCE(data_uso, data_solicitacao) <= '${data_fim}'` : ''}
-      GROUP BY UPPER(REPLACE(COALESCE(NULLIF(TRIM(numero_cartao), ''), placa), ' ', ''))
+      GROUP BY UPPER(REPLACE(COALESCE(NULLIF(TRIM(placa_cartao), ''), NULLIF(TRIM(numero_cartao), ''), placa), ' ', ''))
       ORDER BY placa_cartao
     `;
     
