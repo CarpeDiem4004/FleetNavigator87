@@ -16,3 +16,12 @@
   border-radius: 8px;
 }
 }
+
+.linehaul-abastecimento {
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.88)),
+    url('/attached_assets/image_1766424319159.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}

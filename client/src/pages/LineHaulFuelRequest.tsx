@@ -559,7 +559,7 @@ export default function LineHaulFuelRequest() {
           <p className="text-blue-200 mt-1">Line Haul</p>
         </div>
 
-        <Card className="shadow-xl">
+        <Card className="shadow-xl linehaul-abastecimento">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg flex items-center gap-2">
               <Truck className="h-5 w-5" />
