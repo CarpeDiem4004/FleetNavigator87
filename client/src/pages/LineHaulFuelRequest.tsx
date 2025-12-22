@@ -361,8 +361,8 @@ export default function LineHaulFuelRequest() {
   // Tela de Conscientização Obrigatória
   if (!aceitouConscientizacao) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4">
-        <Card className="w-full max-w-lg shadow-2xl border-0 linehaul-abastecimento">
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 p-4 overflow-y-auto">
+        <Card className="w-full max-w-lg mx-auto shadow-2xl border-0 linehaul-abastecimento my-4">
           <CardHeader className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-t-lg pb-6">
             <div className="flex justify-center mb-3">
               <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
@@ -374,7 +374,7 @@ export default function LineHaulFuelRequest() {
             </CardTitle>
           </CardHeader>
           
-          <ScrollArea className="max-h-[60vh]">
+          <div>
             <CardContent className="pt-6 pb-4 space-y-5">
               {/* Mensagem Principal */}
               <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
@@ -442,10 +442,10 @@ export default function LineHaulFuelRequest() {
               </div>
 
             </CardContent>
-          </ScrollArea>
+          </div>
 
-          {/* Área fixa inferior - sempre visível */}
-          <div className="p-4 bg-white space-y-3 border-t">
+          {/* Área inferior */}
+          <div className="p-4 space-y-3 border-t">
             {/* Contato de Emergência */}
             <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3">
               <p className="text-red-800 text-sm flex items-start gap-2 font-medium">
