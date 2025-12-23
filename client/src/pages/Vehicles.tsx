@@ -440,16 +440,16 @@ const Vehicles: React.FC = () => {
                   Placa
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Marca
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Modelo
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tipo
+                  Base
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Base
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ações
@@ -491,17 +491,10 @@ const Vehicles: React.FC = () => {
                       <div className="text-sm font-medium text-gray-900">{vehicle.plate}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{vehicle.model}</div>
+                      <div className="text-sm text-gray-900">{vehicle.make || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {vehicle.vehicleType === 'cavalo_mecanico' ? 'Cavalo mecânico' :
-                         vehicle.vehicleType === 'carreta' ? 'Carreta' :
-                         vehicle.vehicleType === 'van' ? 'Van' : 'Utilitário'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(vehicle.status as VehicleStatusType)}
+                      <div className="text-sm text-gray-900">{vehicle.model || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {(() => {
@@ -519,6 +512,9 @@ const Vehicles: React.FC = () => {
                           return '-';
                         }
                       })()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getStatusBadge(vehicle.status as VehicleStatusType)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-3">
