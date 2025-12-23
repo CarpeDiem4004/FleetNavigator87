@@ -250,11 +250,9 @@ const LoginBaseGenerico: React.FC = () => {
             <p className="text-xs text-gray-500">
               Murici On Fleet 2.0 - Sistema de Gestão de Frota
             </p>
-            {baseInfo?.operation && (
-              <p className="text-xs text-blue-600 font-medium mt-1">
-                {baseInfo.operation}
-              </p>
-            )}
+            <p className="text-xs text-blue-600 font-medium mt-1">
+              MURICI TRANSPORTE E LOGÍSTICA
+            </p>
           </div>
         </CardContent>
       </Card>
