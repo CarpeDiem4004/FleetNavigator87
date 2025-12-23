@@ -754,14 +754,14 @@ export class DatabaseStorage implements IStorage {
         INSERT INTO vehicles 
         (plate, model, make, vehicle_type, status, base_id, fuel_type, year, 
          cartao_abastecimento, km_atual, consumo_medio_km_l, ownership,
-         crlv_url, antt_url, is_temporary, deactivation_date)
+         crlv_url, crlv_validade, antt_url, is_temporary, deactivation_date)
         VALUES 
         (${vehicle.plate}, ${vehicle.model}, ${vehicle.make}, 
          ${vehicle.vehicleType}, ${vehicle.status}, ${vehicle.baseId}, 
          ${vehicle.fuelType}, ${vehicle.year}, 
          ${vehicle.cartaoAbastecimento || null}, ${vehicle.kmAtual || null},
          ${vehicle.consumoMedioKmL || null}, ${vehicle.ownership || 'murici'},
-         ${vehicle.crlvUrl || null}, ${vehicle.anttUrl || null},
+         ${vehicle.crlvUrl || null}, ${(vehicle as any).crlvValidade || null}, ${vehicle.anttUrl || null},
          ${vehicle.isTemporary || false}, ${vehicle.deactivationDate || null})
         RETURNING id, plate, model, make, year, vehicle_type as "vehicleType", 
                  status, base_id as "baseId", fuel_type as "fuelType",
@@ -805,6 +805,7 @@ export class DatabaseStorage implements IStorage {
       if (vehicle.consumoMedioKmL !== undefined) updateData.consumo_medio_km_l = vehicle.consumoMedioKmL;
       if (vehicle.ownership !== undefined) updateData.ownership = vehicle.ownership;
       if (vehicle.crlvUrl !== undefined) updateData.crlv_url = vehicle.crlvUrl || null;
+      if ((vehicle as any).crlvValidade !== undefined) updateData.crlv_validade = (vehicle as any).crlvValidade || null;
       if (vehicle.anttUrl !== undefined) updateData.antt_url = vehicle.anttUrl || null;
       if (vehicle.isTemporary !== undefined) updateData.is_temporary = vehicle.isTemporary;
       if (vehicle.deactivationDate !== undefined) updateData.deactivation_date = vehicle.deactivationDate || null;

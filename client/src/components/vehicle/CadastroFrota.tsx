@@ -56,6 +56,9 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
   // Estados para controlar o carregamento dos arquivos
   const [isUploadingCrlv, setIsUploadingCrlv] = useState(false)
   const [isUploadingAntt, setIsUploadingAntt] = useState(false)
+  
+  // Estado para validade do CRLV
+  const [crlvValidade, setCrlvValidade] = useState('')
 
   // Opções de tipo de veículo seguindo os valores válidos do enum vehicleType
   const tiposVeiculo = [
@@ -367,6 +370,7 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
           ownership: ownership,
           rentalCompany: ownership === 'locado' ? leasingCompany : null,
           crlvUrl: crlvUrl, // Adicionar URL do CRLV
+          crlvValidade: crlvValidade || null, // Data de validade do CRLV
           anttUrl: anttUrl, // Adicionar URL do ANTT
           cartaoAbastecimento: shouldShowCartaoAbastecimento() ? cartaoAbastecimento : null, // Campo específico para Line Hall
           isTemporary: isTemporary,
@@ -645,35 +649,48 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
             </div>
           )}
           
-          {/* Campo de upload do CRLV */}
-          <div className="space-y-2">
-            <Label htmlFor="crlvFile" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              CRLV (Certificado de Registro e Licenciamento)
-            </Label>
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center gap-2">
-                <Input
-                  id="crlvFile"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={handleCrlvUpload}
-                  className="flex-1"
-                  disabled={isUploadingCrlv}
-                />
-                {isUploadingCrlv && (
-                  <div className="animate-spin h-5 w-5 border-2 border-gray-500 border-t-transparent rounded-full"></div>
+          {/* Campo de upload do CRLV e Validade */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="crlvFile" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                CRLV (Certificado de Registro e Licenciamento)
+              </Label>
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="crlvFile"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleCrlvUpload}
+                    className="flex-1"
+                    disabled={isUploadingCrlv}
+                  />
+                  {isUploadingCrlv && (
+                    <div className="animate-spin h-5 w-5 border-2 border-gray-500 border-t-transparent rounded-full"></div>
+                  )}
+                </div>
+                {crlvUrl && (
+                  <div className="flex items-center gap-2 text-sm text-green-600">
+                    <FileText className="h-4 w-4" />
+                    <span>Documento CRLV anexado</span>
+                    <a href={crlvUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      Visualizar
+                    </a>
+                  </div>
                 )}
               </div>
-              {crlvUrl && (
-                <div className="flex items-center gap-2 text-sm text-green-600">
-                  <FileText className="h-4 w-4" />
-                  <span>Documento CRLV anexado</span>
-                  <a href={crlvUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                    Visualizar
-                  </a>
-                </div>
-              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="crlvValidade">Validade do CRLV</Label>
+              <Input
+                id="crlvValidade"
+                type="date"
+                value={crlvValidade}
+                onChange={(e) => setCrlvValidade(e.target.value)}
+                data-testid="input-crlv-validade"
+              />
             </div>
           </div>
           

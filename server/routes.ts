@@ -8283,6 +8283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         consumoMedioKmL: req.body.mediaConsumoCombutivel ? String(req.body.mediaConsumoCombutivel) : null,
         ownership: req.body.ownership === 'proprio' ? 'murici' : (req.body.ownership || 'murici'),
         crlvUrl: req.body.crlvUrl || null,
+        crlvValidade: req.body.crlvValidade || null,
         anttUrl: req.body.anttUrl || null,
         cartaoAbastecimento: req.body.cartaoAbastecimento || null,
         isTemporary: req.body.isTemporary === true || req.body.isTemporary === 'true',
