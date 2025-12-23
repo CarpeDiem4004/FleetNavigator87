@@ -457,30 +457,47 @@ export class DatabaseStorage implements IStorage {
 
   /**
    * Verifica se um usuário tem acesso a uma base específica
-   * REGRA PRINCIPAL:
-   * - Se role === 'admin' → acesso liberado a todas as bases
-   * - Caso contrário → verifica vínculo na tabela user_bases
+   * HIERARQUIA DE ACESSO:
+   * 1. Se role === 'admin' ou 'ceo' ou 'gerente_geral' → acesso global a todas as bases
+   * 2. Se usuário tem base_id igual ao baseId solicitado → acesso liberado
+   * 3. Se há vínculo na tabela user_bases → acesso liberado
    */
   async checkUserBaseAccess(userId: number, baseId: number, userRole: string): Promise<boolean> {
     try {
-      // Admin tem acesso global a todas as bases
-      if (userRole === 'admin') {
-        console.log(`[AUTH] Admin ${userId} - Acesso global liberado para base ${baseId}`);
+      console.log(`[AUTH] Verificando acesso: userId=${userId}, baseId=${baseId}, role=${userRole}`);
+      
+      // 1. Roles administrativos têm acesso global a todas as bases
+      const adminRoles = ['admin', 'ceo', 'gerente_geral'];
+      if (adminRoles.includes(userRole)) {
+        console.log(`[AUTH] ✅ ${userRole.toUpperCase()} ${userId} - Acesso GLOBAL liberado para base ${baseId}`);
         return true;
       }
 
-      // Para outros perfis, verificar vínculo na tabela user_bases
-      const query = `
+      // 2. Verificar se o base_id do usuário corresponde à base solicitada
+      const userQuery = `SELECT base_id FROM users WHERE id = $1`;
+      const userResult = await pool.query(userQuery, [userId]);
+      
+      if (userResult.rows.length > 0 && userResult.rows[0].base_id === baseId) {
+        console.log(`[AUTH] ✅ Usuário ${userId} (${userRole}) - Acesso via base_id próprio para base ${baseId}`);
+        return true;
+      }
+
+      // 3. Verificar vínculo na tabela user_bases
+      const linkQuery = `
         SELECT id FROM user_bases 
         WHERE user_id = $1 AND base_id = $2 AND is_active = true
         LIMIT 1
       `;
-      const result = await pool.query(query, [userId, baseId]);
+      const linkResult = await pool.query(linkQuery, [userId, baseId]);
       
-      const hasAccess = result.rows.length > 0;
-      console.log(`[AUTH] Usuário ${userId} (${userRole}) - Base ${baseId}: ${hasAccess ? 'LIBERADO' : 'NEGADO'}`);
-      
-      return hasAccess;
+      if (linkResult.rows.length > 0) {
+        console.log(`[AUTH] ✅ Usuário ${userId} (${userRole}) - Acesso via user_bases para base ${baseId}`);
+        return true;
+      }
+
+      // Nenhum acesso encontrado
+      console.log(`[AUTH] ❌ Usuário ${userId} (${userRole}) - ACESSO NEGADO para base ${baseId}`);
+      return false;
     } catch (error) {
       console.error(`[AUTH] Erro ao verificar acesso do usuário ${userId} à base ${baseId}:`, error);
       return false;
