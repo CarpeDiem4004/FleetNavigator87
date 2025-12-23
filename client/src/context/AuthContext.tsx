@@ -161,8 +161,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw new Error(errorData.message || 'Erro no login da base');
       }
 
-      const userData = await response.json();
-      console.log("Login de base bem-sucedido:", userData);
+      const responseData = await response.json();
+      console.log("Login de base bem-sucedido:", responseData);
+      
+      // O backend retorna { success: true, user: {...}, message: '...' }
+      const userData = responseData.user || responseData;
       
       const formattedUser: User = {
         id: userData.id,
@@ -178,7 +181,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       toast({
         title: "Login realizado",
-        description: `Bem-vindo à base, ${userData.name}!`,
+        description: `Bem-vindo à base, ${formattedUser.name}!`,
       });
 
       return formattedUser;
