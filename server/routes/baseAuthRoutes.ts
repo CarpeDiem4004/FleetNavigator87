@@ -1,8 +1,11 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { createClient } from '@supabase/supabase-js';
+import { scrypt, timingSafeEqual } from 'crypto';
+import { promisify } from 'util';
+import { storage } from '../storage';
 
+const scryptAsync = promisify(scrypt);
 const router = Router();
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -11,12 +14,27 @@ if (!JWT_SECRET) {
   console.warn('[BASE-AUTH] AVISO: JWT_SECRET não configurado. A autenticação de bases externas não funcionará até que seja configurado.');
 }
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-
-let supabase: any = null;
-if (supabaseUrl && supabaseKey) {
-  supabase = createClient(supabaseUrl, supabaseKey);
+// Função para comparar senhas (suporta bcrypt e scrypt legado)
+async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
+  try {
+    // Verificar se é hash bcrypt (começa com $2b$)
+    if (stored.startsWith('$2b$')) {
+      return await bcrypt.compare(supplied, stored);
+    }
+    
+    // Formato scrypt legado
+    const [hashed, salt] = stored.split(".");
+    if (!hashed || !salt) {
+      console.error('[BASE-AUTH] Formato de senha inválido');
+      return false;
+    }
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error('[BASE-AUTH] Erro ao comparar senhas:', error);
+    return false;
+  }
 }
 
 router.post('/login', async (req: Request, res: Response) => {
@@ -32,21 +50,10 @@ router.post('/login', async (req: Request, res: Response) => {
       });
     }
 
-    if (!supabase) {
-      return res.status(500).json({
-        success: false,
-        message: 'Erro de configuração do servidor',
-      });
-    }
+    // Buscar usuário no banco de dados LOCAL (PostgreSQL)
+    const user = await storage.getUserByEmail(email.toLowerCase());
 
-    const { data: users, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email.toLowerCase())
-      .eq('is_active', true)
-      .limit(1);
-
-    if (userError || !users || users.length === 0) {
+    if (!user) {
       console.log('[BASE-AUTH] Usuário não encontrado:', email);
       return res.status(401).json({
         success: false,
@@ -54,9 +61,17 @@ router.post('/login', async (req: Request, res: Response) => {
       });
     }
 
-    const user = users[0];
+    // Verificar se usuário está ativo
+    if (!user.isActive) {
+      console.log('[BASE-AUTH] Usuário inativo:', email);
+      return res.status(401).json({
+        success: false,
+        message: 'Usuário inativo. Contate o administrador.',
+      });
+    }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    // Verificar senha (suporta bcrypt e scrypt)
+    const isPasswordValid = await comparePasswords(password, user.password);
     if (!isPasswordValid) {
       console.log('[BASE-AUTH] Senha inválida para:', email);
       return res.status(401).json({
@@ -65,37 +80,25 @@ router.post('/login', async (req: Request, res: Response) => {
       });
     }
 
-    const { data: userBases, error: basesError } = await supabase
-      .from('user_bases')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('base_id', baseId)
-      .eq('is_active', true)
-      .limit(1);
-
-    let hasAccess = false;
+    // Verificar acesso à base usando storage.checkUserBaseAccess
+    const parsedBaseId = parseInt(baseId.toString());
+    const hasAccess = await storage.checkUserBaseAccess(user.id, parsedBaseId, user.role);
+    
     let baseRole = 'operador_base';
-
     if (user.role === 'admin' || user.role === 'ceo' || user.role === 'gerente_geral') {
-      hasAccess = true;
       baseRole = 'admin_base';
-      console.log('[BASE-AUTH] Acesso admin garantido para:', email);
-    } else if (userBases && userBases.length > 0) {
-      hasAccess = true;
-      baseRole = userBases[0].role;
-      console.log('[BASE-AUTH] Acesso via user_bases:', { email, baseRole });
-    } else if (user.base_id === baseId) {
-      hasAccess = true;
-      console.log('[BASE-AUTH] Acesso via base_id do usuário:', email);
     }
 
     if (!hasAccess) {
-      console.log('[BASE-AUTH] Acesso negado - usuário não vinculado à base:', { email, baseId });
+      console.log('[BASE-AUTH] Acesso negado - usuário não vinculado à base:', { email, baseId: parsedBaseId });
       return res.status(403).json({
         success: false,
         message: 'Você não tem permissão para acessar esta base',
+        errorCode: 'ACCESS_DENIED'
       });
     }
+    
+    console.log('[BASE-AUTH] Acesso liberado para:', { email, baseId: parsedBaseId, role: user.role });
 
     if (!JWT_SECRET) {
       console.error('[BASE-AUTH] JWT_SECRET não configurado - impossível gerar token');
