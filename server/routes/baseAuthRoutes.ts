@@ -5,7 +5,11 @@ import { createClient } from '@supabase/supabase-js';
 
 const router = Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'murici-on-fleet-base-auth-secret-2025';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.warn('[BASE-AUTH] AVISO: JWT_SECRET não configurado. A autenticação de bases externas não funcionará até que seja configurado.');
+}
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
@@ -93,6 +97,14 @@ router.post('/login', async (req: Request, res: Response) => {
       });
     }
 
+    if (!JWT_SECRET) {
+      console.error('[BASE-AUTH] JWT_SECRET não configurado - impossível gerar token');
+      return res.status(500).json({
+        success: false,
+        message: 'Erro de configuração do servidor - chave de segurança não configurada',
+      });
+    }
+
     const token = jwt.sign(
       {
         userId: user.id,
@@ -139,6 +151,14 @@ router.post('/verify', async (req: Request, res: Response) => {
     }
 
     const token = authHeader.split(' ')[1];
+
+    if (!JWT_SECRET) {
+      console.error('[BASE-AUTH] JWT_SECRET não configurado - impossível verificar token');
+      return res.status(500).json({
+        valid: false,
+        message: 'Erro de configuração do servidor',
+      });
+    }
 
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as {
