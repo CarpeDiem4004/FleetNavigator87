@@ -107,26 +107,22 @@ const LoginBaseGenerico: React.FC = () => {
     try {
       console.log('[LoginBaseGenerico] Tentando login para base:', baseInfo.name);
       
-      const result = await loginBase(formData.email, formData.password, baseInfo.id);
+      // loginBase retorna User diretamente (ou lança erro se falhar)
+      const user = await loginBase(formData.email, formData.password);
       
-      if (result.success) {
-        console.log('[LoginBaseGenerico] Login realizado com sucesso');
-        
-        // REGRA DE OURO: Após login bem-sucedido, vai para onde foi solicitado
-        if (redirectTo === 'cartao-combustivel') {
-          console.log('[LoginBaseGenerico] Redirecionando para cartão combustível');
-          window.location.href = `/bases/${baseInfo.id}/cartao-combustivel`;
-        } else {
-          console.log('[LoginBaseGenerico] Redirecionando para dashboard da base');
-          window.location.href = `/bases/${baseInfo.id}`;
-        }
+      console.log('[LoginBaseGenerico] Login realizado com sucesso para:', user.email);
+      
+      // REGRA DE OURO: Após login bem-sucedido, vai para onde foi solicitado
+      if (redirectTo === 'cartao-combustivel') {
+        console.log('[LoginBaseGenerico] Redirecionando para cartão combustível');
+        window.location.href = `/bases/${baseInfo.id}/cartao-combustivel`;
       } else {
-        console.error('[LoginBaseGenerico] Erro no login:', result.message);
-        setError(result.message || 'Credenciais inválidas. Verifique seu email e senha.');
+        console.log('[LoginBaseGenerico] Redirecionando para dashboard da base');
+        window.location.href = `/bases/${baseInfo.id}`;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[LoginBaseGenerico] Erro durante login:', error);
-      setError('Erro interno. Tente novamente em alguns instantes.');
+      setError(error?.message || 'Credenciais inválidas. Verifique seu email e senha.');
     } finally {
       setIsLogging(false);
     }
