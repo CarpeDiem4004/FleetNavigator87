@@ -44,7 +44,7 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
       case '/users':
         return 'Usuários';
       default:
-        return 'FleetManager';
+        return 'Murici On Fleet';
     }
   };
   

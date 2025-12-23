@@ -285,11 +285,15 @@ const SidebarSimplified: React.FC<SidebarProps> = ({ open, setOpen }) => {
     >
       <div className="flex flex-col w-64 bg-gradient-to-br from-primary-900 to-primary-800 text-white shadow-xl shadow-primary-900/25 border-r border-primary-900/20">
         {/* Logo */}
-        <div className="flex items-center justify-center h-16 border-b border-primary-900">
-          <h1 className="text-xl font-bold tracking-tight">
-            <Truck className="inline-block mr-2" size={20} />
-            FleetManager
-          </h1>
+        <div className="flex items-center justify-center h-16 border-b border-primary-900/50">
+          <div className="flex items-center gap-2">
+            <Truck className="h-6 w-6 text-primary-200" />
+            <h1 className="text-lg tracking-tight">
+              <span className="font-bold text-white">Murici</span>
+              <span className="font-light text-primary-200 ml-1">On Fleet</span>
+              <span className="font-light text-primary-300/80 text-sm ml-1">2.0</span>
+            </h1>
+          </div>
         </div>
 
         {/* Navigation */}
