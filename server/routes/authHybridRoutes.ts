@@ -5,6 +5,31 @@ import { promisify } from 'util';
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcrypt';
 
+// Declaração de tipos para sessão
+declare module 'express-session' {
+  interface SessionData {
+    user: {
+      id: number;
+      name: string;
+      email: string;
+      role: string;
+      base_id?: number | null;
+      basename?: string | null;
+      isActive: boolean;
+    };
+    isAuthenticated: boolean;
+    hybridUser: {
+      id: number;
+      name: string;
+      email: string;
+      role: string;
+      base_id?: number | null;
+      basename?: string | null;
+      isActive: boolean;
+    };
+  }
+}
+
 const scryptAsync = promisify(scrypt);
 const router = Router();
 
