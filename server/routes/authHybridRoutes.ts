@@ -176,10 +176,34 @@ router.post('/login-base', async (req, res) => {
     const { email, password, baseId } = req.body;
     console.log('[login-base] Tentativa de login para:', email, 'Base ID:', baseId);
 
+    // ==========================================
+    // VALIDAÇÃO DE ENTRADA - baseId é OBRIGATÓRIO
+    // ==========================================
     if (!email || !password) {
       return res.status(400).json({ 
         success: false,
         message: 'Email e senha são obrigatórios' 
+      });
+    }
+
+    // Validar baseId - OBRIGATÓRIO para login de base
+    if (baseId === undefined || baseId === null || baseId === '') {
+      console.log('[login-base] ERRO: baseId não fornecido');
+      return res.status(400).json({ 
+        success: false,
+        message: 'Base não especificada. Este endpoint requer uma base válida.',
+        errorCode: 'BASE_ID_REQUIRED'
+      });
+    }
+
+    // Validar formato numérico do baseId
+    const parsedBaseId = parseInt(baseId.toString());
+    if (isNaN(parsedBaseId) || parsedBaseId <= 0) {
+      console.log('[login-base] ERRO: baseId inválido:', baseId);
+      return res.status(400).json({ 
+        success: false,
+        message: 'Base inválida. Forneça um ID de base válido.',
+        errorCode: 'INVALID_BASE_ID'
       });
     }
 
@@ -215,24 +239,21 @@ router.post('/login-base', async (req, res) => {
     }
 
     // ==========================================
-    // VALIDAÇÃO DE ACESSO À BASE
+    // VALIDAÇÃO DE ACESSO À BASE (OBRIGATÓRIA)
     // Admin: acesso global | Outros: verificar user_bases
     // ==========================================
-    if (baseId) {
-      const parsedBaseId = parseInt(baseId.toString());
-      const hasAccess = await storage.checkUserBaseAccess(user.id, parsedBaseId, user.role);
-      
-      if (!hasAccess) {
-        console.log(`[login-base] ACESSO NEGADO - Usuário ${email} (${user.role}) não tem permissão para base ${parsedBaseId}`);
-        return res.status(403).json({ 
-          success: false,
-          message: 'Você não tem permissão para acessar esta base',
-          errorCode: 'ACCESS_DENIED'
-        });
-      }
-      
-      console.log(`[login-base] ACESSO LIBERADO - Usuário ${email} (${user.role}) autorizado para base ${parsedBaseId}`);
+    const hasAccess = await storage.checkUserBaseAccess(user.id, parsedBaseId, user.role);
+    
+    if (!hasAccess) {
+      console.log(`[login-base] ACESSO NEGADO - Usuário ${email} (${user.role}) não tem permissão para base ${parsedBaseId}`);
+      return res.status(403).json({ 
+        success: false,
+        message: 'Você não tem permissão para acessar esta base',
+        errorCode: 'ACCESS_DENIED'
+      });
     }
+    
+    console.log(`[login-base] ACESSO LIBERADO - Usuário ${email} (${user.role}) autorizado para base ${parsedBaseId}`);
 
     // Formata o usuário para a sessão (remove dados sensíveis como a senha)
     const userSession = {
