@@ -413,7 +413,9 @@ import LinksExternosPostos from "@/pages/postos/LinksExternosPostos";
 import LinksExternosBases from "@/pages/bases/LinksExternosBases";
 import LoginBaseGenerico from "@/pages/bases/LoginBaseGenerico";
 import BasePublic from "@/pages/bases/BasePublic";
+import BasePublicLogin from "@/pages/bases/BasePublicLogin";
 import BaseRouter from "@/pages/bases/BaseRouter";
+import { ProtectedBaseRoute as SecureBaseRoute } from "@/components/security/BaseSecurityGuard";
 import PartnerLogin from "@/pages/partner-login";
 import PartnerDashboard from "@/pages/partner-dashboard";
 import FuelCardRedirect from "@/components/FuelCardRedirect";
@@ -977,6 +979,12 @@ function App() {
           
           {/* Rotas genéricas antigas para compatibilidade por ID - DEVE VIR DEPOIS DAS ESPECÍFICAS */}
           <Route path="/bases/:id/login" component={() => <BaseRouteHandler mode="login" />} />
+          
+          {/* ROTAS PÚBLICAS SEGURAS - Sistema de autenticação de bases para links externos */}
+          <Route path="/bases/:baseId/public/login" component={BasePublicLogin} />
+          <Route path="/bases/:baseId/public">
+            {() => <SecureBaseRoute component={BasePublic} />}
+          </Route>
           
           <ProtectedRoute path="/solicitacoes" component={BaseRequests} />
           
