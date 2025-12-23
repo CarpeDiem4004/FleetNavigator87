@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
-import { Plus, Search, Edit, Eye, Trash2, Loader2, CheckCircle, AlertCircle, Activity } from 'lucide-react';
+import { Plus, Search, Edit, Eye, Trash2, Loader2, CheckCircle, AlertCircle, Activity, FileText, ExternalLink, File } from 'lucide-react';
 import { VehicleMaintenanceIndicators } from '@/components/VehicleMaintenanceIndicators';
 import { apiRequest } from '@/lib/queryClient';
 import { validateAndFormatPlate, applyPlateMask, getPlateFormatHint } from '@/lib/plate-utils';
@@ -74,6 +74,8 @@ const Vehicles: React.FC = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [indicadoresDialogOpen, setIndicadoresDialogOpen] = useState(false);
   const [selectedVehiclePlate, setSelectedVehiclePlate] = useState<string>('');
+  const [documentosDialogOpen, setDocumentosDialogOpen] = useState(false);
+  const [selectedVehicleDocumentos, setSelectedVehicleDocumentos] = useState<any>(null);
   const [filters, setFilters] = useState({
     status: '',
     type: '',
@@ -542,6 +544,18 @@ const Vehicles: React.FC = () => {
                           variant="ghost" 
                           size="icon"
                           onClick={() => {
+                            setSelectedVehicleDocumentos(vehicle);
+                            setDocumentosDialogOpen(true);
+                          }}
+                          data-testid={`button-documentos-${vehicle.plate}`}
+                          title="Ver Documentos do Veículo"
+                        >
+                          <FileText className="h-4 w-4 text-green-600" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => {
                             if (window.confirm(`Tem certeza que deseja excluir o veículo ${vehicle.plate}?`)) {
                               deleteVehicleMutation.mutate(vehicle.id);
                             }
@@ -846,6 +860,105 @@ const Vehicles: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           <VehicleMaintenanceIndicators placa={selectedVehiclePlate} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Documentos do Veículo */}
+      <Dialog open={documentosDialogOpen} onOpenChange={setDocumentosDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-green-600" />
+              Documentos do Veículo - {selectedVehicleDocumentos?.plate}
+            </DialogTitle>
+            <DialogDescription>
+              Documentos e certificados anexados ao veículo
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 mt-4">
+            {/* CRLV */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <File className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">CRLV</p>
+                  <p className="text-sm text-gray-500">Certificado de Registro e Licenciamento</p>
+                </div>
+              </div>
+              {selectedVehicleDocumentos?.crlvUrl ? (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.open(selectedVehicleDocumentos.crlvUrl, '_blank')}
+                  className="gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Visualizar
+                </Button>
+              ) : (
+                <Badge variant="secondary">Não anexado</Badge>
+              )}
+            </div>
+
+            {/* ANTT */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <File className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">ANTT</p>
+                  <p className="text-sm text-gray-500">Registro Nacional de Transportadores</p>
+                </div>
+              </div>
+              {selectedVehicleDocumentos?.anttUrl ? (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.open(selectedVehicleDocumentos.anttUrl, '_blank')}
+                  className="gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Visualizar
+                </Button>
+              ) : (
+                <Badge variant="secondary">Não anexado</Badge>
+              )}
+            </div>
+
+            {/* Cartão de Abastecimento */}
+            {selectedVehicleDocumentos?.cartaoAbastecimento && (
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                    <File className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Cartão de Abastecimento</p>
+                    <p className="text-sm text-gray-500">Número: {selectedVehicleDocumentos.cartaoAbastecimento}</p>
+                  </div>
+                </div>
+                <Badge variant="success">Cadastrado</Badge>
+              </div>
+            )}
+
+            {/* Mensagem se não houver documentos */}
+            {!selectedVehicleDocumentos?.crlvUrl && !selectedVehicleDocumentos?.anttUrl && !selectedVehicleDocumentos?.cartaoAbastecimento && (
+              <div className="text-center py-6 text-gray-500">
+                <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                <p>Nenhum documento anexado a este veículo</p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end mt-4">
+            <Button variant="outline" onClick={() => setDocumentosDialogOpen(false)}>
+              Fechar
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
