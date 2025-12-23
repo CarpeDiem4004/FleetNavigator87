@@ -147,13 +147,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     console.log("Tentando login de base:", email);
     
     try {
-      const response = await fetch('/api/login-base', {
+      const response = await fetch('/api/auth/login-base', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ username: email, password }),
+        body: JSON.stringify({ email, password }),
       });
 
       if (!response.ok) {
