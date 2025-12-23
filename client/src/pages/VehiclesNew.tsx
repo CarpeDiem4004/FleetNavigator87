@@ -21,7 +21,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, FileEdit, Trash2, Upload, AlertTriangle, FileText, ExternalLink, File } from 'lucide-react';
+import { Search, Plus, FileEdit, Trash2, Upload, AlertTriangle, FileText, ExternalLink, File, AlertCircle, Clock, FileWarning } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { 
@@ -60,12 +60,43 @@ interface Vehicle {
   cartao_combustivel?: string;
   cartao_abastecimento?: string;
   crlv_url?: string;
+  crlv_validade?: string;
   antt_url?: string;
   isTemporary?: boolean;
   deactivationDate?: string;
   created_at?: string;
   updated_at?: string;
 }
+
+// Função para calcular estatísticas de documentos
+const calculateDocumentStats = (vehicles: Vehicle[]) => {
+  const today = new Date();
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(today.getDate() + 30);
+  
+  let expired = 0;
+  let expiringSoon = 0;
+  let missingDocs = 0;
+  
+  vehicles.forEach(v => {
+    // Verificar documentos faltando (CRLV ou ANTT)
+    if (!v.crlv_url && !v.antt_url) {
+      missingDocs++;
+    }
+    
+    // Verificar validade do CRLV
+    if (v.crlv_validade) {
+      const expirationDate = new Date(v.crlv_validade);
+      if (expirationDate < today) {
+        expired++;
+      } else if (expirationDate <= thirtyDaysFromNow) {
+        expiringSoon++;
+      }
+    }
+  });
+  
+  return { expired, expiringSoon, missingDocs, total: vehicles.length };
+};
 
 // Função para traduzir os tipos de veículos
 const translateVehicleType = (type: string): string => {
@@ -607,6 +638,62 @@ const VehiclesNew: React.FC = () => {
             </p>
           </div>
         </div>
+
+        {/* Cards de Estatísticas de Documentos */}
+        {(() => {
+          const stats = calculateDocumentStats(vehicles);
+          return (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="border-blue-200 bg-blue-50">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-blue-600 font-medium">Total de Veículos</p>
+                      <p className="text-2xl font-bold text-blue-700">{stats.total}</p>
+                    </div>
+                    <FileText className="h-8 w-8 text-blue-500" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="border-red-200 bg-red-50">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-red-600 font-medium">CRLV Vencido</p>
+                      <p className="text-2xl font-bold text-red-700">{stats.expired}</p>
+                    </div>
+                    <AlertCircle className="h-8 w-8 text-red-500" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="border-yellow-200 bg-yellow-50">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-yellow-600 font-medium">Vence em 30 dias</p>
+                      <p className="text-2xl font-bold text-yellow-700">{stats.expiringSoon}</p>
+                    </div>
+                    <Clock className="h-8 w-8 text-yellow-500" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="border-gray-200 bg-gray-50">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 font-medium">Sem Documentos</p>
+                      <p className="text-2xl font-bold text-gray-700">{stats.missingDocs}</p>
+                    </div>
+                    <FileWarning className="h-8 w-8 text-gray-500" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          );
+        })()}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList>
