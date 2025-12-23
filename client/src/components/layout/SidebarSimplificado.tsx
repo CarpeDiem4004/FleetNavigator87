@@ -257,13 +257,14 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
     >
       <div className="flex flex-col w-64 bg-gradient-to-br from-gray-900 to-gray-800 text-white shadow-xl shadow-primary/20 border-r border-primary/10">
         {/* Logo */}
-        <div className="flex items-center justify-center h-16 border-b border-gray-700">
-          <div className="flex items-center py-3 px-4">
-            <img 
-              src="/attached_assets/image_1752231690168.png" 
-              alt="Murici On Fleet 2.0" 
-              className="h-10 w-auto max-w-[200px] object-contain" 
-            />
+        <div className="flex items-center justify-center h-16 border-b border-gray-700/50">
+          <div className="flex items-center gap-2">
+            <Truck className="h-6 w-6 text-blue-400" />
+            <h1 className="text-lg tracking-tight">
+              <span className="font-bold text-white">Murici</span>
+              <span className="font-light text-blue-300 ml-1">On Fleet</span>
+              <span className="font-light text-blue-400/70 text-sm ml-1">2.0</span>
+            </h1>
           </div>
         </div>
 
