@@ -64,6 +64,9 @@ const BaseDashboardGenerico: React.FC<BaseDashboardProps> = ({ baseInfo }) => {
   // Gerar código único da base para rotas - usar ID diretamente para compatibilidade
   const baseCode = baseInfo.id.toString();
 
+  // Substituir "GRUPO PEREIRA" por "MURICI TRANSPORTE E LOGÍSTICA" 
+  const displayOperation = baseInfo.operation?.replace(/GRUPO PEREIRA/gi, 'MURICI TRANSPORTE E LOGÍSTICA') || 'MURICI TRANSPORTE E LOGÍSTICA';
+
   const menuCategories: MenuCategory[] = [
     {
       id: 'operational',
@@ -196,7 +199,7 @@ const BaseDashboardGenerico: React.FC<BaseDashboardProps> = ({ baseInfo }) => {
           Bem-vindo à Base {baseInfo.name}
         </h1>
         <p className="text-gray-600">
-          {baseInfo.operation} | {baseInfo.location || 'Localização não informada'}
+          {displayOperation} | {baseInfo.location || 'Localização não informada'}
         </p>
       </div>
 
@@ -314,7 +317,7 @@ const BaseDashboardGenerico: React.FC<BaseDashboardProps> = ({ baseInfo }) => {
         <div className="flex items-center justify-between h-16 px-4 bg-blue-600 text-white">
           <div>
             <h1 className="text-lg font-bold">{baseInfo.name}</h1>
-            <p className="text-xs text-blue-100">{baseInfo.operation}</p>
+            <p className="text-xs text-blue-100">{displayOperation}</p>
           </div>
           <button 
             onClick={() => setIsSidebarOpen(false)}
