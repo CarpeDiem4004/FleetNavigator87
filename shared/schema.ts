@@ -13,6 +13,9 @@ export const fuelTypeEnum = pgEnum('fuel_type', ['arla', 'diesel']);
 export const fineStatusEnum = pgEnum('fine_status', ['pendente', 'paga', 'contestada']);
 export const tripStatusEnum = pgEnum('trip_status', ['programada', 'carregando', 'aguardando_carga', 'em_transito', 'finalizada']);
 export const userRoleEnum = pgEnum('user_role', ['admin', 'ceo', 'gerente_geral', 'gestor', 'operador', 'oficina', 'pneus', 'gestor_frota', 'posto', 'line_hall', 'gestor_equipamentos']);
+
+// Enum para roles de usuários em bases específicas (sistema de segurança de links externos)
+export const baseUserRoleEnum = pgEnum('base_user_role', ['admin_base', 'gestor_base', 'operador_base', 'visualizador']);
 export const operationTypeEnum = pgEnum('operation_type', ['carregamento', 'descarga', 'transferencia', 'inventario', 'manutencao']);
 export const operationStatusEnum = pgEnum('operation_status', ['pendente', 'em_andamento', 'concluida', 'cancelada']);
 export const checklistStatusEnum = pgEnum('checklist_status', ['pendente', 'iniciado', 'concluido']);
@@ -253,6 +256,27 @@ export const users = pgTable("users", {
   lastLogin: timestamp("last_login", { mode: "date" }),
   isActive: boolean("is_active").default(true),
 });
+
+// Tabela de vínculo usuário-base para controle de acesso a links externos
+// Sistema de segurança: cada usuário pode ter acesso a múltiplas bases com roles específicas
+export const userBases = pgTable("user_bases", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  baseId: integer("base_id").notNull().references(() => bases.id),
+  role: baseUserRoleEnum("role").notNull().default('operador_base'),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Schema e tipos para user_bases
+export const insertUserBaseSchema = createInsertSchema(userBases).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertUserBase = z.infer<typeof insertUserBaseSchema>;
+export type UserBase = typeof userBases.$inferSelect;
 
 // Tabela para recebimento de carros na oficina
 export const carReceptions = pgTable("car_receptions", {
