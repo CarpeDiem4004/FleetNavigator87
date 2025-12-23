@@ -144,36 +144,69 @@ router.post('/sync-supabase-user', async (req, res) => {
   }
 });
 
-// Rota de login específica para bases - permite operadores acessarem suas bases
+// Rota de login específica para bases - com validação de permissão de acesso
+// REGRA: Admin tem acesso global, outros perfis precisam de vínculo na tabela user_bases
 router.post('/login-base', async (req, res) => {
   try {
-    const { email, password } = req.body;
-    console.log('Tentativa de login de base para:', email);
+    const { email, password, baseId } = req.body;
+    console.log('[login-base] Tentativa de login para:', email, 'Base ID:', baseId);
 
     if (!email || !password) {
-      return res.status(400).json({ message: 'Email e senha são obrigatórios' });
+      return res.status(400).json({ 
+        success: false,
+        message: 'Email e senha são obrigatórios' 
+      });
     }
 
     // Tenta encontrar o usuário no banco local
     const user = await storage.getUserByEmail(email);
     
     if (!user) {
-      console.log('Usuário não encontrado no banco local:', email);
-      return res.status(401).json({ message: 'Usuário não encontrado' });
+      console.log('[login-base] Usuário não encontrado:', email);
+      return res.status(401).json({ 
+        success: false,
+        message: 'Credenciais inválidas' 
+      });
     }
 
     // Verifica se a senha está correta
     const isPasswordValid = await comparePasswords(password, user.password);
     
     if (!isPasswordValid) {
-      console.log('Senha inválida para usuário:', email);
-      return res.status(401).json({ message: 'Credenciais inválidas' });
+      console.log('[login-base] Senha inválida para:', email);
+      return res.status(401).json({ 
+        success: false,
+        message: 'Credenciais inválidas' 
+      });
     }
 
     // Verifica se o usuário está ativo
     if (!user.isActive) {
-      console.log('Usuário inativo tentando fazer login:', email);
-      return res.status(401).json({ message: 'Usuário inativo' });
+      console.log('[login-base] Usuário inativo:', email);
+      return res.status(401).json({ 
+        success: false,
+        message: 'Usuário inativo. Contate o administrador.' 
+      });
+    }
+
+    // ==========================================
+    // VALIDAÇÃO DE ACESSO À BASE
+    // Admin: acesso global | Outros: verificar user_bases
+    // ==========================================
+    if (baseId) {
+      const parsedBaseId = parseInt(baseId.toString());
+      const hasAccess = await storage.checkUserBaseAccess(user.id, parsedBaseId, user.role);
+      
+      if (!hasAccess) {
+        console.log(`[login-base] ACESSO NEGADO - Usuário ${email} (${user.role}) não tem permissão para base ${parsedBaseId}`);
+        return res.status(403).json({ 
+          success: false,
+          message: 'Você não tem permissão para acessar esta base',
+          errorCode: 'ACCESS_DENIED'
+        });
+      }
+      
+      console.log(`[login-base] ACESSO LIBERADO - Usuário ${email} (${user.role}) autorizado para base ${parsedBaseId}`);
     }
 
     // Formata o usuário para a sessão (remove dados sensíveis como a senha)
@@ -192,17 +225,20 @@ router.post('/login-base', async (req, res) => {
     req.session.isAuthenticated = true;
     req.session.hybridUser = userSession;
 
-    console.log('Login de base bem-sucedido para:', email, 'Role:', user.role, 'Base:', user.basename);
+    console.log('[login-base] Login bem-sucedido para:', email, 'Role:', user.role);
     
     res.json({ 
+      success: true,
       message: 'Login realizado com sucesso',
-      user: userSession,
-      success: true
+      user: userSession
     });
 
   } catch (error) {
-    console.error('Erro no login de base:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error('[login-base] Erro:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Erro interno do servidor' 
+    });
   }
 });
 

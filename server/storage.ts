@@ -1,6 +1,7 @@
 import { 
   users, vehicles as veiculos, maintenance, tires, refueling, fines, bases, workshops, painelPrincipal, operations,
   maintenanceChat, chatMessages, baseRequests, baseRequestUpdates, carReceptions, workshopBudgets, maintenanceImports,
+  userBases,
   type User, type InsertUser, type Vehicle, type InsertVehicle,
   type Maintenance, type InsertMaintenance, type Tire, type InsertTire,
   type Refueling, type InsertRefueling, type Fine, type InsertFine,
@@ -9,7 +10,8 @@ import {
   type PainelPrincipal, type InsertPainelPrincipal, type MaintenanceChat, type InsertMaintenanceChat,
   type ChatMessage, type InsertChatMessage, type BaseRequest, type InsertBaseRequest,
   type BaseRequestUpdate, type InsertBaseRequestUpdate, type CarReception, type InsertCarReception,
-  type WorkshopBudget, type InsertWorkshopBudget, type MaintenanceImport, type InsertMaintenanceImport
+  type WorkshopBudget, type InsertWorkshopBudget, type MaintenanceImport, type InsertMaintenanceImport,
+  type UserBase, type InsertUserBase
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, like, desc, sql } from "drizzle-orm";
@@ -23,6 +25,14 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
+  
+  // User-Base access control operations
+  // Verifica se o usuário tem acesso a uma base específica
+  // Retorna true se: role === 'admin' OU existe vínculo ativo na tabela user_bases
+  checkUserBaseAccess(userId: number, baseId: number, userRole: string): Promise<boolean>;
+  getUserBases(userId: number): Promise<UserBase[]>;
+  createUserBase(userBase: InsertUserBase): Promise<UserBase>;
+  deleteUserBase(userId: number, baseId: number): Promise<boolean>;
   
   // Base operations
   getBase(id: number): Promise<Base | undefined>;
@@ -436,6 +446,117 @@ export class DatabaseStorage implements IStorage {
       return result.rowCount !== null && result.rowCount > 0;
     } catch (error) {
       console.error(`Erro ao excluir usuário ID ${id}:`, error);
+      return false;
+    }
+  }
+
+  // ==========================================
+  // User-Base Access Control Operations
+  // Sistema de controle de acesso por base
+  // ==========================================
+
+  /**
+   * Verifica se um usuário tem acesso a uma base específica
+   * REGRA PRINCIPAL:
+   * - Se role === 'admin' → acesso liberado a todas as bases
+   * - Caso contrário → verifica vínculo na tabela user_bases
+   */
+  async checkUserBaseAccess(userId: number, baseId: number, userRole: string): Promise<boolean> {
+    try {
+      // Admin tem acesso global a todas as bases
+      if (userRole === 'admin') {
+        console.log(`[AUTH] Admin ${userId} - Acesso global liberado para base ${baseId}`);
+        return true;
+      }
+
+      // Para outros perfis, verificar vínculo na tabela user_bases
+      const query = `
+        SELECT id FROM user_bases 
+        WHERE user_id = $1 AND base_id = $2 AND is_active = true
+        LIMIT 1
+      `;
+      const result = await pool.query(query, [userId, baseId]);
+      
+      const hasAccess = result.rows.length > 0;
+      console.log(`[AUTH] Usuário ${userId} (${userRole}) - Base ${baseId}: ${hasAccess ? 'LIBERADO' : 'NEGADO'}`);
+      
+      return hasAccess;
+    } catch (error) {
+      console.error(`[AUTH] Erro ao verificar acesso do usuário ${userId} à base ${baseId}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Retorna todas as bases que um usuário tem acesso
+   */
+  async getUserBases(userId: number): Promise<UserBase[]> {
+    try {
+      const query = `
+        SELECT id, user_id, base_id, role, is_active, created_at, updated_at 
+        FROM user_bases 
+        WHERE user_id = $1 AND is_active = true
+      `;
+      const result = await pool.query(query, [userId]);
+      
+      return result.rows.map(row => ({
+        id: row.id,
+        userId: row.user_id,
+        baseId: row.base_id,
+        role: row.role,
+        isActive: row.is_active,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      }));
+    } catch (error) {
+      console.error(`[AUTH] Erro ao buscar bases do usuário ${userId}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Cria um vínculo entre usuário e base
+   */
+  async createUserBase(userBase: InsertUserBase): Promise<UserBase> {
+    try {
+      const query = `
+        INSERT INTO user_bases (user_id, base_id, role, is_active)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id, user_id, base_id, role, is_active, created_at, updated_at
+      `;
+      const result = await pool.query(query, [
+        userBase.userId,
+        userBase.baseId,
+        userBase.role || 'operador_base',
+        userBase.isActive !== false
+      ]);
+      
+      const row = result.rows[0];
+      return {
+        id: row.id,
+        userId: row.user_id,
+        baseId: row.base_id,
+        role: row.role,
+        isActive: row.is_active,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      };
+    } catch (error) {
+      console.error(`[AUTH] Erro ao criar vínculo usuário-base:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove vínculo entre usuário e base
+   */
+  async deleteUserBase(userId: number, baseId: number): Promise<boolean> {
+    try {
+      const query = `DELETE FROM user_bases WHERE user_id = $1 AND base_id = $2 RETURNING id`;
+      const result = await pool.query(query, [userId, baseId]);
+      return result.rowCount !== null && result.rowCount > 0;
+    } catch (error) {
+      console.error(`[AUTH] Erro ao remover vínculo usuário ${userId} - base ${baseId}:`, error);
       return false;
     }
   }

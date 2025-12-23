@@ -105,12 +105,13 @@ const LoginBaseGenerico: React.FC = () => {
     setError(null);
 
     try {
-      console.log('[LoginBaseGenerico] Tentando login para base:', baseInfo.name);
+      console.log('[LoginBaseGenerico] Tentando login para base:', baseInfo.name, 'ID:', baseInfo.id);
       
-      // loginBase retorna User diretamente (ou lança erro se falhar)
-      const user = await loginBase(formData.email, formData.password);
+      // loginBase com validação de acesso à base
+      // Admin: acesso global | Outros: verificar user_bases
+      const user = await loginBase(formData.email, formData.password, baseInfo.id);
       
-      console.log('[LoginBaseGenerico] Login realizado com sucesso para:', user.email);
+      console.log('[LoginBaseGenerico] Login realizado com sucesso para:', user.email, 'Role:', user.role);
       
       // REGRA DE OURO: Após login bem-sucedido, vai para onde foi solicitado
       if (redirectTo === 'cartao-combustivel') {
@@ -122,7 +123,9 @@ const LoginBaseGenerico: React.FC = () => {
       }
     } catch (error: any) {
       console.error('[LoginBaseGenerico] Erro durante login:', error);
-      setError(error?.message || 'Credenciais inválidas. Verifique seu email e senha.');
+      // Mensagem específica para acesso negado
+      const errorMessage = error?.message || 'Credenciais inválidas. Verifique seu email e senha.';
+      setError(errorMessage);
     } finally {
       setIsLogging(false);
     }

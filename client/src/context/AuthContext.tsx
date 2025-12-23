@@ -21,7 +21,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<User>;
-  loginBase: (email: string, password: string) => Promise<User>;
+  loginBase: (email: string, password: string, baseId?: number) => Promise<User>;
   register: (email: string, password: string, name: string) => Promise<User>;
   logout: () => Promise<void>;
 }
@@ -143,8 +143,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const loginBase = async (email: string, password: string): Promise<User> => {
-    console.log("Tentando login de base:", email);
+  const loginBase = async (email: string, password: string, baseId?: number): Promise<User> => {
+    console.log("[loginBase] Tentando login de base:", email, "Base ID:", baseId);
     
     try {
       const response = await fetch('/api/auth/login-base', {
@@ -153,16 +153,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, baseId }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro no login da base');
-      }
-
       const responseData = await response.json();
-      console.log("Login de base bem-sucedido:", responseData);
+      console.log("[loginBase] Resposta do servidor:", responseData);
+
+      // Verificar se houve erro de acesso negado
+      if (!response.ok) {
+        const errorMessage = responseData.message || 'Erro no login da base';
+        
+        // Tratamento especial para acesso negado
+        if (response.status === 403 || responseData.errorCode === 'ACCESS_DENIED') {
+          console.log("[loginBase] ACESSO NEGADO:", errorMessage);
+          throw new Error(errorMessage);
+        }
+        
+        throw new Error(errorMessage);
+      }
       
       // O backend retorna { success: true, user: {...}, message: '...' }
       const userData = responseData.user || responseData;
@@ -186,9 +194,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       return formattedUser;
     } catch (error) {
-      console.error("Erro no login da base:", error);
+      console.error("[loginBase] Erro:", error);
       toast({
-        title: "Erro no login da base",
+        title: "Erro no login",
         description: error instanceof Error ? error.message : "Erro desconhecido",
         variant: "destructive",
       });
