@@ -21,7 +21,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, FileEdit, Trash2, Upload, AlertTriangle } from 'lucide-react';
+import { Search, Plus, FileEdit, Trash2, Upload, AlertTriangle, FileText, ExternalLink, File } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { 
   Select,
@@ -57,6 +58,9 @@ interface Vehicle {
   base_nome?: string;
   status: string;
   cartao_combustivel?: string;
+  cartao_abastecimento?: string;
+  crlv_url?: string;
+  antt_url?: string;
   isTemporary?: boolean;
   deactivationDate?: string;
   created_at?: string;
@@ -354,7 +358,9 @@ const VehiclesNew: React.FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<globalThis.File | null>(null);
+  const [documentosDialogOpen, setDocumentosDialogOpen] = useState(false);
+  const [selectedVehicleDocumentos, setSelectedVehicleDocumentos] = useState<Vehicle | null>(null);
   
 
   // Função para carregar veículos usando a API REST
@@ -736,6 +742,18 @@ const VehiclesNew: React.FC = () => {
                                 <Button 
                                   variant="outline" 
                                   size="icon"
+                                  onClick={() => {
+                                    setSelectedVehicleDocumentos(vehicle);
+                                    setDocumentosDialogOpen(true);
+                                  }}
+                                  title="Ver Documentos do Veículo"
+                                  data-testid={`button-documentos-${vehicle.placa}`}
+                                >
+                                  <FileText className="h-4 w-4 text-green-600" />
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="icon"
                                   onClick={() => handleEditVehicle(vehicle)}
                                 >
                                   <FileEdit className="h-4 w-4" />
@@ -786,6 +804,105 @@ const VehiclesNew: React.FC = () => {
                 }}
               />
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog de Documentos do Veículo */}
+        <Dialog open={documentosDialogOpen} onOpenChange={setDocumentosDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-green-600" />
+                Documentos do Veículo - {selectedVehicleDocumentos?.placa}
+              </DialogTitle>
+              <DialogDescription>
+                Documentos e certificados anexados ao veículo
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 mt-4">
+              {/* CRLV */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <File className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">CRLV</p>
+                    <p className="text-sm text-gray-500">Certificado de Registro e Licenciamento</p>
+                  </div>
+                </div>
+                {selectedVehicleDocumentos?.crlv_url ? (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.open(selectedVehicleDocumentos.crlv_url, '_blank')}
+                    className="gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Visualizar
+                  </Button>
+                ) : (
+                  <Badge variant="secondary">Não anexado</Badge>
+                )}
+              </div>
+
+              {/* ANTT */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <File className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">ANTT</p>
+                    <p className="text-sm text-gray-500">Registro Nacional de Transportadores</p>
+                  </div>
+                </div>
+                {selectedVehicleDocumentos?.antt_url ? (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.open(selectedVehicleDocumentos.antt_url, '_blank')}
+                    className="gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Visualizar
+                  </Button>
+                ) : (
+                  <Badge variant="secondary">Não anexado</Badge>
+                )}
+              </div>
+
+              {/* Cartão de Abastecimento */}
+              {selectedVehicleDocumentos?.cartao_abastecimento && (
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                      <File className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Cartão de Abastecimento</p>
+                      <p className="text-sm text-gray-500">Número: {selectedVehicleDocumentos.cartao_abastecimento}</p>
+                    </div>
+                  </div>
+                  <Badge variant="default" className="bg-green-100 text-green-800">Cadastrado</Badge>
+                </div>
+              )}
+
+              {/* Mensagem se não houver documentos */}
+              {!selectedVehicleDocumentos?.crlv_url && !selectedVehicleDocumentos?.antt_url && !selectedVehicleDocumentos?.cartao_abastecimento && (
+                <div className="text-center py-6 text-gray-500">
+                  <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p>Nenhum documento anexado a este veículo</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end mt-4">
+              <Button variant="outline" onClick={() => setDocumentosDialogOpen(false)}>
+                Fechar
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
