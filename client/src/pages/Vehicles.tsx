@@ -884,11 +884,11 @@ const Vehicles: React.FC = () => {
                   <p className="text-sm text-gray-500">Certificado de Registro e Licenciamento</p>
                 </div>
               </div>
-              {selectedVehicleDocumentos?.crlvUrl ? (
+              {selectedVehicleDocumentos?.crlv_url ? (
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => window.open(selectedVehicleDocumentos.crlvUrl, '_blank')}
+                  onClick={() => window.open(selectedVehicleDocumentos.crlv_url, '_blank')}
                   className="gap-2"
                 >
                   <ExternalLink className="h-4 w-4" />
@@ -910,11 +910,11 @@ const Vehicles: React.FC = () => {
                   <p className="text-sm text-gray-500">Registro Nacional de Transportadores</p>
                 </div>
               </div>
-              {selectedVehicleDocumentos?.anttUrl ? (
+              {selectedVehicleDocumentos?.antt_url ? (
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => window.open(selectedVehicleDocumentos.anttUrl, '_blank')}
+                  onClick={() => window.open(selectedVehicleDocumentos.antt_url, '_blank')}
                   className="gap-2"
                 >
                   <ExternalLink className="h-4 w-4" />
@@ -926,7 +926,7 @@ const Vehicles: React.FC = () => {
             </div>
 
             {/* Cartão de Abastecimento */}
-            {selectedVehicleDocumentos?.cartaoAbastecimento && (
+            {selectedVehicleDocumentos?.cartao_abastecimento && (
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
@@ -934,7 +934,7 @@ const Vehicles: React.FC = () => {
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">Cartão de Abastecimento</p>
-                    <p className="text-sm text-gray-500">Número: {selectedVehicleDocumentos.cartaoAbastecimento}</p>
+                    <p className="text-sm text-gray-500">Número: {selectedVehicleDocumentos.cartao_abastecimento}</p>
                   </div>
                 </div>
                 <Badge variant="success">Cadastrado</Badge>
@@ -942,7 +942,7 @@ const Vehicles: React.FC = () => {
             )}
 
             {/* Mensagem se não houver documentos */}
-            {!selectedVehicleDocumentos?.crlvUrl && !selectedVehicleDocumentos?.anttUrl && !selectedVehicleDocumentos?.cartaoAbastecimento && (
+            {!selectedVehicleDocumentos?.crlv_url && !selectedVehicleDocumentos?.antt_url && !selectedVehicleDocumentos?.cartao_abastecimento && (
               <div className="text-center py-6 text-gray-500">
                 <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                 <p>Nenhum documento anexado a este veículo</p>
