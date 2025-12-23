@@ -173,6 +173,8 @@ import equipmentRoutes from './routes/equipmentRoutes';
 import storageRoutes from './routes/storageRoutes';
 // Importação das rotas de recebimento de combustível
 import fuelReceiptRoutes from './routes/fuelReceiptRoutes.js';
+// Importação das rotas de autenticação de bases (links externos)
+import baseAuthRoutes from './routes/baseAuthRoutes';
 // Importação das rotas pós-pago (isoladas em arquivo separado)
 import { setupPostPaidRoutes } from './routes/postpaid.js';
 // Importação do cliente Supabase para armazenamento de arquivos
@@ -2267,6 +2269,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rotas de autenticação JWT
   app.use('/api', jwtAuthRoutes);
+  
+  // Registrar rotas de autenticação de bases (links externos protegidos)
+  app.use('/api/base-auth', baseAuthRoutes);
   
   // Registrar rotas de equipamentos
   app.use('/api/equipment', equipmentRoutes);
