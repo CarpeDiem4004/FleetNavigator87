@@ -156,13 +156,14 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               window.history.pushState(null, "", "/");
               window.dispatchEvent(new PopStateEvent("popstate"));
             }}
-            className="flex items-center py-2"
+            className="flex items-center py-2 gap-2"
           >
-            <img 
-              src="/attached_assets/image_1752231690168.png" 
-              alt="Murici On Fleet 2.0" 
-              className="h-8 w-auto max-w-[160px] object-contain" 
-            />
+            <Truck className="h-6 w-6 text-blue-400" />
+            <span className="text-lg tracking-tight">
+              <span className="font-bold text-white">Murici</span>
+              <span className="font-light text-blue-300 ml-1">On Fleet</span>
+              <span className="font-light text-blue-400/70 text-sm ml-1">2.0</span>
+            </span>
           </a>
         </div>
         {isMobile && (
@@ -330,13 +331,14 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                     window.dispatchEvent(new PopStateEvent("popstate"));
                     setSidebarOpen(false);
                   }}
-                  className="flex items-center py-2"
+                  className="flex items-center py-2 gap-2"
                 >
-                  <img 
-                    src="/attached_assets/image_1752231690168.png" 
-                    alt="Murici On Fleet 2.0" 
-                    className="h-6 w-auto max-w-[120px] object-contain" 
-                  />
+                  <Truck className="h-5 w-5 text-blue-400" />
+                  <span className="text-base tracking-tight">
+                    <span className="font-bold text-white">Murici</span>
+                    <span className="font-light text-blue-300 ml-1">On Fleet</span>
+                    <span className="font-light text-blue-400/70 text-xs ml-1">2.0</span>
+                  </span>
                 </a>
               </div>
             </div>
