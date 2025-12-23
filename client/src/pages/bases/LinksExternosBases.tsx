@@ -60,7 +60,7 @@ export default function LinksExternosBases() {
 
   const generateBaseUrl = (base: Base) => {
     const currentUrl = window.location.origin;
-    return `${currentUrl}/base/${base.id}/public`;
+    return `${currentUrl}/bases/${base.id}/public`;
   };
 
   const copyToClipboard = async (base: Base) => {
