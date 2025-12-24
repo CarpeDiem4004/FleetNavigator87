@@ -100,16 +100,6 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [loadingError, setLoadingError] = useState<string | null>(null);
   
-  // Estados para diagnóstico de conexão
-  const [connectionStatus, setConnectionStatus] = useState<{
-    speed: 'testing' | 'fast' | 'normal' | 'slow' | 'error';
-    responseTime: number | null;
-    lastTest: Date | null;
-  }>({
-    speed: 'testing',
-    responseTime: null,
-    lastTest: null
-  });
   
   // Estados para configuração de combustível
   const [fuelConfig, setFuelConfig] = useState<{
@@ -139,188 +129,61 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
   });
 
   // Preencher automaticamente o nome do operador quando o usuário for carregado
+  // Otimizado para evitar vazamento de memória - timeout único com cleanup
   useEffect(() => {
-    console.log(`[OPERADOR-DEBUG] useEffect executado`);
-    console.log(`[OPERADOR-DEBUG] Verificando usuário:`, user);
-    console.log(`[OPERADOR-DEBUG] Nome do usuário:`, user?.name);
-    console.log(`[OPERADOR-DEBUG] Email do usuário:`, user?.email);
-    console.log(`[OPERADOR-DEBUG] ID do usuário:`, user?.id);
+    if (!user?.name || !user?.id) return;
     
-    // Forçar o preenchimento sempre que o usuário estiver disponível
-    if (user?.name && user?.id) {
-      let operatorName = user.name;
-      
-      // Não usar "Administrador" como nome do operador
-      if (user.name === "Administrador") {
-        operatorName = "Operador";
-      }
-      
-      console.log(`[OPERADOR-DEBUG] FORÇANDO preenchimento do campo operador com: ${operatorName}`);
-      console.log(`[OPERADOR-DEBUG] Usuario completo:`, JSON.stringify(user));
-      
-      // Limpar qualquer valor anterior e forçar o novo
-      form.setValue("operador", "");
-      
-      // Múltiplas tentativas com intervalos para garantir que o campo seja preenchido
-      setTimeout(() => {
-        form.setValue("operador", operatorName);
-        form.trigger("operador");
-        console.log(`[OPERADOR-DEBUG] 1ª tentativa - setValue para: ${operatorName}`);
-      }, 0);
-      
-      setTimeout(() => {
-        form.setValue("operador", operatorName);
-        console.log(`[OPERADOR-DEBUG] 2ª tentativa - setValue para: ${operatorName}`);
-      }, 100);
-      
-      setTimeout(() => {
-        form.setValue("operador", operatorName);
-        console.log(`[OPERADOR-DEBUG] 3ª tentativa - setValue para: ${operatorName}`);
-        
-        // Verificação final
-        const finalValue = form.getValues("operador");
-        console.log(`[OPERADOR-DEBUG] Valor FINAL do campo operador: ${finalValue}`);
-      }, 200);
-    } else {
-      console.log(`[OPERADOR-DEBUG] Usuário não disponível ainda - user:`, user);
-    }
-  }, [user?.id, user?.name, user?.email, form]);
+    const operatorName = user.name === "Administrador" ? "Operador" : user.name;
+    
+    // Único setTimeout com cleanup adequado
+    const timeoutId = setTimeout(() => {
+      form.setValue("operador", operatorName);
+    }, 50);
+    
+    return () => clearTimeout(timeoutId);
+  }, [user?.id, user?.name, form]);
 
-  // Função de diagnóstico de conexão
-  const testConnectionSpeed = useCallback(async () => {
-    const startTime = performance.now();
-    console.log(`[CONEXAO-DIAGNOSTICO] Iniciando teste de conectividade - Posto: ${postId}`);
-    
-    setConnectionStatus(prev => ({ ...prev, speed: 'testing' }));
-    
-    try {
-      const testResponse = await fetch('/api/user', {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        credentials: 'include'
-      });
-      
-      const endTime = performance.now();
-      const responseTime = endTime - startTime;
-      
-      const speed = responseTime < 1000 ? 'fast' : responseTime < 3000 ? 'normal' : 'slow';
-      
-      setConnectionStatus({
-        speed,
-        responseTime,
-        lastTest: new Date()
-      });
-      
-      console.log(`[CONEXAO-DIAGNOSTICO] Teste concluído:`);
-      console.log(`- Status: ${testResponse.status}`);
-      console.log(`- Tempo de resposta: ${responseTime.toFixed(2)}ms`);
-      console.log(`- Conexão: ${speed.toUpperCase()}`);
-      console.log(`- URL atual: ${window.location.href}`);
-      console.log(`- User Agent: ${navigator.userAgent}`);
-      
-      return { responseTime, status: testResponse.status };
-    } catch (error: any) {
-      const endTime = performance.now();
-      const responseTime = endTime - startTime;
-      
-      setConnectionStatus({
-        speed: 'error',
-        responseTime,
-        lastTest: new Date()
-      });
-      
-      console.error(`[CONEXAO-DIAGNOSTICO] Falha na conexão:`);
-      console.error(`- Tempo até falha: ${responseTime.toFixed(2)}ms`);
-      console.error(`- Erro: ${error?.message || error}`);
-      console.error(`- Tipo de rede: ${(navigator as any).connection?.effectiveType || 'Desconhecido'}`);
-      
-      return { responseTime, error: error?.message || 'Erro desconhecido' };
-    }
-  }, [postId]);
-
-  // Função otimizada para carregar projetos em mobile com diagnóstico de conexão
+  // Função OTIMIZADA para carregar projetos - sem diagnósticos desnecessários
+  // Corrige vazamento de memória em dispositivos Android com pouca RAM
   const loadProjectsMobile = useCallback(async () => {
-    console.log(`[MOBILE-FIX] Iniciando carregamento para ${deviceType}`);
-    
-    // Teste de conexão antes de carregar projetos
-    const connectionTest = await testConnectionSpeed();
-    
     setIsLoadingProjects(true);
     setLoadingError(null);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    
+    try {
+      const response = await fetch('/api/projects-with-bases', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        credentials: 'include',
+        signal: controller.signal
+      });
 
-    // URLs com fallbacks para diferentes cenários de conectividade
-    const urls = [
-      '/api/projects-with-bases',
-      `${window.location.origin}/api/projects-with-bases`
-    ];
+      clearTimeout(timeoutId);
 
-    // Timeout adaptativo baseado na velocidade de conexão
-    const timeoutMs = connectionTest.responseTime > 2000 ? 15000 : 10000;
-    console.log(`[MOBILE-FIX] Timeout definido para ${timeoutMs}ms baseado na velocidade de conexão`);
-
-    for (let i = 0; i < urls.length; i++) {
-      try {
-        console.log(`[MOBILE-FIX] Tentativa ${i + 1}: ${urls[i]}`);
-        const requestStart = performance.now();
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-          console.log(`[MOBILE-FIX] Timeout atingido (${timeoutMs}ms) para tentativa ${i + 1}`);
-          controller.abort();
-        }, timeoutMs);
-
-        const response = await fetch(urls[i], {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache'
-          },
-          credentials: i === 0 ? 'include' : 'omit',
-          signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-        const requestEnd = performance.now();
-        const requestTime = requestEnd - requestStart;
-        
-        console.log(`[MOBILE-FIX] Resposta recebida em ${requestTime.toFixed(2)}ms`);
-
-        if (response.ok) {
-          const data = await response.json();
-          
-          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-            console.log(`[MOBILE-FIX] Sucesso! ${data.data.length} projetos carregados em ${requestTime.toFixed(2)}ms`);
-            console.log(`[MOBILE-FIX] Dados recebidos:`, data.data.map(p => ({ id: p.id, nome: p.name, bases: p.bases?.length || 0 })));
-            setProjects(data.data);
-            setIsLoadingProjects(false);
-            return;
-          }
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && Array.isArray(data.data)) {
+          setProjects(data.data);
+          setIsLoadingProjects(false);
+          return;
         }
-        
-        console.log(`[MOBILE-FIX] Tentativa ${i + 1} falhou - Status: ${response.status}, Tempo: ${requestTime.toFixed(2)}ms`);
-        
-      } catch (error) {
-        console.log(`[MOBILE-FIX] Erro na tentativa ${i + 1}:`, error);
-        
-        // Log detalhado do erro
-        if (error.name === 'AbortError') {
-          console.log(`[MOBILE-FIX] Requisição cancelada por timeout`);
-        } else if (error.message.includes('fetch')) {
-          console.log(`[MOBILE-FIX] Erro de rede: ${error.message}`);
-        }
-        
-        if (i === urls.length - 1) {
-          const errorMsg = connectionTest.responseTime > 3000 
-            ? `Conexão lenta detectada (${connectionTest.responseTime.toFixed(0)}ms). Verifique sua conexão de internet.`
-            : `Erro ao carregar projetos. Verifique sua conexão e tente novamente.`;
-          setLoadingError(errorMsg);
-        }
+      }
+      
+      setLoadingError('Erro ao carregar projetos. Tente novamente.');
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      
+      if (error.name === 'AbortError') {
+        setLoadingError('Conexão lenta. Verifique sua internet.');
+      } else {
+        setLoadingError('Erro de conexão. Tente novamente.');
       }
     }
 
     setIsLoadingProjects(false);
-  }, [deviceType, testConnectionSpeed]);
+  }, []);
 
   // Função para carregar configuração de combustível centralizada
   const loadFuelConfig = useCallback(async () => {
@@ -566,39 +429,6 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
         </p>
       </div>
 
-      {/* Indicador de Status de Conexão */}
-      <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${
-              connectionStatus.speed === 'testing' ? 'bg-yellow-500 animate-pulse' :
-              connectionStatus.speed === 'fast' ? 'bg-green-500' :
-              connectionStatus.speed === 'normal' ? 'bg-blue-500' :
-              connectionStatus.speed === 'slow' ? 'bg-orange-500' :
-              'bg-red-500'
-            }`} />
-            <span className="text-sm font-medium text-gray-700">
-              Status da Conexão: {
-                connectionStatus.speed === 'testing' ? 'Testando...' :
-                connectionStatus.speed === 'fast' ? 'Rápida' :
-                connectionStatus.speed === 'normal' ? 'Normal' :
-                connectionStatus.speed === 'slow' ? 'Lenta' :
-                'Erro'
-              }
-            </span>
-          </div>
-          {connectionStatus.responseTime && (
-            <span className="text-xs text-gray-500">
-              {connectionStatus.responseTime.toFixed(0)}ms
-            </span>
-          )}
-        </div>
-        {connectionStatus.lastTest && (
-          <p className="text-xs text-gray-500 mt-1">
-            Último teste: {connectionStatus.lastTest.toLocaleTimeString()}
-          </p>
-        )}
-      </div>
 
       {/* Status de carregamento */}
       {isLoadingProjects && (
