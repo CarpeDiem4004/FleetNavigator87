@@ -1617,9 +1617,12 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
     // Buscar dados de cada tabela separadamente com filtros de data
     const allSolicitations = [];
     
-    // Decodificar filtro de base (pode vir URL encoded)
+    // Decodificar e NORMALIZAR filtro de base (pode vir URL encoded com acentos/parênteses)
     const decodedBase = base ? decodeURIComponent(String(base)) : null;
+    const normalizedBase = decodedBase && decodedBase !== 'all' ? normalizeBaseName(decodedBase) : null;
+    console.log('[EXPORT-BY-DATE] Base original:', base);
     console.log('[EXPORT-BY-DATE] Base decodificada:', decodedBase);
+    console.log('[EXPORT-BY-DATE] Base normalizada:', normalizedBase);
 
     // 1. Tabela tradicional (solicitacoes_fuel_card)
     try {
@@ -1633,9 +1636,9 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
         paramIndex++;
       }
       
-      if (decodedBase && decodedBase !== 'all') {
+      if (normalizedBase) {
         conditionals += ` AND base = $${paramIndex}`;
-        params.push(decodedBase);
+        params.push(normalizedBase);
         paramIndex++;
       }
 
@@ -1739,10 +1742,10 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
         bsParamIndex++;
       }
 
-      // Adicionar filtro de base se especificado
-      if (decodedBase && decodedBase !== 'all') {
+      // Adicionar filtro de base se especificado (usar base normalizada)
+      if (normalizedBase) {
         bsConditionals += ` AND (b.location = $${bsParamIndex} OR fcr.base_name = $${bsParamIndex})`;
-        bsParams.push(decodedBase);
+        bsParams.push(normalizedBase);
         bsParamIndex++;
       }
 
