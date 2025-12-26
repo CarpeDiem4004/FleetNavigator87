@@ -1191,7 +1191,6 @@ const FuelCardRequestsPanel: React.FC = () => {
       const response = await apiRequest('GET', `/api/fuel-card-solicitations/export-by-date?${queryParams}`);
       
       if (response.ok) {
-        // Criar URL para download
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1202,9 +1201,20 @@ const FuelCardRequestsPanel: React.FC = () => {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
         
+        const formatDateBR = (dateStr: string) => {
+          const [year, month, day] = dateStr.split('-');
+          return `${day}/${month}/${year}`;
+        };
+        
         toast({
           title: 'Relatório baixado com sucesso',
-          description: `Relatório do período ${format(new Date(startDate), 'dd/MM/yyyy')} a ${format(new Date(endDate), 'dd/MM/yyyy')} gerado`,
+          description: `Relatório do período ${formatDateBR(startDate)} a ${formatDateBR(endDate)} gerado`,
+        });
+      } else if (response.status === 404) {
+        toast({
+          title: 'Nenhum dado encontrado',
+          description: 'Não há solicitações no período e filtros selecionados',
+          variant: 'destructive',
         });
       } else {
         throw new Error('Erro ao gerar relatório por data');
