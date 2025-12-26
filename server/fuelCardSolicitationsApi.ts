@@ -1617,20 +1617,28 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
     // Buscar dados de cada tabela separadamente com filtros de data
     const allSolicitations = [];
     
-    // Construir filtros adicionais
-    let statusFilter = '';
-    let baseFilter = '';
-
-    if (status && status !== 'all') {
-      statusFilter = ` AND status = '${status}'`;
-    }
-
-    if (base && base !== 'all') {
-      baseFilter = ` AND base = '${base}'`;
-    }
+    // Decodificar filtro de base (pode vir URL encoded)
+    const decodedBase = base ? decodeURIComponent(String(base)) : null;
+    console.log('[EXPORT-BY-DATE] Base decodificada:', decodedBase);
 
     // 1. Tabela tradicional (solicitacoes_fuel_card)
     try {
+      let paramIndex = 3;
+      const params: any[] = [startDate, endDate];
+      let conditionals = '';
+      
+      if (status && status !== 'all') {
+        conditionals += ` AND status = $${paramIndex}`;
+        params.push(status);
+        paramIndex++;
+      }
+      
+      if (decodedBase && decodedBase !== 'all') {
+        conditionals += ` AND base = $${paramIndex}`;
+        params.push(decodedBase);
+        paramIndex++;
+      }
+
       const traditionalQuery = `
         SELECT 
           id::text as id,
@@ -1657,12 +1665,13 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
         FROM solicitacoes_fuel_card
         WHERE (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date >= $1::date 
           AND (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date <= $2::date
-          ${statusFilter}
-          ${baseFilter}
+          ${conditionals}
         ORDER BY data_solicitacao DESC
       `;
       
-      const traditionalResult = await pool.query(traditionalQuery, [startDate, endDate]);
+      console.log('[EXPORT-BY-DATE] Query tradicional params:', params);
+      const traditionalResult = await pool.query(traditionalQuery, params);
+      console.log('[EXPORT-BY-DATE] Tradicional encontrados:', traditionalResult.rows.length);
       allSolicitations.push(...traditionalResult.rows);
     } catch (err) {
       console.log('Tabela tradicional não encontrada ou erro:', err);
@@ -1670,6 +1679,16 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
     
     // 2. Tabela Line Hall (linehall_fuel_card_requests)
     try {
+      let lhParamIndex = 3;
+      const lhParams: any[] = [startDate, endDate];
+      let lhConditionals = '';
+      
+      if (status && status !== 'all') {
+        lhConditionals += ` AND status = $${lhParamIndex}`;
+        lhParams.push(status);
+        lhParamIndex++;
+      }
+
       const lineHallQuery = `
         SELECT 
           id::text as id,
@@ -1696,11 +1715,12 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
         FROM linehall_fuel_card_requests
         WHERE (created_at AT TIME ZONE 'America/Sao_Paulo')::date >= $1::date 
           AND (created_at AT TIME ZONE 'America/Sao_Paulo')::date <= $2::date
-          ${statusFilter}
+          ${lhConditionals}
         ORDER BY created_at DESC
       `;
       
-      const lineHallResult = await pool.query(lineHallQuery, [startDate, endDate]);
+      const lineHallResult = await pool.query(lineHallQuery, lhParams);
+      console.log('[EXPORT-BY-DATE] Line Hall encontrados:', lineHallResult.rows.length);
       allSolicitations.push(...lineHallResult.rows);
     } catch (err) {
       console.log('Tabela Line Hall não encontrada ou erro:', err);
@@ -1708,7 +1728,32 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
     
     // 3. Tabela base system (fuel_card_requests)
     try {
-      let baseSystemQuery = `
+      let bsParamIndex = 3;
+      const bsParams: any[] = [startDate, endDate];
+      let bsConditionals = '';
+
+      // Adicionar filtro de projeto se especificado
+      if (projectId && projectId !== 'all') {
+        bsConditionals += ` AND fcr.project_id = $${bsParamIndex}`;
+        bsParams.push(projectId);
+        bsParamIndex++;
+      }
+
+      // Adicionar filtro de base se especificado
+      if (decodedBase && decodedBase !== 'all') {
+        bsConditionals += ` AND (b.location = $${bsParamIndex} OR fcr.base_name = $${bsParamIndex})`;
+        bsParams.push(decodedBase);
+        bsParamIndex++;
+      }
+
+      // Adicionar filtro de status se especificado
+      if (status && status !== 'all') {
+        bsConditionals += ` AND fcr.status = $${bsParamIndex}`;
+        bsParams.push(status);
+        bsParamIndex++;
+      }
+
+      const baseSystemQuery = `
         SELECT 
           fcr.id::text as id,
           fcr.plate as placa,
@@ -1735,26 +1780,13 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
         LEFT JOIN bases b ON fcr.base_id = b.id
         WHERE (fcr.requested_at AT TIME ZONE 'America/Sao_Paulo')::date >= $1::date 
           AND (fcr.requested_at AT TIME ZONE 'America/Sao_Paulo')::date <= $2::date
+          ${bsConditionals}
+        ORDER BY fcr.requested_at DESC
       `;
-
-      // Adicionar filtro de projeto se especificado
-      if (projectId && projectId !== 'all') {
-        baseSystemQuery += ` AND fcr.project_id = ${projectId}`;
-      }
-
-      // Adicionar filtro de base se especificado
-      if (base && base !== 'all') {
-        baseSystemQuery += ` AND (b.location = '${base}' OR fcr.base_name = '${base}')`;
-      }
-
-      // Adicionar filtro de status se especificado
-      if (status && status !== 'all') {
-        baseSystemQuery += ` AND fcr.status = '${status}'`;
-      }
-
-      baseSystemQuery += ` ORDER BY fcr.requested_at DESC`;
       
-      const baseSystemResult = await pool.query(baseSystemQuery, [startDate, endDate]);
+      console.log('[EXPORT-BY-DATE] Base system params:', bsParams);
+      const baseSystemResult = await pool.query(baseSystemQuery, bsParams);
+      console.log('[EXPORT-BY-DATE] Base system encontrados:', baseSystemResult.rows.length);
       allSolicitations.push(...baseSystemResult.rows);
     } catch (err) {
       console.log('Tabela base system não encontrada ou erro:', err);
