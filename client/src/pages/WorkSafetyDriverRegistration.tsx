@@ -50,8 +50,11 @@ export default function WorkSafetyDriverRegistration() {
   const [showPgrWarning, setShowPgrWarning] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  const { data: basesData } = useQuery<{ success: boolean; data: string[] }>({
+  const { data: basesData, isLoading: isLoadingBases } = useQuery<{ success: boolean; data: string[] }>({
     queryKey: ['/api/work-safety/bases'],
+    retry: 3,
+    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
   const form = useForm<FormData>({
