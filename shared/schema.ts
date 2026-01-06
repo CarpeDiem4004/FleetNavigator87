@@ -1511,3 +1511,41 @@ export const insertLinehallMaintenanceWorkorderSchema = createInsertSchema(lineh
 // Tipos TypeScript
 export type LinehallMaintenanceWorkorder = typeof linehallMaintenanceWorkorders.$inferSelect;
 export type InsertLinehallMaintenanceWorkorder = z.infer<typeof insertLinehallMaintenanceWorkorderSchema>;
+
+// ==================== SEGURANÇA DO TRABALHO - CADASTRO DE MOTORISTAS ====================
+
+// Tabela de motoristas para Segurança do Trabalho
+export const workSafetyDrivers = pgTable("work_safety_drivers", {
+  id: serial("id").primaryKey(),
+  nomeCompleto: text("nome_completo").notNull(),
+  cpf: text("cpf").notNull().unique(),
+  baseAtuacao: text("base_atuacao").notNull(),
+  telefoneMotorista: text("telefone_motorista").notNull(),
+  email: text("email").notNull(),
+  possuiEar: boolean("possui_ear").notNull().default(false),
+  numeroCnh: text("numero_cnh").notNull(),
+  pgrAprovado: boolean("pgr_aprovado").notNull().default(false),
+  nomeResponsavel: text("nome_responsavel").notNull(),
+  telefoneResponsavel: text("telefone_responsavel").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  ativo: boolean("ativo").notNull().default(true),
+});
+
+// Schema de inserção com validações
+export const insertWorkSafetyDriverSchema = createInsertSchema(workSafetyDrivers, {
+  nomeCompleto: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
+  cpf: z.string().min(11, "CPF inválido").max(14, "CPF inválido"),
+  baseAtuacao: z.string().min(1, "Base de atuação é obrigatória"),
+  telefoneMotorista: z.string().min(10, "Telefone inválido"),
+  email: z.string().email("E-mail inválido"),
+  possuiEar: z.boolean(),
+  numeroCnh: z.string().min(1, "Número da CNH é obrigatório"),
+  pgrAprovado: z.boolean(),
+  nomeResponsavel: z.string().min(3, "Nome do responsável é obrigatório"),
+  telefoneResponsavel: z.string().min(10, "Telefone do responsável inválido"),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+// Tipos TypeScript para Segurança do Trabalho
+export type WorkSafetyDriver = typeof workSafetyDrivers.$inferSelect;
+export type InsertWorkSafetyDriver = z.infer<typeof insertWorkSafetyDriverSchema>;
