@@ -456,6 +456,13 @@ function App() {
               <LineHaulFuelRequest />
             </Route>
             
+            {/* Portal de Segurança do Trabalho - rotas públicas no topo */}
+            <Route path="/work-safety/portal" component={WorkSafetyPortal} />
+            <Route path="/work-safety/cadastro-motorista" component={WorkSafetyDriverRegistration} />
+            <Route path="/work-safety/cadastro" component={WorkSafetyDriverRegistration} />
+            <Route path="/work-safety/relatar-acidente" component={WorkSafetyReportAccident} />
+            <Route path="/work-safety/treinamentos" component={WorkSafetyTrainings} />
+            
             {/* Painel administrativo de abastecimento pós-pago - requer autenticação */}
             <ProtectedRoute 
               path="/admin/abastecimento-pos-pago" 
@@ -778,12 +785,7 @@ function App() {
           <ProtectedRoute path="/fleet-management/towing-partners/:id" component={EditableTowingPartnerDetailPage} />
           <ProtectedRoute path="/accidents" component={Accidents} />
           <ProtectedRoute path="/fuel-receipts" component={FuelReceiptsPage} />
-          {/* Rotas públicas de Segurança do Trabalho - DEVEM vir antes da rota protegida */}
-          <Route path="/work-safety/portal" component={WorkSafetyPortal} />
-          <Route path="/work-safety/cadastro" component={WorkSafetyDriverRegistration} />
-          <Route path="/work-safety/cadastro-motorista" component={WorkSafetyDriverRegistration} />
-          <Route path="/work-safety/relatar-acidente" component={WorkSafetyReportAccident} />
-          <Route path="/work-safety/treinamentos" component={WorkSafetyTrainings} />
+          {/* Rotas protegidas de Segurança do Trabalho */}
           <ProtectedRoute path="/work-safety/motoristas" component={WorkSafetyDriversPanel} />
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
           <ProtectedRoute path="/conferencia-rotas" component={ConferenciaRotas} />
