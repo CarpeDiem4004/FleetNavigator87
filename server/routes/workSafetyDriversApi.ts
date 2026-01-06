@@ -359,24 +359,16 @@ export async function deleteWorkSafetyDriver(req: Request, res: Response) {
 
 export async function getWorkSafetyBases(req: Request, res: Response) {
   try {
-    const result = await pool.query(
-      `SELECT DISTINCT base_atuacao FROM work_safety_drivers WHERE ativo = true ORDER BY base_atuacao`
+    const basesQuery = await pool.query(
+      `SELECT DISTINCT name FROM bases WHERE active = true ORDER BY name`
     );
     
-    const basesQuery = await pool.query(`SELECT DISTINCT name FROM bases ORDER BY name`);
-    
-    const allBases = new Set<string>();
-    basesQuery.rows.forEach(row => allBases.add(row.name));
-    result.rows.forEach(row => {
-      if (row.base_atuacao) allBases.add(row.base_atuacao);
-    });
-    
-    const sortedBases = Array.from(allBases).filter(Boolean).sort();
-    console.log('[WORK-SAFETY] Retornando bases:', sortedBases.length, 'bases encontradas');
+    const bases = basesQuery.rows.map(row => row.name).filter(Boolean);
+    console.log('[WORK-SAFETY] Retornando bases da tabela bases:', bases.length, 'bases encontradas');
     
     return res.json({
       success: true,
-      data: sortedBases
+      data: bases
     });
     
   } catch (error) {
