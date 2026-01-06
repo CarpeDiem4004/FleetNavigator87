@@ -98,16 +98,24 @@ Usuários com role `line_hall` são automaticamente redirecionados para `/line-h
 
 ## Work Safety Module (Segurança do Trabalho)
 
-### Driver Registration System
-Sistema de cadastro de motoristas para o módulo de Segurança do Trabalho.
+### Portal Único de Segurança do Trabalho
+O link `/work-safety/portal` é o hub central para as bases acessarem todas as funcionalidades de segurança do trabalho.
 
-### Routes
-- `/work-safety/cadastro` - Formulário público de cadastro de motoristas (sem autenticação)
-- `/work-safety/motoristas` - Painel administrativo de motoristas (requer autenticação)
-- `/work-safety` - Dashboard principal de Segurança do Trabalho
+### Rotas Públicas (sem autenticação)
+- `/work-safety/portal` - **LINK PRINCIPAL** - Menu com todas as opções para as bases
+- `/work-safety/cadastro-motorista` - Formulário de cadastro de motoristas
+- `/work-safety/relatar-acidente` - Formulário para relatar acidentes/incidentes
+- `/work-safety/treinamentos` - Lista de treinamentos com confirmação de participação
 
-### Database Table
+### Rotas Administrativas (requer autenticação)
+- `/work-safety` - Dashboard principal com estatísticas
+- `/work-safety/motoristas` - Painel de gerenciamento de motoristas
+
+### Database Tables
 - `work_safety_drivers` - Tabela de motoristas cadastrados
+- `work_safety_accidents` - Tabela de acidentes/incidentes reportados
+- `work_safety_trainings` - Tabela de treinamentos disponíveis
+- `work_safety_training_participations` - Participações em treinamentos
 
 ### Key Fields
 - `nome_completo` - Nome completo do motorista
