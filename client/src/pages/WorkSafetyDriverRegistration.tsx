@@ -22,6 +22,7 @@ const formSchema = z.object({
   email: z.string().email('E-mail inválido'),
   possuiEar: z.enum(['true', 'false']),
   numeroCnh: z.string().min(1, 'Número da CNH é obrigatório'),
+  categoriaCnh: z.string().min(1, 'Selecione a categoria da CNH'),
   pgrAprovado: z.enum(['true', 'false']),
   nomeResponsavel: z.string().min(3, 'Nome do responsável é obrigatório'),
   telefoneResponsavel: z.string().min(10, 'Telefone do responsável inválido'),
@@ -63,6 +64,7 @@ export default function WorkSafetyDriverRegistration() {
       email: '',
       possuiEar: 'false',
       numeroCnh: '',
+      categoriaCnh: '',
       pgrAprovado: 'false',
       nomeResponsavel: '',
       telefoneResponsavel: '',
@@ -304,6 +306,35 @@ export default function WorkSafetyDriverRegistration() {
                               />
                             </div>
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="categoriaCnh"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Categoria da CNH *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-categoria-cnh">
+                                <SelectValue placeholder="Selecione a categoria" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="A">A - Motocicleta</SelectItem>
+                              <SelectItem value="B">B - Automóvel</SelectItem>
+                              <SelectItem value="C">C - Caminhão</SelectItem>
+                              <SelectItem value="D">D - Ônibus</SelectItem>
+                              <SelectItem value="E">E - Veículo articulado</SelectItem>
+                              <SelectItem value="AB">AB - Moto + Carro</SelectItem>
+                              <SelectItem value="AC">AC - Moto + Caminhão</SelectItem>
+                              <SelectItem value="AD">AD - Moto + Ônibus</SelectItem>
+                              <SelectItem value="AE">AE - Moto + Articulado</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}

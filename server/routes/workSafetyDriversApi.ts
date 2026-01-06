@@ -68,9 +68,9 @@ export async function createWorkSafetyDriver(req: Request, res: Response) {
     const result = await pool.query(
       `INSERT INTO work_safety_drivers (
         nome_completo, cpf, base_atuacao, telefone_motorista, email,
-        possui_ear, numero_cnh, pgr_aprovado, nome_responsavel, telefone_responsavel,
+        possui_ear, numero_cnh, categoria_cnh, pgr_aprovado, nome_responsavel, telefone_responsavel,
         created_at, updated_at, ativo
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW(), true)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW(), true)
       RETURNING *`,
       [
         data.nomeCompleto,
@@ -80,6 +80,7 @@ export async function createWorkSafetyDriver(req: Request, res: Response) {
         data.email,
         data.possuiEar || false,
         data.numeroCnh,
+        data.categoriaCnh || null,
         data.pgrAprovado || false,
         data.nomeResponsavel,
         data.telefoneResponsavel
@@ -133,6 +134,7 @@ export async function getWorkSafetyDrivers(req: Request, res: Response) {
         email,
         possui_ear,
         numero_cnh,
+        categoria_cnh,
         pgr_aprovado,
         nome_responsavel,
         telefone_responsavel,
@@ -280,11 +282,12 @@ export async function updateWorkSafetyDriver(req: Request, res: Response) {
         email = COALESCE($5, email),
         possui_ear = COALESCE($6, possui_ear),
         numero_cnh = COALESCE($7, numero_cnh),
-        pgr_aprovado = COALESCE($8, pgr_aprovado),
-        nome_responsavel = COALESCE($9, nome_responsavel),
-        telefone_responsavel = COALESCE($10, telefone_responsavel),
+        categoria_cnh = COALESCE($8, categoria_cnh),
+        pgr_aprovado = COALESCE($9, pgr_aprovado),
+        nome_responsavel = COALESCE($10, nome_responsavel),
+        telefone_responsavel = COALESCE($11, telefone_responsavel),
         updated_at = NOW()
-      WHERE id = $11 AND ativo = true
+      WHERE id = $12 AND ativo = true
       RETURNING *`,
       [
         data.nomeCompleto,
@@ -294,6 +297,7 @@ export async function updateWorkSafetyDriver(req: Request, res: Response) {
         data.email,
         data.possuiEar,
         data.numeroCnh,
+        data.categoriaCnh,
         data.pgrAprovado,
         data.nomeResponsavel,
         data.telefoneResponsavel,
