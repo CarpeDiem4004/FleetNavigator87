@@ -359,6 +359,9 @@ export async function deleteWorkSafetyDriver(req: Request, res: Response) {
 
 export async function getWorkSafetyBases(req: Request, res: Response) {
   try {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    
     const basesQuery = await pool.query(
       `SELECT DISTINCT name FROM bases WHERE active = true ORDER BY name`
     );
@@ -366,17 +369,18 @@ export async function getWorkSafetyBases(req: Request, res: Response) {
     const bases = basesQuery.rows.map(row => row.name).filter(Boolean);
     console.log('[WORK-SAFETY] Retornando bases da tabela bases:', bases.length, 'bases encontradas');
     
-    return res.json({
+    return res.status(200).send(JSON.stringify({
       success: true,
       data: bases
-    });
+    }));
     
   } catch (error) {
     console.error('[WORK-SAFETY] Erro ao buscar bases:', error);
-    return res.status(500).json({ 
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(500).send(JSON.stringify({ 
       success: false, 
       message: 'Erro ao buscar bases.' 
-    });
+    }));
   }
 }
 

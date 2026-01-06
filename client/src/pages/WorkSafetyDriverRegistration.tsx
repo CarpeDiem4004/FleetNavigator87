@@ -49,13 +49,89 @@ export default function WorkSafetyDriverRegistration() {
   const { toast } = useToast();
   const [showPgrWarning, setShowPgrWarning] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [bases, setBases] = useState<string[]>([]);
+  const [isLoadingBases, setIsLoadingBases] = useState(true);
+  const [basesError, setBasesError] = useState<string | null>(null);
 
-  const { data: basesData, isLoading: isLoadingBases } = useQuery<{ success: boolean; data: string[] }>({
-    queryKey: ['/api/work-safety/bases'],
-    retry: 3,
-    retryDelay: 1000,
-    staleTime: 5 * 60 * 1000,
-  });
+  useEffect(() => {
+    let isMounted = true;
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    const fetchBases = async (): Promise<void> => {
+      try {
+        setIsLoadingBases(true);
+        setBasesError(null);
+        
+        console.log('[WorkSafety] Fetching bases, attempt:', retryCount + 1);
+        
+        const response = await fetch('/api/work-safety/bases', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+        
+        console.log('[WorkSafety] Response status:', response.status);
+        
+        const contentType = response.headers.get('content-type');
+        console.log('[WorkSafety] Content-Type:', contentType);
+        
+        if (!contentType || !contentType.includes('application/json')) {
+          if (retryCount < maxRetries) {
+            retryCount++;
+            console.log('[WorkSafety] Retrying due to invalid content-type...');
+            await new Promise(resolve => setTimeout(resolve, 500 * retryCount));
+            return fetchBases();
+          }
+          throw new Error('Resposta inválida do servidor');
+        }
+        
+        const text = await response.text();
+        console.log('[WorkSafety] Response text length:', text.length);
+        
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (parseError) {
+          console.error('[WorkSafety] JSON parse error:', parseError);
+          if (retryCount < maxRetries) {
+            retryCount++;
+            await new Promise(resolve => setTimeout(resolve, 500 * retryCount));
+            return fetchBases();
+          }
+          throw new Error('Erro ao processar resposta do servidor');
+        }
+        
+        if (isMounted) {
+          if (data.success && Array.isArray(data.data)) {
+            setBases(data.data);
+            console.log('[WorkSafety] Bases loaded successfully:', data.data.length);
+          } else {
+            throw new Error('Formato de dados inválido');
+          }
+        }
+      } catch (error: any) {
+        const errorMessage = error?.message || error?.toString() || 'Erro desconhecido';
+        console.error('[WorkSafety] Error fetching bases:', errorMessage, error);
+        if (isMounted) {
+          setBasesError(errorMessage);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingBases(false);
+        }
+      }
+    };
+
+    fetchBases();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -234,7 +310,7 @@ export default function WorkSafetyDriverRegistration() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {basesData?.data?.map((base: string) => (
+                              {bases.map((base: string) => (
                                 <SelectItem key={base} value={base}>
                                   {base}
                                 </SelectItem>

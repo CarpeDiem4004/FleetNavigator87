@@ -94,6 +94,36 @@ const app = express();
 app.set('trust proxy', 1);
 console.log('[App] Trust proxy configurado para aceitar cookies secure através de proxy');
 
+// CRÍTICO: Interceptar rotas de API no INÍCIO ABSOLUTO para evitar que o Vite HMR capture
+// Esta rota DEVE vir antes de qualquer middleware
+app.get('/api/work-safety/bases', async (req, res) => {
+  try {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    console.log('[WORK-SAFETY-PRIORITY] Rota de bases interceptada no início absoluto');
+    
+    const basesQuery = await pool.query(
+      `SELECT DISTINCT name FROM bases WHERE active = true ORDER BY name`
+    );
+    
+    const bases = basesQuery.rows.map(row => row.name).filter(Boolean);
+    console.log('[WORK-SAFETY-PRIORITY] Retornando', bases.length, 'bases');
+    
+    return res.status(200).send(JSON.stringify({
+      success: true,
+      data: bases
+    }));
+    
+  } catch (error: any) {
+    console.error('[WORK-SAFETY-PRIORITY] Erro ao buscar bases:', error);
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(500).send(JSON.stringify({ 
+      success: false, 
+      message: 'Erro ao buscar bases.' 
+    }));
+  }
+});
+
 // MIDDLEWARE PWA PRIMEIRO - ANTES DE QUALQUER OUTRO MIDDLEWARE
 app.get('/manifest.json', (req, res) => {
   try {
@@ -1141,8 +1171,6 @@ app.use((req, res, next) => {
         }));
       });
   });
-
-
 
   // Rota específica para bases externas ANTES do registerRoutes
   app.get('/api/external-bases', async (req, res) => {
