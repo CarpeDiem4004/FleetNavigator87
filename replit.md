@@ -95,3 +95,39 @@ Usuários com role `line_hall` são automaticamente redirecionados para `/line-h
 - `client/src/pages/FuelCardRequestsPanel.tsx` - Painel de gestão de cartões
 - `client/src/hooks/use-base-permission.tsx` - Controle de permissões (linhas 454-474)
 - `client/src/pages/SignIn.tsx` - Lógica de redirecionamento após login
+
+## Work Safety Module (Segurança do Trabalho)
+
+### Driver Registration System
+Sistema de cadastro de motoristas para o módulo de Segurança do Trabalho.
+
+### Routes
+- `/work-safety/cadastro` - Formulário público de cadastro de motoristas (sem autenticação)
+- `/work-safety/motoristas` - Painel administrativo de motoristas (requer autenticação)
+- `/work-safety` - Dashboard principal de Segurança do Trabalho
+
+### Database Table
+- `work_safety_drivers` - Tabela de motoristas cadastrados
+
+### Key Fields
+- `nome_completo` - Nome completo do motorista
+- `cpf` - CPF único (com validação de dígitos verificadores)
+- `base_atuacao` - Base onde o motorista atua
+- `telefone_motorista` - Telefone de contato
+- `email` - E-mail do motorista
+- `possui_ear` - Indica se possui EAR (boolean)
+- `numero_cnh` - Número da CNH
+- `pgr_aprovado` - Status de aprovação do PGR (boolean)
+- `nome_responsavel` - Nome do responsável pelo cadastro
+- `telefone_responsavel` - Telefone do responsável
+
+### Business Rules
+- CPF deve ser único no sistema (validação de dígitos verificadores)
+- PGR deve estar aprovado para permitir o cadastro (bloqueio se não aprovado)
+- Bases visualizam apenas seus próprios cadastros
+- Administradores (admin, ceo, gerente_geral) visualizam todas as bases
+
+### Important Files
+- `server/routes/workSafetyDriversApi.ts` - API de CRUD de motoristas
+- `client/src/pages/WorkSafetyDriverRegistration.tsx` - Formulário público
+- `client/src/pages/WorkSafetyDriversPanel.tsx` - Painel administrativo
