@@ -116,6 +116,13 @@ export async function getWorkSafetyDrivers(req: Request, res: Response) {
     const { base, pgrStatus, possuiEar, search } = req.query;
     const user = (req as any).user;
     
+    console.log('[WORK-SAFETY] User info:', { 
+      id: user?.id, 
+      role: user?.role, 
+      base_id: user?.base_id,
+      email: user?.email 
+    });
+    
     let query = `
       SELECT 
         id,
@@ -139,11 +146,21 @@ export async function getWorkSafetyDrivers(req: Request, res: Response) {
     const params: any[] = [];
     let paramIndex = 1;
     
-    const isAdmin = user && ['admin', 'ceo', 'gerente_geral'].includes(user.role);
-    if (!isAdmin && user?.base_id) {
-      query += ` AND base_atuacao = $${paramIndex}`;
-      params.push(user.base_id);
-      paramIndex++;
+    const globalRoles = ['admin', 'ceo', 'gerente_geral'];
+    const isGlobalAdmin = user && user.role && globalRoles.includes(user.role);
+    
+    if (!isGlobalAdmin) {
+      const userBaseName = user?.base_id || user?.base_name || user?.baseName;
+      if (userBaseName) {
+        query += ` AND base_atuacao = $${paramIndex}`;
+        params.push(userBaseName);
+        paramIndex++;
+        console.log('[WORK-SAFETY] Filtering by user base:', userBaseName);
+      } else {
+        console.log('[WORK-SAFETY] User has no base assigned, showing all (no base restriction)');
+      }
+    } else {
+      console.log('[WORK-SAFETY] Global admin access - no base filter');
     }
     
     if (base && base !== 'all') {

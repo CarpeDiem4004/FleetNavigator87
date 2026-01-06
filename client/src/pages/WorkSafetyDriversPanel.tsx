@@ -58,7 +58,7 @@ export default function WorkSafetyDriversPanel() {
     },
   });
 
-  const { data: basesData } = useQuery({
+  const { data: basesData } = useQuery<{ success: boolean; data: string[] }>({
     queryKey: ['/api/work-safety/bases'],
   });
 

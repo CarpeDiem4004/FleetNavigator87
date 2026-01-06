@@ -109,6 +109,8 @@ import FuelReceiptsPage from "@/pages/fuel-receipts";
 import FleetManagement from "@/pages/fleet-management";
 import Accidents from "@/pages/accidents";
 import WorkSafety from "@/pages/work-safety";
+import WorkSafetyDriverRegistration from "@/pages/WorkSafetyDriverRegistration";
+import WorkSafetyDriversPanel from "@/pages/WorkSafetyDriversPanel";
 import WorkshopsPage from "@/pages/fleet-management/WorkshopsPage";
 import MaintenancePage from "@/pages/fleet-management/MaintenancePage";
 import MaintenanceManagement from "@/pages/fleet-management/maintenance-management";
@@ -774,6 +776,8 @@ function App() {
           <ProtectedRoute path="/accidents" component={Accidents} />
           <ProtectedRoute path="/fuel-receipts" component={FuelReceiptsPage} />
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
+          <Route path="/work-safety/cadastro" component={WorkSafetyDriverRegistration} />
+          <ProtectedRoute path="/work-safety/motoristas" component={WorkSafetyDriversPanel} />
           <ProtectedRoute path="/conferencia-rotas" component={ConferenciaRotas} />
           <ProtectedRoute path="/relatorio-consumo" component={RelatorioConsumo} />
           <ProtectedRoute path="/line-haul" component={LineHaulPage} />

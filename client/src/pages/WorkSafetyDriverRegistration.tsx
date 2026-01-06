@@ -49,7 +49,7 @@ export default function WorkSafetyDriverRegistration() {
   const [showPgrWarning, setShowPgrWarning] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  const { data: basesData } = useQuery({
+  const { data: basesData } = useQuery<{ success: boolean; data: string[] }>({
     queryKey: ['/api/work-safety/bases'],
   });
 
