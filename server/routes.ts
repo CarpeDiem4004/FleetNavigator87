@@ -147,6 +147,15 @@ import recebimentosOsascoHandler, { getRecebimentosOsascoV2, registrarRecebiment
 import testeOsascoRecebimentos from "./routes/testeOsascoRecebimentos.js";
 import osascoV2Direto from "./routes/osascoV2Direto.js";
 import osascoDiretoRoutes from "./routes/osascoDiretoRoutes.js";
+import { 
+  createWorkSafetyDriver, 
+  getWorkSafetyDrivers, 
+  getWorkSafetyDriverById,
+  updateWorkSafetyDriver,
+  deleteWorkSafetyDriver,
+  getWorkSafetyBases,
+  getWorkSafetyStats
+} from "./routes/workSafetyDriversApi";
 import recebimentosOsascoV2Routes from "./routes/recebimentosOsascoV2.js";
 import osascoV2RecebimentosDirecto from "./routes/osascoV2RecebimentosDirecto.js";
 import { db, pool } from "./db.js";
@@ -26023,6 +26032,23 @@ async function createFuelRequestNotification(fuelRequest) {
       });
     }
   });
+
+  // ===========================
+  // ROTAS SEGURANÇA DO TRABALHO - CADASTRO DE MOTORISTAS
+  // ===========================
+  
+  // Rota pública para cadastro de motoristas (formulário externo)
+  app.post('/api/work-safety/drivers', createWorkSafetyDriver);
+  
+  // Rota pública para buscar bases disponíveis
+  app.get('/api/work-safety/bases', getWorkSafetyBases);
+  
+  // Rotas autenticadas para painel administrativo
+  app.get('/api/work-safety/drivers', isAuthenticated, getWorkSafetyDrivers);
+  app.get('/api/work-safety/drivers/:id', isAuthenticated, getWorkSafetyDriverById);
+  app.put('/api/work-safety/drivers/:id', isAuthenticated, updateWorkSafetyDriver);
+  app.delete('/api/work-safety/drivers/:id', isAuthenticated, deleteWorkSafetyDriver);
+  app.get('/api/work-safety/stats', isAuthenticated, getWorkSafetyStats);
 
   const httpServer = createServer(app);
   return httpServer;
