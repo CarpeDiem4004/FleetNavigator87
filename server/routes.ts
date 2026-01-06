@@ -156,6 +156,18 @@ import {
   getWorkSafetyBases,
   getWorkSafetyStats
 } from "./routes/workSafetyDriversApi";
+import { 
+  createAccident, 
+  getAccidents, 
+  getAccidentStats 
+} from "./routes/workSafetyAccidentsApi";
+import { 
+  getTrainings, 
+  createParticipation, 
+  getParticipations, 
+  getTrainingStats,
+  seedDefaultTrainings
+} from "./routes/workSafetyTrainingsApi";
 import recebimentosOsascoV2Routes from "./routes/recebimentosOsascoV2.js";
 import osascoV2RecebimentosDirecto from "./routes/osascoV2RecebimentosDirecto.js";
 import { db, pool } from "./db.js";
@@ -26049,6 +26061,30 @@ async function createFuelRequestNotification(fuelRequest) {
   app.put('/api/work-safety/drivers/:id', isAuthenticated, updateWorkSafetyDriver);
   app.delete('/api/work-safety/drivers/:id', isAuthenticated, deleteWorkSafetyDriver);
   app.get('/api/work-safety/stats', isAuthenticated, getWorkSafetyStats);
+
+  // ===========================
+  // ROTAS SEGURANÇA DO TRABALHO - ACIDENTES/INCIDENTES
+  // ===========================
+  
+  // Rota pública para relatar acidentes/incidentes
+  app.post('/api/work-safety/accidents', createAccident);
+  
+  // Rotas autenticadas para painel de acidentes
+  app.get('/api/work-safety/accidents', isAuthenticated, getAccidents);
+  app.get('/api/work-safety/accidents/stats', isAuthenticated, getAccidentStats);
+
+  // ===========================
+  // ROTAS SEGURANÇA DO TRABALHO - TREINAMENTOS
+  // ===========================
+  
+  // Rotas públicas para treinamentos
+  app.get('/api/work-safety/trainings', getTrainings);
+  app.post('/api/work-safety/trainings/participations', createParticipation);
+  
+  // Rotas autenticadas para painel de treinamentos
+  app.get('/api/work-safety/trainings/participations', isAuthenticated, getParticipations);
+  app.get('/api/work-safety/trainings/stats', isAuthenticated, getTrainingStats);
+  app.post('/api/work-safety/trainings/seed', isAuthenticated, seedDefaultTrainings);
 
   const httpServer = createServer(app);
   return httpServer;
