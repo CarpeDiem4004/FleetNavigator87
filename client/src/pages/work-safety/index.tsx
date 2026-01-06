@@ -1,15 +1,23 @@
 import React from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, CheckCircle, Clock, LineChart, FileText, Users } from 'lucide-react';
+import { ShieldCheck, CheckCircle, Clock, LineChart, FileText, Users, UserPlus, ClipboardList, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Link } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
 
 export default function WorkSafetyPage() {
+  const { data: statsData } = useQuery<{ success: boolean; data: { total: number; pgrAprovados: number; comEar: number; totalBases: number } }>({
+    queryKey: ['/api/work-safety/stats'],
+  });
+
+  const stats = statsData?.data || { total: 0, pgrAprovados: 0, comEar: 0, totalBases: 0 };
+
   return (
     <AppLayout>
       <div className="container mx-auto py-6">
         <div className="flex flex-col gap-6">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center flex-wrap gap-4">
             <div>
               <h1 className="text-3xl font-bold flex items-center">
                 <ShieldCheck className="mr-2 h-8 w-8" />
@@ -19,11 +27,64 @@ export default function WorkSafetyPage() {
                 Gestão de segurança ocupacional e treinamentos
               </p>
             </div>
-            <Button>
-              <FileText className="mr-2 h-4 w-4" />
-              Novo Relatório de Segurança
-            </Button>
+            <div className="flex gap-2 flex-wrap">
+              <Link href="/work-safety/motoristas">
+                <Button variant="outline" data-testid="button-view-drivers">
+                  <ClipboardList className="mr-2 h-4 w-4" />
+                  Ver Motoristas ({stats.total})
+                </Button>
+              </Link>
+              <Button onClick={() => window.open('/work-safety/cadastro', '_blank')} data-testid="button-registration-link">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Link de Cadastro
+                <ExternalLink className="ml-2 h-3 w-3" />
+              </Button>
+              <Button>
+                <FileText className="mr-2 h-4 w-4" />
+                Novo Relatório
+              </Button>
+            </div>
           </div>
+
+          <Card className="border-blue-200 bg-blue-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-blue-900">
+                <Users className="h-5 w-5" />
+                Motoristas Cadastrados
+              </CardTitle>
+              <CardDescription>
+                Sistema de cadastro de motoristas para Segurança do Trabalho
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                  <p className="text-3xl font-bold text-blue-600">{stats.total}</p>
+                  <p className="text-sm text-gray-600">Total Cadastrados</p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                  <p className="text-3xl font-bold text-green-600">{stats.pgrAprovados}</p>
+                  <p className="text-sm text-gray-600">PGR Aprovados</p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                  <p className="text-3xl font-bold text-purple-600">{stats.comEar}</p>
+                  <p className="text-sm text-gray-600">Com EAR</p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                  <p className="text-3xl font-bold text-orange-600">{stats.totalBases}</p>
+                  <p className="text-sm text-gray-600">Bases Ativas</p>
+                </div>
+              </div>
+              <div className="mt-4 flex gap-2 justify-center">
+                <Link href="/work-safety/motoristas">
+                  <Button className="bg-blue-600 hover:bg-blue-700" data-testid="button-manage-drivers">
+                    <ClipboardList className="mr-2 h-4 w-4" />
+                    Gerenciar Motoristas
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
