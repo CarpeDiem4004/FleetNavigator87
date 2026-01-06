@@ -1549,3 +1549,91 @@ export const insertWorkSafetyDriverSchema = createInsertSchema(workSafetyDrivers
 // Tipos TypeScript para Segurança do Trabalho
 export type WorkSafetyDriver = typeof workSafetyDrivers.$inferSelect;
 export type InsertWorkSafetyDriver = z.infer<typeof insertWorkSafetyDriverSchema>;
+
+// ==================== SEGURANÇA DO TRABALHO - ACIDENTES/INCIDENTES ====================
+
+// Enum para tipo de ocorrência
+export const workSafetyOccurrenceTypeEnum = pgEnum('work_safety_occurrence_type', ['acidente', 'incidente', 'quase_acidente']);
+
+// Tabela de acidentes/incidentes
+export const workSafetyAccidents = pgTable("work_safety_accidents", {
+  id: serial("id").primaryKey(),
+  base: text("base").notNull(),
+  motoristaId: integer("motorista_id").references(() => workSafetyDrivers.id),
+  motoristaNome: text("motorista_nome"),
+  tipoOcorrencia: text("tipo_ocorrencia").notNull(), // acidente, incidente, quase_acidente
+  dataHora: timestamp("data_hora").notNull(),
+  local: text("local").notNull(),
+  descricao: text("descricao").notNull(),
+  houveVitima: boolean("houve_vitima").notNull().default(false),
+  anexoUrl: text("anexo_url"),
+  nomeReportante: text("nome_reportante").notNull(),
+  telefoneReportante: text("telefone_reportante").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Schema de inserção para acidentes
+export const insertWorkSafetyAccidentSchema = createInsertSchema(workSafetyAccidents, {
+  base: z.string().min(1, "Base é obrigatória"),
+  tipoOcorrencia: z.enum(['acidente', 'incidente', 'quase_acidente']),
+  local: z.string().min(1, "Local é obrigatório"),
+  descricao: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
+  houveVitima: z.boolean(),
+  nomeReportante: z.string().min(3, "Nome do reportante é obrigatório"),
+  telefoneReportante: z.string().min(10, "Telefone inválido"),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type WorkSafetyAccident = typeof workSafetyAccidents.$inferSelect;
+export type InsertWorkSafetyAccident = z.infer<typeof insertWorkSafetyAccidentSchema>;
+
+// ==================== SEGURANÇA DO TRABALHO - TREINAMENTOS ====================
+
+// Tabela de treinamentos disponíveis
+export const workSafetyTrainings = pgTable("work_safety_trainings", {
+  id: serial("id").primaryKey(),
+  nome: text("nome").notNull(),
+  descricao: text("descricao"),
+  cargaHoraria: integer("carga_horaria"), // em horas
+  validade: integer("validade"), // em meses
+  ativo: boolean("ativo").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Schema de inserção para treinamentos
+export const insertWorkSafetyTrainingSchema = createInsertSchema(workSafetyTrainings, {
+  nome: z.string().min(3, "Nome do treinamento é obrigatório"),
+  descricao: z.string().optional(),
+  cargaHoraria: z.number().int().positive().optional(),
+  validade: z.number().int().positive().optional(),
+}).omit({ id: true, createdAt: true });
+
+export type WorkSafetyTraining = typeof workSafetyTrainings.$inferSelect;
+export type InsertWorkSafetyTraining = z.infer<typeof insertWorkSafetyTrainingSchema>;
+
+// Tabela de participações em treinamentos
+export const workSafetyTrainingParticipations = pgTable("work_safety_training_participations", {
+  id: serial("id").primaryKey(),
+  treinamentoId: integer("treinamento_id").references(() => workSafetyTrainings.id).notNull(),
+  motoristaId: integer("motorista_id").references(() => workSafetyDrivers.id),
+  motoristaNome: text("motorista_nome").notNull(),
+  motoristaCpf: text("motorista_cpf"),
+  base: text("base").notNull(),
+  status: text("status").notNull().default('inscrito'), // inscrito, confirmado, concluido, ausente
+  dataInscricao: timestamp("data_inscricao").defaultNow(),
+  dataConclusao: timestamp("data_conclusao"),
+  certificadoUrl: text("certificado_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Schema de inserção para participações
+export const insertWorkSafetyTrainingParticipationSchema = createInsertSchema(workSafetyTrainingParticipations, {
+  treinamentoId: z.number().int().positive(),
+  motoristaNome: z.string().min(3, "Nome é obrigatório"),
+  base: z.string().min(1, "Base é obrigatória"),
+  status: z.enum(['inscrito', 'confirmado', 'concluido', 'ausente']).default('inscrito'),
+}).omit({ id: true, createdAt: true, updatedAt: true, dataInscricao: true });
+
+export type WorkSafetyTrainingParticipation = typeof workSafetyTrainingParticipations.$inferSelect;
+export type InsertWorkSafetyTrainingParticipation = z.infer<typeof insertWorkSafetyTrainingParticipationSchema>;

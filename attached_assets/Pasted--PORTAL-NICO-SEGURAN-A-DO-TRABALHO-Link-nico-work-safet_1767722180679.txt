@@ -1,0 +1,195 @@
+🔗 PORTAL ÚNICO – SEGURANÇA DO TRABALHO
+📍 Link único
+/work-safety
+
+
+Esse link será o hub central para as bases.
+
+🧭 TELA INICIAL DO LINK (MENU DE AÇÕES)
+
+Ao acessar o link, o usuário verá cards ou botões, por exemplo:
+
+🧾 Opções disponíveis
+
+1️⃣ Cadastrar Motorista
+2️⃣ Relatar Acidente / Incidente
+3️⃣ Ver Treinamentos Disponíveis
+4️⃣ Consultar Status de Segurança (opcional)
+
+Cada botão abre uma subpágina, sem sair do módulo.
+
+🧱 ESTRUTURA DE ROTAS
+/work-safety
+/work-safety/cadastro-motorista
+/work-safety/relatar-acidente
+/work-safety/treinamentos
+
+1️⃣ CADASTRAR MOTORISTA
+
+👉 Usa exatamente o formulário que você já mostrou
+✔ Com bloqueio de PGR
+✔ Atualiza painel
+✔ Salva no Supabase
+
+2️⃣ RELATAR ACIDENTE / INCIDENTE
+Campos sugeridos:
+
+Base
+
+Motorista envolvido (lista dos cadastrados)
+
+Tipo:
+
+Acidente
+
+Incidente
+
+Quase acidente
+
+Data e hora
+
+Local
+
+Descrição
+
+Houve vítima? (Sim / Não)
+
+Anexo (foto / documento – opcional)
+
+3️⃣ VER TREINAMENTOS DISPONÍVEIS
+Funcionalidades:
+
+Lista de treinamentos:
+
+Direção defensiva
+
+Primeiros socorros
+
+NR-11
+
+NR-20 (se aplicável)
+
+Status:
+
+Disponível
+
+Agendado
+
+Concluído
+
+Filtro por base
+
+Botão Confirmar participação
+
+📊 INTEGRAÇÃO COM O PAINEL
+
+Tudo que for feito nesse portal deve:
+
+Alimentar o Dashboard de Segurança do Trabalho
+
+Atualizar KPIs:
+
+Dias sem acidente
+
+Inspeções pendentes
+
+Treinamentos em dia
+
+Índice de conformidade
+
+🚀 PROMPT FINAL – PORTAL ÚNICO (REPLIT AI)
+
+👉 Copie e cole exatamente este prompt no Replit AI:
+
+PROMPT PARA REPLIT AI
+
+Transforme o link /work-safety em um Portal Único de Segurança do Trabalho, sem alterar o layout base já existente.
+
+Tela Inicial
+
+Ao acessar /work-safety, exibir um menu com botões/cards:
+
+Cadastrar Motorista
+
+Relatar Acidente / Incidente
+
+Ver Treinamentos Disponíveis
+
+Cada botão deve redirecionar para uma rota interna do módulo.
+
+Rotas do Portal
+/work-safety/cadastro-motorista
+/work-safety/relatar-acidente
+/work-safety/treinamentos
+
+Cadastro de Motorista
+
+Utilizar o formulário já existente
+
+Bloquear cadastro se PGR aprovado = Não
+
+CPF único
+
+Registrar data de criação e atualização
+
+Integrar com Supabase
+
+Relatar Acidente
+
+Criar formulário com:
+
+Base
+
+Motorista envolvido
+
+Tipo (acidente / incidente / quase acidente)
+
+Data e hora
+
+Local
+
+Descrição
+
+Houve vítima (Sim/Não)
+
+Upload opcional
+
+Treinamentos
+
+Criar tela com:
+
+Lista de treinamentos disponíveis
+
+Status por motorista
+
+Botão de confirmação de participação
+
+Regras Gerais
+
+Bases veem apenas seus dados
+
+Admin vê tudo
+
+Todas as ações devem atualizar o painel de Segurança do Trabalho
+
+Requisitos Técnicos
+
+Supabase (Auth + DB)
+
+RLS por base
+
+Código organizado
+
+Não recriar layouts existentes
+
+Gere:
+
+Estrutura de rotas
+
+Tabelas SQL
+
+Policies
+
+Frontend funcional
+
+Integração com o dashboard existente
