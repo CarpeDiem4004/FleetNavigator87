@@ -1,17 +1,59 @@
-import React from 'react';
+import React, { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, CheckCircle, Clock, LineChart, FileText, Users, UserPlus, ClipboardList, ExternalLink } from 'lucide-react';
+import { ShieldCheck, CheckCircle, Clock, LineChart, FileText, Users, UserPlus, ClipboardList, ExternalLink, Copy, Check, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 export default function WorkSafetyPage() {
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+  
   const { data: statsData } = useQuery<{ success: boolean; data: { total: number; pgrAprovados: number; comEar: number; totalBases: number } }>({
     queryKey: ['/api/work-safety/stats'],
   });
 
   const stats = statsData?.data || { total: 0, pgrAprovados: 0, comEar: 0, totalBases: 0 };
+
+  const portalLink = typeof window !== 'undefined' 
+    ? `${window.location.origin}/work-safety/portal`
+    : '/work-safety/portal';
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(portalLink);
+      setCopied(true);
+      toast({
+        title: "Link copiado!",
+        description: "O link do portal foi copiado para a área de transferência.",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast({
+        title: "Erro ao copiar",
+        description: "Não foi possível copiar o link. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const shareLink = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Portal de Segurança do Trabalho - Murici',
+          text: 'Acesse o Portal de Segurança do Trabalho da Murici Transportes',
+          url: portalLink,
+        });
+      } catch (err) {
+        copyLink();
+      }
+    } else {
+      copyLink();
+    }
+  };
 
   return (
     <AppLayout>
@@ -34,14 +76,17 @@ export default function WorkSafetyPage() {
                   Ver Motoristas ({stats.total})
                 </Button>
               </Link>
-              <Button onClick={() => window.open('/work-safety/cadastro', '_blank')} data-testid="button-registration-link">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Link de Cadastro
-                <ExternalLink className="ml-2 h-3 w-3" />
+              <Button onClick={shareLink} variant="outline" data-testid="button-share-portal">
+                <Share2 className="mr-2 h-4 w-4" />
+                Compartilhar Portal
+              </Button>
+              <Button onClick={copyLink} variant="outline" data-testid="button-copy-portal-link">
+                {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                {copied ? 'Copiado!' : 'Copiar Link'}
               </Button>
               <Button>
                 <FileText className="mr-2 h-4 w-4" />
-                Novo Relatório
+                Novo Relatório de Segurança
               </Button>
             </div>
           </div>
