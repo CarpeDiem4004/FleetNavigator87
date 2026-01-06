@@ -367,11 +367,16 @@ export async function getWorkSafetyBases(req: Request, res: Response) {
     
     const allBases = new Set<string>();
     basesQuery.rows.forEach(row => allBases.add(row.name));
-    result.rows.forEach(row => allBases.add(row.base_atuacao));
+    result.rows.forEach(row => {
+      if (row.base_atuacao) allBases.add(row.base_atuacao);
+    });
+    
+    const sortedBases = Array.from(allBases).filter(Boolean).sort();
+    console.log('[WORK-SAFETY] Retornando bases:', sortedBases.length, 'bases encontradas');
     
     return res.json({
       success: true,
-      data: Array.from(allBases).sort()
+      data: sortedBases
     });
     
   } catch (error) {

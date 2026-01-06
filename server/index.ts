@@ -2354,6 +2354,7 @@ app.use((req, res, next) => {
       '/api/work-safety/drivers', // API pública de motoristas
       '/api/work-safety/accidents', // API pública de acidentes
       '/api/work-safety/trainings', // API pública de treinamentos
+      '/api/work-safety/bases', // API pública para listar bases
     ];
     
     // Verificar se a rota atual é pública (não precisa de autenticação)
