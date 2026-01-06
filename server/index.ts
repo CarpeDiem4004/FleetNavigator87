@@ -2346,6 +2346,14 @@ app.use((req, res, next) => {
       '/api/dashboard/km-per-base', // TEMPORÁRIO: Permitir acesso aos dados de quilometragem
       '/postpaid', // Link externo do formulário pós-pago
       '/api/postpaid/', // APIs públicas do sistema pós-pago
+      '/work-safety/portal', // Portal público de Segurança do Trabalho
+      '/work-safety/cadastro', // Cadastro público de motoristas
+      '/work-safety/cadastro-motorista', // Cadastro público de motoristas (alternativo)
+      '/work-safety/relatar-acidente', // Formulário público de relato de acidentes
+      '/work-safety/treinamentos', // Página pública de treinamentos
+      '/api/work-safety/drivers', // API pública de motoristas
+      '/api/work-safety/accidents', // API pública de acidentes
+      '/api/work-safety/trainings', // API pública de treinamentos
     ];
     
     // Verificar se a rota atual é pública (não precisa de autenticação)

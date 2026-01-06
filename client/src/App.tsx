@@ -435,18 +435,20 @@ function App() {
   // ⚠️ DESABILITADO - Hook de injeção automática de JWT estava causando conflitos
   // useFetchWithAuth();
   
+  // Usar o hook do wouter para verificação reativa
+  const [location] = useLocation();
+  
   // Inicializar correção automática de timezone em URLs
   useEffect(() => {
     initializeTimezoneUrlFix();
   }, []);
   
-  // Verificar se é uma rota pública de Segurança do Trabalho
-  const isWorkSafetyPublicRoute = typeof window !== 'undefined' && (
-    window.location.pathname.startsWith('/work-safety/portal') ||
-    window.location.pathname.startsWith('/work-safety/cadastro') ||
-    window.location.pathname.startsWith('/work-safety/relatar-acidente') ||
-    window.location.pathname.startsWith('/work-safety/treinamentos')
-  );
+  // Verificar se é uma rota pública de Segurança do Trabalho (usando location do wouter)
+  const isWorkSafetyPublicRoute = 
+    location.startsWith('/work-safety/portal') ||
+    location.startsWith('/work-safety/cadastro') ||
+    location.startsWith('/work-safety/relatar-acidente') ||
+    location.startsWith('/work-safety/treinamentos');
   
   // Se for rota pública de Work Safety, renderizar sem auth providers
   if (isWorkSafetyPublicRoute) {
