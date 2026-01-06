@@ -440,6 +440,33 @@ function App() {
     initializeTimezoneUrlFix();
   }, []);
   
+  // Verificar se é uma rota pública de Segurança do Trabalho
+  const isWorkSafetyPublicRoute = typeof window !== 'undefined' && (
+    window.location.pathname.startsWith('/work-safety/portal') ||
+    window.location.pathname.startsWith('/work-safety/cadastro') ||
+    window.location.pathname.startsWith('/work-safety/relatar-acidente') ||
+    window.location.pathname.startsWith('/work-safety/treinamentos')
+  );
+  
+  // Se for rota pública de Work Safety, renderizar sem auth providers
+  if (isWorkSafetyPublicRoute) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <Switch>
+          <Route path="/work-safety/portal" component={WorkSafetyPortal} />
+          <Route path="/work-safety/cadastro-motorista" component={WorkSafetyDriverRegistration} />
+          <Route path="/work-safety/cadastro" component={WorkSafetyDriverRegistration} />
+          <Route path="/work-safety/relatar-acidente" component={WorkSafetyReportAccident} />
+          <Route path="/work-safety/treinamentos" component={WorkSafetyTrainings} />
+          <Route>
+            <NotFound />
+          </Route>
+        </Switch>
+        <Toaster />
+      </QueryClientProvider>
+    );
+  }
+  
   return (
     <QueryClientProvider client={queryClient}>
       <SupabaseAuthProvider>
@@ -455,13 +482,6 @@ function App() {
             <Route path="/linehaul-abastecimento">
               <LineHaulFuelRequest />
             </Route>
-            
-            {/* Portal de Segurança do Trabalho - rotas públicas no topo */}
-            <Route path="/work-safety/portal" component={WorkSafetyPortal} />
-            <Route path="/work-safety/cadastro-motorista" component={WorkSafetyDriverRegistration} />
-            <Route path="/work-safety/cadastro" component={WorkSafetyDriverRegistration} />
-            <Route path="/work-safety/relatar-acidente" component={WorkSafetyReportAccident} />
-            <Route path="/work-safety/treinamentos" component={WorkSafetyTrainings} />
             
             {/* Painel administrativo de abastecimento pós-pago - requer autenticação */}
             <ProtectedRoute 
