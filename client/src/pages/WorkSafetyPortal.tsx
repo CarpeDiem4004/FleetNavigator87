@@ -1,10 +1,53 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, UserPlus, AlertTriangle, GraduationCap, ChevronRight, Truck } from 'lucide-react';
+import { ShieldCheck, UserPlus, AlertTriangle, GraduationCap, ChevronRight, Truck, Copy, Check, Share2 } from 'lucide-react';
 import { Link } from 'wouter';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import muriciBgImage from '@assets/murici-logo.png';
 
 export default function WorkSafetyPortal() {
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+  
+  const portalLink = typeof window !== 'undefined' 
+    ? `${window.location.origin}/work-safety/portal`
+    : '/work-safety/portal';
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(portalLink);
+      setCopied(true);
+      toast({
+        title: "Link copiado!",
+        description: "O link do portal foi copiado para a área de transferência.",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast({
+        title: "Erro ao copiar",
+        description: "Não foi possível copiar o link. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const shareLink = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Portal de Segurança do Trabalho - Murici',
+          text: 'Acesse o Portal de Segurança do Trabalho da Murici Transportes',
+          url: portalLink,
+        });
+      } catch (err) {
+        copyLink();
+      }
+    } else {
+      copyLink();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900">
       <div className="container mx-auto px-4 py-8">
@@ -20,6 +63,31 @@ export default function WorkSafetyPortal() {
           <p className="text-blue-100 text-lg">
             Murici On Fleet - Selecione uma opção abaixo
           </p>
+          
+          <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-2">
+            <div className="bg-white/10 backdrop-blur rounded-lg px-4 py-2 flex items-center gap-2 max-w-md w-full">
+              <span className="text-white/80 text-sm truncate flex-1 text-left">
+                {portalLink}
+              </span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={copyLink}
+                className="text-white hover:bg-white/20 shrink-0"
+                data-testid="button-copy-link"
+              >
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+            <Button 
+              onClick={shareLink}
+              className="bg-white text-blue-600 hover:bg-blue-50 shrink-0"
+              data-testid="button-share-link"
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Compartilhar
+            </Button>
+          </div>
         </div>
 
         <div className="max-w-4xl mx-auto">
