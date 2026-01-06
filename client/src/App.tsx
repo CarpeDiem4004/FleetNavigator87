@@ -778,13 +778,14 @@ function App() {
           <ProtectedRoute path="/fleet-management/towing-partners/:id" component={EditableTowingPartnerDetailPage} />
           <ProtectedRoute path="/accidents" component={Accidents} />
           <ProtectedRoute path="/fuel-receipts" component={FuelReceiptsPage} />
-          <ProtectedRoute path="/work-safety" component={WorkSafety} />
+          {/* Rotas públicas de Segurança do Trabalho - DEVEM vir antes da rota protegida */}
           <Route path="/work-safety/portal" component={WorkSafetyPortal} />
           <Route path="/work-safety/cadastro" component={WorkSafetyDriverRegistration} />
           <Route path="/work-safety/cadastro-motorista" component={WorkSafetyDriverRegistration} />
           <Route path="/work-safety/relatar-acidente" component={WorkSafetyReportAccident} />
           <Route path="/work-safety/treinamentos" component={WorkSafetyTrainings} />
           <ProtectedRoute path="/work-safety/motoristas" component={WorkSafetyDriversPanel} />
+          <ProtectedRoute path="/work-safety" component={WorkSafety} />
           <ProtectedRoute path="/conferencia-rotas" component={ConferenciaRotas} />
           <ProtectedRoute path="/relatorio-consumo" component={RelatorioConsumo} />
           <ProtectedRoute path="/line-haul" component={LineHaulPage} />
