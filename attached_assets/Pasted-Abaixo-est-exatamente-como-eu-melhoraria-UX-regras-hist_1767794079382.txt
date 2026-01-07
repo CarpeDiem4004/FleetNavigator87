@@ -1,0 +1,158 @@
+Abaixo está exatamente como eu melhoraria (UX + regras + histórico + banco), do jeito que eu implementaria no Murici On Fleet.
+
+⸻
+
+1) Transformar a central em “Inbox” (3 colunas)
+
+Layout padrão mais intuitivo:
+
+Coluna A — Filtros + Caixas
+	•	Pendentes (SLA estourando)
+	•	Menções ao time
+	•	Palavras-chave (Urgente / Atraso / Coleta / Devolução)
+	•	Atribuídas a mim
+	•	Finalizadas
+
+✅ Isso faz o operador “bater o olho” e saber o que fazer primeiro.
+
+Coluna B — Lista de conversas (cards pequenos)
+
+Cada card mostra:
+	•	Cliente/Grupo
+	•	Última mensagem (preview)
+	•	Badges: URGENTE, @menção, Sem resposta 22min, SLA 1h
+	•	Quem está responsável (foto/initial)
+	•	Ícone se tem alerta ativo 🔔
+
+Coluna C — Detalhe da conversa (timeline)
+	•	Mensagens em formato chat (com data/hora)
+	•	Botões rápidos:
+	•	Atribuir
+	•	Marcar como resolvido
+	•	Criar ocorrência/rota/chamado
+	•	Adicionar nota interna (não vai pro cliente)
+
+⸻
+
+2) Cards executivos que realmente ajudam decisão
+
+Os cards atuais (“Mensagens Hoje”, “Respondidas Hoje”) são bons, mas faltam KPIs de operação.
+
+Eu colocaria:
+	•	Pendentes (agora)
+	•	SLA em risco (próx. 15 min)
+	•	SLA estourado
+	•	Tempo médio de primeira resposta (FRT)
+	•	Tempo médio para resolver (TTR)
+	•	Top 5 clientes com mais alertas (7 dias)
+
+Isso dá “cara de gestão” e não só de contagem.
+
+⸻
+
+3) Histórico e auditoria: “quem respondeu / quem fechou / quem ignorou”
+
+Aqui é onde sua central vira ferramenta séria.
+
+Cada alerta precisa ter status e trilha
+
+Exemplo de vida de um alerta:
+	•	ABERTO → ATRIBUIDO → EM ATENDIMENTO → RESOLVIDO → ARQUIVADO
+
+Registro de eventos (audit log)
+
+Toda ação vira um evento:
+	•	“Amanda atribuiu para João”
+	•	“João respondeu no grupo”
+	•	“André marcou como resolvido”
+	•	“SLA estourou – notificação enviada”
+
+✅ Isso resolve exatamente o “histórico de quem respondeu”.
+
+⸻
+
+4) “Responder” dentro do painel (ou pelo menos registrar resposta)
+
+O ideal: responder pelo painel (via API).
+Se hoje não der: ao menos registrar “resposta/ação”:
+
+Botão: “Registrar resposta” → seleciona:
+	•	Foi respondido onde? (WhatsApp / ligação / email)
+	•	Texto da resposta (opcional)
+	•	Resultado (resolvido / aguardando retorno)
+
+Assim você cria rastreabilidade mesmo sem enviar por lá.
+
+⸻
+
+5) Regras de alerta (do jeito certo)
+
+Você já tem botão “Regras”. Eu deixaria mais executivo:
+
+Tipos de regra:
+	•	Menção a número (ex: @+55 11 97055-8053)
+	•	Palavra-chave (“urgente”, “atraso”, “parado”, “sem coleta”)
+	•	Padrão (placa, CT-e, NF, rota)
+	•	Cliente VIP (qualquer msg vira prioridade)
+
+Cada regra com:
+	•	Prioridade (Alta/Média/Baixa)
+	•	Ação: notificar + criar tarefa + atribuir automático
+	•	Horário de vigência (ex: 06:00–22:00)
+
+⸻
+
+6) Melhorias “dinâmicas” que mudam o jogo
+
+✅ Quick Actions na lista
+
+Sem abrir conversa:
+	•	Atribuir (dropdown rápido)
+	•	Silenciar 1h
+	•	Marcar resolvido
+	•	Criar ocorrência
+
+✅ “Notas internas” separadas do chat
+
+Uma aba “Notas” por grupo/cliente (visível só para a Murici).
+Isso vira memória operacional.
+
+✅ “Contexto do cliente”
+
+Um painel lateral com:
+	•	Rotas em andamento (Line Haul)
+	•	Últimos atrasos / ocorrências
+	•	Contatos
+	•	SLA acordado
+
+⸻
+
+7) Como eu implementaria (banco / estrutura)
+
+Se você quiser fazer robusto, eu criaria essas tabelas:
+
+wa_conversations
+	•	id, type (grupo/direto), nome, cliente_id, ativo
+
+wa_messages
+	•	id, conversation_id, from_number, body, timestamp, has_mention, metadata
+
+wa_alerts
+	•	id, conversation_id, message_id, rule_id, status, priority, created_at, due_at
+
+wa_alert_assignments
+	•	alert_id, assigned_to_user_id, assigned_by, assigned_at
+
+wa_alert_actions (AUDIT LOG)
+	•	id, alert_id, user_id, action_type, notes, created_at
+(action_type: assigned, responded, resolved, reopened, snoozed)
+
+✅ Com isso você consegue gerar:
+	•	“Quem respondeu mais”
+	•	“Tempo médio por operador”
+	•	“Clientes mais críticos”
+	•	“Histórico completo por alerta”
+
+⸻
+
+8) Ordem de entrega (pra sair rápido e bonito)

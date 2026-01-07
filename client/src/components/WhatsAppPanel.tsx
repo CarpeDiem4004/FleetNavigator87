@@ -27,7 +27,9 @@ import {
   Check,
   X,
   Send,
-  Reply
+  Reply,
+  BellOff,
+  History
 } from 'lucide-react';
 
 interface WhatsAppMessage {
@@ -64,6 +66,11 @@ interface WhatsAppStats {
   alertasPendentes: number;
   respondidasHoje: number;
   grupos: string[];
+  pendentesAgora: number;
+  slaEmRisco: number;
+  slaEstourado: number;
+  tempoMedioResposta: number;
+  topGrupos: { grupo_nome: string; total: number }[];
 }
 
 interface AlertRule {
@@ -207,6 +214,46 @@ export default function WhatsAppPanel() {
     });
   };
 
+  const resolveMutation = useMutation({
+    mutationFn: async (messageId: number) => {
+      const response = await fetch('/api/whatsapp/resolve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messageId,
+          userId: user?.id,
+          userName: user?.name || user?.email || 'Sistema'
+        }),
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchMessages();
+      refetchStats();
+      toast({ title: 'Mensagem marcada como resolvida' });
+    },
+  });
+
+  const snoozeMutation = useMutation({
+    mutationFn: async ({ messageId, minutes }: { messageId: number; minutes: number }) => {
+      const response = await fetch('/api/whatsapp/snooze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messageId,
+          minutes,
+          userId: user?.id,
+          userName: user?.name || user?.email || 'Sistema'
+        }),
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchMessages();
+      toast({ title: 'Mensagem silenciada por 1 hora' });
+    },
+  });
+
   const refreshAll = () => {
     refetchStats();
     refetchMessages();
@@ -258,51 +305,57 @@ export default function WhatsAppPanel() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-red-600 font-medium">Alertas Pendentes</p>
-                <p className="text-3xl font-bold text-red-700">{alerts?.naoLidos || 0}</p>
-              </div>
-              <Bell className="h-8 w-8 text-red-500" />
+          <CardContent className="pt-3 pb-3">
+            <div className="text-center">
+              <p className="text-xs text-red-600 font-medium">Pendentes Agora</p>
+              <p className="text-2xl font-bold text-red-700">{stats?.data?.pendentesAgora || 0}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <CardContent className="pt-3 pb-3">
+            <div className="text-center">
+              <p className="text-xs text-orange-600 font-medium">SLA em Risco</p>
+              <p className="text-2xl font-bold text-orange-700">{stats?.data?.slaEmRisco || 0}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-red-100 to-red-200 border-red-300">
+          <CardContent className="pt-3 pb-3">
+            <div className="text-center">
+              <p className="text-xs text-red-700 font-medium">SLA Estourado</p>
+              <p className="text-2xl font-bold text-red-800">{stats?.data?.slaEstourado || 0}</p>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-600 font-medium">Mensagens Hoje</p>
-                <p className="text-3xl font-bold text-blue-700">{stats?.data?.mensagensHoje || 0}</p>
-              </div>
-              <MessageSquare className="h-8 w-8 text-blue-500" />
+          <CardContent className="pt-3 pb-3">
+            <div className="text-center">
+              <p className="text-xs text-blue-600 font-medium">Mensagens Hoje</p>
+              <p className="text-2xl font-bold text-blue-700">{stats?.data?.mensagensHoje || 0}</p>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-600 font-medium">Respondidas Hoje</p>
-                <p className="text-3xl font-bold text-green-700">{stats?.data?.respondidasHoje || 0}</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
+          <CardContent className="pt-3 pb-3">
+            <div className="text-center">
+              <p className="text-xs text-green-600 font-medium">Respondidas</p>
+              <p className="text-2xl font-bold text-green-700">{stats?.data?.respondidasHoje || 0}</p>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-purple-600 font-medium">Grupos Ativos</p>
-                <p className="text-3xl font-bold text-purple-700">{stats?.data?.grupos?.length || 0}</p>
-              </div>
-              <Users className="h-8 w-8 text-purple-500" />
+          <CardContent className="pt-3 pb-3">
+            <div className="text-center">
+              <p className="text-xs text-purple-600 font-medium">Tempo Médio</p>
+              <p className="text-2xl font-bold text-purple-700">{stats?.data?.tempoMedioResposta || 0}m</p>
             </div>
           </CardContent>
         </Card>
@@ -443,11 +496,20 @@ export default function WhatsAppPanel() {
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => markRespondedMutation.mutate(msg.id)}
-                              title="Marcar como respondido"
+                              onClick={() => resolveMutation.mutate(msg.id)}
+                              title="Marcar como resolvido"
                               className="text-green-600 hover:text-green-700 hover:bg-green-50"
                             >
                               <CheckCircle className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => snoozeMutation.mutate({ messageId: msg.id, minutes: 60 })}
+                              title="Silenciar 1h"
+                              className="text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                            >
+                              <BellOff className="h-4 w-4" />
                             </Button>
                           </div>
                         )}

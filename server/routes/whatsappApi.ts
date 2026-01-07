@@ -360,6 +360,13 @@ router.post('/send-reply', async (req: Request, res: Response) => {
          WHERE id = $3`,
         [respondidoPor || 'Sistema', text, messageId]
       );
+      
+      // Registrar ação de resposta no audit log
+      await pool.query(
+        `INSERT INTO wa_actions (message_id, user_name, action_type, notes, created_at)
+         VALUES ($1, $2, 'reply', $3, NOW())`,
+        [messageId, respondidoPor || 'Sistema', text.substring(0, 500)]
+      );
     }
     
     // Salvar a resposta enviada como nova mensagem
@@ -386,13 +393,27 @@ router.post('/send-reply', async (req: Request, res: Response) => {
   }
 });
 
-// Estatísticas
+// Estatísticas com KPIs executivos
 router.get('/stats', async (req: Request, res: Response) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const [totalMessages, todayMessages, pendingAlerts, respondedToday, grupos] = await Promise.all([
+    const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000);
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    
+    const [
+      totalMessages, 
+      todayMessages, 
+      pendingAlerts, 
+      respondedToday, 
+      grupos,
+      pendingNow,
+      slaRisk,
+      slaExceeded,
+      avgResponseTime,
+      topGroups
+    ] = await Promise.all([
       pool.query('SELECT COUNT(*) as total FROM whatsapp_messages'),
       pool.query('SELECT COUNT(*) as total FROM whatsapp_messages WHERE data_mensagem >= $1', [today]),
       pool.query('SELECT COUNT(*) as total FROM whatsapp_alert_events WHERE lido = false'),
@@ -402,6 +423,27 @@ router.get('/stats', async (req: Request, res: Response) => {
         FROM whatsapp_messages 
         WHERE grupo_nome IS NOT NULL AND grupo_id IS NOT NULL
         ORDER BY grupo_id, data_mensagem DESC
+      `),
+      pool.query(`SELECT COUNT(*) as total FROM whatsapp_messages 
+        WHERE respondido = false AND is_outgoing = false AND data_mensagem >= $1`, [today]),
+      pool.query(`SELECT COUNT(*) as total FROM whatsapp_messages 
+        WHERE respondido = false AND is_outgoing = false 
+        AND data_mensagem <= $1 AND data_mensagem > $2`, [fifteenMinAgo, oneHourAgo]),
+      pool.query(`SELECT COUNT(*) as total FROM whatsapp_messages 
+        WHERE respondido = false AND is_outgoing = false 
+        AND data_mensagem <= $1`, [oneHourAgo]),
+      pool.query(`
+        SELECT AVG(EXTRACT(EPOCH FROM (respondido_em - data_mensagem))/60) as avg_minutes
+        FROM whatsapp_messages 
+        WHERE respondido = true AND respondido_em IS NOT NULL AND data_mensagem >= $1
+      `, [today]),
+      pool.query(`
+        SELECT grupo_nome, COUNT(*) as total 
+        FROM whatsapp_messages 
+        WHERE grupo_nome IS NOT NULL AND data_mensagem >= NOW() - INTERVAL '7 days'
+        GROUP BY grupo_nome 
+        ORDER BY total DESC 
+        LIMIT 5
       `)
     ]);
     
@@ -412,13 +454,106 @@ router.get('/stats', async (req: Request, res: Response) => {
         mensagensHoje: parseInt(todayMessages.rows[0].total),
         alertasPendentes: parseInt(pendingAlerts.rows[0].total),
         respondidasHoje: parseInt(respondedToday.rows[0].total),
-        grupos: grupos.rows.map(g => g.grupo_nome).filter(Boolean)
+        grupos: grupos.rows.map(g => g.grupo_nome).filter(Boolean),
+        pendentesAgora: parseInt(pendingNow.rows[0].total || 0),
+        slaEmRisco: parseInt(slaRisk.rows[0].total || 0),
+        slaEstourado: parseInt(slaExceeded.rows[0].total || 0),
+        tempoMedioResposta: Math.round(parseFloat(avgResponseTime.rows[0].avg_minutes) || 0),
+        topGrupos: topGroups.rows
       }
     });
     
   } catch (error) {
     console.error('[WHATSAPP] Erro ao buscar estatísticas:', error);
     res.status(500).json({ success: false, error: 'Erro ao buscar estatísticas' });
+  }
+});
+
+// Atribuir mensagem a usuário
+router.post('/assign', async (req: Request, res: Response) => {
+  try {
+    const { messageId, assignedTo, assignedBy, assignedByName } = req.body;
+    
+    await pool.query(
+      `UPDATE whatsapp_messages SET assigned_to = $1, assigned_at = NOW() WHERE id = $2`,
+      [assignedTo, messageId]
+    );
+    
+    await pool.query(
+      `INSERT INTO wa_actions (message_id, user_id, user_name, action_type, notes, created_at)
+       VALUES ($1, $2, $3, 'assign', $4, NOW())`,
+      [messageId, assignedBy, assignedByName, `Atribuído para usuário ID ${assignedTo}`]
+    );
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[WHATSAPP] Erro ao atribuir:', error);
+    res.status(500).json({ success: false, error: 'Erro ao atribuir mensagem' });
+  }
+});
+
+// Marcar como resolvido
+router.post('/resolve', async (req: Request, res: Response) => {
+  try {
+    const { messageId, userId, userName } = req.body;
+    
+    await pool.query(
+      `UPDATE whatsapp_messages SET status = 'resolvido', respondido = true, respondido_em = NOW() WHERE id = $1`,
+      [messageId]
+    );
+    
+    await pool.query(
+      `INSERT INTO wa_actions (message_id, user_id, user_name, action_type, created_at)
+       VALUES ($1, $2, $3, 'resolve', NOW())`,
+      [messageId, userId, userName]
+    );
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[WHATSAPP] Erro ao resolver:', error);
+    res.status(500).json({ success: false, error: 'Erro ao marcar como resolvido' });
+  }
+});
+
+// Silenciar mensagem
+router.post('/snooze', async (req: Request, res: Response) => {
+  try {
+    const { messageId, minutes = 60, userId, userName } = req.body;
+    
+    const silenciadoAte = new Date(Date.now() + minutes * 60 * 1000);
+    
+    await pool.query(
+      `UPDATE whatsapp_messages SET silenciado_ate = $1 WHERE id = $2`,
+      [silenciadoAte, messageId]
+    );
+    
+    await pool.query(
+      `INSERT INTO wa_actions (message_id, user_id, user_name, action_type, notes, created_at)
+       VALUES ($1, $2, $3, 'snooze', $4, NOW())`,
+      [messageId, userId, userName, `Silenciado por ${minutes} minutos`]
+    );
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[WHATSAPP] Erro ao silenciar:', error);
+    res.status(500).json({ success: false, error: 'Erro ao silenciar' });
+  }
+});
+
+// Histórico de ações de uma mensagem
+router.get('/actions/:messageId', async (req: Request, res: Response) => {
+  try {
+    const { messageId } = req.params;
+    
+    const result = await pool.query(
+      `SELECT * FROM wa_actions WHERE message_id = $1 ORDER BY created_at DESC`,
+      [messageId]
+    );
+    
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('[WHATSAPP] Erro ao buscar ações:', error);
+    res.status(500).json({ success: false, error: 'Erro ao buscar histórico' });
   }
 });
 
