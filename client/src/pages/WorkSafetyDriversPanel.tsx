@@ -48,7 +48,8 @@ const formatMilha = (milha: string) => {
     'line_haul': 'Line Haul',
     'middle_mile': 'Middle Mile',
     'lm': 'LM',
-    'fm': 'FM'
+    'fm': 'FM',
+    'melione': 'Melione'
   };
   return map[milha] || milha || '-';
 };

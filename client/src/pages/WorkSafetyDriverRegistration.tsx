@@ -374,6 +374,7 @@ export default function WorkSafetyDriverRegistration() {
                               <SelectItem value="middle_mile">Middle Mile</SelectItem>
                               <SelectItem value="lm">LM</SelectItem>
                               <SelectItem value="fm">FM</SelectItem>
+                              <SelectItem value="melione">Melione</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
