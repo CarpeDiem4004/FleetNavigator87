@@ -239,6 +239,114 @@ app.post('/api/work-safety/drivers', express.json(), async (req, res) => {
   }
 });
 
+// CRÍTICO: Rota GET para listar motoristas - ANTES do Vite HMR
+app.get('/api/work-safety/drivers', async (req, res) => {
+  try {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    console.log('[WORK-SAFETY-PRIORITY] GET drivers interceptado no início absoluto');
+    
+    const { base, pgrStatus, possuiEar, search } = req.query;
+    
+    let query = `
+      SELECT 
+        id,
+        nome_completo,
+        cpf,
+        base_atuacao,
+        telefone_motorista,
+        email,
+        possui_ear,
+        numero_cnh,
+        categoria_cnh,
+        pgr_aprovado,
+        nome_responsavel,
+        telefone_responsavel,
+        created_at,
+        updated_at,
+        ativo
+      FROM work_safety_drivers
+      WHERE ativo = true
+    `;
+    
+    const params: any[] = [];
+    let paramIndex = 1;
+    
+    if (base && base !== 'all') {
+      query += ` AND base_atuacao = $${paramIndex}`;
+      params.push(base);
+      paramIndex++;
+    }
+    
+    if (pgrStatus && pgrStatus !== 'all') {
+      query += ` AND pgr_aprovado = $${paramIndex}`;
+      params.push(pgrStatus === 'approved');
+      paramIndex++;
+    }
+    
+    if (possuiEar && possuiEar !== 'all') {
+      query += ` AND possui_ear = $${paramIndex}`;
+      params.push(possuiEar === 'yes');
+      paramIndex++;
+    }
+    
+    if (search) {
+      query += ` AND (nome_completo ILIKE $${paramIndex} OR cpf ILIKE $${paramIndex})`;
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
+    
+    query += ' ORDER BY updated_at DESC';
+    
+    const result = await pool.query(query, params);
+    console.log('[WORK-SAFETY-PRIORITY] Retornando', result.rows.length, 'motoristas');
+    
+    return res.status(200).send(JSON.stringify({
+      success: true,
+      data: result.rows,
+      total: result.rows.length
+    }));
+    
+  } catch (error: any) {
+    console.error('[WORK-SAFETY-PRIORITY] Erro ao buscar motoristas:', error);
+    return res.status(500).send(JSON.stringify({ 
+      success: false, 
+      message: 'Erro ao buscar motoristas.' 
+    }));
+  }
+});
+
+// CRÍTICO: Rota GET para estatísticas - ANTES do Vite HMR
+app.get('/api/work-safety/stats', async (req, res) => {
+  try {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    console.log('[WORK-SAFETY-PRIORITY] GET stats interceptado no início absoluto');
+    
+    const totalQuery = await pool.query('SELECT COUNT(*) as total FROM work_safety_drivers WHERE ativo = true');
+    const pgrQuery = await pool.query('SELECT COUNT(*) as total FROM work_safety_drivers WHERE ativo = true AND pgr_aprovado = true');
+    const earQuery = await pool.query('SELECT COUNT(*) as total FROM work_safety_drivers WHERE ativo = true AND possui_ear = true');
+    const basesQuery = await pool.query('SELECT COUNT(DISTINCT base_atuacao) as total FROM work_safety_drivers WHERE ativo = true');
+    
+    return res.status(200).send(JSON.stringify({
+      success: true,
+      data: {
+        total: parseInt(totalQuery.rows[0].total),
+        pgrAprovados: parseInt(pgrQuery.rows[0].total),
+        comEar: parseInt(earQuery.rows[0].total),
+        totalBases: parseInt(basesQuery.rows[0].total)
+      }
+    }));
+    
+  } catch (error: any) {
+    console.error('[WORK-SAFETY-PRIORITY] Erro ao buscar estatísticas:', error);
+    return res.status(500).send(JSON.stringify({ 
+      success: false, 
+      message: 'Erro ao buscar estatísticas.' 
+    }));
+  }
+});
+
 // MIDDLEWARE PWA PRIMEIRO - ANTES DE QUALQUER OUTRO MIDDLEWARE
 app.get('/manifest.json', (req, res) => {
   try {
