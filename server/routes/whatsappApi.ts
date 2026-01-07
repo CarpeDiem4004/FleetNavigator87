@@ -6,6 +6,7 @@ const router = Router();
 
 const ZAPI_INSTANCE_ID = process.env.ZAPI_INSTANCE_ID;
 const ZAPI_TOKEN = process.env.ZAPI_TOKEN;
+const ZAPI_CLIENT_TOKEN = process.env.ZAPI_CLIENT_TOKEN;
 
 // Webhook para receber mensagens do Z-API
 router.post('/webhook', async (req: Request, res: Response) => {
@@ -316,11 +317,17 @@ router.post('/send-reply', async (req: Request, res: Response) => {
     // Enviar mensagem via Z-API
     const zapiUrl = `https://api.z-api.io/instances/${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}/send-text`;
     
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (ZAPI_CLIENT_TOKEN) {
+      headers['Client-Token'] = ZAPI_CLIENT_TOKEN;
+    }
+    
     const response = await fetch(zapiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({
         phone: destination,
         message: text
