@@ -124,6 +124,121 @@ app.get('/api/work-safety/bases', async (req, res) => {
   }
 });
 
+// CRÍTICO: Rota POST para cadastrar motoristas - ANTES do Vite HMR
+app.post('/api/work-safety/drivers', express.json(), async (req, res) => {
+  try {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    console.log('[WORK-SAFETY-PRIORITY] POST drivers interceptado no início absoluto');
+    
+    const data = req.body;
+    
+    // Validar CPF
+    function validateCPF(cpf: string): boolean {
+      const numbers = cpf.replace(/\D/g, '');
+      if (numbers.length !== 11) return false;
+      if (/^(\d)\1{10}$/.test(numbers)) return false;
+      
+      let sum = 0;
+      for (let i = 0; i < 9; i++) {
+        sum += parseInt(numbers.charAt(i)) * (10 - i);
+      }
+      let remainder = (sum * 10) % 11;
+      if (remainder === 10 || remainder === 11) remainder = 0;
+      if (remainder !== parseInt(numbers.charAt(9))) return false;
+      
+      sum = 0;
+      for (let i = 0; i < 10; i++) {
+        sum += parseInt(numbers.charAt(i)) * (11 - i);
+      }
+      remainder = (sum * 10) % 11;
+      if (remainder === 10 || remainder === 11) remainder = 0;
+      if (remainder !== parseInt(numbers.charAt(10))) return false;
+      
+      return true;
+    }
+    
+    function formatCPF(cpf: string): string {
+      const numbers = cpf.replace(/\D/g, '');
+      if (numbers.length !== 11) return cpf;
+      return `${numbers.slice(0,3)}.${numbers.slice(3,6)}.${numbers.slice(6,9)}-${numbers.slice(9)}`;
+    }
+    
+    if (!validateCPF(data.cpf)) {
+      return res.status(400).send(JSON.stringify({ 
+        success: false, 
+        message: 'CPF inválido. Verifique os dígitos informados.' 
+      }));
+    }
+    
+    if (data.pgrAprovado === false) {
+      return res.status(400).send(JSON.stringify({ 
+        success: false, 
+        message: 'Não é possível cadastrar motorista com PGR não aprovado. O PGR deve estar aprovado para prosseguir.' 
+      }));
+    }
+    
+    const cpfFormatted = formatCPF(data.cpf);
+    
+    const existingQuery = await pool.query(
+      'SELECT id FROM work_safety_drivers WHERE cpf = $1',
+      [cpfFormatted]
+    );
+    
+    if (existingQuery.rows.length > 0) {
+      return res.status(409).send(JSON.stringify({ 
+        success: false, 
+        message: 'CPF já cadastrado no sistema. Cada motorista deve ter um CPF único.' 
+      }));
+    }
+    
+    const result = await pool.query(
+      `INSERT INTO work_safety_drivers (
+        nome_completo, cpf, base_atuacao, telefone_motorista, email,
+        possui_ear, numero_cnh, categoria_cnh, pgr_aprovado, nome_responsavel, telefone_responsavel,
+        created_at, updated_at, ativo
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW(), true)
+      RETURNING *`,
+      [
+        data.nomeCompleto,
+        cpfFormatted,
+        data.baseAtuacao,
+        data.telefoneMotorista,
+        data.email,
+        data.possuiEar || false,
+        data.numeroCnh,
+        data.categoriaCnh || null,
+        data.pgrAprovado || false,
+        data.nomeResponsavel,
+        data.telefoneResponsavel
+      ]
+    );
+    
+    console.log('[WORK-SAFETY-PRIORITY] Motorista cadastrado:', result.rows[0].nome_completo);
+    
+    return res.status(201).send(JSON.stringify({
+      success: true,
+      message: 'Motorista cadastrado com sucesso!',
+      data: result.rows[0]
+    }));
+    
+  } catch (error: any) {
+    console.error('[WORK-SAFETY-PRIORITY] Erro ao cadastrar motorista:', error);
+    
+    if (error.code === '23505') {
+      return res.status(409).send(JSON.stringify({ 
+        success: false, 
+        message: 'CPF já cadastrado no sistema.' 
+      }));
+    }
+    
+    return res.status(500).send(JSON.stringify({ 
+      success: false, 
+      message: 'Erro interno ao cadastrar motorista.' 
+    }));
+  }
+});
+
 // MIDDLEWARE PWA PRIMEIRO - ANTES DE QUALQUER OUTRO MIDDLEWARE
 app.get('/manifest.json', (req, res) => {
   try {
