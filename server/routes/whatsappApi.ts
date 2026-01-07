@@ -8,6 +8,85 @@ const ZAPI_INSTANCE_ID = process.env.ZAPI_INSTANCE_ID;
 const ZAPI_TOKEN = process.env.ZAPI_TOKEN;
 const ZAPI_CLIENT_TOKEN = process.env.ZAPI_CLIENT_TOKEN;
 
+// Função para enviar notificação de alerta crítico
+async function notifyCriticalAlert(alertData: {
+  mensagem: string;
+  remetente: string;
+  grupo: string;
+  tipoAlerta: string;
+  ruleId?: number;
+}) {
+  try {
+    // Buscar destinatários ativos (globais ou específicos da regra)
+    let query = `
+      SELECT * FROM whatsapp_critical_recipients 
+      WHERE ativo = true AND (rule_id IS NULL`;
+    const params: any[] = [];
+    
+    if (alertData.ruleId) {
+      query += ` OR rule_id = $1)`;
+      params.push(alertData.ruleId);
+    } else {
+      query += `)`;
+    }
+    
+    const recipientsResult = await pool.query(query, params);
+    
+    if (recipientsResult.rows.length === 0) {
+      console.log('[CRITICAL-NOTIFY] Nenhum destinatário configurado');
+      return;
+    }
+    
+    // Montar mensagem de notificação
+    const notifyMessage = `🚨 *ALERTA CRÍTICO* 🚨
+
+📍 *Grupo:* ${alertData.grupo || 'Desconhecido'}
+👤 *Remetente:* ${alertData.remetente || 'Desconhecido'}
+🏷️ *Tipo:* ${alertData.tipoAlerta}
+
+💬 *Mensagem:*
+${alertData.mensagem.substring(0, 500)}
+
+_Enviado automaticamente pelo Murici On Fleet_`;
+
+    // Enviar para cada destinatário
+    for (const recipient of recipientsResult.rows) {
+      try {
+        const phone = recipient.telefone.replace(/\D/g, '');
+        const response = await fetch(
+          `https://api.z-api.io/instances/${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}/send-text`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Client-Token': ZAPI_CLIENT_TOKEN || ''
+            },
+            body: JSON.stringify({
+              phone: phone,
+              message: notifyMessage
+            })
+          }
+        );
+        
+        const result = await response.json();
+        console.log(`[CRITICAL-NOTIFY] Notificação enviada para ${recipient.nome} (${phone}):`, result);
+        
+        // Registrar ação no log
+        await pool.query(
+          `INSERT INTO whatsapp_actions (tipo, descricao, usuario) VALUES ($1, $2, $3)`,
+          ['critical_notify', `Notificação crítica enviada para ${recipient.nome}`, 'sistema']
+        );
+        
+      } catch (sendError) {
+        console.error(`[CRITICAL-NOTIFY] Erro ao enviar para ${recipient.telefone}:`, sendError);
+      }
+    }
+    
+  } catch (error) {
+    console.error('[CRITICAL-NOTIFY] Erro geral:', error);
+  }
+}
+
 // Webhook para receber mensagens do Z-API
 router.post('/webhook', async (req: Request, res: Response) => {
   try {
@@ -152,6 +231,17 @@ router.post('/webhook', async (req: Request, res: Response) => {
           alertPriority
         ]
       );
+      
+      // Se for alerta crítico, enviar notificações
+      if (alertPriority === 'critica') {
+        notifyCriticalAlert({
+          mensagem: message,
+          remetente: senderName || from,
+          grupo: groupName || 'Conversa privada',
+          tipoAlerta: alertType || 'Alerta',
+          ruleId: matchedRuleId
+        });
+      }
     }
     
     res.status(200).json({ success: true, received: true });
@@ -592,6 +682,89 @@ router.get('/actions/:messageId', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('[WHATSAPP] Erro ao buscar ações:', error);
     res.status(500).json({ success: false, error: 'Erro ao buscar histórico' });
+  }
+});
+
+// ====================== DESTINATÁRIOS DE ALERTAS CRÍTICOS ======================
+
+// Listar destinatários de alertas críticos
+router.get('/critical-recipients', async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `SELECT cr.*, r.valor as regra_valor, r.descricao as regra_descricao
+       FROM whatsapp_critical_recipients cr
+       LEFT JOIN whatsapp_alert_rules r ON cr.rule_id = r.id
+       ORDER BY cr.created_at DESC`
+    );
+    
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('[WHATSAPP] Erro ao listar destinatários críticos:', error);
+    res.status(500).json({ success: false, error: 'Erro ao listar destinatários' });
+  }
+});
+
+// Criar destinatário de alerta crítico
+router.post('/critical-recipients', async (req: Request, res: Response) => {
+  try {
+    const { nome, telefone, rule_id } = req.body;
+    
+    if (!nome || !telefone) {
+      return res.status(400).json({ success: false, error: 'Nome e telefone são obrigatórios' });
+    }
+    
+    const result = await pool.query(
+      `INSERT INTO whatsapp_critical_recipients (nome, telefone, rule_id, ativo)
+       VALUES ($1, $2, $3, true) RETURNING *`,
+      [nome, telefone.replace(/\D/g, ''), rule_id || null]
+    );
+    
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('[WHATSAPP] Erro ao criar destinatário crítico:', error);
+    res.status(500).json({ success: false, error: 'Erro ao criar destinatário' });
+  }
+});
+
+// Atualizar destinatário de alerta crítico
+router.patch('/critical-recipients/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { nome, telefone, rule_id, ativo } = req.body;
+    
+    const result = await pool.query(
+      `UPDATE whatsapp_critical_recipients 
+       SET nome = COALESCE($1, nome),
+           telefone = COALESCE($2, telefone),
+           rule_id = $3,
+           ativo = COALESCE($4, ativo),
+           updated_at = NOW()
+       WHERE id = $5 RETURNING *`,
+      [nome, telefone ? telefone.replace(/\D/g, '') : null, rule_id, ativo, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Destinatário não encontrado' });
+    }
+    
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('[WHATSAPP] Erro ao atualizar destinatário crítico:', error);
+    res.status(500).json({ success: false, error: 'Erro ao atualizar destinatário' });
+  }
+});
+
+// Excluir destinatário de alerta crítico
+router.delete('/critical-recipients/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    await pool.query('DELETE FROM whatsapp_critical_recipients WHERE id = $1', [id]);
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[WHATSAPP] Erro ao excluir destinatário crítico:', error);
+    res.status(500).json({ success: false, error: 'Erro ao excluir destinatário' });
   }
 });
 
