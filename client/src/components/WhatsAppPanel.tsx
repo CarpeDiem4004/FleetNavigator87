@@ -197,11 +197,13 @@ export default function WhatsAppPanel() {
 
   const handleSendReply = () => {
     if (!replyingTo || !replyText.trim()) return;
+    const userName = user?.name || user?.email || 'Sistema';
+    const formattedMessage = `${userName}: ${replyText.trim()}`;
     sendReplyMutation.mutate({
       messageId: replyingTo.id,
       phone: replyingTo.remetente_numero,
       groupId: replyingTo.grupo_id,
-      text: replyText.trim()
+      text: formattedMessage
     });
   };
 
