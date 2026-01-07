@@ -18,6 +18,8 @@ const formSchema = z.object({
   nomeCompleto: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
   cpf: z.string().min(11, 'CPF inválido').max(14, 'CPF inválido'),
   baseAtuacao: z.string().min(1, 'Selecione a base de atuação'),
+  categoriaContrato: z.string().min(1, 'Selecione a categoria de contrato'),
+  milhaAtuacao: z.string().min(1, 'Selecione a milha de atuação'),
   telefoneMotorista: z.string().min(10, 'Telefone inválido'),
   email: z.string().email('E-mail inválido'),
   possuiEar: z.enum(['true', 'false']),
@@ -142,6 +144,8 @@ export default function WorkSafetyDriverRegistration() {
       nomeCompleto: '',
       cpf: '',
       baseAtuacao: '',
+      categoriaContrato: '',
+      milhaAtuacao: '',
       telefoneMotorista: '',
       email: '',
       possuiEar: 'false',
@@ -323,6 +327,53 @@ export default function WorkSafetyDriverRegistration() {
                                   {base}
                                 </SelectItem>
                               ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="categoriaContrato"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Categoria de Contrato *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-categoria-contrato">
+                                <SelectValue placeholder="Selecione a categoria" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="agregado">Agregado</SelectItem>
+                              <SelectItem value="tac">TAC</SelectItem>
+                              <SelectItem value="clt">CLT</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="milhaAtuacao"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Qual Milha Atuará? *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-milha-atuacao">
+                                <SelectValue placeholder="Selecione a milha" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="line_haul">Line Haul</SelectItem>
+                              <SelectItem value="middle_mile">Middle Mile</SelectItem>
+                              <SelectItem value="lm">LM</SelectItem>
+                              <SelectItem value="fm">FM</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />

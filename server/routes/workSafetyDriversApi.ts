@@ -69,8 +69,8 @@ export async function createWorkSafetyDriver(req: Request, res: Response) {
       `INSERT INTO work_safety_drivers (
         nome_completo, cpf, base_atuacao, telefone_motorista, email,
         possui_ear, numero_cnh, categoria_cnh, pgr_aprovado, nome_responsavel, telefone_responsavel,
-        created_at, updated_at, ativo
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW(), true)
+        categoria_contrato, milha_atuacao, created_at, updated_at, ativo
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW(), true)
       RETURNING *`,
       [
         data.nomeCompleto,
@@ -83,7 +83,9 @@ export async function createWorkSafetyDriver(req: Request, res: Response) {
         data.categoriaCnh || null,
         data.pgrAprovado || false,
         data.nomeResponsavel,
-        data.telefoneResponsavel
+        data.telefoneResponsavel,
+        data.categoriaContrato || null,
+        data.milhaAtuacao || null
       ]
     );
     
