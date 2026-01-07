@@ -42,6 +42,7 @@ import { Combobox } from '@/components/ui/combobox';
 import lineHaulLayoutImage from '@assets/image_1754418722959.png';
 import { apiRequest } from '@/lib/queryClient';
 import LineHaulExecutiveDashboard from '@/components/LineHaulExecutiveDashboard';
+import WhatsAppPanel from '@/components/WhatsAppPanel';
 
 // Função para formatar data brasileira (DD/MM/YYYY HH:MM) ou qualquer outro formato
 function formatBrazilianDate(dateStr: string | null | undefined): string {
@@ -2167,6 +2168,11 @@ const LineHaulPage = () => {
 
         {/* Dashboard Executivo */}
         <LineHaulExecutiveDashboard />
+
+        {/* Painel de WhatsApp */}
+        <div className="mt-6">
+          <WhatsAppPanel />
+        </div>
         </>
         )}
 
