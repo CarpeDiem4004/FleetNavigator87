@@ -23,6 +23,9 @@ const formSchema = z.object({
   possuiEar: z.enum(['true', 'false']),
   numeroCnh: z.string().min(1, 'Número da CNH é obrigatório'),
   categoriaCnh: z.string().min(1, 'Selecione a categoria da CNH'),
+  dataEmissaoCnh: z.string().min(1, 'Data de emissão da CNH é obrigatória'),
+  cadastradoDds: z.enum(['true', 'false']),
+  cadastradoVecFleet: z.enum(['true', 'false']),
   pgrAprovado: z.enum(['true', 'false']),
   nomeResponsavel: z.string().min(3, 'Nome do responsável é obrigatório'),
   telefoneResponsavel: z.string().min(10, 'Telefone do responsável inválido'),
@@ -144,6 +147,9 @@ export default function WorkSafetyDriverRegistration() {
       possuiEar: 'false',
       numeroCnh: '',
       categoriaCnh: '',
+      dataEmissaoCnh: '',
+      cadastradoDds: 'false',
+      cadastradoVecFleet: 'false',
       pgrAprovado: 'false',
       nomeResponsavel: '',
       telefoneResponsavel: '',
@@ -165,6 +171,8 @@ export default function WorkSafetyDriverRegistration() {
           ...data,
           possuiEar: data.possuiEar === 'true',
           pgrAprovado: data.pgrAprovado === 'true',
+          cadastradoDds: data.cadastradoDds === 'true',
+          cadastradoVecFleet: data.cadastradoVecFleet === 'true',
         }),
       });
       const result = await response.json();
@@ -414,6 +422,78 @@ export default function WorkSafetyDriverRegistration() {
                               <SelectItem value="AE">AE - Moto + Articulado</SelectItem>
                             </SelectContent>
                           </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="dataEmissaoCnh"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data de Emissão da CNH *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="date"
+                              {...field}
+                              data-testid="input-data-emissao-cnh"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="cadastradoDds"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cadastrado no DDS? *</FormLabel>
+                          <FormControl>
+                            <RadioGroup
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              className="flex gap-4"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="true" id="dds-yes" data-testid="radio-dds-yes" />
+                                <Label htmlFor="dds-yes">Sim</Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="false" id="dds-no" data-testid="radio-dds-no" />
+                                <Label htmlFor="dds-no">Não</Label>
+                              </div>
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="cadastradoVecFleet"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cadastrado no VEC Fleet? *</FormLabel>
+                          <FormControl>
+                            <RadioGroup
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              className="flex gap-4"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="true" id="vec-yes" data-testid="radio-vec-yes" />
+                                <Label htmlFor="vec-yes">Sim</Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="false" id="vec-no" data-testid="radio-vec-no" />
+                                <Label htmlFor="vec-no">Não</Label>
+                              </div>
+                            </RadioGroup>
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}

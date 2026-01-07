@@ -196,8 +196,9 @@ app.post('/api/work-safety/drivers', express.json(), async (req, res) => {
       `INSERT INTO work_safety_drivers (
         nome_completo, cpf, base_atuacao, telefone_motorista, email,
         possui_ear, numero_cnh, categoria_cnh, pgr_aprovado, nome_responsavel, telefone_responsavel,
+        data_emissao_cnh, cadastrado_dds, cadastrado_vec_fleet,
         created_at, updated_at, ativo
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW(), true)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW(), true)
       RETURNING *`,
       [
         data.nomeCompleto,
@@ -210,7 +211,10 @@ app.post('/api/work-safety/drivers', express.json(), async (req, res) => {
         data.categoriaCnh || null,
         data.pgrAprovado || false,
         data.nomeResponsavel,
-        data.telefoneResponsavel
+        data.telefoneResponsavel,
+        data.dataEmissaoCnh || null,
+        data.cadastradoDds || false,
+        data.cadastradoVecFleet || false
       ]
     );
     
@@ -259,6 +263,9 @@ app.get('/api/work-safety/drivers', async (req, res) => {
         possui_ear,
         numero_cnh,
         categoria_cnh,
+        data_emissao_cnh,
+        cadastrado_dds,
+        cadastrado_vec_fleet,
         pgr_aprovado,
         nome_responsavel,
         telefone_responsavel,
