@@ -1,22 +1,33 @@
 import { Router, Request, Response } from 'express';
 import { pool } from '../db';
+import fetch from 'node-fetch';
 
 const router = Router();
+
+const ZAPI_INSTANCE_ID = process.env.ZAPI_INSTANCE_ID;
+const ZAPI_TOKEN = process.env.ZAPI_TOKEN;
 
 // Webhook para receber mensagens do Z-API
 router.post('/webhook', async (req: Request, res: Response) => {
   try {
     const data = req.body;
-    console.log('[WHATSAPP-WEBHOOK] Mensagem recebida:', JSON.stringify(data).substring(0, 200));
+    console.log('[WHATSAPP-WEBHOOK] Payload completo:', JSON.stringify(data).substring(0, 500));
     
-    // Estrutura esperada do Z-API
-    const instanceId = data.instanceId || data.instance_id;
-    const message = data.text?.message || data.message?.text || data.body || '';
-    const from = data.phone || data.from || data.sender?.id || '';
-    const senderName = data.senderName || data.sender?.pushName || data.pushName || '';
-    const isGroup = data.isGroup || data.chat?.isGroup || false;
-    const groupId = isGroup ? (data.chatId || data.chat?.id || '') : null;
-    const groupName = isGroup ? (data.chat?.name || data.groupName || 'Grupo') : null;
+    // Estrutura Z-API - diversos formatos possíveis
+    const instanceId = data.instanceId || data.instance_id || '';
+    const message = data.text?.message || data.message?.text || data.body || data.text || '';
+    const from = data.phone || data.from || data.sender?.id || data.chatId?.split('@')[0] || '';
+    const senderName = data.senderName || data.sender?.pushName || data.pushName || data.participant?.name || '';
+    const isGroup = data.isGroup || data.chat?.isGroup || (data.chatId && data.chatId.includes('@g.us')) || false;
+    const groupId = isGroup ? (data.chatId || data.chat?.id || data.from || '') : null;
+    
+    // Melhor extração do nome do grupo
+    let groupName = null;
+    if (isGroup) {
+      groupName = data.chat?.name || data.groupMetadata?.subject || data.groupName || data.chatName || 
+                  data.name || data.participant?.groupName || 'Grupo WhatsApp';
+    }
+    
     const mentioned = data.mentionedList || data.mentioned || [];
     
     // Verificar se é uma menção
@@ -280,6 +291,81 @@ router.delete('/rules/:id', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('[WHATSAPP] Erro ao excluir regra:', error);
     res.status(500).json({ success: false, error: 'Erro ao excluir regra' });
+  }
+});
+
+// Enviar resposta via Z-API
+router.post('/send-reply', async (req: Request, res: Response) => {
+  try {
+    const { messageId, phone, groupId, text, respondidoPor } = req.body;
+    
+    if (!ZAPI_INSTANCE_ID || !ZAPI_TOKEN) {
+      return res.status(500).json({ success: false, error: 'Credenciais Z-API não configuradas' });
+    }
+    
+    if (!text) {
+      return res.status(400).json({ success: false, error: 'Texto da mensagem é obrigatório' });
+    }
+    
+    // Determinar o destino (grupo ou número direto)
+    const destination = groupId || phone;
+    if (!destination) {
+      return res.status(400).json({ success: false, error: 'Destino não informado (grupo ou número)' });
+    }
+    
+    // Enviar mensagem via Z-API
+    const zapiUrl = `https://api.z-api.io/instances/${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}/send-text`;
+    
+    const response = await fetch(zapiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        phone: destination,
+        message: text
+      })
+    });
+    
+    const result = await response.json();
+    console.log('[WHATSAPP] Resposta Z-API:', result);
+    
+    if (!response.ok) {
+      return res.status(500).json({ success: false, error: 'Erro ao enviar mensagem', details: result });
+    }
+    
+    // Marcar mensagem original como respondida
+    if (messageId) {
+      await pool.query(
+        `UPDATE whatsapp_messages 
+         SET respondido = true, respondido_por = $1, respondido_em = NOW(), status = 'respondido',
+             resposta_texto = $2
+         WHERE id = $3`,
+        [respondidoPor || 'Sistema', text, messageId]
+      );
+    }
+    
+    // Salvar a resposta enviada como nova mensagem
+    await pool.query(
+      `INSERT INTO whatsapp_messages (
+        instance_id, grupo_id, grupo_nome, remetente_numero, remetente_nome,
+        mensagem, is_mention, is_alert, status, data_mensagem, is_outgoing
+      ) VALUES ($1, $2, $3, $4, $5, $6, false, false, 'enviado', NOW(), true)`,
+      [
+        ZAPI_INSTANCE_ID,
+        groupId,
+        null,
+        'Sistema',
+        respondidoPor || 'Sistema',
+        text
+      ]
+    );
+    
+    res.json({ success: true, message: 'Mensagem enviada com sucesso', zapiResponse: result });
+    
+  } catch (error) {
+    console.error('[WHATSAPP] Erro ao enviar resposta:', error);
+    res.status(500).json({ success: false, error: 'Erro ao enviar resposta' });
   }
 });
 

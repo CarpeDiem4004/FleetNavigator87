@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/hooks/use-auth';
 import { 
   MessageSquare, 
   Bell, 
@@ -23,11 +25,14 @@ import {
   Trash2,
   Eye,
   Check,
-  X
+  X,
+  Send,
+  Reply
 } from 'lucide-react';
 
 interface WhatsAppMessage {
   id: number;
+  grupo_id: string;
   grupo_nome: string;
   remetente_nome: string;
   remetente_numero: string;
@@ -36,7 +41,9 @@ interface WhatsAppMessage {
   alert_type: string;
   status: string;
   respondido: boolean;
+  respondido_por: string;
   data_mensagem: string;
+  is_outgoing: boolean;
 }
 
 interface WhatsAppAlert {
@@ -70,12 +77,15 @@ interface AlertRule {
 
 export default function WhatsAppPanel() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedGrupo, setSelectedGrupo] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showRulesDialog, setShowRulesDialog] = useState(false);
   const [newRule, setNewRule] = useState({ tipo: 'palavra', valor: '', descricao: '', prioridade: 'normal' });
+  const [replyingTo, setReplyingTo] = useState<WhatsAppMessage | null>(null);
+  const [replyText, setReplyText] = useState('');
 
   const { data: stats, refetch: refetchStats } = useQuery<{ data: WhatsAppStats }>({
     queryKey: ['/api/whatsapp/stats'],
@@ -153,6 +163,47 @@ export default function WhatsAppPanel() {
       toast({ title: 'Regra excluída' });
     },
   });
+
+  const sendReplyMutation = useMutation({
+    mutationFn: async ({ messageId, phone, groupId, text }: { messageId: number; phone: string; groupId: string; text: string }) => {
+      const response = await fetch('/api/whatsapp/send-reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messageId,
+          phone,
+          groupId,
+          text,
+          respondidoPor: user?.name || user?.email || 'Sistema'
+        }),
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast({ title: 'Resposta enviada com sucesso!' });
+        setReplyingTo(null);
+        setReplyText('');
+        refetchMessages();
+        refetchStats();
+      } else {
+        toast({ title: 'Erro ao enviar resposta', description: data.error, variant: 'destructive' });
+      }
+    },
+    onError: () => {
+      toast({ title: 'Erro ao enviar resposta', variant: 'destructive' });
+    },
+  });
+
+  const handleSendReply = () => {
+    if (!replyingTo || !replyText.trim()) return;
+    sendReplyMutation.mutate({
+      messageId: replyingTo.id,
+      phone: replyingTo.remetente_numero,
+      groupId: replyingTo.grupo_id,
+      text: replyText.trim()
+    });
+  };
 
   const refreshAll = () => {
     refetchStats();
@@ -353,32 +404,50 @@ export default function WhatsAppPanel() {
                   {messages?.data?.map((msg) => (
                     <div 
                       key={msg.id} 
-                      className={`p-3 rounded-lg border ${msg.is_alert ? 'bg-orange-50 border-orange-200' : 'bg-white'}`}
+                      className={`p-3 rounded-lg border ${msg.is_outgoing ? 'bg-green-50 border-green-200' : msg.is_alert ? 'bg-orange-50 border-orange-200' : 'bg-white'}`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-medium text-gray-700">{msg.grupo_nome || 'Direto'}</span>
-                            <span className="text-xs text-gray-400">•</span>
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+                              {msg.grupo_nome || 'Mensagem Direta'}
+                            </Badge>
                             <span className="text-xs text-gray-500">{formatDate(msg.data_mensagem)}</span>
-                            {msg.respondido && (
+                            {msg.is_outgoing && (
+                              <Badge variant="outline" className="text-blue-600 border-blue-600">
+                                Enviada
+                              </Badge>
+                            )}
+                            {msg.respondido && !msg.is_outgoing && (
                               <Badge variant="outline" className="text-green-600 border-green-600">
-                                Respondido
+                                Respondido por {msg.respondido_por}
                               </Badge>
                             )}
                           </div>
-                          <p className="text-sm font-medium text-gray-800">{msg.remetente_nome}</p>
+                          <p className="text-sm font-medium text-gray-800">{msg.remetente_nome || 'Desconhecido'}</p>
                           <p className="text-sm mt-1 text-gray-600">{msg.mensagem}</p>
                         </div>
-                        {!msg.respondido && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => markRespondedMutation.mutate(msg.id)}
-                            title="Marcar como respondido"
-                          >
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          </Button>
+                        {!msg.respondido && !msg.is_outgoing && (
+                          <div className="flex gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => setReplyingTo(msg)}
+                              title="Responder"
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <Reply className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => markRespondedMutation.mutate(msg.id)}
+                              title="Marcar como respondido"
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -463,6 +532,66 @@ export default function WhatsAppPanel() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRulesDialog(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Resposta */}
+      <Dialog open={!!replyingTo} onOpenChange={(open) => !open && setReplyingTo(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Reply className="h-5 w-5 text-blue-600" />
+              Responder Mensagem
+            </DialogTitle>
+            <DialogDescription>
+              Enviando resposta como: <strong>{user?.name || user?.email || 'Sistema'}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          
+          {replyingTo && (
+            <div className="space-y-4">
+              <div className="p-3 bg-gray-50 rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+                    {replyingTo.grupo_nome || 'Mensagem Direta'}
+                  </Badge>
+                  <span className="text-xs text-gray-500">{formatDate(replyingTo.data_mensagem)}</span>
+                </div>
+                <p className="text-sm font-medium">{replyingTo.remetente_nome || 'Desconhecido'}</p>
+                <p className="text-sm text-gray-600 mt-1">{replyingTo.mensagem}</p>
+              </div>
+
+              <div>
+                <Label htmlFor="reply-text">Sua resposta</Label>
+                <Textarea
+                  id="reply-text"
+                  placeholder="Digite sua resposta..."
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  rows={4}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setReplyingTo(null); setReplyText(''); }}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleSendReply}
+              disabled={!replyText.trim() || sendReplyMutation.isPending}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {sendReplyMutation.isPending ? (
+                <RefreshCcw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 mr-2" />
+              )}
+              Enviar Resposta
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
