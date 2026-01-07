@@ -68,6 +68,16 @@ router.post('/webhook', async (req: Request, res: Response) => {
       alertType = 'mencao';
     }
     
+    // Se for grupo e tiver nome, atualizar nome do grupo em todas as mensagens anteriores
+    if (isGroup && groupId && groupName && groupName !== 'Grupo WhatsApp') {
+      await pool.query(
+        `UPDATE whatsapp_messages 
+         SET grupo_nome = $1 
+         WHERE grupo_id = $2 AND (grupo_nome IS NULL OR grupo_nome != $1)`,
+        [groupName, groupId]
+      );
+    }
+    
     // Salvar mensagem no banco
     const insertResult = await pool.query(
       `INSERT INTO whatsapp_messages (
