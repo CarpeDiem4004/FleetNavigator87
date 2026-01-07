@@ -85,6 +85,16 @@ interface AlertRule {
   ativo: boolean;
 }
 
+interface CriticalRecipient {
+  id: number;
+  nome: string;
+  telefone: string;
+  rule_id: number | null;
+  ativo: boolean;
+  regra_valor?: string;
+  regra_descricao?: string;
+}
+
 export default function WhatsAppPanel() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -93,7 +103,9 @@ export default function WhatsAppPanel() {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showRulesDialog, setShowRulesDialog] = useState(false);
+  const [showRecipientsDialog, setShowRecipientsDialog] = useState(false);
   const [newRule, setNewRule] = useState({ tipo: 'palavra', valor: '', descricao: '', prioridade: 'normal' });
+  const [newRecipient, setNewRecipient] = useState({ nome: '', telefone: '', rule_id: null as number | null });
   const [replyingTo, setReplyingTo] = useState<WhatsAppMessage | null>(null);
   const [replyText, setReplyText] = useState('');
 
@@ -114,6 +126,51 @@ export default function WhatsAppPanel() {
 
   const { data: rules, refetch: refetchRules } = useQuery<{ data: AlertRule[] }>({
     queryKey: ['/api/whatsapp/rules'],
+  });
+
+  const { data: recipients, refetch: refetchRecipients } = useQuery<{ data: CriticalRecipient[] }>({
+    queryKey: ['/api/whatsapp/critical-recipients'],
+  });
+
+  const createRecipientMutation = useMutation({
+    mutationFn: async (recipient: typeof newRecipient) => {
+      const response = await fetch('/api/whatsapp/critical-recipients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(recipient),
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchRecipients();
+      setNewRecipient({ nome: '', telefone: '', rule_id: null });
+      toast({ title: 'Destinatário adicionado com sucesso' });
+    },
+  });
+
+  const deleteRecipientMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/whatsapp/critical-recipients/${id}`, { method: 'DELETE' });
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchRecipients();
+      toast({ title: 'Destinatário removido' });
+    },
+  });
+
+  const toggleRecipientMutation = useMutation({
+    mutationFn: async ({ id, ativo }: { id: number; ativo: boolean }) => {
+      const response = await fetch(`/api/whatsapp/critical-recipients/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ativo }),
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchRecipients();
+    },
   });
 
   const markAlertReadMutation = useMutation({
@@ -304,6 +361,10 @@ export default function WhatsAppPanel() {
           <Button variant="outline" size="sm" onClick={() => setShowRulesDialog(true)}>
             <Settings className="h-4 w-4 mr-2" />
             Regras
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowRecipientsDialog(true)} className="border-red-200 text-red-600 hover:bg-red-50">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            Notificações Críticas
           </Button>
         </div>
       </div>
@@ -687,6 +748,120 @@ export default function WhatsAppPanel() {
               )}
               Enviar Resposta
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Destinatários Críticos */}
+      <Dialog open={showRecipientsDialog} onOpenChange={setShowRecipientsDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Notificações de Alertas Críticos
+            </DialogTitle>
+            <DialogDescription>
+              Configure números de telefone para receber notificações quando alertas críticos forem detectados
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-4 gap-2">
+              <Input 
+                placeholder="Nome"
+                value={newRecipient.nome}
+                onChange={(e) => setNewRecipient({ ...newRecipient, nome: e.target.value })}
+              />
+              <Input 
+                placeholder="Telefone (ex: 5511999999999)"
+                value={newRecipient.telefone}
+                onChange={(e) => setNewRecipient({ ...newRecipient, telefone: e.target.value })}
+              />
+              <Select 
+                value={newRecipient.rule_id?.toString() || 'global'} 
+                onValueChange={(v) => setNewRecipient({ ...newRecipient, rule_id: v === 'global' ? null : parseInt(v) })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Regra específica" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="global">Todas as regras</SelectItem>
+                  {rules?.data?.filter(r => r.prioridade === 'critica').map((rule) => (
+                    <SelectItem key={rule.id} value={rule.id.toString()}>
+                      {rule.valor}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={() => createRecipientMutation.mutate(newRecipient)} 
+                disabled={!newRecipient.nome || !newRecipient.telefone}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Adicionar
+              </Button>
+            </div>
+
+            <div className="border rounded-lg">
+              <div className="p-3 bg-red-50 border-b font-medium text-sm text-red-700 flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                Destinatários Configurados
+              </div>
+              <ScrollArea className="h-[200px]">
+                {recipients?.data?.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500">
+                    Nenhum destinatário configurado. Adicione números para receber alertas críticos.
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {recipients?.data?.map((recipient) => (
+                      <div key={recipient.id} className="p-3 flex items-center justify-between hover:bg-gray-50">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${recipient.ativo ? 'bg-green-500' : 'bg-gray-300'}`} />
+                          <div>
+                            <span className="font-medium">{recipient.nome}</span>
+                            <p className="text-xs text-gray-500">{recipient.telefone}</p>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {recipient.rule_id ? `Regra: ${recipient.regra_valor}` : 'Todas as regras'}
+                          </Badge>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => toggleRecipientMutation.mutate({ id: recipient.id, ativo: !recipient.ativo })}
+                            title={recipient.ativo ? 'Desativar' : 'Ativar'}
+                          >
+                            {recipient.ativo ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <X className="h-4 w-4 text-gray-400" />
+                            )}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => deleteRecipientMutation.mutate(recipient.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+              <strong>Como funciona:</strong> Quando um alerta com prioridade "Crítica" for detectado, 
+              todos os destinatários ativos receberão uma mensagem no WhatsApp com os detalhes do alerta.
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRecipientsDialog(false)}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
