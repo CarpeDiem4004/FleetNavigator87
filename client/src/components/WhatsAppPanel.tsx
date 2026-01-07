@@ -50,13 +50,16 @@ interface WhatsAppMessage {
 
 interface WhatsAppAlert {
   id: number;
+  message_id: number;
   tipo_alerta: string;
   descricao: string;
   prioridade: string;
   lido: boolean;
   mensagem: string;
+  grupo_id: string;
   grupo_nome: string;
   remetente_nome: string;
+  remetente_numero: string;
   data_mensagem: string;
 }
 
@@ -395,15 +398,43 @@ export default function WhatsAppPanel() {
                           <p className="text-xs text-gray-600">{alert.remetente_nome}</p>
                           <p className="text-sm mt-1 text-gray-700 line-clamp-2">{alert.mensagem}</p>
                         </div>
-                        {!alert.lido && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => markAlertReadMutation.mutate(alert.id)}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <div className="flex gap-1">
+                          {!alert.lido && (
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => setReplyingTo({
+                                  id: alert.message_id,
+                                  grupo_id: alert.grupo_id,
+                                  grupo_nome: alert.grupo_nome,
+                                  remetente_nome: alert.remetente_nome,
+                                  remetente_numero: alert.remetente_numero,
+                                  mensagem: alert.mensagem,
+                                  is_alert: true,
+                                  alert_type: alert.tipo_alerta,
+                                  status: 'pending',
+                                  respondido: false,
+                                  respondido_por: '',
+                                  data_mensagem: alert.data_mensagem,
+                                  is_outgoing: false
+                                })}
+                                title="Responder"
+                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              >
+                                <Reply className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => markAlertReadMutation.mutate(alert.id)}
+                                title="Marcar como lido"
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}

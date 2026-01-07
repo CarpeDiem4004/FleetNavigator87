@@ -229,6 +229,7 @@ router.get('/alerts', async (req: Request, res: Response) => {
       SELECT 
         ae.*,
         wm.mensagem,
+        wm.grupo_id,
         wm.grupo_nome,
         wm.remetente_nome,
         wm.remetente_numero,
