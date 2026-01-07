@@ -12,15 +12,39 @@ const ZAPI_CLIENT_TOKEN = process.env.ZAPI_CLIENT_TOKEN;
 router.post('/webhook', async (req: Request, res: Response) => {
   try {
     const data = req.body;
-    console.log('[WHATSAPP-WEBHOOK] Payload completo:', JSON.stringify(data).substring(0, 500));
+    console.log('[WHATSAPP-WEBHOOK] Payload completo:', JSON.stringify(data).substring(0, 800));
     
-    // Estrutura Z-API - diversos formatos possíveis
+    // Ignorar callbacks de status (não são mensagens)
+    if (data.type === 'MessageStatusCallback' || data.type === 'DeliveryCallback' || data.type === 'ReadCallback') {
+      return res.status(200).json({ success: true, received: true });
+    }
+    
+    // Estrutura Z-API - diversos formatos possíveis para o texto da mensagem
     const instanceId = data.instanceId || data.instance_id || '';
-    const message = data.text?.message || data.message?.text || data.body || data.text || '';
+    
+    // Extrair texto da mensagem de múltiplos campos possíveis
+    let message = '';
+    if (data.text && typeof data.text === 'object' && data.text.message) {
+      message = data.text.message;
+    } else if (data.text && typeof data.text === 'string') {
+      message = data.text;
+    } else if (data.message?.text) {
+      message = data.message.text;
+    } else if (data.message?.body) {
+      message = data.message.body;
+    } else if (data.body) {
+      message = data.body;
+    } else if (data.caption) {
+      message = data.caption;
+    }
+    
+    console.log('[WHATSAPP-WEBHOOK] Mensagem extraída:', message);
+    
     const from = data.phone || data.from || data.sender?.id || data.chatId?.split('@')[0] || '';
     const senderName = data.senderName || data.sender?.pushName || data.pushName || data.participant?.name || '';
     const isGroup = data.isGroup || data.chat?.isGroup || (data.chatId && data.chatId.includes('@g.us')) || false;
-    const groupId = isGroup ? (data.chatId || data.chat?.id || data.from || '') : null;
+    const groupId = isGroup ? (data.chatId || data.chat?.id || data.from || data.phone || '') : null;
+    const isOutgoing = data.fromMe === true;
     
     // Melhor extração do nome do grupo
     let groupName = null;
@@ -44,9 +68,12 @@ router.post('/webhook', async (req: Request, res: Response) => {
     let alertPriority = 'normal';
     let matchedRuleId = null;
     
-    // Verificar cada regra
+    // Verificar cada regra (apenas para mensagens recebidas com conteúdo)
+    console.log('[WHATSAPP-WEBHOOK] Verificando regras:', rulesResult.rows.length, 'regras ativas, mensagem:', message ? `"${message}"` : '(vazia)');
+    
     for (const rule of rulesResult.rows) {
-      if (rule.tipo === 'palavra' && message.toLowerCase().includes(rule.valor.toLowerCase())) {
+      if (rule.tipo === 'palavra' && message && message.toLowerCase().includes(rule.valor.toLowerCase())) {
+        console.log('[WHATSAPP-WEBHOOK] REGRA MATCH:', rule.valor, 'na mensagem:', message);
         isAlert = true;
         alertType = 'palavra-chave';
         alertPriority = rule.prioridade;
@@ -54,6 +81,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
         break;
       }
       if (rule.tipo === 'numero' && (from.includes(rule.valor) || mentioned.some((m: string) => m.includes(rule.valor)))) {
+        console.log('[WHATSAPP-WEBHOOK] REGRA MATCH número:', rule.valor);
         isAlert = true;
         alertType = 'numero-mencionado';
         alertPriority = rule.prioridade;
@@ -78,13 +106,19 @@ router.post('/webhook', async (req: Request, res: Response) => {
       );
     }
     
+    // Não salvar se não tiver mensagem (evitar duplicatas de status)
+    if (!message && !isOutgoing) {
+      console.log('[WHATSAPP-WEBHOOK] Mensagem vazia ignorada');
+      return res.status(200).json({ success: true, received: true });
+    }
+    
     // Salvar mensagem no banco
     const insertResult = await pool.query(
       `INSERT INTO whatsapp_messages (
         instance_id, grupo_id, grupo_nome, remetente_numero, remetente_nome,
         mensagem, mencionados, is_mention, is_alert, alert_type, status,
-        data_mensagem
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
+        data_mensagem, is_outgoing
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), $12)
       RETURNING id`,
       [
         instanceId,
@@ -97,9 +131,12 @@ router.post('/webhook', async (req: Request, res: Response) => {
         isMention,
         isAlert,
         alertType,
-        isAlert ? 'pending' : 'normal'
+        isAlert ? 'pending' : 'normal',
+        isOutgoing
       ]
     );
+    
+    console.log('[WHATSAPP-WEBHOOK] Mensagem salva ID:', insertResult.rows[0]?.id, 'isAlert:', isAlert);
     
     // Se for alerta, criar evento de alerta
     if (isAlert && insertResult.rows[0]) {
