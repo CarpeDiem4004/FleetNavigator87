@@ -397,7 +397,12 @@ router.get('/stats', async (req: Request, res: Response) => {
       pool.query('SELECT COUNT(*) as total FROM whatsapp_messages WHERE data_mensagem >= $1', [today]),
       pool.query('SELECT COUNT(*) as total FROM whatsapp_alert_events WHERE lido = false'),
       pool.query("SELECT COUNT(*) as total FROM whatsapp_messages WHERE respondido = true AND respondido_em >= $1", [today]),
-      pool.query('SELECT DISTINCT grupo_nome FROM whatsapp_messages WHERE grupo_nome IS NOT NULL')
+      pool.query(`
+        SELECT DISTINCT ON (grupo_id) grupo_nome, grupo_id 
+        FROM whatsapp_messages 
+        WHERE grupo_nome IS NOT NULL AND grupo_id IS NOT NULL
+        ORDER BY grupo_id, data_mensagem DESC
+      `)
     ]);
     
     res.json({
