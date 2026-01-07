@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Shield, Search, Users, CheckCircle, XCircle, Building2, 
-  Phone, Mail, RefreshCw, Download, Filter, Eye
+  Phone, Mail, RefreshCw, Download, Filter, Eye, User, FileText, Calendar, Briefcase, MapPin
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -22,7 +23,13 @@ interface Driver {
   email: string;
   possui_ear: boolean;
   numero_cnh: string;
+  categoria_cnh: string;
+  data_emissao_cnh: string;
   pgr_aprovado: boolean;
+  cadastrado_dds: boolean;
+  cadastrado_vec_fleet: boolean;
+  categoria_contrato: string;
+  milha_atuacao: string;
   nome_responsavel: string;
   telefone_responsavel: string;
   created_at: string;
@@ -36,11 +43,31 @@ interface Stats {
   totalBases: number;
 }
 
+const formatMilha = (milha: string) => {
+  const map: Record<string, string> = {
+    'line_haul': 'Line Haul',
+    'middle_mile': 'Middle Mile',
+    'lm': 'LM',
+    'fm': 'FM'
+  };
+  return map[milha] || milha || '-';
+};
+
+const formatContrato = (contrato: string) => {
+  const map: Record<string, string> = {
+    'agregado': 'Agregado',
+    'tac': 'TAC',
+    'clt': 'CLT'
+  };
+  return map[contrato] || contrato || '-';
+};
+
 export default function WorkSafetyDriversPanel() {
   const [searchTerm, setSearchTerm] = useState('');
   const [baseFilter, setBaseFilter] = useState('all');
   const [pgrFilter, setPgrFilter] = useState('all');
   const [earFilter, setEarFilter] = useState('all');
+  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
 
   const { data: driversData, isLoading, refetch } = useQuery({
     queryKey: ['/api/work-safety/drivers', baseFilter, pgrFilter, earFilter, searchTerm],
@@ -281,7 +308,12 @@ export default function WorkSafetyDriversPanel() {
                   </TableHeader>
                   <TableBody>
                     {drivers.map((driver) => (
-                      <TableRow key={driver.id} data-testid={`row-driver-${driver.id}`}>
+                      <TableRow 
+                        key={driver.id} 
+                        data-testid={`row-driver-${driver.id}`}
+                        className="cursor-pointer hover:bg-blue-50 transition-colors"
+                        onClick={() => setSelectedDriver(driver)}
+                      >
                         <TableCell className="font-medium">{driver.nome_completo}</TableCell>
                         <TableCell className="font-mono text-sm">{driver.cpf}</TableCell>
                         <TableCell>
@@ -334,6 +366,183 @@ export default function WorkSafetyDriversPanel() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={!!selectedDriver} onOpenChange={() => setSelectedDriver(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <User className="w-5 h-5 text-blue-600" />
+              Detalhes do Motorista
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedDriver && (
+            <div className="space-y-6 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-500 flex items-center gap-1">
+                    <User className="w-4 h-4" /> Nome Completo
+                  </p>
+                  <p className="font-medium text-lg">{selectedDriver.nome_completo}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-500 flex items-center gap-1">
+                    <FileText className="w-4 h-4" /> CPF
+                  </p>
+                  <p className="font-mono text-lg">{selectedDriver.cpf}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-500 flex items-center gap-1">
+                    <Building2 className="w-4 h-4" /> Base de Atuação
+                  </p>
+                  <Badge variant="outline" className="bg-blue-50 text-base px-3 py-1">
+                    {selectedDriver.base_atuacao}
+                  </Badge>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-500 flex items-center gap-1">
+                    <Briefcase className="w-4 h-4" /> Categoria de Contrato
+                  </p>
+                  <Badge className="bg-orange-100 text-orange-800 text-base px-3 py-1">
+                    {formatContrato(selectedDriver.categoria_contrato)}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-500 flex items-center gap-1">
+                    <MapPin className="w-4 h-4" /> Milha de Atuação
+                  </p>
+                  <Badge className="bg-purple-100 text-purple-800 text-base px-3 py-1">
+                    {formatMilha(selectedDriver.milha_atuacao)}
+                  </Badge>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-500 flex items-center gap-1">
+                    <Eye className="w-4 h-4" /> Possui EAR
+                  </p>
+                  {selectedDriver.possui_ear ? (
+                    <Badge className="bg-green-100 text-green-800 text-base px-3 py-1">Sim</Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-base px-3 py-1">Não</Badge>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Contato</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                      <Phone className="w-4 h-4" /> Telefone
+                    </p>
+                    <p className="font-medium">{selectedDriver.telefone_motorista}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                      <Mail className="w-4 h-4" /> E-mail
+                    </p>
+                    <p className="font-medium">{selectedDriver.email}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Documentação CNH</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500">Número CNH</p>
+                    <p className="font-mono font-medium">{selectedDriver.numero_cnh}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500">Categoria</p>
+                    <Badge variant="outline" className="text-base">{selectedDriver.categoria_cnh || '-'}</Badge>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                      <Calendar className="w-4 h-4" /> Data Emissão
+                    </p>
+                    <p className="font-medium">
+                      {selectedDriver.data_emissao_cnh 
+                        ? format(new Date(selectedDriver.data_emissao_cnh), 'dd/MM/yyyy', { locale: ptBR })
+                        : '-'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Status e Cadastros</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500">PGR</p>
+                    {selectedDriver.pgr_aprovado ? (
+                      <Badge className="bg-green-100 text-green-800">
+                        <CheckCircle className="w-3 h-3 mr-1" /> Aprovado
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-red-100 text-red-800">
+                        <XCircle className="w-3 h-3 mr-1" /> Pendente
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500">DDS</p>
+                    {selectedDriver.cadastrado_dds ? (
+                      <Badge className="bg-green-100 text-green-800">Cadastrado</Badge>
+                    ) : (
+                      <Badge variant="secondary">Não cadastrado</Badge>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500">VEC Fleet</p>
+                    {selectedDriver.cadastrado_vec_fleet ? (
+                      <Badge className="bg-green-100 text-green-800">Cadastrado</Badge>
+                    ) : (
+                      <Badge variant="secondary">Não cadastrado</Badge>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500">EAR</p>
+                    {selectedDriver.possui_ear ? (
+                      <Badge className="bg-purple-100 text-purple-800">Possui</Badge>
+                    ) : (
+                      <Badge variant="secondary">Não possui</Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Responsável pelo Cadastro</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500">Nome</p>
+                    <p className="font-medium">{selectedDriver.nome_responsavel}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                      <Phone className="w-4 h-4" /> Telefone
+                    </p>
+                    <p className="font-medium">{selectedDriver.telefone_responsavel}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4 text-sm text-gray-500">
+                <div className="flex justify-between">
+                  <span>Cadastrado em: {format(new Date(selectedDriver.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</span>
+                  <span>Atualizado em: {format(new Date(selectedDriver.updated_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
