@@ -72,6 +72,8 @@ import operationalDashboardRoutes from './routes/operationalDashboard';
 import lineHallRoutes from './routes/lineHallRoutes';
 // Importar rotas das bases
 import basesRoutes from './routes/basesRoutes';
+// Importar rotas do WhatsApp
+import whatsappRoutes from './routes/whatsappApi';
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
@@ -2720,6 +2722,9 @@ app.use((req, res, next) => {
 
   // Registrar rotas de cartões de combustível
   app.use('/api/fuel-cards', fuelCardRoutes);
+
+  // Registrar rotas do WhatsApp (Painel de Monitoramento)
+  app.use('/api/whatsapp', whatsappRoutes);
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
