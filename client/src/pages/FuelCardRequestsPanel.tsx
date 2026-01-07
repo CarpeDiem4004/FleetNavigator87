@@ -24,7 +24,7 @@ import WhatsAppResponseButton from '@/components/WhatsAppResponseButton';
 import LineHaulWhatsAppButton from '@/components/LineHaulWhatsAppButton';
 import { useLocation } from 'wouter';
 import { generateBatchApprovalMessage, openWhatsAppWeb, isValidPhoneNumber } from '@/lib/whatsapp-utils';
-import { cleanBaseName } from '@/lib/base-utils';
+import { cleanBaseName, normalizeBaseName } from '@/lib/base-utils';
 
 // Função auxiliar para converter data corretamente (evita bug de timezone UTC)
 const parseLocalDate = (dateString: string): Date => {
@@ -414,8 +414,8 @@ const FuelCardRequestsPanel: React.FC = () => {
         }
       }
       
-      // Filtro por base
-      if (baseFilter !== 'all' && sol.base !== baseFilter) {
+      // Filtro por base (normalizar ambos os lados para garantir match)
+      if (baseFilter !== 'all' && normalizeBaseName(sol.base) !== baseFilter) {
         return false;
       }
       
@@ -1302,9 +1302,9 @@ const FuelCardRequestsPanel: React.FC = () => {
     try {
       setApprovingBatch(true);
       
-      // Buscar solicitações pendentes da base selecionada
+      // Buscar solicitações pendentes da base selecionada (normalizar para garantir match)
       const pendingSolicitations = solicitations.filter(sol => 
-        sol.base === baseFilter && 
+        normalizeBaseName(sol.base) === baseFilter && 
         (sol.status === 'Pendente' || sol.status === 'pendente' || 
          sol.status === 'Em Análise' || sol.status === 'em_analise')
       );
@@ -1381,9 +1381,9 @@ const FuelCardRequestsPanel: React.FC = () => {
         const message = generateBatchApprovalMessage(approvedSols, baseFilter);
         setBatchWhatsAppMessage(message);
         
-        // Atualizar a lista local
+        // Atualizar a lista local (normalizar para garantir match)
         setSolicitations(solicitations.map(sol => {
-          if (sol.base === baseFilter && (sol.status === 'Pendente' || sol.status === 'pendente' || 
+          if (normalizeBaseName(sol.base) === baseFilter && (sol.status === 'Pendente' || sol.status === 'pendente' || 
                                          sol.status === 'Em Análise' || sol.status === 'em_analise')) {
             return {
               ...sol,
@@ -1475,21 +1475,21 @@ const FuelCardRequestsPanel: React.FC = () => {
         }
       }
       
-      // Filtro por projeto
+      // Filtro por projeto (normalizar para garantir match)
       if (projectFilter !== 'all') {
         // Buscar o projeto selecionado e suas bases
         const selectedProject = projects.find(p => p.id.toString() === projectFilter);
         if (selectedProject) {
-          const projectBases = selectedProject.bases?.map((b: any) => b.base_name) || [];
-          if (!projectBases.includes(sol.base)) {
+          const projectBases = selectedProject.bases?.map((b: any) => normalizeBaseName(b.base_name)) || [];
+          if (!projectBases.includes(normalizeBaseName(sol.base))) {
             return false;
           }
         }
       }
 
-      // Filtro por base
+      // Filtro por base (normalizar para garantir match)
       if (baseFilter !== 'all') {
-        if (sol.base !== baseFilter) {
+        if (normalizeBaseName(sol.base) !== baseFilter) {
           return false;
         }
       }
@@ -1603,9 +1603,9 @@ const FuelCardRequestsPanel: React.FC = () => {
       // Add bases from solicitations (real data from database)
       solicitations.forEach(sol => {
         if (sol.base && sol.base.trim() !== '') {
-          // NORMALIZAR antes de adicionar ao Map para eliminar duplicatas por espaços/caracteres invisíveis
-          const normalizedBase = sol.base.trim().replace(/\s+/g, '_').toUpperCase();
-          if (!allBases.has(normalizedBase)) {
+          // NORMALIZAR usando função compartilhada para eliminar duplicatas e acentos
+          const normalizedBase = normalizeBaseName(sol.base);
+          if (normalizedBase && !allBases.has(normalizedBase)) {
             allBases.set(normalizedBase, normalizedBase);
           }
         }
@@ -1616,9 +1616,11 @@ const FuelCardRequestsPanel: React.FC = () => {
         if (project.bases) {
           project.bases.forEach((base: any) => {
             if (base.base_name) {
-              // NORMALIZAR antes de adicionar ao Map
-              const normalizedBase = base.base_name.trim().replace(/\s+/g, '_').toUpperCase();
-              allBases.set(normalizedBase, base.display_name || normalizedBase);
+              // NORMALIZAR usando função compartilhada
+              const normalizedBase = normalizeBaseName(base.base_name);
+              if (normalizedBase) {
+                allBases.set(normalizedBase, base.display_name || normalizedBase);
+              }
             }
           });
         }
@@ -1644,9 +1646,11 @@ const FuelCardRequestsPanel: React.FC = () => {
       if (selectedProject && selectedProject.bases) {
         selectedProject.bases.forEach((base: any) => {
           if (base.base_name) {
-            // NORMALIZAR antes de adicionar ao Map
-            const normalizedBase = base.base_name.trim().replace(/\s+/g, '_').toUpperCase();
-            projectBases.set(normalizedBase, base.display_name || normalizedBase);
+            // NORMALIZAR usando função compartilhada
+            const normalizedBase = normalizeBaseName(base.base_name);
+            if (normalizedBase) {
+              projectBases.set(normalizedBase, base.display_name || normalizedBase);
+            }
           }
         });
       }
@@ -1654,12 +1658,12 @@ const FuelCardRequestsPanel: React.FC = () => {
       // Add bases from solicitations that belong to this project
       solicitations.forEach(sol => {
         if (sol.base && sol.base.trim() !== '') {
-          // NORMALIZAR base da solicitação
-          const normalizedSolBase = sol.base.trim().replace(/\s+/g, '_').toUpperCase();
+          // NORMALIZAR base da solicitação usando função compartilhada
+          const normalizedSolBase = normalizeBaseName(sol.base);
           // Check if this solicitation's base belongs to the selected project
-          if (selectedProject && selectedProject.bases) {
+          if (selectedProject && selectedProject.bases && normalizedSolBase) {
             const belongsToProject = selectedProject.bases.some((base: any) => {
-              const normalizedProjectBase = base.base_name.trim().replace(/\s+/g, '_').toUpperCase();
+              const normalizedProjectBase = normalizeBaseName(base.base_name);
               return normalizedProjectBase === normalizedSolBase;
             });
             if (belongsToProject && !projectBases.has(normalizedSolBase)) {
