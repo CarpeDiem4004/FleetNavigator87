@@ -1763,14 +1763,25 @@ const LineHaulPage = () => {
                     <Wrench className="h-5 w-5 mr-2" />
                     Gerenciar Solicitações de Manutenção
                   </span>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setShowMaintenance(false)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500"
-                  >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Voltar ao Dashboard
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={generateAllMaintenancesPDF}
+                      className="bg-[#E10613] hover:bg-[#B8050F] text-white border-[#E10613]"
+                      data-testid="btn-exportar-pdf-manutencoes"
+                    >
+                      <Printer className="h-4 w-4 mr-2" />
+                      Exportar PDF
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowMaintenance(false)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Voltar ao Dashboard
+                    </Button>
+                  </div>
                 </CardTitle>
               </CardHeader>
             </Card>
@@ -1877,25 +1888,33 @@ const LineHaulPage = () => {
                       )}
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Button 
                         size="sm" 
                         variant="outline" 
-                        className="flex-1"
                         onClick={() => {
-                          toast({
-                            title: "Detalhes da Solicitação",
-                            description: `Placa: ${request.vehicle_plate} | Tipo: ${request.maintenance_type} | Prioridade: ${request.priority}`
-                          });
+                          setSelectedMaintenanceForDetails(request);
+                          setShowMaintenanceDetails(true);
                         }}
+                        data-testid={`btn-ver-detalhes-manutencao-${request.id}`}
                       >
                         <Eye className="h-4 w-4 mr-1" />
                         Ver Detalhes
                       </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => generateMaintenancePDF(request)}
+                        className="text-[#E10613] border-[#E10613] hover:bg-[#E10613] hover:text-white"
+                        data-testid={`btn-pdf-manutencao-${request.id}`}
+                      >
+                        <FileText className="h-4 w-4 mr-1" />
+                        PDF
+                      </Button>
                       {request.status === 'pendente' && (
                         <Button 
                           size="sm" 
-                          className="flex-1 bg-blue-500 hover:bg-blue-600"
+                          className="bg-blue-500 hover:bg-blue-600"
                           onClick={() => handleOpenWorkorderDialog(request)}
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
@@ -1905,7 +1924,7 @@ const LineHaulPage = () => {
                       {request.status === 'em_andamento' && (
                         <Button 
                           size="sm" 
-                          className="flex-1 bg-green-500 hover:bg-green-600"
+                          className="bg-green-500 hover:bg-green-600"
                           onClick={() => handleUpdateMaintenanceStatus(request.id, 'concluida')}
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
@@ -4232,6 +4251,193 @@ const LineHaulPage = () => {
                   )}
                 </Button>
               )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog de Detalhes da Manutenção */}
+        <Dialog open={showMaintenanceDetails} onOpenChange={setShowMaintenanceDetails}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-[#E10613]">
+                <History className="h-5 w-5" />
+                Detalhes da Manutenção
+              </DialogTitle>
+              <DialogDescription>
+                {selectedMaintenanceForDetails && (
+                  <span className="flex items-center gap-2">
+                    <Truck className="h-4 w-4" />
+                    Veículo: {selectedMaintenanceForDetails.vehicle_plate} | {selectedMaintenanceForDetails.vehicle_model || 'Modelo não informado'}
+                  </span>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedMaintenanceForDetails && (
+              <div className="space-y-6 py-4">
+                {/* Status e Prioridade */}
+                <div className="flex gap-4">
+                  <Badge 
+                    className={
+                      selectedMaintenanceForDetails.status === 'concluida' ? 'bg-green-500' :
+                      selectedMaintenanceForDetails.status === 'em_andamento' ? 'bg-blue-500' :
+                      'bg-yellow-500'
+                    }
+                  >
+                    {selectedMaintenanceForDetails.status === 'concluida' ? 'Concluída' :
+                     selectedMaintenanceForDetails.status === 'em_andamento' ? 'Em Andamento' :
+                     'Pendente'}
+                  </Badge>
+                  <Badge 
+                    variant="outline"
+                    className={
+                      selectedMaintenanceForDetails.priority === 'urgente' ? 'border-red-500 text-red-700' :
+                      selectedMaintenanceForDetails.priority === 'alta' ? 'border-orange-500 text-orange-700' :
+                      selectedMaintenanceForDetails.priority === 'media' ? 'border-yellow-500 text-yellow-700' :
+                      'border-gray-500 text-gray-700'
+                    }
+                  >
+                    {selectedMaintenanceForDetails.priority === 'urgente' ? 'Urgente' :
+                     selectedMaintenanceForDetails.priority === 'alta' ? 'Alta' :
+                     selectedMaintenanceForDetails.priority === 'media' ? 'Média' :
+                     'Baixa'}
+                  </Badge>
+                </div>
+
+                {/* Informações do Veículo */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-[#E10613]" />
+                    Informações do Veículo
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-gray-500">Placa:</span>
+                      <span className="font-medium ml-2">{selectedMaintenanceForDetails.vehicle_plate}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Modelo:</span>
+                      <span className="font-medium ml-2">{selectedMaintenanceForDetails.vehicle_model || 'Não informado'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Motorista:</span>
+                      <span className="font-medium ml-2">{selectedMaintenanceForDetails.driver_name || 'Não informado'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Oficina:</span>
+                      <span className="font-medium ml-2">{selectedMaintenanceForDetails.workshop_name || 'Não definida'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dados da Manutenção */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <Wrench className="h-4 w-4 text-[#E10613]" />
+                    Dados da Manutenção
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-gray-500">Tipo:</span>
+                      <span className="font-medium ml-2">{selectedMaintenanceForDetails.maintenance_type}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Nº Ordem de Serviço:</span>
+                      <span className="font-medium ml-2">{selectedMaintenanceForDetails.work_order_number || 'Não gerada'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Data de Abertura:</span>
+                      <span className="font-medium ml-2">{new Date(selectedMaintenanceForDetails.created_at).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                    {selectedMaintenanceForDetails.started_at && (
+                      <div>
+                        <span className="text-gray-500">Iniciada em:</span>
+                        <span className="font-medium ml-2">{new Date(selectedMaintenanceForDetails.started_at).toLocaleDateString('pt-BR')}</span>
+                      </div>
+                    )}
+                    {selectedMaintenanceForDetails.completed_at && (
+                      <div>
+                        <span className="text-gray-500">Concluída em:</span>
+                        <span className="font-medium ml-2">{new Date(selectedMaintenanceForDetails.completed_at).toLocaleDateString('pt-BR')}</span>
+                      </div>
+                    )}
+                    {selectedMaintenanceForDetails.completed_by && (
+                      <div>
+                        <span className="text-gray-500">Finalizada por:</span>
+                        <span className="font-medium ml-2">{selectedMaintenanceForDetails.completed_by}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Descrição do Problema */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-3">Descrição do Problema</h4>
+                  <p className="text-sm text-gray-700">{selectedMaintenanceForDetails.description || 'Não informado'}</p>
+                </div>
+
+                {/* Serviço Realizado (apenas se concluído) */}
+                {selectedMaintenanceForDetails.service_performed && (
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <h4 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      Serviço Realizado
+                    </h4>
+                    <p className="text-sm text-gray-700">{selectedMaintenanceForDetails.service_performed}</p>
+                  </div>
+                )}
+
+                {/* Peças Utilizadas */}
+                {selectedMaintenanceForDetails.parts_used && (
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <h4 className="font-semibold text-blue-800 mb-3">Peças Utilizadas</h4>
+                    <p className="text-sm text-gray-700">{selectedMaintenanceForDetails.parts_used}</p>
+                  </div>
+                )}
+
+                {/* Custos */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-3">Custos</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-gray-500">Custo Estimado:</span>
+                      <span className="font-medium ml-2">R$ {(selectedMaintenanceForDetails.estimated_cost || 0).toFixed(2)}</span>
+                    </div>
+                    {selectedMaintenanceForDetails.final_cost && (
+                      <div>
+                        <span className="text-gray-500">Custo Final:</span>
+                        <span className="font-medium ml-2 text-green-700">R$ {selectedMaintenanceForDetails.final_cost.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Observações */}
+                {selectedMaintenanceForDetails.observations && (
+                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                    <h4 className="font-semibold text-yellow-800 mb-3">Observações</h4>
+                    <p className="text-sm text-gray-700">{selectedMaintenanceForDetails.observations}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <DialogFooter className="gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  if (selectedMaintenanceForDetails) {
+                    generateMaintenancePDF(selectedMaintenanceForDetails);
+                  }
+                }}
+                className="text-[#E10613] border-[#E10613] hover:bg-[#E10613] hover:text-white"
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                Exportar PDF
+              </Button>
+              <Button variant="outline" onClick={() => setShowMaintenanceDetails(false)}>
+                Fechar
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
