@@ -65,16 +65,19 @@ export async function createWorkSafetyDriver(req: Request, res: Response) {
       });
     }
     
+    await pool.query(`ALTER TABLE work_safety_drivers ADD COLUMN IF NOT EXISTS rg VARCHAR(30)`);
+
     const result = await pool.query(
       `INSERT INTO work_safety_drivers (
-        nome_completo, cpf, base_atuacao, telefone_motorista, email,
+        nome_completo, cpf, rg, base_atuacao, telefone_motorista, email,
         possui_ear, numero_cnh, categoria_cnh, pgr_aprovado, nome_responsavel, telefone_responsavel,
         categoria_contrato, milha_atuacao, created_at, updated_at, ativo
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW(), true)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW(), true)
       RETURNING *`,
       [
         data.nomeCompleto,
         cpfFormatted,
+        data.rg || null,
         data.baseAtuacao,
         data.telefoneMotorista,
         data.email,

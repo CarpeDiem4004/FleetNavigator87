@@ -17,6 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 const formSchema = z.object({
   nomeCompleto: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
   cpf: z.string().min(11, 'CPF inválido').max(14, 'CPF inválido'),
+  rg: z.string().min(5, 'RG inválido').max(20, 'RG inválido'),
   baseAtuacao: z.string().min(1, 'Selecione a base de atuação'),
   categoriaContrato: z.string().min(1, 'Selecione a categoria de contrato'),
   milhaAtuacao: z.string().min(1, 'Selecione a milha de atuação'),
@@ -143,6 +144,7 @@ export default function WorkSafetyDriverRegistration() {
     defaultValues: {
       nomeCompleto: '',
       cpf: '',
+      rg: '',
       baseAtuacao: '',
       categoriaContrato: '',
       milhaAtuacao: '',
@@ -302,6 +304,24 @@ export default function WorkSafetyDriverRegistration() {
                               {...field}
                               onChange={(e) => field.onChange(formatCPF(e.target.value))}
                               data-testid="input-cpf"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="rg"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>RG *</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="00.000.000-0"
+                              {...field}
+                              data-testid="input-rg"
                             />
                           </FormControl>
                           <FormMessage />
