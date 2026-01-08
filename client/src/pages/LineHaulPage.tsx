@@ -352,6 +352,19 @@ const LineHaulPage = () => {
   const [showMaintenanceDetails, setShowMaintenanceDetails] = useState(false);
   const [selectedMaintenanceForDetails, setSelectedMaintenanceForDetails] = useState<MaintenanceRequest | null>(null);
 
+  // Estados para novo formulário de manutenção
+  const [showNewMaintenanceDialog, setShowNewMaintenanceDialog] = useState(false);
+  const [isCreatingMaintenance, setIsCreatingMaintenance] = useState(false);
+  const [newMaintenanceForm, setNewMaintenanceForm] = useState({
+    vehicle_plate: '',
+    vehicle_model: '',
+    driver_name: '',
+    maintenance_type: '',
+    priority: 'media',
+    description: '',
+    estimated_cost: ''
+  });
+
   const generateMaintenancePDF = (maintenance: MaintenanceRequest) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -1764,6 +1777,14 @@ const LineHaulPage = () => {
                     Gerenciar Solicitações de Manutenção
                   </span>
                   <div className="flex gap-2">
+                    <Button 
+                      onClick={() => setShowNewMaintenanceDialog(true)}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      data-testid="btn-nova-manutencao"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nova Manutenção
+                    </Button>
                     <Button 
                       variant="outline" 
                       onClick={generateAllMaintenancesPDF}
@@ -4251,6 +4272,218 @@ const LineHaulPage = () => {
                   )}
                 </Button>
               )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog de Nova Manutenção */}
+        <Dialog open={showNewMaintenanceDialog} onOpenChange={setShowNewMaintenanceDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-green-700">
+                <Plus className="h-5 w-5" />
+                Nova Solicitação de Manutenção
+              </DialogTitle>
+              <DialogDescription>
+                Preencha os dados para abrir uma nova solicitação de manutenção
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-vehicle-plate">Placa do Veículo *</Label>
+                  <Input
+                    id="new-vehicle-plate"
+                    value={newMaintenanceForm.vehicle_plate}
+                    onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, vehicle_plate: e.target.value.toUpperCase() }))}
+                    placeholder="ABC1D23"
+                    maxLength={7}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-vehicle-model">Modelo do Veículo</Label>
+                  <Input
+                    id="new-vehicle-model"
+                    value={newMaintenanceForm.vehicle_model}
+                    onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, vehicle_model: e.target.value }))}
+                    placeholder="Ex: Volvo FH 540"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="new-driver-name">Nome do Motorista</Label>
+                <Input
+                  id="new-driver-name"
+                  value={newMaintenanceForm.driver_name}
+                  onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, driver_name: e.target.value }))}
+                  placeholder="Nome completo do motorista"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-maintenance-type">Tipo de Manutenção *</Label>
+                  <Select
+                    value={newMaintenanceForm.maintenance_type}
+                    onValueChange={(value) => setNewMaintenanceForm(prev => ({ ...prev, maintenance_type: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Preventiva">Preventiva</SelectItem>
+                      <SelectItem value="Corretiva">Corretiva</SelectItem>
+                      <SelectItem value="Pneus">Pneus</SelectItem>
+                      <SelectItem value="Elétrica">Elétrica</SelectItem>
+                      <SelectItem value="Freios">Freios</SelectItem>
+                      <SelectItem value="Motor">Motor</SelectItem>
+                      <SelectItem value="Suspensão">Suspensão</SelectItem>
+                      <SelectItem value="Câmbio">Câmbio</SelectItem>
+                      <SelectItem value="Ar Condicionado">Ar Condicionado</SelectItem>
+                      <SelectItem value="Funilaria">Funilaria</SelectItem>
+                      <SelectItem value="Outros">Outros</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-priority">Prioridade *</Label>
+                  <Select
+                    value={newMaintenanceForm.priority}
+                    onValueChange={(value) => setNewMaintenanceForm(prev => ({ ...prev, priority: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a prioridade..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="baixa">Baixa</SelectItem>
+                      <SelectItem value="media">Média</SelectItem>
+                      <SelectItem value="alta">Alta</SelectItem>
+                      <SelectItem value="urgente">Urgente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="new-estimated-cost">Custo Estimado (R$)</Label>
+                <Input
+                  id="new-estimated-cost"
+                  type="number"
+                  step="0.01"
+                  value={newMaintenanceForm.estimated_cost}
+                  onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, estimated_cost: e.target.value }))}
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="new-description">Descrição do Problema *</Label>
+                <textarea
+                  id="new-description"
+                  className="w-full min-h-[100px] p-3 border rounded-md resize-none"
+                  value={newMaintenanceForm.description}
+                  onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Descreva detalhadamente o problema ou serviço necessário..."
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowNewMaintenanceDialog(false);
+                  setNewMaintenanceForm({
+                    vehicle_plate: '',
+                    vehicle_model: '',
+                    driver_name: '',
+                    maintenance_type: '',
+                    priority: 'media',
+                    description: '',
+                    estimated_cost: ''
+                  });
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={async () => {
+                  if (!newMaintenanceForm.vehicle_plate || !newMaintenanceForm.maintenance_type || !newMaintenanceForm.description) {
+                    toast({
+                      title: "Campos obrigatórios",
+                      description: "Preencha a placa, tipo de manutenção e descrição.",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+
+                  setIsCreatingMaintenance(true);
+                  try {
+                    const response = await fetch('/api/maintenance/orders', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
+                      body: JSON.stringify({
+                        vehicle_plate: newMaintenanceForm.vehicle_plate,
+                        vehicle_model: newMaintenanceForm.vehicle_model || null,
+                        driver_name: newMaintenanceForm.driver_name || null,
+                        maintenance_type: newMaintenanceForm.maintenance_type,
+                        priority: newMaintenanceForm.priority,
+                        description: newMaintenanceForm.description,
+                        estimated_cost: newMaintenanceForm.estimated_cost ? parseFloat(newMaintenanceForm.estimated_cost) : 0,
+                        status: 'pendente',
+                        origem: 'line_hall'
+                      })
+                    });
+
+                    if (!response.ok) {
+                      throw new Error('Erro ao criar manutenção');
+                    }
+
+                    toast({
+                      title: "Sucesso!",
+                      description: "Solicitação de manutenção criada com sucesso.",
+                    });
+
+                    setShowNewMaintenanceDialog(false);
+                    setNewMaintenanceForm({
+                      vehicle_plate: '',
+                      vehicle_model: '',
+                      driver_name: '',
+                      maintenance_type: '',
+                      priority: 'media',
+                      description: '',
+                      estimated_cost: ''
+                    });
+                    
+                    queryClient.invalidateQueries({ queryKey: ['/api/maintenance/requests'] });
+                  } catch (error) {
+                    toast({
+                      title: "Erro",
+                      description: "Não foi possível criar a solicitação de manutenção.",
+                      variant: "destructive"
+                    });
+                  } finally {
+                    setIsCreatingMaintenance(false);
+                  }
+                }}
+                disabled={isCreatingMaintenance}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {isCreatingMaintenance ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Criando...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Criar Solicitação
+                  </>
+                )}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
