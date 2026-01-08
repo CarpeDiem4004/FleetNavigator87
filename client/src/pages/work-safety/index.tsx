@@ -240,12 +240,6 @@ export default function WorkSafetyPage() {
               )}
 
               <div className="mt-4 flex gap-2 justify-center">
-                <Link href="/work-safety/portal">
-                  <Button variant="outline" className="border-red-300 text-red-700 hover:bg-red-100" data-testid="button-access-portal">
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Acessar Portal
-                  </Button>
-                </Link>
                 <Button className="bg-red-600 hover:bg-red-700" data-testid="button-view-all-accidents">
                   <Eye className="mr-2 h-4 w-4" />
                   Ver Todas as Ocorrências
