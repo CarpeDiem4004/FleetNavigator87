@@ -3,6 +3,15 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --murici-red: 0 95% 44%;
+    --murici-red-hover: 0 95% 36%;
+    --murici-black: 0 0% 5%;
+    --murici-dark: 0 0% 11%;
+    --murici-gray: 0 0% 55%;
+    --murici-white: 0 0% 96%;
+  }
+
   * {
     @apply border-border;
   }
@@ -11,10 +20,44 @@
     @apply font-sans antialiased text-foreground;
   }
 
-.card {
-  background-color: rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
+  .card {
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+  }
 }
+
+/* Murici Brand Colors */
+.murici-bg {
+  background-color: #0E0E0E;
+}
+
+.murici-card {
+  background-color: #1C1C1C;
+  border-left: 4px solid #E10613;
+}
+
+.murici-btn {
+  background-color: #E10613;
+  color: #FFFFFF;
+}
+
+.murici-btn:hover {
+  background-color: #B8050F;
+}
+
+.murici-input {
+  background-color: #1C1C1C;
+  border: 1px solid #333;
+  color: #F5F5F5;
+}
+
+.murici-input:focus {
+  border-color: #E10613;
+}
+
+.murici-alert {
+  background-color: rgba(225, 6, 19, 0.15);
+  border-left: 4px solid #E10613;
 }
 
 .linehaul-abastecimento {
