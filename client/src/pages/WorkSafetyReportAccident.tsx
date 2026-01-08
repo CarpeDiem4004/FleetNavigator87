@@ -328,49 +328,36 @@ export default function WorkSafetyReportAccident() {
               </div>
 
               <div className="border rounded-lg p-4 bg-gray-50">
-                <h4 className="font-semibold text-gray-800 mb-4 text-center">Título da imagem</h4>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div className="col-span-1 row-span-2 flex items-center justify-center">
-                    <div className="bg-white border-2 border-gray-300 rounded p-2 text-center">
-                      <span className="font-bold text-blue-800">Murici</span>
-                    </div>
+                <h4 className="font-semibold text-gray-800 mb-4 text-center">Fluxo de Comunicação de Acidentes</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                  <div className="bg-[#E10613] text-white rounded-lg p-3 text-center">
+                    <div className="font-bold text-sm">1° COMUNICAÇÃO</div>
+                    <div className="text-[11px] mt-2">Comunicar imediatamente a equipe de segurança do trabalho e sinistro, através do reporte inicial nos grupos COLISÃO ou MURICI ACIDENTES.</div>
                   </div>
                   
-                  <div className="bg-red-600 text-white rounded p-2 text-center">
-                    <div className="font-bold">1° COMUNICAÇÃO</div>
-                    <div className="text-[10px] mt-1">Comunicar imediatamente a equipe de segurança do trabalho e sinistro, através do reporte inicial nos grupos COLISÃO ou MURICI ACIDENTES.</div>
+                  <div className="bg-[#C70510] text-white rounded-lg p-3 text-center">
+                    <div className="font-bold text-sm">2° INFORMAÇÕES</div>
+                    <div className="text-[11px] mt-2">Coletar todas as informações da ocorrência de forma detalhada.</div>
                   </div>
                   
-                  <div className="bg-green-600 text-white rounded p-2 text-center">
-                    <div className="font-bold">4° COLETA DE DADOS</div>
-                    <div className="text-[10px] mt-1">Enviar as fotos, atestados, BO, demais documentos e informações comportamentais para realizarmos a INVESTIGAÇÃO DO ACIDENTE.</div>
+                  <div className="bg-[#A5040D] text-white rounded-lg p-3 text-center">
+                    <div className="font-bold text-sm">3° REPORTE</div>
+                    <div className="text-[11px] mt-2">Realizar o preenchimento do forms, no prazo de 4hs.</div>
                   </div>
 
-                  <div className="bg-red-500 text-white rounded p-2 text-center">
-                    <div className="font-bold">2° INFORMAÇÕES</div>
-                    <div className="text-[10px] mt-1">Coletar todas as informações da ocorrência de forma detalhada.</div>
+                  <div className="bg-[#2ECC71] text-white rounded-lg p-3 text-center">
+                    <div className="font-bold text-sm">4° COLETA DE DADOS</div>
+                    <div className="text-[11px] mt-2">Enviar as fotos, atestados, BO, demais documentos e informações comportamentais para realizarmos a INVESTIGAÇÃO DO ACIDENTE.</div>
                   </div>
                   
-                  <div className="bg-gray-800 text-white rounded p-2 text-center flex items-center justify-center">
-                    <div>
-                      <div className="font-bold">COMUNICAÇÃO</div>
-                      <div className="font-bold">ACIDENTE</div>
-                    </div>
+                  <div className="bg-[#27ae60] text-white rounded-lg p-3 text-center">
+                    <div className="font-bold text-sm">5° TREINAMENTOS</div>
+                    <div className="text-[11px] mt-2">Checar se o colaborador envolvido na ocorrência está com todos os treinamentos realizados.</div>
                   </div>
                   
-                  <div className="bg-green-500 text-white rounded p-2 text-center">
-                    <div className="font-bold">5° TREINAMENTOS</div>
-                    <div className="text-[10px] mt-1">Checar se o colaborador envolvido na ocorrência está com todos os treinamentos realizados.</div>
-                  </div>
-
-                  <div className="col-start-2 bg-red-400 text-white rounded p-2 text-center">
-                    <div className="font-bold">3° REPORTE</div>
-                    <div className="text-[10px] mt-1">Realizar o preenchimento do forms, no prazo de 6hs.</div>
-                  </div>
-                  
-                  <div className="bg-green-400 text-white rounded p-2 text-center">
-                    <div className="font-bold">6° REUNIÃO</div>
-                    <div className="text-[10px] mt-1">Participação na reunião de investigação de acidente.</div>
+                  <div className="bg-[#1e8449] text-white rounded-lg p-3 text-center">
+                    <div className="font-bold text-sm">6° REUNIÃO</div>
+                    <div className="text-[11px] mt-2">Participação na reunião de investigação de acidente.</div>
                   </div>
                 </div>
               </div>
