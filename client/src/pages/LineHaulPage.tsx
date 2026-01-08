@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { 
@@ -34,8 +35,12 @@ import {
   AlertCircle,
   AlertTriangle,
   CheckCircle2,
-  Download
+  Download,
+  FileText,
+  Printer,
+  History
 } from 'lucide-react';
+import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
 import { DriverAutocomplete } from '@/components/ui/driver-autocomplete';
 import { Combobox } from '@/components/ui/combobox';
@@ -178,6 +183,15 @@ interface MaintenanceRequest {
   updated_at: string;
   estimated_cost?: number;
   workshop_name?: string;
+  service_performed?: string;
+  parts_used?: string;
+  final_cost?: number;
+  completed_at?: string;
+  completed_by?: string;
+  mechanic_name?: string;
+  work_order_number?: string;
+  observations?: string;
+  started_at?: string;
 }
 
 // Função para gerar rotas aleatórias realistas
@@ -334,6 +348,214 @@ const LineHaulPage = () => {
     expectedCompletionAt: '',
     notes: ''
   });
+
+  const [showMaintenanceDetails, setShowMaintenanceDetails] = useState(false);
+  const [selectedMaintenanceForDetails, setSelectedMaintenanceForDetails] = useState<MaintenanceRequest | null>(null);
+
+  const generateMaintenancePDF = (maintenance: MaintenanceRequest) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    doc.setFillColor(225, 6, 19);
+    doc.rect(0, 0, pageWidth, 40, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('MURICI TRANSPORTES', pageWidth / 2, 18, { align: 'center' });
+    doc.setFontSize(14);
+    doc.text('Relatório de Manutenção', pageWidth / 2, 30, { align: 'center' });
+    
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('INFORMAÇÕES DO VEÍCULO', 20, 55);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    let y = 65;
+    
+    doc.text(`Placa: ${maintenance.vehicle_plate}`, 20, y);
+    doc.text(`Modelo: ${maintenance.vehicle_model || 'Não informado'}`, 110, y);
+    y += 8;
+    doc.text(`Motorista: ${maintenance.driver_name || 'Não informado'}`, 20, y);
+    y += 8;
+    doc.text(`Oficina: ${maintenance.workshop_name || 'Não informada'}`, 20, y);
+    
+    y += 15;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('DADOS DA MANUTENÇÃO', 20, y);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    y += 10;
+    doc.text(`Tipo: ${maintenance.maintenance_type}`, 20, y);
+    doc.text(`Prioridade: ${maintenance.priority === 'urgente' ? 'Urgente' : maintenance.priority === 'alta' ? 'Alta' : maintenance.priority === 'media' ? 'Média' : 'Baixa'}`, 110, y);
+    y += 8;
+    doc.text(`Status: ${maintenance.status === 'concluida' ? 'Concluída' : maintenance.status === 'em_andamento' ? 'Em Andamento' : 'Pendente'}`, 20, y);
+    y += 8;
+    doc.text(`Data de Abertura: ${new Date(maintenance.created_at).toLocaleDateString('pt-BR')}`, 20, y);
+    if (maintenance.started_at) {
+      doc.text(`Iniciada em: ${new Date(maintenance.started_at).toLocaleDateString('pt-BR')}`, 110, y);
+    }
+    y += 8;
+    if (maintenance.completed_at) {
+      doc.text(`Concluída em: ${new Date(maintenance.completed_at).toLocaleDateString('pt-BR')}`, 20, y);
+      y += 8;
+    }
+    if (maintenance.work_order_number) {
+      doc.text(`Nº Ordem de Serviço: ${maintenance.work_order_number}`, 20, y);
+      y += 8;
+    }
+    
+    y += 7;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('DESCRIÇÃO DO PROBLEMA', 20, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    y += 10;
+    const descLines = doc.splitTextToSize(maintenance.description || 'Não informado', pageWidth - 40);
+    doc.text(descLines, 20, y);
+    y += descLines.length * 5 + 5;
+    
+    if (maintenance.service_performed) {
+      y += 5;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('SERVIÇO REALIZADO', 20, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      y += 10;
+      const serviceLines = doc.splitTextToSize(maintenance.service_performed, pageWidth - 40);
+      doc.text(serviceLines, 20, y);
+      y += serviceLines.length * 5 + 5;
+    }
+    
+    if (maintenance.parts_used) {
+      y += 5;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('PEÇAS UTILIZADAS', 20, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      y += 10;
+      const partsLines = doc.splitTextToSize(maintenance.parts_used, pageWidth - 40);
+      doc.text(partsLines, 20, y);
+      y += partsLines.length * 5 + 5;
+    }
+    
+    y += 10;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('CUSTOS', 20, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    y += 10;
+    doc.text(`Custo Estimado: R$ ${(maintenance.estimated_cost || 0).toFixed(2)}`, 20, y);
+    if (maintenance.final_cost) {
+      doc.text(`Custo Final: R$ ${maintenance.final_cost.toFixed(2)}`, 110, y);
+    }
+    
+    if (maintenance.observations) {
+      y += 15;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('OBSERVAÇÕES', 20, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      y += 10;
+      const obsLines = doc.splitTextToSize(maintenance.observations, pageWidth - 40);
+      doc.text(obsLines, 20, y);
+    }
+    
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.setFontSize(8);
+    doc.setTextColor(128, 128, 128);
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 20, pageHeight - 10);
+    doc.text('Murici Transportes - Sistema de Gestão de Frota', pageWidth - 20, pageHeight - 10, { align: 'right' });
+    
+    doc.save(`manutencao_${maintenance.vehicle_plate}_${maintenance.id}.pdf`);
+    
+    toast({
+      title: "PDF Gerado",
+      description: `Relatório de manutenção exportado com sucesso!`
+    });
+  };
+
+  const generateAllMaintenancesPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    doc.setFillColor(225, 6, 19);
+    doc.rect(0, 0, pageWidth, 40, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('MURICI TRANSPORTES', pageWidth / 2, 18, { align: 'center' });
+    doc.setFontSize(14);
+    doc.text('Relatório de Manutenções', pageWidth / 2, 30, { align: 'center' });
+    
+    doc.setTextColor(0, 0, 0);
+    let y = 55;
+    
+    const filteredRequests = maintenanceRequests.filter(request => 
+      maintenanceFilter === 'todos' || request.status === maintenanceFilter
+    );
+    
+    doc.setFontSize(10);
+    doc.text(`Total de registros: ${filteredRequests.length}`, 20, y);
+    doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth - 60, y);
+    y += 15;
+    
+    doc.setFillColor(240, 240, 240);
+    doc.rect(15, y - 5, pageWidth - 30, 10, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text('Placa', 20, y);
+    doc.text('Tipo', 55, y);
+    doc.text('Status', 100, y);
+    doc.text('Prioridade', 130, y);
+    doc.text('Data', 165, y);
+    y += 12;
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    
+    filteredRequests.forEach((m, index) => {
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+      
+      if (index % 2 === 0) {
+        doc.setFillColor(250, 250, 250);
+        doc.rect(15, y - 4, pageWidth - 30, 8, 'F');
+      }
+      
+      doc.text(m.vehicle_plate, 20, y);
+      doc.text(m.maintenance_type.substring(0, 20), 55, y);
+      doc.text(m.status === 'concluida' ? 'Concluída' : m.status === 'em_andamento' ? 'Em Andamento' : 'Pendente', 100, y);
+      doc.text(m.priority === 'urgente' ? 'Urgente' : m.priority === 'alta' ? 'Alta' : m.priority === 'media' ? 'Média' : 'Baixa', 130, y);
+      doc.text(new Date(m.created_at).toLocaleDateString('pt-BR'), 165, y);
+      y += 8;
+    });
+    
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.setFontSize(8);
+    doc.setTextColor(128, 128, 128);
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 20, pageHeight - 10);
+    doc.text('Murici Transportes - Sistema de Gestão de Frota', pageWidth - 20, pageHeight - 10, { align: 'right' });
+    
+    doc.save(`manutencoes_${maintenanceFilter}_${new Date().toISOString().split('T')[0]}.pdf`);
+    
+    toast({
+      title: "PDF Gerado",
+      description: `Lista de manutenções exportada com sucesso!`
+    });
+  };
 
   // useEffect para calcular automaticamente a distância quando origem e destino mudam
   useEffect(() => {
