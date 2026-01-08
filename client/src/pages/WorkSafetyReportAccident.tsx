@@ -200,7 +200,7 @@ export default function WorkSafetyReportAccident() {
     return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
   };
 
-  const totalSections = 6;
+  const totalSections = 7;
 
   if (success) {
     return (
@@ -294,13 +294,106 @@ export default function WorkSafetyReportAccident() {
 
         {currentSection === 1 && (
           <Card className="shadow-xl">
+            <CardHeader className="border-b bg-white">
+              <CardTitle className="text-xl font-bold text-gray-900">ACIDENTES & INCIDENTES MURICI</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6 bg-white">
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                <p className="font-semibold text-yellow-800">
+                  PRAZO PARA ENVIO DAS INFORMAÇÕES: 4 horas (a partir do momento da ocorrência)
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-gray-800">Deverão ser reportadas aqui:</h3>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex gap-2">
+                    <span className="font-semibold text-red-700">• Acidentes:</span>
+                    <span className="text-gray-700">ocorrências que causem lesões ou fatalidade ao motorista e/ou terceiros;</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="font-semibold text-orange-700">• Quase Acidentes <em>(Near Miss)</em>:</span>
+                    <span className="text-gray-700">ocorrências que possuem potencial de causar lesão ou morte ao motorista e/ou terceiros, como queda de materiais, falha no equipamento, etc.;</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="font-semibold text-yellow-700">• Danos Materiais:</span>
+                    <span className="text-gray-700">ocorrências que não possuem potencial de lesão, mas que resultou em avaria do veículo, equipamentos, estruturas ou pacotes;</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="font-semibold text-green-700">• Danos Ambientais:</span>
+                    <span className="text-gray-700">ocorrências que não possuem potencial de lesão, mas que resultou em danos ao meio ambiente (contaminação do solo, do ar, da água, poluição, etc).</span>
+                  </li>
+                </ul>
+                <p className="text-sm text-gray-600 italic">Em caso de dúvidas, entre em contato com a Segurança do Trabalho.</p>
+              </div>
+
+              <div className="border rounded-lg p-4 bg-gray-50">
+                <h4 className="font-semibold text-gray-800 mb-4 text-center">Título da imagem</h4>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="col-span-1 row-span-2 flex items-center justify-center">
+                    <div className="bg-white border-2 border-gray-300 rounded p-2 text-center">
+                      <span className="font-bold text-blue-800">Murici</span>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-red-600 text-white rounded p-2 text-center">
+                    <div className="font-bold">1° COMUNICAÇÃO</div>
+                    <div className="text-[10px] mt-1">Comunicar imediatamente a equipe de segurança do trabalho e sinistro, através do reporte inicial nos grupos COLISÃO ou MURICI ACIDENTES.</div>
+                  </div>
+                  
+                  <div className="bg-green-600 text-white rounded p-2 text-center">
+                    <div className="font-bold">4° COLETA DE DADOS</div>
+                    <div className="text-[10px] mt-1">Enviar as fotos, atestados, BO, demais documentos e informações comportamentais para realizarmos a INVESTIGAÇÃO DO ACIDENTE.</div>
+                  </div>
+
+                  <div className="bg-red-500 text-white rounded p-2 text-center">
+                    <div className="font-bold">2° INFORMAÇÕES</div>
+                    <div className="text-[10px] mt-1">Coletar todas as informações da ocorrência de forma detalhada.</div>
+                  </div>
+                  
+                  <div className="bg-gray-800 text-white rounded p-2 text-center flex items-center justify-center">
+                    <div>
+                      <div className="font-bold">COMUNICAÇÃO</div>
+                      <div className="font-bold">ACIDENTE</div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-green-500 text-white rounded p-2 text-center">
+                    <div className="font-bold">5° TREINAMENTOS</div>
+                    <div className="text-[10px] mt-1">Checar se o colaborador envolvido na ocorrência está com todos os treinamentos realizados.</div>
+                  </div>
+
+                  <div className="col-start-2 bg-red-400 text-white rounded p-2 text-center">
+                    <div className="font-bold">3° REPORTE</div>
+                    <div className="text-[10px] mt-1">Realizar o preenchimento do forms, no prazo de 6hs.</div>
+                  </div>
+                  
+                  <div className="bg-green-400 text-white rounded p-2 text-center">
+                    <div className="font-bold">6° REUNIÃO</div>
+                    <div className="text-[10px] mt-1">Participação na reunião de investigação de acidente.</div>
+                  </div>
+                </div>
+              </div>
+
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                onClick={() => setCurrentSection(2)}
+              >
+                Continuar para a próxima seção <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {currentSection === 2 && (
+          <Card className="shadow-xl">
             <CardHeader className="border-b">
               <div className="flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-blue-600" />
-                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 1 de {totalSections}</div>
+                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 2 de {totalSections}</div>
               </div>
-              <CardTitle className="text-xl mt-2">Dados do Registro</CardTitle>
-              <CardDescription>Informações sobre quem está reportando e operação.</CardDescription>
+              <CardTitle className="text-xl mt-2">Formulário de Registro de Ocorrência | Operações Murici</CardTitle>
+              <CardDescription>Atenção às descrições, pois orientam como devem ser feitos os preenchimentos.</CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="space-y-4">
@@ -377,22 +470,24 @@ export default function WorkSafetyReportAccident() {
                 </div>
               )}
 
-              <Button 
-                className="w-full bg-blue-600 hover:bg-blue-700"
-                onClick={() => setCurrentSection(2)}
-              >
-                Continuar <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(1)}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => setCurrentSection(3)}>
+                  Continuar <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
 
-        {currentSection === 2 && (
+        {currentSection === 3 && (
           <Card className="shadow-xl">
             <CardHeader className="border-b">
               <div className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-blue-600" />
-                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 2 de {totalSections}</div>
+                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 3 de {totalSections}</div>
               </div>
               <CardTitle className="text-xl mt-2">Localização e Rota</CardTitle>
               <CardDescription>Informações sobre milha, regional e local da ocorrência.</CardDescription>
@@ -486,10 +581,10 @@ export default function WorkSafetyReportAccident() {
               )}
 
               <div className="flex gap-3">
-                <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(1)}>
+                <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(2)}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                 </Button>
-                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => setCurrentSection(3)}>
+                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => setCurrentSection(4)}>
                   Continuar <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -497,12 +592,12 @@ export default function WorkSafetyReportAccident() {
           </Card>
         )}
 
-        {currentSection === 3 && (
+        {currentSection === 4 && (
           <Card className="shadow-xl">
             <CardHeader className="border-b">
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-blue-600" />
-                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 3 de {totalSections}</div>
+                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 4 de {totalSections}</div>
               </div>
               <CardTitle className="text-xl mt-2">Dados da Ocorrência</CardTitle>
               <CardDescription>Data, hora, causa e descrição detalhada do ocorrido.</CardDescription>
@@ -555,10 +650,10 @@ export default function WorkSafetyReportAccident() {
               </div>
 
               <div className="flex gap-3">
-                <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(2)}>
+                <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(3)}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                 </Button>
-                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => setCurrentSection(4)}>
+                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => setCurrentSection(5)}>
                   Continuar <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -566,12 +661,12 @@ export default function WorkSafetyReportAccident() {
           </Card>
         )}
 
-        {currentSection === 4 && (
+        {currentSection === 5 && (
           <Card className="shadow-xl">
             <CardHeader className="border-b">
               <div className="flex items-center gap-2">
                 <Truck className="h-5 w-5 text-blue-600" />
-                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 4 de {totalSections}</div>
+                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 5 de {totalSections}</div>
               </div>
               <CardTitle className="text-xl mt-2">Dados do Veículo</CardTitle>
               <CardDescription>Informações sobre o veículo envolvido na ocorrência.</CardDescription>
@@ -661,10 +756,10 @@ export default function WorkSafetyReportAccident() {
               </div>
 
               <div className="flex gap-3">
-                <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(3)}>
+                <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(4)}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                 </Button>
-                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => setCurrentSection(5)}>
+                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => setCurrentSection(6)}>
                   Continuar <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -672,12 +767,12 @@ export default function WorkSafetyReportAccident() {
           </Card>
         )}
 
-        {currentSection === 5 && (
+        {currentSection === 6 && (
           <Card className="shadow-xl">
             <CardHeader className="border-b">
               <div className="flex items-center gap-2">
                 <UserCircle className="h-5 w-5 text-blue-600" />
-                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 5 de {totalSections}</div>
+                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 6 de {totalSections}</div>
               </div>
               <CardTitle className="text-xl mt-2">Dados do Colaborador</CardTitle>
               <CardDescription>Informações sobre o motorista/colaborador envolvido.</CardDescription>
@@ -768,10 +863,10 @@ export default function WorkSafetyReportAccident() {
               </div>
 
               <div className="flex gap-3">
-                <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(4)}>
+                <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(5)}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                 </Button>
-                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => setCurrentSection(6)}>
+                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => setCurrentSection(7)}>
                   Continuar <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -779,12 +874,12 @@ export default function WorkSafetyReportAccident() {
           </Card>
         )}
 
-        {currentSection === 6 && (
+        {currentSection === 7 && (
           <Card className="shadow-xl">
             <CardHeader className="border-b">
               <div className="flex items-center gap-2">
                 <Stethoscope className="h-5 w-5 text-blue-600" />
-                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 6 de {totalSections}</div>
+                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 7 de {totalSections}</div>
               </div>
               <CardTitle className="text-xl mt-2">Informações Complementares</CardTitle>
               <CardDescription>Sobre saúde dos envolvidos, registro policial, etc.</CardDescription>
@@ -921,7 +1016,7 @@ export default function WorkSafetyReportAccident() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button type="button" variant="outline" className="flex-1" onClick={() => setCurrentSection(5)}>
+                  <Button type="button" variant="outline" className="flex-1" onClick={() => setCurrentSection(6)}>
                     <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                   </Button>
                   <Button
