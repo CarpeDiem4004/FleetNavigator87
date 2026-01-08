@@ -5131,9 +5131,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           motorista_id,
           motorista_nome,
           vehicle_plate,
+          vehicle_model,
+          vehicle_type,
           description,
           urgency,
           status,
+          priority,
+          maintenance_type,
+          workshop_name,
+          driver_caused,
+          stop_date,
+          expected_completion_at,
+          estimated_cost,
+          labor_cost,
+          parts_cost,
+          other_costs,
+          parts_used,
           created_at,
           updated_at,
           completed_at,
@@ -5561,32 +5574,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { 
         motorista_id, 
-        motorista_nome, 
+        motorista_nome,
+        driver_name,
         vehicle_plate, 
+        vehicle_model,
+        vehicle_type = 'cavalo',
         description, 
-        urgency = 'normal' 
+        urgency = 'normal',
+        priority = 'media',
+        maintenance_type,
+        workshop_name,
+        driver_caused = false,
+        stop_date,
+        expected_completion_at,
+        estimated_cost = 0,
+        labor_cost = 0,
+        parts_cost = 0,
+        other_costs = 0,
+        parts_used
       } = req.body;
       
-      if (!motorista_id || !motorista_nome || !vehicle_plate || !description) {
+      // Permitir criação sem motorista_id para o formulário administrativo
+      if (!vehicle_plate || !description) {
         return res.status(400).json({
           success: false,
-          message: 'Dados incompletos. Informe ID do motorista, nome, placa e descrição.'
+          message: 'Dados incompletos. Informe placa e descrição.'
         });
       }
       
       const insertQuery = `
         INSERT INTO linehall_maintenance 
-        (motorista_id, motorista_nome, vehicle_plate, description, urgency, status, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, 'pendente', NOW(), NOW())
+        (motorista_id, motorista_nome, vehicle_plate, vehicle_model, vehicle_type, description, urgency, 
+         priority, maintenance_type, workshop_name, driver_caused, stop_date, expected_completion_at,
+         estimated_cost, labor_cost, parts_cost, other_costs, parts_used, status, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, 'pendente', NOW(), NOW())
         RETURNING *
       `;
       
       const result = await pool.query(insertQuery, [
-        motorista_id,
-        motorista_nome,
+        motorista_id || null,
+        motorista_nome || driver_name || null,
         vehicle_plate.toUpperCase(),
+        vehicle_model || null,
+        vehicle_type,
         description,
-        urgency
+        urgency,
+        priority,
+        maintenance_type || null,
+        workshop_name || null,
+        driver_caused === true || driver_caused === 'true',
+        stop_date || null,
+        expected_completion_at || null,
+        estimated_cost || 0,
+        labor_cost || 0,
+        parts_cost || 0,
+        other_costs || 0,
+        parts_used || null
       ]);
       
       const newRequest = result.rows[0];
@@ -5595,12 +5638,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await createPlateHistory(
         vehicle_plate,
         'maintenance_request_created',
-        `Solicitação de manutenção criada por ${motorista_nome}`,
+        `Solicitação de manutenção criada${motorista_nome || driver_name ? ` por ${motorista_nome || driver_name}` : ''}`,
         {
           maintenance_id: newRequest.id,
           motorista_id: motorista_id,
-          motorista_nome: motorista_nome,
+          motorista_nome: motorista_nome || driver_name,
           urgency: urgency,
+          priority: priority,
+          maintenance_type: maintenance_type,
           description: description
         }
       );
