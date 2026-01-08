@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, CheckCircle, Clock, LineChart, FileText, Users, UserPlus, ClipboardList, ExternalLink, Copy, Check, Share2 } from 'lucide-react';
+import { ShieldCheck, CheckCircle, Clock, LineChart, FileText, Users, UserPlus, ClipboardList, ExternalLink, Copy, Check, Share2, AlertTriangle, AlertCircle, Car, Flame, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export default function WorkSafetyPage() {
   const [copied, setCopied] = useState(false);
@@ -15,7 +18,27 @@ export default function WorkSafetyPage() {
     queryKey: ['/api/work-safety/stats'],
   });
 
+  const { data: accidentStatsData } = useQuery<{ success: boolean; data: { 
+    total: number; 
+    acidentes: number; 
+    quase_acidentes: number; 
+    danos_materiais: number; 
+    danos_ambientais: number;
+    com_vitima: number;
+    dias_sem_acidente: number;
+  }}>({
+    queryKey: ['/api/work-safety/accidents/stats'],
+  });
+
+  const { data: recentAccidentsData } = useQuery<{ success: boolean; data: any[] }>({
+    queryKey: ['/api/work-safety/accidents'],
+  });
+
   const stats = statsData?.data || { total: 0, pgrAprovados: 0, comEar: 0, totalBases: 0 };
+  const accidentStats = accidentStatsData?.data || { 
+    total: 0, acidentes: 0, quase_acidentes: 0, danos_materiais: 0, danos_ambientais: 0, com_vitima: 0, dias_sem_acidente: 0 
+  };
+  const recentAccidents = (recentAccidentsData?.data || []).slice(0, 5);
 
   const portalLink = typeof window !== 'undefined' 
     ? `${window.location.origin}/work-safety/portal`
@@ -131,6 +154,106 @@ export default function WorkSafetyPage() {
             </CardContent>
           </Card>
 
+          <Card className="border-red-200 bg-red-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-red-900">
+                <AlertTriangle className="h-5 w-5" />
+                Acidentes e Incidentes
+              </CardTitle>
+              <CardDescription>
+                Registro e acompanhamento de ocorrências de segurança
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm border-l-4 border-red-500">
+                  <p className="text-3xl font-bold text-red-600">{accidentStats.acidentes}</p>
+                  <p className="text-sm text-gray-600">Acidentes</p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm border-l-4 border-orange-500">
+                  <p className="text-3xl font-bold text-orange-600">{accidentStats.quase_acidentes}</p>
+                  <p className="text-sm text-gray-600">Quase Acidentes</p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm border-l-4 border-yellow-500">
+                  <p className="text-3xl font-bold text-yellow-600">{accidentStats.danos_materiais}</p>
+                  <p className="text-sm text-gray-600">Danos Materiais</p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm border-l-4 border-green-500">
+                  <p className="text-3xl font-bold text-green-600">{accidentStats.danos_ambientais}</p>
+                  <p className="text-sm text-gray-600">Danos Ambientais</p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm border-l-4 border-purple-500">
+                  <p className="text-3xl font-bold text-purple-600">{accidentStats.com_vitima}</p>
+                  <p className="text-sm text-gray-600">Com Vítima</p>
+                </div>
+              </div>
+
+              {recentAccidents.length > 0 && (
+                <div className="bg-white rounded-lg p-4 mt-4">
+                  <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Últimas Ocorrências Registradas
+                  </h4>
+                  <div className="space-y-2">
+                    {recentAccidents.map((accident: any, index: number) => (
+                      <div key={accident.id || index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-full ${
+                            accident.tipo_ocorrencia === 'acidente' ? 'bg-red-100' :
+                            accident.tipo_ocorrencia === 'quase_acidente' ? 'bg-orange-100' :
+                            accident.tipo_ocorrencia === 'danos_materiais' ? 'bg-yellow-100' :
+                            'bg-green-100'
+                          }`}>
+                            {accident.tipo_ocorrencia === 'acidente' ? <AlertTriangle className="h-4 w-4 text-red-600" /> :
+                             accident.tipo_ocorrencia === 'quase_acidente' ? <AlertCircle className="h-4 w-4 text-orange-600" /> :
+                             accident.tipo_ocorrencia === 'danos_materiais' ? <Car className="h-4 w-4 text-yellow-600" /> :
+                             <Flame className="h-4 w-4 text-green-600" />}
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{accident.operacao || 'Operação não especificada'}</p>
+                            <p className="text-xs text-gray-500">
+                              {accident.data_hora ? format(new Date(accident.data_hora), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'Data não informada'}
+                              {accident.local && ` - ${accident.local}`}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant={
+                          accident.tipo_ocorrencia === 'acidente' ? 'destructive' :
+                          accident.tipo_ocorrencia === 'quase_acidente' ? 'secondary' : 'outline'
+                        }>
+                          {accident.tipo_ocorrencia === 'acidente' ? 'Acidente' :
+                           accident.tipo_ocorrencia === 'quase_acidente' ? 'Quase Acidente' :
+                           accident.tipo_ocorrencia === 'danos_materiais' ? 'Danos Materiais' : 'Danos Ambientais'}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {recentAccidents.length === 0 && (
+                <div className="bg-white rounded-lg p-6 mt-4 text-center">
+                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />
+                  <p className="text-gray-600">Nenhuma ocorrência registrada ainda.</p>
+                  <p className="text-sm text-gray-500 mt-1">As ocorrências reportadas aparecerão aqui.</p>
+                </div>
+              )}
+
+              <div className="mt-4 flex gap-2 justify-center">
+                <Link href="/work-safety/portal">
+                  <Button variant="outline" className="border-red-300 text-red-700 hover:bg-red-100" data-testid="button-access-portal">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Acessar Portal
+                  </Button>
+                </Link>
+                <Button className="bg-red-600 hover:bg-red-700" data-testid="button-view-all-accidents">
+                  <Eye className="mr-2 h-4 w-4" />
+                  Ver Todas as Ocorrências
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="pb-2">
@@ -146,7 +269,7 @@ export default function WorkSafetyPage() {
             
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-2xl font-bold">143</CardTitle>
+                <CardTitle className="text-2xl font-bold">{accidentStats.dias_sem_acidente > 0 ? accidentStats.dias_sem_acidente : '—'}</CardTitle>
                 <CardDescription>Dias sem acidentes</CardDescription>
               </CardHeader>
             </Card>
