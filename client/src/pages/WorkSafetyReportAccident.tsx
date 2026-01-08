@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle, Phone, User, Mail, Clock, Shield, FileText, Users, AlertCircle, Leaf, Wrench } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle, Phone, User, Mail, Clock, Shield, Car, Users, Stethoscope, FileText, Building2, MapPin, Calendar, Truck, UserCircle, ClipboardList } from 'lucide-react';
 import { Link } from 'wouter';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -27,6 +28,49 @@ const OPERACOES = [
   'Outro'
 ];
 
+const MILHAS = [
+  { value: 'first_mile_fm', label: 'First Mile - FM' },
+  { value: 'melione_fm', label: 'Melione - FM' },
+  { value: 'line_haul_lh', label: 'Line Haul - LH' },
+  { value: 'last_mile_lm', label: 'Last Mile - LM' },
+  { value: 'middle_mile_mm', label: 'Middle Mile - MM' },
+  { value: 'na', label: 'N/A' }
+];
+
+const REGIONAIS = [
+  'MEGAS OTR', 'SPI', 'SPII', 'SPIII', 'FULLFBM', 'SPIO', 'RIES', 'MG', 'NONECO', 'SUL', 'N/A'
+];
+
+const CAUSAS_IMEDIATAS = [
+  'Agressão Física',
+  'Assalto',
+  'Ataque de animais',
+  'Atropelamento de animal',
+  'Atropelamento de Pedestre',
+  'Capotamento',
+  'Colisão Frontal',
+  'Colisão Traseira',
+  'Colisão Lateral',
+  'Engavetamento',
+  'Incêndio',
+  'Mal súbito',
+  'Tombamento',
+  'Colisão com objeto/estrutura',
+  'Não relacionado ao trânsito (Queda, torção, pega inadequada de pacotes, etc.)'
+];
+
+const MODELOS_VEICULO = [
+  'Caminhão',
+  'Carreta',
+  'Fiorino',
+  'Motocicleta',
+  'Utilitário',
+  'Van Branca/Murici',
+  'Van Amarela Meli (Adesivada)',
+  'Veículo de Passeio',
+  'N/A'
+];
+
 export default function WorkSafetyReportAccident() {
   const { toast } = useToast();
   const [currentSection, setCurrentSection] = useState(1);
@@ -37,15 +81,49 @@ export default function WorkSafetyReportAccident() {
     reportadoPor: '',
     emailCorporativo: '',
     telefoneWhatsApp: '',
-    tipoOcorrencia: '' as 'acidente' | 'quase_acidente' | 'danos_materiais' | 'danos_ambientais' | '',
-    dataHoraOcorrencia: '',
-    localOcorrencia: '',
-    descricaoOcorrencia: '',
-    houveVitima: '',
-    descricaoVitima: '',
-    motoristaNome: '',
+    coordenadorBase: '',
+    nomeResponsavelMeli: '',
+    milha: '',
+    regional: '',
+    baseUnidade: '',
+    enderecoOcorrencia: '',
+    idRota: '',
+    transitTimeOrh: '',
+    inicioRota: '',
+    dataOcorrencia: '',
+    horarioOcorrencia: '',
+    causaImediata: '',
+    descricaoDetalhada: '',
     placaVeiculo: '',
+    modeloVeiculo: '',
+    anoVeiculo: '',
+    frotaFixa: '',
+    tipoFrota: '',
+    tipoFrotaOutro: '',
+    terceiroEnvolvido: '',
+    nomeColaborador: '',
+    idMatricula: '',
+    funcao: '',
+    funcaoOutro: '',
+    idade: '',
+    contratacao: '',
+    contratacaoOutro: '',
+    dataAdmissao: '',
+    dataPrimeiraHabilitacao: '',
+    partesCorpoAtingidas: '',
+    diasAfastado: '',
+    foiSocorrido: '',
+    atendimentoMedico: '',
+    localAtendimento: '',
+    houveInternacao: '',
+    nomeMedicoCrm: '',
+    cid: '',
+    registroPolicial: '',
+    protocoloBO: '',
+    estadoSaudeEnvolvidos: '',
   });
+
+  const isMeliOperation = formData.operacao === 'Mercado Livre (MELI)';
 
   const mutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -54,14 +132,43 @@ export default function WorkSafetyReportAccident() {
         reportado_por: data.reportadoPor,
         email_corporativo: data.emailCorporativo,
         telefone_whatsapp: data.telefoneWhatsApp,
-        tipo_ocorrencia: data.tipoOcorrencia,
-        data_hora_ocorrencia: data.dataHoraOcorrencia,
-        local_ocorrencia: data.localOcorrencia,
-        descricao_ocorrencia: data.descricaoOcorrencia,
-        houve_vitima: data.houveVitima === 'sim',
-        descricao_vitima: data.descricaoVitima,
-        motorista_nome: data.motoristaNome,
+        coordenador_base: data.coordenadorBase,
+        nome_responsavel_meli: data.nomeResponsavelMeli,
+        milha: data.milha,
+        regional: data.regional,
+        base_unidade: data.baseUnidade,
+        endereco_ocorrencia: data.enderecoOcorrencia,
+        id_rota: data.idRota,
+        transit_time_orh: data.transitTimeOrh,
+        inicio_rota: data.inicioRota,
+        data_ocorrencia: data.dataOcorrencia,
+        horario_ocorrencia: data.horarioOcorrencia,
+        causa_imediata: data.causaImediata,
+        descricao_detalhada: data.descricaoDetalhada,
         placa_veiculo: data.placaVeiculo,
+        modelo_veiculo: data.modeloVeiculo,
+        ano_veiculo: data.anoVeiculo,
+        frota_fixa: data.frotaFixa,
+        tipo_frota: data.tipoFrota === 'Outro' ? data.tipoFrotaOutro : data.tipoFrota,
+        terceiro_envolvido: data.terceiroEnvolvido === 'sim',
+        nome_colaborador: data.nomeColaborador,
+        id_matricula: data.idMatricula,
+        funcao: data.funcao === 'Outro' ? data.funcaoOutro : data.funcao,
+        idade: data.idade,
+        contratacao: data.contratacao === 'Outro' ? data.contratacaoOutro : data.contratacao,
+        data_admissao: data.dataAdmissao,
+        data_primeira_habilitacao: data.dataPrimeiraHabilitacao,
+        partes_corpo_atingidas: data.partesCorpoAtingidas,
+        dias_afastado: data.diasAfastado,
+        foi_socorrido: data.foiSocorrido,
+        atendimento_medico: data.atendimentoMedico,
+        local_atendimento: data.localAtendimento,
+        houve_internacao: data.houveInternacao,
+        nome_medico_crm: data.nomeMedicoCrm,
+        cid: data.cid,
+        registro_policial: data.registroPolicial,
+        protocolo_bo: data.protocoloBO,
+        estado_saude_envolvidos: data.estadoSaudeEnvolvidos,
       });
       return response;
     },
@@ -83,22 +190,6 @@ export default function WorkSafetyReportAccident() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.operacao || !formData.reportadoPor || !formData.emailCorporativo || !formData.telefoneWhatsApp) {
-      toast({
-        title: 'Campos obrigatórios',
-        description: 'Por favor, preencha todos os campos obrigatórios.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    if (!formData.tipoOcorrencia || !formData.dataHoraOcorrencia || !formData.localOcorrencia || !formData.descricaoOcorrencia) {
-      toast({
-        title: 'Campos obrigatórios',
-        description: 'Por favor, preencha todos os campos da ocorrência.',
-        variant: 'destructive',
-      });
-      return;
-    }
     mutation.mutate(formData);
   };
 
@@ -109,16 +200,7 @@ export default function WorkSafetyReportAccident() {
     return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
   };
 
-  const canAdvanceToSection2 = () => {
-    return true;
-  };
-
-  const canAdvanceToSection3 = () => {
-    if (!formData.operacao) return false;
-    if (formData.operacao === 'Outro' && !formData.operacaoOutro) return false;
-    if (!formData.reportadoPor || !formData.emailCorporativo || !formData.telefoneWhatsApp) return false;
-    return true;
-  };
+  const totalSections = 6;
 
   if (success) {
     return (
@@ -144,19 +226,16 @@ export default function WorkSafetyReportAccident() {
               setSuccess(false);
               setCurrentSection(1);
               setFormData({
-                operacao: '',
-                operacaoOutro: '',
-                reportadoPor: '',
-                emailCorporativo: '',
-                telefoneWhatsApp: '',
-                tipoOcorrencia: '',
-                dataHoraOcorrencia: '',
-                localOcorrencia: '',
-                descricaoOcorrencia: '',
-                houveVitima: '',
-                descricaoVitima: '',
-                motoristaNome: '',
-                placaVeiculo: '',
+                operacao: '', operacaoOutro: '', reportadoPor: '', emailCorporativo: '', telefoneWhatsApp: '',
+                coordenadorBase: '', nomeResponsavelMeli: '', milha: '', regional: '', baseUnidade: '',
+                enderecoOcorrencia: '', idRota: '', transitTimeOrh: '', inicioRota: '', dataOcorrencia: '',
+                horarioOcorrencia: '', causaImediata: '', descricaoDetalhada: '', placaVeiculo: '',
+                modeloVeiculo: '', anoVeiculo: '', frotaFixa: '', tipoFrota: '', tipoFrotaOutro: '',
+                terceiroEnvolvido: '', nomeColaborador: '', idMatricula: '', funcao: '', funcaoOutro: '',
+                idade: '', contratacao: '', contratacaoOutro: '', dataAdmissao: '', dataPrimeiraHabilitacao: '',
+                partesCorpoAtingidas: '', diasAfastado: '', foiSocorrido: '', atendimentoMedico: '',
+                localAtendimento: '', houveInternacao: '', nomeMedicoCrm: '', cid: '', registroPolicial: '',
+                protocoloBO: '', estadoSaudeEnvolvidos: '',
               });
             }} data-testid="button-new-report">
               Registrar Nova Comunicação
@@ -166,6 +245,24 @@ export default function WorkSafetyReportAccident() {
       </div>
     );
   }
+
+  const renderProgressBar = () => (
+    <div className="flex items-center justify-center gap-1 mb-6">
+      {Array.from({ length: totalSections }, (_, i) => (
+        <div key={i} className="flex items-center">
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+            currentSection > i + 1 ? 'bg-green-500 text-white' :
+            currentSection === i + 1 ? 'bg-white text-blue-600' : 'bg-white/30 text-white'
+          }`}>
+            {currentSection > i + 1 ? '✓' : i + 1}
+          </div>
+          {i < totalSections - 1 && (
+            <div className={`w-6 h-1 ${currentSection > i + 1 ? 'bg-green-500' : 'bg-white/30'}`}></div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 py-8 px-4">
@@ -186,129 +283,24 @@ export default function WorkSafetyReportAccident() {
               <div>
                 <CardTitle className="text-2xl">ACIDENTES & INCIDENTES MURICI</CardTitle>
                 <CardDescription className="text-red-100">
-                  Comunicação de Ocorrências de Segurança do Trabalho
+                  PRAZO DE ENVIO DAS INFORMAÇÕES: 4 horas (a partir do momento da ocorrência)
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
         </Card>
 
-        <div className="flex items-center justify-center gap-2 mb-6">
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentSection >= 1 ? 'bg-white text-blue-600' : 'bg-white/30 text-white'} font-bold`}>1</div>
-          <div className={`w-12 h-1 ${currentSection >= 2 ? 'bg-white' : 'bg-white/30'}`}></div>
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentSection >= 2 ? 'bg-white text-blue-600' : 'bg-white/30 text-white'} font-bold`}>2</div>
-          <div className={`w-12 h-1 ${currentSection >= 3 ? 'bg-white' : 'bg-white/30'}`}></div>
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentSection >= 3 ? 'bg-white text-blue-600' : 'bg-white/30 text-white'} font-bold`}>3</div>
-        </div>
+        {renderProgressBar()}
 
         {currentSection === 1 && (
           <Card className="shadow-xl">
             <CardHeader className="border-b">
               <div className="flex items-center gap-2">
-                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 1 de 3</div>
+                <Building2 className="h-5 w-5 text-blue-600" />
+                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 1 de {totalSections}</div>
               </div>
-              <CardTitle className="text-xl mt-2">Informações Importantes</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-6">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-center gap-2 text-red-700 font-semibold mb-2">
-                  <Clock className="h-5 w-5" />
-                  PRAZO DE ENVIO DAS INFORMAÇÕES: 4 horas (a partir do momento da ocorrência)
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="font-semibold text-gray-800">Deverão ser reportadas aqui:</h3>
-                
-                <div className="grid gap-3">
-                  <div className="flex gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
-                    <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-semibold text-red-700">Acidentes:</span>
-                      <span className="text-gray-700"> ocorrências que causem lesões ou fatalidade ao motorista e/ou terceiros;</span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 p-3 bg-orange-50 rounded-lg border border-orange-100">
-                    <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-semibold text-orange-700">Quase Acidentes (Near Miss):</span>
-                      <span className="text-gray-700"> ocorrências que possuem potencial de causar lesão ou morte ao motorista e/ou terceiros, como queda de materiais, falha no equipamento, etc;</span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
-                    <Wrench className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-semibold text-yellow-700">Danos Materiais:</span>
-                      <span className="text-gray-700"> ocorrências que não possuem potencial de lesão, mas que resultou em avaria do veículo, equipamentos, estruturas ou pacotes;</span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 p-3 bg-green-50 rounded-lg border border-green-100">
-                    <Leaf className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-semibold text-green-700">Danos Ambientais:</span>
-                      <span className="text-gray-700"> ocorrências que não possuem potencial de lesão, mas que resultou em danos ao meio ambiente (contaminação do solo, do ar, da água, poluição, etc).</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-blue-800 text-sm">
-                  Em caso de dúvidas, entre em contato com a Segurança do Trabalho.
-                </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-lg p-4 border">
-                <h4 className="font-semibold text-gray-800 mb-4 text-center">Fluxo de Comunicação de Acidente</h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-center text-sm">
-                  <div className="bg-blue-600 text-white rounded-lg p-3">
-                    <div className="font-bold mb-1">1° COMUNICAÇÃO</div>
-                    <div className="text-xs opacity-90">Comunique imediatamente o trabalho e sinistro através do registro desta COLISÃO ou MURICI ACIDENTES</div>
-                  </div>
-                  <div className="bg-blue-500 text-white rounded-lg p-3">
-                    <div className="font-bold mb-1">2° INFORMAÇÕES</div>
-                    <div className="text-xs opacity-90">Coletar todas as informações da ocorrência de forma detalhada</div>
-                  </div>
-                  <div className="bg-blue-400 text-white rounded-lg p-3">
-                    <div className="font-bold mb-1">3° REPORTE</div>
-                    <div className="text-xs opacity-90">Realizar o preenchimento do forms, no prazo de 6hrs</div>
-                  </div>
-                  <div className="bg-green-600 text-white rounded-lg p-3">
-                    <div className="font-bold mb-1">4° COLETA DE DADOS</div>
-                    <div className="text-xs opacity-90">Envio de fotos, enviando informações comportamentais para INVESTIGAÇÃO DO ACIDENTE</div>
-                  </div>
-                  <div className="bg-green-500 text-white rounded-lg p-3">
-                    <div className="font-bold mb-1">5° TREINAMENTOS</div>
-                    <div className="text-xs opacity-90">Checar se o colaborador envolvido na ocorrência está com todos os treinamentos realizados</div>
-                  </div>
-                  <div className="bg-green-400 text-white rounded-lg p-3">
-                    <div className="font-bold mb-1">6° REUNIÃO</div>
-                    <div className="text-xs opacity-90">Participação na reunião de investigação de acidente</div>
-                  </div>
-                </div>
-              </div>
-
-              <Button 
-                className="w-full bg-blue-600 hover:bg-blue-700"
-                onClick={() => setCurrentSection(2)}
-                data-testid="button-next-section-1"
-              >
-                Continuar para a próxima seção
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {currentSection === 2 && (
-          <Card className="shadow-xl">
-            <CardHeader className="border-b">
-              <div className="flex items-center gap-2">
-                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 2 de 3</div>
-              </div>
-              <CardTitle className="text-xl mt-2">Formulário de Registro de Ocorrência | Operações Murici</CardTitle>
-              <CardDescription>Atenção às descrições, pois orientam como devem ser feitos os preenchimentos.</CardDescription>
+              <CardTitle className="text-xl mt-2">Dados do Registro</CardTitle>
+              <CardDescription>Informações sobre quem está reportando e operação.</CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="space-y-4">
@@ -319,100 +311,186 @@ export default function WorkSafetyReportAccident() {
                   className="grid grid-cols-1 md:grid-cols-2 gap-2"
                 >
                   {OPERACOES.map((op) => (
-                    <div key={op} className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50">
-                      <RadioGroupItem value={op} id={`op-${op}`} data-testid={`radio-operacao-${op.toLowerCase().replace(/[^a-z]/g, '-')}`} />
+                    <div key={op} className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 border">
+                      <RadioGroupItem value={op} id={`op-${op}`} />
                       <Label htmlFor={`op-${op}`} className="font-normal cursor-pointer flex-1">{op}</Label>
                     </div>
                   ))}
                 </RadioGroup>
-
                 {formData.operacao === 'Outro' && (
-                  <div className="ml-6 space-y-2">
-                    <Label htmlFor="operacaoOutro">Especifique a operação *</Label>
-                    <Input
-                      id="operacaoOutro"
-                      placeholder="Digite o nome da operação"
-                      value={formData.operacaoOutro}
-                      onChange={(e) => setFormData({...formData, operacaoOutro: e.target.value})}
-                      data-testid="input-operacao-outro"
-                    />
-                  </div>
+                  <Input
+                    placeholder="Especifique a operação"
+                    value={formData.operacaoOutro}
+                    onChange={(e) => setFormData({...formData, operacaoOutro: e.target.value})}
+                  />
                 )}
               </div>
 
-              <div className="border-t pt-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="reportadoPor" className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Reportado Por *
-                  </Label>
-                  <p className="text-sm text-gray-500">Nome completo da pessoa que está registrando essa comunicação.</p>
+                  <Label>Reportado Por *</Label>
                   <Input
-                    id="reportadoPor"
-                    placeholder="Texto de resposta curta"
+                    placeholder="Nome completo"
                     value={formData.reportadoPor}
                     onChange={(e) => setFormData({...formData, reportadoPor: e.target.value})}
-                    data-testid="input-reportado-por"
                   />
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="emailCorporativo" className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    E-mail Corporativo *
-                  </Label>
+                  <Label>E-mail Corporativo *</Label>
                   <Input
-                    id="emailCorporativo"
                     type="email"
-                    placeholder="Texto de resposta curta"
+                    placeholder="email@empresa.com.br"
                     value={formData.emailCorporativo}
                     onChange={(e) => setFormData({...formData, emailCorporativo: e.target.value})}
-                    data-testid="input-email-corporativo"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="telefoneWhatsApp" className="flex items-center gap-2">
-                    <Phone className="h-4 w-4" />
-                    Telefone (WhatsApp) *
-                  </Label>
-                  <Input
-                    id="telefoneWhatsApp"
-                    placeholder="(00) 00000-0000"
-                    value={formData.telefoneWhatsApp}
-                    onChange={(e) => setFormData({...formData, telefoneWhatsApp: formatPhone(e.target.value)})}
-                    data-testid="input-telefone-whatsapp"
                   />
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Telefone (WhatsApp) *</Label>
+                  <Input
+                    placeholder="(00) 00000-0000"
+                    value={formData.telefoneWhatsApp}
+                    onChange={(e) => setFormData({...formData, telefoneWhatsApp: formatPhone(e.target.value)})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Coordenador da Base/Unidade *</Label>
+                  <Input
+                    placeholder="Nome completo do coordenador"
+                    value={formData.coordenadorBase}
+                    onChange={(e) => setFormData({...formData, coordenadorBase: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              {isMeliOperation && (
+                <div className="space-y-2 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <Label>Nome completo do responsável Meli</Label>
+                  <p className="text-xs text-gray-500">Somente para Operações MELI. Cliente para reporte, dúvidas, informações e contato com a transportadora. Se não houver, marcar como N/A</p>
+                  <Input
+                    placeholder="Nome ou N/A"
+                    value={formData.nomeResponsavelMeli}
+                    onChange={(e) => setFormData({...formData, nomeResponsavelMeli: e.target.value})}
+                  />
+                </div>
+              )}
+
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                onClick={() => setCurrentSection(2)}
+              >
+                Continuar <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {currentSection === 2 && (
+          <Card className="shadow-xl">
+            <CardHeader className="border-b">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-blue-600" />
+                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 2 de {totalSections}</div>
+              </div>
+              <CardTitle className="text-xl mt-2">Localização e Rota</CardTitle>
+              <CardDescription>Informações sobre milha, regional e local da ocorrência.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Milha *</Label>
+                <p className="text-sm text-gray-500">Somente em casos de operações MELI</p>
+                <RadioGroup
+                  value={formData.milha}
+                  onValueChange={(v) => setFormData({...formData, milha: v})}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-2"
+                >
+                  {MILHAS.map((m) => (
+                    <div key={m.value} className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 border">
+                      <RadioGroupItem value={m.value} id={`milha-${m.value}`} />
+                      <Label htmlFor={`milha-${m.value}`} className="font-normal cursor-pointer flex-1">{m.label}</Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Regional *</Label>
+                <p className="text-sm text-gray-500">Somente em casos de operações MELI</p>
+                <RadioGroup
+                  value={formData.regional}
+                  onValueChange={(v) => setFormData({...formData, regional: v})}
+                  className="grid grid-cols-2 md:grid-cols-4 gap-2"
+                >
+                  {REGIONAIS.map((r) => (
+                    <div key={r} className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 border">
+                      <RadioGroupItem value={r} id={`regional-${r}`} />
+                      <Label htmlFor={`regional-${r}`} className="font-normal cursor-pointer flex-1 text-sm">{r}</Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>BASE / UNIDADE *</Label>
+                  <p className="text-xs text-gray-500">Escreva o nome da Base (código e local). Exemplo: SPR1 - Curitiba</p>
+                  <Input
+                    placeholder="SPR1 - Curitiba"
+                    value={formData.baseUnidade}
+                    onChange={(e) => setFormData({...formData, baseUnidade: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Endereço da Ocorrência *</Label>
+                  <p className="text-xs text-gray-500">Informar o Endereço completo, incluindo o CEP.</p>
+                  <Input
+                    placeholder="Rua, número, bairro, cidade - CEP"
+                    value={formData.enderecoOcorrencia}
+                    onChange={(e) => setFormData({...formData, enderecoOcorrencia: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              {isMeliOperation && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <div className="space-y-2">
+                    <Label>ID da Rota</Label>
+                    <p className="text-xs text-gray-500">Conforme informado no Logístico</p>
+                    <Input
+                      placeholder="ID da rota"
+                      value={formData.idRota}
+                      onChange={(e) => setFormData({...formData, idRota: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Transit Time / ORH da rota</Label>
+                    <p className="text-xs text-gray-500">Conforme informado no Logístico</p>
+                    <Input
+                      placeholder="Transit time"
+                      value={formData.transitTimeOrh}
+                      onChange={(e) => setFormData({...formData, transitTimeOrh: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Início da Rota</Label>
+                    <p className="text-xs text-gray-500">Informar quando a rota foi iniciada</p>
+                    <Input
+                      type="time"
+                      value={formData.inicioRota}
+                      onChange={(e) => setFormData({...formData, inicioRota: e.target.value})}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-3">
-                <Button 
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setCurrentSection(1)}
-                  data-testid="button-back-section-1"
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Voltar
+                <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(1)}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                 </Button>
-                <Button 
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                  onClick={() => {
-                    if (canAdvanceToSection3()) {
-                      setCurrentSection(3);
-                    } else {
-                      toast({
-                        title: 'Campos obrigatórios',
-                        description: 'Por favor, preencha todos os campos obrigatórios.',
-                        variant: 'destructive',
-                      });
-                    }
-                  }}
-                  data-testid="button-next-section-2"
-                >
-                  Continuar
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => setCurrentSection(3)}>
+                  Continuar <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
             </CardContent>
@@ -423,159 +501,433 @@ export default function WorkSafetyReportAccident() {
           <Card className="shadow-xl">
             <CardHeader className="border-b">
               <div className="flex items-center gap-2">
-                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 3 de 3</div>
+                <Calendar className="h-5 w-5 text-blue-600" />
+                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 3 de {totalSections}</div>
               </div>
-              <CardTitle className="text-xl mt-2">Detalhes da Ocorrência</CardTitle>
-              <CardDescription>Preencha os detalhes do acidente/incidente.</CardDescription>
+              <CardTitle className="text-xl mt-2">Dados da Ocorrência</CardTitle>
+              <CardDescription>Data, hora, causa e descrição detalhada do ocorrido.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Data da Ocorrência *</Label>
+                  <Input
+                    type="date"
+                    value={formData.dataOcorrencia}
+                    onChange={(e) => setFormData({...formData, dataOcorrencia: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Horário da Ocorrência *</Label>
+                  <Input
+                    type="time"
+                    value={formData.horarioOcorrencia}
+                    onChange={(e) => setFormData({...formData, horarioOcorrencia: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Causa Imediata *</Label>
+                <RadioGroup
+                  value={formData.causaImediata}
+                  onValueChange={(v) => setFormData({...formData, causaImediata: v})}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-2"
+                >
+                  {CAUSAS_IMEDIATAS.map((causa, idx) => (
+                    <div key={idx} className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 border">
+                      <RadioGroupItem value={causa} id={`causa-${idx}`} />
+                      <Label htmlFor={`causa-${idx}`} className="font-normal cursor-pointer flex-1 text-sm">{causa}</Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-2">
+                <Label>DESCRIÇÃO DETALHADA DA OCORRIDO *</Label>
+                <p className="text-xs text-gray-500">Esclarecer: como aconteceu; qual sentido e lado da via; se trata-se de via urbana, rodovia, etc.; se estava cumprindo rota ou retornando/saindo do SVC; se durante o trajeto residência-trabalho; se haviam condições climáticas ou intervenções de terceiros e qualquer outro detalhe relatado que tenha contribuído com o ocorrido.</p>
+                <Textarea
+                  placeholder="Descreva detalhadamente o que aconteceu..."
+                  rows={6}
+                  value={formData.descricaoDetalhada}
+                  onChange={(e) => setFormData({...formData, descricaoDetalhada: e.target.value})}
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(2)}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => setCurrentSection(4)}>
+                  Continuar <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {currentSection === 4 && (
+          <Card className="shadow-xl">
+            <CardHeader className="border-b">
+              <div className="flex items-center gap-2">
+                <Truck className="h-5 w-5 text-blue-600" />
+                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 4 de {totalSections}</div>
+              </div>
+              <CardTitle className="text-xl mt-2">Dados do Veículo</CardTitle>
+              <CardDescription>Informações sobre o veículo envolvido na ocorrência.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Identificador/Placa - Veículo Murici *</Label>
+                  <p className="text-xs text-gray-500">Caso não se aplique, preencher com N/A</p>
+                  <Input
+                    placeholder="ABC-1234 ou N/A"
+                    value={formData.placaVeiculo}
+                    onChange={(e) => setFormData({...formData, placaVeiculo: e.target.value.toUpperCase()})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Ano do Veículo *</Label>
+                  <p className="text-xs text-gray-500">Caso não se aplique, preencher com 0000</p>
+                  <Input
+                    placeholder="2024 ou 0000"
+                    value={formData.anoVeiculo}
+                    onChange={(e) => setFormData({...formData, anoVeiculo: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Modelo do Veículo *</Label>
+                  <Select value={formData.modeloVeiculo} onValueChange={(v) => setFormData({...formData, modeloVeiculo: v})}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {MODELOS_VEICULO.map((m) => (
+                        <SelectItem key={m} value={m}>{m}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Frota Fixa? *</Label>
+                <p className="text-sm text-gray-500">No que se refere ao cumprimento de Rotas</p>
+                <RadioGroup
+                  value={formData.frotaFixa}
+                  onValueChange={(v) => setFormData({...formData, frotaFixa: v})}
+                  className="flex gap-4"
+                >
+                  <div className="flex items-center space-x-2"><RadioGroupItem value="sim" id="frota-sim" /><Label htmlFor="frota-sim">SIM</Label></div>
+                  <div className="flex items-center space-x-2"><RadioGroupItem value="nao" id="frota-nao" /><Label htmlFor="frota-nao">NÃO</Label></div>
+                  <div className="flex items-center space-x-2"><RadioGroupItem value="na" id="frota-na" /><Label htmlFor="frota-na">N/A</Label></div>
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Tipo de Frota *</Label>
+                <RadioGroup
+                  value={formData.tipoFrota}
+                  onValueChange={(v) => setFormData({...formData, tipoFrota: v})}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-2"
+                >
+                  <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 border">
+                    <RadioGroupItem value="alugado" id="tipo-alugado" /><Label htmlFor="tipo-alugado">Alugado</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 border">
+                    <RadioGroupItem value="frota_propria" id="tipo-propria" /><Label htmlFor="tipo-propria">Frota Própria Murici</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 border">
+                    <RadioGroupItem value="agregado" id="tipo-agregado" /><Label htmlFor="tipo-agregado">Agregado (pertence ao motorista)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 border">
+                    <RadioGroupItem value="Outro" id="tipo-outro" /><Label htmlFor="tipo-outro">Outro</Label>
+                  </div>
+                </RadioGroup>
+                {formData.tipoFrota === 'Outro' && (
+                  <Input placeholder="Especifique" value={formData.tipoFrotaOutro} onChange={(e) => setFormData({...formData, tipoFrotaOutro: e.target.value})} />
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Terceiro (Comunidade) Envolvido? *</Label>
+                <RadioGroup
+                  value={formData.terceiroEnvolvido}
+                  onValueChange={(v) => setFormData({...formData, terceiroEnvolvido: v})}
+                  className="flex gap-4"
+                >
+                  <div className="flex items-center space-x-2"><RadioGroupItem value="sim" id="terceiro-sim" /><Label htmlFor="terceiro-sim">SIM</Label></div>
+                  <div className="flex items-center space-x-2"><RadioGroupItem value="nao" id="terceiro-nao" /><Label htmlFor="terceiro-nao">NÃO</Label></div>
+                </RadioGroup>
+              </div>
+
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(3)}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => setCurrentSection(5)}>
+                  Continuar <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {currentSection === 5 && (
+          <Card className="shadow-xl">
+            <CardHeader className="border-b">
+              <div className="flex items-center gap-2">
+                <UserCircle className="h-5 w-5 text-blue-600" />
+                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 5 de {totalSections}</div>
+              </div>
+              <CardTitle className="text-xl mt-2">Dados do Colaborador</CardTitle>
+              <CardDescription>Informações sobre o motorista/colaborador envolvido.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Nome Completo do Colaborador *</Label>
+                  <p className="text-xs text-gray-500">Nome do Driver/Ajudante/Outro MURICI</p>
+                  <Input
+                    placeholder="Nome completo"
+                    value={formData.nomeColaborador}
+                    onChange={(e) => setFormData({...formData, nomeColaborador: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>ID ou Matrícula do Motorista</Label>
+                  <p className="text-xs text-gray-500">Meli: Logístico / Femsa: Trixlog. Caso não se aplique, preencher com 000</p>
+                  <Input
+                    placeholder="ID/Matrícula ou 000"
+                    value={formData.idMatricula}
+                    onChange={(e) => setFormData({...formData, idMatricula: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">FUNÇÃO *</Label>
+                <RadioGroup
+                  value={formData.funcao}
+                  onValueChange={(v) => setFormData({...formData, funcao: v})}
+                  className="flex flex-wrap gap-4"
+                >
+                  <div className="flex items-center space-x-2"><RadioGroupItem value="motorista" id="func-motorista" /><Label htmlFor="func-motorista">MOTORISTA</Label></div>
+                  <div className="flex items-center space-x-2"><RadioGroupItem value="ajudante" id="func-ajudante" /><Label htmlFor="func-ajudante">AJUDANTE</Label></div>
+                  <div className="flex items-center space-x-2"><RadioGroupItem value="Outro" id="func-outro" /><Label htmlFor="func-outro">Outro</Label></div>
+                </RadioGroup>
+                {formData.funcao === 'Outro' && (
+                  <Input placeholder="Especifique a função" value={formData.funcaoOutro} onChange={(e) => setFormData({...formData, funcaoOutro: e.target.value})} />
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>IDADE *</Label>
+                  <Input
+                    placeholder="Idade"
+                    value={formData.idade}
+                    onChange={(e) => setFormData({...formData, idade: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">CONTRATAÇÃO *</Label>
+                  <RadioGroup
+                    value={formData.contratacao}
+                    onValueChange={(v) => setFormData({...formData, contratacao: v})}
+                    className="flex flex-wrap gap-4"
+                  >
+                    <div className="flex items-center space-x-2"><RadioGroupItem value="clt" id="cont-clt" /><Label htmlFor="cont-clt">CLT</Label></div>
+                    <div className="flex items-center space-x-2"><RadioGroupItem value="tac" id="cont-tac" /><Label htmlFor="cont-tac">TAC</Label></div>
+                    <div className="flex items-center space-x-2"><RadioGroupItem value="agregado" id="cont-agregado" /><Label htmlFor="cont-agregado">AGREGADO</Label></div>
+                    <div className="flex items-center space-x-2"><RadioGroupItem value="Outro" id="cont-outro" /><Label htmlFor="cont-outro">Outro</Label></div>
+                  </RadioGroup>
+                  {formData.contratacao === 'Outro' && (
+                    <Input placeholder="Especifique" value={formData.contratacaoOutro} onChange={(e) => setFormData({...formData, contratacaoOutro: e.target.value})} />
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Data de Admissão *</Label>
+                  <Input
+                    type="date"
+                    value={formData.dataAdmissao}
+                    onChange={(e) => setFormData({...formData, dataAdmissao: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Data Primeira Habilitação *</Label>
+                  <p className="text-xs text-gray-500">Exemplo: 22/10/2010</p>
+                  <Input
+                    type="date"
+                    value={formData.dataPrimeiraHabilitacao}
+                    onChange={(e) => setFormData({...formData, dataPrimeiraHabilitacao: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(4)}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => setCurrentSection(6)}>
+                  Continuar <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {currentSection === 6 && (
+          <Card className="shadow-xl">
+            <CardHeader className="border-b">
+              <div className="flex items-center gap-2">
+                <Stethoscope className="h-5 w-5 text-blue-600" />
+                <div className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">Seção 6 de {totalSections}</div>
+              </div>
+              <CardTitle className="text-xl mt-2">Informações Complementares</CardTitle>
+              <CardDescription>Sobre saúde dos envolvidos, registro policial, etc.</CardDescription>
             </CardHeader>
             <CardContent className="p-6">
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-4">
-                  <Label className="text-base font-semibold">Tipo de Ocorrência *</Label>
-                  <RadioGroup
-                    value={formData.tipoOcorrencia}
-                    onValueChange={(v) => setFormData({...formData, tipoOcorrencia: v as any})}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-2"
-                  >
-                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100">
-                      <RadioGroupItem value="acidente" id="tipo-acidente" data-testid="radio-tipo-acidente" />
-                      <Label htmlFor="tipo-acidente" className="font-normal cursor-pointer flex-1">
-                        <span className="font-semibold text-red-700">Acidente</span>
-                        <p className="text-xs text-gray-600">Lesões ou fatalidade</p>
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-orange-200 bg-orange-50 hover:bg-orange-100">
-                      <RadioGroupItem value="quase_acidente" id="tipo-quase" data-testid="radio-tipo-quase" />
-                      <Label htmlFor="tipo-quase" className="font-normal cursor-pointer flex-1">
-                        <span className="font-semibold text-orange-700">Quase Acidente (Near Miss)</span>
-                        <p className="text-xs text-gray-600">Potencial de causar lesão</p>
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-yellow-200 bg-yellow-50 hover:bg-yellow-100">
-                      <RadioGroupItem value="danos_materiais" id="tipo-danos" data-testid="radio-tipo-danos" />
-                      <Label htmlFor="tipo-danos" className="font-normal cursor-pointer flex-1">
-                        <span className="font-semibold text-yellow-700">Danos Materiais</span>
-                        <p className="text-xs text-gray-600">Avaria em veículo/equipamentos</p>
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100">
-                      <RadioGroupItem value="danos_ambientais" id="tipo-ambientais" data-testid="radio-tipo-ambientais" />
-                      <Label htmlFor="tipo-ambientais" className="font-normal cursor-pointer flex-1">
-                        <span className="font-semibold text-green-700">Danos Ambientais</span>
-                        <p className="text-xs text-gray-600">Contaminação/poluição</p>
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="dataHoraOcorrencia">Data e Hora da Ocorrência *</Label>
+                    <Label>Parte(s) do corpo atingida(s) *</Label>
+                    <p className="text-xs text-gray-500">Caso não se aplique, preencher com N/A</p>
                     <Input
-                      id="dataHoraOcorrencia"
-                      type="datetime-local"
-                      value={formData.dataHoraOcorrencia}
-                      onChange={(e) => setFormData({...formData, dataHoraOcorrencia: e.target.value})}
-                      data-testid="input-data-hora"
+                      placeholder="Descrição ou N/A"
+                      value={formData.partesCorpoAtingidas}
+                      onChange={(e) => setFormData({...formData, partesCorpoAtingidas: e.target.value})}
                     />
                   </div>
-
                   <div className="space-y-2">
-                    <Label htmlFor="localOcorrencia">Local da Ocorrência *</Label>
+                    <Label>Dias que permanecerá afastado das atividades *</Label>
+                    <p className="text-xs text-gray-500">Caso não se aplique, preencher com N/A</p>
                     <Input
-                      id="localOcorrencia"
-                      placeholder="Endereço ou descrição do local"
-                      value={formData.localOcorrencia}
-                      onChange={(e) => setFormData({...formData, localOcorrencia: e.target.value})}
-                      data-testid="input-local"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="motoristaNome">Nome do Motorista Envolvido</Label>
-                    <Input
-                      id="motoristaNome"
-                      placeholder="Nome completo (opcional)"
-                      value={formData.motoristaNome}
-                      onChange={(e) => setFormData({...formData, motoristaNome: e.target.value})}
-                      data-testid="input-motorista"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="placaVeiculo">Placa do Veículo</Label>
-                    <Input
-                      id="placaVeiculo"
-                      placeholder="ABC-1234 (opcional)"
-                      value={formData.placaVeiculo}
-                      onChange={(e) => setFormData({...formData, placaVeiculo: e.target.value.toUpperCase()})}
-                      data-testid="input-placa"
+                      placeholder="Número de dias ou N/A"
+                      value={formData.diasAfastado}
+                      onChange={(e) => setFormData({...formData, diasAfastado: e.target.value})}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="descricaoOcorrencia">Descrição da Ocorrência *</Label>
+                  <Label>Foi socorrido? Por quem? *</Label>
+                  <p className="text-xs text-gray-500">Caso não se aplique, preencher com N/A</p>
                   <Textarea
-                    id="descricaoOcorrencia"
-                    placeholder="Descreva detalhadamente o que aconteceu..."
-                    rows={4}
-                    value={formData.descricaoOcorrencia}
-                    onChange={(e) => setFormData({...formData, descricaoOcorrencia: e.target.value})}
-                    data-testid="textarea-descricao"
+                    placeholder="Descreva ou N/A"
+                    value={formData.foiSocorrido}
+                    onChange={(e) => setFormData({...formData, foiSocorrido: e.target.value})}
                   />
                 </div>
 
-                <div className="space-y-4">
-                  <Label className="text-base font-semibold">Houve Vítima? *</Label>
-                  <RadioGroup
-                    value={formData.houveVitima}
-                    onValueChange={(v) => setFormData({...formData, houveVitima: v})}
-                    className="flex gap-4"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="sim" id="vitima-sim" data-testid="radio-vitima-sim" />
-                      <Label htmlFor="vitima-sim" className="font-normal cursor-pointer">Sim</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="nao" id="vitima-nao" data-testid="radio-vitima-nao" />
-                      <Label htmlFor="vitima-nao" className="font-normal cursor-pointer">Não</Label>
-                    </div>
-                  </RadioGroup>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
+                    <Label className="text-base font-semibold">Atendimento Médico? *</Label>
+                    <RadioGroup
+                      value={formData.atendimentoMedico}
+                      onValueChange={(v) => setFormData({...formData, atendimentoMedico: v})}
+                      className="flex gap-4"
+                    >
+                      <div className="flex items-center space-x-2"><RadioGroupItem value="sim" id="atend-sim" /><Label htmlFor="atend-sim">SIM</Label></div>
+                      <div className="flex items-center space-x-2"><RadioGroupItem value="nao" id="atend-nao" /><Label htmlFor="atend-nao">NÃO</Label></div>
+                      <div className="flex items-center space-x-2"><RadioGroupItem value="na" id="atend-na" /><Label htmlFor="atend-na">N/A</Label></div>
+                    </RadioGroup>
+                  </div>
+                  <div className="space-y-4">
+                    <Label className="text-base font-semibold">LOCAL DE ATENDIMENTO *</Label>
+                    <RadioGroup
+                      value={formData.localAtendimento}
+                      onValueChange={(v) => setFormData({...formData, localAtendimento: v})}
+                      className="flex flex-wrap gap-2"
+                    >
+                      <div className="flex items-center space-x-2"><RadioGroupItem value="ambulatorio" id="local-amb" /><Label htmlFor="local-amb" className="text-sm">AMBULATÓRIO</Label></div>
+                      <div className="flex items-center space-x-2"><RadioGroupItem value="unidade_saude" id="local-us" /><Label htmlFor="local-us" className="text-sm">UNIDADE DE SAÚDE</Label></div>
+                      <div className="flex items-center space-x-2"><RadioGroupItem value="na" id="local-na" /><Label htmlFor="local-na" className="text-sm">N/A</Label></div>
+                    </RadioGroup>
+                  </div>
+                </div>
 
-                  {formData.houveVitima === 'sim' && (
-                    <div className="ml-6 space-y-2">
-                      <Label htmlFor="descricaoVitima">Descreva a situação da vítima</Label>
-                      <Textarea
-                        id="descricaoVitima"
-                        placeholder="Estado de saúde, tipo de lesão, atendimento médico..."
-                        rows={3}
-                        value={formData.descricaoVitima}
-                        onChange={(e) => setFormData({...formData, descricaoVitima: e.target.value})}
-                        data-testid="textarea-vitima"
-                      />
-                    </div>
-                  )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
+                    <Label className="text-base font-semibold">Houve internação? *</Label>
+                    <RadioGroup
+                      value={formData.houveInternacao}
+                      onValueChange={(v) => setFormData({...formData, houveInternacao: v})}
+                      className="flex gap-4"
+                    >
+                      <div className="flex items-center space-x-2"><RadioGroupItem value="sim" id="int-sim" /><Label htmlFor="int-sim">SIM</Label></div>
+                      <div className="flex items-center space-x-2"><RadioGroupItem value="nao" id="int-nao" /><Label htmlFor="int-nao">NÃO</Label></div>
+                      <div className="flex items-center space-x-2"><RadioGroupItem value="na" id="int-na" /><Label htmlFor="int-na">N/A</Label></div>
+                    </RadioGroup>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Nome Completo do Médico e CRM *</Label>
+                    <p className="text-xs text-gray-500">Caso não se aplique, preencher com N/A</p>
+                    <Input
+                      placeholder="Nome - CRM ou N/A"
+                      value={formData.nomeMedicoCrm}
+                      onChange={(e) => setFormData({...formData, nomeMedicoCrm: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>CID (Código Internacional de Doenças) *</Label>
+                    <p className="text-xs text-gray-500">Caso não se aplique, preencher com N/A</p>
+                    <Input
+                      placeholder="CID ou N/A"
+                      value={formData.cid}
+                      onChange={(e) => setFormData({...formData, cid: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-4">
+                    <Label className="text-base font-semibold">Registro Policial? *</Label>
+                    <RadioGroup
+                      value={formData.registroPolicial}
+                      onValueChange={(v) => setFormData({...formData, registroPolicial: v})}
+                      className="flex gap-4"
+                    >
+                      <div className="flex items-center space-x-2"><RadioGroupItem value="sim" id="pol-sim" /><Label htmlFor="pol-sim">SIM</Label></div>
+                      <div className="flex items-center space-x-2"><RadioGroupItem value="nao" id="pol-nao" /><Label htmlFor="pol-nao">NÃO</Label></div>
+                      <div className="flex items-center space-x-2"><RadioGroupItem value="na" id="pol-na" /><Label htmlFor="pol-na">N/A</Label></div>
+                    </RadioGroup>
+                  </div>
+                </div>
+
+                {formData.registroPolicial === 'sim' && (
+                  <div className="space-y-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <Label>Protocolo Boletim de Ocorrência</Label>
+                    <p className="text-xs text-gray-500">Em caso de Registro Policial (BO), informe o Protocolo gerado.</p>
+                    <Input
+                      placeholder="Protocolo do BO"
+                      value={formData.protocoloBO}
+                      onChange={(e) => setFormData({...formData, protocoloBO: e.target.value})}
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label>Descreva o Estado de saúde dos envolvidos *</Label>
+                  <p className="text-xs text-gray-500">Terceiro(s) (comunidade) e colaborador(es) Murici</p>
+                  <Textarea
+                    placeholder="Descreva o estado de saúde..."
+                    rows={4}
+                    value={formData.estadoSaudeEnvolvidos}
+                    onChange={(e) => setFormData({...formData, estadoSaudeEnvolvidos: e.target.value})}
+                  />
                 </div>
 
                 <div className="flex gap-3">
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setCurrentSection(2)}
-                    data-testid="button-back-section-2"
-                  >
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Voltar
+                  <Button type="button" variant="outline" className="flex-1" onClick={() => setCurrentSection(5)}>
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                   </Button>
                   <Button
                     type="submit"
                     className="flex-1 bg-red-600 hover:bg-red-700"
                     disabled={mutation.isPending}
-                    data-testid="button-submit"
                   >
                     {mutation.isPending ? 'Registrando...' : 'Registrar Ocorrência'}
                   </Button>
