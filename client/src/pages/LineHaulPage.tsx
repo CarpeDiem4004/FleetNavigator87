@@ -355,6 +355,7 @@ const LineHaulPage = () => {
   // Estados para novo formulário de manutenção
   const [showNewMaintenanceDialog, setShowNewMaintenanceDialog] = useState(false);
   const [isCreatingMaintenance, setIsCreatingMaintenance] = useState(false);
+  const [newMaintenancePartsList, setNewMaintenancePartsList] = useState<Array<{ name: string; value: string }>>([]);
   const [newMaintenanceForm, setNewMaintenanceForm] = useState({
     vehicle_plate: '',
     vehicle_model: '',
@@ -362,7 +363,14 @@ const LineHaulPage = () => {
     maintenance_type: '',
     priority: 'media',
     description: '',
-    estimated_cost: ''
+    estimated_cost: '',
+    workshop_name: '',
+    vehicle_type: 'cavalo',
+    driver_caused: 'nao',
+    stop_date: '',
+    expected_completion_date: '',
+    labor_cost: '',
+    other_costs: ''
   });
 
   const generateMaintenancePDF = (maintenance: MaintenanceRequest) => {
@@ -4278,7 +4286,7 @@ const LineHaulPage = () => {
 
         {/* Dialog de Nova Manutenção */}
         <Dialog open={showNewMaintenanceDialog} onOpenChange={setShowNewMaintenanceDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-green-700">
                 <Plus className="h-5 w-5" />
@@ -4290,7 +4298,8 @@ const LineHaulPage = () => {
             </DialogHeader>
             
             <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
+              {/* Veículo e Modelo */}
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="new-vehicle-plate">Placa do Veículo *</Label>
                   <Input
@@ -4310,19 +4319,47 @@ const LineHaulPage = () => {
                     placeholder="Ex: Volvo FH 540"
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-vehicle-type">Tipo de Veículo *</Label>
+                  <Select
+                    value={newMaintenanceForm.vehicle_type}
+                    onValueChange={(value) => setNewMaintenanceForm(prev => ({ ...prev, vehicle_type: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cavalo">Cavalo</SelectItem>
+                      <SelectItem value="carreta">Carreta</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="new-driver-name">Nome do Motorista</Label>
-                <Input
-                  id="new-driver-name"
-                  value={newMaintenanceForm.driver_name}
-                  onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, driver_name: e.target.value }))}
-                  placeholder="Nome completo do motorista"
-                />
-              </div>
-
+              {/* Motorista e Oficina */}
               <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-driver-name">Nome do Motorista</Label>
+                  <Input
+                    id="new-driver-name"
+                    value={newMaintenanceForm.driver_name}
+                    onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, driver_name: e.target.value }))}
+                    placeholder="Nome completo do motorista"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-workshop-name">Oficina</Label>
+                  <Input
+                    id="new-workshop-name"
+                    value={newMaintenanceForm.workshop_name}
+                    onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, workshop_name: e.target.value }))}
+                    placeholder="Nome da oficina"
+                  />
+                </div>
+              </div>
+
+              {/* Tipo, Prioridade e Causado pelo Motorista */}
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="new-maintenance-type">Tipo de Manutenção *</Label>
                   <Select
@@ -4354,7 +4391,7 @@ const LineHaulPage = () => {
                     onValueChange={(value) => setNewMaintenanceForm(prev => ({ ...prev, priority: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione a prioridade..." />
+                      <SelectValue placeholder="Selecione..." />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="baixa">Baixa</SelectItem>
@@ -4364,25 +4401,149 @@ const LineHaulPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-driver-caused">Causado pelo Motorista?</Label>
+                  <Select
+                    value={newMaintenanceForm.driver_caused}
+                    onValueChange={(value) => setNewMaintenanceForm(prev => ({ ...prev, driver_caused: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nao">Não</SelectItem>
+                      <SelectItem value="sim">Sim</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
+              {/* Datas */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-stop-date">Data de Parada</Label>
+                  <Input
+                    id="new-stop-date"
+                    type="date"
+                    value={newMaintenanceForm.stop_date}
+                    onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, stop_date: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-expected-completion">Previsão de Conclusão</Label>
+                  <Input
+                    id="new-expected-completion"
+                    type="date"
+                    value={newMaintenanceForm.expected_completion_date}
+                    onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, expected_completion_date: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              {/* Custos */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-labor-cost">Mão de Obra (R$)</Label>
+                  <Input
+                    id="new-labor-cost"
+                    type="number"
+                    step="0.01"
+                    value={newMaintenanceForm.labor_cost}
+                    onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, labor_cost: e.target.value }))}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-other-costs">Outros Custos (R$)</Label>
+                  <Input
+                    id="new-other-costs"
+                    type="number"
+                    step="0.01"
+                    value={newMaintenanceForm.other_costs}
+                    onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, other_costs: e.target.value }))}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-estimated-cost">Custo Estimado Total (R$)</Label>
+                  <Input
+                    id="new-estimated-cost"
+                    type="number"
+                    step="0.01"
+                    value={newMaintenanceForm.estimated_cost}
+                    onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, estimated_cost: e.target.value }))}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              {/* Peças Utilizadas */}
               <div className="space-y-2">
-                <Label htmlFor="new-estimated-cost">Custo Estimado (R$)</Label>
-                <Input
-                  id="new-estimated-cost"
-                  type="number"
-                  step="0.01"
-                  value={newMaintenanceForm.estimated_cost}
-                  onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, estimated_cost: e.target.value }))}
-                  placeholder="0.00"
-                />
+                <div className="flex justify-between items-center">
+                  <Label>Peças Utilizadas</Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setNewMaintenancePartsList(prev => [...prev, { name: '', value: '' }])}
+                    className="h-8"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Adicionar Peça
+                  </Button>
+                </div>
+                
+                {newMaintenancePartsList.length > 0 ? (
+                  <div className="space-y-2 max-h-[150px] overflow-y-auto border rounded-md p-2">
+                    {newMaintenancePartsList.map((part, index) => (
+                      <div key={index} className="grid grid-cols-[1fr_120px_40px] gap-2 items-center bg-gray-50 p-2 rounded">
+                        <Input
+                          placeholder="Nome da peça"
+                          value={part.name}
+                          onChange={(e) => {
+                            const updated = [...newMaintenancePartsList];
+                            updated[index].name = e.target.value;
+                            setNewMaintenancePartsList(updated);
+                          }}
+                          className="h-9"
+                        />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Valor (R$)"
+                          value={part.value}
+                          onChange={(e) => {
+                            const updated = [...newMaintenancePartsList];
+                            updated[index].value = e.target.value;
+                            setNewMaintenancePartsList(updated);
+                          }}
+                          className="h-9"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setNewMaintenancePartsList(prev => prev.filter((_, i) => i !== index));
+                          }}
+                          className="h-9 w-9 p-0 text-red-500 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">Nenhuma peça adicionada</p>
+                )}
               </div>
 
+              {/* Descrição */}
               <div className="space-y-2">
                 <Label htmlFor="new-description">Descrição do Problema *</Label>
                 <textarea
                   id="new-description"
-                  className="w-full min-h-[100px] p-3 border rounded-md resize-none"
+                  className="w-full min-h-[80px] p-3 border rounded-md resize-none"
                   value={newMaintenanceForm.description}
                   onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Descreva detalhadamente o problema ou serviço necessário..."
@@ -4395,6 +4556,7 @@ const LineHaulPage = () => {
                 variant="outline" 
                 onClick={() => {
                   setShowNewMaintenanceDialog(false);
+                  setNewMaintenancePartsList([]);
                   setNewMaintenanceForm({
                     vehicle_plate: '',
                     vehicle_model: '',
@@ -4402,7 +4564,14 @@ const LineHaulPage = () => {
                     maintenance_type: '',
                     priority: 'media',
                     description: '',
-                    estimated_cost: ''
+                    estimated_cost: '',
+                    workshop_name: '',
+                    vehicle_type: 'cavalo',
+                    driver_caused: 'nao',
+                    stop_date: '',
+                    expected_completion_date: '',
+                    labor_cost: '',
+                    other_costs: ''
                   });
                 }}
               >
@@ -4421,6 +4590,16 @@ const LineHaulPage = () => {
 
                   setIsCreatingMaintenance(true);
                   try {
+                    const partsTotal = newMaintenancePartsList.reduce((sum, p) => sum + (parseFloat(p.value) || 0), 0);
+                    const laborCost = parseFloat(newMaintenanceForm.labor_cost) || 0;
+                    const otherCosts = parseFloat(newMaintenanceForm.other_costs) || 0;
+                    const estimatedCost = parseFloat(newMaintenanceForm.estimated_cost) || (partsTotal + laborCost + otherCosts);
+
+                    const partsDescription = newMaintenancePartsList
+                      .filter(p => p.name)
+                      .map(p => `${p.name}: R$ ${parseFloat(p.value || '0').toFixed(2)}`)
+                      .join('; ');
+
                     const response = await fetch('/api/maintenance/orders', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
@@ -4432,7 +4611,16 @@ const LineHaulPage = () => {
                         maintenance_type: newMaintenanceForm.maintenance_type,
                         priority: newMaintenanceForm.priority,
                         description: newMaintenanceForm.description,
-                        estimated_cost: newMaintenanceForm.estimated_cost ? parseFloat(newMaintenanceForm.estimated_cost) : 0,
+                        estimated_cost: estimatedCost,
+                        workshop_name: newMaintenanceForm.workshop_name || null,
+                        vehicle_type: newMaintenanceForm.vehicle_type,
+                        driver_caused: newMaintenanceForm.driver_caused === 'sim',
+                        stop_date: newMaintenanceForm.stop_date || null,
+                        expected_completion_at: newMaintenanceForm.expected_completion_date || null,
+                        labor_cost: laborCost,
+                        parts_cost: partsTotal,
+                        other_costs: otherCosts,
+                        parts_used: partsDescription || null,
                         status: 'pendente',
                         origem: 'line_hall'
                       })
@@ -4448,6 +4636,7 @@ const LineHaulPage = () => {
                     });
 
                     setShowNewMaintenanceDialog(false);
+                    setNewMaintenancePartsList([]);
                     setNewMaintenanceForm({
                       vehicle_plate: '',
                       vehicle_model: '',
@@ -4455,7 +4644,14 @@ const LineHaulPage = () => {
                       maintenance_type: '',
                       priority: 'media',
                       description: '',
-                      estimated_cost: ''
+                      estimated_cost: '',
+                      workshop_name: '',
+                      vehicle_type: 'cavalo',
+                      driver_caused: 'nao',
+                      stop_date: '',
+                      expected_completion_date: '',
+                      labor_cost: '',
+                      other_costs: ''
                     });
                     
                     queryClient.invalidateQueries({ queryKey: ['/api/maintenance/requests'] });
