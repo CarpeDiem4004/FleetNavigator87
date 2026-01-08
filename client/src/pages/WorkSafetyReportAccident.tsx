@@ -293,7 +293,7 @@ export default function WorkSafetyReportAccident() {
         {renderProgressBar()}
 
         {currentSection === 1 && (
-          <Card className="shadow-xl bg-[#1C1C1C] border-[#333]">
+          <Card className="shadow-xl bg-white border-gray-200">
             <CardHeader className="border-b bg-white">
               <CardTitle className="text-xl font-bold text-gray-900">ACIDENTES & INCIDENTES MURICI</CardTitle>
             </CardHeader>
@@ -373,18 +373,18 @@ export default function WorkSafetyReportAccident() {
         )}
 
         {currentSection === 2 && (
-          <Card className="shadow-xl bg-[#1C1C1C] border-[#333]">
-            <CardHeader className="border-b">
+          <Card className="shadow-xl bg-white border-gray-200">
+            <CardHeader className="border-b bg-gray-50">
               <div className="flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-[#E10613]" />
                 <div className="bg-[#E10613]/10 text-[#E10613] px-3 py-1 rounded-full text-sm font-medium">Seção 2 de {totalSections}</div>
               </div>
-              <CardTitle className="text-xl mt-2">Formulário de Registro de Ocorrência | Operações Murici</CardTitle>
-              <CardDescription>Atenção às descrições, pois orientam como devem ser feitos os preenchimentos.</CardDescription>
+              <CardTitle className="text-xl mt-2 text-gray-900">Formulário de Registro de Ocorrência | Operações Murici</CardTitle>
+              <CardDescription className="text-gray-600">Atenção às descrições, pois orientam como devem ser feitos os preenchimentos.</CardDescription>
             </CardHeader>
-            <CardContent className="p-6 space-y-6">
+            <CardContent className="p-6 space-y-6 bg-white">
               <div className="space-y-4">
-                <Label className="text-base font-semibold">Operação *</Label>
+                <Label className="text-base font-semibold text-gray-900">Operação *</Label>
                 <RadioGroup
                   value={formData.operacao}
                   onValueChange={(v) => setFormData({...formData, operacao: v})}
@@ -408,7 +408,7 @@ export default function WorkSafetyReportAccident() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Reportado Por *</Label>
+                  <Label className="text-gray-900">Reportado Por *</Label>
                   <Input
                     placeholder="Nome completo"
                     value={formData.reportadoPor}
@@ -416,7 +416,7 @@ export default function WorkSafetyReportAccident() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>E-mail Corporativo *</Label>
+                  <Label className="text-gray-900">E-mail Corporativo *</Label>
                   <Input
                     type="email"
                     placeholder="email@empresa.com.br"
@@ -428,7 +428,7 @@ export default function WorkSafetyReportAccident() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Telefone (WhatsApp) *</Label>
+                  <Label className="text-gray-900">Telefone (WhatsApp) *</Label>
                   <Input
                     placeholder="(00) 00000-0000"
                     value={formData.telefoneWhatsApp}
@@ -436,7 +436,7 @@ export default function WorkSafetyReportAccident() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Coordenador da Base/Unidade *</Label>
+                  <Label className="text-gray-900">Coordenador da Base/Unidade *</Label>
                   <Input
                     placeholder="Nome completo do coordenador"
                     value={formData.coordenadorBase}
@@ -470,18 +470,18 @@ export default function WorkSafetyReportAccident() {
         )}
 
         {currentSection === 3 && (
-          <Card className="shadow-xl bg-[#1C1C1C] border-[#333]">
-            <CardHeader className="border-b">
+          <Card className="shadow-xl bg-white border-gray-200">
+            <CardHeader className="border-b bg-gray-50">
               <div className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-[#E10613]" />
                 <div className="bg-[#E10613]/10 text-[#E10613] px-3 py-1 rounded-full text-sm font-medium">Seção 3 de {totalSections}</div>
               </div>
-              <CardTitle className="text-xl mt-2">Localização e Rota</CardTitle>
-              <CardDescription>Informações sobre milha, regional e local da ocorrência.</CardDescription>
+              <CardTitle className="text-xl mt-2 text-gray-900">Localização e Rota</CardTitle>
+              <CardDescription className="text-gray-600">Informações sobre milha, regional e local da ocorrência.</CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="space-y-4">
-                <Label className="text-base font-semibold">Milha *</Label>
+                <Label className="text-base font-semibold text-gray-900">Milha *</Label>
                 <p className="text-sm text-gray-500">Somente em casos de operações MELI</p>
                 <RadioGroup
                   value={formData.milha}
@@ -580,14 +580,14 @@ export default function WorkSafetyReportAccident() {
         )}
 
         {currentSection === 4 && (
-          <Card className="shadow-xl bg-[#1C1C1C] border-[#333]">
-            <CardHeader className="border-b">
+          <Card className="shadow-xl bg-white border-gray-200">
+            <CardHeader className="border-b bg-gray-50">
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-[#E10613]" />
                 <div className="bg-[#E10613]/10 text-[#E10613] px-3 py-1 rounded-full text-sm font-medium">Seção 4 de {totalSections}</div>
               </div>
-              <CardTitle className="text-xl mt-2">Dados da Ocorrência</CardTitle>
-              <CardDescription>Data, hora, causa e descrição detalhada do ocorrido.</CardDescription>
+              <CardTitle className="text-xl mt-2 text-gray-900">Dados da Ocorrência</CardTitle>
+              <CardDescription className="text-gray-600">Data, hora, causa e descrição detalhada do ocorrido.</CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -649,14 +649,14 @@ export default function WorkSafetyReportAccident() {
         )}
 
         {currentSection === 5 && (
-          <Card className="shadow-xl bg-[#1C1C1C] border-[#333]">
-            <CardHeader className="border-b">
+          <Card className="shadow-xl bg-white border-gray-200">
+            <CardHeader className="border-b bg-gray-50">
               <div className="flex items-center gap-2">
                 <Truck className="h-5 w-5 text-[#E10613]" />
                 <div className="bg-[#E10613]/10 text-[#E10613] px-3 py-1 rounded-full text-sm font-medium">Seção 5 de {totalSections}</div>
               </div>
-              <CardTitle className="text-xl mt-2">Dados do Veículo</CardTitle>
-              <CardDescription>Informações sobre o veículo envolvido na ocorrência.</CardDescription>
+              <CardTitle className="text-xl mt-2 text-gray-900">Dados do Veículo</CardTitle>
+              <CardDescription className="text-gray-600">Informações sobre o veículo envolvido na ocorrência.</CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -755,14 +755,14 @@ export default function WorkSafetyReportAccident() {
         )}
 
         {currentSection === 6 && (
-          <Card className="shadow-xl bg-[#1C1C1C] border-[#333]">
-            <CardHeader className="border-b">
+          <Card className="shadow-xl bg-white border-gray-200">
+            <CardHeader className="border-b bg-gray-50">
               <div className="flex items-center gap-2">
                 <UserCircle className="h-5 w-5 text-[#E10613]" />
                 <div className="bg-[#E10613]/10 text-[#E10613] px-3 py-1 rounded-full text-sm font-medium">Seção 6 de {totalSections}</div>
               </div>
-              <CardTitle className="text-xl mt-2">Dados do Colaborador</CardTitle>
-              <CardDescription>Informações sobre o motorista/colaborador envolvido.</CardDescription>
+              <CardTitle className="text-xl mt-2 text-gray-900">Dados do Colaborador</CardTitle>
+              <CardDescription className="text-gray-600">Informações sobre o motorista/colaborador envolvido.</CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -862,14 +862,14 @@ export default function WorkSafetyReportAccident() {
         )}
 
         {currentSection === 7 && (
-          <Card className="shadow-xl bg-[#1C1C1C] border-[#333]">
-            <CardHeader className="border-b">
+          <Card className="shadow-xl bg-white border-gray-200">
+            <CardHeader className="border-b bg-gray-50">
               <div className="flex items-center gap-2">
                 <Stethoscope className="h-5 w-5 text-[#E10613]" />
                 <div className="bg-[#E10613]/10 text-[#E10613] px-3 py-1 rounded-full text-sm font-medium">Seção 7 de {totalSections}</div>
               </div>
-              <CardTitle className="text-xl mt-2">Informações Complementares</CardTitle>
-              <CardDescription>Sobre saúde dos envolvidos, registro policial, etc.</CardDescription>
+              <CardTitle className="text-xl mt-2 text-gray-900">Informações Complementares</CardTitle>
+              <CardDescription className="text-gray-600">Sobre saúde dos envolvidos, registro policial, etc.</CardDescription>
             </CardHeader>
             <CardContent className="p-6">
               <form onSubmit={handleSubmit} className="space-y-6">
