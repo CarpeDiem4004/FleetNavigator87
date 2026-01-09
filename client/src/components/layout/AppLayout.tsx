@@ -146,8 +146,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   };
 
   const Sidebar = () => (
-    <div className={cn("h-full flex flex-col bg-gradient-to-br from-gray-900 to-gray-800 text-white overflow-y-auto shadow-xl shadow-primary/20")}>
-      <div className="flex items-center justify-between p-4 border-b border-gray-700">
+    <div className={cn("h-full flex flex-col bg-[#000000] text-white overflow-y-auto shadow-xl")}>
+      <div className="flex items-center justify-between p-4 border-b border-[rgba(255,255,255,0.08)]">
         <div>
           <a 
             href="/"
@@ -158,9 +158,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             }}
             className="flex items-center py-2 gap-2"
           >
-            <Truck className="h-6 w-6 text-blue-400" />
+            <Truck className="h-6 w-6 text-[#DB0145]" />
             <span className="text-lg tracking-tight">
-              <span className="font-bold text-white">Murici</span>
+              <span className="font-bold text-[#DB0145]">Murici</span>
               <span className="font-light text-blue-300 ml-1">On Fleet</span>
               <span className="font-light text-blue-400/70 text-sm ml-1">2.0</span>
             </span>
@@ -187,8 +187,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   <Button
                     variant="ghost"
                     className={cn(
-                      "w-full justify-start gap-2 font-normal text-white hover:bg-primary/20 hover:text-white",
-                      isActive(link.href) && "bg-primary-600 text-white font-medium shadow-md shadow-primary/30"
+                      "w-full justify-start gap-2 font-normal text-white/90 hover:bg-[rgba(255,255,255,0.06)] hover:text-white",
+                      isActive(link.href) && "bg-[rgba(219,1,69,0.14)] text-white font-medium border-l-[3px] border-[#DB0145]"
                     )}
                     onClick={link.toggle}
                   >
@@ -210,7 +210,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                     </svg>
                   </Button>
                   {link.expanded && (
-                    <ul className="mt-1 ml-4 space-y-1 border-l pl-2">
+                    <ul className="mt-1 ml-4 space-y-1 border-l border-[rgba(255,255,255,0.08)] pl-2">
                       {link.submenu?.map((subLink) => (
                         <li key={subLink.label}>
                           <div>
@@ -225,8 +225,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                                 }
                               }}
                               className={cn(
-                                "block py-1.5 px-2 text-sm rounded-md text-slate-100 hover:bg-primary/20 hover:text-white",
-                                isActive(subLink.href) && "bg-primary-600 text-white font-medium shadow-sm shadow-primary/30 border-l-2 border-white"
+                                "block py-1.5 px-2 text-sm rounded-md text-white/90 hover:bg-[rgba(255,255,255,0.06)] hover:text-white",
+                                isActive(subLink.href) && "bg-[rgba(219,1,69,0.14)] text-white font-medium border-l-[3px] border-[#DB0145]"
                               )}
                             >
                               {subLink.label}
@@ -250,8 +250,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                       }
                     }}
                     className={cn(
-                      "flex items-center gap-2 py-2 px-3 rounded-md text-white hover:bg-primary/20 hover:text-white",
-                      isActive(link.href) && "bg-primary-600 text-white font-medium shadow-md shadow-primary/30"
+                      "flex items-center gap-2 py-2 px-3 rounded-md text-white/90 hover:bg-[rgba(255,255,255,0.06)] hover:text-white",
+                      isActive(link.href) && "bg-[rgba(219,1,69,0.14)] text-white font-medium border-l-[3px] border-[#DB0145]"
                     )}
                   >
                     <link.icon className="h-4 w-4" />
@@ -264,7 +264,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </ul>
       </nav>
       
-      <div className="p-4 border-t border-gray-700 mt-auto">
+      <div className="p-4 border-t border-[rgba(255,255,255,0.08)] mt-auto">
         {user && (
           <div className="flex flex-col gap-2">
             <div className="flex items-center">
@@ -276,7 +276,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 <p className="text-xs text-gray-400">{user.email || ''}</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={handleLogout} className="w-full gap-2 bg-gray-800 text-white border-primary/30 hover:bg-primary/20 hover:text-white mt-2">
+            <Button variant="outline" size="sm" onClick={handleLogout} className="w-full gap-2 bg-[rgba(255,255,255,0.06)] text-white border-[rgba(255,255,255,0.08)] hover:bg-[rgba(219,1,69,0.14)] hover:text-white mt-2">
               <LogOut className="h-4 w-4" />
               Sair
             </Button>
