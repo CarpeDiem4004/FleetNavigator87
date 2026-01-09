@@ -17,6 +17,16 @@
     
     --sidebar-bg: #0F172A;
     --sidebar-text: #E5E7EB;
+    
+    /* Shadcn Sidebar Variables - Murici Dark Theme */
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 220 13% 91%;
+    --sidebar-primary: 343 99% 43%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 343 99% 43%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 343 99% 43%;
   }
 
   * {

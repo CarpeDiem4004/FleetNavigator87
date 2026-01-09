@@ -17,7 +17,7 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+      "flex h-10 w-full items-center justify-between rounded-lg border border-[#E4E7EC] bg-white px-3 py-2 text-sm text-[#101828] ring-offset-background placeholder:text-[#667085] focus:outline-none focus:ring-2 focus:ring-[#DB0145]/20 focus:border-[#DB0145] disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 transition-all duration-150",
       className
     )}
     {...props}
@@ -113,14 +113,13 @@ const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
 >(({ className, children, value = "placeholder-value", ...props }, ref) => {
-  // Garantir que value nunca seja vazio, o que causa erro no Radix UI
   const safeValue = value === "" ? "placeholder-value" : value;
   
   return (
     <SelectPrimitive.Item
       ref={ref}
       className={cn(
-        "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-[#DB0145]/10 focus:text-[#101828] data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         className
       )}
       value={safeValue}
@@ -128,7 +127,7 @@ const SelectItem = React.forwardRef<
     >
       <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
-          <Check className="h-4 w-4" />
+          <Check className="h-4 w-4 text-[#DB0145]" />
         </SelectPrimitive.ItemIndicator>
       </span>
 
