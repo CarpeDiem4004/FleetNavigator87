@@ -187,8 +187,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   <Button
                     variant="ghost"
                     className={cn(
-                      "w-full justify-start gap-2 font-normal text-white/90 hover:bg-[rgba(219,1,69,0.14)] hover:text-white",
-                      isActive(link.href) && "bg-[rgba(219,1,69,0.14)] text-white font-medium border-l-[3px] border-[#DB0145]"
+                      "w-full justify-start gap-2 font-normal text-white/90 hover:bg-[rgba(219,1,69,0.20)] hover:text-white transition-colors duration-150",
+                      isActive(link.href) && "bg-[rgba(219,1,69,0.25)] text-white font-medium border-l-[3px] border-[#DB0145]"
                     )}
                     onClick={link.toggle}
                   >
@@ -225,8 +225,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                                 }
                               }}
                               className={cn(
-                                "block py-1.5 px-2 text-sm rounded-md text-white/90 hover:bg-[rgba(219,1,69,0.14)] hover:text-white",
-                                isActive(subLink.href) && "bg-[rgba(219,1,69,0.14)] text-white font-medium border-l-[3px] border-[#DB0145]"
+                                "block py-1.5 px-2 text-sm rounded-md text-white/90 hover:bg-[rgba(219,1,69,0.20)] hover:text-white transition-colors duration-150",
+                                isActive(subLink.href) && "bg-[rgba(219,1,69,0.25)] text-white font-medium border-l-[3px] border-[#DB0145]"
                               )}
                             >
                               {subLink.label}
@@ -250,8 +250,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                       }
                     }}
                     className={cn(
-                      "flex items-center gap-2 py-2 px-3 rounded-md text-white/90 hover:bg-[rgba(219,1,69,0.14)] hover:text-white",
-                      isActive(link.href) && "bg-[rgba(219,1,69,0.14)] text-white font-medium border-l-[3px] border-[#DB0145]"
+                      "flex items-center gap-2 py-2 px-3 rounded-md text-white/90 hover:bg-[rgba(219,1,69,0.20)] hover:text-white transition-colors duration-150",
+                      isActive(link.href) && "bg-[rgba(219,1,69,0.25)] text-white font-medium border-l-[3px] border-[#DB0145]"
                     )}
                   >
                     <link.icon className="h-4 w-4" />
