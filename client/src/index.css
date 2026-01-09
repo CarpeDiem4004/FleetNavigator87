@@ -153,33 +153,48 @@
   border-radius: 8px;
 }
 
-/* Background com overlay para páginas - Overlay Leve para Imagem Viva */
-.murici-page-overlay {
-  background: linear-gradient(
-    180deg,
-    rgba(255,255,255,0.40) 0%,
-    rgba(255,255,255,0.55) 35%,
-    rgba(255,255,255,0.70) 100%
-  );
-  backdrop-filter: blur(0px);
+/* Fundo institucional Murici - Imagem Viva */
+.bg-murici-frota {
+  position: relative;
+  background-image: url("/assets/murici-frota-bg.png");
+  background-size: cover;
+  background-position: center right;
+  background-repeat: no-repeat;
+  filter: saturate(1.18) contrast(1.12) brightness(0.98);
 }
 
-/* Background Image Control - Imagem Mais Viva */
-.murici-bg-image {
-  filter: saturate(1.15) contrast(1.10) brightness(0.98);
-}
-
-.murici-bg-image::after {
-  content: '';
+/* Overlay inteligente (SEM película branca) */
+.bg-murici-frota::before {
+  content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(255,255,255,0.40) 0%,
-    rgba(255,255,255,0.55) 35%,
-    rgba(255,255,255,0.70) 100%
+    rgba(255,255,255,0.35) 0%,
+    rgba(255,255,255,0.50) 35%,
+    rgba(255,255,255,0.68) 100%
   );
-  backdrop-filter: blur(0px);
+  pointer-events: none;
+}
+
+/* Conteúdo acima do overlay */
+.bg-murici-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Legacy classes - mantidas para compatibilidade */
+.murici-page-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.35) 0%,
+    rgba(255,255,255,0.50) 35%,
+    rgba(255,255,255,0.68) 100%
+  );
+}
+
+.murici-bg-image {
+  filter: saturate(1.18) contrast(1.12) brightness(0.98);
 }
 
 /* Line Haul Abastecimento Background - Overlay Leve para Imagem Viva */

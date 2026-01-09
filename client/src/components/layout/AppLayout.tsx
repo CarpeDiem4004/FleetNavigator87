@@ -23,7 +23,7 @@ import {
   CreditCard,
   FolderOpen
 } from 'lucide-react';
-import backgroundImage from '../../assets/background.jpeg';
+// Background now uses public assets: /assets/murici-frota-bg.png
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -288,14 +288,22 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Camada de fundo branca com transparência */}
+      {/* Fundo institucional Murici - Imagem Viva */}
       <div 
-        className="fixed inset-0 pointer-events-none opacity-30"
+        className="fixed inset-0 pointer-events-none"
         style={{ 
-          backgroundImage: `url(${backgroundImage})`,
+          backgroundImage: `url('/assets/murici-frota-bg.png')`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
+          backgroundPosition: 'center right',
+          backgroundRepeat: 'no-repeat',
+          filter: 'saturate(1.18) contrast(1.12) brightness(0.98)'
+        }}
+      ></div>
+      {/* Overlay inteligente (SEM película branca) */}
+      <div 
+        className="fixed inset-0 pointer-events-none"
+        style={{ 
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.50) 35%, rgba(255,255,255,0.68) 100%)'
         }}
       ></div>
       
