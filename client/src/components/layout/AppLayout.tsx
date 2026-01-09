@@ -186,10 +186,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 <div>
                   <Button
                     variant="ghost"
-                    className={cn(
-                      "w-full justify-start gap-2 font-normal text-white/90 hover:bg-[rgba(219,1,69,0.25)] hover:text-white hover:border-l-[3px] hover:border-[#DB0145] transition-all duration-150",
-                      isActive(link.href) && "text-white font-medium border-l-[3px] border-[#DB0145] bg-[rgba(219,1,69,0.15)]"
-                    )}
+                    className="w-full justify-start gap-2 font-normal text-white/90 hover:bg-[rgba(219,1,69,0.25)] hover:text-white hover:border-l-[3px] hover:border-[#DB0145] transition-all duration-150"
                     onClick={link.toggle}
                   >
                     <link.icon className="h-4 w-4" />
@@ -224,10 +221,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                                   setSidebarOpen(false);
                                 }
                               }}
-                              className={cn(
-                                "block py-1.5 px-2 text-sm rounded-md text-white/90 hover:bg-[rgba(219,1,69,0.25)] hover:text-white hover:border-l-[3px] hover:border-[#DB0145] transition-all duration-150",
-                                isActive(subLink.href) && "text-white font-medium border-l-[3px] border-[#DB0145] bg-[rgba(219,1,69,0.15)]"
-                              )}
+                              className="block py-1.5 px-2 text-sm rounded-md text-white/90 hover:bg-[rgba(219,1,69,0.25)] hover:text-white hover:border-l-[3px] hover:border-[#DB0145] transition-all duration-150"
                             >
                               {subLink.label}
                             </a>
@@ -249,10 +243,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                         setSidebarOpen(false);
                       }
                     }}
-                    className={cn(
-                      "flex items-center gap-2 py-2 px-3 rounded-md text-white/90 hover:bg-[rgba(219,1,69,0.25)] hover:text-white hover:border-l-[3px] hover:border-[#DB0145] transition-all duration-150",
-                      isActive(link.href) && "text-white font-medium border-l-[3px] border-[#DB0145] bg-[rgba(219,1,69,0.15)]"
-                    )}
+                    className="flex items-center gap-2 py-2 px-3 rounded-md text-white/90 hover:bg-[rgba(219,1,69,0.25)] hover:text-white hover:border-l-[3px] hover:border-[#DB0145] transition-all duration-150"
                   >
                     <link.icon className="h-4 w-4" />
                     <span>{link.label}</span>
