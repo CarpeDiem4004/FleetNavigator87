@@ -153,29 +153,44 @@
   border-radius: 8px;
 }
 
-/* Background com overlay para páginas - Overlay Reforçado */
+/* Background com overlay para páginas - Overlay Leve para Imagem Viva */
 .murici-page-overlay {
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(2px);
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.40) 0%,
+    rgba(255,255,255,0.55) 35%,
+    rgba(255,255,255,0.70) 100%
+  );
+  backdrop-filter: blur(0px);
 }
 
-/* Background Image Control */
+/* Background Image Control - Imagem Mais Viva */
 .murici-bg-image {
-  filter: saturate(0.75) contrast(0.95) brightness(1.02);
+  filter: saturate(1.15) contrast(1.10) brightness(0.98);
 }
 
 .murici-bg-image::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(2px);
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.40) 0%,
+    rgba(255,255,255,0.55) 35%,
+    rgba(255,255,255,0.70) 100%
+  );
+  backdrop-filter: blur(0px);
 }
 
-/* Line Haul Abastecimento Background - Overlay Reforçado */
+/* Line Haul Abastecimento Background - Overlay Leve para Imagem Viva */
 .linehaul-abastecimento {
   background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.94)),
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,0.40) 0%,
+      rgba(255,255,255,0.55) 35%,
+      rgba(255,255,255,0.70) 100%
+    ),
     url('/attached_assets/image_1766424319159.png');
   background-size: cover;
   background-position: center;
