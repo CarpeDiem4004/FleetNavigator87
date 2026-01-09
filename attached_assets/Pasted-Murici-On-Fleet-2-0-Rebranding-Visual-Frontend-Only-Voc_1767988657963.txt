@@ -1,0 +1,170 @@
+Murici On Fleet 2.0 | Rebranding Visual (Frontend Only)
+
+Você é um especialista sênior em UI/UX e Frontend, com domínio absoluto em:
+React + TypeScript, Tailwind CSS e shadcn/ui (Radix UI).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTEXTO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Este projeto é o sistema corporativo “Murici On Fleet 2.0”.
+A tarefa é aplicar APENAS um REBRANDING VISUAL no frontend, alinhado à identidade da Murici,
+sem alterar absolutamente NENHUMA regra de negócio, dado, lógica ou integração.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 REGRA ABSOLUTA (NÃO QUEBRAR O SISTEMA)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Você NÃO pode, em hipótese alguma:
+- Alterar backend, APIs, Supabase, banco de dados, schemas, migrations ou dados
+- Alterar lógica de negócio, validações, autenticação, permissões ou estado global
+- Alterar rotas, paths, ids, nomes de funções ou comportamento de botões
+- Alterar textos, labels, máscaras, fluxos ou regras de formulários
+- Criar novas funcionalidades
+
+👉 Você PODE alterar SOMENTE:
+- Estilos (CSS / Tailwind)
+- Tokens visuais
+- Variáveis CSS
+- Aparência dos componentes shadcn/ui
+- Espaçamentos, cores, sombras, tipografia
+
+STACK CONFIRMADA:
+- React + TypeScript
+- Tailwind CSS
+- shadcn/ui (componentes em: client/src/components/ui/)
+- Lucide React
+- Vite
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 OBJETIVO VISUAL (IDENTIDADE MURICI)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Aparência corporativa, robusta e profissional
+- Sidebar escura institucional
+- Conteúdo claro com bom contraste
+- Rosa Murici como ACENTO estratégico (não como fundo grande)
+- Cards modernos, sólidos e translúcidos (premium)
+- Visual de software proprietário de grande empresa
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎨 PALETA OFICIAL (FIXA)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+--murici-pink: #DB0145;
+--murici-pink-hover: #B80840;
+
+--bg-main: #F2F4F7;
+--surface: #FFFFFF;
+--surface-alt: #FAFAFB;
+
+--text: #101828;
+--muted: #667085;
+--border: #E4E7EC;
+
+--sidebar-bg: #0F172A;
+--sidebar-text: #E5E7EB;
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🧱 IMPLEMENTAÇÃO OBRIGATÓRIA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1️⃣ GLOBAL THEME (shadcn/ui)
+- Atualizar globals.css
+- Manter todos os tokens shadcn/ui existentes
+- Ajustar valores para refletir a paleta Murici
+- NÃO remover nem renomear tokens
+
+2️⃣ BODY
+- background: var(--bg-main)
+- color: var(--text)
+
+3️⃣ SIDEBAR
+- Fundo: var(--sidebar-bg)
+- Texto: var(--sidebar-text)
+- Item ativo:
+  • background: rgba(219,1,69,.12)
+  • color: var(--murici-pink)
+  • border-left: 3px solid var(--murici-pink)
+- Hover sutil
+- NÃO alterar estrutura, links ou lógica do menu
+
+4️⃣ PÁGINAS COM IMAGEM DE FUNDO
+- Manter a imagem atual (caminhões)
+- Aplicar overlay:
+  background: rgba(255,255,255,0.88)
+  backdrop-filter: blur(2px)
+- Cards sempre acima do overlay
+
+5️⃣ CARDS (shadcn/ui Card) — MAIS TRANSLÚCIDOS
+- Background padrão:
+  rgba(255,255,255,0.82)
+- Border:
+  1px solid var(--border)
+- Border-radius:
+  14px
+- Shadow:
+  0 10px 30px rgba(0,0,0,0.08)
+
+6️⃣ CARDS DE KPI / MÉTRICAS
+- Background:
+  rgba(255,255,255,0.88)
+- Número principal grande (28–32px)
+- Labels em muted
+- Valores críticos em rosa Murici
+- Texto sempre 100% opaco
+
+7️⃣ HOVER DOS CARDS
+- Background hover:
+  rgba(255,255,255,0.92)
+- Transition:
+  180ms ease
+- Shadow hover:
+  0 12px 36px rgba(0,0,0,0.10)
+
+8️⃣ BOTÕES (shadcn Button)
+- Primary:
+  background murici-pink
+  texto branco
+  hover murici-pink-hover
+  radius 10–12px
+- Secondary:
+  background surface-alt
+  border border
+- Padronizar TODOS os botões
+- NÃO alterar ações
+
+9️⃣ INPUTS / SELECTS
+- Fundo branco
+- Borda border
+- Focus ring murici-pink (com opacidade)
+- Placeholder muted
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 TELAS PRIORITÁRIAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Aplicar ajustes visuais (SEM alterar lógica):
+- /work-safety (Segurança do Trabalho)
+- Painel de Solicitações
+- /fleet-management (Gestão de Frota)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📦 ENTREGÁVEIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Atualização visual em:
+  • globals.css
+  • componentes shadcn/ui existentes
+- Nenhuma mudança funcional
+- Build funcionando normalmente
+- Visual final alinhado à identidade Murici
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ CHECKLIST FINAL (OBRIGATÓRIO)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[ ] Backend intacto
+[ ] Banco e dados intactos
+[ ] Rotas intactas
+[ ] Apenas UI/estilo alterados
+[ ] Sidebar escura Murici
+[ ] Cards translúcidos premium
+[ ] Rosa usado como acento
+[ ] Sistema com visual corporativo
+
+Antes de iniciar, crie um CHECKPOINT.
+Execute mudanças com commits pequenos e seguros.

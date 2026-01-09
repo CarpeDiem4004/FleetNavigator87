@@ -4,12 +4,19 @@
 
 @layer base {
   :root {
-    --murici-red: 0 95% 44%;
-    --murici-red-hover: 0 95% 36%;
-    --murici-black: 0 0% 5%;
-    --murici-dark: 0 0% 11%;
-    --murici-gray: 0 0% 55%;
-    --murici-white: 0 0% 96%;
+    --murici-pink: #DB0145;
+    --murici-pink-hover: #B80840;
+    
+    --bg-main: #F2F4F7;
+    --surface: #FFFFFF;
+    --surface-alt: #FAFAFB;
+    
+    --text: #101828;
+    --muted: #667085;
+    --border: #E4E7EC;
+    
+    --sidebar-bg: #0F172A;
+    --sidebar-text: #E5E7EB;
   }
 
   * {
@@ -17,49 +24,122 @@
   }
 
   body {
-    @apply font-sans antialiased text-foreground;
-  }
-
-  .card {
-    background-color: rgba(255, 255, 255, 0.8);
-    border-radius: 8px;
+    @apply font-sans antialiased;
+    background-color: var(--bg-main);
+    color: var(--text);
   }
 }
 
-/* Murici Brand Colors */
-.murici-bg {
-  background-color: #0E0E0E;
-}
-
+/* Murici Rebranding - Premium Cards */
 .murici-card {
-  background-color: #1C1C1C;
-  border-left: 4px solid #E10613;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  transition: all 180ms ease;
 }
 
+.murici-card:hover {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.10);
+}
+
+/* KPI Cards */
+.murici-kpi-card {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.murici-kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.murici-kpi-critical {
+  color: var(--murici-pink);
+}
+
+/* Sidebar Murici Institucional */
+.murici-sidebar {
+  background-color: var(--sidebar-bg);
+  color: var(--sidebar-text);
+}
+
+.murici-sidebar-item {
+  color: var(--sidebar-text);
+  transition: all 150ms ease;
+}
+
+.murici-sidebar-item:hover {
+  background: rgba(219, 1, 69, 0.08);
+  color: #fff;
+}
+
+.murici-sidebar-item.active {
+  background: rgba(219, 1, 69, 0.12);
+  color: var(--murici-pink);
+  border-left: 3px solid var(--murici-pink);
+}
+
+/* Buttons Murici */
 .murici-btn {
-  background-color: #E10613;
+  background-color: var(--murici-pink);
   color: #FFFFFF;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all 150ms ease;
 }
 
 .murici-btn:hover {
-  background-color: #B8050F;
+  background-color: var(--murici-pink-hover);
 }
 
+.murici-btn-secondary {
+  background-color: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+}
+
+.murici-btn-secondary:hover {
+  background-color: var(--surface);
+}
+
+/* Inputs Murici */
 .murici-input {
-  background-color: #1C1C1C;
-  border: 1px solid #333;
-  color: #F5F5F5;
+  background-color: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+}
+
+.murici-input::placeholder {
+  color: var(--muted);
 }
 
 .murici-input:focus {
-  border-color: #E10613;
+  border-color: var(--murici-pink);
+  box-shadow: 0 0 0 3px rgba(219, 1, 69, 0.15);
+  outline: none;
 }
 
+/* Alert Murici */
 .murici-alert {
-  background-color: rgba(225, 6, 19, 0.15);
-  border-left: 4px solid #E10613;
+  background-color: rgba(219, 1, 69, 0.08);
+  border-left: 4px solid var(--murici-pink);
+  border-radius: 8px;
 }
 
+/* Background com overlay para páginas */
+.murici-page-overlay {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(2px);
+}
+
+/* Line Haul Abastecimento Background */
 .linehaul-abastecimento {
   background-image: 
     linear-gradient(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.72)),
@@ -67,4 +147,18 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+}
+
+/* Card translúcido padrão */
+.card-translucent {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  transition: all 180ms ease;
+}
+
+.card-translucent:hover {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.10);
 }
