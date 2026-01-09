@@ -1,0 +1,58 @@
+Você vai AJUSTAR APENAS O VISUAL (frontend). 
+NÃO alterar backend, rotas, dados, lógica, permissões, queries, estados ou comportamento.
+
+PROBLEMA ATUAL
+Os cards ficaram translúcidos demais e o background com imagem está muito presente, reduzindo contraste e legibilidade (visual “lavado”).
+
+OBJETIVO
+Manter cards com aparência translúcida premium, mas com leitura perfeita:
+- Fundo mais controlado (overlay mais forte)
+- Cards translúcidos, porém com contraste suficiente
+- Textos e gráficos nítidos
+
+IMPLEMENTAÇÃO
+
+1) CONTROLAR BACKGROUND (OBRIGATÓRIO)
+Nas páginas com imagem de fundo, fortalecer o overlay:
+- overlay branco: rgba(255,255,255,0.94)
+- manter blur leve: blur(2px)
+- adicional: reduzir saturação e contraste da imagem (sem remover):
+  filter: saturate(0.75) contrast(0.95) brightness(1.02);
+
+Se existir container do background, aplique esse filter na imagem e mantenha o overlay por pseudo-elemento.
+
+2) CARDS TRANSLÚCIDOS (AJUSTE FINO)
+Manter translúcido, mas mais legível:
+- Card padrão: background rgba(255,255,255,0.88)
+- KPI card: background rgba(255,255,255,0.92)
+
+Borda e sombra para dar “presença”:
+- border: 1px solid rgba(228,231,236,0.95)
+- box-shadow: 0 10px 30px rgba(16,24,40,0.10)
+
+NÃO aplicar blur no conteúdo interno.
+
+3) CONTRASTE DO CONTEÚDO
+- Títulos: color var(--text) e font-weight 700
+- Texto secundário: var(--muted)
+- Números KPI: font-weight 800
+- Aumentar levemente a opacidade e contraste dos textos dentro dos cards, sem mudar conteúdo.
+
+4) GRÁFICOS (MUITO IMPORTANTE)
+Garantir que área do gráfico tenha “painel” mais sólido:
+- Envolver chart container em um sub-card com:
+  background rgba(255,255,255,0.94)
+  border 1px solid rgba(228,231,236,1)
+  shadow leve
+Isso mantém o translúcido do card externo, mas dá leitura perfeita no gráfico.
+
+5) HOVER
+Hover sutil:
+- background hover: rgba(255,255,255,0.95)
+- transition 180ms
+
+CHECKLIST
+- Apenas UI/estilo alterados
+- Nenhuma mudança funcional
+- Legibilidade superior
+- Cards continuam premium translúcidos

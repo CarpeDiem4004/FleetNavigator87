@@ -40,36 +40,46 @@
   }
 }
 
-/* Murici Rebranding - Premium Cards */
+/* Murici Rebranding - Premium Cards (Legibilidade Aprimorada) */
 .murici-card {
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(228, 231, 236, 0.95);
   border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.10);
   transition: all 180ms ease;
 }
 
 .murici-card:hover {
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.10);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 12px 36px rgba(16, 24, 40, 0.12);
 }
 
-/* KPI Cards */
+/* KPI Cards - Mais Legíveis */
 .murici-kpi-card {
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(228, 231, 236, 0.95);
   border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.10);
 }
 
 .murici-kpi-value {
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text);
 }
 
 .murici-kpi-critical {
   color: var(--murici-pink);
+  font-weight: 800;
+}
+
+/* Chart Container - Fundo Sólido para Gráficos */
+.murici-chart-container {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(228, 231, 236, 1);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.06);
+  padding: 16px;
 }
 
 /* Sidebar Murici Institucional */
@@ -143,32 +153,56 @@
   border-radius: 8px;
 }
 
-/* Background com overlay para páginas */
+/* Background com overlay para páginas - Overlay Reforçado */
 .murici-page-overlay {
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(2px);
 }
 
-/* Line Haul Abastecimento Background */
+/* Background Image Control */
+.murici-bg-image {
+  filter: saturate(0.75) contrast(0.95) brightness(1.02);
+}
+
+.murici-bg-image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(2px);
+}
+
+/* Line Haul Abastecimento Background - Overlay Reforçado */
 .linehaul-abastecimento {
   background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.72)),
+    linear-gradient(rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.94)),
     url('/attached_assets/image_1766424319159.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
-/* Card translúcido padrão */
+/* Card translúcido padrão - Legibilidade Aprimorada */
 .card-translucent {
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(228, 231, 236, 0.95);
   border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.10);
   transition: all 180ms ease;
 }
 
 .card-translucent:hover {
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.10);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 12px 36px rgba(16, 24, 40, 0.12);
+}
+
+/* Títulos dentro de cards - Contraste Aprimorado */
+.murici-card-title {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.murici-card-subtitle {
+  color: var(--muted);
+  font-weight: 500;
 }
