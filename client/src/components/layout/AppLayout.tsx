@@ -187,8 +187,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   <Button
                     variant="ghost"
                     className={cn(
-                      "w-full justify-start gap-2 font-normal text-white/90 hover:bg-[rgba(219,1,69,0.25)] hover:text-white transition-colors duration-150",
-                      isActive(link.href) && "text-white font-medium border-l-[3px] border-[#DB0145] bg-transparent"
+                      "w-full justify-start gap-2 font-normal text-white/90 hover:bg-[rgba(219,1,69,0.25)] hover:text-white hover:border-l-[3px] hover:border-[#DB0145] transition-all duration-150",
+                      isActive(link.href) && "text-white font-medium border-l-[3px] border-[#DB0145] bg-[rgba(219,1,69,0.15)]"
                     )}
                     onClick={link.toggle}
                   >
@@ -225,8 +225,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                                 }
                               }}
                               className={cn(
-                                "block py-1.5 px-2 text-sm rounded-md text-white/90 hover:bg-[rgba(219,1,69,0.25)] hover:text-white transition-colors duration-150",
-                                isActive(subLink.href) && "text-white font-medium border-l-[3px] border-[#DB0145] bg-transparent"
+                                "block py-1.5 px-2 text-sm rounded-md text-white/90 hover:bg-[rgba(219,1,69,0.25)] hover:text-white hover:border-l-[3px] hover:border-[#DB0145] transition-all duration-150",
+                                isActive(subLink.href) && "text-white font-medium border-l-[3px] border-[#DB0145] bg-[rgba(219,1,69,0.15)]"
                               )}
                             >
                               {subLink.label}
@@ -250,8 +250,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                       }
                     }}
                     className={cn(
-                      "flex items-center gap-2 py-2 px-3 rounded-md text-white/90 hover:bg-[rgba(219,1,69,0.25)] hover:text-white transition-colors duration-150",
-                      isActive(link.href) && "text-white font-medium border-l-[3px] border-[#DB0145] bg-transparent"
+                      "flex items-center gap-2 py-2 px-3 rounded-md text-white/90 hover:bg-[rgba(219,1,69,0.25)] hover:text-white hover:border-l-[3px] hover:border-[#DB0145] transition-all duration-150",
+                      isActive(link.href) && "text-white font-medium border-l-[3px] border-[#DB0145] bg-[rgba(219,1,69,0.15)]"
                     )}
                   >
                     <link.icon className="h-4 w-4" />
