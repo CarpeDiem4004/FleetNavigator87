@@ -22,6 +22,7 @@ import { Separator } from '@/components/ui/separator';
 import FuelCardRequestForm from '@/components/FuelCardRequestForm';
 import WhatsAppResponseButton from '@/components/WhatsAppResponseButton';
 import LineHaulWhatsAppButton from '@/components/LineHaulWhatsAppButton';
+import TwilioWhatsAppButton from '@/components/TwilioWhatsAppButton';
 import { useLocation } from 'wouter';
 import { generateBatchApprovalMessage, openWhatsAppWeb, isValidPhoneNumber } from '@/lib/whatsapp-utils';
 import { cleanBaseName, normalizeBaseName } from '@/lib/base-utils';
@@ -3784,8 +3785,23 @@ const FuelCardRequestsPanel: React.FC = () => {
                             </div>
                           )}
                           
-                          {/* Botão WhatsApp ainda disponível */}
-                          <div className="flex justify-end">
+                          {/* Botões WhatsApp disponíveis */}
+                          <div className="flex gap-2 justify-end">
+                            {/* Botão Twilio - Resposta Automática */}
+                            {selectedSolicitation.telefone_celular && (
+                              <TwilioWhatsAppButton
+                                phone={selectedSolicitation.telefone_celular}
+                                placa={selectedSolicitation.placa}
+                                motorista={selectedSolicitation.motorista}
+                                valorSolicitado={selectedSolicitation.valor_solicitado}
+                                status={selectedSolicitation.status === 'Negado' ? 'negado' : 'aprovado'}
+                                observacoes={selectedSolicitation.motivo_negacao}
+                                size="lg"
+                                className="px-4"
+                              />
+                            )}
+                            
+                            {/* Botão WhatsApp Manual (backup) */}
                             {selectedSolicitation.origem_tipo === 'line_hall' ? (
                               <LineHaulWhatsAppButton 
                                 solicitation={selectedSolicitation}
@@ -3847,7 +3863,21 @@ const FuelCardRequestsPanel: React.FC = () => {
                               {updatingStatus ? 'Salvando...' : 'Salvar Alterações'}
                             </Button>
                             
-                            {/* Botão WhatsApp: LineHaul usa botão específico para avisar saldo */}
+                            {/* Botão Twilio - Resposta Automática */}
+                            {selectedSolicitation.telefone_celular && (
+                              <TwilioWhatsAppButton
+                                phone={selectedSolicitation.telefone_celular}
+                                placa={selectedSolicitation.placa}
+                                motorista={selectedSolicitation.motorista}
+                                valorSolicitado={selectedSolicitation.valor_solicitado}
+                                status={editedStatus === 'Negado' ? 'negado' : 'aprovado'}
+                                observacoes={motivoNegacao}
+                                size="lg"
+                                className="px-4"
+                              />
+                            )}
+                            
+                            {/* Botão WhatsApp Manual (backup) */}
                             {selectedSolicitation.origem_tipo === 'line_hall' ? (
                               <LineHaulWhatsAppButton 
                                 solicitation={selectedSolicitation}
