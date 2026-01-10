@@ -114,6 +114,7 @@ import consumoDiarioPostosRoute from "./routes/consumoDiarioPostosRoute";
 import { compareSchemas } from "./compareSchemas";
 import diagnosticoRoutes from './routes/diagnosticoRoutes';
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
+import { sendFuelCardRechargeNotification, isTwilioConfigured } from "./services/twilioWhatsAppService";
 // Removida importação redundante, pois está sendo importada via supabaseInsertRoute
 import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
 import { registerPostosMapeamentoRoutes } from "./routes/postosMapeamentoRoutes";
@@ -3949,6 +3950,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({
         success: false,
         message: 'Erro ao rejeitar solicitação',
+        error: error.message
+      });
+    }
+  });
+
+  // POST - Enviar notificação de recarga via WhatsApp (Twilio)
+  app.post('/api/fuel-card/send-whatsapp-notification', isAuthenticated, async (req, res) => {
+    try {
+      const { phone, placa, motorista, valorSolicitado, status, observacoes } = req.body;
+      const user = req.user as any;
+      
+      if (!phone || !placa || !motorista || !valorSolicitado || !status) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados incompletos para enviar notificação'
+        });
+      }
+      
+      const operador = user.name || user.email || 'Operador';
+      
+      console.log(`[Twilio] Enviando notificação de ${status} para ${phone}`);
+      
+      const result = await sendFuelCardRechargeNotification(
+        phone,
+        placa,
+        motorista,
+        parseFloat(valorSolicitado),
+        operador,
+        status as 'aprovado' | 'negado',
+        observacoes
+      );
+      
+      if (result.success) {
+        return res.status(200).json({
+          success: true,
+          message: 'Notificação enviada com sucesso via WhatsApp',
+          messageId: result.messageId
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao enviar notificação via WhatsApp',
+          error: result.error
+        });
+      }
+    } catch (error: any) {
+      console.error('[Twilio] Erro ao enviar notificação:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao enviar notificação',
+        error: error.message
+      });
+    }
+  });
+
+  // GET - Verificar status do Twilio
+  app.get('/api/twilio/status', isAuthenticated, async (req, res) => {
+    try {
+      const configured = isTwilioConfigured();
+      return res.status(200).json({
+        success: true,
+        configured,
+        message: configured ? 'Twilio configurado e pronto para uso' : 'Twilio não configurado'
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao verificar status do Twilio',
         error: error.message
       });
     }
