@@ -2,7 +2,24 @@ import twilio from 'twilio';
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
-const whatsappFrom = process.env.TWILIO_WHATSAPP_FROM;
+const rawWhatsappFrom = process.env.TWILIO_WHATSAPP_FROM;
+
+function formatWhatsAppFrom(from: string | undefined): string | undefined {
+  if (!from) return undefined;
+  
+  if (from.startsWith('whatsapp:')) {
+    return from;
+  }
+  
+  let cleaned = from.replace(/\D/g, '');
+  if (!cleaned.startsWith('55')) {
+    cleaned = '55' + cleaned;
+  }
+  
+  return `whatsapp:+${cleaned}`;
+}
+
+const whatsappFrom = formatWhatsAppFrom(rawWhatsappFrom);
 
 let twilioClient: twilio.Twilio | null = null;
 
@@ -46,7 +63,9 @@ export async function sendWhatsAppMessage(to: string, message: string): Promise<
   try {
     const formattedTo = formatPhoneForWhatsApp(to);
     
-    console.log(`[Twilio] Enviando mensagem para ${formattedTo}`);
+    console.log(`[Twilio] Enviando mensagem:`);
+    console.log(`[Twilio] - From: ${whatsappFrom}`);
+    console.log(`[Twilio] - To: ${formattedTo}`);
     
     const twilioMessage = await client.messages.create({
       from: whatsappFrom,
@@ -59,6 +78,7 @@ export async function sendWhatsAppMessage(to: string, message: string): Promise<
     return { success: true, messageId: twilioMessage.sid };
   } catch (error: any) {
     console.error('[Twilio] Erro ao enviar mensagem:', error.message);
+    console.error('[Twilio] Código do erro:', error.code);
     return { success: false, error: error.message };
   }
 }
