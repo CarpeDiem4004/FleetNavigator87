@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { MessageCircle, Check, Loader2 } from 'lucide-react';
+import { MessageCircle, Check, Loader2, Smartphone } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 interface TwilioWhatsAppButtonProps {
@@ -57,7 +57,7 @@ export default function TwilioWhatsAppButton({
         setIsSent(true);
         toast({
           title: 'Sucesso!',
-          description: 'Notificação enviada via WhatsApp',
+          description: 'Notificação enviada via SMS',
         });
       } else {
         throw new Error(response.error || 'Erro ao enviar');
@@ -66,7 +66,7 @@ export default function TwilioWhatsAppButton({
       console.error('Erro ao enviar notificação:', error);
       toast({
         title: 'Erro',
-        description: error.message || 'Falha ao enviar notificação WhatsApp',
+        description: error.message || 'Falha ao enviar notificação SMS',
         variant: 'destructive'
       });
     } finally {
@@ -94,14 +94,14 @@ export default function TwilioWhatsAppButton({
       size={size}
       onClick={handleSendNotification}
       disabled={isLoading || !phone}
-      className={`bg-[#25D366] hover:bg-[#128C7E] text-white ${className}`}
+      className={`bg-blue-600 hover:bg-blue-700 text-white ${className}`}
     >
       {isLoading ? (
         <Loader2 className="h-4 w-4 mr-1 animate-spin" />
       ) : (
-        <MessageCircle className="h-4 w-4 mr-1" />
+        <Smartphone className="h-4 w-4 mr-1" />
       )}
-      {isLoading ? 'Enviando...' : 'Responder WhatsApp'}
+      {isLoading ? 'Enviando...' : 'Enviar SMS'}
     </Button>
   );
 }

@@ -2,24 +2,7 @@ import twilio from 'twilio';
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
-const rawWhatsappFrom = process.env.TWILIO_WHATSAPP_FROM;
-
-function formatWhatsAppFrom(from: string | undefined): string | undefined {
-  if (!from) return undefined;
-  
-  if (from.startsWith('whatsapp:')) {
-    return from;
-  }
-  
-  let cleaned = from.replace(/\D/g, '');
-  if (!cleaned.startsWith('55')) {
-    cleaned = '55' + cleaned;
-  }
-  
-  return `whatsapp:+${cleaned}`;
-}
-
-const whatsappFrom = formatWhatsAppFrom(rawWhatsappFrom);
+const twilioFrom = process.env.TWILIO_WHATSAPP_FROM;
 
 let twilioClient: twilio.Twilio | null = null;
 
@@ -37,17 +20,17 @@ function getTwilioClient(): twilio.Twilio | null {
   return twilioClient;
 }
 
-function formatPhoneForWhatsApp(phone: string): string {
+function formatPhoneForSMS(phone: string): string {
   let cleaned = phone.replace(/\D/g, '');
   
   if (!cleaned.startsWith('55')) {
     cleaned = '55' + cleaned;
   }
   
-  return `whatsapp:+${cleaned}`;
+  return `+${cleaned}`;
 }
 
-export async function sendWhatsAppMessage(to: string, message: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
+export async function sendSMSMessage(to: string, message: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
   const client = getTwilioClient();
   
   if (!client) {
@@ -55,32 +38,37 @@ export async function sendWhatsAppMessage(to: string, message: string): Promise<
     return { success: false, error: 'Twilio não configurado' };
   }
   
-  if (!whatsappFrom) {
-    console.log('[Twilio] Número de origem WhatsApp não configurado');
+  if (!twilioFrom) {
+    console.log('[Twilio] Número de origem não configurado');
     return { success: false, error: 'Número de origem não configurado' };
   }
   
   try {
-    const formattedTo = formatPhoneForWhatsApp(to);
+    const formattedTo = formatPhoneForSMS(to);
+    const formattedFrom = formatPhoneForSMS(twilioFrom);
     
-    console.log(`[Twilio] Enviando mensagem:`);
-    console.log(`[Twilio] - From: ${whatsappFrom}`);
-    console.log(`[Twilio] - To: ${formattedTo}`);
+    console.log(`[Twilio SMS] Enviando mensagem:`);
+    console.log(`[Twilio SMS] - From: ${formattedFrom}`);
+    console.log(`[Twilio SMS] - To: ${formattedTo}`);
     
     const twilioMessage = await client.messages.create({
-      from: whatsappFrom,
+      from: formattedFrom,
       to: formattedTo,
       body: message
     });
     
-    console.log(`[Twilio] Mensagem enviada com sucesso. SID: ${twilioMessage.sid}`);
+    console.log(`[Twilio SMS] Mensagem enviada com sucesso. SID: ${twilioMessage.sid}`);
     
     return { success: true, messageId: twilioMessage.sid };
   } catch (error: any) {
-    console.error('[Twilio] Erro ao enviar mensagem:', error.message);
-    console.error('[Twilio] Código do erro:', error.code);
+    console.error('[Twilio SMS] Erro ao enviar mensagem:', error.message);
+    console.error('[Twilio SMS] Código do erro:', error.code);
     return { success: false, error: error.message };
   }
+}
+
+export async function sendWhatsAppMessage(to: string, message: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  return sendSMSMessage(to, message);
 }
 
 export async function sendFuelCardRechargeNotification(
@@ -95,29 +83,29 @@ export async function sendFuelCardRechargeNotification(
   let message = '';
   
   if (status === 'aprovado') {
-    message = `✅ *RECARGA DE CARTÃO APROVADA*\n\n` +
-      `🚗 Placa: ${placa}\n` +
-      `👤 Motorista: ${motorista}\n` +
-      `💰 Valor: R$ ${valorSolicitado.toFixed(2).replace('.', ',')}\n` +
-      `👨‍💼 Aprovado por: ${operador}\n` +
-      `📅 Data: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}\n\n` +
-      `A recarga foi efetuada com sucesso no cartão de combustível.`;
+    message = `RECARGA DE CARTAO APROVADA\n\n` +
+      `Placa: ${placa}\n` +
+      `Motorista: ${motorista}\n` +
+      `Valor: R$ ${valorSolicitado.toFixed(2).replace('.', ',')}\n` +
+      `Aprovado por: ${operador}\n` +
+      `Data: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}\n\n` +
+      `A recarga foi efetuada com sucesso no cartao de combustivel.`;
   } else {
-    message = `❌ *SOLICITAÇÃO DE RECARGA NEGADA*\n\n` +
-      `🚗 Placa: ${placa}\n` +
-      `👤 Motorista: ${motorista}\n` +
-      `💰 Valor solicitado: R$ ${valorSolicitado.toFixed(2).replace('.', ',')}\n` +
-      `👨‍💼 Analisado por: ${operador}\n` +
-      `📅 Data: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`;
+    message = `SOLICITACAO DE RECARGA NEGADA\n\n` +
+      `Placa: ${placa}\n` +
+      `Motorista: ${motorista}\n` +
+      `Valor solicitado: R$ ${valorSolicitado.toFixed(2).replace('.', ',')}\n` +
+      `Analisado por: ${operador}\n` +
+      `Data: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`;
     
     if (observacoes) {
-      message += `\n\n📝 Motivo: ${observacoes}`;
+      message += `\n\nMotivo: ${observacoes}`;
     }
   }
   
-  return sendWhatsAppMessage(phone, message);
+  return sendSMSMessage(phone, message);
 }
 
 export function isTwilioConfigured(): boolean {
-  return !!(accountSid && authToken && whatsappFrom);
+  return !!(accountSid && authToken && twilioFrom);
 }
