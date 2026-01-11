@@ -188,6 +188,8 @@ export function generateBatchApprovalMessage(
     valor_solicitado?: number | string;
     provedor_cartao?: string;
     data_abastecimento?: string;
+    placa_cartao?: string;
+    numero_cartao?: string;
   }>,
   baseName: string
 ): string {
@@ -212,7 +214,12 @@ export function generateBatchApprovalMessage(
       const provedor = sol.provedor_cartao.toLowerCase().includes('veloe') ? 'Veloe' : 
                        sol.provedor_cartao.toLowerCase().includes('ticket') ? 'Ticket' : 
                        sol.provedor_cartao;
-      message += `   💳 Cartão: ${provedor}\n`;
+      message += `   💳 Provedor: ${provedor}\n`;
+    }
+    
+    const placaCartao = sol.placa_cartao || sol.numero_cartao;
+    if (placaCartao) {
+      message += `   🔢 Placa Cartão: ${placaCartao}\n`;
     }
     
     if (sol.data_abastecimento) {
