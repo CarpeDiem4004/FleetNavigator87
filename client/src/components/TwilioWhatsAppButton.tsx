@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { MessageCircle, Check, Loader2, Smartphone } from 'lucide-react';
+import { MessageCircle, Check, Loader2 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 interface TwilioWhatsAppButtonProps {
@@ -11,6 +11,8 @@ interface TwilioWhatsAppButtonProps {
   valorSolicitado: number;
   status: 'aprovado' | 'negado';
   observacoes?: string;
+  provedor?: string;
+  dataUso?: string;
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'default' | 'sm' | 'lg' | 'icon';
   className?: string;
@@ -23,6 +25,8 @@ export default function TwilioWhatsAppButton({
   valorSolicitado,
   status,
   observacoes,
+  provedor,
+  dataUso,
   variant = 'default',
   size = 'sm',
   className = ''
@@ -50,14 +54,16 @@ export default function TwilioWhatsAppButton({
         motorista,
         valorSolicitado,
         status,
-        observacoes
+        observacoes,
+        provedor,
+        dataUso
       });
 
       if (response.success) {
         setIsSent(true);
         toast({
           title: 'Sucesso!',
-          description: 'Notificação enviada via SMS',
+          description: 'Notificação enviada via WhatsApp',
         });
       } else {
         throw new Error(response.error || 'Erro ao enviar');
@@ -66,7 +72,7 @@ export default function TwilioWhatsAppButton({
       console.error('Erro ao enviar notificação:', error);
       toast({
         title: 'Erro',
-        description: error.message || 'Falha ao enviar notificação SMS',
+        description: error.message || 'Falha ao enviar notificação WhatsApp',
         variant: 'destructive'
       });
     } finally {
@@ -94,14 +100,14 @@ export default function TwilioWhatsAppButton({
       size={size}
       onClick={handleSendNotification}
       disabled={isLoading || !phone}
-      className={`bg-blue-600 hover:bg-blue-700 text-white ${className}`}
+      className={`bg-[#25D366] hover:bg-[#128C7E] text-white ${className}`}
     >
       {isLoading ? (
         <Loader2 className="h-4 w-4 mr-1 animate-spin" />
       ) : (
-        <Smartphone className="h-4 w-4 mr-1" />
+        <MessageCircle className="h-4 w-4 mr-1" />
       )}
-      {isLoading ? 'Enviando...' : 'Enviar SMS'}
+      {isLoading ? 'Enviando...' : 'Enviar WhatsApp'}
     </Button>
   );
 }

@@ -115,6 +115,7 @@ import { compareSchemas } from "./compareSchemas";
 import diagnosticoRoutes from './routes/diagnosticoRoutes';
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
 import { sendFuelCardRechargeNotification, isTwilioConfigured } from "./services/twilioWhatsAppService";
+import { sendFuelCardRechargeNotificationZAPI, isZAPIConfigured } from "./services/zapiWhatsAppService";
 // Removida importação redundante, pois está sendo importada via supabaseInsertRoute
 import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
 import { registerPostosMapeamentoRoutes } from "./routes/postosMapeamentoRoutes";
@@ -3955,10 +3956,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // POST - Enviar notificação de recarga via WhatsApp (Twilio)
+  // POST - Enviar notificação de recarga via WhatsApp (Z-API)
   app.post('/api/fuel-card/send-whatsapp-notification', isAuthenticated, async (req, res) => {
     try {
-      const { phone, placa, motorista, valorSolicitado, status, observacoes } = req.body;
+      const { phone, placa, motorista, valorSolicitado, status, observacoes, provedor, dataUso } = req.body;
       const user = req.user as any;
       
       if (!phone || !placa || !motorista || !valorSolicitado || !status) {
@@ -3970,17 +3971,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const operador = user.name || user.email || 'Operador';
       
-      console.log(`[Twilio] Enviando notificação de ${status} para ${phone}`);
+      console.log(`[Z-API] Enviando notificação de ${status} para ${phone}`);
       
-      const result = await sendFuelCardRechargeNotification(
+      const result = await sendFuelCardRechargeNotificationZAPI({
         phone,
         placa,
         motorista,
-        parseFloat(valorSolicitado),
+        valorSolicitado: parseFloat(valorSolicitado),
         operador,
-        status as 'aprovado' | 'negado',
-        observacoes
-      );
+        status: status as 'aprovado' | 'negado',
+        provedor: provedor || undefined,
+        dataUso: dataUso || undefined,
+        observacoes: observacoes || undefined
+      });
       
       if (result.success) {
         return res.status(200).json({
@@ -3996,7 +3999,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
     } catch (error: any) {
-      console.error('[Twilio] Erro ao enviar notificação:', error);
+      console.error('[Z-API] Erro ao enviar notificação:', error);
       return res.status(500).json({
         success: false,
         message: 'Erro ao enviar notificação',

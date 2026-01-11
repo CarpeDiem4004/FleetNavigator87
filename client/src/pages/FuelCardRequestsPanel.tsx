@@ -3787,7 +3787,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                           
                           {/* Botões WhatsApp disponíveis */}
                           <div className="flex gap-2 justify-end">
-                            {/* Botão Twilio - Resposta Automática */}
+                            {/* Botão Z-API - Resposta Automática via WhatsApp */}
                             {selectedSolicitation.telefone_celular && (
                               <TwilioWhatsAppButton
                                 phone={selectedSolicitation.telefone_celular}
@@ -3796,6 +3796,8 @@ const FuelCardRequestsPanel: React.FC = () => {
                                 valorSolicitado={selectedSolicitation.valor_solicitado}
                                 status={selectedSolicitation.status === 'Negado' ? 'negado' : 'aprovado'}
                                 observacoes={selectedSolicitation.motivo_negacao}
+                                provedor={selectedSolicitation.provedor_cartao}
+                                dataUso={selectedSolicitation.data_abastecimento}
                                 size="lg"
                                 className="px-4"
                               />
@@ -3863,7 +3865,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                               {updatingStatus ? 'Salvando...' : 'Salvar Alterações'}
                             </Button>
                             
-                            {/* Botão Twilio - Resposta Automática */}
+                            {/* Botão Z-API - Resposta Automática via WhatsApp */}
                             {selectedSolicitation.telefone_celular && (
                               <TwilioWhatsAppButton
                                 phone={selectedSolicitation.telefone_celular}
@@ -3872,6 +3874,8 @@ const FuelCardRequestsPanel: React.FC = () => {
                                 valorSolicitado={selectedSolicitation.valor_solicitado}
                                 status={editedStatus === 'Negado' ? 'negado' : 'aprovado'}
                                 observacoes={motivoNegacao}
+                                provedor={selectedSolicitation.provedor_cartao}
+                                dataUso={selectedSolicitation.data_abastecimento}
                                 size="lg"
                                 className="px-4"
                               />
