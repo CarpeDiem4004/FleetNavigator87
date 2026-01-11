@@ -186,6 +186,8 @@ export function generateBatchApprovalMessage(
     placa: string;
     motorista: string;
     valor_solicitado?: number | string;
+    provedor_cartao?: string;
+    data_abastecimento?: string;
   }>,
   baseName: string
 ): string {
@@ -202,9 +204,22 @@ export function generateBatchApprovalMessage(
 
   approvedSolicitations.forEach((sol, index) => {
     const valor = sol.valor_solicitado ? parseFloat(sol.valor_solicitado.toString()) : 0;
-    message += `${index + 1}. 🚛 *${sol.placa}*\n`;
+    message += `${index + 1}. 🚗 *${sol.placa}*\n`;
     message += `   👤 ${sol.motorista}\n`;
-    message += `   💵 R$ ${isNaN(valor) ? '0.00' : valor.toFixed(2)}\n\n`;
+    message += `   💰 R$ ${isNaN(valor) ? '0.00' : valor.toFixed(2)}\n`;
+    
+    if (sol.provedor_cartao) {
+      const provedor = sol.provedor_cartao.toLowerCase().includes('veloe') ? 'Veloe' : 
+                       sol.provedor_cartao.toLowerCase().includes('ticket') ? 'Ticket' : 
+                       sol.provedor_cartao;
+      message += `   💳 Cartão: ${provedor}\n`;
+    }
+    
+    if (sol.data_abastecimento) {
+      message += `   📅 Data de Uso: ${sol.data_abastecimento}\n`;
+    }
+    
+    message += `\n`;
   });
 
   message += `✨ Todos os veículos já podem abastecer!\n\n`;
