@@ -46,64 +46,98 @@ export function generateFuelCardMessage(
   status: string,
   valorSolicitado?: number | string,
   observacoes?: string,
-  motivoNegacao?: string | null
+  motivoNegacao?: string | null,
+  provedor?: string | null,
+  placaCartao?: string | null,
+  dataUso?: string | null
 ): string {
-  let message = `Olá ${motorista}!\n\n`;
+  let message = `Ola ${motorista}!\n\n`;
   
-  // Convert valorSolicitado to number if it's a string
   const valor = valorSolicitado ? parseFloat(valorSolicitado.toString()) : null;
+  
+  const formatProvedor = (p: string) => {
+    if (p.toLowerCase().includes('veloe')) return 'Veloe';
+    if (p.toLowerCase().includes('ticket')) return 'Ticket';
+    return p;
+  };
   
   switch (status.toLowerCase()) {
     case 'recarga efetuada':
-      message += `✅ Sua solicitação de recarga foi APROVADA!\n\n`;
-      message += `🚛 Veículo: ${placa}\n`;
+      message += `Sua solicitacao de recarga foi APROVADA!\n\n`;
+      message += `Veiculo: ${placa}\n`;
       if (valor && !isNaN(valor)) {
-        message += `💰 Valor: R$ ${valor.toFixed(2)}\n`;
+        message += `Valor: R$ ${valor.toFixed(2)}\n`;
       }
-      message += `\n📋 Status: Recarga efetuada com sucesso\n`;
+      if (provedor) {
+        message += `Provedor: ${formatProvedor(provedor)}\n`;
+      }
+      if (placaCartao) {
+        message += `Placa Cartao: ${placaCartao}\n`;
+      }
+      if (dataUso) {
+        message += `Data de Uso: ${dataUso}\n`;
+      }
+      message += `\nStatus: Recarga efetuada com sucesso\n`;
       if (observacoes) {
-        message += `\n📝 Observações: ${observacoes}\n`;
+        message += `\nObservacoes: ${observacoes}\n`;
       }
-      message += `\nJá pode abastecer! 🚀`;
+      message += `\nJa pode abastecer!`;
       break;
       
     case 'em análise':
-      message += `⏳ Sua solicitação está EM ANÁLISE\n\n`;
-      message += `🚛 Veículo: ${placa}\n`;
+      message += `Sua solicitacao esta EM ANALISE\n\n`;
+      message += `Veiculo: ${placa}\n`;
       if (valor && !isNaN(valor)) {
-        message += `💰 Valor solicitado: R$ ${valor.toFixed(2)}\n`;
+        message += `Valor solicitado: R$ ${valor.toFixed(2)}\n`;
       }
-      message += `\n📋 Nossa equipe está analisando sua solicitação.\n`;
-      message += `Em breve você receberá uma resposta. 📞`;
+      if (provedor) {
+        message += `Provedor: ${formatProvedor(provedor)}\n`;
+      }
+      if (placaCartao) {
+        message += `Placa Cartao: ${placaCartao}\n`;
+      }
+      message += `\nNossa equipe esta analisando sua solicitacao.\n`;
+      message += `Em breve voce recebera uma resposta.`;
       break;
       
     case 'negado':
-      message += `❌ Sua solicitação foi NEGADA\n\n`;
-      message += `🚛 Veículo: ${placa}\n`;
+      message += `Sua solicitacao foi NEGADA\n\n`;
+      message += `Veiculo: ${placa}\n`;
       if (valor && !isNaN(valor)) {
-        message += `💰 Valor solicitado: R$ ${valor.toFixed(2)}\n`;
+        message += `Valor solicitado: R$ ${valor.toFixed(2)}\n`;
       }
-      // Priorizar motivoNegacao específico, se não existir, usar observações
+      if (provedor) {
+        message += `Provedor: ${formatProvedor(provedor)}\n`;
+      }
+      if (placaCartao) {
+        message += `Placa Cartao: ${placaCartao}\n`;
+      }
       const motivoParaExibir = motivoNegacao && motivoNegacao.trim() ? motivoNegacao : observacoes;
       if (motivoParaExibir) {
-        message += `\n⚠️ Motivo da Negação: ${motivoParaExibir}\n`;
+        message += `\nMotivo da Negacao: ${motivoParaExibir}\n`;
       }
-      message += `\nEntre em contato para mais informações. 📞`;
+      message += `\nEntre em contato para mais informacoes.`;
       break;
       
     default:
-      message += `📋 Atualização sobre sua solicitação de recarga\n\n`;
-      message += `🚛 Veículo: ${placa}\n`;
+      message += `Atualizacao sobre sua solicitacao de recarga\n\n`;
+      message += `Veiculo: ${placa}\n`;
       if (valor && !isNaN(valor)) {
-        message += `💰 Valor: R$ ${valor.toFixed(2)}\n`;
+        message += `Valor: R$ ${valor.toFixed(2)}\n`;
       }
-      message += `📊 Status: ${status}\n`;
+      if (provedor) {
+        message += `Provedor: ${formatProvedor(provedor)}\n`;
+      }
+      if (placaCartao) {
+        message += `Placa Cartao: ${placaCartao}\n`;
+      }
+      message += `Status: ${status}\n`;
       if (observacoes) {
-        message += `\n📝 Informações: ${observacoes}\n`;
+        message += `\nInformacoes: ${observacoes}\n`;
       }
   }
   
-  message += `\n\n---\n📱 Mensagem automática do Sistema de Gestão de Frota`;
+  message += `\n\n---\nMensagem automatica do Sistema de Gestao de Frota`;
   
   return message;
 }
@@ -199,38 +233,38 @@ export function generateBatchApprovalMessage(
     return sum + (isNaN(valor) ? 0 : valor);
   }, 0);
 
-  let message = `✅ *APROVAÇÃO EM LOTE - ${baseName.toUpperCase()}*\n\n`;
-  message += `🎉 ${totalApproved} solicitações foram APROVADAS!\n`;
-  message += `💰 Valor total: R$ ${totalValue.toFixed(2)}\n\n`;
-  message += `📋 *VEÍCULOS COM SALDO DISPONÍVEL:*\n\n`;
+  let message = `*APROVACAO EM LOTE - ${baseName.toUpperCase()}*\n\n`;
+  message += `${totalApproved} solicitacoes foram APROVADAS!\n`;
+  message += `Valor total: R$ ${totalValue.toFixed(2)}\n\n`;
+  message += `*VEICULOS COM SALDO DISPONIVEL:*\n\n`;
 
   approvedSolicitations.forEach((sol, index) => {
     const valor = sol.valor_solicitado ? parseFloat(sol.valor_solicitado.toString()) : 0;
-    message += `${index + 1}. 🚗 *${sol.placa}*\n`;
-    message += `   👤 ${sol.motorista}\n`;
-    message += `   💰 R$ ${isNaN(valor) ? '0.00' : valor.toFixed(2)}\n`;
+    message += `${index + 1}. *${sol.placa}*\n`;
+    message += `   Motorista: ${sol.motorista}\n`;
+    message += `   Valor: R$ ${isNaN(valor) ? '0.00' : valor.toFixed(2)}\n`;
     
     if (sol.provedor_cartao) {
       const provedor = sol.provedor_cartao.toLowerCase().includes('veloe') ? 'Veloe' : 
                        sol.provedor_cartao.toLowerCase().includes('ticket') ? 'Ticket' : 
                        sol.provedor_cartao;
-      message += `   💳 Provedor: ${provedor}\n`;
+      message += `   Provedor: ${provedor}\n`;
     }
     
     const placaCartao = sol.placa_cartao || sol.numero_cartao;
     if (placaCartao) {
-      message += `   🔢 Placa Cartão: ${placaCartao}\n`;
+      message += `   Placa Cartao: ${placaCartao}\n`;
     }
     
     if (sol.data_abastecimento) {
-      message += `   📅 Data de Uso: ${sol.data_abastecimento}\n`;
+      message += `   Data de Uso: ${sol.data_abastecimento}\n`;
     }
     
     message += `\n`;
   });
 
-  message += `✨ Todos os veículos já podem abastecer!\n\n`;
-  message += `---\n📱 Mensagem automática do Sistema de Gestão de Frota`;
+  message += `Todos os veiculos ja podem abastecer!\n\n`;
+  message += `---\nMensagem automatica do Sistema de Gestao de Frota`;
 
   return message;
 }

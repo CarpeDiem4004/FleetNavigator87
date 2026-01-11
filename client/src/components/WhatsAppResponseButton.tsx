@@ -29,6 +29,10 @@ interface WhatsAppResponseButtonProps {
     base?: string;
     tipo_cartao?: string;
     motivo_negacao?: string | null;
+    provedor_cartao?: string | null;
+    placa_cartao?: string | null;
+    numero_cartao?: string | null;
+    data_abastecimento?: string | null;
   };
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'sm' | 'default' | 'lg';
@@ -65,13 +69,17 @@ const WhatsAppResponseButton: React.FC<WhatsAppResponseButtonProps> = ({
     setPhoneNumber(extractedPhone);
     
     // Gerar mensagem padrão baseada no status
+    const placaCartao = solicitation.placa_cartao || solicitation.numero_cartao || null;
     const defaultMessage = generateFuelCardMessage(
       solicitation.motorista,
       solicitation.placa,
       solicitation.status,
       solicitation.valor_solicitado,
       solicitation.observacoes,
-      solicitation.motivo_negacao
+      solicitation.motivo_negacao,
+      solicitation.provedor_cartao,
+      placaCartao,
+      solicitation.data_abastecimento
     );
     
     setMessage(defaultMessage);
