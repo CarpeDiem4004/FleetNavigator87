@@ -112,23 +112,8 @@ export default function MessagesAttendancePage() {
   // Mensagens individuais (não de grupos)
   const individualMessages = messages.filter(msg => !msg.grupo_id && !msg.grupo_nome);
   
-  // Agrupa mensagens individuais por número de telefone
+  // Agrupa mensagens individuais por número de telefone (sem parseMessage - será calculado depois)
   const uniqueContacts = Array.from(new Set(individualMessages.map(m => m.remetente_numero))).filter(Boolean);
-  
-  const contactsWithLastMessage = uniqueContacts.map(phoneNumber => {
-    const msgsOfContact = individualMessages
-      .filter(m => m.remetente_numero === phoneNumber)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    const parsed = parseMessage(msgsOfContact[0]?.mensagem || '');
-    return {
-      phoneNumber,
-      contactName: msgsOfContact[0]?.remetente_nome || phoneNumber,
-      lastMessage: msgsOfContact[0],
-      unreadCount: msgsOfContact.filter(m => !m.respondido && !m.is_outgoing).length,
-      totalMessages: msgsOfContact.length,
-      parsed
-    };
-  }).sort((a, b) => new Date(b.lastMessage?.created_at || 0).getTime() - new Date(a.lastMessage?.created_at || 0).getTime());
 
   // Mensagens do contato selecionado ordenadas cronologicamente
   const selectedContactMessages = selectedContact 
@@ -396,6 +381,22 @@ export default function MessagesAttendancePage() {
     const colorClass = colors[provedor] || 'bg-gray-100 text-gray-800 border-gray-300';
     return <Badge variant="outline" className={`text-xs ${colorClass}`}>{provedor}</Badge>;
   };
+
+  // Agrupa mensagens individuais por número de telefone (agora que parseMessage está definido)
+  const contactsWithLastMessage = uniqueContacts.map(phoneNumber => {
+    const msgsOfContact = individualMessages
+      .filter(m => m.remetente_numero === phoneNumber)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const parsed = parseMessage(msgsOfContact[0]?.mensagem || '');
+    return {
+      phoneNumber,
+      contactName: msgsOfContact[0]?.remetente_nome || phoneNumber,
+      lastMessage: msgsOfContact[0],
+      unreadCount: msgsOfContact.filter(m => !m.respondido && !m.is_outgoing).length,
+      totalMessages: msgsOfContact.length,
+      parsed
+    };
+  }).sort((a, b) => new Date(b.lastMessage?.created_at || 0).getTime() - new Date(a.lastMessage?.created_at || 0).getTime());
 
   const filterMessages = (msgs: WhatsAppMessage[], isGroupTab: boolean = false) => {
     return msgs.filter(msg => {
@@ -904,7 +905,7 @@ export default function MessagesAttendancePage() {
                               <div className="flex items-center justify-between mb-1">
                                 <span className="font-semibold text-gray-800 truncate">{contact.contactName}</span>
                                 <span className="text-xs text-gray-500 flex-shrink-0">
-                                  {formatDate(contact.lastMessage?.created_at || '')}
+                                  {formatTime(contact.lastMessage?.created_at || '')}
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
