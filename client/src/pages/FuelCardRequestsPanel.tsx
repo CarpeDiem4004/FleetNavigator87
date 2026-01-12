@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/lib/queryClient';
-import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, TrendingUp, TrendingDown, DollarSign, Download, Plus, Trash2, Truck, History, FileText, AlertTriangle, BarChart3, Image } from 'lucide-react';
+import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, TrendingUp, TrendingDown, DollarSign, Download, Plus, Trash2, Truck, History, FileText, AlertTriangle, BarChart3, Image, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
@@ -1736,6 +1736,14 @@ const FuelCardRequestsPanel: React.FC = () => {
                 >
                   <Truck className="h-4 w-4" />
                   Gerenciamento Terceiros
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  className="flex items-center gap-2 bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
+                  onClick={() => setLocation('/painel-atendimento-saldo')}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Atendimento de Saldo
                 </Button>
               </>
             )}

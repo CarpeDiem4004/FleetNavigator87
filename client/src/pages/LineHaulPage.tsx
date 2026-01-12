@@ -2281,30 +2281,6 @@ const LineHaulPage = () => {
                 })}
             </div>
           </div>
-        ) : showMessagesPanel ? (
-          <div className="space-y-4">
-            {/* Header do Painel de Mensagens */}
-            <Card className="bg-white shadow-sm border-0">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center text-gray-800">
-                    <MessageSquare className="h-6 w-6 mr-2 text-[#E10613]" />
-                    <span className="text-xl font-bold">Painel de Mensagens - Atendimento de Saldo</span>
-                  </span>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setShowMessagesPanel(false)}
-                    className="border-gray-300 hover:bg-gray-50"
-                  >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Voltar
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-            </Card>
-            
-            <MessagesAttendancePanel />
-          </div>
         ) : showGarage ? (
           <div className="space-y-6">
             {/* Header com botão voltar para Garagem */}
@@ -2635,45 +2611,6 @@ const LineHaulPage = () => {
                   Gerenciar
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Painel de Mensagens */}
-          <Card className="bg-white/80 backdrop-blur-sm border-blue-200 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleCardAction('painel-mensagens')}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center text-blue-700">
-                <MessageSquare className="h-5 w-5 mr-2" />
-                Atendimento de Saldo
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                <div className="text-center p-2 bg-red-50 rounded-lg">
-                  <div className="text-xl font-bold text-red-600">3</div>
-                  <div className="text-xs text-gray-600">Pendentes</div>
-                </div>
-                <div className="text-center p-2 bg-yellow-50 rounded-lg">
-                  <div className="text-xl font-bold text-yellow-600">2</div>
-                  <div className="text-xs text-gray-600">Em Atend.</div>
-                </div>
-                <div className="text-center p-2 bg-green-50 rounded-lg">
-                  <div className="text-xl font-bold text-green-600">15</div>
-                  <div className="text-xs text-gray-600">Finalizados</div>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 mb-4">
-                Gerencie solicitações de saldo Ticket, Veloe e Line Haul com histórico completo de atendimento.
-              </p>
-              <Button 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCardAction('painel-mensagens');
-                }}
-              >
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Abrir Painel de Mensagens
-              </Button>
             </CardContent>
           </Card>
 
