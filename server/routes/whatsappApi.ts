@@ -743,10 +743,22 @@ router.post('/reply', async (req: Request, res: Response) => {
       ]
     );
     
-    await pool.query(
-      `UPDATE whatsapp_messages SET respondido = true, respondido_por = $1, respondido_em = NOW() WHERE id = $2`,
-      [senderName, messageId]
-    );
+    // Se for grupo, marcar TODAS as mensagens pendentes do grupo como respondidas
+    if (isGroup && originalMessage.grupo_nome) {
+      await pool.query(
+        `UPDATE whatsapp_messages 
+         SET respondido = true, respondido_por = $1, respondido_em = NOW(), status = 'respondido'
+         WHERE grupo_nome = $2 AND respondido = false AND is_outgoing = false`,
+        [senderName, originalMessage.grupo_nome]
+      );
+      console.log(`[WHATSAPP] Marcadas todas mensagens pendentes do grupo "${originalMessage.grupo_nome}" como respondidas`);
+    } else {
+      // Se for individual, marcar apenas a mensagem específica
+      await pool.query(
+        `UPDATE whatsapp_messages SET respondido = true, respondido_por = $1, respondido_em = NOW(), status = 'respondido' WHERE id = $2`,
+        [senderName, messageId]
+      );
+    }
     
     res.json({ 
       success: true, 
