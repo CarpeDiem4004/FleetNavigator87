@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { 
@@ -75,10 +76,14 @@ export default function MessagesAttendancePage() {
   const [activeTab, setActiveTab] = useState<string>('individual');
   const [replyText, setReplyText] = useState('');
   const [isSendingReply, setIsSendingReply] = useState(false);
+  const [groupFilter, setGroupFilter] = useState<string>('todos');
 
   useEffect(() => {
     fetchMessages();
   }, []);
+
+  const groupMessages = messages.filter(msg => msg.grupo_id || msg.grupo_nome);
+  const uniqueGroups = Array.from(new Set(groupMessages.map(m => m.grupo_nome || 'Grupo Desconhecido'))).filter(Boolean);
 
   const sendReply = async () => {
     if (!selectedMessage || !replyText.trim()) {
@@ -234,9 +239,8 @@ export default function MessagesAttendancePage() {
   };
 
   const individualMessages = messages.filter(msg => !msg.grupo_id && !msg.grupo_nome);
-  const groupMessages = messages.filter(msg => msg.grupo_id || msg.grupo_nome);
 
-  const filterMessages = (msgs: WhatsAppMessage[]) => {
+  const filterMessages = (msgs: WhatsAppMessage[], isGroupTab: boolean = false) => {
     return msgs.filter(msg => {
       const parsed = parseMessage(msg.mensagem);
       const matchesSearch = 
@@ -250,12 +254,18 @@ export default function MessagesAttendancePage() {
       if (statusFilter === 'negacao' && parsed.type !== 'negacao') return false;
       if (statusFilter === 'alerta' && parsed.type !== 'alerta') return false;
       
+      // Filtro por grupo (apenas na aba de grupos)
+      if (isGroupTab && groupFilter !== 'todos') {
+        const msgGroup = msg.grupo_nome || 'Grupo Desconhecido';
+        if (msgGroup !== groupFilter) return false;
+      }
+      
       return searchTerm ? matchesSearch : true;
     });
   };
 
   const filteredIndividual = filterMessages(individualMessages);
-  const filteredGroups = filterMessages(groupMessages);
+  const filteredGroups = filterMessages(groupMessages, true);
 
   const handleLogout = async () => {
     await logout();
@@ -801,6 +811,20 @@ export default function MessagesAttendancePage() {
                       className="pl-10"
                     />
                   </div>
+                  
+                  {/* Filtro por Grupo */}
+                  <Select value={groupFilter} onValueChange={setGroupFilter}>
+                    <SelectTrigger className="w-[200px]">
+                      <Users className="h-4 w-4 mr-2 text-purple-500" />
+                      <SelectValue placeholder="Filtrar por grupo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos os Grupos</SelectItem>
+                      {uniqueGroups.map(group => (
+                        <SelectItem key={group} value={group}>{group}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   
                   <div className="flex gap-2">
                     {['todos', 'aprovacao', 'negacao', 'alerta'].map(filter => (
