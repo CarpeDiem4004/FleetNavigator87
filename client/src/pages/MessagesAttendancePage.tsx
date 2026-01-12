@@ -428,10 +428,22 @@ export default function MessagesAttendancePage() {
       .filter(m => m.remetente_numero === phoneNumber)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     const parsed = parseMessage(msgsOfContact[0]?.mensagem || '');
+    
+    // Para mensagens de saída (notificações de cartão), mostrar o nome do motorista/destinatário
+    let contactName = msgsOfContact[0]?.remetente_nome || phoneNumber;
+    const lastMsg = msgsOfContact[0];
+    if (lastMsg?.is_outgoing && parsed.motorista) {
+      contactName = parsed.motorista;
+    } else if (lastMsg?.is_outgoing && lastMsg.remetente_nome === 'Gestão de abastecimento Murici') {
+      // Formatar telefone para exibição
+      const formattedPhone = phoneNumber.replace(/^55/, '').replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+      contactName = `Enviado para: ${formattedPhone}`;
+    }
+    
     return {
       phoneNumber,
-      contactName: msgsOfContact[0]?.remetente_nome || phoneNumber,
-      lastMessage: msgsOfContact[0],
+      contactName,
+      lastMessage: lastMsg,
       unreadCount: msgsOfContact.filter(m => !m.respondido && !m.is_outgoing).length,
       totalMessages: msgsOfContact.length,
       parsed
