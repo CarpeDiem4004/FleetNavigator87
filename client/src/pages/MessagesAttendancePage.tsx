@@ -959,13 +959,14 @@ export default function MessagesAttendancePage() {
                         
                         // Try to get solicitante from the latest message
                         const latestParsed = contact.lastMessage ? parseMessage(contact.lastMessage.mensagem) : null;
-                        const solicitanteName = latestParsed?.solicitante;
                         const baseName = latestParsed?.base;
                         
-                        const gestorName = solicitanteName || messageWithName?.remetente_nome || 
-                          (contact.lastMessage?.remetente_nome === 'Gestão de abastecimento Murici' 
-                            ? formattedPhone 
-                            : contact.lastMessage?.remetente_nome || formattedPhone);
+                        // Use remetente_nome if it's not the system name, otherwise try to parse from message
+                        const remetenteNome = contact.lastMessage?.remetente_nome;
+                        const isSystemName = remetenteNome === 'Gestão de abastecimento Murici';
+                        const solicitanteName = latestParsed?.solicitante || (!isSystemName ? remetenteNome : null);
+                        
+                        const gestorName = solicitanteName || messageWithName?.remetente_nome || formattedPhone;
                         
                         return (
                           <div

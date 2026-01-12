@@ -4054,7 +4054,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             )
           `, [
             cleanPhone,
-            `Gestão de abastecimento Murici`,
+            solicitante || motorista || 'Solicitante',
             messageText,
             status === 'aprovado' ? 'Aprovado' : 'Negado',
             operador
