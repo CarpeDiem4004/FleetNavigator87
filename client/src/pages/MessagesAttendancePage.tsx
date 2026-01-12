@@ -63,6 +63,7 @@ interface ParsedMessage {
   aprovadoPor?: string;
   data?: string;
   motivo?: string;
+  base?: string;
 }
 
 export default function MessagesAttendancePage() {
@@ -938,164 +939,200 @@ export default function MessagesAttendancePage() {
                     </div>
                   ) : (
                     <div className="divide-y">
-                      {contactsWithLastMessage.map(contact => (
-                        <div
-                          key={contact.phoneNumber}
-                          onClick={() => {
-                            setSelectedContact(contact.phoneNumber);
-                            setReplyText('');
-                          }}
-                          className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
-                            selectedContact === contact.phoneNumber ? 'bg-[#f0f2f5] border-l-4 border-l-[#25D366]' : ''
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                              {contact.contactName.charAt(0).toUpperCase()}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="font-semibold text-gray-800 truncate">{contact.contactName}</span>
-                                <span className="text-xs text-gray-500 flex-shrink-0">
-                                  {formatTime(contact.lastMessage?.created_at || '')}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {contact.parsed.placa && (
-                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                    {contact.parsed.placa}
-                                  </Badge>
-                                )}
-                                {getTypeBadge(contact.parsed)}
-                              </div>
-                              <p className="text-sm text-gray-500 truncate mt-1">
-                                {contact.parsed.motorista || contact.phoneNumber}
-                              </p>
-                              {contact.parsed.valor && (
-                                <span className="text-xs font-medium text-green-600">R$ {contact.parsed.valor}</span>
-                              )}
-                            </div>
-                            <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                              {contact.unreadCount > 0 && (
-                                <Badge className="bg-[#25D366] text-white rounded-full h-5 min-w-5 flex items-center justify-center text-xs">
-                                  {contact.unreadCount}
-                                </Badge>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50"
-                                onClick={(e) => deleteContactMessages(contact.phoneNumber, e)}
-                                title="Excluir todas as mensagens deste contato"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </ScrollArea>
-              </Card>
-
-              {/* Coluna Direita - Timeline de Chat do Contato Selecionado */}
-              <Card className="shadow-lg border-0 lg:col-span-2 flex flex-col">
-                {selectedContact ? (
-                  <>
-                    <CardHeader className="pb-3 border-b bg-gradient-to-r from-[#075E54] to-[#128C7E] text-white py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                          <Smartphone className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg">
-                            {contactsWithLastMessage.find(c => c.phoneNumber === selectedContact)?.contactName || selectedContact}
-                          </CardTitle>
-                          <p className="text-xs opacity-80">{selectedContactMessages.length} mensagens</p>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    
-                    {/* Timeline de Mensagens */}
-                    <ScrollArea className="flex-1 bg-[#e5ddd5]" style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4cdc4' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-                    }}>
-                      <div className="p-4 space-y-3">
-                        {selectedContactMessages.map((msg, index) => {
+                      {individualMessages
+                        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                        .map(msg => {
                           const parsed = parseMessage(msg.mensagem);
-                          const prevMsg = index > 0 ? selectedContactMessages[index - 1] : null;
-                          const showDateSeparator = !prevMsg || 
-                            new Date(msg.created_at).toDateString() !== new Date(prevMsg.created_at).toDateString();
+                          const displayName = parsed.motorista || msg.remetente_nome || 'Contato';
+                          const formattedPhone = msg.remetente_numero?.replace(/^55/, '').replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3') || '';
                           
                           return (
-                            <div key={msg.id}>
-                              {showDateSeparator && (
-                                <div className="flex justify-center my-4">
-                                  <Badge variant="secondary" className="bg-white/90 text-gray-600 shadow-sm">
-                                    {new Date(msg.created_at).toLocaleDateString('pt-BR', { 
-                                      weekday: 'long', 
-                                      day: 'numeric', 
-                                      month: 'long' 
-                                    })}
-                                  </Badge>
-                                </div>
-                              )}
-                              
-                              <div className={`flex ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[75%] rounded-lg shadow-sm p-3 ${
-                                  msg.is_outgoing 
-                                    ? 'bg-[#dcf8c6] rounded-tr-none' 
-                                    : 'bg-white rounded-tl-none'
+                            <div
+                              key={msg.id}
+                              onClick={() => {
+                                setSelectedContact(msg.remetente_numero);
+                                setSelectedMessage(msg);
+                                setReplyText('');
+                              }}
+                              className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                                selectedMessage?.id === msg.id ? 'bg-[#f0f2f5] border-l-4 border-l-[#25D366]' : ''
+                              }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0 ${
+                                  parsed.type === 'aprovacao' ? 'bg-gradient-to-br from-green-500 to-green-600' :
+                                  parsed.type === 'negacao' ? 'bg-gradient-to-br from-red-500 to-red-600' :
+                                  'bg-gradient-to-br from-[#25D366] to-[#128C7E]'
                                 }`}>
-                                  {!msg.is_outgoing && (
-                                    <p className="text-xs font-semibold text-[#075E54] mb-1">
-                                      {msg.remetente_nome || 'Contato'}
-                                    </p>
-                                  )}
-                                  
-                                  {parsed.placa && (
-                                    <div className="flex flex-wrap gap-1 mb-2">
-                                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                  {displayName.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="font-semibold text-gray-800 truncate">{displayName}</span>
+                                    <span className="text-xs text-gray-500 flex-shrink-0">
+                                      {formatTime(msg.created_at)}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    {parsed.placa && (
+                                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                                         {parsed.placa}
                                       </Badge>
-                                      {getTypeBadge(parsed)}
-                                      {parsed.provedor && getProviderBadge(parsed.provedor)}
-                                    </div>
-                                  )}
-                                  
-                                  {parsed.motorista && (
-                                    <p className="text-sm text-gray-700 mb-1">
-                                      <span className="font-medium">Motorista:</span> {parsed.motorista}
-                                    </p>
-                                  )}
-                                  
-                                  {parsed.valor && (
-                                    <p className="text-sm font-semibold text-green-600 mb-1">
-                                      R$ {parsed.valor}
-                                    </p>
-                                  )}
-                                  
-                                  <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">
-                                    {msg.mensagem}
-                                  </p>
-                                  
-                                  <div className="flex items-center justify-end gap-1 mt-1">
-                                    <span className="text-[10px] text-gray-500">
-                                      {new Date(msg.created_at).toLocaleTimeString('pt-BR', { 
-                                        hour: '2-digit', 
-                                        minute: '2-digit' 
-                                      })}
-                                    </span>
-                                    {msg.is_outgoing && (
-                                      <CheckCircle className="h-3 w-3 text-blue-500" />
                                     )}
+                                    {getTypeBadge(parsed)}
+                                    {getProviderBadge(parsed.provedor)}
                                   </div>
+                                  <p className="text-sm text-gray-500 truncate mt-1">
+                                    {formattedPhone}
+                                  </p>
+                                  {parsed.valor && (
+                                    <span className="text-xs font-medium text-green-600">R$ {parsed.valor}</span>
+                                  )}
+                                </div>
+                                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                                  {!msg.respondido && !msg.is_outgoing && (
+                                    <Badge className="bg-[#25D366] text-white rounded-full h-5 min-w-5 flex items-center justify-center text-xs">
+                                      Novo
+                                    </Badge>
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (confirm('Excluir esta mensagem?')) {
+                                        fetch(`/api/whatsapp/messages/${msg.id}`, {
+                                          method: 'DELETE',
+                                          credentials: 'include'
+                                        }).then(() => fetchMessages());
+                                      }
+                                    }}
+                                    title="Excluir mensagem"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               </div>
                             </div>
                           );
                         })}
+                    </div>
+                  )}
+                </ScrollArea>
+              </Card>
+
+              {/* Coluna Direita - Detalhes da Mensagem Selecionada */}
+              <Card className="shadow-lg border-0 lg:col-span-2 flex flex-col">
+                {selectedMessage ? (
+                  <>
+                    <CardHeader className={`pb-3 border-b py-3 ${
+                      parseMessage(selectedMessage.mensagem).type === 'aprovacao' 
+                        ? 'bg-gradient-to-r from-green-600 to-green-500' 
+                        : parseMessage(selectedMessage.mensagem).type === 'negacao'
+                        ? 'bg-gradient-to-r from-red-600 to-red-500'
+                        : 'bg-gradient-to-r from-[#075E54] to-[#128C7E]'
+                    } text-white`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                            <Smartphone className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg">
+                              {parseMessage(selectedMessage.mensagem).motorista || 'Detalhes da Mensagem'}
+                            </CardTitle>
+                            <p className="text-xs opacity-80">
+                              {parseMessage(selectedMessage.mensagem).placa && `Placa: ${parseMessage(selectedMessage.mensagem).placa} | `}
+                              {formatFullDate(selectedMessage.created_at)}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-white hover:bg-white/20"
+                          onClick={() => setSelectedMessage(null)}
+                        >
+                          <X className="h-5 w-5" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    
+                    {/* Detalhes da Mensagem Selecionada */}
+                    <ScrollArea className="flex-1 bg-gray-50">
+                      <div className="p-6">
+                        {(() => {
+                          const parsed = parseMessage(selectedMessage.mensagem);
+                          const formattedPhone = selectedMessage.remetente_numero?.replace(/^55/, '').replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3') || '';
+                          
+                          return (
+                            <div className="space-y-6">
+                              {/* Card de Resumo */}
+                              <Card className="border-0 shadow-md">
+                                <CardContent className="p-6">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                      <p className="text-xs text-gray-500 uppercase font-medium">Motorista</p>
+                                      <p className="text-lg font-semibold text-gray-800">{parsed.motorista || '-'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                      <p className="text-xs text-gray-500 uppercase font-medium">Placa</p>
+                                      <p className="text-lg font-semibold text-blue-600">{parsed.placa || '-'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                      <p className="text-xs text-gray-500 uppercase font-medium">Valor</p>
+                                      <p className="text-xl font-bold text-green-600">R$ {parsed.valor || '0,00'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                      <p className="text-xs text-gray-500 uppercase font-medium">Provedor</p>
+                                      <p className="text-lg font-semibold text-gray-800">{parsed.provedor || '-'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                      <p className="text-xs text-gray-500 uppercase font-medium">Telefone</p>
+                                      <p className="text-sm text-gray-600">{formattedPhone}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                      <p className="text-xs text-gray-500 uppercase font-medium">Aprovado por</p>
+                                      <p className="text-sm text-gray-600">{parsed.aprovadoPor || '-'}</p>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="mt-4 pt-4 border-t">
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-xs text-gray-500 uppercase font-medium">Status:</p>
+                                      {getTypeBadge(parsed)}
+                                      {selectedMessage.is_outgoing && (
+                                        <Badge className="bg-blue-100 text-blue-800 text-xs">Enviado</Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                              
+                              {/* Mensagem Completa */}
+                              <Card className="border-0 shadow-md">
+                                <CardHeader className="pb-2">
+                                  <CardTitle className="text-sm text-gray-500 uppercase">Mensagem Completa</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                  <div className={`p-4 rounded-lg ${
+                                    parsed.type === 'aprovacao' ? 'bg-green-50 border border-green-200' :
+                                    parsed.type === 'negacao' ? 'bg-red-50 border border-red-200' :
+                                    'bg-gray-100 border border-gray-200'
+                                  }`}>
+                                    <p className="text-sm whitespace-pre-wrap break-words">
+                                      {selectedMessage.mensagem}
+                                    </p>
+                                  </div>
+                                  <p className="text-xs text-gray-400 mt-2 text-right">
+                                    Enviado em: {formatFullDate(selectedMessage.created_at)}
+                                  </p>
+                                </CardContent>
+                              </Card>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </ScrollArea>
 
