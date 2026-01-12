@@ -949,24 +949,40 @@ export default function MessagesAttendancePage() {
                       {contactsWithLastMessage.map(contact => {
                         const formattedPhone = contact.phoneNumber?.replace(/^55/, '').replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3') || '';
                         
-                        // Try to get name from any non-system message
+                        // Get all messages for this contact
                         const contactMessages = individualMessages.filter(m => m.remetente_numero === contact.phoneNumber);
-                        const messageWithName = contactMessages.find(m => 
-                          m.remetente_nome && 
-                          m.remetente_nome !== 'Gestão de abastecimento Murici' &&
-                          !m.is_outgoing
-                        );
                         
-                        // Try to get solicitante from the latest message
-                        const latestParsed = contact.lastMessage ? parseMessage(contact.lastMessage.mensagem) : null;
-                        const baseName = latestParsed?.base;
+                        // Search ALL messages for best name and base
+                        let bestName: string | null = null;
+                        let bestBase: string | null = null;
                         
-                        // Use remetente_nome if it's not the system name, otherwise try to parse from message
-                        const remetenteNome = contact.lastMessage?.remetente_nome;
-                        const isSystemName = remetenteNome === 'Gestão de abastecimento Murici';
-                        const solicitanteName = latestParsed?.solicitante || (!isSystemName ? remetenteNome : null);
+                        for (const msg of contactMessages) {
+                          // Check remetente_nome first (if not system name)
+                          if (!bestName && msg.remetente_nome && msg.remetente_nome !== 'Gestão de abastecimento Murici') {
+                            bestName = msg.remetente_nome;
+                          }
+                          
+                          // Parse message content for solicitante and base
+                          const parsed = parseMessage(msg.mensagem);
+                          
+                          if (!bestName && parsed.solicitante) {
+                            bestName = parsed.solicitante;
+                          }
+                          
+                          if (!bestName && parsed.motorista) {
+                            bestName = parsed.motorista;
+                          }
+                          
+                          if (!bestBase && parsed.base) {
+                            bestBase = parsed.base;
+                          }
+                          
+                          // Stop if we found both
+                          if (bestName && bestBase) break;
+                        }
                         
-                        const gestorName = solicitanteName || messageWithName?.remetente_nome || formattedPhone;
+                        const gestorName = bestName || formattedPhone;
+                        const baseName = bestBase;
                         
                         return (
                           <div
