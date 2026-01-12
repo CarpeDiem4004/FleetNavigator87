@@ -939,112 +939,85 @@ export default function MessagesAttendancePage() {
                     </div>
                   ) : (
                     <div className="divide-y">
-                      {individualMessages
-                        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                        .map(msg => {
-                          const parsed = parseMessage(msg.mensagem);
-                          const displayName = parsed.motorista || msg.remetente_nome || 'Contato';
-                          const formattedPhone = msg.remetente_numero?.replace(/^55/, '').replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3') || '';
-                          
-                          return (
-                            <div
-                              key={msg.id}
-                              onClick={() => {
-                                setSelectedContact(msg.remetente_numero);
-                                setSelectedMessage(msg);
-                                setReplyText('');
-                              }}
-                              className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
-                                selectedMessage?.id === msg.id ? 'bg-[#f0f2f5] border-l-4 border-l-[#25D366]' : ''
-                              }`}
-                            >
-                              <div className="flex items-start gap-3">
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0 ${
-                                  parsed.type === 'aprovacao' ? 'bg-gradient-to-br from-green-500 to-green-600' :
-                                  parsed.type === 'negacao' ? 'bg-gradient-to-br from-red-500 to-red-600' :
-                                  'bg-gradient-to-br from-[#25D366] to-[#128C7E]'
-                                }`}>
-                                  {displayName.charAt(0).toUpperCase()}
+                      {contactsWithLastMessage.map(contact => {
+                        const formattedPhone = contact.phoneNumber?.replace(/^55/, '').replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3') || '';
+                        const gestorName = contact.lastMessage?.remetente_nome === 'Gestão de abastecimento Murici' 
+                          ? `Gestor: ${formattedPhone}` 
+                          : contact.lastMessage?.remetente_nome || formattedPhone;
+                        
+                        return (
+                          <div
+                            key={contact.phoneNumber}
+                            onClick={() => {
+                              setSelectedContact(contact.phoneNumber);
+                              setSelectedMessage(null);
+                              setReplyText('');
+                            }}
+                            className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                              selectedContact === contact.phoneNumber ? 'bg-[#f0f2f5] border-l-4 border-l-[#25D366]' : ''
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                                {gestorName.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-semibold text-gray-800 truncate">{gestorName}</span>
+                                  <span className="text-xs text-gray-500 flex-shrink-0">
+                                    {formatTime(contact.lastMessage?.created_at || '')}
+                                  </span>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="font-semibold text-gray-800 truncate">{displayName}</span>
-                                    <span className="text-xs text-gray-500 flex-shrink-0">
-                                      {formatTime(msg.created_at)}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    {parsed.placa && (
-                                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                        {parsed.placa}
-                                      </Badge>
-                                    )}
-                                    {getTypeBadge(parsed)}
-                                    {getProviderBadge(parsed.provedor)}
-                                  </div>
-                                  <p className="text-sm text-gray-500 truncate mt-1">
-                                    {formattedPhone}
-                                  </p>
-                                  {parsed.valor && (
-                                    <span className="text-xs font-medium text-green-600">R$ {parsed.valor}</span>
-                                  )}
-                                </div>
-                                <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                                  {!msg.respondido && !msg.is_outgoing && (
-                                    <Badge className="bg-[#25D366] text-white rounded-full h-5 min-w-5 flex items-center justify-center text-xs">
-                                      Novo
+                                <p className="text-sm text-gray-600 mb-1">
+                                  {formattedPhone}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                    {contact.totalMessages} mensagens
+                                  </Badge>
+                                  {contact.unreadCount > 0 && (
+                                    <Badge className="bg-orange-500 text-white text-xs">
+                                      {contact.unreadCount} pendentes
                                     </Badge>
                                   )}
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 w-6 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (confirm('Excluir esta mensagem?')) {
-                                        fetch(`/api/whatsapp/messages/${msg.id}`, {
-                                          method: 'DELETE',
-                                          credentials: 'include'
-                                        }).then(() => fetchMessages());
-                                      }
-                                    }}
-                                    title="Excluir mensagem"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
                                 </div>
                               </div>
+                              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                                  onClick={(e) => deleteContactMessages(contact.phoneNumber, e)}
+                                  title="Excluir todas as mensagens deste gestor"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
-                          );
-                        })}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </ScrollArea>
               </Card>
 
-              {/* Coluna Direita - Detalhes da Mensagem Selecionada */}
+              {/* Coluna Direita - Solicitações do Gestor Selecionado */}
               <Card className="shadow-lg border-0 lg:col-span-2 flex flex-col">
-                {selectedMessage ? (
+                {selectedContact ? (
                   <>
-                    <CardHeader className={`pb-3 border-b py-3 ${
-                      parseMessage(selectedMessage.mensagem).type === 'aprovacao' 
-                        ? 'bg-gradient-to-r from-green-600 to-green-500' 
-                        : parseMessage(selectedMessage.mensagem).type === 'negacao'
-                        ? 'bg-gradient-to-r from-red-600 to-red-500'
-                        : 'bg-gradient-to-r from-[#075E54] to-[#128C7E]'
-                    } text-white`}>
+                    <CardHeader className="pb-3 border-b bg-gradient-to-r from-[#075E54] to-[#128C7E] text-white py-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                            <Smartphone className="h-5 w-5" />
+                            <Users className="h-5 w-5" />
                           </div>
                           <div>
                             <CardTitle className="text-lg">
-                              {parseMessage(selectedMessage.mensagem).motorista || 'Detalhes da Mensagem'}
+                              Solicitações Enviadas
                             </CardTitle>
                             <p className="text-xs opacity-80">
-                              {parseMessage(selectedMessage.mensagem).placa && `Placa: ${parseMessage(selectedMessage.mensagem).placa} | `}
-                              {formatFullDate(selectedMessage.created_at)}
+                              {selectedContactMessages.length} solicitações para {selectedContact?.replace(/^55/, '').replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')}
                             </p>
                           </div>
                         </div>
@@ -1052,87 +1025,87 @@ export default function MessagesAttendancePage() {
                           variant="ghost"
                           size="sm"
                           className="text-white hover:bg-white/20"
-                          onClick={() => setSelectedMessage(null)}
+                          onClick={() => setSelectedContact(null)}
                         >
                           <X className="h-5 w-5" />
                         </Button>
                       </div>
                     </CardHeader>
                     
-                    {/* Detalhes da Mensagem Selecionada */}
+                    {/* Lista de Solicitações do Gestor */}
                     <ScrollArea className="flex-1 bg-gray-50">
-                      <div className="p-6">
-                        {(() => {
-                          const parsed = parseMessage(selectedMessage.mensagem);
-                          const formattedPhone = selectedMessage.remetente_numero?.replace(/^55/, '').replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3') || '';
-                          
-                          return (
-                            <div className="space-y-6">
-                              {/* Card de Resumo */}
-                              <Card className="border-0 shadow-md">
-                                <CardContent className="p-6">
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                      <p className="text-xs text-gray-500 uppercase font-medium">Motorista</p>
-                                      <p className="text-lg font-semibold text-gray-800">{parsed.motorista || '-'}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                      <p className="text-xs text-gray-500 uppercase font-medium">Placa</p>
-                                      <p className="text-lg font-semibold text-blue-600">{parsed.placa || '-'}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                      <p className="text-xs text-gray-500 uppercase font-medium">Valor</p>
-                                      <p className="text-xl font-bold text-green-600">R$ {parsed.valor || '0,00'}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                      <p className="text-xs text-gray-500 uppercase font-medium">Provedor</p>
-                                      <p className="text-lg font-semibold text-gray-800">{parsed.provedor || '-'}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                      <p className="text-xs text-gray-500 uppercase font-medium">Telefone</p>
-                                      <p className="text-sm text-gray-600">{formattedPhone}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                      <p className="text-xs text-gray-500 uppercase font-medium">Aprovado por</p>
-                                      <p className="text-sm text-gray-600">{parsed.aprovadoPor || '-'}</p>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="mt-4 pt-4 border-t">
-                                    <div className="flex items-center gap-2">
-                                      <p className="text-xs text-gray-500 uppercase font-medium">Status:</p>
-                                      {getTypeBadge(parsed)}
-                                      {selectedMessage.is_outgoing && (
-                                        <Badge className="bg-blue-100 text-blue-800 text-xs">Enviado</Badge>
+                      <div className="p-4 space-y-3">
+                        {selectedContactMessages
+                          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                          .map(msg => {
+                            const parsed = parseMessage(msg.mensagem);
+                            
+                            return (
+                              <Card key={msg.id} className={`border-l-4 ${
+                                parsed.type === 'aprovacao' ? 'border-l-green-500' :
+                                parsed.type === 'negacao' ? 'border-l-red-500' :
+                                'border-l-gray-300'
+                              } shadow-sm hover:shadow-md transition-shadow`}>
+                                <CardContent className="p-4">
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className="font-bold text-gray-800">{parsed.motorista || 'Motorista'}</span>
+                                        {parsed.placa && (
+                                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                            {parsed.placa}
+                                          </Badge>
+                                        )}
+                                        {getTypeBadge(parsed)}
+                                      </div>
+                                      
+                                      <div className="grid grid-cols-2 gap-2 text-sm">
+                                        <div>
+                                          <span className="text-gray-500">Valor:</span>
+                                          <span className="ml-1 font-semibold text-green-600">R$ {parsed.valor || '0,00'}</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">Provedor:</span>
+                                          <span className="ml-1">{parsed.provedor || '-'}</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">Aprovado por:</span>
+                                          <span className="ml-1">{parsed.aprovadoPor || '-'}</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">Data:</span>
+                                          <span className="ml-1">{formatFullDate(msg.created_at)}</span>
+                                        </div>
+                                      </div>
+                                      
+                                      {parsed.motivo && (
+                                        <div className="mt-2 p-2 bg-red-50 rounded text-sm">
+                                          <span className="text-red-600 font-medium">Motivo:</span>
+                                          <span className="ml-1 text-red-700">{parsed.motivo}</span>
+                                        </div>
                                       )}
                                     </div>
+                                    
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0 text-gray-400 hover:text-red-500"
+                                      onClick={() => {
+                                        if (confirm('Excluir esta mensagem?')) {
+                                          fetch(`/api/whatsapp/messages/${msg.id}`, {
+                                            method: 'DELETE',
+                                            credentials: 'include'
+                                          }).then(() => fetchMessages());
+                                        }
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
                                   </div>
                                 </CardContent>
                               </Card>
-                              
-                              {/* Mensagem Completa */}
-                              <Card className="border-0 shadow-md">
-                                <CardHeader className="pb-2">
-                                  <CardTitle className="text-sm text-gray-500 uppercase">Mensagem Completa</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                  <div className={`p-4 rounded-lg ${
-                                    parsed.type === 'aprovacao' ? 'bg-green-50 border border-green-200' :
-                                    parsed.type === 'negacao' ? 'bg-red-50 border border-red-200' :
-                                    'bg-gray-100 border border-gray-200'
-                                  }`}>
-                                    <p className="text-sm whitespace-pre-wrap break-words">
-                                      {selectedMessage.mensagem}
-                                    </p>
-                                  </div>
-                                  <p className="text-xs text-gray-400 mt-2 text-right">
-                                    Enviado em: {formatFullDate(selectedMessage.created_at)}
-                                  </p>
-                                </CardContent>
-                              </Card>
-                            </div>
-                          );
-                        })()}
+                            );
+                          })}
                       </div>
                     </ScrollArea>
 
