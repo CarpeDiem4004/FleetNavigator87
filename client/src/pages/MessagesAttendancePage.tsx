@@ -78,6 +78,7 @@ export default function MessagesAttendancePage() {
   const [isSendingReply, setIsSendingReply] = useState(false);
   const [groupFilter, setGroupFilter] = useState<string>('todos');
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [selectedContact, setSelectedContact] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<WhatsAppMessage | null>(null);
 
   useEffect(() => {
@@ -107,6 +108,87 @@ export default function MessagesAttendancePage() {
         .filter(m => (m.grupo_nome || 'Grupo Desconhecido') === selectedGroup)
         .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
     : [];
+
+  // Mensagens individuais (não de grupos)
+  const individualMessages = messages.filter(msg => !msg.grupo_id && !msg.grupo_nome);
+  
+  // Agrupa mensagens individuais por número de telefone
+  const uniqueContacts = Array.from(new Set(individualMessages.map(m => m.remetente_numero))).filter(Boolean);
+  
+  const contactsWithLastMessage = uniqueContacts.map(phoneNumber => {
+    const msgsOfContact = individualMessages
+      .filter(m => m.remetente_numero === phoneNumber)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const parsed = parseMessage(msgsOfContact[0]?.mensagem || '');
+    return {
+      phoneNumber,
+      contactName: msgsOfContact[0]?.remetente_nome || phoneNumber,
+      lastMessage: msgsOfContact[0],
+      unreadCount: msgsOfContact.filter(m => !m.respondido && !m.is_outgoing).length,
+      totalMessages: msgsOfContact.length,
+      parsed
+    };
+  }).sort((a, b) => new Date(b.lastMessage?.created_at || 0).getTime() - new Date(a.lastMessage?.created_at || 0).getTime());
+
+  // Mensagens do contato selecionado ordenadas cronologicamente
+  const selectedContactMessages = selectedContact 
+    ? individualMessages
+        .filter(m => m.remetente_numero === selectedContact)
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    : [];
+
+  // Envio para contato individual selecionado
+  const sendIndividualReply = async () => {
+    if (!selectedContact || !replyText.trim()) {
+      toast({
+        title: "Erro",
+        description: "Digite uma mensagem para enviar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const lastMsg = selectedContactMessages[selectedContactMessages.length - 1];
+    if (!lastMsg) return;
+
+    setIsSendingReply(true);
+    try {
+      const response = await fetch('/api/whatsapp/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          messageId: lastMsg.id,
+          replyText: replyText.trim(),
+          userId: user?.id,
+          userName: user?.name || 'Operador'
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast({
+          title: "Enviado!",
+          description: "Mensagem enviada com sucesso",
+        });
+        setReplyText('');
+        setReplyingTo(null);
+        fetchMessages();
+      } else {
+        throw new Error(data.error || 'Erro ao enviar mensagem');
+      }
+    } catch (error: any) {
+      console.error('Erro ao enviar mensagem:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Falha ao enviar mensagem",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSendingReply(false);
+    }
+  };
 
   // Envio para grupo selecionado (novo layout)
   const sendGroupReply = async () => {
@@ -314,8 +396,6 @@ export default function MessagesAttendancePage() {
     const colorClass = colors[provedor] || 'bg-gray-100 text-gray-800 border-gray-300';
     return <Badge variant="outline" className={`text-xs ${colorClass}`}>{provedor}</Badge>;
   };
-
-  const individualMessages = messages.filter(msg => !msg.grupo_id && !msg.grupo_nome);
 
   const filterMessages = (msgs: WhatsAppMessage[], isGroupTab: boolean = false) => {
     return msgs.filter(msg => {
@@ -778,44 +858,225 @@ export default function MessagesAttendancePage() {
               </CardContent>
             </Card>
 
-            {/* Lista + Detalhes */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Card className="shadow-lg border-0">
-                <CardHeader className="pb-3 border-b bg-gray-50">
+            {/* Layout 2 Colunas estilo WhatsApp para Conversas Individuais */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-400px)] min-h-[500px]">
+              {/* Coluna Esquerda - Lista de Contatos */}
+              <Card className="shadow-lg border-0 lg:col-span-1 flex flex-col">
+                <CardHeader className="pb-3 border-b bg-gradient-to-r from-[#075E54] to-[#128C7E] text-white py-4">
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <Smartphone className="h-5 w-5 text-[#1a365d]" />
+                    <Smartphone className="h-5 w-5" />
                     Conversas Individuais
-                    <Badge variant="outline" className="ml-2">{filteredIndividual.length}</Badge>
+                    <Badge variant="secondary" className="ml-1 bg-white/20 text-white">
+                      {contactsWithLastMessage.length}
+                    </Badge>
                   </CardTitle>
                 </CardHeader>
-                <ScrollArea className="h-[calc(100vh-500px)] min-h-[400px]">
+                <ScrollArea className="flex-1">
                   {isLoading ? (
                     <div className="p-4 space-y-3">
                       {[1, 2, 3, 4].map(i => (
-                        <Skeleton key={i} className="h-24 w-full" />
+                        <Skeleton key={i} className="h-16 w-full" />
                       ))}
                     </div>
-                  ) : filteredIndividual.length === 0 ? (
+                  ) : contactsWithLastMessage.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full py-12 text-gray-400">
                       <MessageCircle className="h-12 w-12 mb-3 opacity-30" />
-                      <p>Nenhuma mensagem encontrada</p>
+                      <p>Nenhum contato encontrado</p>
                     </div>
                   ) : (
-                    <div className="p-3">
-                      {filteredIndividual.map(msg => renderMessageCard(msg, false))}
+                    <div className="divide-y">
+                      {contactsWithLastMessage.map(contact => (
+                        <div
+                          key={contact.phoneNumber}
+                          onClick={() => {
+                            setSelectedContact(contact.phoneNumber);
+                            setReplyText('');
+                          }}
+                          className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                            selectedContact === contact.phoneNumber ? 'bg-[#f0f2f5] border-l-4 border-l-[#25D366]' : ''
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                              {contact.contactName.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-semibold text-gray-800 truncate">{contact.contactName}</span>
+                                <span className="text-xs text-gray-500 flex-shrink-0">
+                                  {formatDate(contact.lastMessage?.created_at || '')}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {contact.parsed.placa && (
+                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                    {contact.parsed.placa}
+                                  </Badge>
+                                )}
+                                {getTypeBadge(contact.parsed)}
+                              </div>
+                              <p className="text-sm text-gray-500 truncate mt-1">
+                                {contact.parsed.motorista || contact.phoneNumber}
+                              </p>
+                              {contact.parsed.valor && (
+                                <span className="text-xs font-medium text-green-600">R$ {contact.parsed.valor}</span>
+                              )}
+                            </div>
+                            {contact.unreadCount > 0 && (
+                              <div className="flex-shrink-0">
+                                <Badge className="bg-[#25D366] text-white rounded-full h-5 min-w-5 flex items-center justify-center text-xs">
+                                  {contact.unreadCount}
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </ScrollArea>
               </Card>
 
-              <Card className="shadow-lg border-0">
-                <CardHeader className="pb-3 border-b bg-gray-50">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <History className="h-5 w-5 text-[#1a365d]" />
-                    Detalhes da Mensagem
-                  </CardTitle>
-                </CardHeader>
-                {renderMessageDetails()}
+              {/* Coluna Direita - Timeline de Chat do Contato Selecionado */}
+              <Card className="shadow-lg border-0 lg:col-span-2 flex flex-col">
+                {selectedContact ? (
+                  <>
+                    <CardHeader className="pb-3 border-b bg-gradient-to-r from-[#075E54] to-[#128C7E] text-white py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                          <Smartphone className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">
+                            {contactsWithLastMessage.find(c => c.phoneNumber === selectedContact)?.contactName || selectedContact}
+                          </CardTitle>
+                          <p className="text-xs opacity-80">{selectedContactMessages.length} mensagens</p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    {/* Timeline de Mensagens */}
+                    <ScrollArea className="flex-1 bg-[#e5ddd5]" style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4cdc4' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+                    }}>
+                      <div className="p-4 space-y-3">
+                        {selectedContactMessages.map((msg, index) => {
+                          const parsed = parseMessage(msg.mensagem);
+                          const prevMsg = index > 0 ? selectedContactMessages[index - 1] : null;
+                          const showDateSeparator = !prevMsg || 
+                            new Date(msg.created_at).toDateString() !== new Date(prevMsg.created_at).toDateString();
+                          
+                          return (
+                            <div key={msg.id}>
+                              {showDateSeparator && (
+                                <div className="flex justify-center my-4">
+                                  <Badge variant="secondary" className="bg-white/90 text-gray-600 shadow-sm">
+                                    {new Date(msg.created_at).toLocaleDateString('pt-BR', { 
+                                      weekday: 'long', 
+                                      day: 'numeric', 
+                                      month: 'long' 
+                                    })}
+                                  </Badge>
+                                </div>
+                              )}
+                              
+                              <div className={`flex ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[75%] rounded-lg shadow-sm p-3 ${
+                                  msg.is_outgoing 
+                                    ? 'bg-[#dcf8c6] rounded-tr-none' 
+                                    : 'bg-white rounded-tl-none'
+                                }`}>
+                                  {!msg.is_outgoing && (
+                                    <p className="text-xs font-semibold text-[#075E54] mb-1">
+                                      {msg.remetente_nome || 'Contato'}
+                                    </p>
+                                  )}
+                                  
+                                  {parsed.placa && (
+                                    <div className="flex flex-wrap gap-1 mb-2">
+                                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                        {parsed.placa}
+                                      </Badge>
+                                      {getTypeBadge(parsed)}
+                                      {parsed.provedor && getProviderBadge(parsed.provedor)}
+                                    </div>
+                                  )}
+                                  
+                                  {parsed.motorista && (
+                                    <p className="text-sm text-gray-700 mb-1">
+                                      <span className="font-medium">Motorista:</span> {parsed.motorista}
+                                    </p>
+                                  )}
+                                  
+                                  {parsed.valor && (
+                                    <p className="text-sm font-semibold text-green-600 mb-1">
+                                      R$ {parsed.valor}
+                                    </p>
+                                  )}
+                                  
+                                  <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">
+                                    {msg.mensagem}
+                                  </p>
+                                  
+                                  <div className="flex items-center justify-end gap-1 mt-1">
+                                    <span className="text-[10px] text-gray-500">
+                                      {new Date(msg.created_at).toLocaleTimeString('pt-BR', { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit' 
+                                      })}
+                                    </span>
+                                    {msg.is_outgoing && (
+                                      <CheckCircle className="h-3 w-3 text-blue-500" />
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </ScrollArea>
+
+                    {/* Input de Resposta */}
+                    <div className="border-t bg-[#f0f2f5] p-3">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          placeholder="Digite uma mensagem..."
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              sendIndividualReply();
+                            }
+                          }}
+                          className="flex-1 bg-white rounded-full border-0 shadow-sm"
+                        />
+                        <Button
+                          onClick={sendIndividualReply}
+                          disabled={isSendingReply || !replyText.trim()}
+                          className="rounded-full h-10 w-10 p-0 bg-[#25D366] hover:bg-[#128C7E]"
+                        >
+                          {isSendingReply ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <Send className="h-5 w-5" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center bg-[#f0f2f5] text-gray-500">
+                    <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center mb-4">
+                      <MessageCircle className="h-10 w-10 text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-medium mb-2">Selecione uma mensagem</h3>
+                    <p className="text-sm text-center max-w-sm">
+                      Clique em uma mensagem para ver os detalhes
+                    </p>
+                  </div>
+                )}
               </Card>
             </div>
           </TabsContent>
