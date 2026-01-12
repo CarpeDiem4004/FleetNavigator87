@@ -77,6 +77,8 @@ export default function MessagesAttendancePage() {
   const [replyText, setReplyText] = useState('');
   const [isSendingReply, setIsSendingReply] = useState(false);
   const [groupFilter, setGroupFilter] = useState<string>('todos');
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<WhatsAppMessage | null>(null);
 
   useEffect(() => {
     fetchMessages();
@@ -84,6 +86,81 @@ export default function MessagesAttendancePage() {
 
   const groupMessages = messages.filter(msg => msg.grupo_id || msg.grupo_nome);
   const uniqueGroups = Array.from(new Set(groupMessages.map(m => m.grupo_nome || 'Grupo Desconhecido'))).filter(Boolean);
+
+  // Agrupa mensagens por grupo e pega última mensagem de cada
+  const groupsWithLastMessage = uniqueGroups.map(groupName => {
+    const msgsOfGroup = groupMessages
+      .filter(m => (m.grupo_nome || 'Grupo Desconhecido') === groupName)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return {
+      groupName,
+      groupId: msgsOfGroup[0]?.grupo_id || '',
+      lastMessage: msgsOfGroup[0],
+      unreadCount: msgsOfGroup.filter(m => !m.respondido && !m.is_outgoing).length,
+      totalMessages: msgsOfGroup.length
+    };
+  }).sort((a, b) => new Date(b.lastMessage?.created_at || 0).getTime() - new Date(a.lastMessage?.created_at || 0).getTime());
+
+  // Mensagens do grupo selecionado ordenadas cronologicamente
+  const selectedGroupMessages = selectedGroup 
+    ? groupMessages
+        .filter(m => (m.grupo_nome || 'Grupo Desconhecido') === selectedGroup)
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    : [];
+
+  // Envio para grupo selecionado (novo layout)
+  const sendGroupReply = async () => {
+    if (!selectedGroup || !replyText.trim()) {
+      toast({
+        title: "Erro",
+        description: "Digite uma mensagem para enviar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Pega a última mensagem do grupo para usar como referência
+    const lastMsg = selectedGroupMessages[selectedGroupMessages.length - 1];
+    if (!lastMsg) return;
+
+    setIsSendingReply(true);
+    try {
+      const response = await fetch('/api/whatsapp/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          messageId: lastMsg.id,
+          replyText: replyText.trim(),
+          userId: user?.id,
+          userName: user?.name || 'Operador'
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast({
+          title: "Enviado!",
+          description: "Mensagem enviada ao grupo com sucesso",
+        });
+        setReplyText('');
+        setReplyingTo(null);
+        fetchMessages();
+      } else {
+        throw new Error(data.error || 'Erro ao enviar mensagem');
+      }
+    } catch (error: any) {
+      console.error('Erro ao enviar mensagem:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Falha ao enviar mensagem",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSendingReply(false);
+    }
+  };
 
   const sendReply = async () => {
     if (!selectedMessage || !replyText.trim()) {
@@ -743,7 +820,7 @@ export default function MessagesAttendancePage() {
             </div>
           </TabsContent>
 
-          {/* Tab Mensagens de Grupos */}
+          {/* Tab Mensagens de Grupos - Layout WhatsApp */}
           <TabsContent value="grupos" className="space-y-4 mt-0">
             {/* KPIs Grupos */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -782,111 +859,230 @@ export default function MessagesAttendancePage() {
               </Card>
             </div>
 
-            {/* Info Box */}
-            <Card className="bg-green-50 border-green-200">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <MessageCircle className="h-5 w-5 text-green-500 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-green-800">Monitoramento e Resposta de Grupos</p>
-                    <p className="text-sm text-green-600">
-                      Visualize mensagens de grupos de WhatsApp e responda diretamente pelo painel.
-                      Selecione uma mensagem para ver os detalhes e enviar respostas.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Filtros Grupos */}
-            <Card className="shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="relative flex-1 min-w-[200px]">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Buscar grupo, placa, motorista ou telefone..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  
-                  {/* Filtro por Grupo */}
-                  <Select value={groupFilter} onValueChange={setGroupFilter}>
-                    <SelectTrigger className="w-[200px]">
-                      <Users className="h-4 w-4 mr-2 text-purple-500" />
-                      <SelectValue placeholder="Filtrar por grupo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos os Grupos</SelectItem>
-                      {uniqueGroups.map(group => (
-                        <SelectItem key={group} value={group}>{group}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  
-                  <div className="flex gap-2">
-                    {['todos', 'aprovacao', 'negacao', 'alerta'].map(filter => (
-                      <Button
-                        key={filter}
-                        size="sm"
-                        variant={statusFilter === filter ? 'default' : 'outline'}
-                        onClick={() => setStatusFilter(filter)}
-                        className={statusFilter === filter ? (
-                          filter === 'aprovacao' ? 'bg-green-500 hover:bg-green-600' :
-                          filter === 'negacao' ? 'bg-red-500 hover:bg-red-600' :
-                          filter === 'alerta' ? 'bg-orange-500 hover:bg-orange-600' : ''
-                        ) : ''}
-                      >
-                        {filter === 'todos' ? 'Todas' : 
-                         filter === 'aprovacao' ? 'Aprovadas' :
-                         filter === 'negacao' ? 'Negadas' : 'Alertas'}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Lista + Detalhes Grupos */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Card className="shadow-lg border-0">
-                <CardHeader className="pb-3 border-b bg-gray-50">
+            {/* Layout 2 Colunas estilo WhatsApp */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-320px)] min-h-[500px]">
+              {/* Coluna Esquerda - Lista de Grupos */}
+              <Card className="shadow-lg border-0 lg:col-span-1 flex flex-col">
+                <CardHeader className="pb-3 border-b bg-gradient-to-r from-[#075E54] to-[#128C7E] text-white py-4">
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <Users className="h-5 w-5 text-purple-600" />
-                    Mensagens de Grupos
-                    <Badge variant="outline" className="ml-2">{filteredGroups.length}</Badge>
+                    <Users className="h-5 w-5" />
+                    Grupos
+                    <Badge variant="secondary" className="ml-2 bg-white/20 text-white">
+                      {groupsWithLastMessage.length}
+                    </Badge>
                   </CardTitle>
                 </CardHeader>
-                <ScrollArea className="h-[calc(100vh-500px)] min-h-[400px]">
+                <div className="p-2 border-b bg-gray-50">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Buscar grupo..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 h-9"
+                    />
+                  </div>
+                </div>
+                <ScrollArea className="flex-1">
                   {isLoading ? (
-                    <div className="p-4 space-y-3">
-                      {[1, 2, 3].map(i => (
-                        <Skeleton key={i} className="h-24 w-full" />
+                    <div className="p-3 space-y-2">
+                      {[1, 2, 3, 4].map(i => (
+                        <Skeleton key={i} className="h-16 w-full" />
                       ))}
                     </div>
-                  ) : filteredGroups.length === 0 ? (
+                  ) : groupsWithLastMessage.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full py-12 text-gray-400">
-                      <Users className="h-12 w-12 mb-3 opacity-30" />
-                      <p>Nenhuma mensagem de grupo</p>
+                      <Users className="h-10 w-10 mb-2 opacity-30" />
+                      <p className="text-sm">Nenhum grupo</p>
                     </div>
                   ) : (
-                    <div className="p-3">
-                      {filteredGroups.map(msg => renderMessageCard(msg, true))}
+                    <div className="divide-y">
+                      {groupsWithLastMessage
+                        .filter(g => !searchTerm || g.groupName.toLowerCase().includes(searchTerm.toLowerCase()))
+                        .map(group => (
+                          <div
+                            key={group.groupName}
+                            onClick={() => {
+                              setSelectedGroup(group.groupName);
+                              setReplyText('');
+                              setReplyingTo(null);
+                            }}
+                            className={`p-3 cursor-pointer transition-all hover:bg-gray-50 ${
+                              selectedGroup === group.groupName 
+                                ? 'bg-[#F0F2F5] border-l-4 border-l-[#25D366]' 
+                                : ''
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] flex items-center justify-center text-white font-bold flex-shrink-0">
+                                {group.groupName.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-semibold text-gray-900 truncate text-sm">
+                                    {group.groupName}
+                                  </span>
+                                  <span className="text-xs text-gray-500 flex-shrink-0">
+                                    {formatTime(group.lastMessage?.created_at || '')}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <p className="text-xs text-gray-500 truncate pr-2">
+                                    {group.lastMessage?.is_outgoing ? 'Voce: ' : ''}
+                                    {group.lastMessage?.mensagem?.substring(0, 40) || 'Sem mensagens'}...
+                                  </p>
+                                  {group.unreadCount > 0 && (
+                                    <Badge className="bg-[#25D366] text-white text-xs px-1.5 py-0 h-5 flex-shrink-0">
+                                      {group.unreadCount}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                     </div>
                   )}
                 </ScrollArea>
               </Card>
 
-              <Card className="shadow-lg border-0">
-                <CardHeader className="pb-3 border-b bg-gray-50">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <History className="h-5 w-5 text-purple-600" />
-                    Detalhes da Mensagem
-                  </CardTitle>
-                </CardHeader>
-                {renderMessageDetails()}
+              {/* Coluna Direita - Chat do Grupo */}
+              <Card className="shadow-lg border-0 lg:col-span-2 flex flex-col overflow-hidden">
+                {!selectedGroup ? (
+                  <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-[#F0F2F5]">
+                    <div className="w-64 h-64 mb-4 opacity-20">
+                      <MessageSquare className="w-full h-full" />
+                    </div>
+                    <p className="text-xl font-medium text-gray-600">Selecione um grupo</p>
+                    <p className="text-sm text-gray-400">Clique em um grupo para ver as mensagens</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Header do Chat */}
+                    <div className="bg-gradient-to-r from-[#075E54] to-[#128C7E] text-white p-3 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold">
+                        {selectedGroup.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{selectedGroup}</h3>
+                        <p className="text-xs text-white/70">{selectedGroupMessages.length} mensagens</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-white hover:bg-white/20"
+                        onClick={() => setSelectedGroup(null)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {/* Mensagens do Chat */}
+                    <ScrollArea className="flex-1 bg-[#E5DDD5]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%239C92AC" fill-opacity="0.05"%3E%3Cpath d="M0 0h100v100H0z"/%3E%3C/g%3E%3C/svg%3E")' }}>
+                      <div className="p-4 space-y-2">
+                        {selectedGroupMessages.map((msg, index) => {
+                          const isOutgoing = msg.is_outgoing;
+                          const showDate = index === 0 || 
+                            new Date(msg.created_at).toDateString() !== new Date(selectedGroupMessages[index - 1]?.created_at).toDateString();
+                          
+                          return (
+                            <div key={msg.id}>
+                              {showDate && (
+                                <div className="flex justify-center my-3">
+                                  <span className="bg-white/80 text-gray-600 text-xs px-3 py-1 rounded-full shadow-sm">
+                                    {new Date(msg.created_at).toLocaleDateString('pt-BR', { 
+                                      day: '2-digit', month: 'short', year: 'numeric' 
+                                    })}
+                                  </span>
+                                </div>
+                              )}
+                              <div 
+                                className={`flex ${isOutgoing ? 'justify-end' : 'justify-start'}`}
+                                onClick={() => setReplyingTo(msg)}
+                              >
+                                <div 
+                                  className={`max-w-[75%] rounded-lg p-2 shadow-sm cursor-pointer transition-all hover:shadow-md ${
+                                    isOutgoing 
+                                      ? 'bg-[#DCF8C6] rounded-tr-none' 
+                                      : 'bg-white rounded-tl-none'
+                                  } ${replyingTo?.id === msg.id ? 'ring-2 ring-[#25D366]' : ''}`}
+                                >
+                                  {!isOutgoing && (
+                                    <p className="text-xs font-semibold text-[#075E54] mb-1">
+                                      {msg.remetente_nome || 'Participante'}
+                                    </p>
+                                  )}
+                                  <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">
+                                    {msg.mensagem}
+                                  </p>
+                                  <div className="flex items-center justify-end gap-1 mt-1">
+                                    <span className="text-[10px] text-gray-500">
+                                      {new Date(msg.created_at).toLocaleTimeString('pt-BR', { 
+                                        hour: '2-digit', minute: '2-digit' 
+                                      })}
+                                    </span>
+                                    {isOutgoing && (
+                                      <CheckCircle className="h-3 w-3 text-blue-500" />
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </ScrollArea>
+
+                    {/* Reply Preview */}
+                    {replyingTo && (
+                      <div className="bg-gray-100 border-t px-4 py-2 flex items-center gap-2">
+                        <div className="flex-1 border-l-4 border-[#25D366] pl-3 py-1">
+                          <p className="text-xs font-semibold text-[#075E54]">
+                            Respondendo a {replyingTo.remetente_nome || 'Participante'}
+                          </p>
+                          <p className="text-xs text-gray-600 truncate">{replyingTo.mensagem}</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setReplyingTo(null)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Input de Mensagem */}
+                    <div className="bg-[#F0F2F5] p-3 flex items-end gap-2">
+                      <div className="flex-1">
+                        <Textarea
+                          placeholder="Digite sua mensagem..."
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          className="min-h-[44px] max-h-[120px] resize-none bg-white rounded-2xl border-0 shadow-sm"
+                          disabled={isSendingReply}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              sendGroupReply();
+                            }
+                          }}
+                        />
+                      </div>
+                      <Button
+                        onClick={sendGroupReply}
+                        disabled={isSendingReply || !replyText.trim()}
+                        className="h-11 w-11 rounded-full bg-[#25D366] hover:bg-[#128C7E] text-white p-0"
+                      >
+                        {isSendingReply ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <Send className="h-5 w-5" />
+                        )}
+                      </Button>
+                    </div>
+                  </>
+                )}
               </Card>
             </div>
           </TabsContent>
