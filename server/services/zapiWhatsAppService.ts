@@ -132,12 +132,18 @@ export async function sendZAPIGroupMessage(
   }
   
   try {
+    // Formatar o chatId corretamente para grupos
     let chatId = groupId;
+    
+    // Se já tem @g.us, manter como está
     if (!chatId.includes('@g.us')) {
-      chatId = chatId.replace('-group', '') + '@g.us';
+      // Remover sufixo -group se existir
+      chatId = chatId.replace('-group', '');
+      // Adicionar @g.us para formato de grupo
+      chatId = chatId + '@g.us';
     }
     
-    console.log(`[Z-API] Enviando mensagem para grupo ${chatId}`);
+    console.log(`[Z-API] Enviando mensagem para grupo. ChatId original: ${groupId}, formatado: ${chatId}`);
     
     const url = `https://api.z-api.io/instances/${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}/send-text`;
     
@@ -148,12 +154,14 @@ export async function sendZAPIGroupMessage(
         'Client-Token': ZAPI_CLIENT_TOKEN || ''
       },
       body: JSON.stringify({
-        phone: chatId,
+        chatId: chatId,
         message: message
       })
     });
     
     const data = await response.json() as any;
+    
+    console.log(`[Z-API] Resposta do envio para grupo:`, JSON.stringify(data));
     
     const msgId = data.zapiMessageId || data.messageId || data.id || data.zaapId;
     
