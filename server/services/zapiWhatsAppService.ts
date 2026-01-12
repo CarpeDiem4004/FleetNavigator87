@@ -154,7 +154,7 @@ export async function sendZAPIGroupMessage(
         'Client-Token': ZAPI_CLIENT_TOKEN || ''
       },
       body: JSON.stringify({
-        chatId: chatId,
+        phone: chatId,
         message: message
       })
     });
