@@ -498,6 +498,7 @@ export const useBasePermission = (): BasePermissionHook => {
         '/fleet-management/downtime',                 // Alias para dias parados
         '/fleet-management/operation',                // Alias para análise de operação
         '/fleet-management/overview',                 // Alias para visão geral
+        '/fleet-management/indicadores-manutencao',   // Indicadores de manutenção
         '/maintenance',                               // Sistema de manutenção (rota antiga)
         '/manutencao',                                // Solicitações de manutenção
         '/tratativa-manutencao',                      // Tratativas de manutenção
