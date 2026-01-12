@@ -941,9 +941,19 @@ export default function MessagesAttendancePage() {
                     <div className="divide-y">
                       {contactsWithLastMessage.map(contact => {
                         const formattedPhone = contact.phoneNumber?.replace(/^55/, '').replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3') || '';
-                        const gestorName = contact.lastMessage?.remetente_nome === 'Gestão de abastecimento Murici' 
-                          ? `Gestor: ${formattedPhone}` 
-                          : contact.lastMessage?.remetente_nome || formattedPhone;
+                        
+                        // Try to get name from any non-system message
+                        const contactMessages = individualMessages.filter(m => m.remetente_numero === contact.phoneNumber);
+                        const messageWithName = contactMessages.find(m => 
+                          m.remetente_nome && 
+                          m.remetente_nome !== 'Gestão de abastecimento Murici' &&
+                          !m.is_outgoing
+                        );
+                        
+                        const gestorName = messageWithName?.remetente_nome || 
+                          (contact.lastMessage?.remetente_nome === 'Gestão de abastecimento Murici' 
+                            ? `Gestor: ${formattedPhone}` 
+                            : contact.lastMessage?.remetente_nome || formattedPhone);
                         
                         return (
                           <div
