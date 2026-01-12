@@ -310,6 +310,46 @@ router.get('/messages', async (req: Request, res: Response) => {
   }
 });
 
+// Excluir mensagem individual
+router.delete('/messages/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({ success: false, error: 'ID da mensagem é obrigatório' });
+    }
+    
+    await pool.query('DELETE FROM whatsapp_messages WHERE id = $1', [id]);
+    
+    console.log(`[WHATSAPP] Mensagem ${id} excluída com sucesso`);
+    res.json({ success: true, message: 'Mensagem excluída com sucesso' });
+    
+  } catch (error) {
+    console.error('[WHATSAPP] Erro ao excluir mensagem:', error);
+    res.status(500).json({ success: false, error: 'Erro ao excluir mensagem' });
+  }
+});
+
+// Excluir todas as mensagens de um contato/número
+router.delete('/messages/contact/:phone', async (req: Request, res: Response) => {
+  try {
+    const { phone } = req.params;
+    
+    if (!phone) {
+      return res.status(400).json({ success: false, error: 'Número do contato é obrigatório' });
+    }
+    
+    const result = await pool.query('DELETE FROM whatsapp_messages WHERE remetente_numero = $1', [phone]);
+    
+    console.log(`[WHATSAPP] ${result.rowCount} mensagens do contato ${phone} excluídas`);
+    res.json({ success: true, message: `${result.rowCount} mensagens excluídas`, count: result.rowCount });
+    
+  } catch (error) {
+    console.error('[WHATSAPP] Erro ao excluir mensagens do contato:', error);
+    res.status(500).json({ success: false, error: 'Erro ao excluir mensagens do contato' });
+  }
+});
+
 // Listar alertas não lidos
 router.get('/alerts', async (req: Request, res: Response) => {
   try {

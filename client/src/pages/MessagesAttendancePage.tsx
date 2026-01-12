@@ -31,7 +31,8 @@ import {
   Building2,
   Calendar,
   Send,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react';
 
 interface WhatsAppMessage {
@@ -226,6 +227,45 @@ export default function MessagesAttendancePage() {
       });
     } finally {
       setIsSendingReply(false);
+    }
+  };
+
+  // Excluir todas as mensagens de um contato
+  const deleteContactMessages = async (phoneNumber: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Evita selecionar o contato ao clicar no botão
+    
+    if (!confirm(`Tem certeza que deseja excluir todas as mensagens deste contato?`)) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/whatsapp/messages/contact/${encodeURIComponent(phoneNumber)}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        toast({
+          title: "Excluído!",
+          description: `${data.count || 0} mensagens excluídas com sucesso`,
+        });
+        // Limpa a seleção se for o contato atual
+        if (selectedContact === phoneNumber) {
+          setSelectedContact(null);
+        }
+        fetchMessages();
+      } else {
+        throw new Error(data.error || 'Erro ao excluir mensagens');
+      }
+    } catch (error: any) {
+      console.error('Erro ao excluir mensagens:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Falha ao excluir mensagens",
+        variant: "destructive"
+      });
     }
   };
 
@@ -923,13 +963,22 @@ export default function MessagesAttendancePage() {
                                 <span className="text-xs font-medium text-green-600">R$ {contact.parsed.valor}</span>
                               )}
                             </div>
-                            {contact.unreadCount > 0 && (
-                              <div className="flex-shrink-0">
+                            <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                              {contact.unreadCount > 0 && (
                                 <Badge className="bg-[#25D366] text-white rounded-full h-5 min-w-5 flex items-center justify-center text-xs">
                                   {contact.unreadCount}
                                 </Badge>
-                              </div>
-                            )}
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                                onClick={(e) => deleteContactMessages(contact.phoneNumber, e)}
+                                title="Excluir todas as mensagens deste contato"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       ))}
