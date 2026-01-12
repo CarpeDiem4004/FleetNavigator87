@@ -694,7 +694,8 @@ router.post('/reply', async (req: Request, res: Response) => {
         originalMessage.grupo_nome,
         targetPhone,
         userName || 'Sistema',
-        replyText
+        replyText,
+        userName || 'Sistema'
       ]
     );
     
