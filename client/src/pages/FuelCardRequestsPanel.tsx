@@ -1423,7 +1423,8 @@ const FuelCardRequestsPanel: React.FC = () => {
                   status: 'aprovado',
                   provedor: sol.provedor || 'Cartão Frota',
                   dataUso: sol.data_abastecimento,
-                  observacoes: sol.observacoes
+                  observacoes: sol.observacoes,
+                  base: sol.base
                 })
               });
               

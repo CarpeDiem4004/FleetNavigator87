@@ -3959,7 +3959,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST - Enviar notificação de recarga via WhatsApp (Z-API)
   app.post('/api/fuel-card/send-whatsapp-notification', isAuthenticated, async (req, res) => {
     try {
-      const { phone, placa, motorista, valorSolicitado, status, observacoes, provedor, dataUso } = req.body;
+      const { phone, placa, motorista, valorSolicitado, status, observacoes, provedor, dataUso, base } = req.body;
       const user = req.user as any;
       
       if (!phone || !placa || !motorista || !valorSolicitado || !status) {
@@ -3995,6 +3995,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             messageText = `✅ *RECARGA DE CARTÃO APROVADA*\n\n`;
             messageText += `🚗 *Cartão/Placa:* ${placa}\n`;
             messageText += `👤 *Motorista:* ${motorista}\n`;
+            if (base) messageText += `📍 *Base:* ${base}\n`;
             messageText += `💰 *Valor Liberado:* R$ ${parseFloat(valorSolicitado).toFixed(2).replace('.', ',')}\n`;
             if (provedor) messageText += `🏪 *Provedor:* ${provedor}\n`;
             if (dataUso) messageText += `📅 *Data de Uso:* ${dataUso}\n`;
@@ -4005,6 +4006,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             messageText = `❌ *SOLICITAÇÃO DE RECARGA NEGADA*\n\n`;
             messageText += `🚗 *Cartão/Placa:* ${placa}\n`;
             messageText += `👤 *Motorista:* ${motorista}\n`;
+            if (base) messageText += `📍 *Base:* ${base}\n`;
             messageText += `💰 *Valor Solicitado:* R$ ${parseFloat(valorSolicitado).toFixed(2).replace('.', ',')}\n`;
             if (provedor) messageText += `🏪 *Provedor:* ${provedor}\n`;
             messageText += `👨‍💼 *Analisado por:* ${operador}\n`;

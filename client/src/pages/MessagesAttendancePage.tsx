@@ -360,6 +360,9 @@ export default function MessagesAttendancePage() {
     const motoristaMatch = mensagem.match(/Motorista:\*?\s*([^\n*]+)/i);
     if (motoristaMatch) result.motorista = motoristaMatch[1].trim();
     
+    const baseMatch = mensagem.match(/Base:\*?\s*([^\n*]+)/i);
+    if (baseMatch) result.base = baseMatch[1].trim();
+    
     const valorMatch = mensagem.match(/Valor (?:Liberado|Solicitado):\*?\s*R\$\s*([\d.,]+)/i);
     if (valorMatch) result.valor = valorMatch[1];
     
@@ -1070,6 +1073,12 @@ export default function MessagesAttendancePage() {
                                       </div>
                                       
                                       <div className="grid grid-cols-2 gap-2 text-sm">
+                                        {parsed.base && (
+                                          <div className="col-span-2">
+                                            <span className="text-gray-500">Base:</span>
+                                            <span className="ml-1 font-semibold text-purple-600">{parsed.base}</span>
+                                          </div>
+                                        )}
                                         <div>
                                           <span className="text-gray-500">Valor:</span>
                                           <span className="ml-1 font-semibold text-green-600">R$ {parsed.valor || '0,00'}</span>
