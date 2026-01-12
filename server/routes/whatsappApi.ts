@@ -643,6 +643,77 @@ router.post('/resolve', async (req: Request, res: Response) => {
   }
 });
 
+// Responder mensagem (grupos ou individual)
+router.post('/reply', async (req: Request, res: Response) => {
+  try {
+    const { messageId, replyText, userId, userName } = req.body;
+    
+    if (!messageId || !replyText) {
+      return res.status(400).json({ success: false, error: 'messageId e replyText sao obrigatorios' });
+    }
+    
+    const messageResult = await pool.query(
+      `SELECT * FROM whatsapp_messages WHERE id = $1`,
+      [messageId]
+    );
+    
+    if (messageResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Mensagem nao encontrada' });
+    }
+    
+    const originalMessage = messageResult.rows[0];
+    const isGroup = !!(originalMessage.grupo_id || originalMessage.grupo_nome);
+    
+    let sendResult;
+    let targetPhone = originalMessage.remetente_numero;
+    
+    if (isGroup) {
+      const { sendZAPIGroupMessage } = await import('../services/zapiWhatsAppService');
+      const groupId = originalMessage.grupo_id || targetPhone;
+      sendResult = await sendZAPIGroupMessage(groupId, replyText);
+    } else {
+      const { sendZAPIWhatsAppMessage } = await import('../services/zapiWhatsAppService');
+      sendResult = await sendZAPIWhatsAppMessage(targetPhone, replyText);
+    }
+    
+    if (!sendResult.success) {
+      return res.status(500).json({ success: false, error: sendResult.error || 'Erro ao enviar resposta' });
+    }
+    
+    await pool.query(
+      `INSERT INTO whatsapp_messages (
+        instance_id, grupo_id, grupo_nome, remetente_numero, remetente_nome,
+        mensagem, tipo_mensagem, is_outgoing, status, respondido, respondido_por,
+        respondido_em, data_mensagem, created_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, 'text', true, 'enviado', true, $7, NOW(), NOW(), NOW()
+      )`,
+      [
+        originalMessage.instance_id,
+        originalMessage.grupo_id,
+        originalMessage.grupo_nome,
+        targetPhone,
+        userName || 'Sistema',
+        replyText
+      ]
+    );
+    
+    await pool.query(
+      `UPDATE whatsapp_messages SET respondido = true, respondido_por = $1, respondido_em = NOW() WHERE id = $2`,
+      [userName || 'Sistema', messageId]
+    );
+    
+    res.json({ 
+      success: true, 
+      message: 'Resposta enviada com sucesso',
+      messageId: sendResult.messageId 
+    });
+  } catch (error: any) {
+    console.error('[WHATSAPP] Erro ao responder:', error);
+    res.status(500).json({ success: false, error: 'Erro ao enviar resposta' });
+  }
+});
+
 // Silenciar mensagem
 router.post('/snooze', async (req: Request, res: Response) => {
   try {

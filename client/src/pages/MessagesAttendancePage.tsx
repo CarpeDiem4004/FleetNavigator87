@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { 
@@ -27,7 +28,9 @@ import {
   Smartphone,
   Users,
   Building2,
-  Calendar
+  Calendar,
+  Send,
+  Loader2
 } from 'lucide-react';
 
 interface WhatsAppMessage {
@@ -70,10 +73,60 @@ export default function MessagesAttendancePage() {
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [selectedMessage, setSelectedMessage] = useState<WhatsAppMessage | null>(null);
   const [activeTab, setActiveTab] = useState<string>('individual');
+  const [replyText, setReplyText] = useState('');
+  const [isSendingReply, setIsSendingReply] = useState(false);
 
   useEffect(() => {
     fetchMessages();
   }, []);
+
+  const sendReply = async () => {
+    if (!selectedMessage || !replyText.trim()) {
+      toast({
+        title: "Erro",
+        description: "Digite uma mensagem para responder",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSendingReply(true);
+    try {
+      const response = await fetch('/api/whatsapp/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          messageId: selectedMessage.id,
+          replyText: replyText.trim(),
+          userId: user?.id,
+          userName: user?.name || 'Operador'
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast({
+          title: "Enviado!",
+          description: "Resposta enviada com sucesso via WhatsApp",
+        });
+        setReplyText('');
+        fetchMessages();
+      } else {
+        throw new Error(data.error || 'Erro ao enviar resposta');
+      }
+    } catch (error: any) {
+      console.error('Erro ao enviar resposta:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Falha ao enviar resposta",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSendingReply(false);
+    }
+  };
 
   const fetchMessages = async () => {
     setIsLoading(true);
@@ -416,6 +469,59 @@ export default function MessagesAttendancePage() {
                   <Badge variant="outline" className="text-xs">Sistema</Badge>
                 </div>
               )}
+              {selectedMessage.respondido && selectedMessage.respondido_por && (
+                <div className="flex items-center justify-between text-gray-600">
+                  <span>Respondido por: {selectedMessage.respondido_por}</span>
+                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700">Respondido</Badge>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Caixa de Resposta */}
+          <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+            <div className="flex items-center gap-2 mb-2">
+              <Send className="h-4 w-4 text-green-600" />
+              <p className="text-xs text-green-700 font-medium">
+                Responder {isGroup ? 'no Grupo' : 'Mensagem'}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Textarea
+                placeholder={`Digite sua resposta${isGroup ? ' para o grupo' : ''}...`}
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                className="min-h-[80px] bg-white"
+                disabled={isSendingReply}
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setReplyText('')}
+                  disabled={isSendingReply || !replyText}
+                >
+                  Limpar
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={sendReply}
+                  disabled={isSendingReply || !replyText.trim()}
+                  className="bg-[#25D366] hover:bg-[#128C7E] text-white"
+                >
+                  {isSendingReply ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-1" />
+                      Enviar WhatsApp
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -653,29 +759,29 @@ export default function MessagesAttendancePage() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="bg-white shadow-sm border-l-4 border-l-gray-500">
+              <Card className="bg-white shadow-sm border-l-4 border-l-green-500">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-gray-500 uppercase">Modo</p>
-                      <p className="text-lg font-bold text-gray-600">Somente Leitura</p>
+                      <p className="text-lg font-bold text-green-600">Interativo</p>
                     </div>
-                    <AlertCircle className="h-8 w-8 text-gray-400 opacity-50" />
+                    <Send className="h-8 w-8 text-green-400 opacity-50" />
                   </div>
                 </CardContent>
               </Card>
             </div>
 
             {/* Info Box */}
-            <Card className="bg-blue-50 border-blue-200">
+            <Card className="bg-green-50 border-green-200">
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-blue-500 mt-0.5" />
+                  <MessageCircle className="h-5 w-5 text-green-500 mt-0.5" />
                   <div>
-                    <p className="font-medium text-blue-800">Monitoramento de Grupos</p>
-                    <p className="text-sm text-blue-600">
-                      Esta aba exibe mensagens recebidas de grupos de WhatsApp apenas para visualizacao.
-                      Nao e possivel responder diretamente pelo painel.
+                    <p className="font-medium text-green-800">Monitoramento e Resposta de Grupos</p>
+                    <p className="text-sm text-green-600">
+                      Visualize mensagens de grupos de WhatsApp e responda diretamente pelo painel.
+                      Selecione uma mensagem para ver os detalhes e enviar respostas.
                     </p>
                   </div>
                 </div>

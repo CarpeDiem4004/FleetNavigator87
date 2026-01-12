@@ -121,3 +121,51 @@ export async function sendFuelCardRechargeNotificationZAPI(
 export function isZAPIConfigured(): boolean {
   return !!(ZAPI_INSTANCE_ID && ZAPI_TOKEN);
 }
+
+export async function sendZAPIGroupMessage(
+  groupId: string, 
+  message: string
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  if (!ZAPI_INSTANCE_ID || !ZAPI_TOKEN) {
+    console.log('[Z-API] Credenciais nao configuradas');
+    return { success: false, error: 'Z-API nao configurado' };
+  }
+  
+  try {
+    let chatId = groupId;
+    if (!chatId.includes('@g.us')) {
+      chatId = chatId.replace('-group', '') + '@g.us';
+    }
+    
+    console.log(`[Z-API] Enviando mensagem para grupo ${chatId}`);
+    
+    const url = `https://api.z-api.io/instances/${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}/send-text`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Client-Token': ZAPI_CLIENT_TOKEN || ''
+      },
+      body: JSON.stringify({
+        phone: chatId,
+        message: message
+      })
+    });
+    
+    const data = await response.json() as any;
+    
+    const msgId = data.zapiMessageId || data.messageId || data.id || data.zaapId;
+    
+    if (response.ok && msgId) {
+      console.log(`[Z-API] Mensagem enviada para grupo com sucesso. ID: ${msgId}`);
+      return { success: true, messageId: msgId };
+    } else {
+      console.error('[Z-API] Erro na resposta do grupo:', data);
+      return { success: false, error: data.error || data.message || 'Erro ao enviar mensagem para grupo' };
+    }
+  } catch (error: any) {
+    console.error('[Z-API] Erro ao enviar mensagem para grupo:', error.message);
+    return { success: false, error: error.message };
+  }
+}
