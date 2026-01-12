@@ -2760,11 +2760,6 @@ const LineHaulPage = () => {
 
         {/* Dashboard Executivo */}
         <LineHaulExecutiveDashboard />
-
-        {/* Painel de WhatsApp */}
-        <div className="mt-6">
-          <WhatsAppPanel />
-        </div>
         </>
         )}
 
