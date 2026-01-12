@@ -58,6 +58,7 @@ interface ParsedMessage {
   type: 'aprovacao' | 'negacao' | 'solicitacao' | 'alerta' | 'outro';
   placa?: string;
   motorista?: string;
+  solicitante?: string;
   valor?: string;
   provedor?: string;
   aprovadoPor?: string;
@@ -362,6 +363,9 @@ export default function MessagesAttendancePage() {
     
     const baseMatch = mensagem.match(/Base:\*?\s*([^\n*]+)/i);
     if (baseMatch) result.base = baseMatch[1].trim();
+    
+    const solicitanteMatch = mensagem.match(/Solicitante:\*?\s*([^\n*]+)/i);
+    if (solicitanteMatch) result.solicitante = solicitanteMatch[1].trim();
     
     const valorMatch = mensagem.match(/Valor (?:Liberado|Solicitado):\*?\s*R\$\s*([\d.,]+)/i);
     if (valorMatch) result.valor = valorMatch[1];
@@ -953,9 +957,14 @@ export default function MessagesAttendancePage() {
                           !m.is_outgoing
                         );
                         
-                        const gestorName = messageWithName?.remetente_nome || 
+                        // Try to get solicitante from the latest message
+                        const latestParsed = contact.lastMessage ? parseMessage(contact.lastMessage.mensagem) : null;
+                        const solicitanteName = latestParsed?.solicitante;
+                        const baseName = latestParsed?.base;
+                        
+                        const gestorName = solicitanteName || messageWithName?.remetente_nome || 
                           (contact.lastMessage?.remetente_nome === 'Gestão de abastecimento Murici' 
-                            ? `Gestor: ${formattedPhone}` 
+                            ? formattedPhone 
                             : contact.lastMessage?.remetente_nome || formattedPhone);
                         
                         return (
@@ -981,6 +990,11 @@ export default function MessagesAttendancePage() {
                                     {formatTime(contact.lastMessage?.created_at || '')}
                                   </span>
                                 </div>
+                                {baseName && (
+                                  <p className="text-xs text-purple-600 font-medium mb-1 truncate">
+                                    📍 {baseName}
+                                  </p>
+                                )}
                                 <p className="text-sm text-gray-600 mb-1">
                                   {formattedPhone}
                                 </p>
@@ -1073,6 +1087,12 @@ export default function MessagesAttendancePage() {
                                       </div>
                                       
                                       <div className="grid grid-cols-2 gap-2 text-sm">
+                                        {parsed.solicitante && (
+                                          <div className="col-span-2">
+                                            <span className="text-gray-500">Solicitante:</span>
+                                            <span className="ml-1 font-semibold text-red-600">{parsed.solicitante}</span>
+                                          </div>
+                                        )}
                                         {parsed.base && (
                                           <div className="col-span-2">
                                             <span className="text-gray-500">Base:</span>

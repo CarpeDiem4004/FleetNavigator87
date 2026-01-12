@@ -1419,6 +1419,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                   phone: phone,
                   placa: sol.placa,
                   motorista: sol.motorista,
+                  solicitante: sol.solicitante || sol.requested_by,
                   valorSolicitado: parseFloat(sol.valor_solicitado || '0'),
                   status: 'aprovado',
                   provedor: sol.provedor || 'Cartão Frota',
