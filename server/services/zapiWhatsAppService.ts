@@ -132,15 +132,13 @@ export async function sendZAPIGroupMessage(
   }
   
   try {
-    // Formatar o chatId corretamente para grupos
+    // Para grupos, Z-API aceita o formato com -group que recebemos no webhook
+    // Não precisamos converter para @g.us
     let chatId = groupId;
     
-    // Se já tem @g.us, manter como está
-    if (!chatId.includes('@g.us')) {
-      // Remover sufixo -group se existir
-      chatId = chatId.replace('-group', '');
-      // Adicionar @g.us para formato de grupo
-      chatId = chatId + '@g.us';
+    // Se não tem -group, adicionar
+    if (!chatId.includes('-group') && !chatId.includes('@g.us')) {
+      chatId = chatId + '-group';
     }
     
     console.log(`[Z-API] Enviando mensagem para grupo. ChatId original: ${groupId}, formatado: ${chatId}`);
