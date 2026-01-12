@@ -87,6 +87,7 @@ import HistoricoPatioPage from "@/pages/postos/HistoricoPatioPage";
 import GraficoConsumoPage from "@/pages/postos/GraficoConsumoPage";
 import LineHaulPage from "@/pages/LineHaulPage";
 import MessagesAttendancePage from "@/pages/MessagesAttendancePage";
+import LineHaulWhatsAppPanel from "@/pages/LineHaulWhatsAppPanel";
 import HistoricoConsolidado from "@/pages/postos/HistoricoConsolidado";
 import PostosVisaoGeralIntegrada from "@/pages/postos/PostosVisaoGeralIntegrada";
 import PostoDetalhesPage from "@/pages/postos/PostoDetalhesPage";
@@ -815,6 +816,7 @@ function App() {
           <ProtectedRoute path="/relatorio-consumo" component={RelatorioConsumo} />
           <ProtectedRoute path="/line-haul" component={LineHaulPage} />
           <ProtectedRoute path="/painel-atendimento-saldo" component={MessagesAttendancePage} />
+          <ProtectedRoute path="/line-haul/whatsapp" component={LineHaulWhatsAppPanel} />
           <ProtectedRoute path="/users" component={UsersNew} />
           <ProtectedRoute path="/bases" component={Bases} />
           <ProtectedRoute path="/bases/links-externos" component={LinksExternosBases} />

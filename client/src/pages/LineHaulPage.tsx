@@ -2438,6 +2438,13 @@ const LineHaulPage = () => {
               <Route className="h-4 w-4 mr-2" />
               Gerenciar Rotas ({stats.totalRoutes})
             </Button>
+            <Button 
+              className="bg-[#DB0145] hover:bg-[#B8033B] text-white"
+              onClick={() => setLocation('/line-haul/whatsapp')}
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Central WhatsApp
+            </Button>
           </div>
 
           {/* Barra de busca */}
