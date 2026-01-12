@@ -1,0 +1,206 @@
+Perfeito, esse painel **já está funcional**, agora vamos **evoluir para um nível executivo, claro e operacional**, sem poluir a tela e resolvendo os pontos críticos que você citou.
+
+Vou dividir em **4 camadas práticas**: visual executivo, organização de grupos x individual, foco automático na conversa ativa e identificação clara do operador logado.
+
+---
+
+## 1️⃣ Visual executivo (menos ruído, mais decisão)
+
+### 🔹 Topo (KPIs) – ajustes simples que mudam tudo
+
+Hoje está bom, mas pode ficar **mais “diretoria”**:
+
+**Sugestão de melhoria**
+
+* Usar **cores só para exceção**
+* Estado normal em cinza / azul neutro
+* Alerta só quando precisa agir
+
+**Exemplo**
+
+* Pendentes Agora → cinza
+* SLA em Risco → amarelo
+* SLA Estourado → **vermelho forte**
+* Mensagens Hoje → azul
+* Respondidas → verde
+* Tempo Médio → roxo
+
+💡 **Micro melhoria**
+
+> Colocar tooltip explicando cada KPI (hover)
+
+---
+
+## 2️⃣ Separar claramente: Grupos x Conversas Individuais
+
+Hoje isso está misturado visualmente.
+
+### 🔹 Filtro principal (logo acima das mensagens)
+
+Criar um **toggle fixo**:
+
+```
+[ ● Todos ]  [ ○ Grupos ]  [ ○ Conversas Individuais ]
+```
+
+📌 Comportamento:
+
+* **Grupos**
+
+  * Mostrar nome do grupo
+  * Mostrar projeto (Line Haul, Abastecimento, Multas)
+* **Individuais**
+
+  * Mostrar nome da pessoa
+  * Mostrar placa / cartão / base
+
+---
+
+## 3️⃣ Painel de mensagens com FOCO NA CONVERSA ATIVA
+
+Esse é o ponto mais importante para operador.
+
+### 🔹 Layout ideal (3 colunas – padrão WhatsApp corporativo)
+
+```
+| Lista de Conversas | Conversa Ativa | Histórico / Ações |
+```
+
+### 📍 Regras de comportamento
+
+* Quando o operador **clicar em uma mensagem**:
+
+  * Ela fica **destacada**
+  * O sistema:
+
+    * Marca como **“Em atendimento”**
+    * Associa automaticamente:
+
+      ```
+      atendente_id = usuário_logado
+      ```
+* Outras pessoas veem:
+
+  > 🟡 Em atendimento por: João Paulo
+
+---
+
+## 4️⃣ Mostrar claramente QUEM está respondendo (obrigatório)
+
+### 🔹 Cabeçalho da conversa ativa
+
+Adicionar um header fixo:
+
+```
+Gestão de Abastecimento Murici
+Atendente: João Paulo Carvalho
+Status: Em Atendimento
+```
+
+🔐 Regra:
+
+* Só **quem assumiu** pode responder
+* Outros só visualizam
+
+---
+
+## 5️⃣ Histórico de mensagens + histórico de atendimento
+
+Você citou algo muito importante: **rastro operacional**.
+
+### 🔹 Cada mensagem deve guardar:
+
+* Quem enviou
+* Quem respondeu
+* Data e hora
+* Tipo:
+
+  * Automática
+  * Operador
+  * Sistema
+
+**Exemplo visual**
+
+```
+🧑 Operador (João Paulo) – 10:42
+Saldo aprovado no valor de R$ 343,00
+```
+
+### 🔹 Histórico lateral (executivo)
+
+Uma aba simples:
+
+```
+📜 Histórico do Atendimento
+- 10:34 | Mensagem recebida
+- 10:36 | Atendimento iniciado – João Paulo
+- 10:42 | Resposta enviada
+- 10:43 | Finalizado
+```
+
+---
+
+## 6️⃣ Alertas críticos mais limpos (menos texto técnico)
+
+Hoje está muito “log de sistema”.
+
+### 🔴 Em vez disso:
+
+**ANTES**
+
+> "*Grupo*: Conversa privada – Tipo palavra-chave..."
+
+**DEPOIS**
+
+```
+🚨 ALERTA CRÍTICO – LINE HAUL
+Palavra-chave detectada: “ALERTA CRÍTICO”
+Horário: 10:42
+```
+
+📌 Botão direto:
+
+```
+[ Abrir Conversa ]
+```
+
+---
+
+## 7️⃣ Prompt pronto para IA montar o painel (Replit / Frontend)
+
+Use esse prompt direto:
+
+```
+Crie um painel executivo de atendimento WhatsApp com foco operacional e clareza.
+Layout em 3 colunas:
+1) Lista de conversas (grupos e individuais com filtro)
+2) Conversa ativa central
+3) Histórico e ações laterais
+
+Regras:
+- Sempre destacar a conversa que o operador está respondendo
+- Mostrar no cabeçalho da conversa o nome do usuário logado
+- Bloquear resposta simultânea por dois operadores
+- Registrar histórico de atendimento (quem iniciou, respondeu e finalizou)
+- Separar visualmente mensagens automáticas, humanas e do sistema
+- Alertas críticos devem ser visuais e objetivos
+- Interface clean, executiva, com foco em SLA e tomada de decisão
+```
+
+---
+
+## 8️⃣ Resultado final esperado
+
+✔ Painel executivo
+✔ Operador não se perde
+✔ Gestor bate o olho e entende
+✔ Histórico auditável
+✔ Zero conflito de atendimento
+
+Se quiser, no próximo passo eu:
+
+* Desenho o **wireframe exato**
+* Ou te entrego o **schema de banco** para mensagens + atendimentos
+* Ou monto o **comportamento React** (estado, locks, flags)
+
+É só dizer 👌
