@@ -1661,7 +1661,7 @@ const LineHaulPage = () => {
         setShowMaintenance(true);
         break;
       case 'painel-mensagens':
-        setShowMessagesPanel(true);
+        setLocation('/painel-atendimento-saldo');
         break;
       case 'gerenciar-garagem':
         setIsLoading(true);
