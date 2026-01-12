@@ -604,67 +604,147 @@ const LineHaulPage = () => {
     doc.setFont('helvetica', 'bold');
     doc.text('MURICI TRANSPORTES', pageWidth / 2, 18, { align: 'center' });
     doc.setFontSize(14);
-    doc.text(`Historico de Manutencao - ${plate.toUpperCase()}`, pageWidth / 2, 30, { align: 'center' });
+    doc.text(`Historico Completo de Manutencao`, pageWidth / 2, 30, { align: 'center' });
     
     doc.setTextColor(0, 0, 0);
-    let y = 55;
+    let y = 50;
     
+    const firstMaintenance = plateMaintenances[0];
+    doc.setFillColor(245, 245, 245);
+    doc.rect(15, y - 4, pageWidth - 30, 20, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text(`Placa: ${plate.toUpperCase()}`, 20, y + 2);
+    if (firstMaintenance.vehicle_model) {
+      doc.text(`Modelo: ${firstMaintenance.vehicle_model}`, 100, y + 2);
+    }
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text(`Total de registros: ${plateMaintenances.length}`, 20, y);
-    doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth - 60, y);
-    y += 15;
+    doc.text(`Total de manutencoes: ${plateMaintenances.length}`, 20, y + 12);
+    doc.text(`Data do relatorio: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth - 70, y + 12);
+    y += 30;
+    
+    let totalCusto = 0;
     
     plateMaintenances
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .forEach((m, index) => {
-        if (y > 250) {
+        if (y > 240) {
           doc.addPage();
           y = 20;
         }
         
-        doc.setFillColor(240, 240, 240);
-        doc.rect(15, y - 4, pageWidth - 30, 8, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.text(`${index + 1}. ${m.maintenance_type} - ${m.status === 'concluida' ? 'Concluida' : m.status === 'em_andamento' ? 'Em Andamento' : 'Pendente'}`, 20, y);
-        y += 10;
+        doc.setDrawColor(225, 6, 19);
+        doc.setLineWidth(0.5);
+        doc.line(15, y - 2, pageWidth - 15, y - 2);
         
+        doc.setFillColor(225, 6, 19);
+        doc.rect(15, y, pageWidth - 30, 8, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        const statusText = m.status === 'concluida' ? 'CONCLUIDA' : m.status === 'em_andamento' ? 'EM ANDAMENTO' : 'PENDENTE';
+        doc.text(`${index + 1}. ${m.maintenance_type || 'Nao especificado'} - ${statusText}`, 20, y + 5);
+        y += 12;
+        
+        doc.setTextColor(0, 0, 0);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
-        doc.text(`Data: ${new Date(m.created_at).toLocaleDateString('pt-BR')}`, 20, y);
-        doc.text(`Prioridade: ${m.priority === 'urgente' ? 'Urgente' : m.priority === 'alta' ? 'Alta' : m.priority === 'media' ? 'Media' : 'Baixa'}`, 80, y);
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text('Data:', 20, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(new Date(m.created_at).toLocaleDateString('pt-BR'), 40, y);
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text('Prioridade:', 80, y);
+        doc.setFont('helvetica', 'normal');
+        const prioridadeText = m.priority === 'urgente' ? 'URGENTE' : m.priority === 'alta' ? 'Alta' : m.priority === 'media' ? 'Media' : 'Baixa';
+        doc.text(prioridadeText, 105, y);
         y += 7;
         
+        if (m.driver_name) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('Motorista:', 20, y);
+          doc.setFont('helvetica', 'normal');
+          doc.text(m.driver_name, 50, y);
+          y += 7;
+        }
+        
         if (m.workshop_name) {
-          doc.text(`Oficina: ${m.workshop_name}`, 20, y);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Oficina:', 20, y);
+          doc.setFont('helvetica', 'normal');
+          doc.text(m.workshop_name, 45, y);
           y += 7;
         }
         
         if (m.description) {
-          const descLines = doc.splitTextToSize(`Descricao: ${m.description}`, pageWidth - 40);
-          doc.text(descLines, 20, y);
-          y += descLines.length * 5;
+          doc.setFont('helvetica', 'bold');
+          doc.text('Descricao:', 20, y);
+          doc.setFont('helvetica', 'normal');
+          y += 5;
+          const descLines = doc.splitTextToSize(m.description, pageWidth - 45);
+          doc.text(descLines, 25, y);
+          y += descLines.length * 4 + 3;
         }
         
         if (m.service_performed) {
-          const serviceLines = doc.splitTextToSize(`Servico: ${m.service_performed}`, pageWidth - 40);
-          doc.text(serviceLines, 20, y);
-          y += serviceLines.length * 5;
+          doc.setFont('helvetica', 'bold');
+          doc.text('Servico Realizado:', 20, y);
+          doc.setFont('helvetica', 'normal');
+          y += 5;
+          const serviceLines = doc.splitTextToSize(m.service_performed, pageWidth - 45);
+          doc.text(serviceLines, 25, y);
+          y += serviceLines.length * 4 + 3;
         }
         
         if (m.parts_used) {
-          const partsLines = doc.splitTextToSize(`Pecas: ${m.parts_used}`, pageWidth - 40);
-          doc.text(partsLines, 20, y);
-          y += partsLines.length * 5;
+          doc.setFont('helvetica', 'bold');
+          doc.text('Pecas Utilizadas:', 20, y);
+          doc.setFont('helvetica', 'normal');
+          y += 5;
+          const partsLines = doc.splitTextToSize(m.parts_used, pageWidth - 45);
+          doc.text(partsLines, 25, y);
+          y += partsLines.length * 4 + 3;
         }
         
-        if (m.estimated_cost || m.final_cost) {
-          doc.text(`Custo: R$ ${(m.final_cost || m.estimated_cost || 0).toFixed(2)}`, 20, y);
-          y += 7;
+        if (m.observations) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('Observacoes:', 20, y);
+          doc.setFont('helvetica', 'normal');
+          y += 5;
+          const obsLines = doc.splitTextToSize(m.observations, pageWidth - 45);
+          doc.text(obsLines, 25, y);
+          y += obsLines.length * 4 + 3;
         }
         
-        y += 10;
+        doc.setFillColor(240, 240, 240);
+        doc.rect(15, y - 2, pageWidth - 30, 12, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.text('VALORES:', 20, y + 4);
+        doc.setFont('helvetica', 'normal');
+        
+        const custoEstimado = m.estimated_cost || 0;
+        const custoFinal = m.final_cost || 0;
+        doc.text(`Custo Estimado: R$ ${custoEstimado.toFixed(2)}`, 55, y + 4);
+        doc.text(`Custo Final: R$ ${custoFinal.toFixed(2)}`, 120, y + 4);
+        
+        totalCusto += custoFinal || custoEstimado;
+        y += 18;
       });
+    
+    if (y > 260) {
+      doc.addPage();
+      y = 20;
+    }
+    
+    doc.setFillColor(225, 6, 19);
+    doc.rect(15, y, pageWidth - 30, 12, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text(`CUSTO TOTAL DE MANUTENCOES: R$ ${totalCusto.toFixed(2)}`, pageWidth / 2, y + 8, { align: 'center' });
     
     const pageHeight = doc.internal.pageSize.getHeight();
     doc.setFontSize(8);
@@ -672,11 +752,11 @@ const LineHaulPage = () => {
     doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 20, pageHeight - 10);
     doc.text('Murici Transportes - Sistema de Gestao de Frota', pageWidth - 20, pageHeight - 10, { align: 'right' });
     
-    doc.save(`historico_manutencao_${plate}_${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`historico_completo_${plate}_${new Date().toISOString().split('T')[0]}.pdf`);
     
     toast({
       title: "PDF Gerado",
-      description: `Historico de manutencao da placa ${plate} exportado com sucesso!`
+      description: `Historico completo da placa ${plate} com ${plateMaintenances.length} registros exportado!`
     });
   };
 
