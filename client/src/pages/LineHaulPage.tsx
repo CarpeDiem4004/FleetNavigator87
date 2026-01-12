@@ -2105,9 +2105,20 @@ const LineHaulPage = () => {
                             onClick={() => generateMaintenancePDF(request)}
                             className="text-[#E10613] border-[#E10613] hover:bg-[#E10613] hover:text-white"
                             data-testid={`btn-pdf-manutencao-${request.id}`}
+                            title="Imprimir esta manutenção"
                           >
                             <FileText className="h-4 w-4 mr-1" />
                             PDF
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => generateMaintenanceHistoryPDF(request.vehicle_plate)}
+                            className="text-purple-600 border-purple-500 hover:bg-purple-600 hover:text-white"
+                            title="Imprimir histórico completo desta placa"
+                          >
+                            <History className="h-4 w-4 mr-1" />
+                            Histórico
                           </Button>
                           {request.status === 'pendente' && (
                             <Button 
