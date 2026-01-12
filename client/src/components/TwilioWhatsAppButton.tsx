@@ -59,20 +59,22 @@ export default function TwilioWhatsAppButton({
         dataUso
       });
 
-      if (response.success) {
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         setIsSent(true);
         toast({
-          title: 'Sucesso!',
-          description: 'Notificação enviada via WhatsApp',
+          title: 'Enviado com Sucesso!',
+          description: 'Notificacao enviada via WhatsApp para o solicitante',
         });
       } else {
-        throw new Error(response.error || 'Erro ao enviar');
+        throw new Error(data.error || data.message || 'Erro ao enviar');
       }
     } catch (error: any) {
-      console.error('Erro ao enviar notificação:', error);
+      console.error('Erro ao enviar notificacao:', error);
       toast({
         title: 'Erro',
-        description: error.message || 'Falha ao enviar notificação WhatsApp',
+        description: error.message || 'Falha ao enviar notificacao WhatsApp',
         variant: 'destructive'
       });
     } finally {
