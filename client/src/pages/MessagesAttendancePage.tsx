@@ -682,6 +682,43 @@ export default function MessagesAttendancePage() {
               </CardContent>
             </Card>
 
+            {/* Filtros Grupos */}
+            <Card className="shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Buscar grupo, placa, motorista ou telefone..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    {['todos', 'aprovacao', 'negacao', 'alerta'].map(filter => (
+                      <Button
+                        key={filter}
+                        size="sm"
+                        variant={statusFilter === filter ? 'default' : 'outline'}
+                        onClick={() => setStatusFilter(filter)}
+                        className={statusFilter === filter ? (
+                          filter === 'aprovacao' ? 'bg-green-500 hover:bg-green-600' :
+                          filter === 'negacao' ? 'bg-red-500 hover:bg-red-600' :
+                          filter === 'alerta' ? 'bg-orange-500 hover:bg-orange-600' : ''
+                        ) : ''}
+                      >
+                        {filter === 'todos' ? 'Todas' : 
+                         filter === 'aprovacao' ? 'Aprovadas' :
+                         filter === 'negacao' ? 'Negadas' : 'Alertas'}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Lista + Detalhes Grupos */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <Card className="shadow-lg border-0">
