@@ -3986,6 +3986,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       if (result.success) {
+        // Registrar mensagem no histórico do whatsapp_messages
+        try {
+          const dataAtual = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+          let messageText = '';
+          
+          if (status === 'aprovado') {
+            messageText = `✅ *RECARGA DE CARTÃO APROVADA*\n\n`;
+            messageText += `🚗 *Cartão/Placa:* ${placa}\n`;
+            messageText += `👤 *Motorista:* ${motorista}\n`;
+            messageText += `💰 *Valor Liberado:* R$ ${parseFloat(valorSolicitado).toFixed(2).replace('.', ',')}\n`;
+            if (provedor) messageText += `🏪 *Provedor:* ${provedor}\n`;
+            if (dataUso) messageText += `📅 *Data de Uso:* ${dataUso}\n`;
+            messageText += `👨‍💼 *Aprovado por:* ${operador}\n`;
+            messageText += `🕐 *Data da Aprovação:* ${dataAtual}\n\n`;
+            messageText += `✨ A recarga foi efetuada com sucesso no cartão de combustível!`;
+          } else {
+            messageText = `❌ *SOLICITAÇÃO DE RECARGA NEGADA*\n\n`;
+            messageText += `🚗 *Cartão/Placa:* ${placa}\n`;
+            messageText += `👤 *Motorista:* ${motorista}\n`;
+            messageText += `💰 *Valor Solicitado:* R$ ${parseFloat(valorSolicitado).toFixed(2).replace('.', ',')}\n`;
+            if (provedor) messageText += `🏪 *Provedor:* ${provedor}\n`;
+            messageText += `👨‍💼 *Analisado por:* ${operador}\n`;
+            messageText += `🕐 *Data:* ${dataAtual}`;
+            if (observacoes) messageText += `\n\n📝 *Motivo:* ${observacoes}`;
+          }
+          
+          // Formatar o telefone para o banco
+          let cleanPhone = phone.replace(/\D/g, '');
+          if (!cleanPhone.startsWith('55')) {
+            cleanPhone = '55' + cleanPhone;
+          }
+          
+          await pool.query(`
+            INSERT INTO whatsapp_messages (
+              instance_id,
+              remetente_numero,
+              remetente_nome,
+              mensagem,
+              tipo_mensagem,
+              is_outgoing,
+              is_alert,
+              status,
+              respondido,
+              respondido_por,
+              respondido_em,
+              data_mensagem,
+              created_at
+            ) VALUES (
+              'system',
+              $1,
+              $2,
+              $3,
+              'fuel_card_notification',
+              true,
+              false,
+              $4,
+              true,
+              $5,
+              NOW(),
+              NOW(),
+              NOW()
+            )
+          `, [
+            cleanPhone,
+            `Gestão de abastecimento Murici`,
+            messageText,
+            status === 'aprovado' ? 'Aprovado' : 'Negado',
+            operador
+          ]);
+          
+          console.log(`[Z-API] Mensagem registrada no histórico para ${phone}`);
+        } catch (logError: any) {
+          console.error('[Z-API] Erro ao registrar mensagem no histórico:', logError.message);
+          // Continua mesmo se falhar o log
+        }
+        
         return res.status(200).json({
           success: true,
           message: 'Notificação enviada com sucesso via WhatsApp',
