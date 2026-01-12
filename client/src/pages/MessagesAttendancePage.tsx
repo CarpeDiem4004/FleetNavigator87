@@ -1,24 +1,20 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
-import { apiRequest } from '@/lib/queryClient';
 import { 
   Search, 
-  Send, 
   MessageSquare, 
   Clock, 
   User, 
   Truck,
-  Building2,
   History,
   CheckCircle,
   AlertCircle,
@@ -27,8 +23,11 @@ import {
   ArrowLeft,
   LogOut,
   RefreshCcw,
-  Loader2,
-  Phone
+  Phone,
+  Smartphone,
+  Users,
+  Building2,
+  Calendar
 } from 'lucide-react';
 
 interface WhatsAppMessage {
@@ -65,17 +64,12 @@ export default function MessagesAttendancePage() {
   const { toast } = useToast();
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [messages, setMessages] = useState<WhatsAppMessage[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [selectedMessage, setSelectedMessage] = useState<WhatsAppMessage | null>(null);
-  const [stats, setStats] = useState({
-    pendentes: 0,
-    respondidas: 0,
-    total: 0
-  });
+  const [activeTab, setActiveTab] = useState<string>('individual');
 
   useEffect(() => {
     fetchMessages();
@@ -84,7 +78,7 @@ export default function MessagesAttendancePage() {
   const fetchMessages = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/whatsapp/messages?limit=100', {
+      const response = await fetch('/api/whatsapp/messages?limit=200', {
         credentials: 'include'
       });
       
@@ -92,16 +86,6 @@ export default function MessagesAttendancePage() {
         const data = await response.json();
         if (data.success) {
           setMessages(data.data || []);
-          
-          const msgs = data.data || [];
-          const pendentes = msgs.filter((m: WhatsAppMessage) => !m.respondido && m.is_outgoing).length;
-          const respondidas = msgs.filter((m: WhatsAppMessage) => m.respondido).length;
-          
-          setStats({
-            pendentes,
-            respondidas,
-            total: msgs.length
-          });
         }
       }
     } catch (error) {
@@ -119,15 +103,15 @@ export default function MessagesAttendancePage() {
   const parseMessage = (mensagem: string): ParsedMessage => {
     const result: ParsedMessage = { type: 'outro' };
     
-    if (mensagem.includes('RECARGA DE CARTÃO APROVADA')) {
+    if (mensagem.includes('RECARGA DE CARTÃO APROVADA') || mensagem.includes('RECARGA DE CARTAO APROVADA')) {
       result.type = 'aprovacao';
-    } else if (mensagem.includes('SOLICITAÇÃO DE RECARGA NEGADA')) {
+    } else if (mensagem.includes('SOLICITAÇÃO DE RECARGA NEGADA') || mensagem.includes('SOLICITACAO DE RECARGA NEGADA')) {
       result.type = 'negacao';
-    } else if (mensagem.includes('ALERTA CRÍTICO')) {
+    } else if (mensagem.includes('ALERTA CRÍTICO') || mensagem.includes('ALERTA CRITICO')) {
       result.type = 'alerta';
     }
     
-    const placaMatch = mensagem.match(/Cartão\/Placa:\*?\s*([A-Z0-9]+)/i);
+    const placaMatch = mensagem.match(/Cartão\/Placa:\*?\s*([A-Z0-9]+)/i) || mensagem.match(/Cartao\/Placa:\*?\s*([A-Z0-9]+)/i);
     if (placaMatch) result.placa = placaMatch[1];
     
     const motoristaMatch = mensagem.match(/Motorista:\*?\s*([^\n*]+)/i);
@@ -175,44 +159,272 @@ export default function MessagesAttendancePage() {
   const getTypeBadge = (parsed: ParsedMessage) => {
     switch (parsed.type) {
       case 'aprovacao':
-        return <Badge className="bg-green-500 text-white">Aprovacao</Badge>;
+        return <Badge className="bg-green-500 text-white text-xs">Aprovado</Badge>;
       case 'negacao':
-        return <Badge className="bg-red-500 text-white">Negacao</Badge>;
+        return <Badge className="bg-red-500 text-white text-xs">Negado</Badge>;
       case 'alerta':
-        return <Badge className="bg-orange-500 text-white">Alerta</Badge>;
-      case 'solicitacao':
-        return <Badge className="bg-blue-500 text-white">Solicitacao</Badge>;
+        return <Badge className="bg-orange-500 text-white text-xs">Alerta</Badge>;
       default:
-        return <Badge variant="outline">Outro</Badge>;
+        return <Badge variant="outline" className="text-xs">Outro</Badge>;
     }
   };
 
-  const filteredMessages = messages.filter(msg => {
-    const parsed = parseMessage(msg.mensagem);
-    const matchesSearch = 
-      (parsed.placa?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (parsed.motorista?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      msg.remetente_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      msg.remetente_numero.includes(searchTerm);
-    
-    if (statusFilter === 'aprovacao' && parsed.type !== 'aprovacao') return false;
-    if (statusFilter === 'negacao' && parsed.type !== 'negacao') return false;
-    if (statusFilter === 'alerta' && parsed.type !== 'alerta') return false;
-    
-    return searchTerm ? matchesSearch : true;
-  });
+  const getProviderBadge = (provedor?: string) => {
+    if (!provedor) return null;
+    const colors: Record<string, string> = {
+      'Ticket': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+      'Veloe': 'bg-purple-100 text-purple-800 border-purple-300',
+      'Line Haul': 'bg-blue-100 text-blue-800 border-blue-300',
+    };
+    const colorClass = colors[provedor] || 'bg-gray-100 text-gray-800 border-gray-300';
+    return <Badge variant="outline" className={`text-xs ${colorClass}`}>{provedor}</Badge>;
+  };
+
+  const individualMessages = messages.filter(msg => !msg.grupo_id && !msg.grupo_nome);
+  const groupMessages = messages.filter(msg => msg.grupo_id || msg.grupo_nome);
+
+  const filterMessages = (msgs: WhatsAppMessage[]) => {
+    return msgs.filter(msg => {
+      const parsed = parseMessage(msg.mensagem);
+      const matchesSearch = 
+        (parsed.placa?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (parsed.motorista?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        msg.remetente_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        msg.remetente_numero.includes(searchTerm) ||
+        (msg.grupo_nome?.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      if (statusFilter === 'aprovacao' && parsed.type !== 'aprovacao') return false;
+      if (statusFilter === 'negacao' && parsed.type !== 'negacao') return false;
+      if (statusFilter === 'alerta' && parsed.type !== 'alerta') return false;
+      
+      return searchTerm ? matchesSearch : true;
+    });
+  };
+
+  const filteredIndividual = filterMessages(individualMessages);
+  const filteredGroups = filterMessages(groupMessages);
 
   const handleLogout = async () => {
     await logout();
     setLocation('/signin');
   };
 
-  const aprovacoes = messages.filter(m => parseMessage(m.mensagem).type === 'aprovacao').length;
-  const negacoes = messages.filter(m => parseMessage(m.mensagem).type === 'negacao').length;
-  const alertas = messages.filter(m => parseMessage(m.mensagem).type === 'alerta').length;
+  const individualStats = {
+    aprovacoes: individualMessages.filter(m => parseMessage(m.mensagem).type === 'aprovacao').length,
+    negacoes: individualMessages.filter(m => parseMessage(m.mensagem).type === 'negacao').length,
+    alertas: individualMessages.filter(m => parseMessage(m.mensagem).type === 'alerta').length,
+  };
+
+  const groupStats = {
+    grupos: Array.from(new Set(groupMessages.map(m => m.grupo_nome || m.grupo_id))).length,
+    mensagens: groupMessages.length,
+  };
+
+  const renderMessageCard = (msg: WhatsAppMessage, isGroup: boolean = false) => {
+    const parsed = parseMessage(msg.mensagem);
+    const isSelected = selectedMessage?.id === msg.id;
+    
+    return (
+      <div
+        key={msg.id}
+        onClick={() => setSelectedMessage(msg)}
+        className={`p-3 rounded-lg cursor-pointer transition-all border mb-2 ${
+          isSelected 
+            ? 'bg-blue-50 border-blue-300 shadow-md' 
+            : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+        }`}
+      >
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {isGroup ? (
+              <div className="flex items-center gap-1">
+                <Users className="h-4 w-4 text-blue-500" />
+                <span className="font-medium text-sm text-blue-700 truncate max-w-[150px]">
+                  {msg.grupo_nome || 'Grupo'}
+                </span>
+              </div>
+            ) : parsed.placa ? (
+              <span className="font-bold font-mono text-gray-900 bg-gray-100 px-2 py-0.5 rounded">
+                {parsed.placa}
+              </span>
+            ) : null}
+            {getTypeBadge(parsed)}
+          </div>
+          <span className="text-xs text-gray-500 whitespace-nowrap">{formatTime(msg.created_at)}</span>
+        </div>
+        
+        {parsed.motorista && (
+          <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+            <User className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">{parsed.motorista}</span>
+          </div>
+        )}
+        
+        <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+          <Phone className="h-3 w-3 flex-shrink-0" />
+          <span className="font-mono">{msg.remetente_numero}</span>
+        </div>
+        
+        <div className="flex items-center gap-2 flex-wrap">
+          {parsed.valor && (
+            <Badge variant="outline" className="text-xs font-medium bg-green-50 text-green-700 border-green-200">
+              R$ {parsed.valor}
+            </Badge>
+          )}
+          {getProviderBadge(parsed.provedor)}
+        </div>
+        
+        {parsed.aprovadoPor && (
+          <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+            <CheckCircle className="h-3 w-3" />
+            Por: {parsed.aprovadoPor}
+          </p>
+        )}
+
+        {isGroup && (
+          <p className="text-xs text-gray-600 mt-2 line-clamp-2 italic">
+            {msg.mensagem.substring(0, 100)}...
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  const renderMessageDetails = () => {
+    if (!selectedMessage) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-gray-400 py-12">
+          <MessageSquare className="h-16 w-16 mb-4 opacity-30" />
+          <p className="text-lg font-medium">Selecione uma mensagem</p>
+          <p className="text-sm">Clique em uma mensagem para ver os detalhes</p>
+        </div>
+      );
+    }
+
+    const parsed = parseMessage(selectedMessage.mensagem);
+    const isGroup = !!(selectedMessage.grupo_id || selectedMessage.grupo_nome);
+
+    return (
+      <ScrollArea className="h-[calc(100vh-380px)]">
+        <div className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {isGroup ? (
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                  <Users className="h-3 w-3 mr-1" />
+                  Grupo
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                  <Smartphone className="h-3 w-3 mr-1" />
+                  Individual
+                </Badge>
+              )}
+              {getTypeBadge(parsed)}
+            </div>
+            <div className="flex items-center gap-1 text-sm text-gray-500">
+              <Calendar className="h-4 w-4" />
+              {formatFullDate(selectedMessage.created_at)}
+            </div>
+          </div>
+
+          {isGroup && selectedMessage.grupo_nome && (
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-xs text-blue-500 mb-1 font-medium">Nome do Grupo</p>
+              <p className="font-bold text-blue-800">{selectedMessage.grupo_nome}</p>
+            </div>
+          )}
+          
+          {parsed.placa && (
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <p className="text-xs text-gray-500 mb-1">Placa/Cartao</p>
+              <p className="font-bold font-mono text-2xl text-gray-900">{parsed.placa}</p>
+            </div>
+          )}
+          
+          {parsed.motorista && (
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <User className="h-4 w-4 text-gray-400" />
+                <p className="text-xs text-gray-500">Motorista</p>
+              </div>
+              <p className="font-medium text-gray-800">{parsed.motorista}</p>
+            </div>
+          )}
+          
+          {parsed.valor && (
+            <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+              <p className="text-xs text-green-600 mb-1">Valor</p>
+              <p className="font-bold text-2xl text-green-700">R$ {parsed.valor}</p>
+            </div>
+          )}
+          
+          <div className="grid grid-cols-2 gap-3">
+            {parsed.provedor && (
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-500 mb-1">Provedor</p>
+                <p className="font-medium">{parsed.provedor}</p>
+              </div>
+            )}
+            
+            {parsed.aprovadoPor && (
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-500 mb-1">Atendido por</p>
+                <p className="font-medium">{parsed.aprovadoPor}</p>
+              </div>
+            )}
+          </div>
+          
+          {parsed.motivo && (
+            <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+              <div className="flex items-center gap-2 mb-1">
+                <AlertCircle className="h-4 w-4 text-red-500" />
+                <p className="text-xs text-red-500 font-medium">Motivo da Negacao</p>
+              </div>
+              <p className="font-medium text-red-700">{parsed.motivo}</p>
+            </div>
+          )}
+          
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <Phone className="h-4 w-4 text-gray-400" />
+              <p className="text-xs text-gray-500">Telefone Destino</p>
+            </div>
+            <p className="font-mono text-gray-700">{selectedMessage.remetente_numero}</p>
+          </div>
+          
+          <div className="p-3 bg-gray-100 rounded-lg">
+            <p className="text-xs text-gray-500 mb-2 font-medium">Mensagem Completa</p>
+            <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans leading-relaxed">
+              {selectedMessage.mensagem}
+            </pre>
+          </div>
+
+          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center gap-2 mb-2">
+              <History className="h-4 w-4 text-blue-500" />
+              <p className="text-xs text-blue-600 font-medium">Historico de Auditoria</p>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between text-gray-600">
+                <span>Mensagem enviada</span>
+                <span className="text-xs">{formatFullDate(selectedMessage.created_at)}</span>
+              </div>
+              {selectedMessage.is_outgoing && (
+                <div className="flex items-center justify-between text-gray-600">
+                  <span>Tipo: Notificacao automatica</span>
+                  <Badge variant="outline" className="text-xs">Sistema</Badge>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </ScrollArea>
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
       {/* Header */}
       <div className="bg-gradient-to-r from-[#1a365d] to-[#2d4a7c] text-white p-4 shadow-lg">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -230,7 +442,7 @@ export default function MessagesAttendancePage() {
             <MessageSquare className="h-8 w-8" />
             <div>
               <h1 className="text-xl font-bold">Painel de Atendimento de Saldo</h1>
-              <p className="text-sm text-blue-200">Historico de Notificacoes WhatsApp</p>
+              <p className="text-sm text-blue-200">Ticket | Veloe | Line Haul</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -259,279 +471,259 @@ export default function MessagesAttendancePage() {
       </div>
 
       <div className="max-w-7xl mx-auto p-4">
-        {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-          <Card className="bg-white shadow-sm border-l-4 border-l-green-500">
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center mb-1">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-1" />
-                <span className="text-2xl font-bold text-green-600">{aprovacoes}</span>
-              </div>
-              <p className="text-xs text-gray-600">Aprovacoes</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-white shadow-sm border-l-4 border-l-red-500">
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center mb-1">
-                <X className="h-5 w-5 text-red-500 mr-1" />
-                <span className="text-2xl font-bold text-red-600">{negacoes}</span>
-              </div>
-              <p className="text-xs text-gray-600">Negacoes</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-white shadow-sm border-l-4 border-l-orange-500">
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center mb-1">
-                <AlertCircle className="h-5 w-5 text-orange-500 mr-1" />
-                <span className="text-2xl font-bold text-orange-600">{alertas}</span>
-              </div>
-              <p className="text-xs text-gray-600">Alertas</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-white shadow-sm border-l-4 border-l-blue-500">
-            <CardContent className="p-4 text-center">
-              <span className="text-2xl font-bold text-blue-600">{messages.length}</span>
-              <p className="text-xs text-gray-600">Total</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-white shadow-sm border-l-4 border-l-purple-500">
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center mb-1">
-                <MessageCircle className="h-5 w-5 text-purple-500 mr-1" />
-                <span className="text-2xl font-bold text-purple-600">{messages.filter(m => m.is_outgoing).length}</span>
-              </div>
-              <p className="text-xs text-gray-600">Enviadas</p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Tabs Principais */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <div className="flex items-center justify-between">
+            <TabsList className="bg-white shadow-sm border p-1">
+              <TabsTrigger 
+                value="individual" 
+                className="flex items-center gap-2 data-[state=active]:bg-[#1a365d] data-[state=active]:text-white px-6"
+              >
+                <Smartphone className="h-4 w-4" />
+                Mensagens Individuais
+                <Badge variant="secondary" className="ml-1 bg-blue-100 text-blue-800">
+                  {individualMessages.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="grupos" 
+                className="flex items-center gap-2 data-[state=active]:bg-[#1a365d] data-[state=active]:text-white px-6"
+              >
+                <Users className="h-4 w-4" />
+                Mensagens de Grupos
+                <Badge variant="secondary" className="ml-1 bg-purple-100 text-purple-800">
+                  {groupMessages.length}
+                </Badge>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        {/* Filtros */}
-        <Card className="mb-4 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar placa, motorista ou telefone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant={statusFilter === 'todos' ? 'default' : 'outline'}
-                  onClick={() => setStatusFilter('todos')}
-                >
-                  Todos
-                </Button>
-                <Button
-                  size="sm"
-                  variant={statusFilter === 'aprovacao' ? 'default' : 'outline'}
-                  onClick={() => setStatusFilter('aprovacao')}
-                  className={statusFilter === 'aprovacao' ? 'bg-green-500 hover:bg-green-600' : ''}
-                >
-                  Aprovacoes
-                </Button>
-                <Button
-                  size="sm"
-                  variant={statusFilter === 'negacao' ? 'default' : 'outline'}
-                  onClick={() => setStatusFilter('negacao')}
-                  className={statusFilter === 'negacao' ? 'bg-red-500 hover:bg-red-600' : ''}
-                >
-                  Negacoes
-                </Button>
-                <Button
-                  size="sm"
-                  variant={statusFilter === 'alerta' ? 'default' : 'outline'}
-                  onClick={() => setStatusFilter('alerta')}
-                  className={statusFilter === 'alerta' ? 'bg-orange-500 hover:bg-orange-600' : ''}
-                >
-                  Alertas
-                </Button>
-              </div>
+          {/* Tab Mensagens Individuais */}
+          <TabsContent value="individual" className="space-y-4 mt-0">
+            {/* KPIs Individuais */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card className="bg-white shadow-sm border-l-4 border-l-green-500">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Aprovacoes</p>
+                      <p className="text-2xl font-bold text-green-600">{individualStats.aprovacoes}</p>
+                    </div>
+                    <CheckCircle className="h-8 w-8 text-green-500 opacity-50" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-white shadow-sm border-l-4 border-l-red-500">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Negacoes</p>
+                      <p className="text-2xl font-bold text-red-600">{individualStats.negacoes}</p>
+                    </div>
+                    <X className="h-8 w-8 text-red-500 opacity-50" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-white shadow-sm border-l-4 border-l-orange-500">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Alertas</p>
+                      <p className="text-2xl font-bold text-orange-600">{individualStats.alertas}</p>
+                    </div>
+                    <AlertCircle className="h-8 w-8 text-orange-500 opacity-50" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-white shadow-sm border-l-4 border-l-blue-500">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Total</p>
+                      <p className="text-2xl font-bold text-blue-600">{individualMessages.length}</p>
+                    </div>
+                    <MessageCircle className="h-8 w-8 text-blue-500 opacity-50" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Lista de Mensagens */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Lista */}
-          <Card className="shadow-lg border-0">
-            <CardHeader className="pb-3 border-b bg-gray-50">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <MessageSquare className="h-5 w-5 text-[#1a365d]" />
-                Historico de Mensagens
-                <Badge variant="outline" className="ml-2">{filteredMessages.length}</Badge>
-              </CardTitle>
-            </CardHeader>
-
-            <ScrollArea className="h-[500px]">
-              {isLoading ? (
-                <div className="p-4 space-y-3">
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <Skeleton key={i} className="h-24 w-full" />
-                  ))}
-                </div>
-              ) : filteredMessages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full py-12 text-gray-500">
-                  <MessageCircle className="h-12 w-12 mb-3 opacity-30" />
-                  <p>Nenhuma mensagem encontrada</p>
-                </div>
-              ) : (
-                <div className="p-2 space-y-2">
-                  {filteredMessages.map(msg => {
-                    const parsed = parseMessage(msg.mensagem);
-                    return (
-                      <div
-                        key={msg.id}
-                        onClick={() => setSelectedMessage(msg)}
-                        className={`p-3 rounded-lg cursor-pointer transition-all border ${
-                          selectedMessage?.id === msg.id 
-                            ? 'bg-blue-50 border-blue-300' 
-                            : 'bg-white border-gray-200 hover:bg-gray-50'
-                        }`}
+            {/* Filtros */}
+            <Card className="shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Buscar placa, motorista ou telefone..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    {['todos', 'aprovacao', 'negacao', 'alerta'].map(filter => (
+                      <Button
+                        key={filter}
+                        size="sm"
+                        variant={statusFilter === filter ? 'default' : 'outline'}
+                        onClick={() => setStatusFilter(filter)}
+                        className={statusFilter === filter ? (
+                          filter === 'aprovacao' ? 'bg-green-500 hover:bg-green-600' :
+                          filter === 'negacao' ? 'bg-red-500 hover:bg-red-600' :
+                          filter === 'alerta' ? 'bg-orange-500 hover:bg-orange-600' : ''
+                        ) : ''}
                       >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            {parsed.placa && (
-                              <span className="font-bold font-mono text-gray-900">{parsed.placa}</span>
-                            )}
-                            {getTypeBadge(parsed)}
-                          </div>
-                          <span className="text-xs text-gray-500">{formatTime(msg.created_at)}</span>
-                        </div>
-                        
-                        {parsed.motorista && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
-                            <User className="h-3 w-3" />
-                            <span className="truncate">{parsed.motorista}</span>
-                          </div>
-                        )}
-                        
-                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                          <Phone className="h-3 w-3" />
-                          <span>{msg.remetente_numero}</span>
-                        </div>
-                        
-                        {parsed.valor && (
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">
-                              R$ {parsed.valor}
-                            </Badge>
-                            {parsed.provedor && (
-                              <Badge variant="outline" className="text-xs">
-                                {parsed.provedor}
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                        
-                        {parsed.aprovadoPor && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            Por: {parsed.aprovadoPor}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
+                        {filter === 'todos' ? 'Todas' : 
+                         filter === 'aprovacao' ? 'Aprovadas' :
+                         filter === 'negacao' ? 'Negadas' : 'Alertas'}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-              )}
-            </ScrollArea>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Detalhes */}
-          <Card className="shadow-lg border-0">
-            <CardHeader className="pb-3 border-b bg-gray-50">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <History className="h-5 w-5 text-[#1a365d]" />
-                Detalhes da Mensagem
-              </CardTitle>
-            </CardHeader>
+            {/* Lista + Detalhes */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Card className="shadow-lg border-0">
+                <CardHeader className="pb-3 border-b bg-gray-50">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Smartphone className="h-5 w-5 text-[#1a365d]" />
+                    Conversas Individuais
+                    <Badge variant="outline" className="ml-2">{filteredIndividual.length}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <ScrollArea className="h-[calc(100vh-500px)] min-h-[400px]">
+                  {isLoading ? (
+                    <div className="p-4 space-y-3">
+                      {[1, 2, 3, 4].map(i => (
+                        <Skeleton key={i} className="h-24 w-full" />
+                      ))}
+                    </div>
+                  ) : filteredIndividual.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full py-12 text-gray-400">
+                      <MessageCircle className="h-12 w-12 mb-3 opacity-30" />
+                      <p>Nenhuma mensagem encontrada</p>
+                    </div>
+                  ) : (
+                    <div className="p-3">
+                      {filteredIndividual.map(msg => renderMessageCard(msg, false))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </Card>
 
-            {selectedMessage ? (
-              <ScrollArea className="h-[500px]">
-                <div className="p-4">
-                  {(() => {
-                    const parsed = parseMessage(selectedMessage.mensagem);
-                    return (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          {getTypeBadge(parsed)}
-                          <span className="text-sm text-gray-500">
-                            {formatFullDate(selectedMessage.created_at)}
-                          </span>
-                        </div>
-                        
-                        {parsed.placa && (
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-gray-500 mb-1">Placa/Cartao</p>
-                            <p className="font-bold font-mono text-xl">{parsed.placa}</p>
-                          </div>
-                        )}
-                        
-                        {parsed.motorista && (
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-gray-500 mb-1">Motorista</p>
-                            <p className="font-medium">{parsed.motorista}</p>
-                          </div>
-                        )}
-                        
-                        {parsed.valor && (
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-gray-500 mb-1">Valor</p>
-                            <p className="font-bold text-xl text-green-600">R$ {parsed.valor}</p>
-                          </div>
-                        )}
-                        
-                        {parsed.provedor && (
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-gray-500 mb-1">Provedor</p>
-                            <p className="font-medium">{parsed.provedor}</p>
-                          </div>
-                        )}
-                        
-                        {parsed.aprovadoPor && (
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-gray-500 mb-1">Atendido por</p>
-                            <p className="font-medium">{parsed.aprovadoPor}</p>
-                          </div>
-                        )}
-                        
-                        {parsed.motivo && (
-                          <div className="p-3 bg-red-50 rounded-lg border border-red-200">
-                            <p className="text-xs text-red-500 mb-1">Motivo da Negacao</p>
-                            <p className="font-medium text-red-700">{parsed.motivo}</p>
-                          </div>
-                        )}
-                        
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <p className="text-xs text-gray-500 mb-1">Telefone Destino</p>
-                          <p className="font-mono">{selectedMessage.remetente_numero}</p>
-                        </div>
-                        
-                        <div className="p-3 bg-gray-100 rounded-lg">
-                          <p className="text-xs text-gray-500 mb-2">Mensagem Completa</p>
-                          <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans">
-                            {selectedMessage.mensagem}
-                          </pre>
-                        </div>
-                      </div>
-                    );
-                  })()}
+              <Card className="shadow-lg border-0">
+                <CardHeader className="pb-3 border-b bg-gray-50">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <History className="h-5 w-5 text-[#1a365d]" />
+                    Detalhes da Mensagem
+                  </CardTitle>
+                </CardHeader>
+                {renderMessageDetails()}
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Tab Mensagens de Grupos */}
+          <TabsContent value="grupos" className="space-y-4 mt-0">
+            {/* KPIs Grupos */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <Card className="bg-white shadow-sm border-l-4 border-l-purple-500">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Grupos Ativos</p>
+                      <p className="text-2xl font-bold text-purple-600">{groupStats.grupos}</p>
+                    </div>
+                    <Users className="h-8 w-8 text-purple-500 opacity-50" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-white shadow-sm border-l-4 border-l-blue-500">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Total Mensagens</p>
+                      <p className="text-2xl font-bold text-blue-600">{groupStats.mensagens}</p>
+                    </div>
+                    <MessageSquare className="h-8 w-8 text-blue-500 opacity-50" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-white shadow-sm border-l-4 border-l-gray-500">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Modo</p>
+                      <p className="text-lg font-bold text-gray-600">Somente Leitura</p>
+                    </div>
+                    <AlertCircle className="h-8 w-8 text-gray-400 opacity-50" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Info Box */}
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-blue-500 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-blue-800">Monitoramento de Grupos</p>
+                    <p className="text-sm text-blue-600">
+                      Esta aba exibe mensagens recebidas de grupos de WhatsApp apenas para visualizacao.
+                      Nao e possivel responder diretamente pelo painel.
+                    </p>
+                  </div>
                 </div>
-              </ScrollArea>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-[500px] text-gray-500">
-                <MessageSquare className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                <p className="text-lg">Selecione uma mensagem</p>
-                <p className="text-sm">Clique em uma mensagem para ver os detalhes</p>
-              </div>
-            )}
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+
+            {/* Lista + Detalhes Grupos */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Card className="shadow-lg border-0">
+                <CardHeader className="pb-3 border-b bg-gray-50">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Users className="h-5 w-5 text-purple-600" />
+                    Mensagens de Grupos
+                    <Badge variant="outline" className="ml-2">{filteredGroups.length}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <ScrollArea className="h-[calc(100vh-500px)] min-h-[400px]">
+                  {isLoading ? (
+                    <div className="p-4 space-y-3">
+                      {[1, 2, 3].map(i => (
+                        <Skeleton key={i} className="h-24 w-full" />
+                      ))}
+                    </div>
+                  ) : filteredGroups.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full py-12 text-gray-400">
+                      <Users className="h-12 w-12 mb-3 opacity-30" />
+                      <p>Nenhuma mensagem de grupo</p>
+                    </div>
+                  ) : (
+                    <div className="p-3">
+                      {filteredGroups.map(msg => renderMessageCard(msg, true))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </Card>
+
+              <Card className="shadow-lg border-0">
+                <CardHeader className="pb-3 border-b bg-gray-50">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <History className="h-5 w-5 text-purple-600" />
+                    Detalhes da Mensagem
+                  </CardTitle>
+                </CardHeader>
+                {renderMessageDetails()}
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
