@@ -38,7 +38,12 @@ import {
   Download,
   FileText,
   Printer,
-  History
+  History,
+  Clock,
+  User,
+  Building2,
+  Play,
+  X
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
@@ -1972,19 +1977,19 @@ const LineHaulPage = () => {
             </div>
           </div>
         ) : showMaintenance ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Header com botão voltar para Manutenção */}
-            <Card className="bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between text-orange-700">
-                  <span className="flex items-center">
-                    <Wrench className="h-5 w-5 mr-2" />
-                    Gerenciar Solicitações de Manutenção
+            <Card className="bg-white shadow-sm border-0">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center text-gray-800">
+                    <Wrench className="h-6 w-6 mr-2 text-[#E10613]" />
+                    <span className="text-xl font-bold">Gestão de Manutenção</span>
                   </span>
                   <div className="flex gap-2">
                     <Button 
                       onClick={() => setShowNewMaintenanceDialog(true)}
-                      className="bg-green-600 hover:bg-green-700 text-white"
+                      className="bg-[#E10613] hover:bg-[#B8050F] text-white"
                       data-testid="btn-nova-manutencao"
                     >
                       <Plus className="h-4 w-4 mr-2" />
@@ -1993,103 +1998,115 @@ const LineHaulPage = () => {
                     <Button 
                       variant="outline" 
                       onClick={generateAllMaintenancesPDF}
-                      className="bg-[#E10613] hover:bg-[#B8050F] text-white border-[#E10613]"
+                      className="border-gray-300 hover:bg-gray-50"
                       data-testid="btn-exportar-pdf-manutencoes"
                     >
                       <Printer className="h-4 w-4 mr-2" />
-                      Exportar PDF
+                      Exportar
                     </Button>
                     <Button 
                       variant="outline" 
                       onClick={() => setShowMaintenance(false)}
-                      className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500"
+                      className="border-gray-300 hover:bg-gray-50"
                     >
                       <ArrowLeft className="h-4 w-4 mr-2" />
-                      Voltar ao Dashboard
+                      Voltar
                     </Button>
                   </div>
                 </CardTitle>
               </CardHeader>
             </Card>
 
-            {/* Filtros de Manutenção */}
-            <Card className="bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center text-orange-700">
-                  <Wrench className="h-5 w-5 mr-2" />
-                  Filtrar Solicitações
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-4 flex gap-2 items-end">
-                  <div className="flex-1">
-                    <Label className="text-sm font-medium mb-1 block">Pesquisar por Placa</Label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        placeholder="Digite a placa..."
-                        value={maintenancePlateSearch}
-                        onChange={(e) => setMaintenancePlateSearch(e.target.value.toUpperCase())}
-                        className="pl-10"
-                      />
-                    </div>
+            {/* KPIs Resumo */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <Card 
+                className={`cursor-pointer transition-all hover:shadow-md ${maintenanceFilter === 'mais_3_dias' ? 'ring-2 ring-red-500' : ''}`}
+                onClick={() => setMaintenanceFilter('mais_3_dias')}
+              >
+                <CardContent className="p-4 text-center">
+                  <div className="flex items-center justify-center mb-1">
+                    <AlertTriangle className="h-5 w-5 text-red-500 mr-1" />
+                    <span className="text-2xl font-bold text-red-600">{getMaintenancesOver3Days().length}</span>
+                  </div>
+                  <p className="text-xs text-red-600 font-medium">CRÍTICOS (+3 dias)</p>
+                </CardContent>
+              </Card>
+              <Card 
+                className={`cursor-pointer transition-all hover:shadow-md ${maintenanceFilter === 'pendentes' ? 'ring-2 ring-red-500' : ''}`}
+                onClick={() => setMaintenanceFilter('pendentes')}
+              >
+                <CardContent className="p-4 text-center">
+                  <span className="text-2xl font-bold text-red-500">{maintenanceRequests.filter(m => m.status === 'pendente').length}</span>
+                  <p className="text-xs text-gray-600">Pendentes</p>
+                </CardContent>
+              </Card>
+              <Card 
+                className={`cursor-pointer transition-all hover:shadow-md ${maintenanceFilter === 'em_andamento' ? 'ring-2 ring-yellow-500' : ''}`}
+                onClick={() => setMaintenanceFilter('em_andamento')}
+              >
+                <CardContent className="p-4 text-center">
+                  <span className="text-2xl font-bold text-yellow-600">{maintenanceRequests.filter(m => m.status === 'em_andamento').length}</span>
+                  <p className="text-xs text-gray-600">Em Andamento</p>
+                </CardContent>
+              </Card>
+              <Card 
+                className={`cursor-pointer transition-all hover:shadow-md ${maintenanceFilter === 'concluidas' ? 'ring-2 ring-green-500' : ''}`}
+                onClick={() => setMaintenanceFilter('concluidas')}
+              >
+                <CardContent className="p-4 text-center">
+                  <span className="text-2xl font-bold text-green-600">{maintenanceRequests.filter(m => m.status === 'concluida').length}</span>
+                  <p className="text-xs text-gray-600">Concluídas</p>
+                </CardContent>
+              </Card>
+              <Card 
+                className={`cursor-pointer transition-all hover:shadow-md ${maintenanceFilter === 'todos' ? 'ring-2 ring-blue-500' : ''}`}
+                onClick={() => setMaintenanceFilter('todos')}
+              >
+                <CardContent className="p-4 text-center">
+                  <span className="text-2xl font-bold text-gray-700">{maintenanceRequests.length}</span>
+                  <p className="text-xs text-gray-600">Total</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Busca por Placa */}
+            <Card className="bg-white shadow-sm border-0">
+              <CardContent className="p-4">
+                <div className="flex gap-3 items-center">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Buscar por placa..."
+                      value={maintenancePlateSearch}
+                      onChange={(e) => setMaintenancePlateSearch(e.target.value.toUpperCase())}
+                      className="pl-10 h-10 text-lg font-mono"
+                    />
                   </div>
                   {maintenancePlateSearch && (
-                    <Button
-                      variant="outline"
-                      onClick={() => generateMaintenanceHistoryPDF(maintenancePlateSearch)}
-                      className="bg-[#E10613] hover:bg-[#B8050F] text-white border-[#E10613]"
-                    >
-                      <History className="h-4 w-4 mr-2" />
-                      Imprimir Histórico
-                    </Button>
+                    <>
+                      <Button
+                        variant="outline"
+                        onClick={() => generateMaintenanceHistoryPDF(maintenancePlateSearch)}
+                        className="h-10"
+                      >
+                        <History className="h-4 w-4 mr-2" />
+                        Histórico PDF
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => setMaintenancePlateSearch('')}
+                        className="h-10 px-3"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
                   )}
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  <Button 
-                    variant={maintenanceFilter === 'todos' ? 'default' : 'outline'}
-                    onClick={() => setMaintenanceFilter('todos')}
-                    className="flex-1"
-                  >
-                    Todos ({maintenanceRequests.length})
-                  </Button>
-                  <Button 
-                    variant={maintenanceFilter === 'pendentes' ? 'default' : 'outline'}
-                    onClick={() => setMaintenanceFilter('pendentes')}
-                    className="flex-1"
-                  >
-                    Pendentes ({maintenanceRequests.filter(m => m.status === 'pendente').length})
-                  </Button>
-                  <Button 
-                    variant={maintenanceFilter === 'em_andamento' ? 'default' : 'outline'}
-                    onClick={() => setMaintenanceFilter('em_andamento')}
-                    className="flex-1"
-                  >
-                    Em Andamento ({maintenanceRequests.filter(m => m.status === 'em_andamento').length})
-                  </Button>
-                  <Button 
-                    variant={maintenanceFilter === 'concluidas' ? 'default' : 'outline'}
-                    onClick={() => setMaintenanceFilter('concluidas')}
-                    className="flex-1"
-                  >
-                    Concluídas ({maintenanceRequests.filter(m => m.status === 'concluida').length})
-                  </Button>
-                </div>
-                <div className="mt-3">
-                  <Button 
-                    variant={maintenanceFilter === 'mais_3_dias' ? 'default' : 'outline'}
-                    onClick={() => setMaintenanceFilter('mais_3_dias')}
-                    className={`w-full ${maintenanceFilter === 'mais_3_dias' ? 'bg-red-600 hover:bg-red-700' : 'border-red-500 text-red-600 hover:bg-red-50'}`}
-                  >
-                    <AlertTriangle className="h-4 w-4 mr-2" />
-                    Veículos +3 Dias em Manutenção ({getMaintenancesOver3Days().length})
-                  </Button>
                 </div>
               </CardContent>
             </Card>
 
             {/* Lista de Solicitações de Manutenção */}
-            <div className="grid gap-4">
+            <div className="grid gap-3">
               {maintenanceRequests
                 .filter(request => {
                   const matchesPlate = !maintenancePlateSearch || 
@@ -2105,115 +2122,146 @@ const LineHaulPage = () => {
                   
                   return matchesPlate && matchesFilter;
                 })
+                .sort((a, b) => {
+                  const daysA = calculateDaysInMaintenance(a.created_at, a.status);
+                  const daysB = calculateDaysInMaintenance(b.created_at, b.status);
+                  if (a.status === 'concluida' && b.status !== 'concluida') return 1;
+                  if (a.status !== 'concluida' && b.status === 'concluida') return -1;
+                  return daysB - daysA;
+                })
                 .map(request => {
                   const daysInMaintenance = calculateDaysInMaintenance(request.created_at, request.status);
+                  const isCritical = daysInMaintenance > 3 && request.status !== 'concluida';
+                  const isWarning = daysInMaintenance > 0 && daysInMaintenance <= 3 && request.status !== 'concluida';
+                  
                   return (
-                    <Card key={request.id} className={`bg-white/80 backdrop-blur-sm ${daysInMaintenance > 3 && request.status !== 'concluida' ? 'border-l-4 border-l-red-500' : ''}`}>
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-lg">{request.vehicle_plate} - {request.vehicle_model}</h3>
-                            <p className="text-sm text-gray-600">Motorista: {request.driver_name}</p>
-                            <p className="text-sm text-gray-600">Tipo: {request.maintenance_type}</p>
-                            <p className="text-sm text-gray-600">Data: {new Date(request.created_at).toLocaleDateString('pt-BR')}</p>
-                            {request.workshop_name && (
-                              <p className="text-sm text-gray-600">Oficina: {request.workshop_name}</p>
-                            )}
-                            {daysInMaintenance > 0 && request.status !== 'concluida' && (
-                              <p className={`text-sm font-medium mt-1 ${daysInMaintenance > 3 ? 'text-red-600' : 'text-orange-600'}`}>
-                                {daysInMaintenance} dias em manutenção
-                              </p>
+                    <Card 
+                      key={request.id} 
+                      className={`bg-white shadow-sm hover:shadow-md transition-shadow ${
+                        isCritical ? 'border-l-4 border-l-red-500' : 
+                        isWarning ? 'border-l-4 border-l-yellow-500' : 
+                        request.status === 'concluida' ? 'border-l-4 border-l-green-500 opacity-75' : ''
+                      }`}
+                    >
+                      <CardContent className="p-3">
+                        {/* Linha Principal: Placa + Status + Dias */}
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl font-bold font-mono text-gray-900">{request.vehicle_plate}</span>
+                            <Badge 
+                              className={`text-xs font-semibold ${
+                                request.status === 'concluida' ? 'bg-green-500 text-white' :
+                                request.status === 'em_andamento' ? 'bg-yellow-500 text-black' :
+                                'bg-red-500 text-white'
+                              }`}
+                            >
+                              {request.status === 'concluida' ? 'CONCLUÍDA' :
+                               request.status === 'em_andamento' ? 'EM ANDAMENTO' :
+                               'PENDENTE'}
+                            </Badge>
+                            {request.status !== 'concluida' && daysInMaintenance > 0 && (
+                              <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${
+                                isCritical ? 'bg-red-100 text-red-700 animate-pulse' :
+                                isWarning ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-gray-100 text-gray-600'
+                              }`}>
+                                <Clock className="h-3 w-3" />
+                                <span>{daysInMaintenance} dias</span>
+                              </div>
                             )}
                           </div>
-                          <div className="flex flex-col items-end gap-2">
-                            <Badge 
-                              variant="default"
-                              className={
-                                request.status === 'concluida' ? 'bg-green-500' :
-                                request.status === 'em_andamento' ? 'bg-blue-500' :
-                                'bg-yellow-500'
-                              }
-                            >
-                              {request.status === 'concluida' ? 'Concluída' :
-                               request.status === 'em_andamento' ? 'Em Andamento' :
-                               'Pendente'}
-                            </Badge>
-                            <Badge 
-                              variant="outline"
-                              className={
-                                request.priority === 'urgente' ? 'border-red-500 text-red-700' :
-                                request.priority === 'alta' ? 'border-orange-500 text-orange-700' :
-                                request.priority === 'media' ? 'border-yellow-500 text-yellow-700' :
-                                'border-gray-500 text-gray-700'
-                              }
-                            >
-                              {request.priority === 'urgente' ? 'Urgente' :
-                               request.priority === 'alta' ? 'Alta' :
-                               request.priority === 'media' ? 'Média' :
-                               'Baixa'}
-                            </Badge>
-                          </div>
+                          <Badge 
+                            variant="outline"
+                            className={`text-xs ${
+                              request.priority === 'urgente' ? 'border-red-500 text-red-600 bg-red-50' :
+                              request.priority === 'alta' ? 'border-orange-500 text-orange-600 bg-orange-50' :
+                              request.priority === 'media' ? 'border-yellow-500 text-yellow-600 bg-yellow-50' :
+                              'border-gray-400 text-gray-500'
+                            }`}
+                          >
+                            {request.priority === 'urgente' ? 'URGENTE' :
+                             request.priority === 'alta' ? 'ALTA' :
+                             request.priority === 'media' ? 'MÉDIA' :
+                             'BAIXA'}
+                          </Badge>
                         </div>
-                    
-                        <div className="mb-3">
-                          <p className="text-sm text-gray-700">
-                            <strong>Descrição:</strong> {request.description}
-                          </p>
-                          {request.estimated_cost && (
-                            <p className="text-sm text-gray-700 mt-1">
-                              <strong>Custo Estimado:</strong> R$ {request.estimated_cost.toFixed(2)}
-                            </p>
+
+                        {/* Linha Secundária: Info */}
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 mb-2">
+                          <span className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            {request.driver_name || 'Não informado'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Wrench className="h-3 w-3" />
+                            {request.maintenance_type || 'Não especificado'}
+                          </span>
+                          {request.workshop_name && (
+                            <span className="flex items-center gap-1">
+                              <Building2 className="h-3 w-3" />
+                              {request.workshop_name}
+                            </span>
                           )}
                         </div>
 
-                        <div className="flex gap-2 flex-wrap">
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => {
-                              setSelectedMaintenanceForDetails(request);
-                              setShowMaintenanceDetails(true);
-                            }}
-                            data-testid={`btn-ver-detalhes-manutencao-${request.id}`}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Ver Detalhes
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => generateMaintenancePDF(request)}
-                            className="text-[#E10613] border-[#E10613] hover:bg-[#E10613] hover:text-white"
-                            data-testid={`btn-pdf-manutencao-${request.id}`}
-                            title="Imprimir esta manutenção"
-                          >
-                            <FileText className="h-4 w-4 mr-1" />
-                            PDF
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => generateMaintenanceHistoryPDF(request.vehicle_plate)}
-                            className="text-purple-600 border-purple-500 hover:bg-purple-600 hover:text-white"
-                            title="Imprimir histórico completo desta placa"
-                          >
-                            <History className="h-4 w-4 mr-1" />
-                            Histórico
-                          </Button>
+                        {/* Descrição resumida */}
+                        {request.description && (
+                          <p className="text-sm text-gray-700 mb-2 line-clamp-1">
+                            <Wrench className="h-3 w-3 inline mr-1" />
+                            {request.description}
+                          </p>
+                        )}
+
+                        {/* Ações */}
+                        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                          <div className="flex gap-1">
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              className="h-8 px-2 text-gray-600 hover:text-gray-900"
+                              onClick={() => {
+                                setSelectedMaintenanceForDetails(request);
+                                setShowMaintenanceDetails(true);
+                              }}
+                              data-testid={`btn-ver-detalhes-manutencao-${request.id}`}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              className="h-8 px-2 text-gray-600 hover:text-[#E10613]"
+                              onClick={() => generateMaintenancePDF(request)}
+                              data-testid={`btn-pdf-manutencao-${request.id}`}
+                              title="Imprimir esta manutenção"
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              className="h-8 px-2 text-gray-600 hover:text-purple-600"
+                              onClick={() => generateMaintenanceHistoryPDF(request.vehicle_plate)}
+                              title="Histórico completo"
+                            >
+                              <History className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          
                           {request.status === 'pendente' && (
                             <Button 
                               size="sm" 
-                              className="bg-blue-500 hover:bg-blue-600"
+                              className="h-8 bg-[#E10613] hover:bg-[#B8050F] text-white"
                               onClick={() => handleOpenWorkorderDialog(request)}
                             >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Iniciar Manutenção
+                              <Play className="h-4 w-4 mr-1" />
+                              Iniciar
                             </Button>
                           )}
                           {request.status === 'em_andamento' && (
                             <Button 
                               size="sm" 
-                              className="bg-green-500 hover:bg-green-600"
+                              className="h-8 bg-green-600 hover:bg-green-700 text-white"
                               onClick={() => handleUpdateMaintenanceStatus(request.id, 'concluida')}
                             >
                               <CheckCircle className="h-4 w-4 mr-1" />
