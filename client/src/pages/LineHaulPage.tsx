@@ -302,7 +302,8 @@ const LineHaulPage = () => {
   const [selectedChecklist, setSelectedChecklist] = useState<DriverChecklist | null>(null);
   const [showChecklistDetails, setShowChecklistDetails] = useState(false);
   const [showMaintenance, setShowMaintenance] = useState(false);
-  const [maintenanceFilter, setMaintenanceFilter] = useState<'todos' | 'pendentes' | 'em_andamento' | 'concluidas'>('todos');
+  const [maintenanceFilter, setMaintenanceFilter] = useState<'todos' | 'pendentes' | 'em_andamento' | 'concluidas' | 'mais_3_dias'>('todos');
+  const [maintenancePlateSearch, setMaintenancePlateSearch] = useState<string>('');
   const [showGarage, setShowGarage] = useState(false);
   const [garageFilter, setGarageFilter] = useState<'todos' | 'cavalos' | 'carretas' | 'manutencao'>('todos');
   const [plateSearch, setPlateSearch] = useState<string>('');
@@ -576,6 +577,122 @@ const LineHaulPage = () => {
       title: "PDF Gerado",
       description: `Lista de manutenções exportada com sucesso!`
     });
+  };
+
+  const generateMaintenanceHistoryPDF = (plate: string) => {
+    const plateMaintenances = maintenanceRequests.filter(m => 
+      m.vehicle_plate.toLowerCase().includes(plate.toLowerCase())
+    );
+    
+    if (plateMaintenances.length === 0) {
+      toast({
+        title: "Nenhum registro",
+        description: `Nenhuma manutenção encontrada para a placa ${plate}`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    doc.setFillColor(225, 6, 19);
+    doc.rect(0, 0, pageWidth, 40, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('MURICI TRANSPORTES', pageWidth / 2, 18, { align: 'center' });
+    doc.setFontSize(14);
+    doc.text(`Historico de Manutencao - ${plate.toUpperCase()}`, pageWidth / 2, 30, { align: 'center' });
+    
+    doc.setTextColor(0, 0, 0);
+    let y = 55;
+    
+    doc.setFontSize(10);
+    doc.text(`Total de registros: ${plateMaintenances.length}`, 20, y);
+    doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth - 60, y);
+    y += 15;
+    
+    plateMaintenances
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .forEach((m, index) => {
+        if (y > 250) {
+          doc.addPage();
+          y = 20;
+        }
+        
+        doc.setFillColor(240, 240, 240);
+        doc.rect(15, y - 4, pageWidth - 30, 8, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text(`${index + 1}. ${m.maintenance_type} - ${m.status === 'concluida' ? 'Concluida' : m.status === 'em_andamento' ? 'Em Andamento' : 'Pendente'}`, 20, y);
+        y += 10;
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.text(`Data: ${new Date(m.created_at).toLocaleDateString('pt-BR')}`, 20, y);
+        doc.text(`Prioridade: ${m.priority === 'urgente' ? 'Urgente' : m.priority === 'alta' ? 'Alta' : m.priority === 'media' ? 'Media' : 'Baixa'}`, 80, y);
+        y += 7;
+        
+        if (m.workshop_name) {
+          doc.text(`Oficina: ${m.workshop_name}`, 20, y);
+          y += 7;
+        }
+        
+        if (m.description) {
+          const descLines = doc.splitTextToSize(`Descricao: ${m.description}`, pageWidth - 40);
+          doc.text(descLines, 20, y);
+          y += descLines.length * 5;
+        }
+        
+        if (m.service_performed) {
+          const serviceLines = doc.splitTextToSize(`Servico: ${m.service_performed}`, pageWidth - 40);
+          doc.text(serviceLines, 20, y);
+          y += serviceLines.length * 5;
+        }
+        
+        if (m.parts_used) {
+          const partsLines = doc.splitTextToSize(`Pecas: ${m.parts_used}`, pageWidth - 40);
+          doc.text(partsLines, 20, y);
+          y += partsLines.length * 5;
+        }
+        
+        if (m.estimated_cost || m.final_cost) {
+          doc.text(`Custo: R$ ${(m.final_cost || m.estimated_cost || 0).toFixed(2)}`, 20, y);
+          y += 7;
+        }
+        
+        y += 10;
+      });
+    
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.setFontSize(8);
+    doc.setTextColor(128, 128, 128);
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 20, pageHeight - 10);
+    doc.text('Murici Transportes - Sistema de Gestao de Frota', pageWidth - 20, pageHeight - 10, { align: 'right' });
+    
+    doc.save(`historico_manutencao_${plate}_${new Date().toISOString().split('T')[0]}.pdf`);
+    
+    toast({
+      title: "PDF Gerado",
+      description: `Historico de manutencao da placa ${plate} exportado com sucesso!`
+    });
+  };
+
+  const calculateDaysInMaintenance = (createdAt: string, status: string): number => {
+    if (status === 'concluida') return 0;
+    const startDate = new Date(createdAt);
+    const today = new Date();
+    const diffTime = Math.abs(today.getTime() - startDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const getMaintenancesOver3Days = () => {
+    return maintenanceRequests.filter(m => 
+      m.status !== 'concluida' && calculateDaysInMaintenance(m.created_at, m.status) > 3
+    );
   };
 
   // useEffect para calcular automaticamente a distância quando origem e destino mudam
@@ -1824,6 +1941,30 @@ const LineHaulPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                <div className="mb-4 flex gap-2 items-end">
+                  <div className="flex-1">
+                    <Label className="text-sm font-medium mb-1 block">Pesquisar por Placa</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Digite a placa..."
+                        value={maintenancePlateSearch}
+                        onChange={(e) => setMaintenancePlateSearch(e.target.value.toUpperCase())}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  {maintenancePlateSearch && (
+                    <Button
+                      variant="outline"
+                      onClick={() => generateMaintenanceHistoryPDF(maintenancePlateSearch)}
+                      className="bg-[#E10613] hover:bg-[#B8050F] text-white border-[#E10613]"
+                    >
+                      <History className="h-4 w-4 mr-2" />
+                      Imprimir Histórico
+                    </Button>
+                  )}
+                </div>
                 <div className="flex gap-2 flex-wrap">
                   <Button 
                     variant={maintenanceFilter === 'todos' ? 'default' : 'outline'}
@@ -1854,116 +1995,145 @@ const LineHaulPage = () => {
                     Concluídas ({maintenanceRequests.filter(m => m.status === 'concluida').length})
                   </Button>
                 </div>
+                <div className="mt-3">
+                  <Button 
+                    variant={maintenanceFilter === 'mais_3_dias' ? 'default' : 'outline'}
+                    onClick={() => setMaintenanceFilter('mais_3_dias')}
+                    className={`w-full ${maintenanceFilter === 'mais_3_dias' ? 'bg-red-600 hover:bg-red-700' : 'border-red-500 text-red-600 hover:bg-red-50'}`}
+                  >
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Veículos +3 Dias em Manutenção ({getMaintenancesOver3Days().length})
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
             {/* Lista de Solicitações de Manutenção */}
             <div className="grid gap-4">
               {maintenanceRequests
-                .filter(request => 
-                  maintenanceFilter === 'todos' || request.status === maintenanceFilter
-                )
-                .map(request => (
-                <Card key={request.id} className="bg-white/80 backdrop-blur-sm">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg">{request.vehicle_plate} - {request.vehicle_model}</h3>
-                        <p className="text-sm text-gray-600">Motorista: {request.driver_name}</p>
-                        <p className="text-sm text-gray-600">Tipo: {request.maintenance_type}</p>
-                        <p className="text-sm text-gray-600">Data: {new Date(request.created_at).toLocaleDateString('pt-BR')}</p>
-                        {request.workshop_name && (
-                          <p className="text-sm text-gray-600">Oficina: {request.workshop_name}</p>
-                        )}
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <Badge 
-                          variant="default"
-                          className={
-                            request.status === 'concluida' ? 'bg-green-500' :
-                            request.status === 'em_andamento' ? 'bg-blue-500' :
-                            'bg-yellow-500'
-                          }
-                        >
-                          {request.status === 'concluida' ? 'Concluída' :
-                           request.status === 'em_andamento' ? 'Em Andamento' :
-                           'Pendente'}
-                        </Badge>
-                        <Badge 
-                          variant="outline"
-                          className={
-                            request.priority === 'urgente' ? 'border-red-500 text-red-700' :
-                            request.priority === 'alta' ? 'border-orange-500 text-orange-700' :
-                            request.priority === 'media' ? 'border-yellow-500 text-yellow-700' :
-                            'border-gray-500 text-gray-700'
-                          }
-                        >
-                          {request.priority === 'urgente' ? 'Urgente' :
-                           request.priority === 'alta' ? 'Alta' :
-                           request.priority === 'media' ? 'Média' :
-                           'Baixa'}
-                        </Badge>
-                      </div>
-                    </div>
+                .filter(request => {
+                  const matchesPlate = !maintenancePlateSearch || 
+                    request.vehicle_plate.toLowerCase().includes(maintenancePlateSearch.toLowerCase());
+                  
+                  let matchesFilter = true;
+                  if (maintenanceFilter === 'mais_3_dias') {
+                    matchesFilter = request.status !== 'concluida' && 
+                      calculateDaysInMaintenance(request.created_at, request.status) > 3;
+                  } else if (maintenanceFilter !== 'todos') {
+                    matchesFilter = request.status === maintenanceFilter;
+                  }
+                  
+                  return matchesPlate && matchesFilter;
+                })
+                .map(request => {
+                  const daysInMaintenance = calculateDaysInMaintenance(request.created_at, request.status);
+                  return (
+                    <Card key={request.id} className={`bg-white/80 backdrop-blur-sm ${daysInMaintenance > 3 && request.status !== 'concluida' ? 'border-l-4 border-l-red-500' : ''}`}>
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-lg">{request.vehicle_plate} - {request.vehicle_model}</h3>
+                            <p className="text-sm text-gray-600">Motorista: {request.driver_name}</p>
+                            <p className="text-sm text-gray-600">Tipo: {request.maintenance_type}</p>
+                            <p className="text-sm text-gray-600">Data: {new Date(request.created_at).toLocaleDateString('pt-BR')}</p>
+                            {request.workshop_name && (
+                              <p className="text-sm text-gray-600">Oficina: {request.workshop_name}</p>
+                            )}
+                            {daysInMaintenance > 0 && request.status !== 'concluida' && (
+                              <p className={`text-sm font-medium mt-1 ${daysInMaintenance > 3 ? 'text-red-600' : 'text-orange-600'}`}>
+                                {daysInMaintenance} dias em manutenção
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <Badge 
+                              variant="default"
+                              className={
+                                request.status === 'concluida' ? 'bg-green-500' :
+                                request.status === 'em_andamento' ? 'bg-blue-500' :
+                                'bg-yellow-500'
+                              }
+                            >
+                              {request.status === 'concluida' ? 'Concluída' :
+                               request.status === 'em_andamento' ? 'Em Andamento' :
+                               'Pendente'}
+                            </Badge>
+                            <Badge 
+                              variant="outline"
+                              className={
+                                request.priority === 'urgente' ? 'border-red-500 text-red-700' :
+                                request.priority === 'alta' ? 'border-orange-500 text-orange-700' :
+                                request.priority === 'media' ? 'border-yellow-500 text-yellow-700' :
+                                'border-gray-500 text-gray-700'
+                              }
+                            >
+                              {request.priority === 'urgente' ? 'Urgente' :
+                               request.priority === 'alta' ? 'Alta' :
+                               request.priority === 'media' ? 'Média' :
+                               'Baixa'}
+                            </Badge>
+                          </div>
+                        </div>
                     
-                    <div className="mb-3">
-                      <p className="text-sm text-gray-700">
-                        <strong>Descrição:</strong> {request.description}
-                      </p>
-                      {request.estimated_cost && (
-                        <p className="text-sm text-gray-700 mt-1">
-                          <strong>Custo Estimado:</strong> R$ {request.estimated_cost.toFixed(2)}
-                        </p>
-                      )}
-                    </div>
+                        <div className="mb-3">
+                          <p className="text-sm text-gray-700">
+                            <strong>Descrição:</strong> {request.description}
+                          </p>
+                          {request.estimated_cost && (
+                            <p className="text-sm text-gray-700 mt-1">
+                              <strong>Custo Estimado:</strong> R$ {request.estimated_cost.toFixed(2)}
+                            </p>
+                          )}
+                        </div>
 
-                    <div className="flex gap-2 flex-wrap">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={() => {
-                          setSelectedMaintenanceForDetails(request);
-                          setShowMaintenanceDetails(true);
-                        }}
-                        data-testid={`btn-ver-detalhes-manutencao-${request.id}`}
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Ver Detalhes
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => generateMaintenancePDF(request)}
-                        className="text-[#E10613] border-[#E10613] hover:bg-[#E10613] hover:text-white"
-                        data-testid={`btn-pdf-manutencao-${request.id}`}
-                      >
-                        <FileText className="h-4 w-4 mr-1" />
-                        PDF
-                      </Button>
-                      {request.status === 'pendente' && (
-                        <Button 
-                          size="sm" 
-                          className="bg-blue-500 hover:bg-blue-600"
-                          onClick={() => handleOpenWorkorderDialog(request)}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Iniciar Manutenção
-                        </Button>
-                      )}
-                      {request.status === 'em_andamento' && (
-                        <Button 
-                          size="sm" 
-                          className="bg-green-500 hover:bg-green-600"
-                          onClick={() => handleUpdateMaintenanceStatus(request.id, 'concluida')}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Finalizar
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                        <div className="flex gap-2 flex-wrap">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => {
+                              setSelectedMaintenanceForDetails(request);
+                              setShowMaintenanceDetails(true);
+                            }}
+                            data-testid={`btn-ver-detalhes-manutencao-${request.id}`}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Ver Detalhes
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => generateMaintenancePDF(request)}
+                            className="text-[#E10613] border-[#E10613] hover:bg-[#E10613] hover:text-white"
+                            data-testid={`btn-pdf-manutencao-${request.id}`}
+                          >
+                            <FileText className="h-4 w-4 mr-1" />
+                            PDF
+                          </Button>
+                          {request.status === 'pendente' && (
+                            <Button 
+                              size="sm" 
+                              className="bg-blue-500 hover:bg-blue-600"
+                              onClick={() => handleOpenWorkorderDialog(request)}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Iniciar Manutenção
+                            </Button>
+                          )}
+                          {request.status === 'em_andamento' && (
+                            <Button 
+                              size="sm" 
+                              className="bg-green-500 hover:bg-green-600"
+                              onClick={() => handleUpdateMaintenanceStatus(request.id, 'concluida')}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Finalizar
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
             </div>
           </div>
         ) : showGarage ? (
