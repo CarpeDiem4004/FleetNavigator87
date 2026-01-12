@@ -142,6 +142,9 @@ const FuelCardRequestsPanel: React.FC = () => {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [solicitudeCounts, setSolicitudeCounts] = useState<Record<string, number>>({});
   
+  // Estado para notificação de novas mensagens WhatsApp
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  
   // Verificar parâmetros da URL para modo Line Haul
   const urlParams = new URLSearchParams(window.location.search);
   const isLineHaulMode = urlParams.get('mode') === 'linehaul';
@@ -216,6 +219,30 @@ const FuelCardRequestsPanel: React.FC = () => {
   useEffect(() => {
     setBaseFilter('all');
   }, [projectFilter]);
+
+  // Verificar novas mensagens WhatsApp periodicamente
+  useEffect(() => {
+    const fetchUnreadMessages = async () => {
+      try {
+        const response = await fetch('/api/whatsapp/messages?limit=100', {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data) {
+            const unread = data.data.filter((msg: any) => !msg.respondido && !msg.is_outgoing).length;
+            setUnreadMessagesCount(unread);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao verificar mensagens:', error);
+      }
+    };
+
+    fetchUnreadMessages();
+    const interval = setInterval(fetchUnreadMessages, 30000); // A cada 30 segundos
+    return () => clearInterval(interval);
+  }, []);
 
   const loadSolicitudeCounts = async () => {
     try {
@@ -1739,11 +1766,19 @@ const FuelCardRequestsPanel: React.FC = () => {
                 </Button>
                 <Button 
                   variant="secondary" 
-                  className="flex items-center gap-2 bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
+                  className="flex items-center gap-2 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 relative"
                   onClick={() => setLocation('/painel-atendimento-saldo')}
                 >
                   <MessageSquare className="h-4 w-4" />
                   Atendimento de Saldo
+                  {unreadMessagesCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 w-5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 text-white text-xs items-center justify-center font-bold">
+                        {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                      </span>
+                    </span>
+                  )}
                 </Button>
               </>
             )}
