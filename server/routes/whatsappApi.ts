@@ -667,13 +667,17 @@ router.post('/reply', async (req: Request, res: Response) => {
     let sendResult;
     let targetPhone = originalMessage.remetente_numero;
     
+    // Adicionar nome do usuário logado à mensagem
+    const senderName = userName || 'Sistema';
+    const messageWithSender = `*${senderName}:*\n${replyText}`;
+    
     if (isGroup) {
       const { sendZAPIGroupMessage } = await import('../services/zapiWhatsAppService');
       const groupId = originalMessage.grupo_id || targetPhone;
-      sendResult = await sendZAPIGroupMessage(groupId, replyText);
+      sendResult = await sendZAPIGroupMessage(groupId, messageWithSender);
     } else {
       const { sendZAPIWhatsAppMessage } = await import('../services/zapiWhatsAppService');
-      sendResult = await sendZAPIWhatsAppMessage(targetPhone, replyText);
+      sendResult = await sendZAPIWhatsAppMessage(targetPhone, messageWithSender);
     }
     
     if (!sendResult.success) {
@@ -693,15 +697,15 @@ router.post('/reply', async (req: Request, res: Response) => {
         originalMessage.grupo_id,
         originalMessage.grupo_nome,
         targetPhone,
-        userName || 'Sistema',
-        replyText,
-        userName || 'Sistema'
+        senderName,
+        messageWithSender,
+        senderName
       ]
     );
     
     await pool.query(
       `UPDATE whatsapp_messages SET respondido = true, respondido_por = $1, respondido_em = NOW() WHERE id = $2`,
-      [userName || 'Sistema', messageId]
+      [senderName, messageId]
     );
     
     res.json({ 
