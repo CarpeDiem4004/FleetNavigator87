@@ -44,9 +44,11 @@ export async function sendZAPIWhatsAppMessage(
     
     const data = await response.json() as any;
     
-    if (response.ok && data.zapiMessageId) {
-      console.log(`[Z-API] Mensagem enviada com sucesso. ID: ${data.zapiMessageId}`);
-      return { success: true, messageId: data.zapiMessageId };
+    const msgId = data.zapiMessageId || data.messageId || data.id || data.zaapId;
+    
+    if (response.ok && msgId) {
+      console.log(`[Z-API] Mensagem enviada com sucesso. ID: ${msgId}`);
+      return { success: true, messageId: msgId };
     } else {
       console.error('[Z-API] Erro na resposta:', data);
       return { success: false, error: data.error || data.message || 'Erro ao enviar mensagem' };
