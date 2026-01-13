@@ -5,8 +5,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { MessageCircle, Phone, Send, CheckCircle, XCircle } from 'lucide-react';
+import { MessageCircle, Phone, Send, CheckCircle, XCircle, Loader2, Zap } from 'lucide-react';
 import { openWhatsAppWeb, isValidPhoneNumber } from '@/lib/whatsapp-utils';
+import { apiRequest } from '@/lib/queryClient';
 
 interface LineHaulWhatsAppButtonProps {
   solicitation: {
@@ -44,6 +45,7 @@ const LineHaulWhatsAppButton: React.FC<LineHaulWhatsAppButtonProps> = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [message, setMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
 
   const formatCurrency = (value: number | string | undefined) => {
@@ -104,7 +106,7 @@ Se tiver dúvidas, entre em contato com a equipe.`;
     setIsDialogOpen(true);
   };
 
-  const handleSendWhatsApp = () => {
+  const handleSendViaZAPI = async () => {
     if (!phoneNumber.trim()) {
       toast({
         title: 'Número obrigatório',
@@ -132,19 +134,59 @@ Se tiver dúvidas, entre em contato com a equipe.`;
       return;
     }
 
+    setIsSending(true);
     try {
-      openWhatsAppWeb(phoneNumber, message);
-      
-      toast({
-        title: 'WhatsApp aberto',
-        description: 'A mensagem foi aberta no WhatsApp Web. Confira e envie.',
+      const response = await apiRequest('POST', '/api/whatsapp/send-fuel-card-notification', {
+        phone: phoneNumber,
+        message: message,
+        solicitationId: solicitation.id,
+        tipo: isNegado ? 'negacao' : 'aprovacao'
       });
       
+      const data = await response.json();
+      
+      if (data.success) {
+        toast({
+          title: 'Mensagem enviada!',
+          description: 'O motorista vai receber a notificação no WhatsApp.',
+        });
+        setIsDialogOpen(false);
+      } else {
+        throw new Error(data.error || 'Falha ao enviar');
+      }
+    } catch (error: any) {
+      console.error('Erro ao enviar via Z-API:', error);
+      toast({
+        title: 'Erro ao enviar',
+        description: error.message || 'Não foi possível enviar a mensagem. Tente novamente.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleOpenWhatsAppWeb = () => {
+    if (!phoneNumber.trim() || !message.trim()) {
+      toast({
+        title: 'Dados obrigatórios',
+        description: 'Preencha telefone e mensagem',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      openWhatsAppWeb(phoneNumber, message);
+      toast({
+        title: 'WhatsApp aberto',
+        description: 'A mensagem foi aberta no WhatsApp Web.',
+      });
       setIsDialogOpen(false);
     } catch (error) {
       toast({
         title: 'Erro ao abrir WhatsApp',
-        description: 'Não foi possível abrir o WhatsApp Web. Verifique se o serviço está disponível.',
+        description: 'Não foi possível abrir o WhatsApp Web.',
         variant: 'destructive'
       });
     }
@@ -245,23 +287,45 @@ Se tiver dúvidas, entre em contato com a equipe.`;
             </div>
           </div>
 
-          <div className="flex justify-between gap-3">
+          <div className="flex flex-col gap-2">
             <Button 
-              variant="outline" 
-              onClick={() => setIsDialogOpen(false)}
-              className="flex-1"
-              data-testid="button-cancel-linehaul-whatsapp"
-            >
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleSendWhatsApp}
-              className={`flex-1 text-white ${isNegado ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
+              onClick={handleSendViaZAPI}
+              disabled={isSending}
+              className={`w-full text-white ${isNegado ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
               data-testid="button-send-linehaul-whatsapp"
             >
-              <Send className="h-4 w-4 mr-2" />
-              Abrir WhatsApp
+              {isSending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Zap className="h-4 w-4 mr-2" />
+                  Enviar Direto (Z-API)
+                </>
+              )}
             </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsDialogOpen(false)}
+                className="flex-1"
+                disabled={isSending}
+                data-testid="button-cancel-linehaul-whatsapp"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={handleOpenWhatsAppWeb}
+                className="flex-1"
+                disabled={isSending}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                WhatsApp Web
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

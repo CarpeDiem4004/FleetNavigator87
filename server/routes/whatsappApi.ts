@@ -896,4 +896,74 @@ router.delete('/critical-recipients/:id', async (req: Request, res: Response) =>
   }
 });
 
+// Endpoint para enviar notificação de fuel card via Z-API
+router.post('/send-fuel-card-notification', async (req: Request, res: Response) => {
+  try {
+    const { phone, message, solicitationId, tipo } = req.body;
+    
+    if (!phone || !message) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Telefone e mensagem são obrigatórios' 
+      });
+    }
+    
+    // Limpar telefone
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // Adicionar prefixo do Brasil se necessário
+    let formattedPhone = cleanPhone;
+    if (!formattedPhone.startsWith('55')) {
+      formattedPhone = '55' + formattedPhone;
+    }
+    
+    console.log(`[FUEL-CARD-NOTIF] Enviando para ${formattedPhone} - Tipo: ${tipo || 'manual'}`);
+    
+    const zapiUrl = `https://api.z-api.io/instances/${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}/send-text`;
+    
+    const response = await fetch(zapiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Client-Token': ZAPI_CLIENT_TOKEN || ''
+      },
+      body: JSON.stringify({
+        phone: formattedPhone,
+        message: message
+      })
+    });
+    
+    const result: any = await response.json();
+    
+    console.log(`[FUEL-CARD-NOTIF] Resposta Z-API:`, result);
+    
+    if (result.zapiId || result.messageId || result.id) {
+      // Registrar ação no log
+      await pool.query(
+        `INSERT INTO whatsapp_actions (tipo, descricao, usuario) VALUES ($1, $2, $3)`,
+        ['fuel_card_notification', `Notificação fuel card enviada para ${formattedPhone} - ${tipo || 'manual'}`, 'sistema']
+      );
+      
+      return res.json({ 
+        success: true, 
+        messageId: result.zapiId || result.messageId || result.id,
+        message: 'Mensagem enviada com sucesso'
+      });
+    } else {
+      return res.status(400).json({ 
+        success: false, 
+        error: result.error || 'Falha ao enviar mensagem',
+        details: result
+      });
+    }
+    
+  } catch (error: any) {
+    console.error('[FUEL-CARD-NOTIF] Erro:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Erro interno ao enviar notificação' 
+    });
+  }
+});
+
 export default router;
