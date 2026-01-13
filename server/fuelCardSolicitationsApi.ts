@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { pool } from './db';
 import * as XLSX from 'xlsx';
 import { normalizeBaseName } from '../shared/baseNormalization';
+import { sendFuelCardRechargeNotificationZAPI, isZAPIConfigured } from './services/zapiWhatsAppService';
 
 /**
  * Determina o consumo médio baseado no modelo do veículo
@@ -782,6 +783,44 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
     
     console.log(`✅ [UPDATE-STATUS] UPDATE executado com sucesso! Linhas afetadas: ${result.rowCount}`);
     console.log(`📊 [UPDATE-STATUS] Dados atualizados:`, result.rows[0]);
+    
+    // Enviar notificação WhatsApp via Z-API para motorista quando aprovado ou negado
+    const updatedRecord = result.rows[0];
+    const shouldNotify = (status === 'Recarga Efetuada' || status === 'aprovado' || status === 'Negado' || status === 'rejeitado');
+    
+    if (shouldNotify && isZAPIConfigured()) {
+      const telefone = updatedRecord.telefone_celular || updatedRecord.telefone_motorista || updatedRecord.phone;
+      
+      if (telefone) {
+        const isAprovado = status === 'Recarga Efetuada' || status === 'aprovado';
+        
+        console.log(`📱 [WHATSAPP-NOTIF] Enviando notificação para ${telefone} - Status: ${isAprovado ? 'aprovado' : 'negado'}`);
+        
+        try {
+          const notificationResult = await sendFuelCardRechargeNotificationZAPI({
+            phone: telefone,
+            placa: updatedRecord.placa || updatedRecord.veiculo_placa || 'N/A',
+            motorista: updatedRecord.motorista || 'Motorista',
+            valorSolicitado: parseFloat(updatedRecord.valor_solicitado) || 0,
+            operador: user?.name || 'Sistema',
+            status: isAprovado ? 'aprovado' : 'negado',
+            provedor: updatedRecord.provedor_cartao || undefined,
+            dataUso: updatedRecord.data_uso || undefined,
+            observacoes: updatedRecord.motivo_negacao || updatedRecord.rejection_reason || undefined
+          });
+          
+          if (notificationResult.success) {
+            console.log(`✅ [WHATSAPP-NOTIF] Notificação enviada com sucesso! MessageId: ${notificationResult.messageId}`);
+          } else {
+            console.error(`❌ [WHATSAPP-NOTIF] Falha ao enviar: ${notificationResult.error}`);
+          }
+        } catch (whatsappError: any) {
+          console.error(`❌ [WHATSAPP-NOTIF] Erro ao enviar notificação:`, whatsappError.message);
+        }
+      } else {
+        console.log(`⚠️ [WHATSAPP-NOTIF] Sem telefone para notificação`);
+      }
+    }
     
     return res.status(200).json({
       success: true,
