@@ -195,38 +195,48 @@ export default function WorkSafetyPage() {
                     Últimas Ocorrências Registradas
                   </h4>
                   <div className="space-y-2">
-                    {recentAccidents.map((accident: any, index: number) => (
-                      <div key={accident.id || index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-full ${
-                            accident.tipo_ocorrencia === 'acidente' ? 'bg-red-100' :
-                            accident.tipo_ocorrencia === 'quase_acidente' ? 'bg-orange-100' :
-                            accident.tipo_ocorrencia === 'danos_materiais' ? 'bg-yellow-100' :
-                            'bg-green-100'
-                          }`}>
-                            {accident.tipo_ocorrencia === 'acidente' ? <AlertTriangle className="h-4 w-4 text-red-600" /> :
-                             accident.tipo_ocorrencia === 'quase_acidente' ? <AlertCircle className="h-4 w-4 text-orange-600" /> :
-                             accident.tipo_ocorrencia === 'danos_materiais' ? <Car className="h-4 w-4 text-yellow-600" /> :
-                             <Flame className="h-4 w-4 text-green-600" />}
+                    {recentAccidents.map((accident: any, index: number) => {
+                      const isColisao = accident.causa_imediata?.toLowerCase().includes('colisão') || accident.causa_imediata?.toLowerCase().includes('colisao');
+                      const isTombamento = accident.causa_imediata?.toLowerCase().includes('tombamento');
+                      const isAtropelamento = accident.causa_imediata?.toLowerCase().includes('atropelamento');
+                      
+                      return (
+                        <div key={accident.id || index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-full ${
+                              isColisao ? 'bg-red-100' :
+                              isTombamento ? 'bg-orange-100' :
+                              isAtropelamento ? 'bg-yellow-100' :
+                              'bg-blue-100'
+                            }`}>
+                              {isColisao ? <Car className="h-4 w-4 text-red-600" /> :
+                               isTombamento ? <AlertTriangle className="h-4 w-4 text-orange-600" /> :
+                               isAtropelamento ? <AlertCircle className="h-4 w-4 text-yellow-600" /> :
+                               <AlertTriangle className="h-4 w-4 text-blue-600" />}
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{accident.causa_imediata || accident.operacao || 'Ocorrência'}</p>
+                              <p className="text-xs text-gray-500">
+                                {accident.data_ocorrencia 
+                                  ? format(new Date(accident.data_ocorrencia), "dd/MM/yyyy", { locale: ptBR })
+                                  : accident.created_at 
+                                    ? format(new Date(accident.created_at), "dd/MM/yyyy", { locale: ptBR })
+                                    : 'Data não informada'
+                                }
+                                {accident.horario_ocorrencia && ` às ${accident.horario_ocorrencia}`}
+                                {accident.base_unidade && ` - ${accident.base_unidade}`}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                Reportado por: {accident.reportado_por || 'Não informado'}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium text-sm">{accident.operacao || 'Operação não especificada'}</p>
-                            <p className="text-xs text-gray-500">
-                              {accident.data_hora ? format(new Date(accident.data_hora), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'Data não informada'}
-                              {accident.local && ` - ${accident.local}`}
-                            </p>
-                          </div>
+                          <Badge variant={accident.status === 'reportado' ? 'secondary' : 'outline'}>
+                            {accident.status === 'reportado' ? 'Reportado' : accident.status || 'Pendente'}
+                          </Badge>
                         </div>
-                        <Badge variant={
-                          accident.tipo_ocorrencia === 'acidente' ? 'destructive' :
-                          accident.tipo_ocorrencia === 'quase_acidente' ? 'secondary' : 'outline'
-                        }>
-                          {accident.tipo_ocorrencia === 'acidente' ? 'Acidente' :
-                           accident.tipo_ocorrencia === 'quase_acidente' ? 'Quase Acidente' :
-                           accident.tipo_ocorrencia === 'danos_materiais' ? 'Danos Materiais' : 'Danos Ambientais'}
-                        </Badge>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
