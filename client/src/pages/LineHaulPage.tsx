@@ -44,7 +44,8 @@ import {
   Building2,
   Play,
   X,
-  MessageSquare
+  MessageSquare,
+  ExternalLink
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
@@ -338,6 +339,19 @@ const LineHaulPage = () => {
     observacoes: ''
   });
   const [isCreatingJourney, setIsCreatingJourney] = useState(false);
+
+  // Estados para Checklist de Pátio
+  const [showChecklistPatioPanel, setShowChecklistPatioPanel] = useState(false);
+  const [checklistPatioStats, setChecklistPatioStats] = useState({
+    total: 0,
+    aprovados: 0,
+    aprovados_observacoes: 0,
+    reprovados: 0,
+    hoje: 0
+  });
+  const [recentChecklistsPatio, setRecentChecklistsPatio] = useState<any[]>([]);
+  const [selectedChecklistPatio, setSelectedChecklistPatio] = useState<any>(null);
+  const [checklistPatioSearchPlaca, setChecklistPatioSearchPlaca] = useState('');
   
   // Estados para estatísticas
   const [stats, setStats] = useState({
@@ -1280,6 +1294,83 @@ const LineHaulPage = () => {
     }, 30000);
     
     return () => clearInterval(interval);
+  }, []);
+
+  // Funções para Checklist de Pátio
+  const fetchChecklistPatioStats = async () => {
+    try {
+      const res = await apiRequest('GET', '/api/checklist-patio/stats');
+      const response = await res.json();
+      if (response.success) {
+        setChecklistPatioStats(response.data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar stats de checklist:', error);
+    }
+  };
+
+  const fetchRecentChecklistsPatio = async () => {
+    try {
+      const res = await apiRequest('GET', '/api/checklist-patio?limit=10');
+      const response = await res.json();
+      if (response.success) {
+        setRecentChecklistsPatio(response.data || []);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar checklists recentes:', error);
+    }
+  };
+
+  const fetchChecklistPatioByPlaca = async (placa: string) => {
+    if (!placa.trim()) {
+      fetchRecentChecklistsPatio();
+      return;
+    }
+    try {
+      const res = await apiRequest('GET', `/api/checklist-patio/historico/${encodeURIComponent(placa)}`);
+      const response = await res.json();
+      if (response.success) {
+        setRecentChecklistsPatio(response.data || []);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar histórico por placa:', error);
+    }
+  };
+
+  const fetchChecklistPatioDetails = async (id: number) => {
+    try {
+      const res = await apiRequest('GET', `/api/checklist-patio/${id}`);
+      const response = await res.json();
+      if (response.success) {
+        setSelectedChecklistPatio(response.data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar detalhes do checklist:', error);
+    }
+  };
+
+  const getChecklistStatusColor = (status: string) => {
+    switch (status) {
+      case 'aprovado': return 'bg-green-100 text-green-800 border-green-300';
+      case 'aprovado_com_observacoes': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'reprovado': return 'bg-red-100 text-red-800 border-red-300';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
+  };
+
+  const getChecklistStatusLabel = (status: string) => {
+    switch (status) {
+      case 'aprovado': return 'Aprovado';
+      case 'aprovado_com_observacoes': return 'Com Observações';
+      case 'reprovado': return 'Reprovado';
+      default: return status;
+    }
+  };
+
+  // Carregar dados de checklist de pátio
+  useEffect(() => {
+    fetchChecklistPatioStats();
+    fetchRecentChecklistsPatio();
   }, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -3065,6 +3156,215 @@ const LineHaulPage = () => {
                 Iniciar Jornada
               </Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Card de Checklist de Pátio */}
+        <Card className="bg-white/80 backdrop-blur-sm border-orange-200 mb-8">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center text-orange-700">
+              <ClipboardCheck className="h-5 w-5 mr-2" />
+              Checklist de Pátio
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+              <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="text-2xl font-bold text-blue-600">{checklistPatioStats.total}</div>
+                <div className="text-xs text-gray-600">Total</div>
+              </div>
+              <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
+                <div className="text-2xl font-bold text-green-600">{checklistPatioStats.aprovados}</div>
+                <div className="text-xs text-gray-600">Aprovados</div>
+              </div>
+              <div className="text-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                <div className="text-2xl font-bold text-yellow-600">{checklistPatioStats.aprovados_observacoes}</div>
+                <div className="text-xs text-gray-600">Com Obs.</div>
+              </div>
+              <div className="text-center p-3 bg-red-50 rounded-lg border border-red-200">
+                <div className="text-2xl font-bold text-red-600">{checklistPatioStats.reprovados}</div>
+                <div className="text-xs text-gray-600">Reprovados</div>
+              </div>
+              <div className="text-center p-3 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="text-2xl font-bold text-purple-600">{checklistPatioStats.hoje}</div>
+                <div className="text-xs text-gray-600">Hoje</div>
+              </div>
+            </div>
+
+            {showChecklistPatioPanel && (
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <div className="flex gap-2 mb-4">
+                  <Input
+                    placeholder="Buscar por placa..."
+                    value={checklistPatioSearchPlaca}
+                    onChange={(e) => setChecklistPatioSearchPlaca(e.target.value.toUpperCase())}
+                    className="flex-1"
+                  />
+                  <Button 
+                    onClick={() => fetchChecklistPatioByPlaca(checklistPatioSearchPlaca)}
+                    variant="outline"
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                {recentChecklistsPatio.length > 0 ? (
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {recentChecklistsPatio.map((checklist: any) => (
+                      <div 
+                        key={checklist.id}
+                        className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors hover:bg-white ${getChecklistStatusColor(checklist.status_checklist)}`}
+                        onClick={() => fetchChecklistPatioDetails(checklist.id)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Truck className="h-4 w-4" />
+                          <div>
+                            <p className="font-medium text-sm">{checklist.placa_cavalo}</p>
+                            <p className="text-xs opacity-75">
+                              {checklist.operador_nome} • {checklist.base_nome || 'Sem base'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant="outline" className="text-xs">
+                            {getChecklistStatusLabel(checklist.status_checklist)}
+                          </Badge>
+                          <p className="text-xs opacity-75 mt-1">
+                            {new Date(checklist.created_at).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-gray-500">
+                    <ClipboardCheck className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>Nenhum checklist encontrado</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-center flex-wrap">
+              <Button 
+                onClick={() => setShowChecklistPatioPanel(!showChecklistPatioPanel)}
+                className={showChecklistPatioPanel ? "bg-gray-600 hover:bg-gray-700" : "bg-orange-500 hover:bg-orange-600"}
+              >
+                {showChecklistPatioPanel ? (
+                  <>
+                    <X className="h-4 w-4 mr-2" />
+                    Ocultar
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver Checklists
+                  </>
+                )}
+              </Button>
+              <Button 
+                onClick={() => window.open('/checklist-patio', '_blank')}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Link Externo
+              </Button>
+              <Button 
+                onClick={() => { fetchChecklistPatioStats(); fetchRecentChecklistsPatio(); }}
+                variant="outline"
+              >
+                <RefreshCcw className="h-4 w-4 mr-2" />
+                Atualizar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Dialog de detalhes do checklist de pátio */}
+        <Dialog open={!!selectedChecklistPatio} onOpenChange={(open) => !open && setSelectedChecklistPatio(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ClipboardCheck className="h-5 w-5 text-orange-600" />
+                Detalhes do Checklist
+              </DialogTitle>
+            </DialogHeader>
+            {selectedChecklistPatio && (
+              <div className="space-y-4">
+                <div className={`p-4 rounded-lg ${getChecklistStatusColor(selectedChecklistPatio.status_checklist)}`}>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Status:</span>
+                    <Badge>{getChecklistStatusLabel(selectedChecklistPatio.status_checklist)}</Badge>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Cavalo:</span>
+                      <span className="font-medium">{selectedChecklistPatio.placa_cavalo}</span>
+                    </div>
+                    {selectedChecklistPatio.placa_carreta_1 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Carreta 1:</span>
+                        <span className="font-medium">{selectedChecklistPatio.placa_carreta_1}</span>
+                      </div>
+                    )}
+                    {selectedChecklistPatio.placa_carreta_2 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Carreta 2:</span>
+                        <span className="font-medium">{selectedChecklistPatio.placa_carreta_2}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Operador:</span>
+                      <span className="font-medium">{selectedChecklistPatio.operador_nome}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Base:</span>
+                      <span className="font-medium">{selectedChecklistPatio.base_nome || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Data:</span>
+                      <span className="font-medium">
+                        {new Date(selectedChecklistPatio.created_at).toLocaleString('pt-BR')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedChecklistPatio.itens && selectedChecklistPatio.itens.length > 0 && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-semibold mb-3">Itens Verificados</h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {selectedChecklistPatio.itens.map((item: any, idx: number) => (
+                        <div key={idx} className={`flex items-center justify-between p-2 rounded text-sm ${
+                          item.status === 'sim' ? 'bg-green-50' : 
+                          item.status === 'nao' ? 'bg-red-50' : 'bg-gray-100'
+                        }`}>
+                          <span className="flex-1">{item.item}</span>
+                          <Badge variant="outline" className={
+                            item.status === 'sim' ? 'text-green-600' : 
+                            item.status === 'nao' ? 'text-red-600' : 'text-gray-500'
+                          }>
+                            {item.status === 'sim' ? 'OK' : item.status === 'nao' ? 'Problema' : 'N/A'}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {selectedChecklistPatio.observacao_geral && (
+                  <div className="bg-yellow-50 p-4 rounded-lg">
+                    <h4 className="font-semibold mb-2">Observações Gerais</h4>
+                    <p className="text-sm">{selectedChecklistPatio.observacao_geral}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </DialogContent>
         </Dialog>
 
