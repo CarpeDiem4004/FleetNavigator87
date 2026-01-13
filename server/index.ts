@@ -104,12 +104,19 @@ app.get('/api/work-safety/bases', async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     console.log('[WORK-SAFETY-PRIORITY] Rota de bases interceptada no início absoluto');
     
-    const basesQuery = await pool.query(
-      `SELECT DISTINCT name FROM bases WHERE active = true ORDER BY name`
-    );
+    // Buscar bases das duas tabelas: bases e project_bases
+    const basesQuery = await pool.query(`
+      SELECT DISTINCT name FROM (
+        SELECT name FROM bases WHERE active = true
+        UNION
+        SELECT base_name as name FROM project_bases WHERE is_active = true
+      ) combined_bases
+      WHERE name IS NOT NULL AND name != ''
+      ORDER BY name
+    `);
     
     const bases = basesQuery.rows.map(row => row.name).filter(Boolean);
-    console.log('[WORK-SAFETY-PRIORITY] Retornando', bases.length, 'bases');
+    console.log('[WORK-SAFETY-PRIORITY] Retornando', bases.length, 'bases (combinadas das duas tabelas)');
     
     return res.status(200).send(JSON.stringify({
       success: true,
