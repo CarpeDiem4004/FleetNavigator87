@@ -91,6 +91,27 @@ console.log(`[SISTEMA] TZ environment: ${process.env.TZ}`);
 
 const app = express();
 
+// Flag de prontidão para health check
+let isReady = false;
+
+// HEALTH CHECK - DEVE SER A PRIMEIRA ROTA (antes de qualquer middleware)
+// Responde imediatamente para passar no health check do deployment
+app.get('/health', (req, res) => {
+  if (isReady) {
+    res.status(200).json({ status: 'healthy', ready: true, timestamp: new Date().toISOString() });
+  } else {
+    res.status(200).json({ status: 'starting', ready: false, timestamp: new Date().toISOString() });
+  }
+});
+
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ 
+    status: isReady ? 'healthy' : 'starting', 
+    ready: isReady,
+    timestamp: new Date().toISOString() 
+  });
+});
+
 // CRÍTICO: Confiar no proxy do Replit para aceitar cookies secure
 // Sem isso, o Express rejeita cookies secure mesmo com sameSite=none
 app.set('trust proxy', 1);
@@ -892,23 +913,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Adicionar delay inicial para garantir que serviços estejam prontos
-  const startupDelay = process.env.NODE_ENV === 'production' ? 3000 : 1000;
-  console.log(`Aguardando ${startupDelay}ms para inicialização completa dos serviços...`);
-  await new Promise(resolve => setTimeout(resolve, startupDelay));
-  
-  // Executar migrações antes de iniciar o servidor
-  try {
-    const migrationSuccess = await runMigrations();
-    if (migrationSuccess) {
-      console.log("Migrações executadas com sucesso!");
-    } else {
-      console.warn("Algumas migrações falharam, mas o servidor continuará funcionando.");
-    }
-  } catch (error) {
-    console.error("Erro ao executar migrações:", error);
-    console.warn("Continuando inicialização do servidor apesar dos erros de migração.");
-  }
+  // REMOVIDO: Delay de inicialização para permitir health check imediato
+  // Migrations serão executadas APÓS o servidor iniciar
+  console.log('[STARTUP] Iniciando servidor imediatamente para health check...');
   
   // Add simple drivers API before any middleware conflicts
   app.get('/api/drivers', async (req, res) => {
@@ -2765,8 +2772,27 @@ app.use((req, res, next) => {
     port,
     host: "0.0.0.0",
     reusePort: true,
-  }, () => {
+  }, async () => {
     log(`serving on port ${port}`);
+    log('[STARTUP] Servidor iniciado - health check disponível');
+    
+    // Executar migrações APÓS o servidor iniciar (não bloqueia health check)
+    try {
+      log('[STARTUP] Executando migrações...');
+      const migrationSuccess = await runMigrations();
+      if (migrationSuccess) {
+        log('[STARTUP] Migrações executadas com sucesso!');
+      } else {
+        console.warn('[STARTUP] Algumas migrações falharam, mas o servidor continuará funcionando.');
+      }
+    } catch (error) {
+      console.error('[STARTUP] Erro ao executar migrações:', error);
+      console.warn('[STARTUP] Continuando apesar dos erros de migração.');
+    }
+    
+    // Marcar como pronto após migrações
+    isReady = true;
+    log('[STARTUP] Sistema pronto para receber requisições');
     
     // Iniciar tarefas agendadas
     try {
