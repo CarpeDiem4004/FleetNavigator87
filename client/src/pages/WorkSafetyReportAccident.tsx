@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,27 +6,27 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle, Phone, User, Mail, Clock, Shield, Car, Users, Stethoscope, FileText, Building2, MapPin, Calendar, Truck, UserCircle, ClipboardList } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle, Phone, User, Mail, Clock, Shield, Car, Users, Stethoscope, FileText, Building2, MapPin, Calendar, Truck, UserCircle, ClipboardList, Loader2, Search, ChevronsUpDown, Check } from 'lucide-react';
 import { Link } from 'wouter';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
-const OPERACOES = [
-  'Coca-Cola Femsa',
-  'Mercado Livre (MELI)',
-  'Shopee',
-  'Pet Love',
-  'Natura',
-  'Madeira Madeira',
-  'Oxco',
-  'Grupo Pereira',
-  'Magalu',
-  'Royal Canin',
-  'Cacau Show',
-  'Murici (administrativo)',
-  'Outro'
-];
+interface Project {
+  id: number;
+  name: string;
+  description?: string;
+  bases: ProjectBase[];
+}
+
+interface ProjectBase {
+  id: number;
+  base_name: string;
+  base_code: string;
+  description?: string;
+}
 
 const MILHAS = [
   { value: 'first_mile_fm', label: 'First Mile - FM' },
@@ -75,6 +75,93 @@ export default function WorkSafetyReportAccident() {
   const { toast } = useToast();
   const [currentSection, setCurrentSection] = useState(1);
   const [success, setSuccess] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
+  const [projectsError, setProjectsError] = useState<string | null>(null);
+  const [baseSearchOpen, setBaseSearchOpen] = useState(false);
+  const [baseSearchQuery, setBaseSearchQuery] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    const loadProjectsWithBases = async (): Promise<void> => {
+      try {
+        setIsLoadingProjects(true);
+        setProjectsError(null);
+        
+        const controller = new AbortController();
+        const timeoutMs = 30000;
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        
+        const response = await fetch('/api/public/projects-with-bases', {
+          method: 'GET',
+          credentials: 'include',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (isMounted) {
+          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+            setProjects(data.data);
+          } else {
+            throw new Error('Dados de projetos inválidos ou vazios');
+          }
+        }
+      } catch (error: any) {
+        const errorMessage = error?.message || error?.toString() || 'Erro desconhecido';
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          return loadProjectsWithBases();
+        }
+        
+        if (isMounted) {
+          setProjectsError(errorMessage);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingProjects(false);
+        }
+      }
+    };
+
+    loadProjectsWithBases();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleProjectChange = (projectId: string) => {
+    const project = projects.find(p => p.id.toString() === projectId);
+    setSelectedProject(project || null);
+    setFormData(prev => ({ ...prev, operacao: project?.name || '', baseUnidade: '' }));
+    setBaseSearchQuery('');
+  };
+
+  const filteredBases = useMemo(() => {
+    if (!selectedProject?.bases) return [];
+    if (!baseSearchQuery) return selectedProject.bases;
+    return selectedProject.bases.filter(base => 
+      base.base_name.toLowerCase().includes(baseSearchQuery.toLowerCase())
+    );
+  }, [selectedProject?.bases, baseSearchQuery]);
+
   const [formData, setFormData] = useState({
     operacao: '',
     operacaoOutro: '',
@@ -204,7 +291,8 @@ export default function WorkSafetyReportAccident() {
 
   const validateSection2 = () => {
     const required = [
-      { field: formData.operacao, name: 'Operação' },
+      { field: formData.operacao, name: 'Projeto' },
+      { field: formData.baseUnidade, name: 'Base' },
       { field: formData.reportadoPor, name: 'Reportado Por' },
       { field: formData.emailCorporativo, name: 'E-mail Corporativo' },
       { field: formData.telefoneWhatsApp, name: 'Telefone WhatsApp' },
@@ -222,7 +310,6 @@ export default function WorkSafetyReportAccident() {
     const required = [
       { field: formData.milha, name: 'Milha' },
       { field: formData.regional, name: 'Regional' },
-      { field: formData.baseUnidade, name: 'Base/Unidade' },
       { field: formData.enderecoOcorrencia, name: 'Endereço da Ocorrência' },
     ];
     const missing = required.filter(r => !r.field.trim());
@@ -469,28 +556,92 @@ export default function WorkSafetyReportAccident() {
               <CardDescription className="text-gray-600">Atenção às descrições, pois orientam como devem ser feitos os preenchimentos.</CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6 bg-white">
-              <div className="space-y-4">
-                <Label className="text-base font-semibold text-gray-900">Operação *</Label>
-                <RadioGroup
-                  value={formData.operacao}
-                  onValueChange={(v) => setFormData({...formData, operacao: v})}
-                  className="grid grid-cols-1 md:grid-cols-2 gap-2"
-                >
-                  {OPERACOES.map((op) => (
-                    <div key={op} className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 border">
-                      <RadioGroupItem value={op} id={`op-${op}`} />
-                      <Label htmlFor={`op-${op}`} className="font-normal cursor-pointer flex-1">{op}</Label>
+              {isLoadingProjects ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-[#E10613]" />
+                  <span className="ml-2 text-gray-600">Carregando projetos...</span>
+                </div>
+              ) : projectsError ? (
+                <div className="text-center p-8">
+                  <p className="text-red-600 mb-4">Erro ao carregar projetos: {projectsError}</p>
+                  <Button onClick={() => window.location.reload()}>Tentar novamente</Button>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-base font-semibold text-gray-900">Projeto *</Label>
+                      <Select onValueChange={handleProjectChange} value={selectedProject?.id.toString() || ''}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Selecione um projeto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {projects.map((project) => (
+                            <SelectItem key={project.id} value={project.id.toString()}>
+                              {project.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                  ))}
-                </RadioGroup>
-                {formData.operacao === 'Outro' && (
-                  <Input
-                    placeholder="Especifique a operação"
-                    value={formData.operacaoOutro}
-                    onChange={(e) => setFormData({...formData, operacaoOutro: e.target.value})}
-                  />
-                )}
-              </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-base font-semibold text-gray-900">Base *</Label>
+                      <Popover open={baseSearchOpen} onOpenChange={setBaseSearchOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={baseSearchOpen}
+                            className="w-full justify-between"
+                            disabled={!selectedProject}
+                          >
+                            {formData.baseUnidade || (selectedProject ? 'Selecione a base' : 'Selecione um projeto primeiro')}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0" align="start">
+                          <div className="flex items-center border-b px-3">
+                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                            <input
+                              className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                              placeholder="Buscar base..."
+                              value={baseSearchQuery}
+                              onChange={(e) => setBaseSearchQuery(e.target.value)}
+                            />
+                          </div>
+                          <div className="max-h-[200px] overflow-y-auto p-1">
+                            {filteredBases.length === 0 ? (
+                              <p className="p-2 text-sm text-muted-foreground">Nenhuma base encontrada.</p>
+                            ) : (
+                              filteredBases.map((base) => (
+                                <div
+                                  key={base.id}
+                                  className={cn(
+                                    "flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-100",
+                                    formData.baseUnidade === base.base_name && "bg-gray-100"
+                                  )}
+                                  onClick={() => {
+                                    setFormData(prev => ({ ...prev, baseUnidade: base.base_name }));
+                                    setBaseSearchOpen(false);
+                                    setBaseSearchQuery('');
+                                  }}
+                                >
+                                  <Check className={cn(
+                                    "h-4 w-4",
+                                    formData.baseUnidade === base.base_name ? "opacity-100" : "opacity-0"
+                                  )} />
+                                  {base.base_name}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -600,25 +751,14 @@ export default function WorkSafetyReportAccident() {
                 </RadioGroup>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>BASE / UNIDADE *</Label>
-                  <p className="text-xs text-gray-500">Escreva o nome da Base (código e local). Exemplo: SPR1 - Curitiba</p>
-                  <Input
-                    placeholder="SPR1 - Curitiba"
-                    value={formData.baseUnidade}
-                    onChange={(e) => setFormData({...formData, baseUnidade: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Endereço da Ocorrência *</Label>
-                  <p className="text-xs text-gray-500">Informar o Endereço completo, incluindo o CEP.</p>
-                  <Input
-                    placeholder="Rua, número, bairro, cidade - CEP"
-                    value={formData.enderecoOcorrencia}
-                    onChange={(e) => setFormData({...formData, enderecoOcorrencia: e.target.value})}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label>Endereço da Ocorrência *</Label>
+                <p className="text-xs text-gray-500">Informar o Endereço completo, incluindo o CEP.</p>
+                <Input
+                  placeholder="Rua, número, bairro, cidade - CEP"
+                  value={formData.enderecoOcorrencia}
+                  onChange={(e) => setFormData({...formData, enderecoOcorrencia: e.target.value})}
+                />
               </div>
 
               {isMeliOperation && (
