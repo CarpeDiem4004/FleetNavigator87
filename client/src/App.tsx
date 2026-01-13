@@ -178,6 +178,7 @@ import DriverMaintenanceRequest from "@/pages/DriverMaintenanceRequest";
 import LineHallVehicleRegistration from "@/pages/LineHallVehicleRegistration";
 import LineHallFuelCardRequests from "@/pages/LineHallFuelCardRequests";
 import LineHaulFuelRequest from "@/pages/LineHaulFuelRequest";
+import ChecklistPatioPublico from "@/pages/ChecklistPatioPublico";
 import Equipment from "@/pages/Equipment";
 import EquipmentRequest from "@/pages/EquipmentRequest";
 import EquipmentRequestsAdmin from "@/pages/EquipmentRequestsAdmin";
@@ -485,6 +486,11 @@ function App() {
             {/* Formulário público de solicitação de abastecimento Line Haul */}
             <Route path="/linehaul-abastecimento">
               <LineHaulFuelRequest />
+            </Route>
+            
+            {/* Checklist de Pátio público - Link externo para operadores */}
+            <Route path="/checklist-patio">
+              <ChecklistPatioPublico />
             </Route>
             
             {/* Painel administrativo de abastecimento pós-pago - requer autenticação */}

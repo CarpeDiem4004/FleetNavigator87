@@ -76,6 +76,8 @@ import basesRoutes from './routes/basesRoutes';
 import whatsappRoutes from './routes/whatsappApi';
 // Importar rotas de Jornada de Motoristas
 import jornadaMotoristaApi from './routes/jornadaMotoristaApi';
+// Importar rotas de Checklist de Pátio
+import checklistPatioApi from './routes/checklistPatioApi';
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
@@ -1481,6 +1483,10 @@ app.use((req, res, next) => {
   // Registrar rotas de Jornada de Motoristas (Line Haul)
   console.log('[JORNADA] Registrando rotas de Jornada de Motoristas');
   app.use('/api/jornada-motorista', jornadaMotoristaApi);
+  
+  // Registrar rotas de Checklist de Pátio (Line Haul)
+  console.log('[CHECKLIST-PATIO] Registrando rotas de Checklist de Pátio');
+  app.use('/api/checklist-patio', checklistPatioApi);
   
   // Rota de bases já registrada acima no arquivo principal
   
