@@ -1007,15 +1007,36 @@ const FuelCardRequestsPanel: React.FC = () => {
   };
 
   const handleExportExcel = async () => {
+    // Validar se as datas estão preenchidas
+    if (!startDate || !endDate) {
+      toast({
+        title: 'Datas obrigatórias',
+        description: 'Selecione o período de início e fim para gerar o relatório',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       console.log('[EXPORT] Iniciando exportação de relatório Excel...');
+      console.log('[EXPORT] Filtros:', { startDate, endDate, baseFilter });
       
       // Verificar se há token de autenticação
       const authToken = localStorage.getItem('authToken');
       console.log('[EXPORT] Token disponível:', !!authToken);
       
-      // Usar GET para evitar problema de payload grande
-      const response = await apiRequest('GET', '/api/fuel-card-solicitations/export');
+      // Construir query params com filtros
+      const queryParams = new URLSearchParams({
+        data_inicio: startDate,
+        data_fim: endDate,
+      });
+      
+      if (baseFilter && baseFilter !== 'all') {
+        queryParams.append('base', baseFilter);
+      }
+      
+      // Usar GET com filtros
+      const response = await apiRequest('GET', `/api/fuel-card-solicitations/export?${queryParams}`);
       
       console.log('[EXPORT] Resposta recebida:', {
         ok: response.ok,
@@ -1031,7 +1052,8 @@ const FuelCardRequestsPanel: React.FC = () => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `solicitacoes-cartao-combustivel-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+        const baseLabel = baseFilter !== 'all' ? `-${baseFilter}` : '';
+        a.download = `solicitacoes-cartao-combustivel${baseLabel}-${startDate}-a-${endDate}.xlsx`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -1040,7 +1062,7 @@ const FuelCardRequestsPanel: React.FC = () => {
         console.log('[EXPORT] Download iniciado com sucesso');
         toast({
           title: 'Exportação concluída',
-          description: 'Relatório Excel gerado com sucesso',
+          description: `Relatório do período ${startDate} a ${endDate}${baseFilter !== 'all' ? ` da base ${baseFilter}` : ''} gerado com sucesso`,
         });
       } else {
         const errorText = await response.text();
@@ -1842,7 +1864,13 @@ const FuelCardRequestsPanel: React.FC = () => {
               </Button>
             </div>
             
-            <Button onClick={handleExportExcel} variant="outline" className="flex items-center gap-2">
+            <Button 
+              onClick={handleExportExcel} 
+              variant="outline" 
+              className="flex items-center gap-2"
+              disabled={!startDate || !endDate}
+              title={!startDate || !endDate ? 'Selecione o período para baixar' : `Baixar relatório${baseFilter !== 'all' ? ` da base ${baseFilter}` : ''}`}
+            >
               <Download className="h-4 w-4" />
               Baixar Relatório Excel
             </Button>

@@ -1125,7 +1125,36 @@ export async function createLineHallFuelCardRequest(req: Request, res: Response)
  */
 export async function exportFuelCardSolicitationsToExcel(req: Request, res: Response) {
   try {
-    console.log('[EXPORT-EXCEL] Iniciando exportação com separação de solicitante e motorista');
+    // Obter filtros de query params
+    const { data_inicio, data_fim, base } = req.query;
+    
+    console.log('[EXPORT-EXCEL] Iniciando exportação com filtros:', { data_inicio, data_fim, base });
+    
+    // Construir cláusula WHERE para datas
+    let dateFilter = '';
+    const queryParams: any[] = [];
+    let paramIndex = 1;
+    
+    if (data_inicio && data_fim) {
+      dateFilter = ` WHERE data_solicitacao >= $${paramIndex}::date AND data_solicitacao <= $${paramIndex + 1}::date`;
+      queryParams.push(data_inicio, data_fim);
+      paramIndex += 2;
+    }
+    
+    // Filtro de base
+    let baseFilter = '';
+    if (base && base !== 'all') {
+      if (dateFilter) {
+        baseFilter = ` AND LOWER(COALESCE(base, '')) LIKE LOWER($${paramIndex})`;
+      } else {
+        baseFilter = ` WHERE LOWER(COALESCE(base, '')) LIKE LOWER($${paramIndex})`;
+      }
+      queryParams.push(`%${base}%`);
+      paramIndex++;
+    }
+    
+    console.log('[EXPORT-EXCEL] Filtros aplicados:', { dateFilter, baseFilter, queryParams });
+    
     // Buscar dados de cada tabela separadamente e depois unir
     const allSolicitations = [];
     
@@ -1156,11 +1185,13 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
           '' as horario_abastecimento,
           COALESCE(base, 'Base Principal') as base
         FROM solicitacoes_fuel_card
+        ${dateFilter.replace(/data_solicitacao/g, 'data_solicitacao')}${baseFilter}
         ORDER BY data_solicitacao DESC
       `;
       
-      const traditionalResult = await pool.query(traditionalQuery);
+      const traditionalResult = await pool.query(traditionalQuery, queryParams);
       allSolicitations.push(...traditionalResult.rows);
+      console.log('[EXPORT-EXCEL] Registros tabela tradicional:', traditionalResult.rows.length);
     } catch (err) {
       console.log('Tabela tradicional não encontrada ou erro:', err);
     }
