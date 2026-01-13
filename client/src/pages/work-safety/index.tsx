@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, CheckCircle, Clock, LineChart, FileText, Users, UserPlus, ClipboardList, ExternalLink, Copy, Check, Share2, AlertTriangle, AlertCircle, Car, Flame, Eye } from 'lucide-react';
+import { ShieldCheck, CheckCircle, Clock, LineChart, FileText, Users, UserPlus, ClipboardList, ExternalLink, Copy, Check, Share2, AlertTriangle, AlertCircle, Car, Flame, Eye, EyeOff, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'wouter';
@@ -9,9 +9,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function WorkSafetyPage() {
   const [copied, setCopied] = useState(false);
+  const [showOccurrences, setShowOccurrences] = useState(false);
+  const [selectedAccident, setSelectedAccident] = useState<any>(null);
   const { toast } = useToast();
   
   const { data: statsData } = useQuery<{ success: boolean; data: { total: number; pgrAprovados: number; comEar: number; totalBases: number } }>({
@@ -188,7 +192,15 @@ export default function WorkSafetyPage() {
                 </div>
               </div>
 
-              {recentAccidents.length > 0 && (
+              {recentAccidents.length === 0 && (
+                <div className="bg-white rounded-lg p-6 mt-4 text-center">
+                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />
+                  <p className="text-gray-600">Nenhuma ocorrência registrada ainda.</p>
+                  <p className="text-sm text-gray-500 mt-1">As ocorrências reportadas aparecerão aqui.</p>
+                </div>
+              )}
+
+              {recentAccidents.length > 0 && showOccurrences && (
                 <div className="bg-white rounded-lg p-4 mt-4">
                   <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                     <Clock className="h-4 w-4" />
@@ -201,7 +213,11 @@ export default function WorkSafetyPage() {
                       const isAtropelamento = accident.causa_imediata?.toLowerCase().includes('atropelamento');
                       
                       return (
-                        <div key={accident.id || index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                        <div 
+                          key={accident.id || index} 
+                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                          onClick={() => setSelectedAccident(accident)}
+                        >
                           <div className="flex items-center gap-3">
                             <div className={`p-2 rounded-full ${
                               isColisao ? 'bg-red-100' :
@@ -241,18 +257,14 @@ export default function WorkSafetyPage() {
                 </div>
               )}
 
-              {recentAccidents.length === 0 && (
-                <div className="bg-white rounded-lg p-6 mt-4 text-center">
-                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />
-                  <p className="text-gray-600">Nenhuma ocorrência registrada ainda.</p>
-                  <p className="text-sm text-gray-500 mt-1">As ocorrências reportadas aparecerão aqui.</p>
-                </div>
-              )}
-
               <div className="mt-4 flex gap-2 justify-center">
-                <Button className="bg-red-600 hover:bg-red-700" data-testid="button-view-all-accidents">
-                  <Eye className="mr-2 h-4 w-4" />
-                  Ver Todas as Ocorrências
+                <Button 
+                  className={showOccurrences ? "bg-gray-600 hover:bg-gray-700" : "bg-red-600 hover:bg-red-700"} 
+                  data-testid="button-view-all-accidents"
+                  onClick={() => setShowOccurrences(!showOccurrences)}
+                >
+                  {showOccurrences ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+                  {showOccurrences ? 'Ocultar Ocorrências' : 'Ver Todas as Ocorrências'}
                 </Button>
               </div>
             </CardContent>
@@ -466,6 +478,196 @@ export default function WorkSafetyPage() {
           </Card>
         </div>
       </div>
+
+      <Dialog open={!!selectedAccident} onOpenChange={(open) => !open && setSelectedAccident(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-700">
+              <AlertTriangle className="h-5 w-5" />
+              Detalhes da Ocorrência
+            </DialogTitle>
+            <DialogDescription>
+              Informações completas do registro de acidente/incidente
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedAccident && (
+            <ScrollArea className="h-[60vh] pr-4">
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase font-medium">Tipo de Ocorrência</p>
+                    <p className="font-semibold text-red-600">{selectedAccident.causa_imediata || 'Não informado'}</p>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase font-medium">Status</p>
+                    <Badge variant={selectedAccident.status === 'reportado' ? 'secondary' : 'outline'} className="mt-1">
+                      {selectedAccident.status === 'reportado' ? 'Reportado' : selectedAccident.status || 'Pendente'}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold text-gray-800 mb-3">Identificação</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-gray-500">Operação/Projeto</p>
+                      <p className="font-medium">{selectedAccident.operacao || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Base/Unidade</p>
+                      <p className="font-medium">{selectedAccident.base_unidade || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Milha</p>
+                      <p className="font-medium">{selectedAccident.milha || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Regional</p>
+                      <p className="font-medium">{selectedAccident.regional || 'Não informado'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold text-gray-800 mb-3">Data e Local</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-gray-500">Data da Ocorrência</p>
+                      <p className="font-medium">
+                        {selectedAccident.data_ocorrencia 
+                          ? format(new Date(selectedAccident.data_ocorrencia), "dd/MM/yyyy", { locale: ptBR })
+                          : 'Não informada'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Horário</p>
+                      <p className="font-medium">{selectedAccident.horario_ocorrencia || 'Não informado'}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-gray-500">Endereço da Ocorrência</p>
+                      <p className="font-medium">{selectedAccident.endereco_ocorrencia || 'Não informado'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold text-gray-800 mb-3">Reportado por</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-gray-500">Nome</p>
+                      <p className="font-medium">{selectedAccident.reportado_por || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">E-mail</p>
+                      <p className="font-medium">{selectedAccident.email_corporativo || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Telefone/WhatsApp</p>
+                      <p className="font-medium">{selectedAccident.telefone_whatsapp || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Coordenador da Base</p>
+                      <p className="font-medium">{selectedAccident.coordenador_base || 'Não informado'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedAccident.descricao_detalhada && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold text-gray-800 mb-3">Descrição Detalhada</h4>
+                    <p className="text-sm bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">{selectedAccident.descricao_detalhada}</p>
+                  </div>
+                )}
+
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold text-gray-800 mb-3">Veículo</h4>
+                  <div className="grid grid-cols-3 gap-3 text-sm">
+                    <div>
+                      <p className="text-gray-500">Placa</p>
+                      <p className="font-medium">{selectedAccident.placa_veiculo || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Modelo</p>
+                      <p className="font-medium">{selectedAccident.modelo_veiculo || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Ano</p>
+                      <p className="font-medium">{selectedAccident.ano_veiculo || 'Não informado'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {(selectedAccident.nome_colaborador || selectedAccident.id_matricula) && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold text-gray-800 mb-3">Colaborador Envolvido</h4>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-gray-500">Nome</p>
+                        <p className="font-medium">{selectedAccident.nome_colaborador || 'Não informado'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">ID/Matrícula</p>
+                        <p className="font-medium">{selectedAccident.id_matricula || 'Não informado'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Função</p>
+                        <p className="font-medium">{selectedAccident.funcao || 'Não informado'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Idade</p>
+                        <p className="font-medium">{selectedAccident.idade || 'Não informado'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold text-gray-800 mb-3">Informações Adicionais</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-gray-500">Terceiro Envolvido?</p>
+                      <p className="font-medium">{selectedAccident.terceiro_envolvido ? 'Sim' : 'Não'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Foi Socorrido?</p>
+                      <p className="font-medium">{selectedAccident.foi_socorrido || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Atendimento Médico</p>
+                      <p className="font-medium">{selectedAccident.atendimento_medico || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Local Atendimento</p>
+                      <p className="font-medium">{selectedAccident.local_atendimento || 'Não informado'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedAccident.protocolo_bo && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold text-gray-800 mb-3">Registro Policial</h4>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-gray-500">Registro Policial</p>
+                        <p className="font-medium">{selectedAccident.registro_policial || 'Não'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Protocolo B.O.</p>
+                        <p className="font-medium">{selectedAccident.protocolo_bo || 'Não informado'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="border-t pt-4 text-xs text-gray-400">
+                  <p>Registrado em: {selectedAccident.created_at ? format(new Date(selectedAccident.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'Data não disponível'}</p>
+                </div>
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
