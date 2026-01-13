@@ -18,6 +18,7 @@ interface Driver {
   id: number;
   nome_completo: string;
   cpf: string;
+  rg?: string;
   base_atuacao: string;
   telefone_motorista: string;
   email: string;
@@ -386,11 +387,19 @@ export default function WorkSafetyDriversPanel() {
                   </p>
                   <p className="font-medium text-lg">{selectedDriver.nome_completo}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-gray-500 flex items-center gap-1">
-                    <FileText className="w-4 h-4" /> CPF
-                  </p>
-                  <p className="font-mono text-lg">{selectedDriver.cpf}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                      <FileText className="w-4 h-4" /> CPF
+                    </p>
+                    <p className="font-mono">{selectedDriver.cpf}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                      <FileText className="w-4 h-4" /> RG
+                    </p>
+                    <p className="font-mono">{selectedDriver.rg || '-'}</p>
+                  </div>
                 </div>
               </div>
 

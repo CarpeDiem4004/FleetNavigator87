@@ -134,6 +134,7 @@ export async function getWorkSafetyDrivers(req: Request, res: Response) {
         id,
         nome_completo,
         cpf,
+        rg,
         base_atuacao,
         telefone_motorista,
         email,
