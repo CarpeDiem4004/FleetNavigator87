@@ -1267,11 +1267,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rota pública para relatar acidentes/incidentes
   app.post('/api/work-safety/accidents', createAccident);
   
+  // Rotas para listar e estatísticas de acidentes (registradas cedo para evitar interceptação Vite)
+  app.get('/api/work-safety/accidents', getAccidents);
+  app.get('/api/work-safety/accidents/stats', getAccidentStats);
+  
   // Rota pública para cadastro de motoristas
   app.post('/api/work-safety/drivers', createWorkSafetyDriver);
   
   // Rota pública para buscar bases disponíveis
   app.get('/api/work-safety/bases', getWorkSafetyBases);
+  
+  // Rotas de estatísticas de motoristas
+  app.get('/api/work-safety/stats', getWorkSafetyStats);
   
   // Rotas públicas para treinamentos
   app.get('/api/work-safety/trainings', getTrainings);
