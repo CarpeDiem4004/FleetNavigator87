@@ -11,8 +11,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, User, Phone, Mail, CreditCard, FileCheck, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
+import { Shield, User, Phone, Mail, CreditCard, FileCheck, AlertTriangle, CheckCircle, Loader2, Building2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+interface Project {
+  id: number;
+  name: string;
+  description?: string;
+  bases: ProjectBase[];
+}
+
+interface ProjectBase {
+  id: number;
+  base_name: string;
+  base_code: string;
+  description?: string;
+}
 
 const formSchema = z.object({
   nomeCompleto: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
@@ -55,89 +69,87 @@ export default function WorkSafetyDriverRegistration() {
   const { toast } = useToast();
   const [showPgrWarning, setShowPgrWarning] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [bases, setBases] = useState<string[]>([]);
-  const [isLoadingBases, setIsLoadingBases] = useState(true);
-  const [basesError, setBasesError] = useState<string | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
+  const [projectsError, setProjectsError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
     let retryCount = 0;
     const maxRetries = 3;
     
-    const fetchBases = async (): Promise<void> => {
+    const loadProjectsWithBases = async (): Promise<void> => {
       try {
-        setIsLoadingBases(true);
-        setBasesError(null);
+        setIsLoadingProjects(true);
+        setProjectsError(null);
         
-        console.log('[WorkSafety] Fetching bases, attempt:', retryCount + 1);
+        console.log('[WorkSafety] Fetching projects with bases, attempt:', retryCount + 1);
         
-        const response = await fetch('/api/work-safety/bases', {
+        const controller = new AbortController();
+        const timeoutMs = 30000;
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        
+        const response = await fetch('/api/public/projects-with-bases', {
           method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
           credentials: 'include',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
         });
+        
+        clearTimeout(timeoutId);
         
         console.log('[WorkSafety] Response status:', response.status);
         
-        const contentType = response.headers.get('content-type');
-        console.log('[WorkSafety] Content-Type:', contentType);
-        
-        if (!contentType || !contentType.includes('application/json')) {
-          if (retryCount < maxRetries) {
-            retryCount++;
-            console.log('[WorkSafety] Retrying due to invalid content-type...');
-            await new Promise(resolve => setTimeout(resolve, 500 * retryCount));
-            return fetchBases();
-          }
-          throw new Error('Resposta inválida do servidor');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
-        const text = await response.text();
-        console.log('[WorkSafety] Response text length:', text.length);
-        
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch (parseError) {
-          console.error('[WorkSafety] JSON parse error:', parseError);
-          if (retryCount < maxRetries) {
-            retryCount++;
-            await new Promise(resolve => setTimeout(resolve, 500 * retryCount));
-            return fetchBases();
-          }
-          throw new Error('Erro ao processar resposta do servidor');
-        }
+        const data = await response.json();
         
         if (isMounted) {
-          if (data.success && Array.isArray(data.data)) {
-            setBases(data.data);
-            console.log('[WorkSafety] Bases loaded successfully:', data.data.length);
+          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+            setProjects(data.data);
+            console.log('[WorkSafety] Projects loaded successfully:', data.data.length);
           } else {
-            throw new Error('Formato de dados inválido');
+            throw new Error('Dados de projetos inválidos ou vazios');
           }
         }
       } catch (error: any) {
         const errorMessage = error?.message || error?.toString() || 'Erro desconhecido';
-        console.error('[WorkSafety] Error fetching bases:', errorMessage, error);
+        console.error('[WorkSafety] Error fetching projects:', errorMessage, error);
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          return loadProjectsWithBases();
+        }
+        
         if (isMounted) {
-          setBasesError(errorMessage);
+          setProjectsError(errorMessage);
         }
       } finally {
         if (isMounted) {
-          setIsLoadingBases(false);
+          setIsLoadingProjects(false);
         }
       }
     };
 
-    fetchBases();
+    loadProjectsWithBases();
     
     return () => {
       isMounted = false;
     };
   }, []);
+
+  const handleProjectChange = (projectId: string) => {
+    const project = projects.find(p => p.id.toString() === projectId);
+    setSelectedProject(project || null);
+    form.setValue('baseAtuacao', '');
+  };
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -329,26 +341,60 @@ export default function WorkSafetyDriverRegistration() {
                       )}
                     />
 
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4" />
+                        Projeto *
+                      </FormLabel>
+                      <Select 
+                        onValueChange={handleProjectChange} 
+                        value={selectedProject?.id.toString() || ''}
+                        disabled={isLoadingProjects}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-projeto">
+                            <SelectValue placeholder={isLoadingProjects ? "Carregando projetos..." : "Selecione um projeto"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {projects.map((project) => (
+                            <SelectItem key={project.id} value={project.id.toString()}>
+                              {project.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">Selecione o projeto para esta solicitação</p>
+                      {projectsError && (
+                        <p className="text-xs text-red-500">{projectsError}</p>
+                      )}
+                    </FormItem>
+
                     <FormField
                       control={form.control}
                       name="baseAtuacao"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Base de Atuação *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value}
+                            disabled={!selectedProject}
+                          >
                             <FormControl>
                               <SelectTrigger data-testid="select-base">
-                                <SelectValue placeholder="Selecione a base" />
+                                <SelectValue placeholder={!selectedProject ? "Selecione um projeto primeiro" : "Selecione a base"} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {bases.map((base: string) => (
-                                <SelectItem key={base} value={base}>
-                                  {base}
+                              {selectedProject?.bases.map((base) => (
+                                <SelectItem key={base.id} value={base.base_name}>
+                                  {base.base_name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
+                          <p className="text-xs text-muted-foreground">Base onde o motorista está alocado</p>
                           <FormMessage />
                         </FormItem>
                       )}
