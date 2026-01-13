@@ -202,6 +202,92 @@ export default function WorkSafetyReportAccident() {
 
   const totalSections = 7;
 
+  const validateSection2 = () => {
+    const required = [
+      { field: formData.operacao, name: 'Operação' },
+      { field: formData.reportadoPor, name: 'Reportado Por' },
+      { field: formData.emailCorporativo, name: 'E-mail Corporativo' },
+      { field: formData.telefoneWhatsApp, name: 'Telefone WhatsApp' },
+      { field: formData.coordenadorBase, name: 'Coordenador da Base' },
+    ];
+    const missing = required.filter(r => !r.field.trim());
+    if (missing.length > 0) {
+      toast({ title: 'Campos obrigatórios', description: `Preencha: ${missing.map(m => m.name).join(', ')}`, variant: 'destructive' });
+      return false;
+    }
+    return true;
+  };
+
+  const validateSection3 = () => {
+    const required = [
+      { field: formData.milha, name: 'Milha' },
+      { field: formData.regional, name: 'Regional' },
+      { field: formData.baseUnidade, name: 'Base/Unidade' },
+      { field: formData.enderecoOcorrencia, name: 'Endereço da Ocorrência' },
+    ];
+    const missing = required.filter(r => !r.field.trim());
+    if (missing.length > 0) {
+      toast({ title: 'Campos obrigatórios', description: `Preencha: ${missing.map(m => m.name).join(', ')}`, variant: 'destructive' });
+      return false;
+    }
+    return true;
+  };
+
+  const validateSection4 = () => {
+    const required = [
+      { field: formData.dataOcorrencia, name: 'Data da Ocorrência' },
+      { field: formData.horarioOcorrencia, name: 'Horário da Ocorrência' },
+      { field: formData.causaImediata, name: 'Causa Imediata' },
+      { field: formData.descricaoDetalhada, name: 'Descrição Detalhada' },
+    ];
+    const missing = required.filter(r => !r.field.trim());
+    if (missing.length > 0) {
+      toast({ title: 'Campos obrigatórios', description: `Preencha: ${missing.map(m => m.name).join(', ')}`, variant: 'destructive' });
+      return false;
+    }
+    return true;
+  };
+
+  const validateSection5 = () => {
+    const required = [
+      { field: formData.placaVeiculo, name: 'Placa do Veículo' },
+      { field: formData.modeloVeiculo, name: 'Modelo do Veículo' },
+      { field: formData.frotaFixa, name: 'Frota Fixa' },
+      { field: formData.terceiroEnvolvido, name: 'Terceiro Envolvido' },
+    ];
+    const missing = required.filter(r => !r.field.trim());
+    if (missing.length > 0) {
+      toast({ title: 'Campos obrigatórios', description: `Preencha: ${missing.map(m => m.name).join(', ')}`, variant: 'destructive' });
+      return false;
+    }
+    return true;
+  };
+
+  const validateSection6 = () => {
+    const required = [
+      { field: formData.nomeColaborador, name: 'Nome do Colaborador' },
+      { field: formData.funcao, name: 'Função' },
+      { field: formData.contratacao, name: 'Contratação' },
+    ];
+    const missing = required.filter(r => !r.field.trim());
+    if (missing.length > 0) {
+      toast({ title: 'Campos obrigatórios', description: `Preencha: ${missing.map(m => m.name).join(', ')}`, variant: 'destructive' });
+      return false;
+    }
+    return true;
+  };
+
+  const goToSection = (nextSection: number) => {
+    if (nextSection > currentSection) {
+      if (currentSection === 2 && !validateSection2()) return;
+      if (currentSection === 3 && !validateSection3()) return;
+      if (currentSection === 4 && !validateSection4()) return;
+      if (currentSection === 5 && !validateSection5()) return;
+      if (currentSection === 6 && !validateSection6()) return;
+    }
+    setCurrentSection(nextSection);
+  };
+
   if (success) {
     return (
       <div className="min-h-screen bg-[#0E0E0E] flex items-center justify-center p-4">
@@ -461,7 +547,7 @@ export default function WorkSafetyReportAccident() {
                 <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(1)}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                 </Button>
-                <Button className="flex-1 bg-[#E10613] hover:bg-[#B8050F]" onClick={() => setCurrentSection(3)}>
+                <Button className="flex-1 bg-[#E10613] hover:bg-[#B8050F]" onClick={() => goToSection(3)}>
                   Continuar <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -571,7 +657,7 @@ export default function WorkSafetyReportAccident() {
                 <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(2)}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                 </Button>
-                <Button className="flex-1 bg-[#E10613] hover:bg-[#B8050F]" onClick={() => setCurrentSection(4)}>
+                <Button className="flex-1 bg-[#E10613] hover:bg-[#B8050F]" onClick={() => goToSection(4)}>
                   Continuar <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -640,7 +726,7 @@ export default function WorkSafetyReportAccident() {
                 <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(3)}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                 </Button>
-                <Button className="flex-1 bg-[#E10613] hover:bg-[#B8050F]" onClick={() => setCurrentSection(5)}>
+                <Button className="flex-1 bg-[#E10613] hover:bg-[#B8050F]" onClick={() => goToSection(5)}>
                   Continuar <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -746,7 +832,7 @@ export default function WorkSafetyReportAccident() {
                 <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(4)}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                 </Button>
-                <Button className="flex-1 bg-[#E10613] hover:bg-[#B8050F]" onClick={() => setCurrentSection(6)}>
+                <Button className="flex-1 bg-[#E10613] hover:bg-[#B8050F]" onClick={() => goToSection(6)}>
                   Continuar <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -853,7 +939,7 @@ export default function WorkSafetyReportAccident() {
                 <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(5)}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                 </Button>
-                <Button className="flex-1 bg-[#E10613] hover:bg-[#B8050F]" onClick={() => setCurrentSection(7)}>
+                <Button className="flex-1 bg-[#E10613] hover:bg-[#B8050F]" onClick={() => goToSection(7)}>
                   Continuar <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
