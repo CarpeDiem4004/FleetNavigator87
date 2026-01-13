@@ -3363,6 +3363,33 @@ const LineHaulPage = () => {
                     <p className="text-sm">{selectedChecklistPatio.observacao_geral}</p>
                   </div>
                 )}
+
+                {selectedChecklistPatio.fotos && selectedChecklistPatio.fotos.length > 0 && (
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-semibold mb-3">Fotos ({selectedChecklistPatio.fotos.length})</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {selectedChecklistPatio.fotos.map((foto: any, idx: number) => (
+                        <div key={idx} className="space-y-1">
+                          <a 
+                            href={foto.url_foto} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="block"
+                          >
+                            <img 
+                              src={foto.url_foto} 
+                              alt={foto.descricao || foto.posicao || `Foto ${idx + 1}`}
+                              className="w-full h-24 object-cover rounded-lg border-2 border-blue-200 hover:border-blue-400 transition-colors"
+                            />
+                          </a>
+                          <p className="text-xs text-center text-gray-600 truncate">
+                            {foto.descricao || foto.posicao || `Foto ${idx + 1}`}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </DialogContent>
