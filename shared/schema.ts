@@ -1637,3 +1637,42 @@ export const insertWorkSafetyTrainingParticipationSchema = createInsertSchema(wo
 
 export type WorkSafetyTrainingParticipation = typeof workSafetyTrainingParticipations.$inferSelect;
 export type InsertWorkSafetyTrainingParticipation = z.infer<typeof insertWorkSafetyTrainingParticipationSchema>;
+
+// ==================== LINE HAUL - CONTROLE DE JORNADA DE MOTORISTAS ====================
+
+// Enum para status da jornada
+export const journeyStatusEnum = pgEnum('journey_status', ['em_andamento', 'dentro_limite', 'proximo_limite', 'excedido', 'encerrada']);
+
+// Tabela de jornadas de motoristas
+export const jornadaMotorista = pgTable("jornada_motorista", {
+  id: serial("id").primaryKey(),
+  motoristaId: integer("motorista_id"),
+  motoristaNome: text("motorista_nome").notNull(),
+  veiculoId: integer("veiculo_id"),
+  placaCavalo: text("placa_cavalo").notNull(),
+  placaCarreta1: text("placa_carreta_1"),
+  placaCarreta2: text("placa_carreta_2"),
+  rotaId: integer("rota_id"),
+  rotaNome: text("rota_nome"),
+  baseId: integer("base_id"),
+  baseNome: text("base_nome"),
+  inicioJornada: timestamp("inicio_jornada").notNull(),
+  fimJornada: timestamp("fim_jornada"),
+  horasTrabalhadas: decimal("horas_trabalhadas", { precision: 5, scale: 2 }),
+  statusJornada: text("status_jornada").notNull().default('em_andamento'), // em_andamento, dentro_limite, proximo_limite, excedido, encerrada
+  observacoes: text("observacoes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: text("created_by"),
+});
+
+// Schema de inserção para jornadas
+export const insertJornadaMotoristaSchema = createInsertSchema(jornadaMotorista, {
+  motoristaNome: z.string().min(1, "Nome do motorista é obrigatório"),
+  placaCavalo: z.string().min(1, "Placa do veículo é obrigatória"),
+  rotaNome: z.string().optional().nullable(),
+  baseNome: z.string().optional().nullable(),
+}).omit({ id: true, createdAt: true, updatedAt: true, horasTrabalhadas: true });
+
+export type JornadaMotorista = typeof jornadaMotorista.$inferSelect;
+export type InsertJornadaMotorista = z.infer<typeof insertJornadaMotoristaSchema>;

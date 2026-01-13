@@ -74,6 +74,8 @@ import lineHallRoutes from './routes/lineHallRoutes';
 import basesRoutes from './routes/basesRoutes';
 // Importar rotas do WhatsApp
 import whatsappRoutes from './routes/whatsappApi';
+// Importar rotas de Jornada de Motoristas
+import jornadaMotoristaApi from './routes/jornadaMotoristaApi';
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
@@ -1475,6 +1477,10 @@ app.use((req, res, next) => {
   // Registrar rotas do Line Hall
   console.log('[LINE-HALL] Registrando rotas do Line Hall');
   app.use('/api/line-hall', lineHallRoutes);
+  
+  // Registrar rotas de Jornada de Motoristas (Line Haul)
+  console.log('[JORNADA] Registrando rotas de Jornada de Motoristas');
+  app.use('/api/jornada-motorista', jornadaMotoristaApi);
   
   // Rota de bases já registrada acima no arquivo principal
   

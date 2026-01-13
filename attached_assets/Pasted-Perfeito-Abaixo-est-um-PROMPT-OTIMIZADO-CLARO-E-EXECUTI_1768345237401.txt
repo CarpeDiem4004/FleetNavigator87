@@ -1,0 +1,161 @@
+Perfeito 👍
+Abaixo está um **PROMPT OTIMIZADO, CLARO E EXECUTIVO**, pronto para você **colar direto no Replit AI** e ele aplicar no sistema do **Painel Line Haul** sem ambiguidades.
+
+---
+
+## 🔧 PROMPT PARA REPLIT AI – CONTROLE DE JORNADA LINE HAUL
+
+Crie e implemente no sistema **Painel Line Haul** um **módulo completo de Controle de Jornada de Motoristas**, com foco em **segurança operacional, compliance e prevenção de riscos**.
+
+### 🎯 Objetivo do Módulo
+
+Registrar de forma **simples, padronizada e confiável** o **início e o término diário das rotas**, permitindo o controle automático da jornada de trabalho dos motoristas e a visualização em tempo real no dashboard.
+
+---
+
+### 🧩 Funcionalidades Obrigatórias
+
+#### 1️⃣ Registro de Jornada
+
+Criar um formulário simples no Painel Line Haul para:
+
+* Selecionar **Motorista**
+* Selecionar **Veículo (cavalo e carretas)**
+* Selecionar **Rota / Viagem**
+* Botão **"Iniciar Jornada"** → grava data e hora automaticamente
+* Botão **"Encerrar Jornada"** → grava data e hora automaticamente
+
+> Não permitir edição manual de horário após o registro.
+
+---
+
+#### 2️⃣ Cálculo Automático da Jornada
+
+O sistema deve:
+
+* Calcular automaticamente as **horas trabalhadas por dia**
+* Considerar viradas de dia (ex: início em um dia e término no outro)
+* Consolidar a jornada por **motorista / dia**
+
+---
+
+#### 3️⃣ Regras de Jornada
+
+Implementar regras configuráveis:
+
+* Jornada padrão diária (ex: 8h ou 9h)
+* Limite máximo permitido (ex: 10h / 12h)
+* Classificação automática:
+
+  * **Dentro da jornada**
+  * **Próximo do limite** (ex: acima de 80%)
+  * **Jornada excedida**
+
+---
+
+#### 4️⃣ Dashboard de Controle (Painel Line Haul)
+
+Criar um dashboard visual com:
+
+##### Cards Resumo
+
+* Total de motoristas em operação
+* Motoristas dentro da jornada
+* Motoristas próximos do limite
+* Motoristas com jornada excedida
+
+##### Lista em Tempo Real
+
+Tabela com:
+
+* Nome do motorista
+* Base
+* Rota
+* Horário de início
+* Horas acumuladas
+* Status da jornada (cores: verde, amarelo, vermelho)
+
+---
+
+#### 5️⃣ Alertas Operacionais
+
+* Exibir alertas visuais no painel quando:
+
+  * Motorista estiver próximo do limite
+  * Jornada for excedida
+* Preparar estrutura para alerta futuro via WhatsApp / sistema interno
+
+---
+
+#### 6️⃣ Análises e Tendências
+
+Criar visão analítica com:
+
+* Excesso de jornada por **base**
+* Excesso por **rota**
+* Excesso por **período** (dia, semana, mês)
+
+---
+
+### 🗄️ Estrutura Técnica
+
+#### Backend
+
+* Criar tabela `jornada_motorista` com:
+
+  * id
+  * motorista_id
+  * veiculo_id
+  * rota_id
+  * base_id
+  * inicio_jornada (timestamp)
+  * fim_jornada (timestamp)
+  * horas_trabalhadas
+  * status_jornada
+  * created_at
+
+#### Regras
+
+* Cálculo deve ocorrer automaticamente no backend
+* Status deve ser recalculado em tempo real
+
+---
+
+### 🎨 UX/UI
+
+* Interface simples, clara e executiva
+* Uso de cores padrão:
+
+  * Verde → dentro da jornada
+  * Amarelo → próximo do limite
+  * Vermelho → excedido
+* Painel focado em **tomada de decisão rápida**
+
+---
+
+### 🔐 Governança e Segurança
+
+* Registro vinculado ao usuário logado
+* Log de criação e encerramento de jornada
+* Dados imutáveis após fechamento da jornada
+
+---
+
+### 📌 Resultado Esperado
+
+Um **Painel de Controle de Jornada no Line Haul**, capaz de:
+
+* Monitorar jornadas em tempo real
+* Reduzir risco de fadiga e acidentes
+* Garantir compliance
+* Apoiar decisões preventivas da operação
+
+---
+
+Se quiser, posso:
+
+* Adaptar o prompt **exatamente** para o stack atual (React + Supabase / Flutter)
+* Criar versão **mobile-first** para motorista
+* Incluir regra CLT + descanso mínimo automaticamente
+
+É só falar.

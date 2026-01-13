@@ -316,6 +316,29 @@ const LineHaulPage = () => {
   const [plateSearch, setPlateSearch] = useState<string>('');
   const [showMessagesPanel, setShowMessagesPanel] = useState(false);
   
+  // Estados para Controle de Jornada
+  const [showJourneyList, setShowJourneyList] = useState(false);
+  const [selectedJourney, setSelectedJourney] = useState<any>(null);
+  const [journeyStats, setJourneyStats] = useState({
+    total_operacao: 0,
+    dentro_limite: 0,
+    proximo_limite: 0,
+    excedido: 0,
+    jornadas_hoje: 0
+  });
+  const [activeJourneys, setActiveJourneys] = useState<any[]>([]);
+  const [showNewJourneyDialog, setShowNewJourneyDialog] = useState(false);
+  const [newJourneyForm, setNewJourneyForm] = useState({
+    motorista_nome: '',
+    placa_cavalo: '',
+    placa_carreta_1: '',
+    placa_carreta_2: '',
+    rota_nome: '',
+    base_nome: '',
+    observacoes: ''
+  });
+  const [isCreatingJourney, setIsCreatingJourney] = useState(false);
+  
   // Estados para estatísticas
   const [stats, setStats] = useState({
     checklistStats: { pendentes: 0, concluidos: 0, total: 0 },
@@ -1120,6 +1143,144 @@ const LineHaulPage = () => {
       }));
     }
   };
+
+  // Funções para Controle de Jornada
+  const fetchJourneyStats = async () => {
+    try {
+      const res = await apiRequest('GET', '/api/jornada-motorista/stats');
+      const response = await res.json();
+      if (response.success) {
+        setJourneyStats(response.data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas de jornada:', error);
+    }
+  };
+
+  const fetchActiveJourneys = async () => {
+    try {
+      const res = await apiRequest('GET', '/api/jornada-motorista/ativas');
+      const response = await res.json();
+      if (response.success) {
+        setActiveJourneys(response.data || []);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar jornadas ativas:', error);
+    }
+  };
+
+  const handleStartJourney = async () => {
+    if (!newJourneyForm.motorista_nome || !newJourneyForm.placa_cavalo) {
+      toast({
+        title: "Erro",
+        description: "Motorista e placa do veículo são obrigatórios",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsCreatingJourney(true);
+    try {
+      const res = await apiRequest('POST', '/api/jornada-motorista/iniciar', {
+        ...newJourneyForm,
+        created_by: user?.name || 'Sistema'
+      });
+      const response = await res.json();
+      
+      if (response.success) {
+        toast({
+          title: "Sucesso",
+          description: "Jornada iniciada com sucesso!"
+        });
+        setShowNewJourneyDialog(false);
+        setNewJourneyForm({
+          motorista_nome: '',
+          placa_cavalo: '',
+          placa_carreta_1: '',
+          placa_carreta_2: '',
+          rota_nome: '',
+          base_nome: '',
+          observacoes: ''
+        });
+        fetchJourneyStats();
+        fetchActiveJourneys();
+      } else {
+        toast({
+          title: "Erro",
+          description: response.error || "Erro ao iniciar jornada",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao iniciar jornada:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao iniciar jornada",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingJourney(false);
+    }
+  };
+
+  const handleEndJourney = async (journeyId: number) => {
+    try {
+      const res = await apiRequest('POST', `/api/jornada-motorista/encerrar/${journeyId}`, {});
+      const response = await res.json();
+      
+      if (response.success) {
+        toast({
+          title: "Sucesso",
+          description: "Jornada encerrada com sucesso!"
+        });
+        fetchJourneyStats();
+        fetchActiveJourneys();
+        setSelectedJourney(null);
+      } else {
+        toast({
+          title: "Erro",
+          description: response.error || "Erro ao encerrar jornada",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao encerrar jornada:', error);
+    }
+  };
+
+  const getJourneyStatusColor = (status: string) => {
+    switch (status) {
+      case 'dentro_limite': return 'bg-green-100 text-green-800 border-green-300';
+      case 'proximo_limite': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'excedido': return 'bg-red-100 text-red-800 border-red-300';
+      case 'encerrada': return 'bg-gray-100 text-gray-800 border-gray-300';
+      default: return 'bg-blue-100 text-blue-800 border-blue-300';
+    }
+  };
+
+  const getJourneyStatusLabel = (status: string) => {
+    switch (status) {
+      case 'dentro_limite': return 'Dentro do Limite';
+      case 'proximo_limite': return 'Próximo do Limite';
+      case 'excedido': return 'Excedido';
+      case 'encerrada': return 'Encerrada';
+      default: return 'Em Andamento';
+    }
+  };
+
+  // Carregar dados de jornada
+  useEffect(() => {
+    fetchJourneyStats();
+    fetchActiveJourneys();
+    
+    // Atualizar a cada 30 segundos
+    const interval = setInterval(() => {
+      fetchJourneyStats();
+      fetchActiveJourneys();
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -2645,6 +2806,267 @@ const LineHaulPage = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Card de Controle de Jornada */}
+        <Card className="bg-white/80 backdrop-blur-sm border-[#DB0145]/30 mb-8">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center text-[#DB0145]">
+              <Clock className="h-5 w-5 mr-2" />
+              Controle de Jornada de Motoristas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Cards resumo */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="text-2xl font-bold text-blue-600">{journeyStats.total_operacao}</div>
+                <div className="text-xs text-gray-600">Em Operação</div>
+              </div>
+              <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
+                <div className="text-2xl font-bold text-green-600">{journeyStats.dentro_limite}</div>
+                <div className="text-xs text-gray-600">Dentro do Limite</div>
+              </div>
+              <div className="text-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                <div className="text-2xl font-bold text-yellow-600">{journeyStats.proximo_limite}</div>
+                <div className="text-xs text-gray-600">Próximo do Limite</div>
+              </div>
+              <div className="text-center p-3 bg-red-50 rounded-lg border border-red-200">
+                <div className="text-2xl font-bold text-red-600">{journeyStats.excedido}</div>
+                <div className="text-xs text-gray-600">Jornada Excedida</div>
+              </div>
+            </div>
+
+            {/* Lista de jornadas ativas (oculta por padrão) */}
+            {showJourneyList && activeJourneys.length > 0 && (
+              <div className="bg-gray-50 rounded-lg p-4 mb-4 max-h-64 overflow-y-auto">
+                <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Motoristas em Operação
+                </h4>
+                <div className="space-y-2">
+                  {activeJourneys.map((journey: any) => (
+                    <div 
+                      key={journey.id} 
+                      className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors hover:bg-white ${getJourneyStatusColor(journey.status_jornada)}`}
+                      onClick={() => setSelectedJourney(journey)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <User className="h-4 w-4" />
+                        <div>
+                          <p className="font-medium text-sm">{journey.motorista_nome}</p>
+                          <p className="text-xs opacity-75">
+                            {journey.placa_cavalo} • {journey.rota_nome || 'Sem rota definida'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-sm">{journey.horas_trabalhadas}h</p>
+                        <Badge variant="outline" className="text-xs">
+                          {getJourneyStatusLabel(journey.status_jornada)}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {showJourneyList && activeJourneys.length === 0 && (
+              <div className="bg-gray-50 rounded-lg p-6 mb-4 text-center">
+                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />
+                <p className="text-gray-600">Nenhuma jornada ativa no momento.</p>
+              </div>
+            )}
+
+            {/* Botões de ação */}
+            <div className="flex gap-2 justify-center flex-wrap">
+              <Button 
+                onClick={() => setShowJourneyList(!showJourneyList)}
+                className={showJourneyList ? "bg-gray-600 hover:bg-gray-700" : "bg-[#DB0145] hover:bg-[#B8033B]"}
+              >
+                {showJourneyList ? (
+                  <>
+                    <X className="h-4 w-4 mr-2" />
+                    Ocultar Jornadas
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver Jornadas Ativas
+                  </>
+                )}
+              </Button>
+              <Button 
+                onClick={() => setShowNewJourneyDialog(true)}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Iniciar Jornada
+              </Button>
+              <Button 
+                onClick={() => { fetchJourneyStats(); fetchActiveJourneys(); }}
+                variant="outline"
+                disabled={isLoading}
+              >
+                <RefreshCcw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Dialog para detalhes da jornada */}
+        <Dialog open={!!selectedJourney} onOpenChange={(open) => !open && setSelectedJourney(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-[#DB0145]" />
+                Detalhes da Jornada
+              </DialogTitle>
+            </DialogHeader>
+            {selectedJourney && (
+              <div className="space-y-4">
+                <div className={`p-4 rounded-lg ${getJourneyStatusColor(selectedJourney.status_jornada)}`}>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Status:</span>
+                    <Badge>{getJourneyStatusLabel(selectedJourney.status_jornada)}</Badge>
+                  </div>
+                  <div className="text-center mt-2">
+                    <span className="text-3xl font-bold">{selectedJourney.horas_trabalhadas}h</span>
+                    <p className="text-sm opacity-75">Horas Trabalhadas</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Motorista:</span>
+                    <span className="font-medium">{selectedJourney.motorista_nome}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Veículo:</span>
+                    <span className="font-medium">{selectedJourney.placa_cavalo}</span>
+                  </div>
+                  {selectedJourney.placa_carreta_1 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Carreta:</span>
+                      <span className="font-medium">{selectedJourney.placa_carreta_1}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Rota:</span>
+                    <span className="font-medium">{selectedJourney.rota_nome || 'Não informada'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Início:</span>
+                    <span className="font-medium">
+                      {selectedJourney.inicio_jornada ? new Date(selectedJourney.inicio_jornada).toLocaleString('pt-BR') : 'Não informado'}
+                    </span>
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={() => handleEndJourney(selectedJourney.id)}
+                  className="w-full bg-red-600 hover:bg-red-700"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Encerrar Jornada
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog para iniciar nova jornada */}
+        <Dialog open={showNewJourneyDialog} onOpenChange={setShowNewJourneyDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Play className="h-5 w-5 text-green-600" />
+                Iniciar Nova Jornada
+              </DialogTitle>
+              <DialogDescription>
+                Registre o início da jornada de trabalho do motorista.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Motorista *</Label>
+                <Input 
+                  placeholder="Nome do motorista"
+                  value={newJourneyForm.motorista_nome}
+                  onChange={(e) => setNewJourneyForm(prev => ({ ...prev, motorista_nome: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Placa do Cavalo *</Label>
+                <Input 
+                  placeholder="ABC-1234"
+                  value={newJourneyForm.placa_cavalo}
+                  onChange={(e) => setNewJourneyForm(prev => ({ ...prev, placa_cavalo: e.target.value.toUpperCase() }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>Carreta 1</Label>
+                  <Input 
+                    placeholder="Placa"
+                    value={newJourneyForm.placa_carreta_1}
+                    onChange={(e) => setNewJourneyForm(prev => ({ ...prev, placa_carreta_1: e.target.value.toUpperCase() }))}
+                  />
+                </div>
+                <div>
+                  <Label>Carreta 2</Label>
+                  <Input 
+                    placeholder="Placa"
+                    value={newJourneyForm.placa_carreta_2}
+                    onChange={(e) => setNewJourneyForm(prev => ({ ...prev, placa_carreta_2: e.target.value.toUpperCase() }))}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Rota</Label>
+                <Input 
+                  placeholder="Nome da rota"
+                  value={newJourneyForm.rota_nome}
+                  onChange={(e) => setNewJourneyForm(prev => ({ ...prev, rota_nome: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Base</Label>
+                <Input 
+                  placeholder="Nome da base"
+                  value={newJourneyForm.base_nome}
+                  onChange={(e) => setNewJourneyForm(prev => ({ ...prev, base_nome: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Observações</Label>
+                <Textarea 
+                  placeholder="Observações adicionais..."
+                  value={newJourneyForm.observacoes}
+                  onChange={(e) => setNewJourneyForm(prev => ({ ...prev, observacoes: e.target.value }))}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowNewJourneyDialog(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleStartJourney}
+                className="bg-green-600 hover:bg-green-700"
+                disabled={isCreatingJourney}
+              >
+                {isCreatingJourney ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Play className="h-4 w-4 mr-2" />
+                )}
+                Iniciar Jornada
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Seção inferior com rotas e nova rota */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
