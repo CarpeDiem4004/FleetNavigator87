@@ -72,7 +72,8 @@ import {
   Database as DatabaseIcon,
   Fuel,
   Home,
-  ExternalLink
+  ExternalLink,
+  Search
 } from 'lucide-react';
 
 // Schema para o formulário, estendendo o schema existente
@@ -93,6 +94,7 @@ export default function BasesPage() {
   const [importingBases, setImportingBases] = useState(false);
   const [importPreview, setImportPreview] = useState<Partial<Base>[]>([]);
   const [customOperation, setCustomOperation] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   
@@ -168,6 +170,20 @@ export default function BasesPage() {
     // Ordenar as operações
     return uniqueOperations.sort();
   }, [bases]);
+
+  // Filtrar bases pelo termo de pesquisa
+  const filteredBases = React.useMemo(() => {
+    if (!bases || !Array.isArray(bases)) return [];
+    if (!searchTerm.trim()) return bases;
+    
+    const lowerSearch = searchTerm.toLowerCase().trim();
+    return bases.filter(base => 
+      (base.name && base.name.toLowerCase().includes(lowerSearch)) ||
+      (base.location && base.location.toLowerCase().includes(lowerSearch)) ||
+      (base.operation && base.operation.toLowerCase().includes(lowerSearch)) ||
+      (base.type && base.type.toLowerCase().includes(lowerSearch))
+    );
+  }, [bases, searchTerm]);
 
   // Mutation para adicionar uma nova base
   const createBaseMutation = useMutation({
