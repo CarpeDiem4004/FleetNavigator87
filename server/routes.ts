@@ -1259,6 +1259,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Configuração do passport para autenticação ANTES de qualquer rota protegida
   setupAuth(app);
   
+  // ===========================
+  // ROTAS SEGURANÇA DO TRABALHO - ALTA PRIORIDADE (públicas)
+  // Registradas no início para garantir que não sejam interceptadas
+  // ===========================
+  
+  // Rota pública para relatar acidentes/incidentes
+  app.post('/api/work-safety/accidents', createAccident);
+  
+  // Rota pública para cadastro de motoristas
+  app.post('/api/work-safety/drivers', createWorkSafetyDriver);
+  
+  // Rota pública para buscar bases disponíveis
+  app.get('/api/work-safety/bases', getWorkSafetyBases);
+  
+  // Rotas públicas para treinamentos
+  app.get('/api/work-safety/trainings', getTrainings);
+  app.post('/api/work-safety/trainings/participations', createParticipation);
+  
   // Health check endpoints para deployments
   // ROTAS DE ALTA PRIORIDADE - DEPOIS DA AUTENTICAÇÃO
   
@@ -26243,40 +26261,20 @@ async function createFuelRequestNotification(fuelRequest) {
   });
 
   // ===========================
-  // ROTAS SEGURANÇA DO TRABALHO - CADASTRO DE MOTORISTAS
+  // ROTAS SEGURANÇA DO TRABALHO - AUTENTICADAS
+  // (Rotas públicas foram movidas para o início do arquivo)
   // ===========================
   
-  // Rota pública para cadastro de motoristas (formulário externo)
-  app.post('/api/work-safety/drivers', createWorkSafetyDriver);
-  
-  // Rota pública para buscar bases disponíveis
-  app.get('/api/work-safety/bases', getWorkSafetyBases);
-  
-  // Rotas autenticadas para painel administrativo
+  // Rotas autenticadas para painel administrativo de motoristas
   app.get('/api/work-safety/drivers', isAuthenticated, getWorkSafetyDrivers);
   app.get('/api/work-safety/drivers/:id', isAuthenticated, getWorkSafetyDriverById);
   app.put('/api/work-safety/drivers/:id', isAuthenticated, updateWorkSafetyDriver);
   app.delete('/api/work-safety/drivers/:id', isAuthenticated, deleteWorkSafetyDriver);
   app.get('/api/work-safety/stats', isAuthenticated, getWorkSafetyStats);
-
-  // ===========================
-  // ROTAS SEGURANÇA DO TRABALHO - ACIDENTES/INCIDENTES
-  // ===========================
-  
-  // Rota pública para relatar acidentes/incidentes
-  app.post('/api/work-safety/accidents', createAccident);
   
   // Rotas autenticadas para painel de acidentes
   app.get('/api/work-safety/accidents', isAuthenticated, getAccidents);
   app.get('/api/work-safety/accidents/stats', isAuthenticated, getAccidentStats);
-
-  // ===========================
-  // ROTAS SEGURANÇA DO TRABALHO - TREINAMENTOS
-  // ===========================
-  
-  // Rotas públicas para treinamentos
-  app.get('/api/work-safety/trainings', getTrainings);
-  app.post('/api/work-safety/trainings/participations', createParticipation);
   
   // Rotas autenticadas para painel de treinamentos
   app.get('/api/work-safety/trainings/participations', isAuthenticated, getParticipations);
