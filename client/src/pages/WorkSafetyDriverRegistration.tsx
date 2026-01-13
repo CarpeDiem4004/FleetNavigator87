@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,8 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, User, Phone, Mail, CreditCard, FileCheck, AlertTriangle, CheckCircle, Loader2, Building2 } from 'lucide-react';
+import { Shield, User, Phone, Mail, CreditCard, FileCheck, AlertTriangle, CheckCircle, Loader2, Building2, Check, ChevronsUpDown, Search } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 interface Project {
   id: number;
@@ -145,11 +147,23 @@ export default function WorkSafetyDriverRegistration() {
     };
   }, []);
 
+  const [baseSearchOpen, setBaseSearchOpen] = useState(false);
+  const [baseSearchQuery, setBaseSearchQuery] = useState('');
+
   const handleProjectChange = (projectId: string) => {
     const project = projects.find(p => p.id.toString() === projectId);
     setSelectedProject(project || null);
     form.setValue('baseAtuacao', '');
+    setBaseSearchQuery('');
   };
+
+  const filteredBases = useMemo(() => {
+    if (!selectedProject?.bases) return [];
+    if (!baseSearchQuery) return selectedProject.bases;
+    return selectedProject.bases.filter(base => 
+      base.base_name.toLowerCase().includes(baseSearchQuery.toLowerCase())
+    );
+  }, [selectedProject?.bases, baseSearchQuery]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -376,25 +390,68 @@ export default function WorkSafetyDriverRegistration() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Base de Atuação *</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            value={field.value}
-                            disabled={!selectedProject}
-                          >
-                            <FormControl>
-                              <SelectTrigger data-testid="select-base">
-                                <SelectValue placeholder={!selectedProject ? "Selecione um projeto primeiro" : "Selecione a base"} />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {selectedProject?.bases.map((base) => (
-                                <SelectItem key={base.id} value={base.base_name}>
-                                  {base.base_name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <p className="text-xs text-muted-foreground">Base onde o motorista está alocado</p>
+                          <Popover open={baseSearchOpen} onOpenChange={setBaseSearchOpen}>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  role="combobox"
+                                  aria-expanded={baseSearchOpen}
+                                  className={cn(
+                                    "w-full justify-between font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                  disabled={!selectedProject}
+                                  data-testid="select-base"
+                                >
+                                  {field.value || (!selectedProject ? "Selecione um projeto primeiro" : "Digite para buscar a base...")}
+                                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[350px] p-0" align="start">
+                              <div className="flex items-center border-b px-3">
+                                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                <Input
+                                  placeholder="Digite para filtrar bases..."
+                                  value={baseSearchQuery}
+                                  onChange={(e) => setBaseSearchQuery(e.target.value)}
+                                  className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                />
+                              </div>
+                              <div className="max-h-[300px] overflow-y-auto">
+                                {filteredBases.length === 0 ? (
+                                  <div className="py-6 text-center text-sm text-muted-foreground">
+                                    Nenhuma base encontrada.
+                                  </div>
+                                ) : (
+                                  filteredBases.map((base) => (
+                                    <div
+                                      key={base.id}
+                                      className={cn(
+                                        "flex items-center px-3 py-2 cursor-pointer hover:bg-accent",
+                                        field.value === base.base_name && "bg-accent"
+                                      )}
+                                      onClick={() => {
+                                        field.onChange(base.base_name);
+                                        setBaseSearchOpen(false);
+                                        setBaseSearchQuery('');
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          field.value === base.base_name ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      {base.base_name}
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                          <p className="text-xs text-muted-foreground">Digite para buscar - Base onde o motorista está alocado</p>
                           <FormMessage />
                         </FormItem>
                       )}
