@@ -1,5 +1,35 @@
 import { Router, Request, Response } from 'express';
 import { pool } from '../db';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+const uploadDir = path.join(process.cwd(), 'uploads', 'checklist-patio');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas imagens são permitidas'));
+    }
+  }
+});
 
 const router = Router();
 
@@ -279,6 +309,36 @@ router.post('/:id/fotos', async (req: Request, res: Response) => {
     res.json({ success: true, data: result.rows[0] });
   } catch (error: any) {
     console.error('[CHECKLIST-PATIO] Erro ao adicionar foto:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.post('/upload-foto', upload.single('foto'), async (req: Request, res: Response) => {
+  try {
+    const file = req.file;
+    const { checklist_id, posicao, descricao } = req.body;
+
+    if (!file) {
+      return res.status(400).json({ success: false, message: 'Nenhuma foto enviada' });
+    }
+
+    if (!checklist_id) {
+      return res.status(400).json({ success: false, message: 'ID do checklist é obrigatório' });
+    }
+
+    const url_foto = `/uploads/checklist-patio/${file.filename}`;
+
+    const result = await pool.query(`
+      INSERT INTO checklist_patio_fotos (checklist_id, item_id, url_foto, descricao, posicao)
+      VALUES ($1, NULL, $2, $3, $4)
+      RETURNING *
+    `, [checklist_id, url_foto, descricao || null, posicao || null]);
+
+    console.log(`[CHECKLIST-PATIO] Foto enviada: ${file.filename} para checklist ${checklist_id}`);
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error: any) {
+    console.error('[CHECKLIST-PATIO] Erro ao fazer upload de foto:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
