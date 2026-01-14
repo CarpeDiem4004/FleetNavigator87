@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, UserPlus, AlertTriangle, GraduationCap, ChevronRight, Truck } from 'lucide-react';
+import { ShieldCheck, UserPlus, AlertTriangle, GraduationCap, ChevronRight, Truck, AlertOctagon } from 'lucide-react';
 import { Link } from 'wouter';
 
 export default function WorkSafetyPortal() {
@@ -74,6 +74,25 @@ export default function WorkSafetyPortal() {
                 </CardHeader>
                 <CardContent className="flex justify-center">
                   <Button className="w-full bg-[#2ECC71] hover:bg-[#27ae60] text-white">
+                    Acessar <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/work-safety/registrar-desvio">
+              <Card className="cursor-pointer hover:shadow-xl transition-all hover:scale-105 h-full bg-[#1C1C1C] border-l-4 border-l-[#F39C12] border-[#333]" data-testid="card-deviations">
+                <CardHeader className="text-center pb-2">
+                  <div className="mx-auto bg-[#0E0E0E] rounded-full p-4 mb-2 border border-[#F39C12]">
+                    <AlertOctagon className="h-8 w-8 text-[#F39C12]" />
+                  </div>
+                  <CardTitle className="text-xl text-[#F5F5F5]">Registrar Desvio</CardTitle>
+                  <CardDescription className="text-[#8C8C8C]">
+                    Registrar desvios operacionais de motoristas
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center">
+                  <Button className="w-full bg-[#F39C12] hover:bg-[#D68910] text-white">
                     Acessar <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 </CardContent>

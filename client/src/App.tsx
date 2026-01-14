@@ -116,6 +116,7 @@ import WorkSafetyPortal from "@/pages/WorkSafetyPortal";
 import WorkSafetyReportAccident from "@/pages/WorkSafetyReportAccident";
 import WorkSafetyTrainings from "@/pages/WorkSafetyTrainings";
 import WorkSafetyDriversPanel from "@/pages/WorkSafetyDriversPanel";
+import WorkSafetyDeviationForm from "@/pages/WorkSafetyDeviationForm";
 import WorkshopsPage from "@/pages/fleet-management/WorkshopsPage";
 import MaintenancePage from "@/pages/fleet-management/MaintenancePage";
 import MaintenanceManagement from "@/pages/fleet-management/maintenance-management";
@@ -451,7 +452,8 @@ function App() {
     location.startsWith('/work-safety/portal') ||
     location.startsWith('/work-safety/cadastro') ||
     location.startsWith('/work-safety/relatar-acidente') ||
-    location.startsWith('/work-safety/treinamentos');
+    location.startsWith('/work-safety/treinamentos') ||
+    location.startsWith('/work-safety/registrar-desvio');
   
   // Se for rota pública de Work Safety, renderizar sem auth providers
   if (isWorkSafetyPublicRoute) {
@@ -463,6 +465,7 @@ function App() {
           <Route path="/work-safety/cadastro" component={WorkSafetyDriverRegistration} />
           <Route path="/work-safety/relatar-acidente" component={WorkSafetyReportAccident} />
           <Route path="/work-safety/treinamentos" component={WorkSafetyTrainings} />
+          <Route path="/work-safety/registrar-desvio" component={WorkSafetyDeviationForm} />
           <Route>
             <NotFound />
           </Route>
