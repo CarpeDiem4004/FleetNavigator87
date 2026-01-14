@@ -23,6 +23,9 @@ interface VehicleRouteData {
   motorista: string;
   operacao: string;
   modelo: string;
+  rota_log?: string;
+  qtde_produtos?: number;
+  qtde_paradas?: number;
 }
 
 interface FuelRecord {
@@ -204,7 +207,7 @@ export const uploadRouteData = async (req: Request, res: Response) => {
     const hasPlacaColumn = firstRow && ('PLACA' in firstRow || 'placa' in firstRow || 'Placa' in firstRow);
     
     // Verificar se NÃO tem as colunas do formato completo
-    const hasMercadoLivreFormat = firstRow && ('DATA DO FRETE/ABASTECIMENTO' in firstRow || 'OPERAÇÃO' in firstRow || 'MOTORISTA' in firstRow);
+    const hasMercadoLivreFormat = firstRow && ('DATA DO FRETE/ABASTECIMENTO' in firstRow || 'DATA DO FRETE' in firstRow || 'OPERAÇÃO' in firstRow || 'MOTORISTA' in firstRow);
     
     // É formato simples se tiver Data/Base/Placa E NÃO tiver colunas do MercadoLivre
     const isSimpleFormat = hasDataColumn && hasBaseColumn && !hasMercadoLivreFormat;
@@ -229,8 +232,8 @@ export const uploadRouteData = async (req: Request, res: Response) => {
         // Formato simples: Data (ou "Data da rota"), Base, PLACA
         dataExcel = row['Data'] || row['data'] || row['Data da rota'] || row['data da rota'];
       } else {
-        // Formato completo: DATA DO FRETE/ABASTECIMENTO
-        dataExcel = row['DATA DO FRETE/ABASTECIMENTO'];
+        // Formato completo: DATA DO FRETE ou DATA DO FRETE/ABASTECIMENTO
+        dataExcel = row['DATA DO FRETE'] || row['DATA DO FRETE/ABASTECIMENTO'];
       }
       
       if (typeof dataExcel === 'number') {
@@ -244,12 +247,19 @@ export const uploadRouteData = async (req: Request, res: Response) => {
         console.log(`[CONFERENCIA] Conversão de data Excel: ${dataExcel} -> ${utcDate.toISOString()} -> ${dataISO}`);
       } else if (typeof dataExcel === 'string') {
         // Data já em string - tentar converter para ISO
-        // Se já estiver em formato brasileiro (dd/mm/yyyy), converter
-        if (dataExcel.includes('/')) {
-          const [dia, mes, ano] = dataExcel.split('/');
+        // Formatos suportados: dd/mm/yyyy, dd/mm/yyyy hh:mm:ss, yyyy-mm-dd
+        let datePart = dataExcel.trim();
+        
+        // Se tiver horário (ex: "13/01/2026 00:00:00"), remover
+        if (datePart.includes(' ')) {
+          datePart = datePart.split(' ')[0];
+        }
+        
+        if (datePart.includes('/')) {
+          const [dia, mes, ano] = datePart.split('/');
           dataISO = `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
         } else {
-          dataISO = dataExcel;
+          dataISO = datePart;
         }
       }
 
@@ -260,16 +270,34 @@ export const uploadRouteData = async (req: Request, res: Response) => {
           operacao: row['Base'] || row['base'] || '',
           motorista: 'N/D',
           placa: row['PLACA'] || row['placa'] || '',
-          modelo: 'N/D'
+          modelo: 'N/D',
+          rota_log: '',
+          qtde_produtos: 0,
+          qtde_paradas: 0
         };
       } else {
-        // Formato completo
+        // Formato completo (inclui colunas: DATA DO FRETE, OPERAÇÃO, ROTA LOG, QTDE PRODUTOS, QTDE PARADAS, MOTORISTA, PLACA)
+        // Converter QTDE PRODUTOS e QTDE PARADAS para números
+        let qtdeProdutos = row['QTDE PRODUTOS'] || row['QTDE_PRODUTOS'] || 0;
+        let qtdeParadas = row['QTDE PARADAS'] || row['QTDE_PARADAS'] || 0;
+        
+        // Tratar formato brasileiro de número (vírgula como decimal)
+        if (typeof qtdeProdutos === 'string') {
+          qtdeProdutos = parseFloat(qtdeProdutos.replace(',', '.')) || 0;
+        }
+        if (typeof qtdeParadas === 'string') {
+          qtdeParadas = parseInt(qtdeParadas) || 0;
+        }
+        
         return {
           data: dataISO,
-          operacao: row['OPERAÇÃO'] || '',
+          operacao: row['OPERAÇÃO'] || row['OPERACAO'] || '',
           motorista: row['MOTORISTA'] || '',
           placa: row['PLACA'] || '',
-          modelo: row['MODELO'] || ''
+          modelo: row['MODELO'] || '',
+          rota_log: row['ROTA LOG'] || row['ROTA_LOG'] || '',
+          qtde_produtos: qtdeProdutos,
+          qtde_paradas: qtdeParadas
         };
       }
     }).filter(item => item.data && item.placa); // Filtrar registros válidos
@@ -318,8 +346,8 @@ export const uploadRouteData = async (req: Request, res: Response) => {
       
       try {
         const placeholders = batch.map((_, index) => {
-          const base = index * 6;
-          return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6})`;
+          const base = index * 9;
+          return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9})`;
         }).join(', ');
         
         const values = batch.flatMap(item => [
@@ -328,11 +356,14 @@ export const uploadRouteData = async (req: Request, res: Response) => {
           item.placa.toUpperCase(),
           item.motorista,
           item.operacao || null,
-          item.modelo || null
+          item.modelo || null,
+          item.rota_log || null,
+          item.qtde_produtos || 0,
+          item.qtde_paradas || 0
         ]);
         
         const batchQuery = `
-          INSERT INTO conferencia_rotas_dados (upload_id, data, placa, motorista, operacao, modelo)
+          INSERT INTO conferencia_rotas_dados (upload_id, data, placa, motorista, operacao, modelo, rota_log, qtde_produtos, qtde_paradas)
           VALUES ${placeholders}
         `;
         
@@ -405,7 +436,7 @@ export const generateReport = async (req: Request, res: Response) => {
 
     // Buscar dados das rotas para a data (usando formato ISO principal e alternativo)
     const routeQuery = await pool.query(
-      'SELECT data, placa, motorista, operacao, modelo FROM conferencia_rotas_dados WHERE data IN ($1, $2)',
+      'SELECT data, placa, motorista, operacao, modelo, rota_log, qtde_produtos, qtde_paradas FROM conferencia_rotas_dados WHERE data IN ($1, $2)',
       [isoDate, alternativeIsoDate]
     );
     const routeData = routeQuery.rows;
