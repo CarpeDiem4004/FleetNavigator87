@@ -481,7 +481,10 @@ export const generateReport = async (req: Request, res: Response) => {
     // Buscar solicitações de cartão para a data (solicitacoes_fuel_card)
     console.log('[CONFERENCIA] Executando consulta 3: solicitacoes_fuel_card');
     const fuelCardQuery = await pool.query(
-      'SELECT data_solicitacao as data, placa, motorista, base as projeto, valor_solicitado as valor FROM solicitacoes_fuel_card WHERE DATE(data_solicitacao) = $1',
+      `SELECT data_solicitacao as data, placa, motorista, 
+        COALESCE(NULLIF(base, ''), CONCAT(rota_origem, ' → ', rota_destino)) as projeto, 
+        valor_solicitado as valor 
+      FROM solicitacoes_fuel_card WHERE DATE(data_solicitacao) = $1`,
       [isoDate]
     );
     const fuelCardData = fuelCardQuery.rows;
