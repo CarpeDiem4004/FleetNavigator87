@@ -888,8 +888,19 @@ const ConferenciaRotas: React.FC = () => {
                                       <XAxis type="number" tickFormatter={(v) => `R$ ${(v/1000).toFixed(0)}k`} />
                                       <YAxis type="category" dataKey="base" tick={{ fontSize: 10 }} width={95} />
                                       <Tooltip 
-                                        formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor']}
-                                        labelStyle={{ fontWeight: 'bold' }}
+                                        content={({ active, payload }) => {
+                                          if (active && payload && payload.length) {
+                                            const data = payload[0].payload;
+                                            return (
+                                              <div className="bg-white p-3 border rounded-lg shadow-lg">
+                                                <p className="font-bold text-sm mb-1">{data.base}</p>
+                                                <p className="text-green-700">Valor: R$ {data.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                                <p className="text-gray-600">Veículos: {data.count}</p>
+                                              </div>
+                                            );
+                                          }
+                                          return null;
+                                        }}
                                       />
                                       <Bar dataKey="valor" radius={[0, 4, 4, 0]}>
                                         {dashboardStats.todasBasesValor.map((_, index) => (
@@ -914,11 +925,13 @@ const ConferenciaRotas: React.FC = () => {
                                       </span>
                                       <span className="font-medium text-xs">{item.base}</span>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-right flex items-center gap-3">
                                       <span className="font-bold text-green-700">
                                         R$ {item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                       </span>
-                                      <span className="text-muted-foreground text-xs ml-2">({item.count} reg.)</span>
+                                      <span className="text-muted-foreground text-xs bg-gray-100 px-2 py-1 rounded">
+                                        {item.count} veículo{item.count !== 1 ? 's' : ''}
+                                      </span>
                                     </div>
                                   </div>
                                 ))}
@@ -944,8 +957,19 @@ const ConferenciaRotas: React.FC = () => {
                                       <XAxis type="number" tickFormatter={(v) => `${v.toFixed(0)} L`} />
                                       <YAxis type="category" dataKey="base" tick={{ fontSize: 10 }} width={95} />
                                       <Tooltip 
-                                        formatter={(value: number) => [`${value.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L`, 'Litros']}
-                                        labelStyle={{ fontWeight: 'bold' }}
+                                        content={({ active, payload }) => {
+                                          if (active && payload && payload.length) {
+                                            const data = payload[0].payload;
+                                            return (
+                                              <div className="bg-white p-3 border rounded-lg shadow-lg">
+                                                <p className="font-bold text-sm mb-1">{data.base}</p>
+                                                <p className="text-blue-700">Litros: {data.litros.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L</p>
+                                                <p className="text-gray-600">Veículos: {data.count}</p>
+                                              </div>
+                                            );
+                                          }
+                                          return null;
+                                        }}
                                       />
                                       <Bar dataKey="litros" radius={[0, 4, 4, 0]}>
                                         {dashboardStats.todasBasesLitros.map((_, index) => (
@@ -970,11 +994,13 @@ const ConferenciaRotas: React.FC = () => {
                                       </span>
                                       <span className="font-medium text-xs">{item.base}</span>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-right flex items-center gap-3">
                                       <span className="font-bold text-blue-700">
                                         {item.litros.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L
                                       </span>
-                                      <span className="text-muted-foreground text-xs ml-2">({item.count} reg.)</span>
+                                      <span className="text-muted-foreground text-xs bg-gray-100 px-2 py-1 rounded">
+                                        {item.count} veículo{item.count !== 1 ? 's' : ''}
+                                      </span>
                                     </div>
                                   </div>
                                 ))}
