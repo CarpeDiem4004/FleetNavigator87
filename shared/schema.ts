@@ -1638,6 +1638,67 @@ export const insertWorkSafetyTrainingParticipationSchema = createInsertSchema(wo
 export type WorkSafetyTrainingParticipation = typeof workSafetyTrainingParticipations.$inferSelect;
 export type InsertWorkSafetyTrainingParticipation = z.infer<typeof insertWorkSafetyTrainingParticipationSchema>;
 
+// ==================== SEGURANÇA DO TRABALHO - REGISTRO DE DESVIOS ====================
+
+export const workSafetyDeviationTypeEnum = pgEnum('work_safety_deviation_type', [
+  'excesso_velocidade',
+  'jornada_acima_permitido', 
+  'falha_checklist',
+  'nao_uso_epi',
+  'uso_indevido_veiculo',
+  'avaria_conducao_inadequada',
+  'descumprimento_procedimento',
+  'outro'
+]);
+
+export const workSafetyDeviationStatusEnum = pgEnum('work_safety_deviation_status', [
+  'registrado',
+  'em_acompanhamento',
+  'tratado',
+  'recorrente'
+]);
+
+export const workSafetyDeviations = pgTable("work_safety_deviations", {
+  id: serial("id").primaryKey(),
+  placa: text("placa").notNull(),
+  motoristaNome: text("motorista_nome").notNull(),
+  motoristaId: integer("motorista_id").references(() => workSafetyDrivers.id),
+  dataDesvio: timestamp("data_desvio").notNull(),
+  tipoDesvio: text("tipo_desvio").notNull(),
+  observacoes: text("observacoes"),
+  anexoUrl: text("anexo_url"),
+  responsavelRegistro: text("responsavel_registro").notNull(),
+  baseOperacao: text("base_operacao").notNull(),
+  status: text("status").notNull().default('registrado'),
+  reincidente: boolean("reincidente").notNull().default(false),
+  quantidadeDesvios: integer("quantidade_desvios").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertWorkSafetyDeviationSchema = createInsertSchema(workSafetyDeviations, {
+  placa: z.string().min(1, "Placa é obrigatória"),
+  motoristaNome: z.string().min(1, "Nome do motorista é obrigatório"),
+  dataDesvio: z.string().or(z.date()),
+  tipoDesvio: z.enum([
+    'excesso_velocidade',
+    'jornada_acima_permitido',
+    'falha_checklist',
+    'nao_uso_epi',
+    'uso_indevido_veiculo',
+    'avaria_conducao_inadequada',
+    'descumprimento_procedimento',
+    'outro'
+  ]),
+  observacoes: z.string().optional(),
+  responsavelRegistro: z.string().min(1, "Responsável é obrigatório"),
+  baseOperacao: z.string().min(1, "Base é obrigatória"),
+  status: z.enum(['registrado', 'em_acompanhamento', 'tratado', 'recorrente']).default('registrado'),
+}).omit({ id: true, createdAt: true, updatedAt: true, reincidente: true, quantidadeDesvios: true });
+
+export type WorkSafetyDeviation = typeof workSafetyDeviations.$inferSelect;
+export type InsertWorkSafetyDeviation = z.infer<typeof insertWorkSafetyDeviationSchema>;
+
 // ==================== LINE HAUL - CONTROLE DE JORNADA DE MOTORISTAS ====================
 
 // Enum para status da jornada

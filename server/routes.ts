@@ -170,6 +170,14 @@ import {
   getTrainingStats,
   seedDefaultTrainings
 } from "./routes/workSafetyTrainingsApi";
+import {
+  createDeviation,
+  getDeviations,
+  getDeviationById,
+  updateDeviationStatus,
+  getDeviationStats,
+  deleteDeviation
+} from "./routes/workSafetyDeviationsApi";
 import recebimentosOsascoV2Routes from "./routes/recebimentosOsascoV2.js";
 import osascoV2RecebimentosDirecto from "./routes/osascoV2RecebimentosDirecto.js";
 import { db, pool } from "./db.js";
@@ -1286,6 +1294,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rotas públicas para treinamentos
   app.get('/api/work-safety/trainings', getTrainings);
   app.post('/api/work-safety/trainings/participations', createParticipation);
+  
+  // Rotas públicas para desvios de motoristas
+  app.post('/api/work-safety/deviations', createDeviation);
+  app.get('/api/work-safety/deviations', getDeviations);
+  app.get('/api/work-safety/deviations/stats', getDeviationStats);
   
   // Health check endpoints para deployments
   // ROTAS DE ALTA PRIORIDADE - DEPOIS DA AUTENTICAÇÃO
@@ -26294,6 +26307,13 @@ async function createFuelRequestNotification(fuelRequest) {
   app.get('/api/work-safety/trainings/participations', isAuthenticated, getParticipations);
   app.get('/api/work-safety/trainings/stats', isAuthenticated, getTrainingStats);
   app.post('/api/work-safety/trainings/seed', isAuthenticated, seedDefaultTrainings);
+
+  // Rotas autenticadas para painel de desvios de motoristas
+  app.get('/api/work-safety/deviations', isAuthenticated, getDeviations);
+  app.get('/api/work-safety/deviations/stats', isAuthenticated, getDeviationStats);
+  app.get('/api/work-safety/deviations/:id', isAuthenticated, getDeviationById);
+  app.put('/api/work-safety/deviations/:id/status', isAuthenticated, updateDeviationStatus);
+  app.delete('/api/work-safety/deviations/:id', isAuthenticated, deleteDeviation);
 
   const httpServer = createServer(app);
   return httpServer;
