@@ -77,12 +77,12 @@ export default function WorkSafetyDeviationsPanel() {
   const [newDeviationOpen, setNewDeviationOpen] = useState(false);
   const [newDeviation, setNewDeviation] = useState({
     placa: '',
-    motorista_nome: '',
-    data_desvio: new Date().toISOString().split('T')[0],
-    tipo_desvio: '',
+    motoristaNome: '',
+    dataDesvio: new Date().toISOString().split('T')[0],
+    tipoDesvio: '',
     observacoes: '',
-    base_operacao: '',
-    responsavel_registro: ''
+    baseOperacao: '',
+    responsavelRegistro: ''
   });
 
   const { data: deviationsResponse, isLoading, refetch } = useQuery({
@@ -148,12 +148,12 @@ export default function WorkSafetyDeviationsPanel() {
       setNewDeviationOpen(false);
       setNewDeviation({
         placa: '',
-        motorista_nome: '',
-        data_desvio: new Date().toISOString().split('T')[0],
-        tipo_desvio: '',
+        motoristaNome: '',
+        dataDesvio: new Date().toISOString().split('T')[0],
+        tipoDesvio: '',
         observacoes: '',
-        base_operacao: '',
-        responsavel_registro: ''
+        baseOperacao: '',
+        responsavelRegistro: ''
       });
       queryClient.invalidateQueries({ queryKey: ['/api/work-safety/deviations'] });
       queryClient.invalidateQueries({ queryKey: ['/api/work-safety/deviations/stats'] });
@@ -164,7 +164,7 @@ export default function WorkSafetyDeviationsPanel() {
   });
 
   const handleCreateDeviation = () => {
-    if (!newDeviation.placa || !newDeviation.motorista_nome || !newDeviation.tipo_desvio || !newDeviation.base_operacao || !newDeviation.responsavel_registro) {
+    if (!newDeviation.placa || !newDeviation.motoristaNome || !newDeviation.tipoDesvio || !newDeviation.baseOperacao || !newDeviation.responsavelRegistro) {
       toast({ title: 'Preencha todos os campos obrigatórios', variant: 'destructive' });
       return;
     }
@@ -248,8 +248,8 @@ export default function WorkSafetyDeviationsPanel() {
                       <Label>Data do Desvio *</Label>
                       <Input
                         type="date"
-                        value={newDeviation.data_desvio}
-                        onChange={(e) => setNewDeviation({...newDeviation, data_desvio: e.target.value})}
+                        value={newDeviation.dataDesvio}
+                        onChange={(e) => setNewDeviation({...newDeviation, dataDesvio: e.target.value})}
                         className="mt-1"
                       />
                     </div>
@@ -258,16 +258,16 @@ export default function WorkSafetyDeviationsPanel() {
                     <Label>Nome do Motorista *</Label>
                     <Input
                       placeholder="Nome completo do motorista"
-                      value={newDeviation.motorista_nome}
-                      onChange={(e) => setNewDeviation({...newDeviation, motorista_nome: e.target.value})}
+                      value={newDeviation.motoristaNome}
+                      onChange={(e) => setNewDeviation({...newDeviation, motoristaNome: e.target.value})}
                       className="mt-1"
                     />
                   </div>
                   <div>
                     <Label>Tipo de Desvio *</Label>
                     <Select 
-                      value={newDeviation.tipo_desvio} 
-                      onValueChange={(v) => setNewDeviation({...newDeviation, tipo_desvio: v})}
+                      value={newDeviation.tipoDesvio} 
+                      onValueChange={(v) => setNewDeviation({...newDeviation, tipoDesvio: v})}
                     >
                       <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Selecione o tipo" />
@@ -283,8 +283,8 @@ export default function WorkSafetyDeviationsPanel() {
                     <Label>Base de Operação *</Label>
                     <Input
                       placeholder="Nome da base"
-                      value={newDeviation.base_operacao}
-                      onChange={(e) => setNewDeviation({...newDeviation, base_operacao: e.target.value})}
+                      value={newDeviation.baseOperacao}
+                      onChange={(e) => setNewDeviation({...newDeviation, baseOperacao: e.target.value})}
                       className="mt-1"
                     />
                   </div>
@@ -292,8 +292,8 @@ export default function WorkSafetyDeviationsPanel() {
                     <Label>Responsável pelo Registro *</Label>
                     <Input
                       placeholder="Seu nome"
-                      value={newDeviation.responsavel_registro}
-                      onChange={(e) => setNewDeviation({...newDeviation, responsavel_registro: e.target.value})}
+                      value={newDeviation.responsavelRegistro}
+                      onChange={(e) => setNewDeviation({...newDeviation, responsavelRegistro: e.target.value})}
                       className="mt-1"
                     />
                   </div>
