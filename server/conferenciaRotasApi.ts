@@ -836,14 +836,21 @@ export const exportReportToExcel = async (req: Request, res: Response) => {
 
     // Buscar solicitações de cartão para a data (solicitacoes_fuel_card)
     const fuelCardQuery = await pool.query(
-      'SELECT data_solicitacao as data, placa, motorista, base as projeto FROM solicitacoes_fuel_card WHERE DATE(data_solicitacao) = $1',
+      `SELECT data_solicitacao as data, placa, motorista, 
+        CASE 
+          WHEN COALESCE(base, '') = '' AND (rota_origem IS NOT NULL OR rota_destino IS NOT NULL) THEN 'LINE HAUL'
+          ELSE base 
+        END as projeto,
+        CONCAT(rota_origem, ' → ', rota_destino) as rota,
+        valor_solicitado as valor
+      FROM solicitacoes_fuel_card WHERE DATE(data_solicitacao) = $1`,
       [isoDate]
     );
     const fuelCardData = fuelCardQuery.rows;
 
     // NOVA FONTE: Buscar dados do Histórico Geral de Abastecimentos (tabela abastecimentos_supabase)
     const historicoGeralExportQuery = await pool.query(
-      'SELECT created_at as data, placa, motorista, projeto FROM abastecimentos_supabase WHERE DATE(created_at) = $1',
+      'SELECT created_at as data, placa, motorista, projeto, litros FROM abastecimentos_supabase WHERE DATE(created_at) = $1',
       [isoDate]
     );
     const historicoGeralExportData = historicoGeralExportQuery.rows;
@@ -862,7 +869,7 @@ export const exportReportToExcel = async (req: Request, res: Response) => {
     for (const posto of postoEspecificoQueriesExport) {
       try {
         const query = await pool.query(
-          `SELECT created_at as data, placa, motorista, projeto FROM ${posto.tabela} WHERE DATE(created_at) = $1`,
+          `SELECT created_at as data, placa, motorista, projeto, litros FROM ${posto.tabela} WHERE DATE(created_at) = $1`,
           [isoDate]
         );
         const dados = query.rows.map(row => ({
@@ -905,14 +912,17 @@ export const exportReportToExcel = async (req: Request, res: Response) => {
         placa: item.placa.toUpperCase(),
         motorista: item.motorista,
         projeto: mapProjectToBaseName(item.projeto),
-        tipo: 'solicitacao_fuel_card' as const
+        tipo: 'solicitacao_fuel_card' as const,
+        valor: item.valor,
+        rota: item.rota
       })),
       ...historicoGeralExportData.map((item: any) => ({
         data: item.data,
         placa: item.placa.toUpperCase(),
         motorista: item.motorista,
         projeto: mapProjectToBaseName(item.projeto),
-        tipo: 'historico_geral' as const
+        tipo: 'historico_geral' as const,
+        litros: item.litros
       })),
       ...postosEspecificosExportData.map((item: any) => ({
         data: item.data,
@@ -920,7 +930,8 @@ export const exportReportToExcel = async (req: Request, res: Response) => {
         motorista: item.motorista,
         projeto: mapProjectToBaseName(item.projeto),
         tipo: 'posto_especifico' as const,
-        fonte: item.fonte
+        fonte: item.fonte,
+        litros: item.litros
       }))
     ];
 
@@ -1010,8 +1021,11 @@ export const exportReportToExcel = async (req: Request, res: Response) => {
       'Data': item.data,
       'Placa': String(item.placa || '').toUpperCase(),
       'Motorista': String(item.motorista || '').toUpperCase(),
-      'Projeto': String(item.projeto || '').toUpperCase(),
-      'Tipo': String(item.tipo || '').toUpperCase()
+      'Tipo': String(item.tipo || '').toUpperCase(),
+      'Valor (Cartão)': item.valor ? `R$ ${Number(item.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-',
+      'Litros (Interno)': item.litros ? `${Number(item.litros).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L` : '-',
+      'Base': String(item.projeto || '').toUpperCase(),
+      'Rota': String(item.rota || '-').toUpperCase()
     }));
 
     const worksheet3 = XLSX.utils.json_to_sheet(sheet3Data);
