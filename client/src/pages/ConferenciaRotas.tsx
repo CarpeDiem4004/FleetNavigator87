@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Upload, FileSpreadsheet, Download, Calendar, Filter, CheckCircle, XCircle, AlertTriangle, TrendingUp, DollarSign, Droplets, Building2, X, MessageCircle, Send, Phone, Truck } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { PieChart, Pie, Tooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -986,12 +986,24 @@ const ConferenciaRotas: React.FC = () => {
                             </CardHeader>
                             <CardContent>
                               {dashboardStats.todasBasesValor.length > 0 ? (
-                                <div style={{ height: Math.max(200, dashboardStats.todasBasesValor.length * 35) }}>
+                                <div style={{ height: 350 }}>
                                   <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={dashboardStats.todasBasesValor} layout="vertical" margin={{ left: 100, right: 20 }}>
-                                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                                      <XAxis type="number" tickFormatter={(v) => `R$ ${(v/1000).toFixed(0)}k`} />
-                                      <YAxis type="category" dataKey="base" tick={{ fontSize: 10 }} width={95} />
+                                    <PieChart>
+                                      <Pie
+                                        data={dashboardStats.todasBasesValor}
+                                        dataKey="valor"
+                                        nameKey="base"
+                                        cx="50%"
+                                        cy="50%"
+                                        outerRadius={100}
+                                        innerRadius={50}
+                                        label={({ base, percent }) => `${base.substring(0, 10)}${base.length > 10 ? '...' : ''} (${(percent * 100).toFixed(0)}%)`}
+                                        labelLine={true}
+                                      >
+                                        {dashboardStats.todasBasesValor.map((_, index) => (
+                                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                                        ))}
+                                      </Pie>
                                       <Tooltip 
                                         content={({ active, payload }) => {
                                           if (active && payload && payload.length) {
@@ -1007,12 +1019,7 @@ const ConferenciaRotas: React.FC = () => {
                                           return null;
                                         }}
                                       />
-                                      <Bar dataKey="valor" radius={[0, 4, 4, 0]}>
-                                        {dashboardStats.todasBasesValor.map((_, index) => (
-                                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                                        ))}
-                                      </Bar>
-                                    </BarChart>
+                                    </PieChart>
                                   </ResponsiveContainer>
                                 </div>
                               ) : (
@@ -1055,12 +1062,24 @@ const ConferenciaRotas: React.FC = () => {
                             </CardHeader>
                             <CardContent>
                               {dashboardStats.todasBasesLitros.length > 0 ? (
-                                <div style={{ height: Math.max(200, dashboardStats.todasBasesLitros.length * 35) }}>
+                                <div style={{ height: 350 }}>
                                   <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={dashboardStats.todasBasesLitros} layout="vertical" margin={{ left: 100, right: 20 }}>
-                                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                                      <XAxis type="number" tickFormatter={(v) => `${v.toFixed(0)} L`} />
-                                      <YAxis type="category" dataKey="base" tick={{ fontSize: 10 }} width={95} />
+                                    <PieChart>
+                                      <Pie
+                                        data={dashboardStats.todasBasesLitros}
+                                        dataKey="litros"
+                                        nameKey="base"
+                                        cx="50%"
+                                        cy="50%"
+                                        outerRadius={100}
+                                        innerRadius={50}
+                                        label={({ base, percent }) => `${base.substring(0, 10)}${base.length > 10 ? '...' : ''} (${(percent * 100).toFixed(0)}%)`}
+                                        labelLine={true}
+                                      >
+                                        {dashboardStats.todasBasesLitros.map((_, index) => (
+                                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                                        ))}
+                                      </Pie>
                                       <Tooltip 
                                         content={({ active, payload }) => {
                                           if (active && payload && payload.length) {
@@ -1076,12 +1095,7 @@ const ConferenciaRotas: React.FC = () => {
                                           return null;
                                         }}
                                       />
-                                      <Bar dataKey="litros" radius={[0, 4, 4, 0]}>
-                                        {dashboardStats.todasBasesLitros.map((_, index) => (
-                                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                                        ))}
-                                      </Bar>
-                                    </BarChart>
+                                    </PieChart>
                                   </ResponsiveContainer>
                                 </div>
                               ) : (
