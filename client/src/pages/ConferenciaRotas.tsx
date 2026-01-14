@@ -763,10 +763,10 @@ const ConferenciaRotas: React.FC = () => {
                             <TableRow>
                               <TableHead>Placa</TableHead>
                               <TableHead>Motorista</TableHead>
-                              <TableHead>Operação</TableHead>
-                              <TableHead>Modelo</TableHead>
+                              <TableHead>Tipo</TableHead>
                               <TableHead>Data</TableHead>
-                              <TableHead>Registros Combustível</TableHead>
+                              <TableHead>Valor (Cartão)</TableHead>
+                              <TableHead>Litros (Interno)</TableHead>
                               <TableHead>Projetos</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -775,14 +775,11 @@ const ConferenciaRotas: React.FC = () => {
                               <TableRow key={index} className="bg-orange-50">
                                 <TableCell className="font-mono">{item.placa}</TableCell>
                                 <TableCell>{item.motorista}</TableCell>
-                                <TableCell>-</TableCell>
-                                <TableCell>-</TableCell>
-                                <TableCell>{item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '-'}</TableCell>
                                 <TableCell>
                                   <div className="flex flex-col gap-1">
                                     <Badge variant={item.tipo === 'abastecimento' || item.tipo === 'posto_especifico' ? 'default' : 'secondary'}>
                                       {item.tipo === 'abastecimento' && 'Abastecimento'}
-                                      {item.tipo === 'posto_especifico' && 'Posto Específico'}
+                                      {item.tipo === 'posto_especifico' && 'Posto Interno'}
                                       {item.tipo === 'solicitacao_cartao' && 'Solicitação Cartão'}
                                       {item.tipo === 'solicitacao_fuel_card' && 'Fuel Card'}
                                       {item.tipo === 'historico_geral' && 'Histórico Geral'}
@@ -791,6 +788,13 @@ const ConferenciaRotas: React.FC = () => {
                                       <span className="text-xs text-muted-foreground">{item.posto}</span>
                                     )}
                                   </div>
+                                </TableCell>
+                                <TableCell>{item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '-'}</TableCell>
+                                <TableCell className="font-semibold text-green-700">
+                                  {item.valor && item.valor > 0 ? `R$ ${item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
+                                </TableCell>
+                                <TableCell className="font-semibold text-blue-700">
+                                  {item.litros && item.litros > 0 ? `${item.litros.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L` : '-'}
                                 </TableCell>
                                 <TableCell>{item.projeto}</TableCell>
                               </TableRow>
