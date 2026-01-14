@@ -102,7 +102,9 @@ export default function WorkSafetyDeviationsPanel() {
       const response = await fetch(`/api/work-safety/deviations?${params.toString()}`, {
         credentials: 'include'
       });
-      return response.json();
+      const data = await response.json();
+      console.log('[DESVIOS-PANEL] Resposta da API:', data);
+      return data;
     }
   });
 
