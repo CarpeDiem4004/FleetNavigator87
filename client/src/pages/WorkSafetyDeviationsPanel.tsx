@@ -179,6 +179,10 @@ export default function WorkSafetyDeviationsPanel() {
 
   const deviations: Deviation[] = deviationsResponse?.data || [];
   const stats: DeviationStats | null = statsResponse?.data || null;
+  
+  console.log('[DESVIOS-DEBUG] deviationsResponse:', JSON.stringify(deviationsResponse));
+  console.log('[DESVIOS-DEBUG] deviations array length:', deviations.length);
+  console.log('[DESVIOS-DEBUG] isLoading:', isLoading);
 
   const uniqueBases = useMemo(() => {
     const bases = new Set(deviations.map(d => d.base_operacao));
