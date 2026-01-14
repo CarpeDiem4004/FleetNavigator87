@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, CheckCircle, Clock, LineChart, FileText, Users, UserPlus, ClipboardList, ExternalLink, Copy, Check, Share2, AlertTriangle, AlertCircle, Car, Flame, Eye, EyeOff, X } from 'lucide-react';
+import { ShieldCheck, CheckCircle, Clock, LineChart, FileText, Users, UserPlus, ClipboardList, ExternalLink, Copy, Check, Share2, AlertTriangle, AlertCircle, Car, Flame, Eye, EyeOff, X, AlertOctagon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'wouter';
@@ -38,7 +38,16 @@ export default function WorkSafetyPage() {
     queryKey: ['/api/work-safety/accidents'],
   });
 
+  const { data: deviationStatsData } = useQuery<{ success: boolean; data: { 
+    total: number; 
+    recurrentDrivers: number;
+    byStatus: { status: string; label: string; count: number }[];
+  }}>({
+    queryKey: ['/api/work-safety/deviations/stats'],
+  });
+
   const stats = statsData?.data || { total: 0, pgrAprovados: 0, comEar: 0, totalBases: 0 };
+  const deviationStats = deviationStatsData?.data || { total: 0, recurrentDrivers: 0, byStatus: [] };
   const accidentStats = accidentStatsData?.data || { 
     total: 0, acidentes: 0, quase_acidentes: 0, danos_materiais: 0, danos_ambientais: 0, com_vitima: 0, dias_sem_acidente: 0 
   };
@@ -266,6 +275,51 @@ export default function WorkSafetyPage() {
                   {showOccurrences ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
                   {showOccurrences ? 'Ocultar Ocorrências' : 'Ver Todas as Ocorrências'}
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-orange-200 bg-orange-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-orange-900">
+                <AlertOctagon className="h-5 w-5" />
+                Desvios Operacionais
+              </CardTitle>
+              <CardDescription>
+                Registro e acompanhamento de desvios comportamentais de motoristas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm border-l-4 border-orange-500">
+                  <p className="text-3xl font-bold text-orange-600">{deviationStats.total}</p>
+                  <p className="text-sm text-gray-600">Total de Desvios</p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm border-l-4 border-red-500">
+                  <p className="text-3xl font-bold text-red-600">{deviationStats.recurrentDrivers}</p>
+                  <p className="text-sm text-gray-600">Motoristas Reincidentes</p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm border-l-4 border-yellow-500">
+                  <p className="text-3xl font-bold text-yellow-600">
+                    {deviationStats.byStatus.find(s => s.status === 'em_acompanhamento')?.count || 0}
+                  </p>
+                  <p className="text-sm text-gray-600">Em Acompanhamento</p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm border-l-4 border-green-500">
+                  <p className="text-3xl font-bold text-green-600">
+                    {deviationStats.byStatus.find(s => s.status === 'tratado')?.count || 0}
+                  </p>
+                  <p className="text-sm text-gray-600">Tratados</p>
+                </div>
+              </div>
+
+              <div className="mt-4 flex gap-2 justify-center">
+                <Link href="/work-safety/desvios">
+                  <Button className="bg-orange-600 hover:bg-orange-700" data-testid="button-manage-deviations">
+                    <ClipboardList className="mr-2 h-4 w-4" />
+                    Gerenciar Desvios
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
