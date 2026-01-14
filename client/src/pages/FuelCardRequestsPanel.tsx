@@ -1424,58 +1424,14 @@ const FuelCardRequestsPanel: React.FC = () => {
           return sol;
         }));
 
-        // Enviar notificações automáticas via Z-API para cada solicitação aprovada
-        console.log('📲 [BATCH-APPROVAL] Enviando notificações WhatsApp automáticas via Z-API...');
-        let notificationsSent = 0;
-        let notificationsFailed = 0;
-        
-        for (const sol of approvedSols) {
-          const phone = sol.telefone_celular || sol.telefone_motorista;
-          if (phone) {
-            try {
-              const notifResponse = await fetch('/api/fuel-card/send-whatsapp-notification', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                  phone: phone,
-                  placa: sol.placa,
-                  motorista: sol.motorista,
-                  solicitante: sol.solicitante || sol.requested_by,
-                  valorSolicitado: parseFloat(sol.valor_solicitado || '0'),
-                  status: 'aprovado',
-                  provedor: sol.provedor || 'Cartão Frota',
-                  dataUso: sol.data_abastecimento,
-                  observacoes: sol.observacoes,
-                  base: sol.base
-                })
-              });
-              
-              const notifResult = await notifResponse.json();
-              if (notifResult.success) {
-                notificationsSent++;
-                console.log(`✅ [BATCH-APPROVAL] Notificação enviada para ${phone} (${sol.placa})`);
-              } else {
-                notificationsFailed++;
-                console.warn(`⚠️ [BATCH-APPROVAL] Falha ao enviar para ${phone}:`, notifResult.message);
-              }
-            } catch (err) {
-              notificationsFailed++;
-              console.error(`❌ [BATCH-APPROVAL] Erro ao enviar notificação para ${phone}:`, err);
-            }
-          }
-        }
+        // NOTIFICAÇÃO AUTOMÁTICA DESATIVADA - Usar apenas encaminhamento manual via WhatsApp
+        console.log('📲 [BATCH-APPROVAL] Notificação automática desativada - usar encaminhamento manual');
 
         let notifMessage = `${successes} solicitação(ões) aprovada(s)`;
-        if (notificationsSent > 0) {
-          notifMessage += ` | ${notificationsSent} notificação(ões) WhatsApp enviada(s)`;
-        }
-        if (notificationsFailed > 0) {
-          notifMessage += ` | ${notificationsFailed} falha(s) no envio`;
-        }
         if (failures > 0) {
           notifMessage += ` | ${failures} falha(s) na aprovação`;
         }
+        notifMessage += ' | Use o botão WhatsApp para notificar manualmente';
 
         toast({
           title: 'Aprovação em Lote Concluída',
