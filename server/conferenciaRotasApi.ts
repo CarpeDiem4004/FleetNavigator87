@@ -483,7 +483,10 @@ export const generateReport = async (req: Request, res: Response) => {
     console.log('[CONFERENCIA] Executando consulta 3: solicitacoes_fuel_card');
     const fuelCardQuery = await pool.query(
       `SELECT data_solicitacao as data, placa, motorista, 
-        base as projeto,
+        CASE 
+          WHEN COALESCE(base, '') = '' AND (rota_origem IS NOT NULL OR rota_destino IS NOT NULL) THEN 'LINE HAUL'
+          ELSE base 
+        END as projeto,
         CONCAT(rota_origem, ' → ', rota_destino) as rota,
         valor_solicitado as valor 
       FROM solicitacoes_fuel_card WHERE DATE(data_solicitacao) = $1`,
