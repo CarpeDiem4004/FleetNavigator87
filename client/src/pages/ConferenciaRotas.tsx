@@ -31,6 +31,7 @@ interface FuelRecord {
   posto?: string;
   fonte?: string;
   valor?: number;
+  litros?: number;
 }
 
 interface ConferenceReport {
@@ -669,12 +670,14 @@ const ConferenciaRotas: React.FC = () => {
                               <TableHead>Data</TableHead>
                               <TableHead>Registros Combustível</TableHead>
                               <TableHead>Valor Solicitado</TableHead>
+                              <TableHead>Litros (Interno)</TableHead>
                               <TableHead>Projetos</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {conferenceReport.rodaram_e_abasteceram.map((item, index) => {
                               const totalValor = item.fuel_records.reduce((sum, f) => sum + (f.valor || 0), 0);
+                              const totalLitros = item.fuel_records.reduce((sum, f) => sum + (f.litros || 0), 0);
                               return (
                               <TableRow key={index}>
                                 <TableCell className="font-mono">{item.placa}</TableCell>
@@ -689,6 +692,9 @@ const ConferenciaRotas: React.FC = () => {
                                 </TableCell>
                                 <TableCell className="font-semibold text-green-700">
                                   {totalValor > 0 ? `R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
+                                </TableCell>
+                                <TableCell className="font-semibold text-blue-700">
+                                  {totalLitros > 0 ? `${totalLitros.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L` : '-'}
                                 </TableCell>
                                 <TableCell>
                                   {item.fuel_records.map(f => f.projeto).filter(Boolean).join(', ')}

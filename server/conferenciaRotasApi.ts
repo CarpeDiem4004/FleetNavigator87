@@ -37,6 +37,7 @@ interface FuelRecord {
   posto?: string;
   fonte?: string;
   valor?: number;
+  litros?: number;
 }
 
 // Função para mapear códigos de projeto para nomes de bases
@@ -512,7 +513,7 @@ export const generateReport = async (req: Request, res: Response) => {
       try {
         console.log(`[CONFERENCIA] Executando consulta: ${posto.tabela}`);
         const query = await pool.query(
-          `SELECT created_at as data, placa, motorista, projeto FROM ${posto.tabela} WHERE DATE(created_at) = $1`,
+          `SELECT created_at as data, placa, motorista, projeto, litros FROM ${posto.tabela} WHERE DATE(created_at) = $1`,
           [isoDate]
         );
         const dados = query.rows.map(row => ({
@@ -589,7 +590,8 @@ export const generateReport = async (req: Request, res: Response) => {
         projeto: mapProjectToBaseName(item.projeto),
         tipo: 'posto_especifico' as const,
         posto: item.posto_nome || item.fonte.replace('_v2', '').toUpperCase(),
-        fonte: item.fonte
+        fonte: item.fonte,
+        litros: item.litros ? parseFloat(item.litros) : undefined
       }))
     ];
 
