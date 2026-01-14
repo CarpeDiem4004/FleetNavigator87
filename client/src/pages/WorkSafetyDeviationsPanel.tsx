@@ -12,12 +12,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   AlertTriangle, Search, Filter, TrendingUp, Users, Truck, 
   Calendar, RefreshCw, ChevronDown, AlertOctagon, CheckCircle,
-  Clock, AlertCircle, BarChart3, PieChart, Eye, Edit, Plus
+  Clock, AlertCircle, BarChart3, PieChart, Eye, Edit, Plus, FileText
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { PieChart as RechartsChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import DeviationFormEmbed from '@/components/work-safety/DeviationFormEmbed';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 interface Deviation {
   id: number;
@@ -157,8 +159,8 @@ export default function WorkSafetyDeviationsPanel() {
         baseOperacao: '',
         responsavelRegistro: ''
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/work-safety/deviations'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/work-safety/deviations/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-safety/deviations'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-safety/deviations/stats'], exact: false });
     },
     onError: (error: any) => {
       toast({ title: 'Erro ao registrar desvio', description: error.message, variant: 'destructive' });
@@ -203,6 +205,79 @@ export default function WorkSafetyDeviationsPanel() {
     return new Date(dateStr).toLocaleDateString('pt-BR');
   };
 
+  const exportToPDF = (includeHistory: boolean = false) => {
+    const doc = new jsPDF({ orientation: 'landscape' });
+    
+    doc.setFillColor(219, 1, 69);
+    doc.rect(0, 0, doc.internal.pageSize.getWidth(), 25, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.text('MURICI TRANSPORTES', 14, 15);
+    doc.setFontSize(10);
+    doc.text('Relatório de Desvios Operacionais', 14, 21);
+    
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 200, 35);
+    
+    if (filterBase || filterStatus || filterType || dateFrom || dateTo) {
+      doc.setFontSize(9);
+      doc.text('Filtros aplicados:', 14, 35);
+      let filterY = 40;
+      if (filterBase) { doc.text(`Base: ${filterBase}`, 14, filterY); filterY += 4; }
+      if (filterStatus) { doc.text(`Status: ${STATUS_CONFIG[filterStatus]?.label || filterStatus}`, 14, filterY); filterY += 4; }
+      if (filterType) { doc.text(`Tipo: ${DEVIATION_TYPES[filterType] || filterType}`, 14, filterY); filterY += 4; }
+      if (dateFrom || dateTo) { doc.text(`Período: ${dateFrom || '...'} a ${dateTo || '...'}`, 14, filterY); }
+    }
+    
+    const tableData = deviations.map((d: Deviation) => [
+      formatDate(d.data_desvio),
+      d.placa,
+      d.motorista_nome,
+      d.base_operacao,
+      DEVIATION_TYPES[d.tipo_desvio] || d.tipo_desvio,
+      STATUS_CONFIG[d.status]?.label || d.status,
+      d.reincidente ? 'Sim' : 'Não',
+      includeHistory ? (d.observacoes || '-') : ''
+    ]);
+    
+    const headers = includeHistory 
+      ? ['Data', 'Placa', 'Motorista', 'Base', 'Tipo de Desvio', 'Status', 'Reincidente', 'Observações']
+      : ['Data', 'Placa', 'Motorista', 'Base', 'Tipo de Desvio', 'Status', 'Reincidente'];
+    
+    (doc as any).autoTable({
+      head: [headers],
+      body: tableData.map(row => includeHistory ? row : row.slice(0, 7)),
+      startY: 50,
+      theme: 'striped',
+      headStyles: { fillColor: [219, 1, 69], textColor: 255 },
+      styles: { fontSize: 8, cellPadding: 2 },
+      columnStyles: includeHistory ? { 7: { cellWidth: 50 } } : {},
+      didDrawPage: (data: any) => {
+        doc.setFontSize(8);
+        doc.setTextColor(128);
+        doc.text(`Página ${doc.getNumberOfPages()}`, doc.internal.pageSize.getWidth() - 25, doc.internal.pageSize.getHeight() - 10);
+      }
+    });
+    
+    doc.setFontSize(9);
+    doc.setTextColor(0);
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    doc.text(`Total de registros: ${deviations.length}`, 14, finalY);
+    if (stats) {
+      doc.text(`Motoristas reincidentes: ${stats.recurrentDrivers}`, 14, finalY + 5);
+    }
+    
+    const fileName = `desvios_${includeHistory ? 'completo_' : ''}${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+    
+    toast({
+      title: 'PDF exportado com sucesso!',
+      description: `Arquivo ${fileName} foi baixado.`
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -220,6 +295,14 @@ export default function WorkSafetyDeviationsPanel() {
             <Button onClick={() => refetch()} variant="outline" className="gap-2">
               <RefreshCw className="h-4 w-4" />
               Atualizar
+            </Button>
+            <Button onClick={() => exportToPDF(false)} variant="outline" className="gap-2">
+              <FileText className="h-4 w-4" />
+              PDF
+            </Button>
+            <Button onClick={() => exportToPDF(true)} variant="outline" className="gap-2">
+              <FileText className="h-4 w-4" />
+              PDF Completo
             </Button>
             <Dialog open={newDeviationOpen} onOpenChange={setNewDeviationOpen}>
               <DialogTrigger asChild>

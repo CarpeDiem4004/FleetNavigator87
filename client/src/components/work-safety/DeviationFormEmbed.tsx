@@ -132,7 +132,7 @@ export default function DeviationFormEmbed({ onSuccess, onCancel }: DeviationFor
     },
     onSuccess: (response: any) => {
       setSuccess(true);
-      queryClient.invalidateQueries({ queryKey: ['/api/work-safety/deviations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-safety/deviations'], exact: false });
       toast({
         title: "Desvio registrado!",
         description: response.isRecurrent 
