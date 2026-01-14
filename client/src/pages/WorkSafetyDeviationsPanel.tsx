@@ -513,12 +513,12 @@ export default function WorkSafetyDeviationsPanel() {
 
                   <div>
                     <Label className="text-xs">Base</Label>
-                    <Select value={filterBase} onValueChange={setFilterBase}>
+                    <Select value={filterBase || "_all"} onValueChange={(v) => setFilterBase(v === "_all" ? "" : v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Todas" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todas</SelectItem>
+                        <SelectItem value="_all">Todas</SelectItem>
                         {uniqueBases.map(base => (
                           <SelectItem key={base} value={base}>{base}</SelectItem>
                         ))}
@@ -528,12 +528,12 @@ export default function WorkSafetyDeviationsPanel() {
 
                   <div>
                     <Label className="text-xs">Status</Label>
-                    <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <Select value={filterStatus || "_all"} onValueChange={(v) => setFilterStatus(v === "_all" ? "" : v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Todos" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todos</SelectItem>
+                        <SelectItem value="_all">Todos</SelectItem>
                         {Object.entries(STATUS_CONFIG).map(([key, config]) => (
                           <SelectItem key={key} value={key}>{config.label}</SelectItem>
                         ))}
@@ -543,12 +543,12 @@ export default function WorkSafetyDeviationsPanel() {
 
                   <div>
                     <Label className="text-xs">Tipo</Label>
-                    <Select value={filterType} onValueChange={setFilterType}>
+                    <Select value={filterType || "_all"} onValueChange={(v) => setFilterType(v === "_all" ? "" : v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Todos" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todos</SelectItem>
+                        <SelectItem value="_all">Todos</SelectItem>
                         {Object.entries(DEVIATION_TYPES).map(([key, label]) => (
                           <SelectItem key={key} value={key}>{label}</SelectItem>
                         ))}
