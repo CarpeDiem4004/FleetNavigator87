@@ -106,16 +106,19 @@ O link `/work-safety/portal` é o hub central para as bases acessarem todas as f
 - `/work-safety/cadastro-motorista` - Formulário de cadastro de motoristas
 - `/work-safety/relatar-acidente` - Formulário para relatar acidentes/incidentes
 - `/work-safety/treinamentos` - Lista de treinamentos com confirmação de participação
+- `/work-safety/registrar-desvio` - Formulário de registro de desvios de motoristas
 
 ### Rotas Administrativas (requer autenticação)
 - `/work-safety` - Dashboard principal com estatísticas
 - `/work-safety/motoristas` - Painel de gerenciamento de motoristas
+- `/work-safety/desvios` - Painel de gestão de desvios operacionais
 
 ### Database Tables
 - `work_safety_drivers` - Tabela de motoristas cadastrados
 - `work_safety_accidents` - Tabela de acidentes/incidentes reportados
 - `work_safety_trainings` - Tabela de treinamentos disponíveis
 - `work_safety_training_participations` - Participações em treinamentos
+- `work_safety_deviations` - Registro de desvios operacionais de motoristas
 
 ### Key Fields
 - `nome_completo` - Nome completo do motorista
@@ -139,3 +142,31 @@ O link `/work-safety/portal` é o hub central para as bases acessarem todas as f
 - `server/routes/workSafetyDriversApi.ts` - API de CRUD de motoristas
 - `client/src/pages/WorkSafetyDriverRegistration.tsx` - Formulário público
 - `client/src/pages/WorkSafetyDriversPanel.tsx` - Painel administrativo
+- `server/routes/workSafetyDeviationsApi.ts` - API de desvios operacionais
+- `client/src/pages/WorkSafetyDeviationForm.tsx` - Formulário público de desvios
+- `client/src/pages/WorkSafetyDeviationsPanel.tsx` - Painel administrativo de desvios
+
+### Driver Deviations Module (Desvios Operacionais)
+Módulo para registro e acompanhamento de desvios comportamentais de motoristas.
+
+#### Tipos de Desvio
+- `excesso_velocidade` - Excesso de velocidade
+- `jornada_acima_permitido` - Jornada acima do permitido
+- `falha_checklist` - Falha no checklist
+- `nao_uso_epi` - Não uso de EPI
+- `uso_indevido_veiculo` - Uso indevido do veículo
+- `avaria_conducao_inadequada` - Avaria por condução inadequada
+- `descumprimento_procedimento` - Descumprimento de procedimento
+- `outro` - Outro
+
+#### Status de Desvio
+- `registrado` - Recém registrado
+- `em_acompanhamento` - Em acompanhamento pelo setor
+- `tratado` - Desvio tratado/resolvido
+- `recorrente` - Motorista reincidente (mesmo tipo em 90 dias)
+
+#### Business Rules
+- Detecção automática de reincidência: mesmo motorista + mesmo tipo em 90 dias
+- Estatísticas por base, tipo de desvio e motorista
+- Top 10 motoristas com mais desvios
+- Filtros por data, base, status e tipo
