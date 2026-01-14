@@ -219,101 +219,30 @@ export default function WorkSafetyDeviationsPanel() {
               <RefreshCw className="h-4 w-4" />
               Atualizar
             </Button>
-            <Dialog open={newDeviationOpen} onOpenChange={setNewDeviationOpen}>
+            <Dialog open={newDeviationOpen} onOpenChange={(open) => {
+                setNewDeviationOpen(open);
+                if (!open) {
+                  refetch();
+                }
+              }}>
               <DialogTrigger asChild>
                 <Button className="gap-2 bg-[#DB0145] hover:bg-[#B50139]">
                   <Plus className="h-4 w-4" />
                   Novo Desvio
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader>
+              <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
+                <DialogHeader className="p-4 pb-0">
                   <DialogTitle>Registrar Novo Desvio</DialogTitle>
                   <DialogDescription>
-                    Preencha os dados para registrar um desvio operacional
+                    Preencha o formulário abaixo para registrar um desvio operacional
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Placa do Veículo *</Label>
-                      <Input
-                        placeholder="ABC-1234"
-                        value={newDeviation.placa}
-                        onChange={(e) => setNewDeviation({...newDeviation, placa: e.target.value.toUpperCase()})}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label>Data do Desvio *</Label>
-                      <Input
-                        type="date"
-                        value={newDeviation.dataDesvio}
-                        onChange={(e) => setNewDeviation({...newDeviation, dataDesvio: e.target.value})}
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Nome do Motorista *</Label>
-                    <Input
-                      placeholder="Nome completo do motorista"
-                      value={newDeviation.motoristaNome}
-                      onChange={(e) => setNewDeviation({...newDeviation, motoristaNome: e.target.value})}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label>Tipo de Desvio *</Label>
-                    <Select 
-                      value={newDeviation.tipoDesvio} 
-                      onValueChange={(v) => setNewDeviation({...newDeviation, tipoDesvio: v})}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(DEVIATION_TYPES).map(([key, label]) => (
-                          <SelectItem key={key} value={key}>{label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Base de Operação *</Label>
-                    <Input
-                      placeholder="Nome da base"
-                      value={newDeviation.baseOperacao}
-                      onChange={(e) => setNewDeviation({...newDeviation, baseOperacao: e.target.value})}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label>Responsável pelo Registro *</Label>
-                    <Input
-                      placeholder="Seu nome"
-                      value={newDeviation.responsavelRegistro}
-                      onChange={(e) => setNewDeviation({...newDeviation, responsavelRegistro: e.target.value})}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label>Observações</Label>
-                    <Textarea
-                      placeholder="Detalhes adicionais sobre o desvio..."
-                      value={newDeviation.observacoes}
-                      onChange={(e) => setNewDeviation({...newDeviation, observacoes: e.target.value})}
-                      className="mt-1"
-                    />
-                  </div>
-                  <Button 
-                    onClick={handleCreateDeviation}
-                    className="w-full bg-[#DB0145] hover:bg-[#B50139]"
-                    disabled={createDeviationMutation.isPending}
-                  >
-                    {createDeviationMutation.isPending ? 'Registrando...' : 'Registrar Desvio'}
-                  </Button>
-                </div>
+                <iframe 
+                  src="/work-safety/registrar-desvio" 
+                  className="w-full h-[75vh] border-0"
+                  title="Formulário de Registro de Desvio"
+                />
               </DialogContent>
             </Dialog>
           </div>
