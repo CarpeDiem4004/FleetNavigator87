@@ -17,6 +17,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { PieChart as RechartsChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import DeviationFormEmbed from '@/components/work-safety/DeviationFormEmbed';
 
 interface Deviation {
   id: number;
@@ -219,29 +220,25 @@ export default function WorkSafetyDeviationsPanel() {
               <RefreshCw className="h-4 w-4" />
               Atualizar
             </Button>
-            <Dialog open={newDeviationOpen} onOpenChange={(open) => {
-                setNewDeviationOpen(open);
-                if (!open) {
-                  refetch();
-                }
-              }}>
+            <Dialog open={newDeviationOpen} onOpenChange={setNewDeviationOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2 bg-[#DB0145] hover:bg-[#B50139]">
                   <Plus className="h-4 w-4" />
                   Novo Desvio
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
+              <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-hidden">
                 <DialogHeader className="p-4 pb-0">
                   <DialogTitle>Registrar Novo Desvio</DialogTitle>
                   <DialogDescription>
                     Preencha o formulário abaixo para registrar um desvio operacional
                   </DialogDescription>
                 </DialogHeader>
-                <iframe 
-                  src="/work-safety/registrar-desvio" 
-                  className="w-full h-[75vh] border-0"
-                  title="Formulário de Registro de Desvio"
+                <DeviationFormEmbed 
+                  onSuccess={() => {
+                    refetch();
+                  }}
+                  onCancel={() => setNewDeviationOpen(false)}
                 />
               </DialogContent>
             </Dialog>
