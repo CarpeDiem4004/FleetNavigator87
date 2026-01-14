@@ -106,19 +106,19 @@ const ConferenciaRotas: React.FC = () => {
       }))
       .sort((a, b) => b.valor - a.valor);
     
-    // Top 5 bases por valor
-    const top5Valor = basesRanking.slice(0, 5);
+    // Todas as bases por valor (ordenadas por valor)
+    const todasBasesValor = basesRanking.filter(b => b.valor > 0);
     
-    // Top 5 bases por litros
-    const top5Litros = [...basesRanking].sort((a, b) => b.litros - a.litros).slice(0, 5);
+    // Todas as bases por litros (ordenadas por litros)
+    const todasBasesLitros = [...basesRanking].filter(b => b.litros > 0).sort((a, b) => b.litros - a.litros);
     
     return {
       totalValor,
       totalLitros,
       totalRegistros,
       totalBases: baseStats.size,
-      top5Valor,
-      top5Litros,
+      todasBasesValor,
+      todasBasesLitros,
       basesRanking
     };
   }, [conferenceReport?.abasteceram_nao_rodaram]);
@@ -870,29 +870,29 @@ const ConferenciaRotas: React.FC = () => {
 
                         {/* Gráficos e Rankings */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                          {/* Top 5 Bases por Valor */}
+                          {/* Todas as Bases por Valor */}
                           <Card>
                             <CardHeader className="pb-2">
                               <CardTitle className="text-lg flex items-center gap-2">
                                 <TrendingUp className="h-5 w-5 text-green-600" />
-                                Top 5 Bases - Valor (Cartão)
+                                Ranking Bases - Valor (Cartão)
                               </CardTitle>
-                              <CardDescription>Maiores gastos em cartão de combustível</CardDescription>
+                              <CardDescription>Gastos em cartão de combustível por base</CardDescription>
                             </CardHeader>
                             <CardContent>
-                              {dashboardStats.top5Valor.length > 0 ? (
-                                <div className="h-64">
+                              {dashboardStats.todasBasesValor.length > 0 ? (
+                                <div style={{ height: Math.max(200, dashboardStats.todasBasesValor.length * 35) }}>
                                   <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={dashboardStats.top5Valor} layout="vertical" margin={{ left: 80, right: 20 }}>
+                                    <BarChart data={dashboardStats.todasBasesValor} layout="vertical" margin={{ left: 100, right: 20 }}>
                                       <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                                       <XAxis type="number" tickFormatter={(v) => `R$ ${(v/1000).toFixed(0)}k`} />
-                                      <YAxis type="category" dataKey="base" tick={{ fontSize: 11 }} width={75} />
+                                      <YAxis type="category" dataKey="base" tick={{ fontSize: 10 }} width={95} />
                                       <Tooltip 
                                         formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor']}
                                         labelStyle={{ fontWeight: 'bold' }}
                                       />
                                       <Bar dataKey="valor" radius={[0, 4, 4, 0]}>
-                                        {dashboardStats.top5Valor.map((_, index) => (
+                                        {dashboardStats.todasBasesValor.map((_, index) => (
                                           <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                                         ))}
                                       </Bar>
@@ -903,16 +903,16 @@ const ConferenciaRotas: React.FC = () => {
                                 <p className="text-center text-muted-foreground py-8">Sem dados de valor</p>
                               )}
                               
-                              {/* Lista resumida */}
-                              <div className="mt-4 space-y-2">
-                                {dashboardStats.top5Valor.map((item, idx) => (
+                              {/* Lista completa */}
+                              <div className="mt-4 space-y-2 max-h-80 overflow-y-auto">
+                                {dashboardStats.todasBasesValor.map((item, idx) => (
                                   <div key={item.base} className="flex items-center justify-between text-sm border-b pb-2">
                                     <div className="flex items-center gap-2">
                                       <span className="w-6 h-6 rounded-full text-white text-xs flex items-center justify-center" 
-                                            style={{ backgroundColor: CHART_COLORS[idx] }}>
+                                            style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}>
                                         {idx + 1}
                                       </span>
-                                      <span className="font-medium">{item.base}</span>
+                                      <span className="font-medium text-xs">{item.base}</span>
                                     </div>
                                     <div className="text-right">
                                       <span className="font-bold text-green-700">
@@ -926,29 +926,29 @@ const ConferenciaRotas: React.FC = () => {
                             </CardContent>
                           </Card>
 
-                          {/* Top 5 Bases por Litros */}
+                          {/* Todas as Bases por Litros */}
                           <Card>
                             <CardHeader className="pb-2">
                               <CardTitle className="text-lg flex items-center gap-2">
                                 <Droplets className="h-5 w-5 text-blue-600" />
-                                Top 5 Bases - Litros (Interno)
+                                Ranking Bases - Litros (Interno)
                               </CardTitle>
-                              <CardDescription>Maiores consumos em postos internos</CardDescription>
+                              <CardDescription>Consumo em postos internos por base</CardDescription>
                             </CardHeader>
                             <CardContent>
-                              {dashboardStats.top5Litros.filter(b => b.litros > 0).length > 0 ? (
-                                <div className="h-64">
+                              {dashboardStats.todasBasesLitros.length > 0 ? (
+                                <div style={{ height: Math.max(200, dashboardStats.todasBasesLitros.length * 35) }}>
                                   <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={dashboardStats.top5Litros.filter(b => b.litros > 0)} layout="vertical" margin={{ left: 80, right: 20 }}>
+                                    <BarChart data={dashboardStats.todasBasesLitros} layout="vertical" margin={{ left: 100, right: 20 }}>
                                       <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                                       <XAxis type="number" tickFormatter={(v) => `${v.toFixed(0)} L`} />
-                                      <YAxis type="category" dataKey="base" tick={{ fontSize: 11 }} width={75} />
+                                      <YAxis type="category" dataKey="base" tick={{ fontSize: 10 }} width={95} />
                                       <Tooltip 
                                         formatter={(value: number) => [`${value.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L`, 'Litros']}
                                         labelStyle={{ fontWeight: 'bold' }}
                                       />
                                       <Bar dataKey="litros" radius={[0, 4, 4, 0]}>
-                                        {dashboardStats.top5Litros.filter(b => b.litros > 0).map((_, index) => (
+                                        {dashboardStats.todasBasesLitros.map((_, index) => (
                                           <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                                         ))}
                                       </Bar>
@@ -959,16 +959,16 @@ const ConferenciaRotas: React.FC = () => {
                                 <p className="text-center text-muted-foreground py-8">Sem dados de litros</p>
                               )}
                               
-                              {/* Lista resumida */}
-                              <div className="mt-4 space-y-2">
-                                {dashboardStats.top5Litros.filter(b => b.litros > 0).map((item, idx) => (
+                              {/* Lista completa */}
+                              <div className="mt-4 space-y-2 max-h-80 overflow-y-auto">
+                                {dashboardStats.todasBasesLitros.map((item, idx) => (
                                   <div key={item.base} className="flex items-center justify-between text-sm border-b pb-2">
                                     <div className="flex items-center gap-2">
                                       <span className="w-6 h-6 rounded-full text-white text-xs flex items-center justify-center" 
-                                            style={{ backgroundColor: CHART_COLORS[idx] }}>
+                                            style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}>
                                         {idx + 1}
                                       </span>
-                                      <span className="font-medium">{item.base}</span>
+                                      <span className="font-medium text-xs">{item.base}</span>
                                     </div>
                                     <div className="text-right">
                                       <span className="font-bold text-blue-700">
