@@ -1295,10 +1295,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/work-safety/trainings', getTrainings);
   app.post('/api/work-safety/trainings/participations', createParticipation);
   
-  // Rotas públicas para desvios de motoristas
+  // Rota pública para criar desvio de motorista (mantido público para acesso externo)
   app.post('/api/work-safety/deviations', createDeviation);
-  app.get('/api/work-safety/deviations', getDeviations);
-  app.get('/api/work-safety/deviations/stats', getDeviationStats);
+  // NOTA: GET de desvios e stats agora são rotas autenticadas apenas (linhas 26312+)
   
   // Health check endpoints para deployments
   // ROTAS DE ALTA PRIORIDADE - DEPOIS DA AUTENTICAÇÃO
