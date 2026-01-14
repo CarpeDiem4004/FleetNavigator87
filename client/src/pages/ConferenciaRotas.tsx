@@ -35,6 +35,7 @@ interface FuelRecord {
   fonte?: string;
   valor?: number;
   litros?: number;
+  rota?: string;
 }
 
 interface ConferenceReport {
@@ -767,7 +768,8 @@ const ConferenciaRotas: React.FC = () => {
                               <TableHead>Data</TableHead>
                               <TableHead>Valor (Cartão)</TableHead>
                               <TableHead>Litros (Interno)</TableHead>
-                              <TableHead>Projetos</TableHead>
+                              <TableHead>Base</TableHead>
+                              <TableHead>Rota</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -796,7 +798,8 @@ const ConferenciaRotas: React.FC = () => {
                                 <TableCell className="font-semibold text-blue-700">
                                   {item.litros && item.litros > 0 ? `${item.litros.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L` : '-'}
                                 </TableCell>
-                                <TableCell>{item.projeto}</TableCell>
+                                <TableCell>{item.projeto || '-'}</TableCell>
+                                <TableCell className="text-xs">{item.rota || '-'}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>

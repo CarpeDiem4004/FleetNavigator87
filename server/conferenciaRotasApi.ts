@@ -38,6 +38,7 @@ interface FuelRecord {
   fonte?: string;
   valor?: number;
   litros?: number;
+  rota?: string;
 }
 
 // Função para mapear códigos de projeto para nomes de bases
@@ -482,7 +483,8 @@ export const generateReport = async (req: Request, res: Response) => {
     console.log('[CONFERENCIA] Executando consulta 3: solicitacoes_fuel_card');
     const fuelCardQuery = await pool.query(
       `SELECT data_solicitacao as data, placa, motorista, 
-        COALESCE(NULLIF(base, ''), CONCAT(rota_origem, ' → ', rota_destino)) as projeto, 
+        base as projeto,
+        CONCAT(rota_origem, ' → ', rota_destino) as rota,
         valor_solicitado as valor 
       FROM solicitacoes_fuel_card WHERE DATE(data_solicitacao) = $1`,
       [isoDate]
@@ -575,7 +577,8 @@ export const generateReport = async (req: Request, res: Response) => {
         tipo: 'solicitacao_fuel_card' as const,
         posto: 'Solicitação Fuel Card',
         fonte: 'solicitacoes_fuel_card',
-        valor: item.valor ? parseFloat(item.valor) : undefined
+        valor: item.valor ? parseFloat(item.valor) : undefined,
+        rota: item.rota && item.rota !== ' → ' ? item.rota : undefined
       })),
       ...historicoGeralData.map((item: any) => ({
         data: item.data,
