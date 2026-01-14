@@ -117,6 +117,7 @@ import WorkSafetyReportAccident from "@/pages/WorkSafetyReportAccident";
 import WorkSafetyTrainings from "@/pages/WorkSafetyTrainings";
 import WorkSafetyDriversPanel from "@/pages/WorkSafetyDriversPanel";
 import WorkSafetyDeviationForm from "@/pages/WorkSafetyDeviationForm";
+import WorkSafetyDeviationsPanel from "@/pages/WorkSafetyDeviationsPanel";
 import WorkshopsPage from "@/pages/fleet-management/WorkshopsPage";
 import MaintenancePage from "@/pages/fleet-management/MaintenancePage";
 import MaintenanceManagement from "@/pages/fleet-management/maintenance-management";
@@ -820,6 +821,7 @@ function App() {
           <ProtectedRoute path="/fuel-receipts" component={FuelReceiptsPage} />
           {/* Rotas protegidas de Segurança do Trabalho */}
           <ProtectedRoute path="/work-safety/motoristas" component={WorkSafetyDriversPanel} />
+          <ProtectedRoute path="/work-safety/desvios" component={WorkSafetyDeviationsPanel} />
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
           <ProtectedRoute path="/conferencia-rotas" component={ConferenciaRotas} />
           <ProtectedRoute path="/relatorio-consumo" component={RelatorioConsumo} />
