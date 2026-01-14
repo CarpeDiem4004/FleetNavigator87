@@ -1297,7 +1297,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rota pública para criar desvio de motorista (mantido público para acesso externo)
   app.post('/api/work-safety/deviations', createDeviation);
-  // NOTA: GET de desvios e stats agora são rotas autenticadas apenas (linhas 26312+)
+  
+  // Rotas autenticadas para desvios - REGISTRADAS CEDO para evitar interceptação pelo Vite
+  app.get('/api/work-safety/deviations', isAuthenticated, getDeviations);
+  app.get('/api/work-safety/deviations/stats', isAuthenticated, getDeviationStats);
+  app.get('/api/work-safety/deviations/:id', isAuthenticated, getDeviationById);
+  app.put('/api/work-safety/deviations/:id/status', isAuthenticated, updateDeviationStatus);
+  app.delete('/api/work-safety/deviations/:id', isAuthenticated, deleteDeviation);
   
   // Health check endpoints para deployments
   // ROTAS DE ALTA PRIORIDADE - DEPOIS DA AUTENTICAÇÃO
@@ -26307,12 +26313,7 @@ async function createFuelRequestNotification(fuelRequest) {
   app.get('/api/work-safety/trainings/stats', isAuthenticated, getTrainingStats);
   app.post('/api/work-safety/trainings/seed', isAuthenticated, seedDefaultTrainings);
 
-  // Rotas autenticadas para painel de desvios de motoristas
-  app.get('/api/work-safety/deviations', isAuthenticated, getDeviations);
-  app.get('/api/work-safety/deviations/stats', isAuthenticated, getDeviationStats);
-  app.get('/api/work-safety/deviations/:id', isAuthenticated, getDeviationById);
-  app.put('/api/work-safety/deviations/:id/status', isAuthenticated, updateDeviationStatus);
-  app.delete('/api/work-safety/deviations/:id', isAuthenticated, deleteDeviation);
+  // NOTA: Rotas de desvios foram movidas para o início do arquivo (linhas 1304-1309) para evitar interceptação pelo Vite
 
   const httpServer = createServer(app);
   return httpServer;
