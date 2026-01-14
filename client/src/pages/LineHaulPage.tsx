@@ -3340,17 +3340,24 @@ const LineHaulPage = () => {
                     <h4 className="font-semibold mb-3">Itens Verificados</h4>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {selectedChecklistPatio.itens.map((item: any, idx: number) => (
-                        <div key={idx} className={`flex items-center justify-between p-2 rounded text-sm ${
+                        <div key={idx} className={`p-2 rounded text-sm ${
                           item.status === 'sim' ? 'bg-green-50' : 
                           item.status === 'nao' ? 'bg-red-50' : 'bg-gray-100'
                         }`}>
-                          <span className="flex-1">{item.item}</span>
-                          <Badge variant="outline" className={
-                            item.status === 'sim' ? 'text-green-600' : 
-                            item.status === 'nao' ? 'text-red-600' : 'text-gray-500'
-                          }>
-                            {item.status === 'sim' ? 'OK' : item.status === 'nao' ? 'Problema' : 'N/A'}
-                          </Badge>
+                          <div className="flex items-center justify-between">
+                            <span className="flex-1">{item.item}</span>
+                            <Badge variant="outline" className={
+                              item.status === 'sim' ? 'text-green-600' : 
+                              item.status === 'nao' ? 'text-red-600' : 'text-gray-500'
+                            }>
+                              {item.status === 'sim' ? 'OK' : item.status === 'nao' ? 'Problema' : 'N/A'}
+                            </Badge>
+                          </div>
+                          {item.observacao && (
+                            <p className="text-xs text-gray-600 mt-1 pl-2 border-l-2 border-red-300 italic">
+                              {item.observacao}
+                            </p>
+                          )}
                         </div>
                       ))}
                     </div>
