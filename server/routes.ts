@@ -1280,6 +1280,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rotas de estatísticas de motoristas
   app.get('/api/work-safety/stats', getWorkSafetyStats);
   
+  // Rota pública para listar motoristas (com paginação)
+  app.get('/api/work-safety/drivers', getWorkSafetyDrivers);
+  
   // Rotas públicas para treinamentos
   app.get('/api/work-safety/trainings', getTrainings);
   app.post('/api/work-safety/trainings/participations', createParticipation);
