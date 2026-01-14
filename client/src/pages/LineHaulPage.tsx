@@ -45,7 +45,8 @@ import {
   Play,
   X,
   MessageSquare,
-  ExternalLink
+  ExternalLink,
+  Download
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
@@ -1365,6 +1366,95 @@ const LineHaulPage = () => {
       case 'reprovado': return 'Reprovado';
       default: return status;
     }
+  };
+
+  const downloadChecklistPatioPDF = (checklist: any) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let yPos = 20;
+
+    doc.setFontSize(18);
+    doc.setTextColor(219, 1, 69);
+    doc.text('Checklist de Pátio', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 10;
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, pageWidth / 2, yPos, { align: 'center' });
+    yPos += 15;
+
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text(`Status: ${getChecklistStatusLabel(checklist.status_checklist)}`, 20, yPos);
+    yPos += 8;
+    doc.text(`Cavalo: ${checklist.placa_cavalo}`, 20, yPos);
+    if (checklist.placa_carreta_1) {
+      yPos += 6;
+      doc.text(`Carreta 1: ${checklist.placa_carreta_1}`, 20, yPos);
+    }
+    if (checklist.placa_carreta_2) {
+      yPos += 6;
+      doc.text(`Carreta 2: ${checklist.placa_carreta_2}`, 20, yPos);
+    }
+    yPos += 6;
+    doc.text(`Operador: ${checklist.operador_nome}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Base: ${checklist.base_nome || '-'}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Data: ${new Date(checklist.created_at).toLocaleString('pt-BR')}`, 20, yPos);
+    yPos += 12;
+
+    if (checklist.itens && checklist.itens.length > 0) {
+      doc.setFontSize(14);
+      doc.setTextColor(219, 1, 69);
+      doc.text('Itens Verificados', 20, yPos);
+      yPos += 8;
+
+      doc.setFontSize(10);
+      doc.setTextColor(0);
+      checklist.itens.forEach((item: any) => {
+        if (yPos > 270) {
+          doc.addPage();
+          yPos = 20;
+        }
+        const statusText = item.status === 'sim' ? '[OK]' : item.status === 'nao' ? '[PROBLEMA]' : '[N/A]';
+        const statusColor = item.status === 'sim' ? [0, 128, 0] : item.status === 'nao' ? [220, 0, 0] : [128, 128, 128];
+        
+        doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+        doc.text(statusText, 20, yPos);
+        doc.setTextColor(0);
+        doc.text(`${item.item}`, 45, yPos);
+        yPos += 6;
+
+        if (item.observacao) {
+          doc.setTextColor(100);
+          doc.setFontSize(9);
+          const obsLines = doc.splitTextToSize(`Obs: ${item.observacao}`, pageWidth - 50);
+          doc.text(obsLines, 45, yPos);
+          yPos += obsLines.length * 5;
+          doc.setFontSize(10);
+          doc.setTextColor(0);
+        }
+      });
+    }
+
+    if (checklist.observacao_geral) {
+      yPos += 8;
+      if (yPos > 260) {
+        doc.addPage();
+        yPos = 20;
+      }
+      doc.setFontSize(14);
+      doc.setTextColor(219, 1, 69);
+      doc.text('Observações Gerais', 20, yPos);
+      yPos += 8;
+      doc.setFontSize(10);
+      doc.setTextColor(0);
+      const obsLines = doc.splitTextToSize(checklist.observacao_geral, pageWidth - 40);
+      doc.text(obsLines, 20, yPos);
+    }
+
+    doc.save(`checklist_patio_${checklist.placa_cavalo}_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   // Carregar dados de checklist de pátio
@@ -3284,10 +3374,23 @@ const LineHaulPage = () => {
         <Dialog open={!!selectedChecklistPatio} onOpenChange={(open) => !open && setSelectedChecklistPatio(null)}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <ClipboardCheck className="h-5 w-5 text-orange-600" />
-                Detalhes do Checklist
-              </DialogTitle>
+              <div className="flex items-center justify-between">
+                <DialogTitle className="flex items-center gap-2">
+                  <ClipboardCheck className="h-5 w-5 text-orange-600" />
+                  Detalhes do Checklist
+                </DialogTitle>
+                {selectedChecklistPatio && (
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => downloadChecklistPatioPDF(selectedChecklistPatio)}
+                    className="flex items-center gap-1"
+                  >
+                    <Download className="h-4 w-4" />
+                    PDF
+                  </Button>
+                )}
+              </div>
             </DialogHeader>
             {selectedChecklistPatio && (
               <div className="space-y-4">
