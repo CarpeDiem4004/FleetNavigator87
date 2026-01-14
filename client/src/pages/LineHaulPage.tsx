@@ -1367,20 +1367,24 @@ const LineHaulPage = () => {
     }
   };
 
-  const downloadChecklistPatioPDF = (checklist: any) => {
+  const downloadChecklistPatioPDF = async (checklist: any) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    let yPos = 20;
+    let yPos = 15;
 
-    doc.setFontSize(18);
+    doc.setFontSize(20);
     doc.setTextColor(219, 1, 69);
+    doc.text('MURICI TRANSPORTES', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 8;
+
+    doc.setFontSize(16);
     doc.text('Checklist de Pátio', pageWidth / 2, yPos, { align: 'center' });
-    yPos += 10;
+    yPos += 8;
 
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 15;
+    yPos += 12;
 
     doc.setFontSize(12);
     doc.setTextColor(0);
@@ -1451,6 +1455,65 @@ const LineHaulPage = () => {
       doc.setTextColor(0);
       const obsLines = doc.splitTextToSize(checklist.observacao_geral, pageWidth - 40);
       doc.text(obsLines, 20, yPos);
+      yPos += obsLines.length * 5;
+    }
+
+    if (checklist.fotos && checklist.fotos.length > 0) {
+      doc.addPage();
+      yPos = 20;
+      doc.setFontSize(14);
+      doc.setTextColor(219, 1, 69);
+      doc.text('Registro Fotográfico', pageWidth / 2, yPos, { align: 'center' });
+      yPos += 10;
+
+      const imgWidth = 80;
+      const imgHeight = 60;
+      let xPos = 20;
+      let imagesInRow = 0;
+
+      for (const foto of checklist.fotos) {
+        try {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject();
+            img.src = foto.url_foto;
+          });
+
+          if (yPos + imgHeight + 15 > 280) {
+            doc.addPage();
+            yPos = 20;
+            xPos = 20;
+            imagesInRow = 0;
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0);
+          const imgData = canvas.toDataURL('image/jpeg', 0.7);
+
+          doc.addImage(imgData, 'JPEG', xPos, yPos, imgWidth, imgHeight);
+          
+          doc.setFontSize(8);
+          doc.setTextColor(100);
+          const label = foto.descricao || foto.posicao || 'Foto';
+          doc.text(label, xPos + imgWidth / 2, yPos + imgHeight + 5, { align: 'center' });
+
+          imagesInRow++;
+          if (imagesInRow >= 2) {
+            xPos = 20;
+            yPos += imgHeight + 15;
+            imagesInRow = 0;
+          } else {
+            xPos += imgWidth + 10;
+          }
+        } catch (e) {
+          console.error('Erro ao carregar imagem:', e);
+        }
+      }
     }
 
     doc.save(`checklist_patio_${checklist.placa_cavalo}_${new Date().toISOString().split('T')[0]}.pdf`);
