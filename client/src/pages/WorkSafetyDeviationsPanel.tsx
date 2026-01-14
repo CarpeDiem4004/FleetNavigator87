@@ -88,9 +88,10 @@ export default function WorkSafetyDeviationsPanel() {
     responsavelRegistro: ''
   });
 
-  const { data: deviationsResponse, isLoading, refetch } = useQuery({
+  const { data: deviationsResponse, isLoading, refetch, error: queryError } = useQuery({
     queryKey: ['/api/work-safety/deviations', filterBase, filterStatus, filterType, dateFrom, dateTo, searchTerm],
     queryFn: async () => {
+      console.log('[DESVIOS-PANEL] Executando queryFn...');
       const params = new URLSearchParams();
       if (filterBase) params.append('base', filterBase);
       if (filterStatus) params.append('status', filterStatus);
@@ -102,10 +103,18 @@ export default function WorkSafetyDeviationsPanel() {
       const response = await fetch(`/api/work-safety/deviations?${params.toString()}`, {
         credentials: 'include'
       });
+      
+      if (!response.ok) {
+        console.error('[DESVIOS-PANEL] Erro na resposta:', response.status, response.statusText);
+        throw new Error(`Erro ao carregar desvios: ${response.status}`);
+      }
+      
       const data = await response.json();
       console.log('[DESVIOS-PANEL] Resposta da API:', data);
       return data;
-    }
+    },
+    retry: 1,
+    staleTime: 0
   });
 
   const { data: statsResponse } = useQuery({
@@ -183,6 +192,7 @@ export default function WorkSafetyDeviationsPanel() {
   console.log('[DESVIOS-DEBUG] deviationsResponse:', JSON.stringify(deviationsResponse));
   console.log('[DESVIOS-DEBUG] deviations array length:', deviations.length);
   console.log('[DESVIOS-DEBUG] isLoading:', isLoading);
+  console.log('[DESVIOS-DEBUG] queryError:', queryError);
 
   const uniqueBases = useMemo(() => {
     const bases = new Set(deviations.map(d => d.base_operacao));
