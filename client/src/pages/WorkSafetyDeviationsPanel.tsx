@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   AlertTriangle, Search, Filter, TrendingUp, Users, Truck, 
   Calendar, RefreshCw, ChevronDown, AlertOctagon, CheckCircle,
-  Clock, AlertCircle, BarChart3, PieChart, Eye, Edit
+  Clock, AlertCircle, BarChart3, PieChart, Eye, Edit, Plus
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -74,6 +74,16 @@ export default function WorkSafetyDeviationsPanel() {
   const [newStatus, setNewStatus] = useState('');
   const [statusNotes, setStatusNotes] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [newDeviationOpen, setNewDeviationOpen] = useState(false);
+  const [newDeviation, setNewDeviation] = useState({
+    placa: '',
+    motorista_nome: '',
+    data_desvio: new Date().toISOString().split('T')[0],
+    tipo_desvio: '',
+    observacoes: '',
+    base_operacao: '',
+    responsavel_registro: ''
+  });
 
   const { data: deviationsResponse, isLoading, refetch } = useQuery({
     queryKey: ['/api/work-safety/deviations', filterBase, filterStatus, filterType, dateFrom, dateTo, searchTerm],
@@ -124,6 +134,43 @@ export default function WorkSafetyDeviationsPanel() {
     }
   });
 
+  const createDeviationMutation = useMutation({
+    mutationFn: async (data: typeof newDeviation) => {
+      return await apiRequest('POST', '/api/work-safety/deviations', data);
+    },
+    onSuccess: (response: any) => {
+      const isRecurrent = response?.data?.reincidente;
+      toast({ 
+        title: 'Desvio registrado com sucesso!',
+        description: isRecurrent ? '⚠️ Atenção: Motorista reincidente detectado!' : undefined,
+        variant: isRecurrent ? 'destructive' : 'default'
+      });
+      setNewDeviationOpen(false);
+      setNewDeviation({
+        placa: '',
+        motorista_nome: '',
+        data_desvio: new Date().toISOString().split('T')[0],
+        tipo_desvio: '',
+        observacoes: '',
+        base_operacao: '',
+        responsavel_registro: ''
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-safety/deviations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-safety/deviations/stats'] });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Erro ao registrar desvio', description: error.message, variant: 'destructive' });
+    }
+  });
+
+  const handleCreateDeviation = () => {
+    if (!newDeviation.placa || !newDeviation.motorista_nome || !newDeviation.tipo_desvio || !newDeviation.base_operacao || !newDeviation.responsavel_registro) {
+      toast({ title: 'Preencha todos os campos obrigatórios', variant: 'destructive' });
+      return;
+    }
+    createDeviationMutation.mutate(newDeviation);
+  };
+
   const deviations: Deviation[] = deviationsResponse?.data || [];
   const stats: DeviationStats | null = statsResponse?.data || null;
 
@@ -167,10 +214,109 @@ export default function WorkSafetyDeviationsPanel() {
               Gerencie e acompanhe desvios operacionais e comportamentais
             </p>
           </div>
-          <Button onClick={() => refetch()} variant="outline" className="gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Atualizar
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => refetch()} variant="outline" className="gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Atualizar
+            </Button>
+            <Dialog open={newDeviationOpen} onOpenChange={setNewDeviationOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 bg-[#DB0145] hover:bg-[#B50139]">
+                  <Plus className="h-4 w-4" />
+                  Novo Desvio
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Registrar Novo Desvio</DialogTitle>
+                  <DialogDescription>
+                    Preencha os dados para registrar um desvio operacional
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Placa do Veículo *</Label>
+                      <Input
+                        placeholder="ABC-1234"
+                        value={newDeviation.placa}
+                        onChange={(e) => setNewDeviation({...newDeviation, placa: e.target.value.toUpperCase()})}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label>Data do Desvio *</Label>
+                      <Input
+                        type="date"
+                        value={newDeviation.data_desvio}
+                        onChange={(e) => setNewDeviation({...newDeviation, data_desvio: e.target.value})}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Nome do Motorista *</Label>
+                    <Input
+                      placeholder="Nome completo do motorista"
+                      value={newDeviation.motorista_nome}
+                      onChange={(e) => setNewDeviation({...newDeviation, motorista_nome: e.target.value})}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label>Tipo de Desvio *</Label>
+                    <Select 
+                      value={newDeviation.tipo_desvio} 
+                      onValueChange={(v) => setNewDeviation({...newDeviation, tipo_desvio: v})}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(DEVIATION_TYPES).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>{label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Base de Operação *</Label>
+                    <Input
+                      placeholder="Nome da base"
+                      value={newDeviation.base_operacao}
+                      onChange={(e) => setNewDeviation({...newDeviation, base_operacao: e.target.value})}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label>Responsável pelo Registro *</Label>
+                    <Input
+                      placeholder="Seu nome"
+                      value={newDeviation.responsavel_registro}
+                      onChange={(e) => setNewDeviation({...newDeviation, responsavel_registro: e.target.value})}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label>Observações</Label>
+                    <Textarea
+                      placeholder="Detalhes adicionais sobre o desvio..."
+                      value={newDeviation.observacoes}
+                      onChange={(e) => setNewDeviation({...newDeviation, observacoes: e.target.value})}
+                      className="mt-1"
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleCreateDeviation}
+                    className="w-full bg-[#DB0145] hover:bg-[#B50139]"
+                    disabled={createDeviationMutation.isPending}
+                  >
+                    {createDeviationMutation.isPending ? 'Registrando...' : 'Registrar Desvio'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <Tabs defaultValue="dashboard" className="space-y-6">
