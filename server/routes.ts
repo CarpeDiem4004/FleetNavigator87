@@ -1885,6 +1885,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Exportar relatório para Excel (acesso público para funcionalidade de conferência)
   app.get('/api/conferencia-rotas/export', exportReportToExcel);
   
+  // Enviar solicitação de justificativa via WhatsApp
+  const { sendJustificationRequest } = await import('./conferenciaRotasApi');
+  app.post('/api/conferencia-rotas/justificativa', isAuthenticated, sendJustificationRequest);
+  
   // Listar uploads
   app.get('/api/conferencia-rotas/uploads', isAuthenticated, listUploads);
   

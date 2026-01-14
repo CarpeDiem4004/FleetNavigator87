@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { Upload, FileSpreadsheet, Download, Calendar, Filter, CheckCircle, XCircle, AlertTriangle, TrendingUp, DollarSign, Droplets, Building2, X } from 'lucide-react';
+import { Upload, FileSpreadsheet, Download, Calendar, Filter, CheckCircle, XCircle, AlertTriangle, TrendingUp, DollarSign, Droplets, Building2, X, MessageCircle, Send, Phone, Truck } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Checkbox } from '@/components/ui/checkbox';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
+import { apiRequest } from '@/lib/queryClient';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -69,6 +73,10 @@ const ConferenciaRotas: React.FC = () => {
   const [conferenceReport, setConferenceReport] = useState<ConferenceReport | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [selectedBaseFilter, setSelectedBaseFilter] = useState<string>('');
+  const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
+  const [selectedBaseForWhatsapp, setSelectedBaseForWhatsapp] = useState<string>('');
+  const [whatsappPhone, setWhatsappPhone] = useState('');
+  const [sendingWhatsapp, setSendingWhatsapp] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -154,6 +162,71 @@ const ConferenciaRotas: React.FC = () => {
       totalLitros
     };
   }, [selectedBaseFilter, filteredRecords]);
+
+  // Placas agrupadas por base
+  const placasPorBase = useMemo(() => {
+    if (!conferenceReport?.abasteceram_nao_rodaram?.length) return [];
+    
+    const baseMap = new Map<string, { placas: Set<string>; records: FuelRecord[]; totalValor: number; totalLitros: number }>();
+    
+    conferenceReport.abasteceram_nao_rodaram.forEach(record => {
+      const base = record.projeto || 'SEM BASE';
+      const current = baseMap.get(base) || { placas: new Set<string>(), records: [], totalValor: 0, totalLitros: 0 };
+      current.placas.add(record.placa);
+      current.records.push(record);
+      current.totalValor += record.valor || 0;
+      current.totalLitros += record.litros || 0;
+      baseMap.set(base, current);
+    });
+    
+    return Array.from(baseMap.entries())
+      .map(([base, data]) => ({
+        base,
+        placas: Array.from(data.placas).sort(),
+        totalPlacas: data.placas.size,
+        totalRegistros: data.records.length,
+        totalValor: data.totalValor,
+        totalLitros: data.totalLitros
+      }))
+      .sort((a, b) => b.totalValor - a.totalValor);
+  }, [conferenceReport?.abasteceram_nao_rodaram]);
+
+  // Função para abrir dialog de WhatsApp
+  const handleOpenWhatsappDialog = (base: string) => {
+    setSelectedBaseForWhatsapp(base);
+    setWhatsappPhone('');
+    setWhatsappDialogOpen(true);
+  };
+
+  // Função para enviar justificativa via WhatsApp
+  const handleSendJustification = async () => {
+    const baseData = placasPorBase.find(b => b.base === selectedBaseForWhatsapp);
+    if (!baseData || !whatsappPhone) return;
+
+    setSendingWhatsapp(true);
+    try {
+      await apiRequest('POST', '/api/conferencia-rotas/justificativa', {
+        baseName: selectedBaseForWhatsapp,
+        plates: baseData.placas,
+        date: selectedDate ? new Date(selectedDate).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
+        phone: whatsappPhone
+      });
+
+      toast({
+        title: "Mensagem enviada!",
+        description: `Solicitação de justificativa enviada para ${selectedBaseForWhatsapp}`,
+      });
+      setWhatsappDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao enviar",
+        description: error.message || "Não foi possível enviar a mensagem",
+        variant: "destructive"
+      });
+    } finally {
+      setSendingWhatsapp(false);
+    }
+  };
 
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1109,6 +1182,144 @@ const ConferenciaRotas: React.FC = () => {
                         )}
                       </CardContent>
                     </Card>
+
+                    {/* Placas Agrupadas por Base */}
+                    <Card className="mb-4">
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <Truck className="h-5 w-5" />
+                          Placas por Base
+                        </CardTitle>
+                        <CardDescription>Clique na base para ver as placas e enviar solicitação de justificativa via WhatsApp</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {placasPorBase.length > 0 ? (
+                          <Accordion type="single" collapsible className="w-full">
+                            {placasPorBase.map((baseData) => (
+                              <AccordionItem key={baseData.base} value={baseData.base}>
+                                <AccordionTrigger className="hover:no-underline">
+                                  <div className="flex items-center justify-between w-full pr-4">
+                                    <div className="flex items-center gap-3">
+                                      <Building2 className="h-4 w-4 text-pink-600" />
+                                      <span className="font-semibold">{baseData.base}</span>
+                                      <Badge variant="secondary">{baseData.totalPlacas} placas</Badge>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-sm">
+                                      {baseData.totalValor > 0 && (
+                                        <span className="text-green-600 font-medium">
+                                          R$ {baseData.totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                        </span>
+                                      )}
+                                      {baseData.totalLitros > 0 && (
+                                        <span className="text-blue-600 font-medium">
+                                          {baseData.totalLitros.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                  <div className="p-4 bg-gray-50 rounded-lg">
+                                    <div className="flex flex-wrap gap-2 mb-4">
+                                      {baseData.placas.map((placa) => (
+                                        <Badge key={placa} variant="outline" className="font-mono">
+                                          {placa}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Button 
+                                        size="sm" 
+                                        variant="default"
+                                        className="bg-green-600 hover:bg-green-700"
+                                        onClick={() => handleOpenWhatsappDialog(baseData.base)}
+                                      >
+                                        <MessageCircle className="h-4 w-4 mr-2" />
+                                        Enviar Justificativa via WhatsApp
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          setSelectedBaseFilter(baseData.base);
+                                        }}
+                                      >
+                                        <Filter className="h-4 w-4 mr-2" />
+                                        Filtrar Tabela
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            ))}
+                          </Accordion>
+                        ) : (
+                          <p className="text-gray-500 text-center py-4">Nenhum registro para agrupar</p>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Dialog para enviar WhatsApp */}
+                    <Dialog open={whatsappDialogOpen} onOpenChange={setWhatsappDialogOpen}>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-2">
+                            <MessageCircle className="h-5 w-5 text-green-600" />
+                            Enviar Solicitação de Justificativa
+                          </DialogTitle>
+                          <DialogDescription>
+                            Base: <strong>{selectedBaseForWhatsapp}</strong>
+                          </DialogDescription>
+                        </DialogHeader>
+                        
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="phone">Número do WhatsApp</Label>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Phone className="h-4 w-4 text-gray-500" />
+                              <Input
+                                id="phone"
+                                placeholder="(11) 99999-9999"
+                                value={whatsappPhone}
+                                onChange={(e) => setWhatsappPhone(e.target.value)}
+                              />
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">Digite o número com DDD</p>
+                          </div>
+                          
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-sm font-medium mb-2">Placas a serem justificadas:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {placasPorBase.find(b => b.base === selectedBaseForWhatsapp)?.placas.map((placa) => (
+                                <Badge key={placa} variant="secondary" className="font-mono text-xs">
+                                  {placa}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setWhatsappDialogOpen(false)}>
+                            Cancelar
+                          </Button>
+                          <Button 
+                            onClick={handleSendJustification}
+                            disabled={!whatsappPhone || sendingWhatsapp}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            {sendingWhatsapp ? (
+                              <>Enviando...</>
+                            ) : (
+                              <>
+                                <Send className="h-4 w-4 mr-2" />
+                                Enviar via WhatsApp
+                              </>
+                            )}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
 
                     <Card>
                       <CardHeader>

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import multer from 'multer';
 import * as XLSX from 'xlsx';
 import { pool } from './db';
+import { sendZAPIWhatsAppMessage } from './services/zapiWhatsAppService';
 
 // Configurar multer para upload de arquivos
 const storage = multer.memoryStorage();
@@ -1070,6 +1071,85 @@ export const exportReportToExcel = async (req: Request, res: Response) => {
 
   } catch (error) {
     console.error('Erro ao exportar relatório:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: (error as Error).message
+    });
+  }
+};
+
+// Mapeamento de bases para telefones de contato
+const basePhoneMap: Record<string, string> = {
+  'VARGEM GRANDE': '',
+  'JACAREÍ': '',
+  'HORTOLÂNDIA': '',
+  'CAJAMAR': '',
+  'EMBU': '',
+  'EXTREMA': '',
+  'BETIM': '',
+  'CONTAGEM': '',
+  'LINE HALL': '',
+  'LINE HAUL': '',
+  // Adicionar mais bases conforme necessário
+};
+
+// Endpoint para enviar solicitação de justificativa via WhatsApp
+export const sendJustificationRequest = async (req: Request, res: Response) => {
+  try {
+    const { baseName, plates, date, phone, customMessage } = req.body;
+
+    if (!baseName || !plates || !Array.isArray(plates) || plates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Base e lista de placas são obrigatórios'
+      });
+    }
+
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Número de telefone é obrigatório'
+      });
+    }
+
+    // Formatar data
+    const formattedDate = date || new Date().toLocaleDateString('pt-BR');
+
+    // Montar mensagem
+    let message = customMessage || `🚨 *SOLICITAÇÃO DE JUSTIFICATIVA*\n\n`;
+    message += `📍 *Base:* ${baseName}\n`;
+    message += `📅 *Data:* ${formattedDate}\n\n`;
+    message += `Os seguintes veículos registraram abastecimento, porém não constam nas rotas do dia:\n\n`;
+    
+    plates.forEach((plate: string, index: number) => {
+      message += `${index + 1}. 🚗 ${plate}\n`;
+    });
+    
+    message += `\n📝 *Favor justificar os abastecimentos acima.*\n\n`;
+    message += `_Murici Transportes - Conferência de Rotas_`;
+
+    // Enviar via Z-API
+    const result = await sendZAPIWhatsAppMessage(phone, message);
+
+    if (result.success) {
+      console.log(`[JUSTIFICATIVA] Mensagem enviada para ${baseName} - ${phone}`);
+      res.json({
+        success: true,
+        message: 'Solicitação de justificativa enviada com sucesso',
+        messageId: result.messageId
+      });
+    } else {
+      console.error(`[JUSTIFICATIVA] Erro ao enviar para ${baseName}:`, result.error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao enviar mensagem',
+        error: result.error
+      });
+    }
+
+  } catch (error) {
+    console.error('Erro ao enviar solicitação de justificativa:', error);
     res.status(500).json({
       success: false,
       message: 'Erro interno do servidor',
