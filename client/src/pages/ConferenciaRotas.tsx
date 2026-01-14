@@ -20,6 +20,9 @@ interface VehicleRouteData {
   motorista: string;
   operacao?: string;
   modelo?: string;
+  rota_log?: string;
+  qtde_produtos?: number;
+  qtde_paradas?: number;
 }
 
 interface FuelRecord {
@@ -666,7 +669,7 @@ const ConferenciaRotas: React.FC = () => {
                               <TableHead>Placa</TableHead>
                               <TableHead>Motorista</TableHead>
                               <TableHead>Operação</TableHead>
-                              <TableHead>Modelo</TableHead>
+                              <TableHead>Rota Log</TableHead>
                               <TableHead>Data</TableHead>
                               <TableHead>Registros Combustível</TableHead>
                               <TableHead>Valor Solicitado</TableHead>
@@ -683,7 +686,7 @@ const ConferenciaRotas: React.FC = () => {
                                 <TableCell className="font-mono">{item.placa}</TableCell>
                                 <TableCell>{item.motorista}</TableCell>
                                 <TableCell>{item.operacao}</TableCell>
-                                <TableCell>{item.modelo}</TableCell>
+                                <TableCell className="font-mono text-xs">{item.rota_log || '-'}</TableCell>
                                 <TableCell>{item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '-'}</TableCell>
                                 <TableCell>
                                   <Badge variant="secondary">
