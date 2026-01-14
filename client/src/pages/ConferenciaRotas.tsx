@@ -122,30 +122,6 @@ const ConferenciaRotas: React.FC = () => {
     // Todas as bases por litros (ordenadas por litros)
     const todasBasesLitros = [...basesRanking].filter(b => b.litros > 0).sort((a, b) => b.litros - a.litros);
     
-    // Top 5 + Outras para gráficos de pizza (valor)
-    const top5Valor = todasBasesValor.slice(0, 5);
-    const outrasValor = todasBasesValor.slice(5);
-    const chartDataValor = outrasValor.length > 0 
-      ? [...top5Valor, { 
-          base: `Outras (${outrasValor.length})`, 
-          valor: outrasValor.reduce((s, b) => s + b.valor, 0),
-          litros: outrasValor.reduce((s, b) => s + b.litros, 0),
-          count: outrasValor.reduce((s, b) => s + b.count, 0)
-        }]
-      : top5Valor;
-    
-    // Top 5 + Outras para gráficos de pizza (litros)
-    const top5Litros = todasBasesLitros.slice(0, 5);
-    const outrasLitros = todasBasesLitros.slice(5);
-    const chartDataLitros = outrasLitros.length > 0
-      ? [...top5Litros, {
-          base: `Outras (${outrasLitros.length})`,
-          valor: outrasLitros.reduce((s, b) => s + b.valor, 0),
-          litros: outrasLitros.reduce((s, b) => s + b.litros, 0),
-          count: outrasLitros.reduce((s, b) => s + b.count, 0)
-        }]
-      : top5Litros;
-    
     // Lista de todas as bases para o filtro
     const todasBases = Array.from(baseStats.keys()).sort();
 
@@ -156,8 +132,6 @@ const ConferenciaRotas: React.FC = () => {
       totalBases: baseStats.size,
       todasBasesValor,
       todasBasesLitros,
-      chartDataValor,
-      chartDataLitros,
       basesRanking,
       todasBases
     };
@@ -1011,23 +985,22 @@ const ConferenciaRotas: React.FC = () => {
                               <CardDescription>Gastos em cartão de combustível por base</CardDescription>
                             </CardHeader>
                             <CardContent>
-                              {dashboardStats.chartDataValor.length > 0 ? (
-                                <div style={{ height: 320 }}>
+                              {dashboardStats.todasBasesValor.length > 0 ? (
+                                <div style={{ height: 350 }}>
                                   <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                       <Pie
-                                        data={dashboardStats.chartDataValor}
+                                        data={dashboardStats.todasBasesValor}
                                         dataKey="valor"
                                         nameKey="base"
                                         cx="50%"
                                         cy="50%"
-                                        outerRadius={90}
-                                        innerRadius={45}
-                                        label={({ base, percent }) => `${base} (${(percent * 100).toFixed(0)}%)`}
-                                        labelLine={{ strokeWidth: 1 }}
-                                        fontSize={11}
+                                        outerRadius={100}
+                                        innerRadius={50}
+                                        label={({ base, percent }) => `${base.substring(0, 10)}${base.length > 10 ? '...' : ''} (${(percent * 100).toFixed(0)}%)`}
+                                        labelLine={true}
                                       >
-                                        {dashboardStats.chartDataValor.map((_, index) => (
+                                        {dashboardStats.todasBasesValor.map((_, index) => (
                                           <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                                         ))}
                                       </Pie>
@@ -1088,23 +1061,22 @@ const ConferenciaRotas: React.FC = () => {
                               <CardDescription>Consumo em postos internos por base</CardDescription>
                             </CardHeader>
                             <CardContent>
-                              {dashboardStats.chartDataLitros.length > 0 ? (
-                                <div style={{ height: 320 }}>
+                              {dashboardStats.todasBasesLitros.length > 0 ? (
+                                <div style={{ height: 350 }}>
                                   <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                       <Pie
-                                        data={dashboardStats.chartDataLitros}
+                                        data={dashboardStats.todasBasesLitros}
                                         dataKey="litros"
                                         nameKey="base"
                                         cx="50%"
                                         cy="50%"
-                                        outerRadius={90}
-                                        innerRadius={45}
-                                        label={({ base, percent }) => `${base} (${(percent * 100).toFixed(0)}%)`}
-                                        labelLine={{ strokeWidth: 1 }}
-                                        fontSize={11}
+                                        outerRadius={100}
+                                        innerRadius={50}
+                                        label={({ base, percent }) => `${base.substring(0, 10)}${base.length > 10 ? '...' : ''} (${(percent * 100).toFixed(0)}%)`}
+                                        labelLine={true}
                                       >
-                                        {dashboardStats.chartDataLitros.map((_, index) => (
+                                        {dashboardStats.todasBasesLitros.map((_, index) => (
                                           <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                                         ))}
                                       </Pie>
