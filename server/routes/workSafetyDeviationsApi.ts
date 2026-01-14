@@ -216,13 +216,26 @@ export async function updateDeviationStatus(req: Request, res: Response) {
     const { id } = req.params;
     const { status, observacoes } = req.body;
 
+    console.log('[DESVIOS-DEBUG] updateDeviationStatus chamado - id:', id, 'body:', req.body);
+
+    if (!status) {
+      console.log('[DESVIOS-DEBUG] Status não informado');
+      return res.status(400).json({
+        success: false,
+        message: 'Status não informado.'
+      });
+    }
+
     if (!['registrado', 'em_acompanhamento', 'tratado', 'recorrente'].includes(status)) {
+      console.log('[DESVIOS-DEBUG] Status inválido:', status);
       return res.status(400).json({
         success: false,
         message: 'Status inválido.'
       });
     }
 
+    console.log('[DESVIOS-DEBUG] Executando UPDATE para id:', id, 'novo status:', status);
+    
     const result = await pool.query(
       `UPDATE work_safety_deviations 
        SET status = $1, observacoes = COALESCE($2, observacoes), updated_at = NOW()
@@ -231,6 +244,8 @@ export async function updateDeviationStatus(req: Request, res: Response) {
       [status, observacoes, id]
     );
 
+    console.log('[DESVIOS-DEBUG] Resultado UPDATE:', result.rows.length, 'rows');
+
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
@@ -238,7 +253,7 @@ export async function updateDeviationStatus(req: Request, res: Response) {
       });
     }
 
-    console.log('[DESVIOS] Status atualizado:', id, 'Novo status:', status);
+    console.log('[DESVIOS] Status atualizado:', id, 'Novo status:', status, 'DB status:', result.rows[0].status);
 
     return res.json({
       success: true,
