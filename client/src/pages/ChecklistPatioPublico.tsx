@@ -68,6 +68,8 @@ export default function ChecklistPatioPublico() {
     operador_nome: '',
     operador_telefone: '',
     base_nome: '',
+    tipo_veiculo: '',
+    placa_veiculo: '',
     placa_cavalo: '',
     placa_carreta_1: '',
     placa_carreta_2: '',
@@ -209,8 +211,12 @@ export default function ChecklistPatioPublico() {
       toast({ title: "Campo obrigatório", description: "Selecione a base", variant: "destructive" });
       return false;
     }
-    if (!formData.placa_cavalo.trim()) {
-      toast({ title: "Campo obrigatório", description: "Informe a placa do cavalo", variant: "destructive" });
+    if (!formData.tipo_veiculo) {
+      toast({ title: "Campo obrigatório", description: "Selecione o tipo de veículo", variant: "destructive" });
+      return false;
+    }
+    if (!formData.placa_veiculo.trim()) {
+      toast({ title: "Campo obrigatório", description: "Informe a placa do veículo", variant: "destructive" });
       return false;
     }
     return true;
@@ -288,7 +294,9 @@ export default function ChecklistPatioPublico() {
     try {
       const payload = {
         ...formData,
-        placa_cavalo: formData.placa_cavalo.toUpperCase(),
+        tipo_veiculo: formData.tipo_veiculo,
+        placa_cavalo: formData.placa_veiculo.toUpperCase(),
+        placa_veiculo: formData.placa_veiculo.toUpperCase(),
         placa_carreta_1: formData.placa_carreta_1.toUpperCase() || null,
         placa_carreta_2: formData.placa_carreta_2.toUpperCase() || null,
         itens: checklistItens.filter(i => i.status !== '').map(item => ({
@@ -382,7 +390,7 @@ export default function ChecklistPatioPublico() {
             </div>
             <h2 className="text-2xl font-bold mb-2">{getStatusLabel(resultStatus)}</h2>
             <p className="text-gray-600 mb-6">
-              Checklist registrado para o veículo {formData.placa_cavalo}
+              Checklist registrado para o veículo {formData.placa_veiculo}
             </p>
             <Button 
               onClick={() => window.location.reload()}
@@ -464,14 +472,51 @@ export default function ChecklistPatioPublico() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label>Placa Cavalo *</Label>
+                    <Label>Tipo de Veículo *</Label>
+                    <select
+                      className="w-full border rounded-md p-2"
+                      value={formData.tipo_veiculo}
+                      onChange={(e) => handleInputChange('tipo_veiculo', e.target.value)}
+                    >
+                      <option value="">Selecione</option>
+                      <option value="toco">Toco</option>
+                      <option value="truck">Truck</option>
+                      <option value="cavalo">Cavalo</option>
+                      <option value="carreta">Carreta</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label>Placa *</Label>
                     <Input
                       placeholder="ABC-1234"
-                      value={formData.placa_cavalo}
-                      onChange={(e) => handleInputChange('placa_cavalo', e.target.value.toUpperCase())}
+                      value={formData.placa_veiculo}
+                      onChange={(e) => handleInputChange('placa_veiculo', e.target.value.toUpperCase())}
                       className="uppercase"
                     />
                   </div>
+                </div>
+                {(formData.tipo_veiculo === 'cavalo' || formData.tipo_veiculo === 'carreta') && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Placa Cavalo {formData.tipo_veiculo === 'cavalo' ? '*' : ''}</Label>
+                      <Input
+                        placeholder="ABC-1234"
+                        value={formData.placa_cavalo}
+                        onChange={(e) => handleInputChange('placa_cavalo', e.target.value.toUpperCase())}
+                        className="uppercase"
+                      />
+                    </div>
+                    <div>
+                      <Label>Quilometragem</Label>
+                      <Input
+                        placeholder="000000"
+                        value={formData.quilometragem}
+                        onChange={(e) => handleInputChange('quilometragem', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+                {(formData.tipo_veiculo === 'toco' || formData.tipo_veiculo === 'truck') && (
                   <div>
                     <Label>Quilometragem</Label>
                     <Input
@@ -480,7 +525,7 @@ export default function ChecklistPatioPublico() {
                       onChange={(e) => handleInputChange('quilometragem', e.target.value)}
                     />
                   </div>
-                </div>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Carreta 1</Label>
@@ -693,7 +738,7 @@ export default function ChecklistPatioPublico() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Veículo:</span>
-                    <span className="font-medium">{formData.placa_cavalo}</span>
+                    <span className="font-medium">{formData.tipo_veiculo?.toUpperCase()} - {formData.placa_veiculo}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Fotos:</span>

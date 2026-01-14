@@ -218,6 +218,7 @@ router.post('/', async (req: Request, res: Response) => {
       placa_carreta_1,
       placa_carreta_2,
       tipo_operacao,
+      tipo_veiculo,
       base_nome,
       operador_nome,
       operador_telefone,
@@ -244,16 +245,17 @@ router.post('/', async (req: Request, res: Response) => {
 
     const checklistResult = await pool.query(`
       INSERT INTO checklist_patio (
-        placa_cavalo, placa_carreta_1, placa_carreta_2, tipo_operacao,
+        placa_cavalo, placa_carreta_1, placa_carreta_2, tipo_operacao, tipo_veiculo,
         base_nome, operador_nome, operador_telefone, quilometragem,
         observacao_geral, status_checklist, finalizado, finalizado_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, CURRENT_TIMESTAMP)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, true, CURRENT_TIMESTAMP)
       RETURNING *
     `, [
       placa_cavalo.toUpperCase(),
       placa_carreta_1?.toUpperCase() || null,
       placa_carreta_2?.toUpperCase() || null,
       tipo_operacao || 'Line Haul',
+      tipo_veiculo || null,
       base_nome,
       operador_nome,
       operador_telefone,
