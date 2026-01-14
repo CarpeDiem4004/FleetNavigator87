@@ -1,5 +1,6 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { Upload, FileSpreadsheet, Download, Calendar, Filter, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
+import { Upload, FileSpreadsheet, Download, Calendar, Filter, CheckCircle, XCircle, AlertTriangle, TrendingUp, DollarSign, Droplets, Building2 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -56,6 +57,9 @@ const getTipoLabel = (tipo: string): string => {
   }
 };
 
+// Cores para o gráfico
+const CHART_COLORS = ['#DB0145', '#E53E3E', '#DD6B20', '#D69E2E', '#38A169', '#3182CE', '#805AD5', '#D53F8C', '#319795', '#718096'];
+
 const ConferenciaRotas: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -65,6 +69,59 @@ const ConferenciaRotas: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Dashboard statistics para "Abasteceram Não Rodaram"
+  const dashboardStats = useMemo(() => {
+    if (!conferenceReport?.abasteceram_nao_rodaram?.length) {
+      return null;
+    }
+
+    const records = conferenceReport.abasteceram_nao_rodaram;
+    
+    // Totais gerais
+    const totalValor = records.reduce((sum, r) => sum + (r.valor || 0), 0);
+    const totalLitros = records.reduce((sum, r) => sum + (r.litros || 0), 0);
+    const totalRegistros = records.length;
+    
+    // Agrupar por base
+    const baseStats = new Map<string, { valor: number; litros: number; count: number }>();
+    
+    records.forEach(record => {
+      const base = record.projeto || 'SEM BASE';
+      const current = baseStats.get(base) || { valor: 0, litros: 0, count: 0 };
+      baseStats.set(base, {
+        valor: current.valor + (record.valor || 0),
+        litros: current.litros + (record.litros || 0),
+        count: current.count + 1
+      });
+    });
+    
+    // Converter para array e ordenar por valor (maiores ofensores)
+    const basesRanking = Array.from(baseStats.entries())
+      .map(([base, stats]) => ({
+        base,
+        valor: stats.valor,
+        litros: stats.litros,
+        count: stats.count
+      }))
+      .sort((a, b) => b.valor - a.valor);
+    
+    // Top 5 bases por valor
+    const top5Valor = basesRanking.slice(0, 5);
+    
+    // Top 5 bases por litros
+    const top5Litros = [...basesRanking].sort((a, b) => b.litros - a.litros).slice(0, 5);
+    
+    return {
+      totalValor,
+      totalLitros,
+      totalRegistros,
+      totalBases: baseStats.size,
+      top5Valor,
+      top5Litros,
+      basesRanking
+    };
+  }, [conferenceReport?.abasteceram_nao_rodaram]);
 
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -753,6 +810,181 @@ const ConferenciaRotas: React.FC = () => {
                   </TabsContent>
 
                   <TabsContent value="extra-fuel">
+                    {/* Dashboard Executivo - Bases Mais Ofensoras */}
+                    {dashboardStats && (
+                      <div className="mb-6 space-y-6">
+                        {/* Cards de Resumo */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <Card className="border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-white">
+                            <CardContent className="pt-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">Total Registros</p>
+                                  <p className="text-3xl font-bold text-red-700">{dashboardStats.totalRegistros}</p>
+                                </div>
+                                <AlertTriangle className="h-10 w-10 text-red-400" />
+                              </div>
+                            </CardContent>
+                          </Card>
+                          
+                          <Card className="border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-white">
+                            <CardContent className="pt-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">Total em Cartões</p>
+                                  <p className="text-2xl font-bold text-green-700">
+                                    R$ {dashboardStats.totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </p>
+                                </div>
+                                <DollarSign className="h-10 w-10 text-green-400" />
+                              </div>
+                            </CardContent>
+                          </Card>
+                          
+                          <Card className="border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-white">
+                            <CardContent className="pt-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">Total Litros</p>
+                                  <p className="text-2xl font-bold text-blue-700">
+                                    {dashboardStats.totalLitros.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L
+                                  </p>
+                                </div>
+                                <Droplets className="h-10 w-10 text-blue-400" />
+                              </div>
+                            </CardContent>
+                          </Card>
+                          
+                          <Card className="border-l-4 border-l-purple-500 bg-gradient-to-r from-purple-50 to-white">
+                            <CardContent className="pt-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">Bases Envolvidas</p>
+                                  <p className="text-3xl font-bold text-purple-700">{dashboardStats.totalBases}</p>
+                                </div>
+                                <Building2 className="h-10 w-10 text-purple-400" />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+
+                        {/* Gráficos e Rankings */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          {/* Top 5 Bases por Valor */}
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-lg flex items-center gap-2">
+                                <TrendingUp className="h-5 w-5 text-green-600" />
+                                Top 5 Bases - Valor (Cartão)
+                              </CardTitle>
+                              <CardDescription>Maiores gastos em cartão de combustível</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              {dashboardStats.top5Valor.length > 0 ? (
+                                <div className="h-64">
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={dashboardStats.top5Valor} layout="vertical" margin={{ left: 80, right: 20 }}>
+                                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                                      <XAxis type="number" tickFormatter={(v) => `R$ ${(v/1000).toFixed(0)}k`} />
+                                      <YAxis type="category" dataKey="base" tick={{ fontSize: 11 }} width={75} />
+                                      <Tooltip 
+                                        formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor']}
+                                        labelStyle={{ fontWeight: 'bold' }}
+                                      />
+                                      <Bar dataKey="valor" radius={[0, 4, 4, 0]}>
+                                        {dashboardStats.top5Valor.map((_, index) => (
+                                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                                        ))}
+                                      </Bar>
+                                    </BarChart>
+                                  </ResponsiveContainer>
+                                </div>
+                              ) : (
+                                <p className="text-center text-muted-foreground py-8">Sem dados de valor</p>
+                              )}
+                              
+                              {/* Lista resumida */}
+                              <div className="mt-4 space-y-2">
+                                {dashboardStats.top5Valor.map((item, idx) => (
+                                  <div key={item.base} className="flex items-center justify-between text-sm border-b pb-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-6 h-6 rounded-full text-white text-xs flex items-center justify-center" 
+                                            style={{ backgroundColor: CHART_COLORS[idx] }}>
+                                        {idx + 1}
+                                      </span>
+                                      <span className="font-medium">{item.base}</span>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="font-bold text-green-700">
+                                        R$ {item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      </span>
+                                      <span className="text-muted-foreground text-xs ml-2">({item.count} reg.)</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          {/* Top 5 Bases por Litros */}
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-lg flex items-center gap-2">
+                                <Droplets className="h-5 w-5 text-blue-600" />
+                                Top 5 Bases - Litros (Interno)
+                              </CardTitle>
+                              <CardDescription>Maiores consumos em postos internos</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              {dashboardStats.top5Litros.filter(b => b.litros > 0).length > 0 ? (
+                                <div className="h-64">
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={dashboardStats.top5Litros.filter(b => b.litros > 0)} layout="vertical" margin={{ left: 80, right: 20 }}>
+                                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                                      <XAxis type="number" tickFormatter={(v) => `${v.toFixed(0)} L`} />
+                                      <YAxis type="category" dataKey="base" tick={{ fontSize: 11 }} width={75} />
+                                      <Tooltip 
+                                        formatter={(value: number) => [`${value.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L`, 'Litros']}
+                                        labelStyle={{ fontWeight: 'bold' }}
+                                      />
+                                      <Bar dataKey="litros" radius={[0, 4, 4, 0]}>
+                                        {dashboardStats.top5Litros.filter(b => b.litros > 0).map((_, index) => (
+                                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                                        ))}
+                                      </Bar>
+                                    </BarChart>
+                                  </ResponsiveContainer>
+                                </div>
+                              ) : (
+                                <p className="text-center text-muted-foreground py-8">Sem dados de litros</p>
+                              )}
+                              
+                              {/* Lista resumida */}
+                              <div className="mt-4 space-y-2">
+                                {dashboardStats.top5Litros.filter(b => b.litros > 0).map((item, idx) => (
+                                  <div key={item.base} className="flex items-center justify-between text-sm border-b pb-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-6 h-6 rounded-full text-white text-xs flex items-center justify-center" 
+                                            style={{ backgroundColor: CHART_COLORS[idx] }}>
+                                        {idx + 1}
+                                      </span>
+                                      <span className="font-medium">{item.base}</span>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="font-bold text-blue-700">
+                                        {item.litros.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L
+                                      </span>
+                                      <span className="text-muted-foreground text-xs ml-2">({item.count} reg.)</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </div>
+                    )}
+
                     <Card>
                       <CardHeader>
                         <CardTitle className="text-orange-700">Abastecimentos sem Rota</CardTitle>
