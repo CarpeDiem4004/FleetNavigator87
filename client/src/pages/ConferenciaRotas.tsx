@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { Upload, FileSpreadsheet, Download, Calendar, Filter, CheckCircle, XCircle, AlertTriangle, TrendingUp, DollarSign, Droplets, Building2 } from 'lucide-react';
+import { Upload, FileSpreadsheet, Download, Calendar, Filter, CheckCircle, XCircle, AlertTriangle, TrendingUp, DollarSign, Droplets, Building2, X } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -67,6 +68,7 @@ const ConferenciaRotas: React.FC = () => {
   const [uploadedData, setUploadedData] = useState<VehicleRouteData[]>([]);
   const [conferenceReport, setConferenceReport] = useState<ConferenceReport | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedBaseFilter, setSelectedBaseFilter] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -112,6 +114,9 @@ const ConferenciaRotas: React.FC = () => {
     // Todas as bases por litros (ordenadas por litros)
     const todasBasesLitros = [...basesRanking].filter(b => b.litros > 0).sort((a, b) => b.litros - a.litros);
     
+    // Lista de todas as bases para o filtro
+    const todasBases = Array.from(baseStats.keys()).sort();
+
     return {
       totalValor,
       totalLitros,
@@ -119,9 +124,36 @@ const ConferenciaRotas: React.FC = () => {
       totalBases: baseStats.size,
       todasBasesValor,
       todasBasesLitros,
-      basesRanking
+      basesRanking,
+      todasBases
     };
   }, [conferenceReport?.abasteceram_nao_rodaram]);
+
+  // Registros filtrados por base selecionada
+  const filteredRecords = useMemo(() => {
+    if (!conferenceReport?.abasteceram_nao_rodaram?.length) return [];
+    if (!selectedBaseFilter) return conferenceReport.abasteceram_nao_rodaram;
+    
+    return conferenceReport.abasteceram_nao_rodaram.filter(record => {
+      const base = record.projeto || 'SEM BASE';
+      return base === selectedBaseFilter;
+    });
+  }, [conferenceReport?.abasteceram_nao_rodaram, selectedBaseFilter]);
+
+  // Estatísticas da base selecionada
+  const selectedBaseStats = useMemo(() => {
+    if (!selectedBaseFilter || !filteredRecords.length) return null;
+    
+    const totalValor = filteredRecords.reduce((sum, r) => sum + (r.valor || 0), 0);
+    const totalLitros = filteredRecords.reduce((sum, r) => sum + (r.litros || 0), 0);
+    
+    return {
+      base: selectedBaseFilter,
+      totalRegistros: filteredRecords.length,
+      totalValor,
+      totalLitros
+    };
+  }, [selectedBaseFilter, filteredRecords]);
 
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1011,10 +1043,88 @@ const ConferenciaRotas: React.FC = () => {
                       </div>
                     )}
 
+                    {/* Filtro por Base */}
+                    <Card className="mb-4">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <Filter className="h-5 w-5" />
+                          Filtrar por Base
+                        </CardTitle>
+                        <CardDescription>Selecione uma base para ver o relatório detalhado</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1 max-w-md">
+                            <Select value={selectedBaseFilter} onValueChange={setSelectedBaseFilter}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Todas as bases" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {dashboardStats?.todasBases?.map((base) => (
+                                  <SelectItem key={base} value={base}>
+                                    {base}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {selectedBaseFilter && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setSelectedBaseFilter('')}
+                              className="flex items-center gap-1"
+                            >
+                              <X className="h-4 w-4" />
+                              Limpar Filtro
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* Resumo da Base Selecionada */}
+                        {selectedBaseStats && (
+                          <div className="mt-4 p-4 bg-gradient-to-r from-pink-50 to-orange-50 rounded-lg border border-pink-200">
+                            <h4 className="font-bold text-lg text-pink-700 mb-3">
+                              Relatório Detalhado: {selectedBaseStats.base}
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div className="bg-white p-3 rounded-lg shadow-sm">
+                                <p className="text-sm text-gray-500">Total de Registros</p>
+                                <p className="text-2xl font-bold text-red-700">{selectedBaseStats.totalRegistros}</p>
+                              </div>
+                              <div className="bg-white p-3 rounded-lg shadow-sm">
+                                <p className="text-sm text-gray-500">Total em Cartões</p>
+                                <p className="text-xl font-bold text-green-700">
+                                  R$ {selectedBaseStats.totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </p>
+                              </div>
+                              <div className="bg-white p-3 rounded-lg shadow-sm">
+                                <p className="text-sm text-gray-500">Total em Litros</p>
+                                <p className="text-xl font-bold text-blue-700">
+                                  {selectedBaseStats.totalLitros.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-orange-700">Abastecimentos sem Rota</CardTitle>
-                        <CardDescription>Registros de abastecimento sem correspondência nas rotas</CardDescription>
+                        <CardTitle className="text-orange-700 flex items-center justify-between">
+                          <span>Abastecimentos sem Rota</span>
+                          {selectedBaseFilter && (
+                            <Badge variant="secondary" className="ml-2">
+                              Filtrado: {selectedBaseFilter} ({filteredRecords.length} registros)
+                            </Badge>
+                          )}
+                        </CardTitle>
+                        <CardDescription>
+                          {selectedBaseFilter 
+                            ? `Registros da base ${selectedBaseFilter}` 
+                            : 'Registros de abastecimento sem correspondência nas rotas'}
+                        </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <Table>
@@ -1031,7 +1141,7 @@ const ConferenciaRotas: React.FC = () => {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {conferenceReport.abasteceram_nao_rodaram.map((item, index) => (
+                            {filteredRecords.map((item, index) => (
                               <TableRow key={index} className="bg-orange-50">
                                 <TableCell className="font-mono">{item.placa}</TableCell>
                                 <TableCell>{item.motorista}</TableCell>
