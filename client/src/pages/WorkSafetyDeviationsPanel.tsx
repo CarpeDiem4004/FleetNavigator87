@@ -127,8 +127,9 @@ export default function WorkSafetyDeviationsPanel() {
       toast({ title: 'Status atualizado com sucesso!' });
       setDialogOpen(false);
       setSelectedDeviation(null);
-      queryClient.invalidateQueries({ queryKey: ['/api/work-safety/deviations'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/work-safety/deviations/stats'] });
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ['/api/work-safety/deviations'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-safety/deviations/stats'], exact: false });
     },
     onError: (error: any) => {
       toast({ title: 'Erro ao atualizar status', description: error.message, variant: 'destructive' });

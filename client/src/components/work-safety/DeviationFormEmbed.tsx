@@ -53,6 +53,7 @@ export default function DeviationFormEmbed({ onSuccess, onCancel }: DeviationFor
   const [formData, setFormData] = useState({
     placa: '',
     motoristaNome: '',
+    motoristaCpf: '',
     dataDesvio: new Date().toISOString().split('T')[0],
     tipoDesvio: '',
     observacoes: '',
@@ -121,6 +122,7 @@ export default function DeviationFormEmbed({ onSuccess, onCancel }: DeviationFor
       return await apiRequest('POST', '/api/work-safety/deviations', {
         placa: data.placa.toUpperCase(),
         motoristaNome: data.motoristaNome,
+        motoristaCpf: data.motoristaCpf || null,
         dataDesvio: new Date(data.dataDesvio).toISOString(),
         tipoDesvio: data.tipoDesvio,
         observacoes: data.observacoes || null,
@@ -183,6 +185,7 @@ export default function DeviationFormEmbed({ onSuccess, onCancel }: DeviationFor
     setFormData({
       placa: '',
       motoristaNome: '',
+      motoristaCpf: '',
       dataDesvio: new Date().toISOString().split('T')[0],
       tipoDesvio: '',
       observacoes: '',
@@ -345,6 +348,27 @@ export default function DeviationFormEmbed({ onSuccess, onCancel }: DeviationFor
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2 text-sm">
+              <User className="h-4 w-4 text-[#DB0145]" />
+              CPF do Motorista
+            </Label>
+            <Input
+              placeholder="000.000.000-00"
+              value={formData.motoristaCpf}
+              onChange={(e) => {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 11) value = value.slice(0, 11);
+                if (value.length > 9) value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+                else if (value.length > 6) value = value.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                else if (value.length > 3) value = value.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+                handleChange('motoristaCpf', value);
+              }}
+              maxLength={14}
+              className="h-9"
+            />
+          </div>
+
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-sm">
               <Calendar className="h-4 w-4 text-[#DB0145]" />

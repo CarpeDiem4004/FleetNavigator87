@@ -1662,6 +1662,7 @@ export const workSafetyDeviations = pgTable("work_safety_deviations", {
   id: serial("id").primaryKey(),
   placa: text("placa").notNull(),
   motoristaNome: text("motorista_nome").notNull(),
+  motoristaCpf: text("motorista_cpf"),
   motoristaId: integer("motorista_id").references(() => workSafetyDrivers.id),
   dataDesvio: timestamp("data_desvio").notNull(),
   tipoDesvio: text("tipo_desvio").notNull(),
@@ -1679,6 +1680,7 @@ export const workSafetyDeviations = pgTable("work_safety_deviations", {
 export const insertWorkSafetyDeviationSchema = createInsertSchema(workSafetyDeviations, {
   placa: z.string().min(1, "Placa é obrigatória"),
   motoristaNome: z.string().min(1, "Nome do motorista é obrigatório"),
+  motoristaCpf: z.string().optional(),
   dataDesvio: z.string().or(z.date()),
   tipoDesvio: z.enum([
     'excesso_velocidade',
