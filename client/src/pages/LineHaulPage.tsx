@@ -45,8 +45,7 @@ import {
   Play,
   X,
   MessageSquare,
-  ExternalLink,
-  Download
+  ExternalLink
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
