@@ -30,6 +30,7 @@ interface FuelRecord {
   tipo: 'abastecimento' | 'solicitacao' | 'solicitacao_cartao' | 'solicitacao_fuel_card' | 'historico_geral' | 'posto_especifico';
   posto?: string;
   fonte?: string;
+  valor?: number;
 }
 
 interface ConferenceReport {
@@ -667,11 +668,14 @@ const ConferenciaRotas: React.FC = () => {
                               <TableHead>Modelo</TableHead>
                               <TableHead>Data</TableHead>
                               <TableHead>Registros Combustível</TableHead>
+                              <TableHead>Valor Solicitado</TableHead>
                               <TableHead>Projetos</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {conferenceReport.rodaram_e_abasteceram.map((item, index) => (
+                            {conferenceReport.rodaram_e_abasteceram.map((item, index) => {
+                              const totalValor = item.fuel_records.reduce((sum, f) => sum + (f.valor || 0), 0);
+                              return (
                               <TableRow key={index}>
                                 <TableCell className="font-mono">{item.placa}</TableCell>
                                 <TableCell>{item.motorista}</TableCell>
@@ -683,11 +687,14 @@ const ConferenciaRotas: React.FC = () => {
                                     {item.fuel_records.length} registro(s)
                                   </Badge>
                                 </TableCell>
+                                <TableCell className="font-semibold text-green-700">
+                                  {totalValor > 0 ? `R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
+                                </TableCell>
                                 <TableCell>
                                   {item.fuel_records.map(f => f.projeto).filter(Boolean).join(', ')}
                                 </TableCell>
                               </TableRow>
-                            ))}
+                            );})}
                           </TableBody>
                         </Table>
                       </CardContent>
