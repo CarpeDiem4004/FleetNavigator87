@@ -1425,7 +1425,11 @@ const FuelCardRequestsPanel: React.FC = () => {
         batchMessage += `💰 *Valor Total: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalSaldo)}*\n\n`;
         batchMessage += `📋 *Placas aprovadas:*\n`;
         approvedSols.forEach((sol, idx) => {
-          batchMessage += `${idx + 1}. ${sol.placa} - ${sol.motorista || 'Sem motorista'} - ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(sol.valor_solicitado || 0)}\n`;
+          const provedor = sol.provedor_cartao || sol.tipo_cartao || 'N/I';
+          const cartao = sol.cartao_combustivel || sol.numero_cartao || sol.placa;
+          batchMessage += `${idx + 1}. ${sol.placa} - ${sol.motorista || 'Sem motorista'}\n`;
+          batchMessage += `   💳 Cartão: ${cartao} | Provedor: ${provedor}\n`;
+          batchMessage += `   💰 ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(sol.valor_solicitado || 0)}\n`;
         });
         batchMessage += `\n_Murici On Fleet 2.0_`;
         
