@@ -1410,26 +1410,30 @@ const FuelCardRequestsPanel: React.FC = () => {
         const approvedSols = pendingSolicitations.slice(0, successes);
         setApprovedBatchSolicitations(approvedSols);
         
-        // Calcular total do saldo liberado
-        const totalSaldo = approvedSols.reduce((acc, sol) => acc + (sol.valor_solicitado || 0), 0);
+        // Calcular total do saldo liberado (garantir conversão para número)
+        const totalSaldo = approvedSols.reduce((acc, sol) => {
+          const valor = parseFloat(String(sol.valor_solicitado || 0)) || 0;
+          return acc + valor;
+        }, 0);
         
         // Gerar mensagem consolidada para WhatsApp
         const now = new Date();
         const dateStr = format(now, 'dd/MM/yyyy', { locale: ptBR });
         const timeStr = format(now, 'HH:mm', { locale: ptBR });
         
-        let batchMessage = `🔔 *AVISO DE SALDO LIBERADO*\n`;
-        batchMessage += `📅 ${dateStr} às ${timeStr}\n`;
-        batchMessage += `📍 Base: ${baseFilter}\n\n`;
-        batchMessage += `✅ *${approvedSols.length} solicitações aprovadas*\n`;
-        batchMessage += `💰 *Valor Total: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalSaldo)}*\n\n`;
-        batchMessage += `📋 *Placas aprovadas:*\n`;
+        let batchMessage = `*AVISO DE SALDO LIBERADO*\n`;
+        batchMessage += `Data: ${dateStr} as ${timeStr}\n`;
+        batchMessage += `Base: ${baseFilter}\n\n`;
+        batchMessage += `*${approvedSols.length} solicitacoes aprovadas*\n`;
+        batchMessage += `*Valor Total: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalSaldo || 0)}*\n\n`;
+        batchMessage += `*Placas aprovadas:*\n`;
         approvedSols.forEach((sol, idx) => {
           const provedor = sol.provedor_cartao || sol.tipo_cartao || 'N/I';
           const cartao = sol.cartao_combustivel || sol.numero_cartao || sol.placa;
+          const valor = parseFloat(String(sol.valor_solicitado || 0)) || 0;
           batchMessage += `${idx + 1}. ${sol.placa} - ${sol.motorista || 'Sem motorista'}\n`;
-          batchMessage += `   💳 Cartão: ${cartao} | Provedor: ${provedor}\n`;
-          batchMessage += `   💰 ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(sol.valor_solicitado || 0)}\n`;
+          batchMessage += `   Cartao: ${cartao} | Provedor: ${provedor}\n`;
+          batchMessage += `   Valor: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)}\n`;
         });
         batchMessage += `\n_Murici On Fleet 2.0_`;
         
