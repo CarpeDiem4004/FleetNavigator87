@@ -1430,6 +1430,13 @@ const FuelCardRequestsPanel: React.FC = () => {
         batchMessage += `\n_Murici On Fleet 2.0_`;
         
         setBatchWhatsAppMessage(batchMessage);
+        
+        // Preencher telefone automaticamente da primeira solicitação
+        const firstSolPhone = approvedSols[0]?.telefone_celular || (approvedSols[0] as any)?.driver_phone || '';
+        if (firstSolPhone) {
+          setGestorPhone(firstSolPhone);
+        }
+        
         setBatchWhatsAppDialogOpen(true);
         
         // Atualizar a lista local (normalizar para garantir match)
