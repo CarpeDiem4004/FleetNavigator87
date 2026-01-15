@@ -1410,6 +1410,28 @@ const FuelCardRequestsPanel: React.FC = () => {
         const approvedSols = pendingSolicitations.slice(0, successes);
         setApprovedBatchSolicitations(approvedSols);
         
+        // Calcular total do saldo liberado
+        const totalSaldo = approvedSols.reduce((acc, sol) => acc + (sol.valor_solicitado || 0), 0);
+        
+        // Gerar mensagem consolidada para WhatsApp
+        const now = new Date();
+        const dateStr = format(now, 'dd/MM/yyyy', { locale: ptBR });
+        const timeStr = format(now, 'HH:mm', { locale: ptBR });
+        
+        let batchMessage = `🔔 *AVISO DE SALDO LIBERADO*\n`;
+        batchMessage += `📅 ${dateStr} às ${timeStr}\n`;
+        batchMessage += `📍 Base: ${baseFilter}\n\n`;
+        batchMessage += `✅ *${approvedSols.length} solicitações aprovadas*\n`;
+        batchMessage += `💰 *Valor Total: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalSaldo)}*\n\n`;
+        batchMessage += `📋 *Placas aprovadas:*\n`;
+        approvedSols.forEach((sol, idx) => {
+          batchMessage += `${idx + 1}. ${sol.placa} - ${sol.motorista || 'Sem motorista'} - ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(sol.valor_solicitado || 0)}\n`;
+        });
+        batchMessage += `\n_Murici On Fleet 2.0_`;
+        
+        setBatchWhatsAppMessage(batchMessage);
+        setBatchWhatsAppDialogOpen(true);
+        
         // Atualizar a lista local (normalizar para garantir match)
         setSolicitations(solicitations.map(sol => {
           if (normalizeBaseName(sol.base) === baseFilter && (sol.status === 'Pendente' || sol.status === 'pendente' || 
@@ -4181,7 +4203,7 @@ const FuelCardRequestsPanel: React.FC = () => {
             <DialogHeader>
               <DialogTitle className="flex items-center text-green-700">
                 <CheckCircle2 className="h-6 w-6 mr-2" />
-                Notificação WhatsApp - Aprovação em Lote
+                Encaminhar Aviso de Saldo - WhatsApp
               </DialogTitle>
             </DialogHeader>
             
