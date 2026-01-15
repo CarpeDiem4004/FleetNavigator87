@@ -1421,19 +1421,19 @@ const FuelCardRequestsPanel: React.FC = () => {
         const dateStr = format(now, 'dd/MM/yyyy', { locale: ptBR });
         const timeStr = format(now, 'HH:mm', { locale: ptBR });
         
-        let batchMessage = `*AVISO DE SALDO LIBERADO*\n`;
-        batchMessage += `Data: ${dateStr} as ${timeStr}\n`;
-        batchMessage += `Base: ${baseFilter}\n\n`;
-        batchMessage += `*${approvedSols.length} solicitacoes aprovadas*\n`;
-        batchMessage += `*Valor Total: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalSaldo || 0)}*\n\n`;
-        batchMessage += `*Placas aprovadas:*\n`;
+        let batchMessage = String.fromCodePoint(0x1F514) + ` *AVISO DE SALDO LIBERADO*\n`;
+        batchMessage += String.fromCodePoint(0x1F4C5) + ` Data: ${dateStr} as ${timeStr}\n`;
+        batchMessage += String.fromCodePoint(0x1F4CD) + ` Base: ${baseFilter}\n\n`;
+        batchMessage += String.fromCodePoint(0x2705) + ` *${approvedSols.length} solicitacoes aprovadas*\n`;
+        batchMessage += String.fromCodePoint(0x1F4B0) + ` *Valor Total: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalSaldo || 0)}*\n\n`;
+        batchMessage += String.fromCodePoint(0x1F4CB) + ` *Placas aprovadas:*\n`;
         approvedSols.forEach((sol, idx) => {
           const provedor = sol.provedor_cartao || sol.tipo_cartao || 'N/I';
           const cartao = sol.cartao_combustivel || sol.numero_cartao || sol.placa;
           const valor = parseFloat(String(sol.valor_solicitado || 0)) || 0;
           batchMessage += `${idx + 1}. ${sol.placa} - ${sol.motorista || 'Sem motorista'}\n`;
-          batchMessage += `   Cartao: ${cartao} | Provedor: ${provedor}\n`;
-          batchMessage += `   Valor: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)}\n`;
+          batchMessage += `   ` + String.fromCodePoint(0x1F4B3) + ` Cartao: ${cartao} | Provedor: ${provedor}\n`;
+          batchMessage += `   ` + String.fromCodePoint(0x1F4B5) + ` Valor: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)}\n`;
         });
         batchMessage += `\n_Murici On Fleet 2.0_`;
         
