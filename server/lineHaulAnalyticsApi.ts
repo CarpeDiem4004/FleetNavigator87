@@ -122,14 +122,19 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
 
     const tabelaAnaliticaQuery = `
       SELECT 
-        COALESCE(id_rota, 'Sem Rota') as rota,
+        CASE 
+          WHEN rota_origem IS NOT NULL AND rota_origem != '' AND rota_destino IS NOT NULL AND rota_destino != ''
+          THEN SUBSTRING(rota_origem FROM 1 FOR 25) || ' → ' || SUBSTRING(rota_destino FROM 1 FOR 25)
+          WHEN id_rota IS NOT NULL AND id_rota != '' THEN id_rota
+          ELSE COALESCE(provedor_cartao, 'Sem Rota')
+        END as rota,
         COUNT(*) as viagens,
         SUM(valor_solicitado) as valor_total,
         AVG(valor_solicitado) as custo_medio,
         COUNT(DISTINCT placa) as veiculos_envolvidos
       FROM solicitacoes_fuel_card
       ${whereClause}
-      GROUP BY id_rota
+      GROUP BY rota
       ORDER BY valor_total DESC
     `;
     const tabelaAnalitica = await pool.query(tabelaAnaliticaQuery, params);
