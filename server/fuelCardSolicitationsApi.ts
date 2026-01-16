@@ -160,6 +160,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           COALESCE(s.id_rota, '') as id_rota,
           COALESCE(s.origem_tipo, 'tradicional') as origem_tipo,
           s.tipo_combustivel,
+          s.valor_litro,
           s.litros_solicitados,
           TO_CHAR(s.data_uso, 'YYYY-MM-DD') as data_uso,
           s.turno,
@@ -205,6 +206,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           '' as id_rota,
           'line_hall' as origem_tipo,
           NULL as tipo_combustivel,
+          NULL as valor_litro,
           NULL as litros_solicitados,
           NULL as data_uso,
           NULL as turno,
@@ -260,6 +262,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           '' as id_rota,
           'base_system' as origem_tipo,
           fcr.fuel_type as tipo_combustivel,
+          NULL as valor_litro,
           NULL as litros_solicitados,
           NULL as data_uso,
           NULL as turno,
@@ -405,6 +408,7 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       motorista, 
       observacoes,
       valor_solicitado,
+      valor_litro,
       tipo_combustivel,
       litros_solicitados,
       base,
@@ -507,9 +511,9 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
     
     const query = `
       INSERT INTO solicitacoes_fuel_card
-        (placa, km, km_veiculo, tipo_cartao, provedor_cartao, numero_cartao, motorista, solicitante, telefone_celular, observacoes, status, data_solicitacao, valor_solicitado, tipo_combustivel, base, id_rota, origem_tipo, data_uso, turno)
+        (placa, km, km_veiculo, tipo_cartao, provedor_cartao, numero_cartao, motorista, solicitante, telefone_celular, observacoes, status, data_solicitacao, valor_solicitado, valor_litro, litros_solicitados, tipo_combustivel, base, id_rota, origem_tipo, data_uso, turno)
       VALUES
-        ($1, $2, $2, $3, $4, $5, $6, $7, $8, $9, 'pendente', NOW(), $10, $11, $12, $13, $14, $15, $16)
+        ($1, $2, $2, $3, $4, $5, $6, $7, $8, $9, 'pendente', NOW(), $10, $11, $12, $13, $14, $15, $16, $17, $18)
       RETURNING *
     `;
     
@@ -553,6 +557,8 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       req.body.telefone_celular || null,
       observacoes || null,
       valorFinal, // Valor garantido como número fixo
+      valor_litro || null, // Valor do litro do combustível
+      litros_solicitados || null, // Quantidade de litros calculada
       tipo_combustivel || 'diesel',
       baseNormalizada, // Base normalizada para consistência
       id_rota || null,
