@@ -68,6 +68,7 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
     solicitante: '',
     telefone_celular: '',
     valor_solicitado: '',
+    valor_litro: '',
     km: '',
     projeto_id: '',
     base_id: '',
@@ -77,6 +78,21 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
     observacoes: '',
     data_uso: '' // Nova data de quando o saldo será usado
   });
+
+  // Calcular quantidade de litros automaticamente
+  const calcularLitros = (): number => {
+    const valorSolicitado = unformatCurrency(formData.valor_solicitado);
+    const valorLitro = unformatCurrency(formData.valor_litro);
+    if (valorLitro > 0) {
+      return valorSolicitado / valorLitro;
+    }
+    return 0;
+  };
+
+  const handleValorLitroChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCurrency(e.target.value);
+    setFormData(prev => ({ ...prev, valor_litro: formatted }));
+  };
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -168,10 +184,21 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
     e.preventDefault();
     
     // Validações básicas
-    if (!formData.placa || !formData.motorista || !formData.solicitante || !formData.valor_solicitado) {
+    if (!formData.placa || !formData.motorista || !formData.solicitante || !formData.valor_solicitado || !formData.valor_litro) {
       toast({
         title: 'Campos obrigatórios',
-        description: 'Preencha placa, motorista, solicitante e valor solicitado',
+        description: 'Preencha placa, motorista, solicitante, valor solicitado e valor do litro',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validar valor do litro (não pode ser zero ou negativo)
+    const valorLitroNum = unformatCurrency(formData.valor_litro);
+    if (valorLitroNum <= 0) {
+      toast({
+        title: 'Valor do litro inválido',
+        description: 'O valor do litro deve ser maior que zero',
         variant: 'destructive'
       });
       return;
@@ -206,12 +233,18 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
         console.log('[FUEL-CARD-FORM] Data selecionada:', formData.data_uso, '→ Enviando:', dataUsoFormatted);
       }
       
+      const valorSolicitadoNum = unformatCurrency(formData.valor_solicitado);
+      const valorLitroNum = unformatCurrency(formData.valor_litro);
+      const litrosCalculados = valorLitroNum > 0 ? valorSolicitadoNum / valorLitroNum : 0;
+
       const requestData = {
         placa: formData.placa.toUpperCase(),
         motorista: formData.motorista,
         solicitante: formData.solicitante,
         telefone_celular: formData.telefone_celular,
-        valor_solicitado: unformatCurrency(formData.valor_solicitado), // Desformatar moeda brasileira
+        valor_solicitado: valorSolicitadoNum,
+        valor_litro: valorLitroNum > 0 ? valorLitroNum : null,
+        litros_solicitados: litrosCalculados > 0 ? parseFloat(litrosCalculados.toFixed(2)) : null,
         km: formData.km ? parseInt(formData.km) : null,
         tipo_cartao: formData.tipo_cartao,
         provedor_cartao: formData.provedor_cartao,
@@ -487,8 +520,8 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
             </div>
           </div>
 
-          {/* Valor Solicitado e Data de Uso */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Valor Solicitado, Valor do Litro e Quantidade de Litros */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="valor_solicitado">Valor Solicitado (R$) *</Label>
               <Input
@@ -500,9 +533,34 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
                 required
                 data-testid="input-valor-solicitado"
               />
-              <p className="text-xs text-muted-foreground">Digite apenas números - formatação automática</p>
+              <p className="text-xs text-muted-foreground">Digite apenas números</p>
             </div>
             
+            <div className="space-y-2">
+              <Label htmlFor="valor_litro">Valor do Litro (R$) *</Label>
+              <Input
+                id="valor_litro"
+                type="text"
+                value={formData.valor_litro}
+                onChange={handleValorLitroChange}
+                placeholder="Ex: 6,49"
+                required
+                data-testid="input-valor-litro"
+              />
+              <p className="text-xs text-muted-foreground">Preço por litro</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="quantidade_litros">Quantidade de Litros</Label>
+              <div className="h-10 px-3 py-2 border rounded-md bg-gray-100 flex items-center font-semibold text-green-700">
+                {calcularLitros() > 0 ? `${calcularLitros().toFixed(2)} L` : '0,00 L'}
+              </div>
+              <p className="text-xs text-muted-foreground">Calculado automaticamente</p>
+            </div>
+          </div>
+
+          {/* Data de Uso do Saldo */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="data_uso">Data de Uso do Saldo</Label>
               <Input
