@@ -7,7 +7,7 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
   try {
     const { dataInicio, dataFim, veiculo, rota } = req.query;
     
-    let whereClause = 'WHERE 1=1';
+    let whereClause = `WHERE (origem_tipo = 'line_hall' OR base ILIKE '%line%hall%' OR base ILIKE '%line%haul%' OR provedor_cartao ILIKE '%line%')`;
     const params: any[] = [];
     let paramIndex = 1;
     
@@ -24,34 +24,34 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
     }
     
     if (veiculo && veiculo !== 'all') {
-      whereClause += ` AND veiculo_placa = $${paramIndex}`;
+      whereClause += ` AND placa = $${paramIndex}`;
       params.push(veiculo);
       paramIndex++;
     }
     
     if (rota && rota !== 'all') {
-      whereClause += ` AND CONCAT(COALESCE(rota_origem, ''), ' → ', COALESCE(rota_destino, '')) ILIKE $${paramIndex}`;
+      whereClause += ` AND id_rota ILIKE $${paramIndex}`;
       params.push(`%${rota}%`);
       paramIndex++;
     }
 
     const cardsQuery = `
       SELECT 
-        COALESCE(SUM(valor_calculado), 0) as custo_total,
+        COALESCE(SUM(valor_solicitado), 0) as custo_total,
         COUNT(*) as total_viagens,
-        COUNT(DISTINCT CONCAT(COALESCE(rota_origem, ''), ' → ', COALESCE(rota_destino, ''))) as rotas_distintas,
-        CASE WHEN COUNT(*) > 0 THEN COALESCE(SUM(valor_calculado), 0) / COUNT(*) ELSE 0 END as custo_medio
-      FROM linehall_fuel_card_requests
+        COUNT(DISTINCT id_rota) as rotas_distintas,
+        CASE WHEN COUNT(*) > 0 THEN COALESCE(SUM(valor_solicitado), 0) / COUNT(*) ELSE 0 END as custo_medio
+      FROM solicitacoes_fuel_card
       ${whereClause}
     `;
     
     const cardsResult = await pool.query(cardsQuery, params);
     
     const veiculoMaisCaroQuery = `
-      SELECT veiculo_placa, SUM(valor_calculado) as total
-      FROM linehall_fuel_card_requests
+      SELECT placa, SUM(valor_solicitado) as total
+      FROM solicitacoes_fuel_card
       ${whereClause}
-      GROUP BY veiculo_placa
+      GROUP BY placa
       ORDER BY total DESC
       LIMIT 1
     `;
@@ -59,11 +59,11 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
 
     const rotasMaisRealizadasQuery = `
       SELECT 
-        CONCAT(COALESCE(rota_origem, 'N/I'), ' → ', COALESCE(rota_destino, 'N/I')) as rota,
+        COALESCE(id_rota, 'Sem Rota') as rota,
         COUNT(*) as quantidade
-      FROM linehall_fuel_card_requests
+      FROM solicitacoes_fuel_card
       ${whereClause}
-      GROUP BY rota_origem, rota_destino
+      GROUP BY id_rota
       ORDER BY quantidade DESC
       LIMIT 10
     `;
@@ -71,11 +71,11 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
 
     const rotasMaisCarasQuery = `
       SELECT 
-        CONCAT(COALESCE(rota_origem, 'N/I'), ' → ', COALESCE(rota_destino, 'N/I')) as rota,
-        SUM(valor_calculado) as valor
-      FROM linehall_fuel_card_requests
+        COALESCE(id_rota, 'Sem Rota') as rota,
+        SUM(valor_solicitado) as valor
+      FROM solicitacoes_fuel_card
       ${whereClause}
-      GROUP BY rota_origem, rota_destino
+      GROUP BY id_rota
       ORDER BY valor DESC
       LIMIT 10
     `;
@@ -83,11 +83,11 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
 
     const custoPorVeiculoQuery = `
       SELECT 
-        veiculo_placa as placa,
-        SUM(valor_calculado) as valor
-      FROM linehall_fuel_card_requests
+        placa,
+        SUM(valor_solicitado) as valor
+      FROM solicitacoes_fuel_card
       ${whereClause}
-      GROUP BY veiculo_placa
+      GROUP BY placa
       ORDER BY valor DESC
       LIMIT 15
     `;
@@ -96,8 +96,8 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
     const evolucaoCustoQuery = `
       SELECT 
         TO_CHAR(DATE(created_at), 'DD/MM') as data,
-        SUM(valor_calculado) as valor
-      FROM linehall_fuel_card_requests
+        SUM(valor_solicitado) as valor
+      FROM solicitacoes_fuel_card
       ${whereClause}
       GROUP BY DATE(created_at)
       ORDER BY DATE(created_at)
@@ -106,33 +106,33 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
 
     const tabelaAnaliticaQuery = `
       SELECT 
-        CONCAT(COALESCE(rota_origem, 'N/I'), ' → ', COALESCE(rota_destino, 'N/I')) as rota,
+        COALESCE(id_rota, 'Sem Rota') as rota,
         COUNT(*) as viagens,
-        SUM(valor_calculado) as valor_total,
-        AVG(valor_calculado) as custo_medio,
-        COUNT(DISTINCT veiculo_placa) as veiculos_envolvidos
-      FROM linehall_fuel_card_requests
+        SUM(valor_solicitado) as valor_total,
+        AVG(valor_solicitado) as custo_medio,
+        COUNT(DISTINCT placa) as veiculos_envolvidos
+      FROM solicitacoes_fuel_card
       ${whereClause}
-      GROUP BY rota_origem, rota_destino
+      GROUP BY id_rota
       ORDER BY valor_total DESC
     `;
     const tabelaAnalitica = await pool.query(tabelaAnaliticaQuery, params);
 
     const veiculosQuery = `
-      SELECT DISTINCT veiculo_placa 
-      FROM linehall_fuel_card_requests 
-      WHERE veiculo_placa IS NOT NULL
-      ORDER BY veiculo_placa
+      SELECT DISTINCT placa 
+      FROM solicitacoes_fuel_card 
+      ${whereClause}
+      ORDER BY placa
     `;
-    const veiculosResult = await pool.query(veiculosQuery);
+    const veiculosResult = await pool.query(veiculosQuery, params);
 
     const rotasQuery = `
-      SELECT DISTINCT CONCAT(COALESCE(rota_origem, 'N/I'), ' → ', COALESCE(rota_destino, 'N/I')) as rota
-      FROM linehall_fuel_card_requests
-      WHERE rota_origem IS NOT NULL OR rota_destino IS NOT NULL
+      SELECT DISTINCT COALESCE(id_rota, 'Sem Rota') as rota
+      FROM solicitacoes_fuel_card
+      ${whereClause}
       ORDER BY rota
     `;
-    const rotasResult = await pool.query(rotasQuery);
+    const rotasResult = await pool.query(rotasQuery, params);
 
     const cards = cardsResult.rows[0];
     const veiculoMaisCaro = veiculoResult.rows[0];
@@ -145,7 +145,7 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
           totalViagens: parseInt(cards?.total_viagens || 0),
           rotasDistintas: parseInt(cards?.rotas_distintas || 0),
           custoMedio: parseFloat(cards?.custo_medio || 0),
-          veiculoMaisCaro: veiculoMaisCaro?.veiculo_placa || '-',
+          veiculoMaisCaro: veiculoMaisCaro?.placa || '-',
           veiculoMaisCaroValor: parseFloat(veiculoMaisCaro?.total || 0)
         },
         rotasMaisRealizadas: rotasMaisRealizadas.rows.map(r => ({
@@ -171,7 +171,7 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
           custoMedio: parseFloat(r.custo_medio),
           veiculosEnvolvidos: parseInt(r.veiculos_envolvidos)
         })),
-        veiculos: veiculosResult.rows.map(r => r.veiculo_placa),
+        veiculos: veiculosResult.rows.map(r => r.placa),
         rotas: rotasResult.rows.map(r => r.rota)
       }
     });
