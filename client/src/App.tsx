@@ -87,6 +87,7 @@ import HistoricoGeralPage from "@/pages/postos/HistoricoGeralPage";
 import HistoricoPatioPage from "@/pages/postos/HistoricoPatioPage";
 import GraficoConsumoPage from "@/pages/postos/GraficoConsumoPage";
 import LineHaulPage from "@/pages/LineHaulPage";
+import LineHaulAnalytics from "@/pages/LineHaulAnalytics";
 import MessagesAttendancePage from "@/pages/MessagesAttendancePage";
 import LineHaulWhatsAppPanel from "@/pages/LineHaulWhatsAppPanel";
 import HistoricoConsolidado from "@/pages/postos/HistoricoConsolidado";
@@ -827,6 +828,7 @@ function App() {
           <ProtectedRoute path="/conferencia-rotas" component={ConferenciaRotas} />
           <ProtectedRoute path="/relatorio-consumo" component={RelatorioConsumo} />
           <ProtectedRoute path="/line-haul" component={LineHaulPage} />
+          <ProtectedRoute path="/linehaul/analytics" component={LineHaulAnalytics} />
           <ProtectedRoute path="/painel-atendimento-saldo" component={MessagesAttendancePage} />
           <ProtectedRoute path="/line-haul/whatsapp" component={LineHaulWhatsAppPanel} />
           <ProtectedRoute path="/users" component={UsersNew} />

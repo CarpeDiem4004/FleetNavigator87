@@ -198,6 +198,7 @@ import partnerAuthRouter from './routes/partnerAuth';
 import jwtAuthRoutes from './jwtAuthRoutes.js';
 // Importação das rotas do Line Hall (motoristas)
 import lineHallRoutes from './routes/lineHallRoutes';
+import lineHaulAnalyticsApi from './lineHaulAnalyticsApi';
 // Importação das rotas de equipamentos
 import equipmentRoutes from './routes/equipmentRoutes';
 // Importação das rotas de storage
@@ -2103,6 +2104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rotas do Line Hall (motoristas)
   app.use('/api/line-hall', lineHallRoutes);
+  app.use(lineHaulAnalyticsApi);
   
   // Redirecionar requisições de recebimentos do Guarulhos V2 para a rota especializada
   app.get('/api/recebimentos/guarulhos_v2', async (req, res) => {
