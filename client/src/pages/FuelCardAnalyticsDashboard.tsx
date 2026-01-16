@@ -234,17 +234,20 @@ const FuelCardAnalyticsDashboard = () => {
   }, [analytics]);
 
   const chartDataBase = useMemo(() => {
-    return analytics?.graficos.porBase.map(item => ({
-      base: item.base.length > 20 ? item.base.substring(0, 20) + '...' : item.base,
-      total: parseFloat(item.total),
-    })) || [];
+    return analytics?.graficos.porBase.map(item => {
+      const baseName = item.base || 'Sem Base';
+      return {
+        base: baseName.length > 20 ? baseName.substring(0, 20) + '...' : baseName,
+        total: parseFloat(item.total),
+      };
+    }) || [];
   }, [analytics]);
 
   const chartDataOperadora = useMemo(() => {
     return analytics?.graficos.porOperadora
-      .filter(item => item.operadora.toLowerCase() !== 'alelo')
+      .filter(item => item.operadora && item.operadora.toLowerCase() !== 'alelo')
       .map(item => ({
-        name: item.operadora,
+        name: item.operadora || 'Sem Operadora',
         value: parseFloat(item.total),
       })) || [];
   }, [analytics]);
