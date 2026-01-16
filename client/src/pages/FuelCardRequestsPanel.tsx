@@ -2441,7 +2441,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                           <p className="text-sm font-medium text-gray-900 truncate">{solicitacao.motorista || (solicitacao as any).driver_name || 'Motorista não informado'}</p>
                           <p className="text-xs text-gray-700 font-medium">
                             {formatCurrency(solicitacao.valor_solicitado)} - {solicitacao.km_total || solicitacao.km_veiculo || (solicitacao as any).km || '-'} km
-                            {solicitacao.litros_solicitados && <span className="ml-1 text-green-600 font-bold">({solicitacao.litros_solicitados.toFixed(1)}L)</span>}
+                            {solicitacao.litros_solicitados && <span className="ml-1 text-green-600 font-bold">({Number(solicitacao.litros_solicitados).toFixed(1)}L)</span>}
                           </p>
                         </div>
 
@@ -2702,7 +2702,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                           <p className="text-sm text-gray-900 truncate">{solicitacao.motorista || (solicitacao as any).nome_motorista || 'Motorista não informado'}</p>
                           <p className="text-xs text-gray-700 font-medium">
                             {formatCurrency(solicitacao.valor_solicitado)} - {solicitacao.km_total || solicitacao.km_veiculo || (solicitacao as any).km || '-'} km
-                            {solicitacao.litros_solicitados && <span className="ml-1 text-green-600 font-bold">({solicitacao.litros_solicitados.toFixed(1)}L)</span>}
+                            {solicitacao.litros_solicitados && <span className="ml-1 text-green-600 font-bold">({Number(solicitacao.litros_solicitados).toFixed(1)}L)</span>}
                           </p>
                         </div>
 
@@ -2933,7 +2933,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                           <p className="text-sm text-gray-900 truncate">{solicitacao.motorista || (solicitacao as any).nome_motorista || 'Motorista não informado'}</p>
                           <p className="text-xs text-gray-700 font-medium">
                             {formatCurrency(solicitacao.valor_solicitado)} - {solicitacao.km_total || solicitacao.km_veiculo || (solicitacao as any).km || '-'} km
-                            {solicitacao.litros_solicitados && <span className="ml-1 text-green-600 font-bold">({solicitacao.litros_solicitados.toFixed(1)}L)</span>}
+                            {solicitacao.litros_solicitados && <span className="ml-1 text-green-600 font-bold">({Number(solicitacao.litros_solicitados).toFixed(1)}L)</span>}
                           </p>
                         </div>
 
