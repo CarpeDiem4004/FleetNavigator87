@@ -251,7 +251,7 @@ export default function LineHaulAnalytics() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis type="number" />
                       <YAxis dataKey="rota" type="category" width={200} tick={{ fontSize: 9 }} />
-                      <Tooltip formatter={(v: number, name: string) => name === 'quantidade' ? v : formatCurrency(v)} />
+                      <Tooltip formatter={(v: number) => [v, 'Viagens']} />
                       <Bar dataKey="quantidade" fill="#3B82F6" name="Viagens" />
                     </BarChart>
                   </ResponsiveContainer>
