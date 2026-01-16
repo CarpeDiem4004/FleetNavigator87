@@ -193,6 +193,17 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
       return;
     }
 
+    // Validar valor solicitado (não pode ser zero ou negativo)
+    const valorSolicitadoNum = unformatCurrency(formData.valor_solicitado);
+    if (valorSolicitadoNum <= 0) {
+      toast({
+        title: 'Valor solicitado inválido',
+        description: 'O valor solicitado deve ser maior que zero',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     // Validar valor do litro (não pode ser zero ou negativo)
     const valorLitroNum = unformatCurrency(formData.valor_litro);
     if (valorLitroNum <= 0) {

@@ -61,6 +61,7 @@ interface FuelCardSolicitation {
   requested_by?: string; // Campo alternativo para o solicitante
   telefone_celular?: string; // Telefone do solicitante
   valor_solicitado: number;
+  valor_litro?: number; // Valor do litro informado na solicitação
   km_veiculo?: number;
   tipo_cartao?: string;
   provedor_cartao?: string; // Provedor do cartão (Ticket, Veloe Go, etc)
@@ -2438,7 +2439,10 @@ const FuelCardRequestsPanel: React.FC = () => {
                         <div className="col-span-2 border-2 border-blue-500 bg-blue-50 p-2 rounded h-full">
                           <p className="text-xs text-blue-600 font-bold mb-1">🚛 MOTORISTA DO VEÍCULO</p>
                           <p className="text-sm font-medium text-gray-900 truncate">{solicitacao.motorista || (solicitacao as any).driver_name || 'Motorista não informado'}</p>
-                          <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_solicitado)} - {solicitacao.km_total || solicitacao.km_veiculo || (solicitacao as any).km || '-'} km</p>
+                          <p className="text-xs text-gray-700 font-medium">
+                            {formatCurrency(solicitacao.valor_solicitado)} - {solicitacao.km_total || solicitacao.km_veiculo || (solicitacao as any).km || '-'} km
+                            {solicitacao.litros_solicitados && <span className="ml-1 text-green-600 font-bold">({solicitacao.litros_solicitados.toFixed(1)}L)</span>}
+                          </p>
                         </div>
 
                         {/* Operação e Base - 1 col */}
@@ -2696,7 +2700,10 @@ const FuelCardRequestsPanel: React.FC = () => {
                         <div className="border-2 border-blue-500 bg-blue-50 p-2 rounded flex-shrink-0" style={{minWidth: '200px'}}>
                           <p className="text-xs text-blue-600 font-bold mb-1">🚛 MOTORISTA</p>
                           <p className="text-sm text-gray-900 truncate">{solicitacao.motorista || (solicitacao as any).nome_motorista || 'Motorista não informado'}</p>
-                          <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_solicitado)} - {solicitacao.km_total || solicitacao.km_veiculo || (solicitacao as any).km || '-'} km</p>
+                          <p className="text-xs text-gray-700 font-medium">
+                            {formatCurrency(solicitacao.valor_solicitado)} - {solicitacao.km_total || solicitacao.km_veiculo || (solicitacao as any).km || '-'} km
+                            {solicitacao.litros_solicitados && <span className="ml-1 text-green-600 font-bold">({solicitacao.litros_solicitados.toFixed(1)}L)</span>}
+                          </p>
                         </div>
 
                         {/* Operação e Base */}
@@ -2924,7 +2931,10 @@ const FuelCardRequestsPanel: React.FC = () => {
                         <div className="border-2 border-blue-500 bg-blue-50 p-2 rounded flex-shrink-0" style={{minWidth: '200px'}}>
                           <p className="text-xs text-blue-600 font-bold mb-1">🚛 MOTORISTA</p>
                           <p className="text-sm text-gray-900 truncate">{solicitacao.motorista || (solicitacao as any).nome_motorista || 'Motorista não informado'}</p>
-                          <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_solicitado)} - {solicitacao.km_total || solicitacao.km_veiculo || (solicitacao as any).km || '-'} km</p>
+                          <p className="text-xs text-gray-700 font-medium">
+                            {formatCurrency(solicitacao.valor_solicitado)} - {solicitacao.km_total || solicitacao.km_veiculo || (solicitacao as any).km || '-'} km
+                            {solicitacao.litros_solicitados && <span className="ml-1 text-green-600 font-bold">({solicitacao.litros_solicitados.toFixed(1)}L)</span>}
+                          </p>
                         </div>
 
                         {/* Operação e Base */}
