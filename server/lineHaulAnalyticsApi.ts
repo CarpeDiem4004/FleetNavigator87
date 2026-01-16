@@ -63,42 +63,38 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
     `;
     const veiculoResult = await pool.query(veiculoMaisCaroQuery, params);
 
-    const rotasMaisRealizadasQuery = operacao && operacao !== 'all' 
-      ? `SELECT 
-          COALESCE(provedor_cartao, 'Sem Provedor') as rota,
-          COUNT(*) as quantidade
-        FROM solicitacoes_fuel_card
-        ${whereClause}
-        GROUP BY provedor_cartao
-        ORDER BY quantidade DESC
-        LIMIT 10`
-      : `SELECT 
-          COALESCE(id_rota, 'Sem Rota') as rota,
-          COUNT(*) as quantidade
-        FROM solicitacoes_fuel_card
-        ${whereClause}
-        GROUP BY id_rota
-        ORDER BY quantidade DESC
-        LIMIT 10`;
+    const rotasMaisRealizadasQuery = `
+      SELECT 
+        CASE 
+          WHEN rota_origem IS NOT NULL AND rota_origem != '' AND rota_destino IS NOT NULL AND rota_destino != ''
+          THEN SUBSTRING(rota_origem FROM 1 FOR 20) || ' → ' || SUBSTRING(rota_destino FROM 1 FOR 20)
+          WHEN id_rota IS NOT NULL AND id_rota != '' THEN id_rota
+          ELSE COALESCE(provedor_cartao, 'Sem Rota')
+        END as rota,
+        COUNT(*) as quantidade
+      FROM solicitacoes_fuel_card
+      ${whereClause}
+      GROUP BY rota
+      ORDER BY quantidade DESC
+      LIMIT 10
+    `;
     const rotasMaisRealizadas = await pool.query(rotasMaisRealizadasQuery, params);
 
-    const rotasMaisCarasQuery = operacao && operacao !== 'all'
-      ? `SELECT 
-          COALESCE(provedor_cartao, 'Sem Provedor') as rota,
-          SUM(valor_solicitado) as valor
-        FROM solicitacoes_fuel_card
-        ${whereClause}
-        GROUP BY provedor_cartao
-        ORDER BY valor DESC
-        LIMIT 10`
-      : `SELECT 
-          COALESCE(id_rota, 'Sem Rota') as rota,
-          SUM(valor_solicitado) as valor
-        FROM solicitacoes_fuel_card
-        ${whereClause}
-        GROUP BY id_rota
-        ORDER BY valor DESC
-        LIMIT 10`;
+    const rotasMaisCarasQuery = `
+      SELECT 
+        CASE 
+          WHEN rota_origem IS NOT NULL AND rota_origem != '' AND rota_destino IS NOT NULL AND rota_destino != ''
+          THEN SUBSTRING(rota_origem FROM 1 FOR 20) || ' → ' || SUBSTRING(rota_destino FROM 1 FOR 20)
+          WHEN id_rota IS NOT NULL AND id_rota != '' THEN id_rota
+          ELSE COALESCE(provedor_cartao, 'Sem Rota')
+        END as rota,
+        SUM(valor_solicitado) as valor
+      FROM solicitacoes_fuel_card
+      ${whereClause}
+      GROUP BY rota
+      ORDER BY valor DESC
+      LIMIT 10
+    `;
     const rotasMaisCaras = await pool.query(rotasMaisCarasQuery, params);
 
     const custoPorVeiculoQuery = `
