@@ -665,7 +665,7 @@ export default function FuelCardSolicitation() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   <FormField
                     control={form.control}
                     name="valor_litro"
@@ -689,23 +689,6 @@ export default function FuelCardSolicitation() {
                       </FormItem>
                     )}
                   />
-
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium">📊 Quantidade de Litros</FormLabel>
-                    <div className="h-12 px-3 py-2 border rounded-md bg-gray-100 flex items-center font-semibold text-green-700 text-base">
-                      {(() => {
-                        const valorSol = unformatCurrency(form.watch("valor_solicitado") || "");
-                        const valorLit = unformatCurrency(form.watch("valor_litro") || "");
-                        if (valorLit > 0 && valorSol > 0) {
-                          return `${(valorSol / valorLit).toFixed(2)} L`;
-                        }
-                        return "0,00 L";
-                      })()}
-                    </div>
-                    <FormDescription className="text-xs">
-                      Calculado automaticamente
-                    </FormDescription>
-                  </FormItem>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
