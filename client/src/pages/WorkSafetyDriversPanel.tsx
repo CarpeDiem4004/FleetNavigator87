@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import * as XLSX from 'xlsx';
 
 interface Driver {
   id: number;
@@ -106,29 +107,41 @@ export default function WorkSafetyDriversPanel() {
   const stats: Stats = statsData?.data || { total: 0, pgrAprovados: 0, comEar: 0, totalBases: 0 };
 
   const handleExport = () => {
-    const csvContent = [
-      ['Nome', 'CPF', 'Base', 'Telefone', 'Email', 'CNH', 'Possui EAR', 'PGR Aprovado', 'Responsável', 'Última Atualização'].join(','),
-      ...drivers.map(d => [
-        d.nome_completo,
-        d.cpf,
-        d.base_atuacao,
-        d.telefone_motorista,
-        d.email,
-        d.numero_cnh,
-        d.possui_ear ? 'Sim' : 'Não',
-        d.pgr_aprovado ? 'Sim' : 'Não',
-        d.nome_responsavel,
-        format(new Date(d.updated_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })
-      ].join(','))
-    ].join('\n');
+    const data = drivers.map(d => ({
+      'Nome Completo': d.nome_completo || '',
+      'CPF': d.cpf || '',
+      'RG': d.rg || '',
+      'Base': d.base_atuacao || '',
+      'Telefone': d.telefone_motorista || '',
+      'Email': d.email || '',
+      'Nº CNH': d.numero_cnh || '',
+      'Categoria CNH': d.categoria_cnh || '',
+      'Data Emissão CNH': d.data_emissao_cnh ? format(new Date(d.data_emissao_cnh), 'dd/MM/yyyy', { locale: ptBR }) : '',
+      'Possui EAR': d.possui_ear ? 'Sim' : 'Não',
+      'PGR Aprovado': d.pgr_aprovado ? 'Sim' : 'Não',
+      'Categoria Contrato': d.categoria_contrato || '',
+      'Milha Atuação': d.milha_atuacao || '',
+      'Cadastrado DDS': d.cadastrado_dds ? 'Sim' : 'Não',
+      'Cadastrado VEC Fleet': d.cadastrado_vec_fleet ? 'Sim' : 'Não',
+      'Responsável': d.nome_responsavel || '',
+      'Tel. Responsável': d.telefone_responsavel || '',
+      'Data Cadastro': d.created_at ? format(new Date(d.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : '',
+      'Última Atualização': d.updated_at ? format(new Date(d.updated_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : ''
+    }));
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `motoristas-seguranca-trabalho-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Motoristas');
+    
+    const colWidths = [
+      { wch: 35 }, { wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 18 },
+      { wch: 30 }, { wch: 15 }, { wch: 12 }, { wch: 18 }, { wch: 12 },
+      { wch: 12 }, { wch: 18 }, { wch: 15 }, { wch: 14 }, { wch: 18 },
+      { wch: 25 }, { wch: 18 }, { wch: 18 }, { wch: 18 }
+    ];
+    ws['!cols'] = colWidths;
+
+    XLSX.writeFile(wb, `motoristas-seguranca-trabalho-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
   return (
@@ -151,7 +164,7 @@ export default function WorkSafetyDriversPanel() {
             </Button>
             <Button onClick={handleExport} data-testid="button-export">
               <Download className="w-4 h-4 mr-2" />
-              Exportar CSV
+              Exportar Excel
             </Button>
           </div>
         </div>
