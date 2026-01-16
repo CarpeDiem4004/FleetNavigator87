@@ -640,6 +640,9 @@ export default function FuelCardSolicitation() {
                     )}
                   />
                   
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="valor_solicitado"
@@ -663,9 +666,7 @@ export default function FuelCardSolicitation() {
                       </FormItem>
                     )}
                   />
-                </div>
-
-                <div className="grid grid-cols-1 gap-4">
+                  
                   <FormField
                     control={form.control}
                     name="valor_litro"
