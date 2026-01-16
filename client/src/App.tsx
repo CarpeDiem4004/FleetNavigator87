@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { VersionChecker } from "@/components/VersionChecker";
 import { initializeTimezoneUrlFix } from "@/utils/externalTimezone";
 import { initializeBrazilTimezone } from '@/utils/timezone-brazil';
 import { initializeRealtimeSync, cleanupRealtimeSync, syncMaintenanceIndicators } from "@/services/syncIndicators";
@@ -1401,6 +1402,7 @@ function App() {
           </Route>
             </Switch>
             <Toaster />
+            <VersionChecker />
           </FuelCardDraftProvider>
         </AuthProvider>
       </SupabaseAuthProvider>

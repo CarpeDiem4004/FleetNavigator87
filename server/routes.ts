@@ -8117,6 +8117,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para verificar versão do sistema (para auto-atualização)
+  app.get("/api/version", (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.json({ 
+      version: '2.9.5',
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // Endpoint para diagnóstico do Supabase
   app.get("/api/diagnostico/supabase", isAdmin, async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
