@@ -154,6 +154,36 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
     `;
     const rotasResult = await pool.query(rotasQuery, params);
 
+    const comparativoOperacoesQuery = `
+      SELECT 
+        CASE 
+          WHEN observacoes ILIKE '%Shopee%' THEN 'Shopee'
+          WHEN observacoes ILIKE '%Mercado Livre%' THEN 'Mercado Livre'
+          ELSE 'Outro'
+        END as operacao,
+        COUNT(*) as solicitacoes,
+        SUM(valor_solicitado) as valor_total
+      FROM solicitacoes_fuel_card
+      WHERE origem_tipo = 'line_hall' OR base ILIKE '%line%hall%' OR base ILIKE '%line%haul%' OR provedor_cartao ILIKE '%line%'
+      GROUP BY operacao
+      ORDER BY valor_total DESC
+    `;
+    const comparativoOperacoes = await pool.query(comparativoOperacoesQuery);
+
+    const rotasABQuery = `
+      SELECT 
+        COALESCE(NULLIF(rota_origem, ''), 'N/A') || ' → ' || COALESCE(NULLIF(rota_destino, ''), 'N/A') as rota,
+        COUNT(*) as quantidade,
+        SUM(valor_solicitado) as valor_total
+      FROM solicitacoes_fuel_card
+      ${whereClause}
+        AND (rota_origem IS NOT NULL AND rota_origem != '' OR rota_destino IS NOT NULL AND rota_destino != '')
+      GROUP BY rota_origem, rota_destino
+      ORDER BY quantidade DESC
+      LIMIT 15
+    `;
+    const rotasAB = await pool.query(rotasABQuery, params);
+
     const cards = cardsResult.rows[0];
     const veiculoMaisCaro = veiculoResult.rows[0];
 
@@ -192,7 +222,17 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
           veiculosEnvolvidos: parseInt(r.veiculos_envolvidos)
         })),
         veiculos: veiculosResult.rows.map(r => r.placa),
-        rotas: rotasResult.rows.map(r => r.rota)
+        rotas: rotasResult.rows.map(r => r.rota),
+        comparativoOperacoes: comparativoOperacoes.rows.map(r => ({
+          operacao: r.operacao,
+          solicitacoes: parseInt(r.solicitacoes),
+          valorTotal: parseFloat(r.valor_total)
+        })),
+        rotasAB: rotasAB.rows.map(r => ({
+          rota: r.rota,
+          quantidade: parseInt(r.quantidade),
+          valorTotal: parseFloat(r.valor_total)
+        }))
       }
     });
   } catch (error: any) {

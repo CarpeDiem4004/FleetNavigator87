@@ -56,7 +56,9 @@ export default function LineHaulAnalytics() {
     participacaoRotas: [],
     tabelaAnalitica: [],
     veiculos: [],
-    rotas: []
+    rotas: [],
+    comparativoOperacoes: [],
+    rotasAB: []
   };
 
   return (
@@ -217,10 +219,50 @@ export default function LineHaulAnalytics() {
               </Card>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {data.comparativoOperacoes?.map((op: any, idx: number) => (
+                <Card key={op.operacao} className={`border-l-4 ${op.operacao === 'Shopee' ? 'border-l-orange-500' : op.operacao === 'Mercado Livre' ? 'border-l-blue-500' : 'border-l-gray-400'}`}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-gray-500 flex items-center gap-1">
+                          {op.operacao === 'Shopee' ? '🟠' : op.operacao === 'Mercado Livre' ? '🔵' : '⚪'} {op.operacao}
+                        </p>
+                        <p className="text-xl font-bold text-gray-900">{formatCurrency(op.valorTotal)}</p>
+                        <p className="text-xs text-gray-400">{op.solicitacoes} solicitações</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-blue-600" />
+                  Top 15 Rotas (Origem → Destino) - Mais Solicitadas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data.rotasAB?.slice(0, 10) || []} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis dataKey="rota" type="category" width={200} tick={{ fontSize: 9 }} />
+                      <Tooltip formatter={(v: number, name: string) => name === 'quantidade' ? v : formatCurrency(v)} />
+                      <Bar dataKey="quantidade" fill="#3B82F6" name="Viagens" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm">Rotas Mais Realizadas</CardTitle>
+                  <CardTitle className="text-sm">Agrupamento por Provedor/Rota</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="h-64">
