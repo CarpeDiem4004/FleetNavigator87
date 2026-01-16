@@ -63,28 +63,42 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
     `;
     const veiculoResult = await pool.query(veiculoMaisCaroQuery, params);
 
-    const rotasMaisRealizadasQuery = `
-      SELECT 
-        COALESCE(id_rota, 'Sem Rota') as rota,
-        COUNT(*) as quantidade
-      FROM solicitacoes_fuel_card
-      ${whereClause}
-      GROUP BY id_rota
-      ORDER BY quantidade DESC
-      LIMIT 10
-    `;
+    const rotasMaisRealizadasQuery = operacao && operacao !== 'all' 
+      ? `SELECT 
+          COALESCE(provedor_cartao, 'Sem Provedor') as rota,
+          COUNT(*) as quantidade
+        FROM solicitacoes_fuel_card
+        ${whereClause}
+        GROUP BY provedor_cartao
+        ORDER BY quantidade DESC
+        LIMIT 10`
+      : `SELECT 
+          COALESCE(id_rota, 'Sem Rota') as rota,
+          COUNT(*) as quantidade
+        FROM solicitacoes_fuel_card
+        ${whereClause}
+        GROUP BY id_rota
+        ORDER BY quantidade DESC
+        LIMIT 10`;
     const rotasMaisRealizadas = await pool.query(rotasMaisRealizadasQuery, params);
 
-    const rotasMaisCarasQuery = `
-      SELECT 
-        COALESCE(id_rota, 'Sem Rota') as rota,
-        SUM(valor_solicitado) as valor
-      FROM solicitacoes_fuel_card
-      ${whereClause}
-      GROUP BY id_rota
-      ORDER BY valor DESC
-      LIMIT 10
-    `;
+    const rotasMaisCarasQuery = operacao && operacao !== 'all'
+      ? `SELECT 
+          COALESCE(provedor_cartao, 'Sem Provedor') as rota,
+          SUM(valor_solicitado) as valor
+        FROM solicitacoes_fuel_card
+        ${whereClause}
+        GROUP BY provedor_cartao
+        ORDER BY valor DESC
+        LIMIT 10`
+      : `SELECT 
+          COALESCE(id_rota, 'Sem Rota') as rota,
+          SUM(valor_solicitado) as valor
+        FROM solicitacoes_fuel_card
+        ${whereClause}
+        GROUP BY id_rota
+        ORDER BY valor DESC
+        LIMIT 10`;
     const rotasMaisCaras = await pool.query(rotasMaisCarasQuery, params);
 
     const custoPorVeiculoQuery = `
