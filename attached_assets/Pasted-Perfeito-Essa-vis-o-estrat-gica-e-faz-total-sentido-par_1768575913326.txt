@@ -1,0 +1,152 @@
+Perfeito. Essa visão é **estratégica** e faz total sentido para o **Line Haul / gestão de frota**.
+Vou te passar **como montar a visão**, **quais métricas**, **modelos de gráficos** e **filtros**, já pensando no teu sistema (Supabase + painel web).
+
+---
+
+## 🎯 Objetivo da visão
+
+Criar um **dashboard de análise de rotas**, permitindo:
+
+* Identificar **rotas mais realizadas**
+* Entender **custo por veículo**
+* Ver **valor total gasto com abastecimento**
+* Descobrir **rotas mais caras**
+* Filtrar tudo por **período (data início e fim)**
+
+---
+
+## 📊 Visões / Cards principais (topo do painel)
+
+**Cards resumidos:**
+
+1. 💰 **Custo total de abastecimento** (período filtrado)
+2. 🚚 **Quantidade de viagens realizadas**
+3. 📍 **Quantidade de rotas distintas**
+4. 💸 **Custo médio por viagem**
+5. 🚛 **Veículo com maior custo no período**
+
+---
+
+## 📈 Gráficos recomendados
+
+### 1️⃣ Rotas mais realizadas
+
+**Gráfico:** Barras (horizontal)
+**Eixo Y:** Rota (Origem → Destino)
+**Eixo X:** Quantidade de viagens
+
+👉 Ideal para ver rapidamente quais rotas mais rodam.
+
+---
+
+### 2️⃣ Rotas que mais custam (abastecimento)
+
+**Gráfico:** Barras
+**Eixo Y:** Rota
+**Eixo X:** Valor total gasto
+
+👉 Mostra onde está o maior consumo financeiro.
+
+---
+
+### 3️⃣ Custo por veículo
+
+**Gráfico:** Barras
+**Eixo Y:** Placa do veículo
+**Eixo X:** Valor gasto em abastecimento
+
+👉 Ajuda a identificar veículos fora do padrão.
+
+---
+
+### 4️⃣ Evolução de custo ao longo do tempo
+
+**Gráfico:** Linha
+**Eixo X:** Data
+**Eixo Y:** Valor total gasto
+
+👉 Excelente para análise de tendência e sazonalidade.
+
+---
+
+### 5️⃣ Participação de custo por rota
+
+**Gráfico:** Pizza ou Donut
+**Legenda:** Rotas
+**Valor:** % do custo total
+
+👉 Visual executivo para reuniões.
+
+---
+
+## 📋 Tabela analítica (muito importante)
+
+**Tabela: Análise de Rotas**
+
+Colunas:
+
+* Rota (Origem → Destino)
+* Quantidade de viagens
+* Total abastecido (litros)
+* Valor total gasto
+* Custo médio por viagem
+* Custo médio por km (se tiver KM)
+* Veículos envolvidos
+
+👉 Essa tabela deve respeitar o filtro de datas.
+
+---
+
+## 🔎 Filtros obrigatórios (topo do painel)
+
+* 📅 **Data início**
+* 📅 **Data fim**
+* 🚛 Veículo (opcional)
+* 📍 Rota (opcional)
+* 🧑‍✈️ Projeto / Operação (se existir)
+* ⛽ Tipo de combustível (se aplicável)
+
+---
+
+## 🧠 Regras de cálculo (importante para o backend)
+
+* **Valor gasto** = Litros × Valor do litro
+* **Custo por rota** = Soma do valor gasto em todas as viagens da rota
+* **Custo por veículo** = Soma dos abastecimentos vinculados à placa
+* **Custo médio por viagem** = Total gasto ÷ número de viagens
+
+---
+
+## 🧩 Sugestão de estrutura de dados (resumo)
+
+Campos essenciais:
+
+* placa_veiculo
+* rota_origem
+* rota_destino
+* data_viagem
+* litros_abastecidos
+* valor_litro
+* valor_total
+* km_inicial / km_final (se houver)
+* projeto / operação
+
+---
+
+## 📌 Resultado final esperado
+
+Um **dashboard claro, executivo e operacional**, que responda rápido:
+
+* Onde estamos gastando mais?
+* Em quais rotas?
+* Com quais veículos?
+* Em qual período?
+
+Se quiser, no próximo passo eu posso:
+
+* 🔹 Montar o **prompt exato para o Replit AI**
+* 🔹 Desenhar o **layout do dashboard**
+* 🔹 Sugerir **queries SQL no Supabase**
+* 🔹 Ajudar a criar **alertas automáticos** (rota fora do padrão)
+
+Só me diz qual você quer seguir primeiro.
