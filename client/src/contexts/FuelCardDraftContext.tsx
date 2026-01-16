@@ -5,6 +5,8 @@ export interface DraftFuelCardRequest {
   placa: string;
   km: number;
   valor_solicitado: number;
+  valor_litro?: number | null;
+  litros_solicitados?: number | null;
   tipo_cartao: string;
   provedor_cartao: string;
   numero_cartao?: string;

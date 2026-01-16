@@ -58,6 +58,8 @@ const solicitacaoSchema = z.object({
     .min(1, { message: "A quilometragem é obrigatória" }),
   valor_solicitado: z.string()
     .min(1, { message: "O valor solicitado é obrigatório" }),
+  valor_litro: z.string()
+    .min(1, { message: "O valor do litro é obrigatório" }),
   tipo_cartao: z.enum(["placa", "numero"], { 
     required_error: "Selecione o tipo de cartão"
   }),
@@ -144,6 +146,7 @@ export default function FuelCardSolicitation() {
       nomeMotorista: "",
       km: "",
       valor_solicitado: "",
+      valor_litro: "",
       tipo_cartao: "placa",
       provedor_cartao: "Ticket",
       numero_cartao: "",
@@ -240,10 +243,16 @@ export default function FuelCardSolicitation() {
       
       console.log('[FUEL-CARD-FRONTEND] Data original:', values.data_uso, '→ Data para envio:', data_uso_corrigida);
       
+      const valorSolicitadoNum = unformatCurrency(values.valor_solicitado.toString());
+      const valorLitroNum = unformatCurrency(values.valor_litro.toString());
+      const litrosCalculados = valorLitroNum > 0 ? valorSolicitadoNum / valorLitroNum : 0;
+
       const processedValues = {
         placa: values.placa,
         km: parseInt(values.km.toString()),
-        valor_solicitado: unformatCurrency(values.valor_solicitado.toString()), // Desformatar moeda brasileira
+        valor_solicitado: valorSolicitadoNum,
+        valor_litro: valorLitroNum > 0 ? valorLitroNum : null,
+        litros_solicitados: litrosCalculados > 0 ? parseFloat(litrosCalculados.toFixed(2)) : null,
         tipo_cartao: values.tipo_cartao,
         provedor_cartao: values.provedor_cartao,
         numero_cartao: values.numero_cartao || "",
@@ -327,10 +336,16 @@ export default function FuelCardSolicitation() {
         ? values.data_uso 
         : localDateToDateOnlyString(new Date(values.data_uso));
       
+      const valorSolDraft = unformatCurrency(values.valor_solicitado.toString());
+      const valorLitDraft = unformatCurrency(values.valor_litro.toString());
+      const litrosDraft = valorLitDraft > 0 ? valorSolDraft / valorLitDraft : 0;
+
       addToDraft({
         placa: values.placa,
         km: parseInt(values.km.toString()),
-        valor_solicitado: unformatCurrency(values.valor_solicitado.toString()), // Desformatar moeda brasileira
+        valor_solicitado: valorSolDraft,
+        valor_litro: valorLitDraft > 0 ? valorLitDraft : null,
+        litros_solicitados: litrosDraft > 0 ? parseFloat(litrosDraft.toFixed(2)) : null,
         tipo_cartao: values.tipo_cartao,
         provedor_cartao: values.provedor_cartao,
         numero_cartao: values.numero_cartao || "",
@@ -367,6 +382,7 @@ export default function FuelCardSolicitation() {
         nomeMotorista: "",
         km: "",
         valor_solicitado: "",
+        valor_litro: "",
         tipo_cartao: "placa",
         provedor_cartao: "Ticket",
         numero_cartao: "",
@@ -647,6 +663,49 @@ export default function FuelCardSolicitation() {
                       </FormItem>
                     )}
                   />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="valor_litro"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">⛽ Valor do Litro (R$)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="text"
+                            placeholder="Ex: 6,49" 
+                            className="text-base h-12" 
+                            value={field.value ? formatCurrency(field.value) : ''}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            data-testid="input-valor-litro"
+                          />
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          Preço por litro do combustível
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium">📊 Quantidade de Litros</FormLabel>
+                    <div className="h-12 px-3 py-2 border rounded-md bg-gray-100 flex items-center font-semibold text-green-700 text-base">
+                      {(() => {
+                        const valorSol = unformatCurrency(form.watch("valor_solicitado") || "");
+                        const valorLit = unformatCurrency(form.watch("valor_litro") || "");
+                        if (valorLit > 0 && valorSol > 0) {
+                          return `${(valorSol / valorLit).toFixed(2)} L`;
+                        }
+                        return "0,00 L";
+                      })()}
+                    </div>
+                    <FormDescription className="text-xs">
+                      Calculado automaticamente
+                    </FormDescription>
+                  </FormItem>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
