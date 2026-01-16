@@ -157,9 +157,9 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
     const comparativoOperacoesQuery = `
       SELECT 
         CASE 
-          WHEN observacoes ILIKE '%Shopee%' THEN 'Shopee'
           WHEN observacoes ILIKE '%Mercado Livre%' THEN 'Mercado Livre'
-          ELSE 'Outro'
+          WHEN observacoes ILIKE '%Shopee%' OR base ILIKE '%SHOPEE%' THEN 'Shopee'
+          ELSE 'Shopee'
         END as operacao,
         COUNT(*) as solicitacoes,
         SUM(valor_solicitado) as valor_total
