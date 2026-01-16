@@ -28,15 +28,17 @@ export default function LineHaulAnalytics() {
   const [dataFim, setDataFim] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [veiculoFilter, setVeiculoFilter] = useState('all');
   const [rotaFilter, setRotaFilter] = useState('all');
+  const [operacaoFilter, setOperacaoFilter] = useState('all');
 
   const { data: analyticsData, isLoading, refetch } = useQuery({
-    queryKey: ['/api/linehaul/analytics', dataInicio, dataFim, veiculoFilter, rotaFilter],
+    queryKey: ['/api/linehaul/analytics', dataInicio, dataFim, veiculoFilter, rotaFilter, operacaoFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.append('dataInicio', dataInicio);
       params.append('dataFim', dataFim);
       if (veiculoFilter !== 'all') params.append('veiculo', veiculoFilter);
       if (rotaFilter !== 'all') params.append('rota', rotaFilter);
+      if (operacaoFilter !== 'all') params.append('operacao', operacaoFilter);
       
       const response = await fetch(`/api/linehaul/analytics?${params.toString()}`, {
         credentials: 'include',
@@ -90,7 +92,20 @@ export default function LineHaulAnalytics() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">Operação</label>
+                <Select value={operacaoFilter} onValueChange={setOperacaoFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas as operações" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as operações</SelectItem>
+                    <SelectItem value="Shopee">🟠 Shopee</SelectItem>
+                    <SelectItem value="Mercado Livre">🔵 Mercado Livre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <label className="text-xs font-medium text-gray-600 mb-1 block">Data Início</label>
                 <Input

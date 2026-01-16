@@ -5,7 +5,7 @@ const router = Router();
 
 router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
   try {
-    const { dataInicio, dataFim, veiculo, rota } = req.query;
+    const { dataInicio, dataFim, veiculo, rota, operacao } = req.query;
     
     let whereClause = `WHERE (origem_tipo = 'line_hall' OR base ILIKE '%line%hall%' OR base ILIKE '%line%haul%' OR provedor_cartao ILIKE '%line%')`;
     const params: any[] = [];
@@ -32,6 +32,12 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
     if (rota && rota !== 'all') {
       whereClause += ` AND id_rota ILIKE $${paramIndex}`;
       params.push(`%${rota}%`);
+      paramIndex++;
+    }
+    
+    if (operacao && operacao !== 'all') {
+      whereClause += ` AND observacoes ILIKE $${paramIndex}`;
+      params.push(`%Operação: ${operacao}%`);
       paramIndex++;
     }
 
