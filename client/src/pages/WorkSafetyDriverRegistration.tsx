@@ -101,11 +101,13 @@ export default function WorkSafetyDriverRegistration() {
           method: 'GET',
           credentials: 'include',
           signal: controller.signal,
+          cache: 'no-store',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
             'X-Mobile-Request': 'true',
-            'Cache-Control': 'no-cache'
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
           }
         });
         

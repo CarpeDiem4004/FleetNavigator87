@@ -1,0 +1,183 @@
+Perfeito, a imagem ajuda bastante 👍
+Esse erro **não é de layout**, é **falha de carregamento da API no mobile**, bem comum quando envolve **fetch + Service Worker / PWA / HTTPS / CORS**.
+
+### O que o erro significa (em português claro)
+
+> **`FetchEvent.respondWith received an error: TypeError: Load failed`**
+
+No celular, o navegador **tentou buscar os projetos**, mas:
+
+* a requisição **falhou antes de receber resposta**
+* normalmente por **CORS, HTTPS, Service Worker quebrado ou API bloqueada no mobile**
+
+No desktop costuma funcionar porque o Chrome é mais permissivo.
+
+---
+
+## 🎯 Causas MAIS COMUNS (pela sua arquitetura)
+
+### 1️⃣ API ou Supabase sem HTTPS válido
+
+No mobile:
+
+* **Safari / Chrome Mobile bloqueiam fetch inseguro**
+* Se sua API estiver em:
+
+```
+http://api.gestaoonfleet.com.br
+```
+
+❌ vai falhar
+
+✅ **TEM que ser**
+
+```
+https://api.gestaoonfleet.com.br
+```
+
+👉 **Confirme**:
+
+* Frontend: `https://gestaoonfleet.com.br`
+* Backend/API: **HTTPS válido (SSL)**
+
+---
+
+### 2️⃣ CORS não liberado para mobile
+
+Se o backend não permitir explicitamente o domínio, o mobile bloqueia.
+
+No backend (Express / Django / Node), o CORS precisa permitir:
+
+```js
+Access-Control-Allow-Origin: https://gestaoonfleet.com.br
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization
+```
+
+Se estiver usando **Supabase**:
+
+* Confirme que a chamada está usando:
+
+```js
+createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+```
+
+e **não** variáveis locais quebradas no build mobile.
+
+---
+
+### 3️⃣ Service Worker / PWA quebrado (MUITO PROVÁVEL)
+
+Esse erro é **clássico de Service Worker**.
+
+Se você usa:
+
+* Vercel
+* PWA
+* Cache offline
+* Manifest.json
+
+👉 O Service Worker pode estar:
+
+* tentando responder um fetch que falhou
+* cacheando endpoint antigo
+* quebrado só no mobile
+
+### Teste rápido (importante)
+
+No celular:
+
+1. Abra o site
+2. Ative **modo anônimo**
+3. Teste novamente
+
+Se funcionar 👉 **é Service Worker**
+
+---
+
+## 🛠️ Correção RÁPIDA (recomendada)
+
+### Opção A — Desativar Service Worker temporariamente
+
+No frontend (React/Vite/Next):
+
+```js
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(registrations => {
+    registrations.forEach(reg => reg.unregister());
+  });
+}
+```
+
+Depois:
+
+* publique
+* peça para os usuários **recarregar a página**
+
+---
+
+### Opção B — Não usar cache para projetos/bases
+
+Se o fetch for algo como:
+
+```js
+fetch('/api/projetos')
+```
+
+Use:
+
+```js
+fetch('/api/projetos', { cache: 'no-store' })
+```
+
+Ou no Service Worker:
+
+```js
+if (event.request.url.includes('/projetos')) {
+  return fetch(event.request);
+}
+```
+
+---
+
+## 4️⃣ Erro encadeado: projetos → bases
+
+Como **bases dependem do projeto**, quando projetos falha:
+
+* o select de base nunca carrega
+* o formulário “volta” ou trava
+
+💡 **Melhoria obrigatória**
+
+* Se projetos falhar:
+
+  * não renderizar o select de base
+  * mostrar mensagem clara:
+
+> “Erro de conexão. Verifique sua internet ou tente novamente.”
+
+---
+
+## ✅ Checklist rápido para você agora
+
+Marca mentalmente:
+
+* [ ] API está em **HTTPS**
+* [ ] CORS liberado para `gestaoonfleet.com.br`
+* [ ] Service Worker testado em aba anônima
+* [ ] Fetch sem cache
+* [ ] Tratamento de erro no select de projeto
+
+---
+
+## 🚀 Próximo passo (se quiser)
+
+Posso te entregar **um prompt pronto para o Replit AI** que:
+
+* corrige o fetch mobile
+* trata erro de projetos
+* impede o select de base de quebrar
+* desativa cache só nesse endpoint
+
+Se quiser, me diga:
+👉 **Frontend é React, Vue ou Flutter Web?**
