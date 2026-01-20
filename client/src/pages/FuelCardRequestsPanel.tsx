@@ -1790,7 +1790,7 @@ const FuelCardRequestsPanel: React.FC = () => {
             Painel de Solicitações
           </h1>
           <div className="flex flex-wrap items-center gap-3">
-            {(user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
+            {(user?.role === 'admin' || user?.role === 'gestor_combustivel' || user?.role === 'line_hall') && (
               <>
                 <Button 
                   variant="secondary" 
@@ -1801,14 +1801,16 @@ const FuelCardRequestsPanel: React.FC = () => {
                   <BarChart3 className="h-4 w-4" />
                   Análise de Consumo
                 </Button>
-                <Button 
-                  variant="secondary" 
-                  className="flex items-center gap-2 bg-blue-100 text-blue-700 hover:bg-blue-200"
-                  onClick={() => setLocation('/terceiros/gerenciamento')}
-                >
-                  <Truck className="h-4 w-4" />
-                  Gerenciamento Terceiros
-                </Button>
+                {(user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
+                  <Button 
+                    variant="secondary" 
+                    className="flex items-center gap-2 bg-blue-100 text-blue-700 hover:bg-blue-200"
+                    onClick={() => setLocation('/terceiros/gerenciamento')}
+                  >
+                    <Truck className="h-4 w-4" />
+                    Gerenciamento Terceiros
+                  </Button>
+                )}
                 <Button 
                   variant="secondary" 
                   className="flex items-center gap-2 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 relative"
@@ -2338,7 +2340,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                     </CardDescription>
                   </div>
               <div className="flex gap-2">
-                {baseFilter !== 'all' && (user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
+                {baseFilter !== 'all' && (user?.role === 'admin' || user?.role === 'gestor_combustivel' || user?.role === 'line_hall') && (
                   <Button 
                     onClick={handleBatchApproval} 
                     variant="default" 
