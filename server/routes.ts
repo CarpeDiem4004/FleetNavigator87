@@ -14282,8 +14282,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/fuel-card-requests', blockFuelCardForOperador1LineHaul, createFuelCardRequest);
   
   // Rotas para relatório de consumo de combustível
-  app.get('/api/fuel-consumption-report', isAuthenticated, getFuelConsumptionReport);
-  app.get('/api/fuel-consumption-bases', isAuthenticated, getBasesForFilter);
+  app.get('/api/fuel-consumption-report', isAuthenticated, blockFuelCardForOperador1LineHaul, getFuelConsumptionReport);
+  app.get('/api/fuel-consumption-bases', isAuthenticated, blockFuelCardForOperador1LineHaul, getBasesForFilter);
 
   // Função específica para acesso público aos projetos
   const getProjectsWithBasesPublic = async (req: Request, res: Response) => {
