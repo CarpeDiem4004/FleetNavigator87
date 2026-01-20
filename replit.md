@@ -178,6 +178,19 @@ O link `/work-safety/portal` é o hub central para as bases acessarem todas as f
 - `client/src/pages/WorkSafetyDeviationForm.tsx` - Formulário público de desvios
 - `client/src/pages/WorkSafetyDeviationsPanel.tsx` - Painel administrativo de desvios
 
+### Checklist de Pátio - Armazenamento de Fotos
+O sistema de checklist de pátio salva as fotos no **Supabase Storage** (bucket: `checklist-patio-fotos`) para garantir armazenamento permanente e seguro.
+
+#### Arquivos Relevantes:
+- `server/routes/checklistPatioApi.ts` - API com upload para Supabase Storage
+- Bucket Supabase: `checklist-patio-fotos` (público, limite 10MB)
+
+#### Fluxo de Upload:
+1. Foto é enviada via multer (memoryStorage)
+2. Buffer é enviado para Supabase Storage
+3. URL pública é salva no banco de dados
+4. Fotos ficam permanentemente acessíveis
+
 ### Driver Deviations Module (Desvios Operacionais)
 Módulo para registro e acompanhamento de desvios comportamentais de motoristas.
 
