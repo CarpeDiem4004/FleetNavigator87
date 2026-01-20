@@ -924,20 +924,22 @@ export default function FuelCardSolicitation() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Projeto</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={isLoadingProjects ? "Carregando projetos..." : "Selecione um projeto"} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
+                        <FormControl>
+                          <select
+                            className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            style={{ fontSize: '16px', minHeight: '48px' }}
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            disabled={isLoadingProjects}
+                          >
+                            <option value="">{isLoadingProjects ? "Carregando projetos..." : "Selecione um projeto"}</option>
                             {projects.map((project) => (
-                              <SelectItem key={project.id} value={project.id.toString()}>
+                              <option key={project.id} value={project.id.toString()}>
                                 {project.name}
-                              </SelectItem>
+                              </option>
                             ))}
-                          </SelectContent>
-                        </Select>
+                          </select>
+                        </FormControl>
                         <FormDescription>
                           Selecione o projeto para esta solicitação
                         </FormDescription>
@@ -953,23 +955,26 @@ export default function FuelCardSolicitation() {
                       <FormItem>
                         <FormLabel>Base</FormLabel>
                         <FormControl>
-                          <Combobox
-                            options={selectedProject?.bases.map((base) => ({
-                              value: base.id.toString(),
-                              label: getBaseDisplayName(base.base_name)
-                            })) || []}
+                          <select
+                            className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            style={{ fontSize: '16px', minHeight: '48px' }}
                             value={field.value}
-                            onChange={field.onChange}
-                            placeholder={
-                              !selectedProject 
+                            onChange={(e) => field.onChange(e.target.value)}
+                            disabled={!selectedProject || selectedProject.bases.length === 0}
+                          >
+                            <option value="">
+                              {!selectedProject 
                                 ? "Selecione um projeto primeiro"
                                 : selectedProject.bases.length === 0 
                                   ? "Nenhuma base disponível"
-                                  : "Digite para buscar uma base..."
-                            }
-                            emptyMessage="Nenhuma base encontrada"
-                            disabled={!selectedProject || selectedProject.bases.length === 0}
-                          />
+                                  : "Selecione uma base"}
+                            </option>
+                            {selectedProject?.bases.map((base) => (
+                              <option key={base.id} value={base.id.toString()}>
+                                {getBaseDisplayName(base.base_name)}
+                              </option>
+                            ))}
+                          </select>
                         </FormControl>
                         <FormDescription>
                           Base onde o veículo está alocado
