@@ -470,81 +470,14 @@ export default function ChecklistPatioPublico() {
                     ))}
                   </select>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Tipo de Veículo *</Label>
-                    <select
-                      className="w-full border rounded-md p-2"
-                      value={formData.tipo_veiculo}
-                      onChange={(e) => handleInputChange('tipo_veiculo', e.target.value)}
-                    >
-                      <option value="">Selecione</option>
-                      <option value="toco">Toco</option>
-                      <option value="truck">Truck</option>
-                      <option value="cavalo">Cavalo</option>
-                      <option value="carreta">Carreta</option>
-                    </select>
-                  </div>
-                  <div>
-                    <Label>Placa *</Label>
-                    <Input
-                      placeholder="ABC-1234"
-                      value={formData.placa_veiculo}
-                      onChange={(e) => handleInputChange('placa_veiculo', e.target.value.toUpperCase())}
-                      className="uppercase"
-                    />
-                  </div>
-                </div>
-                {(formData.tipo_veiculo === 'cavalo' || formData.tipo_veiculo === 'carreta') && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Placa Cavalo {formData.tipo_veiculo === 'cavalo' ? '*' : ''}</Label>
-                      <Input
-                        placeholder="ABC-1234"
-                        value={formData.placa_cavalo}
-                        onChange={(e) => handleInputChange('placa_cavalo', e.target.value.toUpperCase())}
-                        className="uppercase"
-                      />
-                    </div>
-                    <div>
-                      <Label>Quilometragem</Label>
-                      <Input
-                        placeholder="000000"
-                        value={formData.quilometragem}
-                        onChange={(e) => handleInputChange('quilometragem', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                )}
-                {(formData.tipo_veiculo === 'toco' || formData.tipo_veiculo === 'truck') && (
-                  <div>
-                    <Label>Quilometragem</Label>
-                    <Input
-                      placeholder="000000"
-                      value={formData.quilometragem}
-                      onChange={(e) => handleInputChange('quilometragem', e.target.value)}
-                    />
-                  </div>
-                )}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Carreta 1</Label>
-                    <Input
-                      placeholder="Placa"
-                      value={formData.placa_carreta_1}
-                      onChange={(e) => handleInputChange('placa_carreta_1', e.target.value.toUpperCase())}
-                      className="uppercase"
-                    />
-                  </div>
-                  <div>
-                    <Label>Carreta 2</Label>
-                    <Input
-                      placeholder="Placa"
-                      value={formData.placa_carreta_2}
-                      onChange={(e) => handleInputChange('placa_carreta_2', e.target.value.toUpperCase())}
-                      className="uppercase"
-                    />
-                  </div>
+                <div>
+                  <Label>Placa *</Label>
+                  <Input
+                    placeholder="ABC-1234"
+                    value={formData.placa_veiculo}
+                    onChange={(e) => handleInputChange('placa_veiculo', e.target.value.toUpperCase())}
+                    className="uppercase"
+                  />
                 </div>
               </>
             )}
