@@ -1740,3 +1740,61 @@ export const insertJornadaMotoristaSchema = createInsertSchema(jornadaMotorista,
 
 export type JornadaMotorista = typeof jornadaMotorista.$inferSelect;
 export type InsertJornadaMotorista = z.infer<typeof insertJornadaMotoristaSchema>;
+
+// ==================== SEGURANÇA DO TRABALHO - PLANOS DE AÇÃO ====================
+
+export const workSafetyActionPlanOriginEnum = pgEnum('work_safety_action_plan_origin', [
+  'investigacao',
+  'telemetria',
+  'gestao_relatos',
+  'preventiva',
+  'campanhas'
+]);
+
+export const workSafetyActionPlanStatusEnum = pgEnum('work_safety_action_plan_status', [
+  'em_andamento',
+  'concluido',
+  'atrasado'
+]);
+
+export const workSafetyActionPlans = pgTable("work_safety_action_plans", {
+  id: serial("id").primaryKey(),
+  status: text("status").notNull().default('em_andamento'),
+  dataAbertura: timestamp("data_abertura").notNull().defaultNow(),
+  prazoFinal: timestamp("prazo_final").notNull(),
+  origemAcao: text("origem_acao").notNull(),
+  placa: text("placa"),
+  dataOcorrencia: timestamp("data_ocorrencia"),
+  operacao: text("operacao").notNull(),
+  baseOperacao: text("base_operacao"),
+  acaoProposta: text("acao_proposta").notNull(),
+  responsavelNome: text("responsavel_nome").notNull(),
+  responsavelTelefone: text("responsavel_telefone"),
+  responsavelEmail: text("responsavel_email"),
+  observacoes: text("observacoes"),
+  dataConclusao: timestamp("data_conclusao"),
+  criadoPor: text("criado_por").notNull(),
+  notificadoWhatsapp: boolean("notificado_whatsapp").default(false),
+  dataNotificacao: timestamp("data_notificacao"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertWorkSafetyActionPlanSchema = createInsertSchema(workSafetyActionPlans, {
+  status: z.enum(['em_andamento', 'concluido', 'atrasado']).default('em_andamento'),
+  prazoFinal: z.string().or(z.date()),
+  origemAcao: z.enum(['investigacao', 'telemetria', 'gestao_relatos', 'preventiva', 'campanhas']),
+  placa: z.string().optional().nullable(),
+  dataOcorrencia: z.string().or(z.date()).optional().nullable(),
+  operacao: z.string().min(1, "Operação é obrigatória"),
+  baseOperacao: z.string().optional().nullable(),
+  acaoProposta: z.string().min(1, "Ação proposta é obrigatória"),
+  responsavelNome: z.string().min(1, "Responsável é obrigatório"),
+  responsavelTelefone: z.string().optional().nullable(),
+  responsavelEmail: z.string().email().optional().nullable(),
+  observacoes: z.string().optional().nullable(),
+  criadoPor: z.string().min(1, "Criado por é obrigatório"),
+}).omit({ id: true, createdAt: true, updatedAt: true, notificadoWhatsapp: true, dataNotificacao: true, dataConclusao: true });
+
+export type WorkSafetyActionPlan = typeof workSafetyActionPlans.$inferSelect;
+export type InsertWorkSafetyActionPlan = z.infer<typeof insertWorkSafetyActionPlanSchema>;
