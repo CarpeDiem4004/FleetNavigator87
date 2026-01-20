@@ -176,7 +176,8 @@ import {
   getDeviationById,
   updateDeviationStatus,
   getDeviationStats,
-  deleteDeviation
+  deleteDeviation,
+  cleanupTestData
 } from "./routes/workSafetyDeviationsApi";
 import recebimentosOsascoV2Routes from "./routes/recebimentosOsascoV2.js";
 import osascoV2RecebimentosDirecto from "./routes/osascoV2RecebimentosDirecto.js";
@@ -1305,6 +1306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/work-safety/deviations/:id', isAuthenticated, getDeviationById);
   app.put('/api/work-safety/deviations/:id/status', isAuthenticated, updateDeviationStatus);
   app.delete('/api/work-safety/deviations/:id', isAuthenticated, deleteDeviation);
+  app.post('/api/work-safety/deviations/cleanup-test-data', isAuthenticated, cleanupTestData);
   
   // Health check endpoints para deployments
   // ROTAS DE ALTA PRIORIDADE - DEPOIS DA AUTENTICAÇÃO

@@ -12,8 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   AlertTriangle, Search, Filter, TrendingUp, Users, Truck, 
   Calendar, RefreshCw, ChevronDown, AlertOctagon, CheckCircle,
-  Clock, AlertCircle, BarChart3, PieChart, Eye, Edit, Plus, FileText
+  Clock, AlertCircle, BarChart3, PieChart, Eye, Edit, Plus, FileText, Trash2
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { PieChart as RechartsChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
@@ -67,7 +68,9 @@ const CHART_COLORS = ['#DB0145', '#F39C12', '#3498db', '#2ecc71', '#9b59b6', '#e
 
 export default function WorkSafetyDeviationsPanel() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
+  const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
   const [filterBase, setFilterBase] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterType, setFilterType] = useState('');
@@ -184,6 +187,37 @@ export default function WorkSafetyDeviationsPanel() {
       return;
     }
     createDeviationMutation.mutate(newDeviation);
+  };
+
+  const cleanupTestDataMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/work-safety/deviations/cleanup-test-data', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao limpar dados de teste');
+      }
+      return response.json();
+    },
+    onSuccess: (response: any) => {
+      toast({ 
+        title: 'Dados de teste removidos com sucesso!',
+        description: `${response.deletedCount} registros foram removidos.`
+      });
+      setCleanupDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/work-safety/deviations'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-safety/deviations/stats'], exact: false });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Erro ao limpar dados', description: error.message, variant: 'destructive' });
+    }
+  });
+
+  const handleCleanupTestData = () => {
+    cleanupTestDataMutation.mutate();
   };
 
   const deviations: Deviation[] = deviationsResponse?.data || [];
@@ -320,6 +354,47 @@ export default function WorkSafetyDeviationsPanel() {
               <FileText className="h-4 w-4" />
               PDF Completo
             </Button>
+            
+            {(user?.role === 'admin' || user?.role === 'ceo') && (
+              <Dialog open={cleanupDialogOpen} onOpenChange={setCleanupDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2 text-red-600 border-red-200 hover:bg-red-50">
+                    <Trash2 className="h-4 w-4" />
+                    Limpar Testes
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-red-600">
+                      <AlertTriangle className="h-5 w-5" />
+                      Confirmar Limpeza de Dados de Teste
+                    </DialogTitle>
+                    <DialogDescription className="pt-4 space-y-3">
+                      <p>Esta ação irá remover registros de teste com as seguintes características:</p>
+                      <ul className="list-disc list-inside text-sm space-y-1">
+                        <li>Nomes genéricos exatos (teste, tes, eee, demo, etc.)</li>
+                        <li>Placas fictícias específicas (ABC1234, EE33, SEE333, RER333, etc.)</li>
+                      </ul>
+                      <p className="text-sm text-gray-600 mt-2">Registros reais com nomes válidos não serão afetados.</p>
+                      <p className="font-semibold text-red-600">Esta ação não pode ser desfeita!</p>
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex justify-end gap-2 mt-4">
+                    <Button variant="outline" onClick={() => setCleanupDialogOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      onClick={handleCleanupTestData}
+                      disabled={cleanupTestDataMutation.isPending}
+                    >
+                      {cleanupTestDataMutation.isPending ? 'Removendo...' : 'Confirmar Limpeza'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+            
             <Dialog open={newDeviationOpen} onOpenChange={setNewDeviationOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2 bg-[#DB0145] hover:bg-[#B50139]">

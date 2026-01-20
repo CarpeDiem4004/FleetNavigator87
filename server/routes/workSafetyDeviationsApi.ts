@@ -413,5 +413,133 @@ export async function deleteDeviation(req: Request, res: Response) {
   }
 }
 
+export async function cleanupTestData(req: Request, res: Response) {
+  const client = await pool.connect();
+  
+  try {
+    const user = (req as any).user;
+    
+    if (!user || (user.role !== 'admin' && user.role !== 'ceo')) {
+      return res.status(403).json({
+        success: false,
+        message: 'Apenas administradores podem executar esta ação.'
+      });
+    }
+
+    const TEST_NAME_PATTERNS = [
+      'teste', 'test', 'tes', 'eee', 'aaa', 'bbb', 'demo', 'sample', 
+      'exemplo', 'dummy', 'fake', 'mock', 'xxx', 'yyy', 'zzz', 'usuario teste',
+      'motorista teste', 'driver test', 'condutor teste'
+    ];
+    
+    const TEST_PLATE_PATTERNS = [
+      'ABC1234', 'ABC123', 'EEE3', 'EE33', 'SEE333', 'RER333', 'TEST1234',
+      'TESTE123', 'XXX1234', 'YYY1234', 'ZZZ1234', 'AAA1234', 'BBB1234'
+    ];
+
+    await client.query('BEGIN');
+
+    const findTestQuery = `
+      SELECT id, motorista_nome, placa, base_operacao, data_desvio 
+      FROM work_safety_deviations 
+      WHERE 
+        -- Nomes genéricos de teste (case insensitive, nome exato)
+        LOWER(TRIM(motorista_nome)) IN (${TEST_NAME_PATTERNS.map((_, i) => `$${i + 1}`).join(', ')})
+        OR
+        -- Placas fictícias conhecidas (match exato)
+        UPPER(placa) IN (${TEST_PLATE_PATTERNS.map((_, i) => `$${i + 1 + TEST_NAME_PATTERNS.length}`).join(', ')})
+    `;
+
+    const allPatterns = [...TEST_NAME_PATTERNS, ...TEST_PLATE_PATTERNS];
+    const testRecords = await client.query(findTestQuery, allPatterns);
+
+    if (testRecords.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.json({
+        success: true,
+        message: 'Nenhum dado de teste encontrado para remoção.',
+        deletedCount: 0,
+        deletedRecords: []
+      });
+    }
+
+    const idsToDelete = testRecords.rows.map(r => r.id);
+    
+    const deleteQuery = `
+      DELETE FROM work_safety_deviations 
+      WHERE id = ANY($1::int[])
+      RETURNING id, motorista_nome, placa, base_operacao
+    `;
+    
+    const deleteResult = await client.query(deleteQuery, [idsToDelete]);
+
+    const auditQuery = `
+      INSERT INTO audit_log (
+        action, entity_type, entity_id, user_email, user_role, 
+        details, ip_address, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+    `;
+    
+    const auditDetails = JSON.stringify({
+      action: 'cleanup_test_data',
+      deletedCount: deleteResult.rows.length,
+      deletedRecords: deleteResult.rows.map(r => ({
+        id: r.id,
+        motorista: r.motorista_nome,
+        placa: r.placa,
+        base: r.base_operacao
+      })),
+      criteria: {
+        testNamePatterns: TEST_NAME_PATTERNS,
+        testPlatePatterns: TEST_PLATE_PATTERNS
+      },
+      timestamp: new Date().toISOString()
+    });
+
+    try {
+      await client.query(auditQuery, [
+        'cleanup_test_data',
+        'work_safety_deviations',
+        idsToDelete.join(','),
+        user.email || 'unknown',
+        user.role || 'admin',
+        auditDetails,
+        req.ip || 'unknown'
+      ]);
+    } catch (auditError) {
+      console.log('[DESVIOS] Tabela audit_log não existe, continuando sem log de auditoria');
+    }
+
+    await client.query('COMMIT');
+
+    console.log(`[DESVIOS] Limpeza de dados de teste executada por ${user.email}. Registros removidos: ${deleteResult.rows.length}`);
+
+    return res.json({
+      success: true,
+      message: `Dados de teste removidos com sucesso.`,
+      deletedCount: deleteResult.rows.length,
+      deletedRecords: deleteResult.rows.map(r => ({
+        id: r.id,
+        motorista: r.motorista_nome,
+        placa: r.placa,
+        base: r.base_operacao
+      })),
+      executedBy: user.email,
+      executedAt: new Date().toISOString()
+    });
+
+  } catch (error: any) {
+    await client.query('ROLLBACK');
+    console.error('[DESVIOS] Erro ao limpar dados de teste:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro interno ao limpar dados de teste.',
+      error: error.message
+    });
+  } finally {
+    client.release();
+  }
+}
+
 export const deviationTypes = DEVIATION_TYPES;
 export const statusLabels = STATUS_LABELS;
