@@ -355,107 +355,124 @@ export default function WorkSafetyDriverRegistration() {
                       )}
                     />
 
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Building2 className="w-4 h-4" />
-                        Projeto *
-                      </FormLabel>
-                      <Select 
-                        onValueChange={handleProjectChange} 
-                        value={selectedProject?.id.toString() || ''}
-                        disabled={isLoadingProjects}
-                      >
-                        <FormControl>
-                          <SelectTrigger data-testid="select-projeto">
-                            <SelectValue placeholder={isLoadingProjects ? "Carregando projetos..." : "Selecione um projeto"} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {projects.map((project) => (
-                            <SelectItem key={project.id} value={project.id.toString()}>
-                              {project.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground">Selecione o projeto para esta solicitação</p>
-                      {projectsError && (
-                        <p className="text-xs text-red-500">{projectsError}</p>
-                      )}
-                    </FormItem>
-
-                    <FormField
-                      control={form.control}
-                      name="baseAtuacao"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Base de Atuação *</FormLabel>
-                          <Popover open={baseSearchOpen} onOpenChange={setBaseSearchOpen}>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant="outline"
-                                  role="combobox"
-                                  aria-expanded={baseSearchOpen}
-                                  className={cn(
-                                    "w-full justify-between font-normal",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                  disabled={!selectedProject}
-                                  data-testid="select-base"
-                                >
-                                  {field.value || (!selectedProject ? "Selecione um projeto primeiro" : "Digite para buscar a base...")}
-                                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[350px] p-0" align="start">
-                              <div className="flex items-center border-b px-3">
-                                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                <Input
-                                  placeholder="Digite para filtrar bases..."
-                                  value={baseSearchQuery}
-                                  onChange={(e) => setBaseSearchQuery(e.target.value)}
-                                  className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                                />
-                              </div>
-                              <div className="max-h-[300px] overflow-y-auto">
-                                {filteredBases.length === 0 ? (
-                                  <div className="py-6 text-center text-sm text-muted-foreground">
-                                    Nenhuma base encontrada.
-                                  </div>
-                                ) : (
-                                  filteredBases.map((base) => (
-                                    <div
-                                      key={base.id}
-                                      className={cn(
-                                        "flex items-center px-3 py-2 cursor-pointer hover:bg-accent",
-                                        field.value === base.base_name && "bg-accent"
-                                      )}
-                                      onClick={() => {
-                                        field.onChange(base.base_name);
-                                        setBaseSearchOpen(false);
-                                        setBaseSearchQuery('');
-                                      }}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          "mr-2 h-4 w-4",
-                                          field.value === base.base_name ? "opacity-100" : "opacity-0"
-                                        )}
-                                      />
-                                      {base.base_name}
-                                    </div>
-                                  ))
-                                )}
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                          <p className="text-xs text-muted-foreground">Digite para buscar - Base onde o motorista está alocado</p>
-                          <FormMessage />
+                    {isLoadingProjects ? (
+                      <div className="col-span-2 flex items-center justify-center p-4">
+                        <Loader2 className="h-5 w-5 animate-spin text-blue-600 mr-2" />
+                        <span className="text-gray-600">Carregando projetos...</span>
+                      </div>
+                    ) : projectsError ? (
+                      <div className="col-span-2 text-center p-4">
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-3">
+                          <p className="text-red-600 font-medium">Erro ao carregar projetos</p>
+                          <p className="text-red-500 text-sm">Verifique sua conexão</p>
+                        </div>
+                        <Button 
+                          type="button"
+                          onClick={() => window.location.reload()}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          Tentar novamente
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <FormItem className="col-span-2 md:col-span-1">
+                          <FormLabel className="flex items-center gap-2">
+                            <Building2 className="w-4 h-4" />
+                            Projeto *
+                          </FormLabel>
+                          <Select 
+                            onValueChange={handleProjectChange} 
+                            value={selectedProject?.id.toString() || ''}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-projeto">
+                                <SelectValue placeholder="Selecione um projeto" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {projects.map((project) => (
+                                <SelectItem key={project.id} value={project.id.toString()}>
+                                  {project.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </FormItem>
-                      )}
-                    />
+
+                        <FormField
+                          control={form.control}
+                          name="baseAtuacao"
+                          render={({ field }) => (
+                            <FormItem className="col-span-2 md:col-span-1">
+                              <FormLabel>Base de Atuação *</FormLabel>
+                              <Popover open={baseSearchOpen} onOpenChange={setBaseSearchOpen}>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      variant="outline"
+                                      role="combobox"
+                                      aria-expanded={baseSearchOpen}
+                                      className={cn(
+                                        "w-full justify-between font-normal",
+                                        !field.value && "text-muted-foreground"
+                                      )}
+                                      disabled={!selectedProject}
+                                      data-testid="select-base"
+                                    >
+                                      {field.value || (!selectedProject ? "Selecione projeto" : "Buscar base...")}
+                                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[calc(100vw-2rem)] max-w-[350px] p-0" align="start">
+                                  <div className="flex items-center border-b px-3">
+                                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                    <Input
+                                      placeholder="Digite para filtrar bases..."
+                                      value={baseSearchQuery}
+                                      onChange={(e) => setBaseSearchQuery(e.target.value)}
+                                      className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                    />
+                                  </div>
+                                  <div className="max-h-[300px] overflow-y-auto">
+                                    {filteredBases.length === 0 ? (
+                                      <div className="py-6 text-center text-sm text-muted-foreground">
+                                        Nenhuma base encontrada.
+                                      </div>
+                                    ) : (
+                                      filteredBases.map((base) => (
+                                        <div
+                                          key={base.id}
+                                          className={cn(
+                                            "flex items-center px-3 py-2 cursor-pointer hover:bg-accent",
+                                            field.value === base.base_name && "bg-accent"
+                                          )}
+                                          onClick={() => {
+                                            field.onChange(base.base_name);
+                                            setBaseSearchOpen(false);
+                                            setBaseSearchQuery('');
+                                          }}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              field.value === base.base_name ? "opacity-100" : "opacity-0"
+                                            )}
+                                          />
+                                          {base.base_name}
+                                        </div>
+                                      ))
+                                    )}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
 
                     <FormField
                       control={form.control}

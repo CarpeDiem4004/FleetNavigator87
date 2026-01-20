@@ -557,18 +557,26 @@ export default function WorkSafetyReportAccident() {
             </CardHeader>
             <CardContent className="p-6 space-y-6 bg-white">
               {isLoadingProjects ? (
-                <div className="flex items-center justify-center p-8">
+                <div className="flex flex-col items-center justify-center p-8">
                   <Loader2 className="h-8 w-8 animate-spin text-[#E10613]" />
-                  <span className="ml-2 text-gray-600">Carregando projetos...</span>
+                  <span className="mt-2 text-gray-600">Carregando projetos...</span>
                 </div>
               ) : projectsError ? (
-                <div className="text-center p-8">
-                  <p className="text-red-600 mb-4">Erro ao carregar projetos: {projectsError}</p>
-                  <Button onClick={() => window.location.reload()}>Tentar novamente</Button>
+                <div className="text-center p-8 space-y-4">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p className="text-red-600 font-medium">Erro ao carregar projetos</p>
+                    <p className="text-red-500 text-sm mt-1">Verifique sua conexão e tente novamente</p>
+                  </div>
+                  <Button 
+                    className="bg-[#E10613] hover:bg-[#B8050F]"
+                    onClick={() => window.location.reload()}
+                  >
+                    Tentar novamente
+                  </Button>
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <div className="space-y-2">
                       <Label className="text-base font-semibold text-gray-900">Projeto *</Label>
                       <Select onValueChange={handleProjectChange} value={selectedProject?.id.toString() || ''}>
@@ -600,7 +608,7 @@ export default function WorkSafetyReportAccident() {
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-full p-0" align="start">
+                        <PopoverContent className="w-[calc(100vw-2rem)] max-w-[350px] p-0" align="start">
                           <div className="flex items-center border-b px-3">
                             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                             <input
@@ -640,68 +648,70 @@ export default function WorkSafetyReportAccident() {
                       </Popover>
                     </div>
                   </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-gray-900">Reportado Por *</Label>
+                      <Input
+                        placeholder="Nome completo"
+                        value={formData.reportadoPor}
+                        onChange={(e) => setFormData({...formData, reportadoPor: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-gray-900">E-mail Corporativo *</Label>
+                      <Input
+                        type="email"
+                        placeholder="email@empresa.com.br"
+                        value={formData.emailCorporativo}
+                        onChange={(e) => setFormData({...formData, emailCorporativo: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-gray-900">Telefone (WhatsApp) *</Label>
+                      <Input
+                        placeholder="(00) 00000-0000"
+                        value={formData.telefoneWhatsApp}
+                        onChange={(e) => setFormData({...formData, telefoneWhatsApp: formatPhone(e.target.value)})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-gray-900">Coordenador da Base/Unidade *</Label>
+                      <Input
+                        placeholder="Nome completo do coordenador"
+                        value={formData.coordenadorBase}
+                        onChange={(e) => setFormData({...formData, coordenadorBase: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  {isMeliOperation && (
+                    <div className="space-y-2 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                      <Label>Nome completo do responsável Meli</Label>
+                      <p className="text-xs text-gray-500">Somente para Operações MELI. Cliente para reporte, dúvidas, informações e contato com a transportadora. Se não houver, marcar como N/A</p>
+                      <Input
+                        placeholder="Nome ou N/A"
+                        value={formData.nomeResponsavelMeli}
+                        onChange={(e) => setFormData({...formData, nomeResponsavelMeli: e.target.value})}
+                      />
+                    </div>
+                  )}
                 </>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-gray-900">Reportado Por *</Label>
-                  <Input
-                    placeholder="Nome completo"
-                    value={formData.reportadoPor}
-                    onChange={(e) => setFormData({...formData, reportadoPor: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-gray-900">E-mail Corporativo *</Label>
-                  <Input
-                    type="email"
-                    placeholder="email@empresa.com.br"
-                    value={formData.emailCorporativo}
-                    onChange={(e) => setFormData({...formData, emailCorporativo: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-gray-900">Telefone (WhatsApp) *</Label>
-                  <Input
-                    placeholder="(00) 00000-0000"
-                    value={formData.telefoneWhatsApp}
-                    onChange={(e) => setFormData({...formData, telefoneWhatsApp: formatPhone(e.target.value)})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-gray-900">Coordenador da Base/Unidade *</Label>
-                  <Input
-                    placeholder="Nome completo do coordenador"
-                    value={formData.coordenadorBase}
-                    onChange={(e) => setFormData({...formData, coordenadorBase: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              {isMeliOperation && (
-                <div className="space-y-2 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <Label>Nome completo do responsável Meli</Label>
-                  <p className="text-xs text-gray-500">Somente para Operações MELI. Cliente para reporte, dúvidas, informações e contato com a transportadora. Se não houver, marcar como N/A</p>
-                  <Input
-                    placeholder="Nome ou N/A"
-                    value={formData.nomeResponsavelMeli}
-                    onChange={(e) => setFormData({...formData, nomeResponsavelMeli: e.target.value})}
-                  />
+              {!isLoadingProjects && !projectsError && (
+                <div className="flex gap-3">
+                  <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(1)}>
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                  </Button>
+                  <Button className="flex-1 bg-[#E10613] hover:bg-[#B8050F]" onClick={() => goToSection(3)}>
+                    Continuar <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                 </div>
               )}
-
-              <div className="flex gap-3">
-                <Button variant="outline" className="flex-1" onClick={() => setCurrentSection(1)}>
-                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-                </Button>
-                <Button className="flex-1 bg-[#E10613] hover:bg-[#B8050F]" onClick={() => goToSection(3)}>
-                  Continuar <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
             </CardContent>
           </Card>
         )}
