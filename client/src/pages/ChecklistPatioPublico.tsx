@@ -216,6 +216,10 @@ export default function ChecklistPatioPublico() {
       toast({ title: "Campo obrigatório", description: "Selecione a base", variant: "destructive" });
       return false;
     }
+    if (!formData.tipo_veiculo) {
+      toast({ title: "Campo obrigatório", description: "Selecione o tipo de veículo", variant: "destructive" });
+      return false;
+    }
     if (!formData.placa_veiculo.trim()) {
       toast({ title: "Campo obrigatório", description: "Informe a placa do veículo", variant: "destructive" });
       return false;
@@ -477,6 +481,20 @@ export default function ChecklistPatioPublico() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
+                    <Label>Tipo de Veículo *</Label>
+                    <select
+                      className="w-full border rounded-md p-2"
+                      value={formData.tipo_veiculo}
+                      onChange={(e) => handleInputChange('tipo_veiculo', e.target.value)}
+                    >
+                      <option value="">Selecione</option>
+                      <option value="toco">Toco</option>
+                      <option value="truck">Truck</option>
+                      <option value="cavalo">Cavalo</option>
+                      <option value="carreta">Carreta</option>
+                    </select>
+                  </div>
+                  <div>
                     <Label>Placa *</Label>
                     <Input
                       placeholder="ABC-1234"
@@ -485,15 +503,15 @@ export default function ChecklistPatioPublico() {
                       className="uppercase"
                     />
                   </div>
-                  <div>
-                    <Label>Quilometragem *</Label>
-                    <Input
-                      placeholder="000000"
-                      type="number"
-                      value={formData.quilometragem}
-                      onChange={(e) => handleInputChange('quilometragem', e.target.value)}
-                    />
-                  </div>
+                </div>
+                <div>
+                  <Label>Quilometragem *</Label>
+                  <Input
+                    placeholder="000000"
+                    type="number"
+                    value={formData.quilometragem}
+                    onChange={(e) => handleInputChange('quilometragem', e.target.value)}
+                  />
                 </div>
               </>
             )}
