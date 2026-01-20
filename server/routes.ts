@@ -179,6 +179,15 @@ import {
   deleteDeviation,
   cleanupTestData
 } from "./routes/workSafetyDeviationsApi";
+import {
+  createActionPlan,
+  getActionPlans,
+  getActionPlanById,
+  getActionPlanStats,
+  updateActionPlan,
+  deleteActionPlan,
+  notifyResponsible
+} from "./routes/workSafetyActionPlansApi";
 import recebimentosOsascoV2Routes from "./routes/recebimentosOsascoV2.js";
 import osascoV2RecebimentosDirecto from "./routes/osascoV2RecebimentosDirecto.js";
 import { db, pool } from "./db.js";
@@ -1308,6 +1317,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/work-safety/deviations/:id/status', isAuthenticated, updateDeviationStatus);
   app.delete('/api/work-safety/deviations/:id', isAuthenticated, deleteDeviation);
   app.post('/api/work-safety/deviations/cleanup-test-data', isAuthenticated, cleanupTestData);
+  
+  // Rotas de Planos de Ação - Segurança do Trabalho
+  app.post('/api/work-safety/action-plans', isAuthenticated, createActionPlan);
+  app.get('/api/work-safety/action-plans', isAuthenticated, getActionPlans);
+  app.get('/api/work-safety/action-plans/stats', isAuthenticated, getActionPlanStats);
+  app.get('/api/work-safety/action-plans/:id', isAuthenticated, getActionPlanById);
+  app.put('/api/work-safety/action-plans/:id', isAuthenticated, updateActionPlan);
+  app.delete('/api/work-safety/action-plans/:id', isAuthenticated, deleteActionPlan);
+  app.post('/api/work-safety/action-plans/:id/notify', isAuthenticated, notifyResponsible);
   
   // Health check endpoints para deployments
   // ROTAS DE ALTA PRIORIDADE - DEPOIS DA AUTENTICAÇÃO
