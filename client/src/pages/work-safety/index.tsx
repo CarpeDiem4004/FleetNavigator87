@@ -320,14 +320,15 @@ export default function WorkSafetyPage() {
               )}
 
               <div className="mt-4 flex gap-2 justify-center">
-                <Button 
-                  className="bg-red-600 hover:bg-red-700" 
-                  data-testid="button-view-all-accidents"
-                  onClick={() => setOccurrencesModalOpen(true)}
-                >
-                  <Eye className="mr-2 h-4 w-4" />
-                  Ver Todas as Ocorrências
-                </Button>
+                <Link href="/work-safety/acidentes">
+                  <Button 
+                    className="bg-red-600 hover:bg-red-700" 
+                    data-testid="button-view-all-accidents"
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Ver Todas as Ocorrências
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
