@@ -48,8 +48,18 @@ export default function WorkSafetyPage() {
     queryKey: ['/api/work-safety/deviations/stats'],
   });
 
+  const { data: actionPlanStatsData } = useQuery<{ success: boolean; data: { 
+    emAndamento: number; 
+    concluidos: number;
+    atrasados: number;
+    total: number;
+  }}>({
+    queryKey: ['/api/work-safety/action-plans/stats'],
+  });
+
   const stats = statsData?.data || { total: 0, pgrAprovados: 0, comEar: 0, totalBases: 0 };
   const deviationStats = deviationStatsData?.data || { total: 0, recurrentDrivers: 0, byStatus: [] };
+  const actionPlanStats = actionPlanStatsData?.data || { emAndamento: 0, concluidos: 0, atrasados: 0, total: 0 };
   const accidentStats = accidentStatsData?.data || { 
     total: 0, acidentes: 0, quase_acidentes: 0, danos_materiais: 0, danos_ambientais: 0, com_vitima: 0, dias_sem_acidente: 0 
   };
@@ -463,6 +473,47 @@ export default function WorkSafetyPage() {
                   <Button className="bg-orange-600 hover:bg-orange-700" data-testid="button-manage-deviations">
                     <ClipboardList className="mr-2 h-4 w-4" />
                     Gerenciar Desvios
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-purple-200 bg-purple-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-purple-900">
+                <ClipboardList className="h-5 w-5" />
+                Planos de Ação
+              </CardTitle>
+              <CardDescription>
+                Controle e acompanhamento de planos de ação de segurança
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm border-l-4 border-blue-500">
+                  <p className="text-3xl font-bold text-blue-600">{actionPlanStats.emAndamento}</p>
+                  <p className="text-sm text-gray-600">Em Andamento</p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm border-l-4 border-red-500">
+                  <p className="text-3xl font-bold text-red-600">{actionPlanStats.atrasados}</p>
+                  <p className="text-sm text-gray-600">Atrasados</p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm border-l-4 border-green-500">
+                  <p className="text-3xl font-bold text-green-600">{actionPlanStats.concluidos}</p>
+                  <p className="text-sm text-gray-600">Concluídos</p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm border-l-4 border-purple-500">
+                  <p className="text-3xl font-bold text-purple-600">{actionPlanStats.total}</p>
+                  <p className="text-sm text-gray-600">Total</p>
+                </div>
+              </div>
+
+              <div className="mt-4 flex gap-2 justify-center">
+                <Link href="/work-safety/planos-acao">
+                  <Button className="bg-purple-600 hover:bg-purple-700" data-testid="button-manage-action-plans">
+                    <ClipboardList className="mr-2 h-4 w-4" />
+                    Gerenciar Planos de Ação
                   </Button>
                 </Link>
               </div>
