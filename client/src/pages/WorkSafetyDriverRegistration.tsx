@@ -83,68 +83,37 @@ export default function WorkSafetyDriverRegistration() {
 
   useEffect(() => {
     let isMounted = true;
-    let retryCount = 0;
-    const maxRetries = 3;
     
     const loadProjectsWithBases = async (): Promise<void> => {
       try {
         setIsLoadingProjects(true);
         setProjectsError(null);
+        console.log('[WorkSafety] Fetching projects with bases');
         
-        console.log('[WorkSafety] Fetching projects with bases, attempt:', retryCount + 1);
-        
-        const controller = new AbortController();
-        const timeoutMs = 30000;
-        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-        
-        const response = await fetch('/api/public/projects-with-bases', {
+        const response = await fetch('/api/projects-with-bases', {
           method: 'GET',
-          credentials: 'include',
-          signal: controller.signal,
-          cache: 'no-store',
           headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-Mobile-Request': 'true',
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
-          }
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
         });
         
-        clearTimeout(timeoutId);
-        
         console.log('[WorkSafety] Response status:', response.status);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
         
         const data = await response.json();
         
         if (isMounted) {
-          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          if (response.ok && data.success && Array.isArray(data.data) && data.data.length > 0) {
             setProjects(data.data);
             console.log('[WorkSafety] Projects loaded successfully:', data.data.length);
           } else {
-            throw new Error('Dados de projetos inválidos ou vazios');
+            throw new Error(data.message || 'Erro ao carregar projetos');
           }
         }
       } catch (error: any) {
         console.error('[WorkSafety] Error fetching projects:', error);
-        const isNetworkError = error?.name === 'AbortError' || error?.message?.includes('network') || error?.message?.includes('fetch');
-        const errorMessage = isNetworkError 
-          ? 'Problema de conexão. Verifique sua internet.' 
-          : (error?.message || 'Erro ao carregar projetos');
-        
-        if (retryCount < maxRetries) {
-          retryCount++;
-          console.log('[WorkSafety] Retrying in', 1000 * retryCount, 'ms');
-          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
-          return loadProjectsWithBases();
-        }
-        
         if (isMounted) {
-          setProjectsError(errorMessage);
+          setProjectsError(error?.message || 'Erro ao carregar projetos');
         }
       } finally {
         if (isMounted) {
