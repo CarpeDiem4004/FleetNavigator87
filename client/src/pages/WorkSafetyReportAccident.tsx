@@ -598,7 +598,8 @@ export default function WorkSafetyReportAccident() {
                     <div className="space-y-2">
                       <Label className="text-base font-semibold text-gray-900">Projeto *</Label>
                       <select
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base ring-offset-background focus:outline-none focus:ring-2 focus:ring-[#E10613] focus:border-[#E10613] appearance-none"
+                        style={{ fontSize: '16px', minHeight: '48px' }}
                         value={selectedProject?.id.toString() || ''}
                         onChange={(e) => handleProjectChange(e.target.value)}
                       >
@@ -614,7 +615,8 @@ export default function WorkSafetyReportAccident() {
                     <div className="space-y-2">
                       <Label className="text-base font-semibold text-gray-900">Base *</Label>
                       <select
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base ring-offset-background focus:outline-none focus:ring-2 focus:ring-[#E10613] focus:border-[#E10613] appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        style={{ fontSize: '16px', minHeight: '48px' }}
                         value={formData.baseUnidade}
                         onChange={(e) => setFormData(prev => ({ ...prev, baseUnidade: e.target.value }))}
                         disabled={!selectedProject}
