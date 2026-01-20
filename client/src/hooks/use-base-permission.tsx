@@ -472,6 +472,43 @@ export const useBasePermission = (): BasePermissionHook => {
       return hasAccess;
     }
     
+    // OPERADOR 1 LINE HAUL - acesso completo ao Line Haul SEM módulo de combustível/cartão
+    if (user.role?.toLowerCase() === 'operador_1_line_haul') {
+      // Rotas BLOQUEADAS (módulo de combustível/cartão)
+      const blockedRoutes = [
+        '/fuel-card-requests',
+        '/fuel-cards',
+        '/fuel-card',
+        '/line-hall-fuel-requests',
+        '/linehaul-abastecimento',
+        '/cartao-abastecimento',
+        '/refueling',
+        '/abastecimento'
+      ];
+      
+      // Verificar se está tentando acessar rotas bloqueadas
+      if (blockedRoutes.some(blocked => route === blocked || route.startsWith(blocked + '/'))) {
+        console.log(`OPERADOR_1_LINE_HAUL role permission DENIED for fuel/card route: ${route}`);
+        return false;
+      }
+      
+      // Rotas permitidas (Line Haul completo sem combustível)
+      const allowedRoutes = [
+        '/line-haul',                 // Página principal do Line Haul (completa)
+        '/line-hall-shopee',          // Página secundária do Line Hall
+        '/line-hall-maintenance',     // Manutenção Line Hall
+        '/line-hall-checklists',      // Checklists Line Hall
+        '/vehicles',                  // Cadastro de veículos
+        '/drivers',                   // Cadastro de motoristas
+        '/stopped-vehicles',          // Veículos parados
+        '/line-hall'                  // Rotas do Line Hall
+      ];
+      
+      const hasAccess = allowedRoutes.some(allowedRoute => route === allowedRoute || route.startsWith(allowedRoute));
+      console.log(`OPERADOR_1_LINE_HAUL role permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      return hasAccess;
+    }
+    
     // Line Hall Base - permite acesso somente ao Line Hall e bloqueia outras rotas específicas
     if (user.basename === "Line Hall" || user.baseId === 11) {
       // Se o usuário for Line Hall, só mostra Line Hall no menu e dashboard

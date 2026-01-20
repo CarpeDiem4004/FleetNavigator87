@@ -3,6 +3,26 @@ import { ADMIN_EMAILS, FLEET_MANAGEMENT_BASE_ID, isUserAdmin, isUserInFleetManag
 import { validateSupabaseToken, extractJwtToken, AuthError } from '../utils/auth';
 
 /**
+ * Middleware para bloquear acesso ao módulo de combustível/cartão para o role operador_1_line_haul
+ * Este role tem acesso completo ao Line Haul MAS NÃO pode acessar funcionalidades de combustível
+ */
+export const blockFuelCardForOperador1LineHaul = (req: Request, res: Response, next: NextFunction) => {
+  const user = (req as any).user;
+  
+  // Verificar se o usuário tem o role operador_1_line_haul
+  if (user?.role?.toLowerCase() === 'operador_1_line_haul') {
+    console.log(`[blockFuelCardForOperador1LineHaul] Acesso BLOQUEADO para ${user.email} ao módulo de combustível/cartão`);
+    return res.status(403).json({
+      success: false,
+      message: 'Você não tem permissão para acessar este módulo.',
+      error: 'ACCESS_DENIED_FUEL_CARD'
+    });
+  }
+  
+  next();
+};
+
+/**
  * Middleware para verificar se o usuário está autenticado
  * Retorna 401 se o usuário não estiver autenticado
  */

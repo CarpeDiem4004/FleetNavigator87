@@ -221,7 +221,8 @@ import {
   hasMaintenanceAccessV2 as maintenanceAccessMiddleware, 
   hasTiresAccess as tiresAccessMiddleware, 
   isWorkshop as workshopMiddleware, 
-  hasBaseAccess as baseAccessMiddleware
+  hasBaseAccess as baseAccessMiddleware,
+  blockFuelCardForOperador1LineHaul
 } from "./middleware/auth";
 
 // Importação dos novos middlewares de autenticação híbrida

@@ -2819,22 +2819,24 @@ const LineHaulPage = () => {
               <Users className="h-4 w-4 mr-2" />
               Cadastrar Motorista
             </Button>
-            <Button 
-              className={`text-white relative ${
-                pendingFuelCardRequests > 0 
-                  ? 'bg-orange-500 hover:bg-orange-600 animate-pulse' 
-                  : 'bg-blue-500 hover:bg-blue-600'
-              }`}
-              onClick={() => setLocation('/fuel-cards?tab=linehaul_pendentes&mode=linehaul')}
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Solicitações de Cartão
-              {pendingFuelCardRequests > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-bounce">
-                  {pendingFuelCardRequests}
-                </span>
-              )}
-            </Button>
+            {user?.role?.toLowerCase() !== 'operador_1_line_haul' && (
+              <Button 
+                className={`text-white relative ${
+                  pendingFuelCardRequests > 0 
+                    ? 'bg-orange-500 hover:bg-orange-600 animate-pulse' 
+                    : 'bg-blue-500 hover:bg-blue-600'
+                }`}
+                onClick={() => setLocation('/fuel-cards?tab=linehaul_pendentes&mode=linehaul')}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Solicitações de Cartão
+                {pendingFuelCardRequests > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-bounce">
+                    {pendingFuelCardRequests}
+                  </span>
+                )}
+              </Button>
+            )}
             <Button 
               className="bg-green-500 hover:bg-green-600 text-white"
               onClick={() => setShowRoutes(true)}
