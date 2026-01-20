@@ -1721,6 +1721,7 @@ export const jornadaMotorista = pgTable("jornada_motorista", {
   baseNome: text("base_nome"),
   inicioJornada: timestamp("inicio_jornada").notNull(),
   fimJornada: timestamp("fim_jornada"),
+  interjornadaFim: timestamp("interjornada_fim"),
   horasTrabalhadas: decimal("horas_trabalhadas", { precision: 5, scale: 2 }),
   statusJornada: text("status_jornada").notNull().default('em_andamento'), // em_andamento, dentro_limite, proximo_limite, excedido, encerrada
   observacoes: text("observacoes"),

@@ -7,6 +7,7 @@ const router = Router();
 const JORNADA_PADRAO = 8;
 const JORNADA_LIMITE = 10;
 const JORNADA_ALERTA = 0.8; // 80% da jornada limite
+const INTERJORNADA_HORAS = 11; // Horas de descanso obrigatório
 
 // Calcular horas trabalhadas
 function calcularHorasTrabalhadas(inicio: Date, fim: Date | null): number {
@@ -183,6 +184,35 @@ router.post('/iniciar', async (req: Request, res: Response) => {
         error: 'Este motorista já possui uma jornada em andamento' 
       });
     }
+
+    // Verificar interjornada (descanso obrigatório de 11h)
+    const ultimaJornada = await pool.query(`
+      SELECT fim_jornada, interjornada_fim
+      FROM jornada_motorista
+      WHERE motorista_nome = $1 AND status_jornada = 'encerrada'
+      ORDER BY fim_jornada DESC
+      LIMIT 1
+    `, [motorista_nome]);
+    
+    if (ultimaJornada.rows.length > 0) {
+      const fimJornada = new Date(ultimaJornada.rows[0].fim_jornada);
+      const interjornadaFim = ultimaJornada.rows[0].interjornada_fim 
+        ? new Date(ultimaJornada.rows[0].interjornada_fim)
+        : new Date(fimJornada.getTime() + INTERJORNADA_HORAS * 60 * 60 * 1000);
+      
+      const agora = new Date();
+      
+      if (agora < interjornadaFim) {
+        const tempoRestante = (interjornadaFim.getTime() - agora.getTime()) / (1000 * 60 * 60);
+        const horasRestantes = Math.floor(tempoRestante);
+        const minutosRestantes = Math.round((tempoRestante - horasRestantes) * 60);
+        
+        return res.status(400).json({ 
+          success: false, 
+          error: `Motorista em descanso obrigatório (interjornada de 11h). Faltam ${horasRestantes}h ${minutosRestantes}min para liberação.`
+        });
+      }
+    }
     
     const result = await pool.query(`
       INSERT INTO jornada_motorista (
@@ -205,7 +235,7 @@ router.post('/iniciar', async (req: Request, res: Response) => {
   }
 });
 
-// POST - Encerrar jornada
+// POST - Encerrar jornada (agora calcula interjornada_fim = fim + 11h)
 router.post('/encerrar/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -222,9 +252,11 @@ router.post('/encerrar/:id', async (req: Request, res: Response) => {
     
     const horasTrabalhadas = calcularHorasTrabalhadas(new Date(jornada.rows[0].inicio_jornada), new Date());
     
+    // Calcular interjornada_fim = agora + 11 horas
     const result = await pool.query(`
       UPDATE jornada_motorista
       SET fim_jornada = NOW(),
+          interjornada_fim = NOW() + INTERVAL '${INTERJORNADA_HORAS} hours',
           horas_trabalhadas = $1,
           status_jornada = 'encerrada',
           observacoes = COALESCE($2, observacoes),
@@ -236,6 +268,131 @@ router.post('/encerrar/:id', async (req: Request, res: Response) => {
     res.json({ success: true, data: result.rows[0] });
   } catch (error: any) {
     console.error('[JORNADA API] Erro ao encerrar jornada:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET - Motoristas em interjornada (descanso obrigatório)
+router.get('/interjornada', async (req: Request, res: Response) => {
+  try {
+    const agora = new Date();
+    
+    // Buscar jornadas encerradas onde interjornada_fim ainda não passou
+    // ou buscar jornadas encerradas nas últimas 24h sem interjornada_fim calculado
+    const result = await pool.query(`
+      SELECT 
+        id, motorista_id, motorista_nome, placa_cavalo, 
+        placa_carreta_1, rota_nome, base_nome,
+        fim_jornada, interjornada_fim,
+        horas_trabalhadas
+      FROM jornada_motorista
+      WHERE status_jornada = 'encerrada'
+        AND fim_jornada IS NOT NULL
+        AND (
+          -- Jornadas com interjornada_fim ainda no futuro
+          (interjornada_fim IS NOT NULL AND interjornada_fim > NOW())
+          OR
+          -- Jornadas sem interjornada_fim mas encerradas nas últimas 11h
+          (interjornada_fim IS NULL AND fim_jornada > NOW() - INTERVAL '${INTERJORNADA_HORAS} hours')
+        )
+      ORDER BY fim_jornada DESC
+    `);
+    
+    const motoristas = result.rows.map(j => {
+      const fimJornada = new Date(j.fim_jornada);
+      // Se não tem interjornada_fim, calcular (fim + 11h)
+      const interjornadaFim = j.interjornada_fim 
+        ? new Date(j.interjornada_fim) 
+        : new Date(fimJornada.getTime() + INTERJORNADA_HORAS * 60 * 60 * 1000);
+      
+      const tempoDescansado = (agora.getTime() - fimJornada.getTime()) / (1000 * 60 * 60);
+      const tempoRestante = (interjornadaFim.getTime() - agora.getTime()) / (1000 * 60 * 60);
+      
+      let status = 'liberado';
+      if (tempoRestante > 2) status = 'em_descanso';
+      else if (tempoRestante > 0) status = 'proximo_liberacao';
+      
+      return {
+        ...j,
+        interjornada_fim: interjornadaFim.toISOString(),
+        tempo_descansado_horas: Math.max(0, tempoDescansado).toFixed(2),
+        tempo_restante_horas: Math.max(0, tempoRestante).toFixed(2),
+        status_interjornada: status
+      };
+    });
+    
+    // Separar em descanso e liberados
+    const emDescanso = motoristas.filter(m => m.status_interjornada !== 'liberado');
+    const liberados = motoristas.filter(m => m.status_interjornada === 'liberado');
+    
+    res.json({ 
+      success: true, 
+      data: {
+        em_descanso: emDescanso.length,
+        liberados: liberados.length,
+        motoristas: motoristas
+      }
+    });
+  } catch (error: any) {
+    console.error('[JORNADA API] Erro ao buscar interjornada:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET - Verificar se motorista pode iniciar nova jornada (verifica interjornada)
+router.get('/pode-iniciar/:motoristaNome', async (req: Request, res: Response) => {
+  try {
+    const { motoristaNome } = req.params;
+    
+    // Verificar se tem jornada ativa
+    const jornadaAtiva = await pool.query(`
+      SELECT id FROM jornada_motorista
+      WHERE motorista_nome = $1 AND fim_jornada IS NULL
+    `, [motoristaNome]);
+    
+    if (jornadaAtiva.rows.length > 0) {
+      return res.json({ 
+        success: true, 
+        pode_iniciar: false, 
+        motivo: 'Motorista já possui jornada em andamento'
+      });
+    }
+    
+    // Verificar interjornada (última jornada encerrada)
+    const ultimaJornada = await pool.query(`
+      SELECT fim_jornada, interjornada_fim
+      FROM jornada_motorista
+      WHERE motorista_nome = $1 AND status_jornada = 'encerrada'
+      ORDER BY fim_jornada DESC
+      LIMIT 1
+    `, [motoristaNome]);
+    
+    if (ultimaJornada.rows.length > 0) {
+      const fimJornada = new Date(ultimaJornada.rows[0].fim_jornada);
+      const interjornadaFim = ultimaJornada.rows[0].interjornada_fim 
+        ? new Date(ultimaJornada.rows[0].interjornada_fim)
+        : new Date(fimJornada.getTime() + INTERJORNADA_HORAS * 60 * 60 * 1000);
+      
+      const agora = new Date();
+      
+      if (agora < interjornadaFim) {
+        const tempoRestante = (interjornadaFim.getTime() - agora.getTime()) / (1000 * 60 * 60);
+        const horasRestantes = Math.floor(tempoRestante);
+        const minutosRestantes = Math.round((tempoRestante - horasRestantes) * 60);
+        
+        return res.json({ 
+          success: true, 
+          pode_iniciar: false, 
+          motivo: `Motorista em descanso obrigatório (interjornada de 11h). Faltam ${horasRestantes}h ${minutosRestantes}min`,
+          interjornada_fim: interjornadaFim.toISOString(),
+          tempo_restante_horas: tempoRestante.toFixed(2)
+        });
+      }
+    }
+    
+    res.json({ success: true, pode_iniciar: true });
+  } catch (error: any) {
+    console.error('[JORNADA API] Erro ao verificar interjornada:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

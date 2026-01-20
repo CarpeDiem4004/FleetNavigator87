@@ -329,6 +329,12 @@ const LineHaulPage = () => {
   });
   const [activeJourneys, setActiveJourneys] = useState<any[]>([]);
   const [showNewJourneyDialog, setShowNewJourneyDialog] = useState(false);
+  const [interjornadaStats, setInterjornadaStats] = useState({
+    em_descanso: 0,
+    liberados: 0,
+    motoristas: [] as any[]
+  });
+  const [showInterjornadaList, setShowInterjornadaList] = useState(false);
   const [newJourneyForm, setNewJourneyForm] = useState({
     motorista_nome: '',
     placa_cavalo: '',
@@ -1183,6 +1189,35 @@ const LineHaulPage = () => {
     }
   };
 
+  const fetchInterjornadaStats = async () => {
+    try {
+      const res = await apiRequest('GET', '/api/jornada-motorista/interjornada');
+      const response = await res.json();
+      if (response.success) {
+        setInterjornadaStats(response.data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar interjornada:', error);
+    }
+  };
+
+  const formatTempoRestante = (horasStr: string) => {
+    const horas = parseFloat(horasStr);
+    if (horas <= 0) return 'Liberado';
+    const h = Math.floor(horas);
+    const m = Math.round((horas - h) * 60);
+    return `${h}h ${m}min`;
+  };
+
+  const getInterjornadaStatusColor = (status: string) => {
+    switch (status) {
+      case 'em_descanso': return 'bg-red-50 border-red-200 text-red-700';
+      case 'proximo_liberacao': return 'bg-yellow-50 border-yellow-200 text-yellow-700';
+      case 'liberado': return 'bg-green-50 border-green-200 text-green-700';
+      default: return 'bg-gray-50 border-gray-200';
+    }
+  };
+
   const handleStartJourney = async () => {
     if (!newJourneyForm.motorista_nome || !newJourneyForm.placa_cavalo) {
       toast({
@@ -1195,6 +1230,20 @@ const LineHaulPage = () => {
 
     setIsCreatingJourney(true);
     try {
+      // Verificar se motorista pode iniciar (interjornada)
+      const checkRes = await apiRequest('GET', `/api/jornada-motorista/pode-iniciar/${encodeURIComponent(newJourneyForm.motorista_nome)}`);
+      const checkResponse = await checkRes.json();
+      
+      if (checkResponse.success && !checkResponse.pode_iniciar) {
+        toast({
+          title: "Motorista em Descanso Obrigatório",
+          description: checkResponse.motivo || "Motorista ainda não completou o período de interjornada de 11 horas",
+          variant: "destructive"
+        });
+        setIsCreatingJourney(false);
+        return;
+      }
+
       const res = await apiRequest('POST', '/api/jornada-motorista/iniciar', {
         ...newJourneyForm,
         created_by: user?.name || 'Sistema'
@@ -1249,6 +1298,7 @@ const LineHaulPage = () => {
         });
         fetchJourneyStats();
         fetchActiveJourneys();
+        fetchInterjornadaStats();
         setSelectedJourney(null);
       } else {
         toast({
@@ -1286,11 +1336,13 @@ const LineHaulPage = () => {
   useEffect(() => {
     fetchJourneyStats();
     fetchActiveJourneys();
+    fetchInterjornadaStats();
     
     // Atualizar a cada 30 segundos
     const interval = setInterval(() => {
       fetchJourneyStats();
       fetchActiveJourneys();
+      fetchInterjornadaStats();
     }, 30000);
     
     return () => clearInterval(interval);
@@ -3062,7 +3114,7 @@ const LineHaulPage = () => {
           </CardHeader>
           <CardContent>
             {/* Cards resumo */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
               <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="text-2xl font-bold text-blue-600">{journeyStats.total_operacao}</div>
                 <div className="text-xs text-gray-600">Em Operação</div>
@@ -3078,6 +3130,20 @@ const LineHaulPage = () => {
               <div className="text-center p-3 bg-red-50 rounded-lg border border-red-200">
                 <div className="text-2xl font-bold text-red-600">{journeyStats.excedido}</div>
                 <div className="text-xs text-gray-600">Jornada Excedida</div>
+              </div>
+              <div 
+                className={`text-center p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
+                  interjornadaStats.em_descanso > 0 
+                    ? 'bg-orange-50 border-orange-200' 
+                    : 'bg-green-50 border-green-200'
+                }`}
+                onClick={() => setShowInterjornadaList(!showInterjornadaList)}
+              >
+                <div className={`text-2xl font-bold ${interjornadaStats.em_descanso > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                  {interjornadaStats.em_descanso}
+                </div>
+                <div className="text-xs text-gray-600">Interjornada (11h)</div>
+                <div className="text-xs text-gray-500">{interjornadaStats.liberados} liberados</div>
               </div>
             </div>
 
@@ -3123,6 +3189,69 @@ const LineHaulPage = () => {
               </div>
             )}
 
+            {/* Lista de motoristas em interjornada */}
+            {showInterjornadaList && (
+              <div className="bg-orange-50 rounded-lg p-4 mb-4 border border-orange-200">
+                <h4 className="font-semibold text-orange-800 mb-3 flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Interjornada - Descanso Obrigatório (11h)
+                </h4>
+                {interjornadaStats.motoristas.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-orange-100">
+                        <tr>
+                          <th className="text-left p-2">Motorista</th>
+                          <th className="text-left p-2">Placa</th>
+                          <th className="text-center p-2">Fim Jornada</th>
+                          <th className="text-center p-2">Tempo Descansado</th>
+                          <th className="text-center p-2">Tempo Restante</th>
+                          <th className="text-center p-2">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {interjornadaStats.motoristas.map((m: any) => (
+                          <tr key={m.id} className={`border-b ${getInterjornadaStatusColor(m.status_interjornada)}`}>
+                            <td className="p-2 font-medium">{m.motorista_nome}</td>
+                            <td className="p-2">{m.placa_cavalo}</td>
+                            <td className="p-2 text-center">
+                              {new Date(m.fim_jornada).toLocaleString('pt-BR', { 
+                                day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
+                              })}
+                            </td>
+                            <td className="p-2 text-center">{formatTempoRestante(m.tempo_descansado_horas)}</td>
+                            <td className="p-2 text-center font-bold">
+                              {m.status_interjornada === 'liberado' 
+                                ? <span className="text-green-600">Liberado</span>
+                                : <span className={m.status_interjornada === 'em_descanso' ? 'text-red-600' : 'text-yellow-600'}>
+                                    Faltam {formatTempoRestante(m.tempo_restante_horas)}
+                                  </span>
+                              }
+                            </td>
+                            <td className="p-2 text-center">
+                              <Badge variant="outline" className={
+                                m.status_interjornada === 'em_descanso' ? 'bg-red-100 text-red-700' :
+                                m.status_interjornada === 'proximo_liberacao' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-green-100 text-green-700'
+                              }>
+                                {m.status_interjornada === 'em_descanso' ? 'Em Descanso' :
+                                 m.status_interjornada === 'proximo_liberacao' ? 'Próximo' : 'Apto'}
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                    <p className="text-gray-600">Nenhum motorista em período de descanso obrigatório.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Botões de ação */}
             <div className="flex gap-2 justify-center flex-wrap">
               <Button 
@@ -3149,7 +3278,7 @@ const LineHaulPage = () => {
                 Iniciar Jornada
               </Button>
               <Button 
-                onClick={() => { fetchJourneyStats(); fetchActiveJourneys(); }}
+                onClick={() => { fetchJourneyStats(); fetchActiveJourneys(); fetchInterjornadaStats(); }}
                 variant="outline"
                 disabled={isLoading}
               >
