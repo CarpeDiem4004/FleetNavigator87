@@ -56,8 +56,8 @@ const CHECKLIST_ITENS_PADRAO = [
   { categoria: 'Segurança', item: 'Triângulo de sinalização presente' },
   { categoria: 'Segurança', item: 'Macaco e chave de roda presentes' },
   { categoria: 'Geral', item: 'Condições gerais do veículo adequadas para operação' },
-  { categoria: 'Geral', item: 'Tem cartão abastecimento Ticket? (Informe a placa do cartão na observação)' },
-  { categoria: 'Geral', item: 'Tem cartão abastecimento Veloe? (Informe a placa do cartão na observação)' }
+  { categoria: 'Geral', item: 'Tem cartão abastecimento Ticket?' },
+  { categoria: 'Geral', item: 'Tem cartão abastecimento Veloe?' }
 ];
 
 router.get('/itens-padrao', (_req: Request, res: Response) => {

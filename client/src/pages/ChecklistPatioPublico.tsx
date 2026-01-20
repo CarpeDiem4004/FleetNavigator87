@@ -557,6 +557,17 @@ export default function ChecklistPatioPublico() {
                           />
                         </div>
                       )}
+                      {item.status === 'sim' && (item.item.includes('Ticket') || item.item.includes('Veloe')) && (
+                        <div className="mt-3">
+                          <Label className="text-sm text-gray-600 mb-1">Placa do Cartão *</Label>
+                          <Input
+                            placeholder="Digite a placa do cartão (ABC-1234)"
+                            value={item.observacao}
+                            onChange={(e) => handleItemObsChange(globalIndex, e.target.value.toUpperCase())}
+                            className="border-green-300 uppercase"
+                          />
+                        </div>
+                      )}
                     </div>
                   );
                 })}
