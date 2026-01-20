@@ -598,8 +598,8 @@ export default function WorkSafetyReportAccident() {
                     <div className="space-y-2">
                       <Label className="text-base font-semibold text-gray-900">Projeto *</Label>
                       <select
-                        className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base ring-offset-background focus:outline-none focus:ring-2 focus:ring-[#E10613] focus:border-[#E10613] appearance-none"
-                        style={{ fontSize: '16px', minHeight: '48px' }}
+                        className="block w-full h-14 px-4 py-3 text-lg bg-white border-2 border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-500"
+                        style={{ fontSize: '18px', WebkitAppearance: 'menulist', MozAppearance: 'menulist' }}
                         value={selectedProject?.id.toString() || ''}
                         onChange={(e) => handleProjectChange(e.target.value)}
                       >
@@ -615,8 +615,8 @@ export default function WorkSafetyReportAccident() {
                     <div className="space-y-2">
                       <Label className="text-base font-semibold text-gray-900">Base *</Label>
                       <select
-                        className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base ring-offset-background focus:outline-none focus:ring-2 focus:ring-[#E10613] focus:border-[#E10613] appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                        style={{ fontSize: '16px', minHeight: '48px' }}
+                        className="block w-full h-14 px-4 py-3 text-lg bg-white border-2 border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-500 disabled:bg-gray-100 disabled:opacity-60"
+                        style={{ fontSize: '18px', WebkitAppearance: 'menulist', MozAppearance: 'menulist' }}
                         value={formData.baseUnidade}
                         onChange={(e) => setFormData(prev => ({ ...prev, baseUnidade: e.target.value }))}
                         disabled={!selectedProject}

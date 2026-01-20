@@ -395,8 +395,8 @@ export default function WorkSafetyDriverRegistration() {
                             Projeto *
                           </label>
                           <select
-                            className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 appearance-none"
-                            style={{ fontSize: '16px', minHeight: '48px' }}
+                            className="block w-full h-14 px-4 py-3 text-lg bg-white border-2 border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                            style={{ fontSize: '18px', WebkitAppearance: 'menulist', MozAppearance: 'menulist' }}
                             value={selectedProject?.id.toString() || ''}
                             onChange={(e) => handleProjectChange(e.target.value)}
                             data-testid="select-projeto"
@@ -418,8 +418,8 @@ export default function WorkSafetyDriverRegistration() {
                               <FormLabel>Base de Atuação *</FormLabel>
                               <FormControl>
                                 <select
-                                  className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                  style={{ fontSize: '16px', minHeight: '48px' }}
+                                  className="block w-full h-14 px-4 py-3 text-lg bg-white border-2 border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:opacity-60"
+                                  style={{ fontSize: '18px', WebkitAppearance: 'menulist', MozAppearance: 'menulist' }}
                                   value={field.value || ''}
                                   onChange={(e) => field.onChange(e.target.value)}
                                   disabled={!selectedProject}
