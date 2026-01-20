@@ -3726,7 +3726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rotas para Fuel Card (Cartão de Combustível)
   // GET - Obter todas as solicitações de cartão de combustível (com filtragem opcional por status/base)
-  app.get('/api/fuel-card', isAuthenticated, async (req, res) => {
+  app.get('/api/fuel-card', isAuthenticated, blockFuelCardForOperador1LineHaul, async (req, res) => {
     try {
       const { status } = req.query;
       const user = req.user as any;
@@ -3774,7 +3774,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // GET - Obter solicitações pendentes (para aprovação/rejeição)
-  app.get('/api/fuel-card/pending', isAuthenticated, async (req, res) => {
+  app.get('/api/fuel-card/pending', isAuthenticated, blockFuelCardForOperador1LineHaul, async (req, res) => {
     try {
       const user = req.user as any;
       
@@ -3812,7 +3812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // POST - Criar nova solicitação de recarga
-  app.post('/api/fuel-card', isAuthenticated, async (req, res) => {
+  app.post('/api/fuel-card', isAuthenticated, blockFuelCardForOperador1LineHaul, async (req, res) => {
     try {
       const { plate, cardNumber, amount, reason, requestedBy } = req.body;
       const user = req.user as any;
@@ -3862,10 +3862,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // GET - Analytics de consumo de combustível
-  app.get('/api/fuel-card/analytics', isAuthenticated, getFuelCardAnalytics);
+  app.get('/api/fuel-card/analytics', isAuthenticated, blockFuelCardForOperador1LineHaul, getFuelCardAnalytics);
 
   // POST - Aprovar solicitação de recarga
-  app.post('/api/fuel-card/:id/approve', isAuthenticated, async (req, res) => {
+  app.post('/api/fuel-card/:id/approve', isAuthenticated, blockFuelCardForOperador1LineHaul, async (req, res) => {
     try {
       const { id } = req.params;
       const user = req.user as any;
@@ -3933,7 +3933,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // POST - Rejeitar solicitação de recarga
-  app.post('/api/fuel-card/:id/reject', isAuthenticated, async (req, res) => {
+  app.post('/api/fuel-card/:id/reject', isAuthenticated, blockFuelCardForOperador1LineHaul, async (req, res) => {
     try {
       const { id } = req.params;
       const { rejectionReason } = req.body;
@@ -7213,7 +7213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // GET - Obter cartões combustível (genérico)
-  app.get('/api/fuel-cards', isAuthenticated, async (req, res) => {
+  app.get('/api/fuel-cards', isAuthenticated, blockFuelCardForOperador1LineHaul, async (req, res) => {
     try {
       const { baseId } = req.query;
       
@@ -14257,29 +14257,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/dashboard/fuel-consumption-real", isAuthenticatedHybrid, getRealFuelConsumption);
   
   // Rotas para solicitações de cartão de combustível
-  app.get('/api/fuel-card-solicitations', unifiedAuthMiddleware, getFuelCardSolicitations);
+  app.get('/api/fuel-card-solicitations', unifiedAuthMiddleware, blockFuelCardForOperador1LineHaul, getFuelCardSolicitations);
   // Rotas específicas devem vir ANTES das rotas com parâmetros
-  app.get('/api/fuel-card-solicitations/export', isAuthenticated, exportFuelCardSolicitationsToExcel);
-  app.post('/api/fuel-card-solicitations/export', isAuthenticated, exportFuelCardSolicitationsToExcel);
+  app.get('/api/fuel-card-solicitations/export', isAuthenticated, blockFuelCardForOperador1LineHaul, exportFuelCardSolicitationsToExcel);
+  app.post('/api/fuel-card-solicitations/export', isAuthenticated, blockFuelCardForOperador1LineHaul, exportFuelCardSolicitationsToExcel);
   // Nova rota para exportação por período
-  app.get('/api/fuel-card-solicitations/export-by-date', isAuthenticated, exportFuelCardSolicitationsByDate);
-  app.get('/api/fuel-card-solicitations/export-by-fuel-date', isAuthenticated, exportFuelCardSolicitationsByFuelDate);
+  app.get('/api/fuel-card-solicitations/export-by-date', isAuthenticated, blockFuelCardForOperador1LineHaul, exportFuelCardSolicitationsByDate);
+  app.get('/api/fuel-card-solicitations/export-by-fuel-date', isAuthenticated, blockFuelCardForOperador1LineHaul, exportFuelCardSolicitationsByFuelDate);
   // Rota alternativa para CSV
-  app.get('/api/fuel-card-solicitations/export-csv', isAuthenticated, exportFuelCardSolicitationsToCSV);
+  app.get('/api/fuel-card-solicitations/export-csv', isAuthenticated, blockFuelCardForOperador1LineHaul, exportFuelCardSolicitationsToCSV);
   // Rota para exportação Veloe no formato "Carga Complementar Massiva"
-  app.get('/api/fuel-card-solicitations/export-veloe', isAuthenticated, exportVeloeToExcel);
+  app.get('/api/fuel-card-solicitations/export-veloe', isAuthenticated, blockFuelCardForOperador1LineHaul, exportVeloeToExcel);
   // Rota para exportação Ticket - formato simples PLACA/VALOR (pendentes do dia)
-  app.get('/api/fuel-card-solicitations/export-ticket', isAuthenticated, exportTicketCards);
-  app.get('/api/fuel-card-solicitations/:id', isAuthenticated, getFuelCardSolicitationById);
-  app.post('/api/fuel-card-solicitations', createFuelCardSolicitation);
-  app.put('/api/fuel-card-solicitations/:id/status', isAuthenticated, updateFuelCardSolicitationStatus);
-  app.delete('/api/fuel-card-solicitations/:id', isAuthenticated, deleteFuelCardSolicitation);
+  app.get('/api/fuel-card-solicitations/export-ticket', isAuthenticated, blockFuelCardForOperador1LineHaul, exportTicketCards);
+  app.get('/api/fuel-card-solicitations/:id', isAuthenticated, blockFuelCardForOperador1LineHaul, getFuelCardSolicitationById);
+  app.post('/api/fuel-card-solicitations', blockFuelCardForOperador1LineHaul, createFuelCardSolicitation);
+  app.put('/api/fuel-card-solicitations/:id/status', isAuthenticated, blockFuelCardForOperador1LineHaul, updateFuelCardSolicitationStatus);
+  app.delete('/api/fuel-card-solicitations/:id', isAuthenticated, blockFuelCardForOperador1LineHaul, deleteFuelCardSolicitation);
   
   // OTIMIZAÇÃO: Novo endpoint batch para contadores de placas
-  app.post('/api/fuel-card-solicitations-counts', unifiedAuthMiddleware, getFuelCardSolicitationsCounts);
+  app.post('/api/fuel-card-solicitations-counts', unifiedAuthMiddleware, blockFuelCardForOperador1LineHaul, getFuelCardSolicitationsCounts);
   
   // Nova rota para solicitações de cartão de combustível das bases
-  app.post('/api/fuel-card-requests', createFuelCardRequest);
+  app.post('/api/fuel-card-requests', blockFuelCardForOperador1LineHaul, createFuelCardRequest);
   
   // Rotas para relatório de consumo de combustível
   app.get('/api/fuel-consumption-report', isAuthenticated, getFuelConsumptionReport);

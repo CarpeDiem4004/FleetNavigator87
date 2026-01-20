@@ -86,6 +86,38 @@ Usuários com role `line_hall` têm acesso às seguintes rotas:
 ### Line Haul Login Redirect
 Usuários com role `line_hall` são automaticamente redirecionados para `/line-haul` após o login (configurado em `client/src/pages/SignIn.tsx`).
 
+### Role: OPERADOR_1_LINE_HAUL
+Perfil de acesso operacional que tem **acesso completo ao Line Haul** mas **SEM acesso ao módulo de combustível/cartão**.
+
+#### Permissões Liberadas:
+- Dashboard de Line Haul (`/line-haul`)
+- Checklists de motoristas e pátio
+- Solicitações de manutenção
+- Controle de jornada de motoristas
+- Veículos na garagem
+- Rotas cadastradas
+- Operações Line Haul (criar, editar, finalizar, cancelar)
+- Cadastrar veículos e motoristas (`/vehicles`, `/drivers`)
+- Central WhatsApp
+
+#### Permissões Bloqueadas (módulo combustível):
+- `/fuel-card-requests` - Painel de solicitações de cartão
+- `/fuel-cards` - Gestão de cartões de combustível
+- `/linehaul-abastecimento` - Formulário de abastecimento
+- `/line-hall-fuel-requests` - Solicitações de combustível
+- Todas as APIs de `/api/fuel-card*` e `/api/fuel-card-solicitations*`
+
+#### Implementação Técnica:
+- **Frontend**: Botão "Solicitações de Cartão" oculto via renderização condicional
+- **Backend**: Middleware `blockFuelCardForOperador1LineHaul` aplicado em todas as rotas de combustível
+- **Rotas bloqueadas**: Retornam HTTP 403 com mensagem "Você não tem permissão para acessar este módulo"
+
+#### Arquivos Relevantes:
+- `client/src/hooks/use-base-permission.tsx` - Linhas 478-513 (controle de rotas)
+- `client/src/pages/LineHaulPage.tsx` - Linha 2825 (ocultar botão)
+- `server/middleware/auth.ts` - Middleware de bloqueio
+- `server/routes.ts` - Aplicação do middleware nas rotas
+
 ### Database Tables for Line Haul
 - `solicitacoes_fuel_card` - Tabela principal para solicitações (origem_tipo='line_hall')
 - `linehall_fuel_card_requests` - Tabela legada
