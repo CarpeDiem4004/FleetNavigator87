@@ -35,7 +35,6 @@ const router = Router();
 
 const CHECKLIST_ITENS_PADRAO = [
   { categoria: 'Pneus', item: 'Pneus em bom estado (sem cortes, bolhas ou desgaste excessivo)' },
-  { categoria: 'Pneus', item: 'Pressão dos pneus adequada' },
   { categoria: 'Pneus', item: 'Estepe presente e em condições de uso' },
   { categoria: 'Iluminação', item: 'Faróis funcionando corretamente' },
   { categoria: 'Iluminação', item: 'Lanternas traseiras funcionando' },
@@ -51,14 +50,14 @@ const CHECKLIST_ITENS_PADRAO = [
   { categoria: 'Fluidos', item: 'Nível de água do radiador adequado' },
   { categoria: 'Fluidos', item: 'Sem vazamentos visíveis (óleo, combustível, água)' },
   { categoria: 'Carroceria', item: 'Portas funcionando corretamente' },
-  { categoria: 'Carroceria', item: 'Lacres em bom estado' },
   { categoria: 'Carroceria', item: 'Lona/baú sem danos aparentes' },
   { categoria: 'Documentação', item: 'Documento do veículo presente' },
   { categoria: 'Documentação', item: 'Licenciamento em dia' },
-  { categoria: 'Segurança', item: 'Extintor presente e dentro da validade' },
   { categoria: 'Segurança', item: 'Triângulo de sinalização presente' },
   { categoria: 'Segurança', item: 'Macaco e chave de roda presentes' },
-  { categoria: 'Geral', item: 'Condições gerais do veículo adequadas para operação' }
+  { categoria: 'Geral', item: 'Condições gerais do veículo adequadas para operação' },
+  { categoria: 'Geral', item: 'Tem cartão abastecimento Ticket? (Informe a placa do cartão na observação)' },
+  { categoria: 'Geral', item: 'Tem cartão abastecimento Veloe? (Informe a placa do cartão na observação)' }
 ];
 
 router.get('/itens-padrao', (_req: Request, res: Response) => {
