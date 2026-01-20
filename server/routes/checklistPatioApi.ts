@@ -3,21 +3,14 @@ import { pool } from '../db';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { getSupabaseAdmin } from '../services/supabaseAdmin';
 
 const uploadDir = path.join(process.cwd(), 'uploads', 'checklist-patio');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const storage = multer.memoryStorage();
 
 const upload = multer({ 
   storage,
@@ -30,6 +23,48 @@ const upload = multer({
     }
   }
 });
+
+async function uploadToSupabaseStorage(fileBuffer: Buffer, filename: string, contentType: string): Promise<string | null> {
+  try {
+    const supabase = getSupabaseAdmin();
+    const bucketName = 'checklist-patio-fotos';
+    
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const bucketExists = buckets?.some(b => b.name === bucketName);
+    
+    if (!bucketExists) {
+      const { error: createError } = await supabase.storage.createBucket(bucketName, {
+        public: true,
+        fileSizeLimit: 10485760
+      });
+      if (createError) {
+        console.error('[SUPABASE-STORAGE] Erro ao criar bucket:', createError);
+      }
+    }
+    
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .upload(filename, fileBuffer, {
+        contentType,
+        upsert: true
+      });
+    
+    if (error) {
+      console.error('[SUPABASE-STORAGE] Erro ao fazer upload:', error);
+      return null;
+    }
+    
+    const { data: publicUrl } = supabase.storage
+      .from(bucketName)
+      .getPublicUrl(filename);
+    
+    console.log(`[SUPABASE-STORAGE] Foto enviada com sucesso: ${publicUrl.publicUrl}`);
+    return publicUrl.publicUrl;
+  } catch (error) {
+    console.error('[SUPABASE-STORAGE] Erro geral:', error);
+    return null;
+  }
+}
 
 const router = Router();
 
@@ -327,7 +362,14 @@ router.post('/upload-foto', upload.single('foto'), async (req: Request, res: Res
       return res.status(400).json({ success: false, message: 'ID do checklist é obrigatório' });
     }
 
-    const url_foto = `/uploads/checklist-patio/${file.filename}`;
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const filename = uniqueSuffix + path.extname(file.originalname);
+    
+    const url_foto = await uploadToSupabaseStorage(file.buffer, filename, file.mimetype);
+    
+    if (!url_foto) {
+      return res.status(500).json({ success: false, message: 'Erro ao fazer upload da foto para o storage' });
+    }
 
     const result = await pool.query(`
       INSERT INTO checklist_patio_fotos (checklist_id, item_id, url_foto, descricao, posicao)
@@ -335,7 +377,7 @@ router.post('/upload-foto', upload.single('foto'), async (req: Request, res: Res
       RETURNING *
     `, [checklist_id, url_foto, descricao || null, posicao || null]);
 
-    console.log(`[CHECKLIST-PATIO] Foto enviada: ${file.filename} para checklist ${checklist_id}`);
+    console.log(`[CHECKLIST-PATIO] Foto enviada para Supabase: ${filename} para checklist ${checklist_id}`);
 
     res.json({ success: true, data: result.rows[0] });
   } catch (error: any) {
