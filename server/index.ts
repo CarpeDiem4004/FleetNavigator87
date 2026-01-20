@@ -2479,6 +2479,9 @@ app.use((req, res, next) => {
 
   // Servir arquivos estáticos de uploads de equipamentos
   app.use('/uploads', express.static(path.join(process.cwd(), 'server', 'uploads')));
+  
+  // Servir arquivos estáticos de uploads na raiz (checklist-patio, etc.)
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Registrar rotas de cartões de combustível
   app.use('/api/fuel-cards', fuelCardRoutes);
