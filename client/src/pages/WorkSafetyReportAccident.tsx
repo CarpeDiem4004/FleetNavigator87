@@ -82,6 +82,12 @@ export default function WorkSafetyReportAccident() {
   const [baseSearchOpen, setBaseSearchOpen] = useState(false);
   const [baseSearchQuery, setBaseSearchQuery] = useState('');
 
+  const [retryTrigger, setRetryTrigger] = useState(0);
+  
+  const handleRetryLoad = () => {
+    setRetryTrigger(prev => prev + 1);
+  };
+
   useEffect(() => {
     let isMounted = true;
     let retryCount = 0;
@@ -91,6 +97,7 @@ export default function WorkSafetyReportAccident() {
       try {
         setIsLoadingProjects(true);
         setProjectsError(null);
+        console.log('[WorkSafety] Fetching projects with bases, attempt:', retryCount + 1);
         
         const controller = new AbortController();
         const timeoutMs = 30000;
@@ -102,11 +109,14 @@ export default function WorkSafetyReportAccident() {
           signal: controller.signal,
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'X-Mobile-Request': 'true',
+            'Cache-Control': 'no-cache'
           }
         });
         
         clearTimeout(timeoutId);
+        console.log('[WorkSafety] Response status:', response.status);
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -117,15 +127,21 @@ export default function WorkSafetyReportAccident() {
         if (isMounted) {
           if (data.success && Array.isArray(data.data) && data.data.length > 0) {
             setProjects(data.data);
+            console.log('[WorkSafety] Projects loaded successfully:', data.data.length);
           } else {
             throw new Error('Dados de projetos inválidos ou vazios');
           }
         }
       } catch (error: any) {
-        const errorMessage = error?.message || error?.toString() || 'Erro desconhecido';
+        console.error('[WorkSafety] Error loading projects:', error);
+        const isNetworkError = error?.name === 'AbortError' || error?.message?.includes('network') || error?.message?.includes('fetch');
+        const errorMessage = isNetworkError 
+          ? 'Problema de conexão. Verifique sua internet.' 
+          : (error?.message || 'Erro ao carregar projetos');
         
         if (retryCount < maxRetries) {
           retryCount++;
+          console.log('[WorkSafety] Retrying in', 1000 * retryCount, 'ms');
           await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
           return loadProjectsWithBases();
         }
@@ -145,7 +161,7 @@ export default function WorkSafetyReportAccident() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [retryTrigger]);
 
   const handleProjectChange = (projectId: string) => {
     const project = projects.find(p => p.id.toString() === projectId);
@@ -569,7 +585,7 @@ export default function WorkSafetyReportAccident() {
                   </div>
                   <Button 
                     className="bg-[#E10613] hover:bg-[#B8050F]"
-                    onClick={() => window.location.reload()}
+                    onClick={handleRetryLoad}
                   >
                     Tentar novamente
                   </Button>

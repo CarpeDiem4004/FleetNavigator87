@@ -75,6 +75,11 @@ export default function WorkSafetyDriverRegistration() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [projectsError, setProjectsError] = useState<string | null>(null);
+  const [retryTrigger, setRetryTrigger] = useState(0);
+
+  const handleRetryLoad = () => {
+    setRetryTrigger(prev => prev + 1);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -98,7 +103,9 @@ export default function WorkSafetyDriverRegistration() {
           signal: controller.signal,
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'X-Mobile-Request': 'true',
+            'Cache-Control': 'no-cache'
           }
         });
         
@@ -121,11 +128,15 @@ export default function WorkSafetyDriverRegistration() {
           }
         }
       } catch (error: any) {
-        const errorMessage = error?.message || error?.toString() || 'Erro desconhecido';
-        console.error('[WorkSafety] Error fetching projects:', errorMessage, error);
+        console.error('[WorkSafety] Error fetching projects:', error);
+        const isNetworkError = error?.name === 'AbortError' || error?.message?.includes('network') || error?.message?.includes('fetch');
+        const errorMessage = isNetworkError 
+          ? 'Problema de conexão. Verifique sua internet.' 
+          : (error?.message || 'Erro ao carregar projetos');
         
         if (retryCount < maxRetries) {
           retryCount++;
+          console.log('[WorkSafety] Retrying in', 1000 * retryCount, 'ms');
           await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
           return loadProjectsWithBases();
         }
@@ -145,7 +156,7 @@ export default function WorkSafetyDriverRegistration() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [retryTrigger]);
 
   const [baseSearchOpen, setBaseSearchOpen] = useState(false);
   const [baseSearchQuery, setBaseSearchQuery] = useState('');
@@ -368,7 +379,7 @@ export default function WorkSafetyDriverRegistration() {
                         </div>
                         <Button 
                           type="button"
-                          onClick={() => window.location.reload()}
+                          onClick={handleRetryLoad}
                           className="bg-blue-600 hover:bg-blue-700"
                         >
                           Tentar novamente
