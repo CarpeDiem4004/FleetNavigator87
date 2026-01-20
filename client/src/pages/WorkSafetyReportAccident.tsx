@@ -595,73 +595,35 @@ export default function WorkSafetyReportAccident() {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label className="text-base font-semibold text-gray-900">Projeto *</Label>
-                      <Select onValueChange={handleProjectChange} value={selectedProject?.id.toString() || ''}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecione um projeto" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {projects.map((project) => (
-                            <SelectItem key={project.id} value={project.id.toString()}>
-                              {project.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <select
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        value={selectedProject?.id.toString() || ''}
+                        onChange={(e) => handleProjectChange(e.target.value)}
+                      >
+                        <option value="">Selecione um projeto</option>
+                        {projects.map((project) => (
+                          <option key={project.id} value={project.id.toString()}>
+                            {project.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     <div className="space-y-2">
                       <Label className="text-base font-semibold text-gray-900">Base *</Label>
-                      <Popover open={baseSearchOpen} onOpenChange={setBaseSearchOpen}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={baseSearchOpen}
-                            className="w-full justify-between"
-                            disabled={!selectedProject}
-                          >
-                            {formData.baseUnidade || (selectedProject ? 'Selecione a base' : 'Selecione um projeto primeiro')}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[calc(100vw-2rem)] max-w-[350px] p-0" align="start">
-                          <div className="flex items-center border-b px-3">
-                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                            <input
-                              className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                              placeholder="Buscar base..."
-                              value={baseSearchQuery}
-                              onChange={(e) => setBaseSearchQuery(e.target.value)}
-                            />
-                          </div>
-                          <div className="max-h-[200px] overflow-y-auto p-1">
-                            {filteredBases.length === 0 ? (
-                              <p className="p-2 text-sm text-muted-foreground">Nenhuma base encontrada.</p>
-                            ) : (
-                              filteredBases.map((base) => (
-                                <div
-                                  key={base.id}
-                                  className={cn(
-                                    "flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-100",
-                                    formData.baseUnidade === base.base_name && "bg-gray-100"
-                                  )}
-                                  onClick={() => {
-                                    setFormData(prev => ({ ...prev, baseUnidade: base.base_name }));
-                                    setBaseSearchOpen(false);
-                                    setBaseSearchQuery('');
-                                  }}
-                                >
-                                  <Check className={cn(
-                                    "h-4 w-4",
-                                    formData.baseUnidade === base.base_name ? "opacity-100" : "opacity-0"
-                                  )} />
-                                  {base.base_name}
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                      <select
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        value={formData.baseUnidade}
+                        onChange={(e) => setFormData(prev => ({ ...prev, baseUnidade: e.target.value }))}
+                        disabled={!selectedProject}
+                      >
+                        <option value="">{selectedProject ? 'Selecione a base' : 'Selecione um projeto primeiro'}</option>
+                        {selectedProject?.bases?.map((base) => (
+                          <option key={base.id} value={base.base_name}>
+                            {base.base_name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
