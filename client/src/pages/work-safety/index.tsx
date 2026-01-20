@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, CheckCircle, Clock, LineChart, FileText, Users, UserPlus, ClipboardList, ExternalLink, Copy, Check, Share2, AlertTriangle, AlertCircle, Car, Flame, Eye, EyeOff, X, AlertOctagon } from 'lucide-react';
+import { ShieldCheck, CheckCircle, Clock, LineChart, FileText, Users, UserPlus, ClipboardList, ExternalLink, Copy, Check, Share2, AlertTriangle, AlertCircle, Car, Flame, Eye, EyeOff, X, AlertOctagon, Download, Table } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'wouter';
@@ -11,10 +11,12 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import * as XLSX from 'xlsx';
 
 export default function WorkSafetyPage() {
   const [copied, setCopied] = useState(false);
   const [showOccurrences, setShowOccurrences] = useState(false);
+  const [occurrencesModalOpen, setOccurrencesModalOpen] = useState(false);
   const [selectedAccident, setSelectedAccident] = useState<any>(null);
   const { toast } = useToast();
   
@@ -89,6 +91,57 @@ export default function WorkSafetyPage() {
     } else {
       copyLink();
     }
+  };
+
+  const allAccidents = recentAccidentsData?.data || [];
+
+  const exportAccidentsToExcel = () => {
+    if (allAccidents.length === 0) {
+      toast({
+        title: 'Sem dados para exportar',
+        description: 'Não há ocorrências registradas para exportar.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const exportData = allAccidents.map((acc: any) => ({
+      'Data Ocorrência': acc.data_ocorrencia ? format(new Date(acc.data_ocorrencia), "dd/MM/yyyy", { locale: ptBR }) : 'N/A',
+      'Horário': acc.horario_ocorrencia || 'N/A',
+      'Tipo Ocorrência': acc.causa_imediata || acc.operacao || 'N/A',
+      'Base/Unidade': acc.base_unidade || acc.base || 'N/A',
+      'Colaborador': acc.nome_colaborador || 'N/A',
+      'Placa Veículo': acc.placa_veiculo || 'N/A',
+      'Modelo Veículo': acc.modelo_veiculo || 'N/A',
+      'Descrição': acc.descricao_detalhada || acc.descricao || 'N/A',
+      'Local': acc.endereco_ocorrencia || acc.local || 'N/A',
+      'Houve Vítima': acc.houve_vitima ? 'Sim' : 'Não',
+      'Dias Afastado': acc.dias_afastado || 0,
+      'Foi Socorrido': acc.foi_socorrido ? 'Sim' : 'Não',
+      'Atendimento Médico': acc.atendimento_medico ? 'Sim' : 'Não',
+      'Status': acc.status || 'Reportado',
+      'Reportado Por': acc.reportado_por || 'N/A',
+      'Data Registro': acc.created_at ? format(new Date(acc.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR }) : 'N/A'
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Ocorrências');
+    
+    const colWidths = [
+      { wch: 15 }, { wch: 10 }, { wch: 25 }, { wch: 20 }, { wch: 25 },
+      { wch: 12 }, { wch: 20 }, { wch: 40 }, { wch: 30 }, { wch: 12 },
+      { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 20 }, { wch: 18 }
+    ];
+    worksheet['!cols'] = colWidths;
+    
+    const fileName = `ocorrencias_seguranca_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+    
+    toast({
+      title: 'Excel exportado com sucesso!',
+      description: `Arquivo ${fileName} foi baixado.`
+    });
   };
 
   return (
@@ -268,16 +321,107 @@ export default function WorkSafetyPage() {
 
               <div className="mt-4 flex gap-2 justify-center">
                 <Button 
-                  className={showOccurrences ? "bg-gray-600 hover:bg-gray-700" : "bg-red-600 hover:bg-red-700"} 
+                  className="bg-red-600 hover:bg-red-700" 
                   data-testid="button-view-all-accidents"
-                  onClick={() => setShowOccurrences(!showOccurrences)}
+                  onClick={() => setOccurrencesModalOpen(true)}
                 >
-                  {showOccurrences ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
-                  {showOccurrences ? 'Ocultar Ocorrências' : 'Ver Todas as Ocorrências'}
+                  <Eye className="mr-2 h-4 w-4" />
+                  Ver Todas as Ocorrências
                 </Button>
               </div>
             </CardContent>
           </Card>
+
+          <Dialog open={occurrencesModalOpen} onOpenChange={setOccurrencesModalOpen}>
+            <DialogContent className="max-w-4xl max-h-[80vh]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                  Todas as Ocorrências de Segurança
+                </DialogTitle>
+                <DialogDescription>
+                  Lista completa de acidentes e incidentes registrados no sistema
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="flex justify-end mb-4">
+                <Button 
+                  onClick={exportAccidentsToExcel}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Exportar Excel
+                </Button>
+              </div>
+
+              <ScrollArea className="h-[50vh]">
+                {allAccidents.length === 0 ? (
+                  <div className="text-center py-8">
+                    <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />
+                    <p className="text-gray-600">Nenhuma ocorrência registrada.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {allAccidents.map((accident: any, index: number) => {
+                      const isColisao = accident.causa_imediata?.toLowerCase().includes('colisão') || accident.causa_imediata?.toLowerCase().includes('colisao');
+                      const isTombamento = accident.causa_imediata?.toLowerCase().includes('tombamento');
+                      const isAtropelamento = accident.causa_imediata?.toLowerCase().includes('atropelamento');
+                      
+                      return (
+                        <div 
+                          key={accident.id || index} 
+                          className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2 rounded-full flex-shrink-0 ${
+                                isColisao ? 'bg-red-100' :
+                                isTombamento ? 'bg-orange-100' :
+                                isAtropelamento ? 'bg-yellow-100' :
+                                'bg-blue-100'
+                              }`}>
+                                {isColisao ? <Car className="h-5 w-5 text-red-600" /> :
+                                 isTombamento ? <AlertTriangle className="h-5 w-5 text-orange-600" /> :
+                                 isAtropelamento ? <AlertCircle className="h-5 w-5 text-yellow-600" /> :
+                                 <AlertTriangle className="h-5 w-5 text-blue-600" />}
+                              </div>
+                              <div>
+                                <p className="font-semibold">{accident.causa_imediata || accident.operacao || 'Ocorrência'}</p>
+                                <p className="text-sm text-gray-500">
+                                  {accident.data_ocorrencia 
+                                    ? format(new Date(accident.data_ocorrencia), "dd/MM/yyyy", { locale: ptBR })
+                                    : 'Data não informada'
+                                  }
+                                  {accident.horario_ocorrencia && ` às ${accident.horario_ocorrencia}`}
+                                </p>
+                                <div className="flex flex-wrap gap-2 mt-1">
+                                  {accident.base_unidade && (
+                                    <Badge variant="outline" className="text-xs">{accident.base_unidade}</Badge>
+                                  )}
+                                  {accident.placa_veiculo && (
+                                    <Badge variant="secondary" className="text-xs">{accident.placa_veiculo}</Badge>
+                                  )}
+                                  {accident.houve_vitima && (
+                                    <Badge variant="destructive" className="text-xs">Com Vítima</Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-400 mt-2">
+                                  Reportado por: {accident.reportado_por || 'Não informado'}
+                                </p>
+                              </div>
+                            </div>
+                            <Badge variant={accident.status === 'reportado' ? 'secondary' : 'outline'}>
+                              {accident.status === 'reportado' ? 'Reportado' : accident.status || 'Pendente'}
+                            </Badge>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
 
           <Card className="border-orange-200 bg-orange-50">
             <CardHeader>
