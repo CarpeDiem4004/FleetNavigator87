@@ -35,8 +35,9 @@ interface FotoAdicional {
 }
 
 const BASES_LINE_HAUL = [
-  'Osasco', 'ABC', 'Campinas', 'Sorocaba', 'Socorro', 'Alair',
-  'Line Haul SP', 'Line Haul RJ', 'Line Haul MG', 'Outra'
+  'LINE HAUL SP',
+  'LINE HAUL MG',
+  'LINE HAUL RIBEIRÃO PRETO'
 ];
 
 const POSICOES_FOTO = [
@@ -207,16 +208,20 @@ export default function ChecklistPatioPublico() {
       toast({ title: "Campo obrigatório", description: "Informe seu nome", variant: "destructive" });
       return false;
     }
+    if (!formData.operador_telefone.trim()) {
+      toast({ title: "Campo obrigatório", description: "Informe seu telefone", variant: "destructive" });
+      return false;
+    }
     if (!formData.base_nome) {
       toast({ title: "Campo obrigatório", description: "Selecione a base", variant: "destructive" });
       return false;
     }
-    if (!formData.tipo_veiculo) {
-      toast({ title: "Campo obrigatório", description: "Selecione o tipo de veículo", variant: "destructive" });
-      return false;
-    }
     if (!formData.placa_veiculo.trim()) {
       toast({ title: "Campo obrigatório", description: "Informe a placa do veículo", variant: "destructive" });
+      return false;
+    }
+    if (!formData.quilometragem.trim()) {
+      toast({ title: "Campo obrigatório", description: "Informe a quilometragem do veículo", variant: "destructive" });
       return false;
     }
     return true;
@@ -450,7 +455,7 @@ export default function ChecklistPatioPublico() {
                   />
                 </div>
                 <div>
-                  <Label>Telefone</Label>
+                  <Label>Telefone *</Label>
                   <Input
                     placeholder="(00) 00000-0000"
                     value={formData.operador_telefone}
@@ -470,14 +475,25 @@ export default function ChecklistPatioPublico() {
                     ))}
                   </select>
                 </div>
-                <div>
-                  <Label>Placa *</Label>
-                  <Input
-                    placeholder="ABC-1234"
-                    value={formData.placa_veiculo}
-                    onChange={(e) => handleInputChange('placa_veiculo', e.target.value.toUpperCase())}
-                    className="uppercase"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Placa *</Label>
+                    <Input
+                      placeholder="ABC-1234"
+                      value={formData.placa_veiculo}
+                      onChange={(e) => handleInputChange('placa_veiculo', e.target.value.toUpperCase())}
+                      className="uppercase"
+                    />
+                  </div>
+                  <div>
+                    <Label>Quilometragem *</Label>
+                    <Input
+                      placeholder="000000"
+                      type="number"
+                      value={formData.quilometragem}
+                      onChange={(e) => handleInputChange('quilometragem', e.target.value)}
+                    />
+                  </div>
                 </div>
               </>
             )}
