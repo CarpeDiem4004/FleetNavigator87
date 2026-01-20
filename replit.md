@@ -29,7 +29,7 @@ The system is built with a React/TypeScript frontend and a Node.js/Express backe
 - **Maintenance System**: Service scheduling, workshop management, parts inventory integration, cost tracking, and a comprehensive workshop budget system with approval workflows and PDF generation.
 - **SaaS External Links**: Modern stateless architecture for external base access with JWT authentication, PWA capabilities, and offline support. Public access forms are mobile-optimized with dynamic project/base loading and timezone-aware data entry.
 - **Route and Fuel Conference System**: Upload and analyze daily vehicle route reports, compare with fuel records, and generate comprehensive reports with visual indicators and export capabilities (Excel/PDF).
-- **Line Haul Dashboard**: Dedicated page for Line Haul management including route management, vehicle tracking, maintenance workflow, and driver interface access.
+- **Line Haul Dashboard**: Dedicated page for Line Haul management including route management, vehicle tracking, maintenance workflow, driver interface access, and driver journey control with interjornada (11h mandatory rest) enforcement.
 - **Universal Base Dashboard System**: Standardized operational dashboards for all bases with consistent navigation and security controls.
 - **Universal Fuel Card System**: Standardized fuel card access configuration and functionality across all bases.
 - **Security Implementation**: Comprehensive "golden rule" security system with complete private access enforcement. All base and posto routes require authentication, with `BaseSecurityGuard` and `BaseAccessController` components ensuring base-specific login.
