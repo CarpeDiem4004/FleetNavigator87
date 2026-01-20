@@ -136,13 +136,11 @@ export default function WorkSafetyActionPlansPanel() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/work-safety/action-plans', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...data,
-          criadoPor: user?.name || user?.email || 'Sistema'
-        })
+      const response = await apiRequest('POST', '/api/work-safety/action-plans', {
+        ...data,
+        criadoPor: user?.name || user?.email || 'Sistema'
       });
+      return response.json();
     },
     onSuccess: () => {
       toast({ title: 'Sucesso', description: 'Plano de ação criado com sucesso!' });
@@ -157,10 +155,8 @@ export default function WorkSafetyActionPlansPanel() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      return apiRequest(`/api/work-safety/action-plans/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      });
+      const response = await apiRequest('PUT', `/api/work-safety/action-plans/${id}`, data);
+      return response.json();
     },
     onSuccess: () => {
       toast({ title: 'Sucesso', description: 'Plano de ação atualizado com sucesso!' });
@@ -177,9 +173,8 @@ export default function WorkSafetyActionPlansPanel() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/work-safety/action-plans/${id}`, {
-        method: 'DELETE'
-      });
+      const response = await apiRequest('DELETE', `/api/work-safety/action-plans/${id}`);
+      return response.json();
     },
     onSuccess: () => {
       toast({ title: 'Sucesso', description: 'Plano de ação excluído com sucesso!' });
