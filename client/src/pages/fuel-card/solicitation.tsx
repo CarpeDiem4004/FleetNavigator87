@@ -43,6 +43,7 @@ interface Vehicle {
 }
 
 // Schema de validação para solicitação de cartão combustível
+// TODOS os campos são obrigatórios exceto observações
 const solicitacaoSchema = z.object({
   placa: z.string()
     .min(1, { message: "A placa é obrigatória" })
@@ -55,11 +56,21 @@ const solicitacaoSchema = z.object({
   nomeMotorista: z.string()
     .min(3, { message: "O nome do motorista deve ter no mínimo 3 caracteres" }),
   km: z.string()
-    .min(1, { message: "A quilometragem é obrigatória" }),
+    .min(1, { message: "A quilometragem é obrigatória" })
+    .regex(/^\d+$/, { message: "A quilometragem deve conter apenas números" }),
   valor_solicitado: z.string()
-    .min(1, { message: "O valor solicitado é obrigatório" }),
+    .min(1, { message: "O valor solicitado é obrigatório" })
+    .refine((val) => {
+      const numbers = val.replace(/\D/g, '');
+      return numbers.length > 0 && parseFloat(numbers) > 0;
+    }, { message: "Informe um valor válido maior que zero" }),
   valor_litro: z.string()
-    .min(1, { message: "O valor do litro é obrigatório" }),
+    .min(1, { message: "O valor do litro é obrigatório" })
+    .refine((val) => {
+      const cleaned = val.replace(',', '.').replace(/[^\d.]/g, '');
+      const num = parseFloat(cleaned);
+      return !isNaN(num) && num > 0;
+    }, { message: "Informe um valor do litro válido maior que zero" }),
   tipo_cartao: z.enum(["placa", "numero"], { 
     required_error: "Selecione o tipo de cartão"
   }),
@@ -72,10 +83,10 @@ const solicitacaoSchema = z.object({
   }),
 
   motorista: z.string()
-    .min(3, { message: "O nome do motorista deve ter no mínimo 3 caracteres" }),
+    .min(3, { message: "O nome do solicitante deve ter no mínimo 3 caracteres" }),
   telefone_celular: z.string()
-    .min(10, { message: "O telefone deve ter no mínimo 10 dígitos" })
-    .regex(/^[\(\)\d\s\-\+]+$/, { message: "Formato de telefone inválido" }),
+    .min(14, { message: "Informe um telefone válido com DDD" })
+    .regex(/^\(\d{2}\)\s?\d{4,5}-?\d{4}$/, { message: "Formato de telefone inválido. Use (11) 99999-9999" }),
   projeto_id: z.string()
     .min(1, { message: "Selecione um projeto" }),
   base_id: z.string()
