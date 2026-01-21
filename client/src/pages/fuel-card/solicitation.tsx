@@ -543,6 +543,7 @@ export default function FuelCardSolicitation() {
           <div className="mb-4">
             <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800">💳 Solicitação de Cartão</h1>
             <p className="text-sm sm:text-base text-muted-foreground">Preencha os dados para solicitar recarga de combustível</p>
+            <span className="text-xs text-gray-400">v2.1.0</span>
           </div>
         </div>
         
