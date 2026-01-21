@@ -128,6 +128,16 @@ const unformatCurrency = (value: string): number => {
   return parseFloat(numbers) / 100;
 };
 
+// Função para formatar telefone enquanto digita (XX) XXXXX-XXXX
+const formatPhone = (value: string): string => {
+  const numbers = value.replace(/\D/g, '').slice(0, 11);
+  if (numbers.length === 0) return '';
+  if (numbers.length <= 2) return `(${numbers}`;
+  if (numbers.length <= 6) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+  if (numbers.length <= 10) return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`;
+  return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
+};
+
 export default function FuelCardSolicitation() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -910,12 +920,17 @@ export default function FuelCardSolicitation() {
                       name="telefone_celular"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm font-medium">Telefone</FormLabel>
+                          <FormLabel className="text-sm font-medium">Telefone <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <Input 
                               placeholder="(11) 99999-9999" 
                               className="text-base h-12" 
-                              {...field} 
+                              value={field.value}
+                              onChange={(e) => {
+                                const formatted = formatPhone(e.target.value);
+                                field.onChange(formatted);
+                              }}
+                              maxLength={16}
                             />
                           </FormControl>
                           <FormDescription className="text-xs">
