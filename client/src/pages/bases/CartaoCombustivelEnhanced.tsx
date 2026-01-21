@@ -113,6 +113,7 @@ const fuelCardRequestSchema = z.object({
   cardNumber: z.string().min(1, { message: 'Número do cartão é obrigatório' }),
   specificCardData: z.string().optional(),
   amount: z.number().min(0.01, { message: 'Valor mínimo é R$ 0,01' }).max(5000, { message: 'Valor máximo é R$ 5.000,00' }),
+  valorLitro: z.number().min(0.01, { message: 'Valor do litro é obrigatório e deve ser maior que zero' }),
   provider: z.string().min(1, { message: 'Provedor do cartão é obrigatório' }),
   fuelType: z.string().min(1, { message: 'Tipo de combustível é obrigatório' }),
   fuelTime: z.string().min(1, { message: 'Horário de abastecimento é obrigatório' }),
@@ -171,6 +172,7 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
       cardNumber: '',
       specificCardData: '',
       amount: 0,
+      valorLitro: 0,
       provider: '',
       fuelType: '',
       fuelTime: '',
@@ -611,7 +613,7 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                             <FormItem>
                               <FormLabel className="flex items-center gap-2 text-orange-600 font-medium">
                                 <DollarSign size={14} />
-                                Valor (R$)
+                                Valor (R$) <span className="text-red-500">*</span>
                               </FormLabel>
                               <FormControl>
                                 <Input
@@ -625,6 +627,33 @@ const CartaoCombustivelEnhanced: React.FC<CartaoCombustivelProps> = ({ baseId, b
                               </FormControl>
                               <FormDescription className="text-xs text-gray-500">
                                 Valor em reais para carregar
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="valorLitro"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2 text-green-600 font-medium">
+                                <Fuel size={14} />
+                                Valor do Litro (R$) <span className="text-red-500">*</span>
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder="6.49"
+                                  step="0.01"
+                                  {...field}
+                                  className="bg-green-50 border-green-200 focus:border-green-400"
+                                  onChange={(e) => field.onChange(Number(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormDescription className="text-xs text-gray-500">
+                                Preço por litro do combustível
                               </FormDescription>
                               <FormMessage />
                             </FormItem>

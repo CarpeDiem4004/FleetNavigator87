@@ -6368,6 +6368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cardNumber, 
         cardType, 
         amount, 
+        valorLitro,
         provider, 
         fuelType, 
         fuelTime,
@@ -6457,11 +6458,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Criar a solicitação na tabela principal (solicitacoes_fuel_card) para integração com o painel
+      // Calcular litros se valor_litro foi informado
+      const valorLitroNum = valorLitro ? parseFloat(valorLitro) : null;
+      const litrosCalculados = valorLitroNum && valorLitroNum > 0 ? parseFloat((amount / valorLitroNum).toFixed(2)) : null;
+      
       const query = `
         INSERT INTO solicitacoes_fuel_card (
-          placa, km, numero_cartao, tipo_cartao, valor_solicitado, provedor_cartao, tipo_combustivel, 
+          placa, km, numero_cartao, tipo_cartao, valor_solicitado, valor_litro, litros_solicitados, provedor_cartao, tipo_combustivel, 
           motorista, solicitante, telefone_celular, observacoes, status, data_solicitacao, base, id_rota
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'Pendente', NOW(), $12, 'GP02-REQUEST')
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'Pendente', NOW(), $14, 'GP02-REQUEST')
         RETURNING *
       `;
       
@@ -6471,6 +6476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[FUEL-CARD-REQUEST] Executando query INSERT...');
       console.log('[FUEL-CARD-REQUEST] Solicitante identificado como:', requestedByName);
       console.log('[FUEL-CARD-REQUEST] Base identificada como:', baseName);
+      console.log('[FUEL-CARD-REQUEST] Valor litro:', valorLitroNum, 'Litros calculados:', litrosCalculados);
       
       const result = await pool.query(query, [
         plate,                  // $1 - placa
@@ -6478,13 +6484,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cardNumber,            // $3 - numero_cartao
         cardType,              // $4 - tipo_cartao
         amount,                // $5 - valor_solicitado
-        provider,              // $6 - provedor_cartao
-        fuelType,              // $7 - tipo_combustivel
-        driverName,            // $8 - motorista
-        requestedByName,       // $9 - solicitante
-        driverPhone,           // $10 - telefone_celular
-        reason,                // $11 - observacoes
-        baseName || 'GP02 JACAREI (GRUPO PEREIRA)' // $12 - base (usar nome completo da base GP02)
+        valorLitroNum,         // $6 - valor_litro
+        litrosCalculados,      // $7 - litros_solicitados
+        provider,              // $8 - provedor_cartao
+        fuelType,              // $9 - tipo_combustivel
+        driverName,            // $10 - motorista
+        requestedByName,       // $11 - solicitante
+        driverPhone,           // $12 - telefone_celular
+        reason,                // $13 - observacoes
+        baseName || 'GP02 JACAREI (GRUPO PEREIRA)' // $14 - base (usar nome completo da base GP02)
       ]);
       
       console.log('[FUEL-CARD-REQUEST] Solicitação criada com sucesso:', result.rows[0]);
