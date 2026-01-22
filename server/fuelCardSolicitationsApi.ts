@@ -1568,6 +1568,8 @@ export async function createFuelCardRequest(req: Request, res: Response) {
       plate,
       odometer,
       amount,
+      valorLitro,
+      litros_solicitados,
       card_type,
       provider,
       card_number,
@@ -1605,35 +1607,40 @@ export async function createFuelCardRequest(req: Request, res: Response) {
       base_name = baseResult.rows[0].name;
     }
 
-    // Inserir nova solicitação
+    // Calcular litros se não informados
+    const valorLitroNum = valorLitro ? parseFloat(valorLitro) : null;
+    const litrosCalc = litros_solicitados ? parseFloat(litros_solicitados) : 
+                       (valorLitroNum && valorLitroNum > 0 ? parseFloat((amount / valorLitroNum).toFixed(2)) : null);
+
+    // Inserir na tabela solicitacoes_fuel_card (tabela principal do painel)
     const insertQuery = `
-      INSERT INTO fuel_card_requests (
-        plate, odometer, amount, card_type, provider, card_number,
-        driver_name, driver_phone, fuel_type, fuel_time, reason,
-        project_id, base_id, base_name, status, requested_by, requested_at, created_at, updated_at
+      INSERT INTO solicitacoes_fuel_card (
+        placa, km, km_veiculo, numero_cartao, tipo_cartao, valor_solicitado, valor_litro, litros_solicitados,
+        provedor_cartao, tipo_combustivel, motorista, solicitante, telefone_celular, observacoes,
+        status, data_solicitacao, base, origem_tipo
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW(), NOW()
+        $1, $2, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'pendente', NOW(), $14, 'base_system'
       ) RETURNING *
     `;
 
     const values = [
-      plate,
-      odometer || 0,
-      amount,
-      card_type || 'vinculado',
-      provider || 'Ticket',
-      card_number || '',
-      driver_name,
-      driver_phone || '',
-      fuel_type || 'Diesel',
-      fuel_time || '',
-      reason || 'Solicitação de recarga',
-      project_id,
-      base_id,
-      base_name,
-      status,
-      req.user?.name || 'Sistema SC'
+      plate,                              // $1 - placa
+      odometer || 0,                      // $2 - km
+      card_number || plate,               // $3 - numero_cartao
+      card_type || 'vinculado',           // $4 - tipo_cartao
+      amount,                             // $5 - valor_solicitado
+      valorLitroNum,                      // $6 - valor_litro
+      litrosCalc,                         // $7 - litros_solicitados
+      provider || 'Ticket',               // $8 - provedor_cartao
+      fuel_type || 'Diesel',              // $9 - tipo_combustivel
+      driver_name,                        // $10 - motorista
+      req.user?.name || 'Sistema SC',     // $11 - solicitante
+      driver_phone || '',                 // $12 - telefone_celular
+      reason || 'Solicitação de recarga', // $13 - observacoes
+      base_name || 'Base SC'              // $14 - base
     ];
+
+    console.log('[CREATE-FUEL-CARD-REQUEST] Inserindo com valor_litro:', valorLitroNum, 'litros:', litrosCalc);
 
     const result = await pool.query(insertQuery, values);
     const newRequest = result.rows[0];

@@ -57,6 +57,7 @@ interface SolicitacaoFormData {
   placaVeiculo: string;
   quilometragem: string;
   valor: string;
+  valorLitro: string;
   tipoCartao: 'vinculado' | 'especifico';
   placaAutomatic: string;
   numeroCartaoEspecifico?: string;
@@ -95,6 +96,7 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
     placaVeiculo: '',
     quilometragem: '',
     valor: '',
+    valorLitro: '',
     tipoCartao: 'vinculado',
     placaAutomatic: '',
     numeroCartaoEspecifico: '',
@@ -323,10 +325,16 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
       }
 
       // Enviar solicitação para API (campos conforme esperado pela API createFuelCardRequest)
+      const valorLitroNum = parseFloat(formData.valorLitro) || 0;
+      const valorNum = parseFloat(formData.valor) || 0;
+      const litrosCalculados = valorLitroNum > 0 ? parseFloat((valorNum / valorLitroNum).toFixed(2)) : 0;
+      
       const requestData = {
         plate: formData.placaVeiculo,
         odometer: parseInt(formData.quilometragem) || 0,
-        amount: parseFloat(formData.valor),
+        amount: valorNum,
+        valorLitro: valorLitroNum,
+        litros_solicitados: litrosCalculados,
         card_type: formData.tipoCartao,
         card_number: formData.tipoCartao === 'especifico' ? formData.numeroCartaoEspecifico : formData.placaVeiculo,
         provider: formData.provedorCartao,
@@ -380,6 +388,7 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
           placaVeiculo: '',
           quilometragem: '',
           valor: '',
+          valorLitro: '',
           tipoCartao: 'vinculado',
           placaAutomatic: '',
           numeroCartaoEspecifico: '',
@@ -589,7 +598,7 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
 
                           <div className="space-y-2">
                             <Label htmlFor="valor" className="text-green-600 font-medium">
-                              💰 Valor da Recarga (R$)
+                              💰 Valor da Recarga (R$) <span className="text-red-500">*</span>
                             </Label>
                             <Input
                               id="valor"
@@ -603,6 +612,24 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
                               required
                             />
                             <p className="text-xs text-gray-500">Valor da recarga solicitada</p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="valorLitro" className="text-orange-600 font-medium">
+                              ⛽ Valor do Litro (R$) <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                              id="valorLitro"
+                              placeholder="6.49"
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={formData.valorLitro}
+                              onChange={(e) => setFormData(prev => ({ ...prev, valorLitro: e.target.value }))}
+                              className="h-11"
+                              required
+                            />
+                            <p className="text-xs text-gray-500">Preço por litro do combustível</p>
                           </div>
                         </div>
 
