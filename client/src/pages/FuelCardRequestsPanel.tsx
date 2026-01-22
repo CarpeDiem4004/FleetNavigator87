@@ -4442,12 +4442,26 @@ const FuelCardRequestsPanel: React.FC = () => {
                                       if (confirm(`Deseja realmente NEGAR a solicitação da placa ${sol.placa}?`)) {
                                         try {
                                           await apiRequest(`/api/fuel-card-solicitations/${sol.id}/status`, {
-                                            method: 'PATCH',
-                                            body: JSON.stringify({ status: 'Negado', motivo: 'Negado via painel de placas repetidas' })
+                                            method: 'PUT',
+                                            body: JSON.stringify({ status: 'Negado', motivo_negacao: 'Solicitação negada - placa com múltiplas solicitações no mesmo dia' })
                                           });
                                           toast({ title: 'Solicitação negada com sucesso' });
+                                          
+                                          // Abrir WhatsApp para enviar mensagem de negação
+                                          const telefone = sol.telefone_celular || '';
+                                          if (telefone && isValidPhoneNumber(telefone)) {
+                                            const mensagem = `❌ *SOLICITAÇÃO NEGADA*\n\n` +
+                                              `Placa: *${sol.placa}*\n` +
+                                              `Motorista: ${sol.motorista}\n` +
+                                              `Valor: R$ ${sol.valor_solicitado?.toFixed(2).replace('.', ',')}\n\n` +
+                                              `Motivo: Placa com múltiplas solicitações no mesmo dia.\n\n` +
+                                              `Por favor, entre em contato para mais informações.`;
+                                            openWhatsAppWeb(telefone, mensagem);
+                                          }
+                                          
                                           fetchSolicitations();
                                         } catch (error) {
+                                          console.error('Erro ao negar:', error);
                                           toast({ title: 'Erro ao negar solicitação', variant: 'destructive' });
                                         }
                                       }
