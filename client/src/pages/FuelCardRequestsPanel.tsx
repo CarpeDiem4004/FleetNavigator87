@@ -143,6 +143,9 @@ const FuelCardRequestsPanel: React.FC = () => {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [solicitudeCounts, setSolicitudeCounts] = useState<Record<string, number>>({});
   
+  // Estado para modal de placas repetidas
+  const [repeatedPlatesModalOpen, setRepeatedPlatesModalOpen] = useState(false);
+  
   // Estado para notificação de novas mensagens WhatsApp
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   
@@ -394,6 +397,35 @@ const FuelCardRequestsPanel: React.FC = () => {
     const dailyRepeats = getDailyPlateRepeats();
     return dailyRepeats[placa]?.[date] || 1;
   };
+
+  // Obter detalhes das placas repetidas para exibição no modal
+  const getRepeatedPlatesDetails = useMemo(() => {
+    const dailyRepeats = getDailyPlateRepeats();
+    const repeatedDetails: { placa: string; data: string; count: number; solicitacoes: FuelCardSolicitation[] }[] = [];
+    
+    Object.entries(dailyRepeats).forEach(([placa, dates]) => {
+      Object.entries(dates).forEach(([dateStr, count]) => {
+        if (count > 1) {
+          // Buscar as solicitações dessa placa nessa data
+          const solicitacoesPlaca = solicitations.filter(s => {
+            const dataUso = s.data_uso || s.data_solicitacao;
+            const solDate = new Date(dataUso).toDateString();
+            return s.placa === placa && solDate === dateStr;
+          });
+          
+          repeatedDetails.push({
+            placa,
+            data: dateStr,
+            count,
+            solicitacoes: solicitacoesPlaca
+          });
+        }
+      });
+    });
+    
+    // Ordenar por data (mais recente primeiro)
+    return repeatedDetails.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+  }, [solicitations]);
 
   // Memorização das listas filtradas para melhor performance
   const filteredSolicitations = useMemo(() => {
@@ -1945,7 +1977,10 @@ const FuelCardRequestsPanel: React.FC = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow border-red-200 hover:border-red-400"
+            onClick={() => setRepeatedPlatesModalOpen(true)}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Placas Repetindo</CardTitle>
               <AlertCircle className="h-4 w-4 text-red-600" />
@@ -1955,6 +1990,7 @@ const FuelCardRequestsPanel: React.FC = () => {
               <p className="text-xs text-muted-foreground">
                 Múltiplas solicitações por dia
               </p>
+              <p className="text-xs text-blue-600 mt-1">Clique para ver detalhes</p>
             </CardContent>
           </Card>
           
@@ -2318,7 +2354,10 @@ const FuelCardRequestsPanel: React.FC = () => {
                 </CardContent>
               </Card>
               
-              <Card>
+              <Card 
+                className="cursor-pointer hover:shadow-lg transition-shadow border-red-200 hover:border-red-400"
+                onClick={() => setRepeatedPlatesModalOpen(true)}
+              >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Placas Repetindo</CardTitle>
                   <AlertCircle className="h-4 w-4 text-red-600" />
@@ -2326,6 +2365,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                 <CardContent>
                   <div className="text-2xl font-bold text-red-600">{statistics.placasRepetidas}</div>
                   <p className="text-xs text-muted-foreground">Múltiplas solicitações por dia</p>
+                  <p className="text-xs text-blue-600 mt-1">Clique para ver detalhes</p>
                 </CardContent>
               </Card>
             </div>
@@ -4316,6 +4356,77 @@ const FuelCardRequestsPanel: React.FC = () => {
                   Enviar WhatsApp
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Placas Repetidas */}
+        <Dialog open={repeatedPlatesModalOpen} onOpenChange={setRepeatedPlatesModalOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <AlertCircle className="h-5 w-5" />
+                Placas com Múltiplas Solicitações no Mesmo Dia
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {getRepeatedPlatesDetails.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                  <p>Nenhuma placa com solicitações repetidas no mesmo dia.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {getRepeatedPlatesDetails.map((item, index) => (
+                    <Card key={`${item.placa}-${item.data}-${index}`} className="border-red-200">
+                      <CardHeader className="py-3 bg-red-50">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Truck className="h-5 w-5 text-red-600" />
+                            <span className="font-bold text-lg">{item.placa}</span>
+                            <Badge variant="destructive">{item.count}x no mesmo dia</Badge>
+                          </div>
+                          <span className="text-sm text-muted-foreground">
+                            {format(new Date(item.data), "dd/MM/yyyy", { locale: ptBR })}
+                          </span>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-3">
+                        <div className="space-y-2">
+                          {item.solicitacoes.map((sol, solIndex) => (
+                            <div 
+                              key={sol.id || solIndex} 
+                              className="flex items-center justify-between p-2 bg-gray-50 rounded border"
+                            >
+                              <div className="flex items-center gap-4">
+                                <div>
+                                  <p className="text-sm font-medium">{sol.motorista}</p>
+                                  <p className="text-xs text-muted-foreground">{sol.solicitante || sol.requested_by || '-'}</p>
+                                </div>
+                                <Badge variant="outline">{sol.tipo_combustivel || 'Diesel'}</Badge>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold text-green-600">{formatCurrency(sol.valor_solicitado)}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {sol.data_solicitacao ? format(new Date(sol.data_solicitacao), "HH:mm", { locale: ptBR }) : '-'}
+                                </p>
+                              </div>
+                              <Badge 
+                                variant={
+                                  sol.status === 'Pendente' || sol.status === 'pendente' ? 'secondary' :
+                                  sol.status === 'Recarga Efetuada' || sol.status === 'atendido' ? 'default' : 'destructive'
+                                }
+                              >
+                                {sol.status}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>
