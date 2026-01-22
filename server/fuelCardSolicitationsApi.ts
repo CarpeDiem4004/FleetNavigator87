@@ -1913,14 +1913,7 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
 
     console.log(`[EXPORT-BY-DATE] Total de registros encontrados no período: ${solicitations.length}`);
 
-    if (solicitations.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Nenhuma solicitação encontrada no período especificado'
-      });
-    }
-
-    // Preparar dados para Excel
+    // Preparar dados para Excel (mesmo se vazio, gera planilha com cabeçalhos)
     const excelData = solicitations.map((sol: any) => {
       const valorFormatado = parseFloat(sol.valor_solicitado) || 0;
       const valorLitroFormatado = parseFloat(sol.valor_litro) || 0;
@@ -1950,7 +1943,18 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
 
     // Criar workbook e worksheet
     const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    
+    // Definir headers para garantir que apareçam mesmo sem dados
+    const headers = [
+      'Data da Solicitacao', 'Nome do Solicitante', 'Telefone', 'Placa do Carro',
+      'Nome do Motorista', 'Provedor do Cartao', 'Vinculado/Nao Vinculado', 'Placa do Cartao',
+      'Valor', 'Valor Litro', 'Litros Total', 'Data de Uso', 'Nome da Base', 'Status', 'Observacao'
+    ];
+    
+    // Criar worksheet com headers
+    const worksheet = excelData.length > 0 
+      ? XLSX.utils.json_to_sheet(excelData, { header: headers })
+      : XLSX.utils.aoa_to_sheet([headers]);
 
     // Configurar largura das colunas
     const columnWidths = [
