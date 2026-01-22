@@ -2064,6 +2064,8 @@ export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: R
           COALESCE(tipo_cartao, '') as tipo_cartao,
           COALESCE(numero_cartao, '') as numero_cartao,
           COALESCE(valor_solicitado::text, '0') as valor_solicitado,
+          COALESCE(valor_litro::text, '0') as valor_litro,
+          COALESCE(litros_solicitados::text, '0') as litros_solicitados,
           data_uso,
           COALESCE(base, 'Base Principal') as base,
           COALESCE(turno, '') as turno,
@@ -2110,6 +2112,8 @@ export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: R
         'Vinculado/Não Vinculado': String(sol.tipo_cartao || '').toUpperCase(),
         'Placa do Cartão': placaCartao,
         'Valor': Number(sol.valor_solicitado || 0),
+        'Valor Litro': Number(sol.valor_litro || 0),
+        'Litros Total': Number(sol.litros_solicitados || 0),
         'Data de Uso': sol.data_uso ? new Date(sol.data_uso).toLocaleDateString('pt-BR') : '',
         'Nome da Base': String(sol.base || '').toUpperCase(),
         'AM/PM': String(sol.turno || '').toUpperCase(),
@@ -2131,6 +2135,8 @@ export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: R
       { wch: 22 }, // Vinculado/Não Vinculado
       { wch: 18 }, // Placa do Cartão
       { wch: 15 }, // Valor
+      { wch: 12 }, // Valor Litro
+      { wch: 12 }, // Litros Total
       { wch: 15 }, // Data de Uso
       { wch: 20 }, // Nome da Base
       { wch: 10 }, // AM/PM
