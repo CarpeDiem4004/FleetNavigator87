@@ -4396,16 +4396,16 @@ const FuelCardRequestsPanel: React.FC = () => {
                           {item.solicitacoes.map((sol, solIndex) => (
                             <div 
                               key={sol.id || solIndex} 
-                              className="flex items-center justify-between p-2 bg-gray-50 rounded border"
+                              className="flex items-center justify-between p-3 bg-gray-50 rounded border gap-3"
                             >
-                              <div className="flex items-center gap-4">
-                                <div>
-                                  <p className="text-sm font-medium">{sol.motorista}</p>
-                                  <p className="text-xs text-muted-foreground">{sol.solicitante || sol.requested_by || '-'}</p>
+                              <div className="flex items-center gap-4 flex-1">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium truncate">{sol.motorista}</p>
+                                  <p className="text-xs text-muted-foreground truncate">{sol.solicitante || sol.requested_by || '-'}</p>
                                 </div>
-                                <Badge variant="outline">{sol.tipo_combustivel || 'Diesel'}</Badge>
+                                <Badge variant="outline" className="shrink-0">{sol.tipo_combustivel || 'Diesel'}</Badge>
                               </div>
-                              <div className="text-right">
+                              <div className="text-right shrink-0">
                                 <p className="font-bold text-green-600">{formatCurrency(sol.valor_solicitado)}</p>
                                 <p className="text-xs text-muted-foreground">
                                   {sol.data_solicitacao ? format(new Date(sol.data_solicitacao), "HH:mm", { locale: ptBR }) : '-'}
@@ -4416,9 +4416,47 @@ const FuelCardRequestsPanel: React.FC = () => {
                                   sol.status === 'Pendente' || sol.status === 'pendente' ? 'secondary' :
                                   sol.status === 'Recarga Efetuada' || sol.status === 'atendido' ? 'default' : 'destructive'
                                 }
+                                className="shrink-0"
                               >
                                 {sol.status}
                               </Badge>
+                              {(sol.status === 'Pendente' || sol.status === 'pendente' || sol.status === 'Em Análise' || sol.status === 'em_analise') && (
+                                <div className="flex gap-1 shrink-0">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-8 px-2 text-green-600 border-green-300 hover:bg-green-50"
+                                    onClick={() => {
+                                      setSelectedSolicitation(sol);
+                                      setIsSheetOpen(true);
+                                      setRepeatedPlatesModalOpen(false);
+                                    }}
+                                  >
+                                    <CheckCircle2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-8 px-2 text-red-600 border-red-300 hover:bg-red-50"
+                                    onClick={async () => {
+                                      if (confirm(`Deseja realmente NEGAR a solicitação da placa ${sol.placa}?`)) {
+                                        try {
+                                          await apiRequest(`/api/fuel-card-solicitations/${sol.id}/status`, {
+                                            method: 'PATCH',
+                                            body: JSON.stringify({ status: 'Negado', motivo: 'Negado via painel de placas repetidas' })
+                                          });
+                                          toast({ title: 'Solicitação negada com sucesso' });
+                                          fetchSolicitations();
+                                        } catch (error) {
+                                          toast({ title: 'Erro ao negar solicitação', variant: 'destructive' });
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
