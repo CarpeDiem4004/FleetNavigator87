@@ -1175,6 +1175,8 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
           COALESCE(solicitante, '') as nome_solicitante,
           COALESCE(telefone_celular, '') as telefone_solicitante,
           COALESCE(valor_solicitado::text, '0') as valor_solicitado,
+          COALESCE(valor_litro::text, '0') as valor_litro,
+          COALESCE(litros_solicitados::text, '0') as litros_solicitados,
           COALESCE(km, 0) as km,
           tipo_cartao,
           numero_cartao,
@@ -1212,6 +1214,8 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
           COALESCE(motorista_nome, '') as nome_motorista,
           COALESCE(motorista_nome, '') as nome_solicitante,
           COALESCE(valor_calculado::text, '0') as valor_solicitado,
+          '0' as valor_litro,
+          '0' as litros_solicitados,
           COALESCE(km_total, 0) as km,
           'vinculado' as tipo_cartao,
           veiculo_placa as numero_cartao,
@@ -1247,6 +1251,8 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
           COALESCE(fcr.driver_name, '') as nome_motorista,
           COALESCE(fcr.requested_by, '') as nome_solicitante,
           COALESCE(fcr.amount::text, '0') as valor_solicitado,
+          '0' as valor_litro,
+          '0' as litros_solicitados,
           COALESCE(fcr.odometer, 0) as km,
           fcr.card_type as tipo_cartao,
           fcr.card_number as numero_cartao,
@@ -1284,6 +1290,8 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
     // Preparar dados para Excel com formatação mais robusta
     const excelData = solicitations.map((sol: any) => {
       const valorFormatado = parseFloat(sol.valor_solicitado) || 0;
+      const valorLitroFormatado = parseFloat(sol.valor_litro) || 0;
+      const litrosTotalFormatado = parseFloat(sol.litros_solicitados) || 0;
       const dataFormatada = sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleDateString('pt-BR') : '';
       const dataAtendimentoFormatada = sol.data_atendimento ? new Date(sol.data_atendimento).toLocaleDateString('pt-BR') : '';
       
@@ -1294,6 +1302,8 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
         'Telefone do Solicitante': String(sol.telefone_solicitante || ''),
         'Motorista do Veiculo': String(sol.nome_motorista || '').toUpperCase(),
         'Valor Solicitado': valorFormatado,
+        'Valor Litro': valorLitroFormatado,
+        'Litros Total': litrosTotalFormatado,
         'KM': parseInt(sol.km || '0') || 0,
         'Tipo Cartao': (sol.tipo_cartao === 'numero' ? 'CARTÃO NUMERADO' : 
                        sol.tipo_cartao === 'placa' ? 'CARTÃO POR PLACA' : 
@@ -1326,25 +1336,28 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
     const columnWidths = [
       { wch: 8 },   // ID
       { wch: 12 },  // Placa
-      { wch: 20 },  // Nome do Solicitante
-      { wch: 20 },  // Motorista
+      { wch: 25 },  // Nome do Solicitante
+      { wch: 18 },  // Telefone do Solicitante
+      { wch: 25 },  // Motorista do Veiculo
       { wch: 15 },  // Valor Solicitado
-      { wch: 8 },   // KM
-      { wch: 15 },  // Tipo Cartao
+      { wch: 12 },  // Valor Litro
+      { wch: 12 },  // Litros Total
+      { wch: 10 },  // KM
+      { wch: 18 },  // Tipo Cartao
       { wch: 20 },  // Numero Cartao
-      { wch: 15 },  // Provedor
+      { wch: 12 },  // Provedor
       { wch: 15 },  // Status
       { wch: 15 },  // Data Solicitacao
       { wch: 15 },  // Atendido Por
       { wch: 15 },  // Data Atendimento
-      { wch: 15 },  // Base
+      { wch: 20 },  // Base
       { wch: 30 },  // Observacoes
-      { wch: 15 },  // Origem
+      { wch: 18 },  // Origem
       { wch: 15 },  // Modelo Veiculo
       { wch: 20 },  // Rota Origem
       { wch: 20 },  // Rota Destino
       { wch: 15 },  // Telefone Motorista
-      { wch: 15 },  // Horario Abastecimento
+      { wch: 18 },  // Horario Abastecimento
     ];
     worksheet['!cols'] = columnWidths;
 
