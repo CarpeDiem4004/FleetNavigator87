@@ -1745,7 +1745,11 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
           placa,
           motorista,
           COALESCE(motorista, '') as nome_solicitante,
+          COALESCE(solicitante, '') as solicitante,
+          COALESCE(telefone_celular, '') as telefone_celular,
           COALESCE(valor_solicitado::text, '0') as valor_solicitado,
+          COALESCE(valor_litro::text, '0') as valor_litro,
+          COALESCE(litros_solicitados::text, '0') as litros_solicitados,
           COALESCE(km, 0) as km,
           tipo_cartao,
           numero_cartao,
@@ -1795,7 +1799,11 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
           veiculo_placa as placa,
           motorista_nome as motorista,
           COALESCE(motorista_nome, '') as nome_solicitante,
+          '' as solicitante,
+          '' as telefone_celular,
           COALESCE(valor_calculado::text, '0') as valor_solicitado,
+          '0' as valor_litro,
+          '0' as litros_solicitados,
           COALESCE(km_total, 0) as km,
           'vinculado' as tipo_cartao,
           veiculo_placa as numero_cartao,
@@ -1859,7 +1867,11 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
           fcr.plate as placa,
           fcr.driver_name as motorista,
           COALESCE(fcr.requested_by, fcr.driver_name, '') as nome_solicitante,
+          COALESCE(fcr.requested_by, '') as solicitante,
+          COALESCE(fcr.driver_phone, '') as telefone_celular,
           COALESCE(fcr.amount::text, '0') as valor_solicitado,
+          '0' as valor_litro,
+          '0' as litros_solicitados,
           COALESCE(fcr.odometer, 0) as km,
           fcr.card_type as tipo_cartao,
           fcr.card_number as numero_cartao,
@@ -1911,34 +1923,28 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
     // Preparar dados para Excel
     const excelData = solicitations.map((sol: any) => {
       const valorFormatado = parseFloat(sol.valor_solicitado) || 0;
+      const valorLitroFormatado = parseFloat(sol.valor_litro) || 0;
+      const litrosTotalFormatado = parseFloat(sol.litros_solicitados) || 0;
       const dataFormatada = sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleDateString('pt-BR') : '';
+      const horaFormatada = sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
       const dataAtendimentoFormatada = sol.data_atendimento ? new Date(sol.data_atendimento).toLocaleDateString('pt-BR') : '';
       
       return {
-        'ID': String(sol.id || ''),
-        'Placa': String(sol.placa || '').toUpperCase(),
-        'Nome do Solicitante': String(sol.nome_solicitante || '').toUpperCase(),
-        'Motorista': String(sol.motorista || '').toUpperCase(),
-        'Valor Solicitado': valorFormatado,
-        'KM': parseInt(sol.km || '0') || 0,
-        'Tipo Cartao': (sol.tipo_cartao === 'numero' ? 'CARTÃO NUMERADO' : 
-                       sol.tipo_cartao === 'placa' ? 'CARTÃO POR PLACA' : 
-                       String(sol.tipo_cartao || 'PADRÃO')).toUpperCase(),
-        'Numero Cartao': String(sol.tipo_cartao === 'placa' ? sol.placa : sol.numero_cartao || '').toUpperCase(),
-        'Provedor': String(sol.provedor_cartao || 'PADRÃO').toUpperCase(),
+        'Data da Solicitacao': dataFormatada + ', ' + horaFormatada,
+        'Nome do Solicitante': String(sol.solicitante || sol.nome_solicitante || '').toUpperCase(),
+        'Telefone': String(sol.telefone_celular || sol.telefone_motorista || ''),
+        'Placa do Carro': String(sol.placa || '').toUpperCase(),
+        'Nome do Motorista': String(sol.motorista || '').toUpperCase(),
+        'Provedor do Cartao': String(sol.provedor_cartao || 'PADRÃO').toUpperCase(),
+        'Vinculado/Nao Vinculado': (sol.tipo_cartao === 'placa' ? 'PLACA' : 'NUMERO'),
+        'Placa do Cartao': String(sol.tipo_cartao === 'placa' ? sol.placa : sol.numero_cartao || '').toUpperCase(),
+        'Valor': valorFormatado,
+        'Valor Litro': valorLitroFormatado,
+        'Litros Total': litrosTotalFormatado,
+        'Data de Uso': dataAtendimentoFormatada,
+        'Nome da Base': String(sol.base || '').toUpperCase(),
         'Status': String(sol.status || '').toUpperCase(),
-        'Data Solicitacao': dataFormatada,
-        'Atendido Por': String(sol.atendido_por || '').toUpperCase(),
-        'Data Atendimento': dataAtendimentoFormatada,
-        'Base': String(sol.base || '').toUpperCase(),
-        'Observacoes': String(sol.observacoes || '').toUpperCase(),
-        'Origem': (sol.origem_tipo === 'line_hall' ? 'LINE HALL SHOPEE' : 
-                  sol.origem_tipo === 'base_system' ? 'SISTEMA DE BASES' : 'SISTEMA PRINCIPAL').toUpperCase(),
-        'Modelo Veiculo': String(sol.veiculo_modelo || '').toUpperCase(),
-        'Rota Origem': String(sol.rota_origem || '').toUpperCase(),
-        'Rota Destino': String(sol.rota_destino || '').toUpperCase(),
-        'Telefone Motorista': String(sol.telefone_motorista || ''),
-        'Horario Abastecimento': String(sol.horario_abastecimento || '').toUpperCase()
+        'Observacao': String(sol.observacoes || '').toUpperCase()
       };
     });
 
@@ -1948,27 +1954,21 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
 
     // Configurar largura das colunas
     const columnWidths = [
-      { wch: 8 },   // ID
-      { wch: 12 },  // Placa
-      { wch: 20 },  // Nome do Solicitante
-      { wch: 20 },  // Motorista
-      { wch: 15 },  // Valor Solicitado
-      { wch: 8 },   // KM
-      { wch: 15 },  // Tipo Cartao
-      { wch: 20 },  // Numero Cartao
-      { wch: 15 },  // Provedor
+      { wch: 22 },  // Data da Solicitacao
+      { wch: 25 },  // Nome do Solicitante
+      { wch: 16 },  // Telefone
+      { wch: 14 },  // Placa do Carro
+      { wch: 30 },  // Nome do Motorista
+      { wch: 15 },  // Provedor do Cartao
+      { wch: 20 },  // Vinculado/Nao Vinculado
+      { wch: 16 },  // Placa do Cartao
+      { wch: 12 },  // Valor
+      { wch: 12 },  // Valor Litro
+      { wch: 12 },  // Litros Total
+      { wch: 15 },  // Data de Uso
+      { wch: 25 },  // Nome da Base
       { wch: 15 },  // Status
-      { wch: 15 },  // Data Solicitacao
-      { wch: 15 },  // Atendido Por
-      { wch: 15 },  // Data Atendimento
-      { wch: 15 },  // Base
-      { wch: 30 },  // Observacoes
-      { wch: 15 },  // Origem
-      { wch: 15 },  // Modelo Veiculo
-      { wch: 20 },  // Rota Origem
-      { wch: 20 },  // Rota Destino
-      { wch: 15 },  // Telefone Motorista
-      { wch: 15 },  // Horario Abastecimento
+      { wch: 30 },  // Observacao
     ];
     worksheet['!cols'] = columnWidths;
 
