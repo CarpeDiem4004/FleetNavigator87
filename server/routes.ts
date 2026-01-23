@@ -7036,86 +7036,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // POST - Criar solicitação pública (sem autenticação)
-  app.post('/api/public/fuel-card/request', async (req, res) => {
-    try {
-      const { plate, cardNumber, amount, reason, requestedBy, baseId, baseName } = req.body;
-      
-      // Validações básicas
-      if (!plate || !cardNumber || !amount || !reason || !requestedBy) {
-        return res.status(400).json({
-          success: false,
-          message: 'Todos os campos são obrigatórios'
-        });
-      }
-      
-      if (amount < 10 || amount > 5000) {
-        return res.status(400).json({
-          success: false,
-          message: 'Valor deve estar entre R$ 10,00 e R$ 5.000,00'
-        });
-      }
-      
-      // Validação: Verificar se o veículo existe e está ativo (não expirado)
-      const vehicle = await storage.getVehicleByPlate(plate);
-      if (!vehicle) {
-        console.log('[PUBLIC-FUEL-CARD-REQUEST] Veículo não encontrado:', plate);
-        return res.status(404).json({
-          success: false,
-          message: `Veículo com placa ${plate} não encontrado no sistema`
-        });
-      }
-      
-      const isActive = await storage.isVehicleActive(vehicle.id);
-      if (!isActive) {
-        console.log('[PUBLIC-FUEL-CARD-REQUEST] Veículo temporário expirado:', {
-          plate: vehicle.plate,
-          isTemporary: vehicle.isTemporary,
-          deactivationDate: vehicle.deactivationDate
-        });
-        return res.status(403).json({
-          success: false,
-          message: `Veículo ${plate} está desativado. Veículos temporários expirados não podem solicitar combustível.`
-        });
-      }
-      
-      // Validação: Verificar se o veículo está em manutenção
-      if (vehicle.status === 'em_manutencao') {
-        console.log('[PUBLIC-FUEL-CARD-REQUEST] Veículo em manutenção:', plate);
-        return res.status(403).json({
-          success: false,
-          message: `Veículo ${plate} está em manutenção e não pode solicitar combustível no momento.`
-        });
-      }
-      
-      // Criar a solicitação
-      const query = `
-        INSERT INTO fuel_card_requests (
-          plate, card_number, amount, reason, requested_by, 
-          base_id, status, requested_at, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, 'pendente', NOW(), NOW(), NOW())
-        RETURNING *
-      `;
-      
-      const result = await pool.query(query, [
-        plate, cardNumber, amount, reason, requestedBy, baseId || 2
-      ]);
-      
-      return res.status(201).json({
-        success: true,
-        data: result.rows[0],
-        message: 'Solicitação criada com sucesso'
-      });
-    } catch (error: any) {
-      console.error('Erro ao criar solicitação pública:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Erro ao criar solicitação pública',
-        error: error.message
-      });
-    }
-  });
-
   // GET - Obter projetos para o fuel card system (usando filtro is_active = true)
   app.get('/api/projects', async (req, res) => {
     try {
@@ -7349,7 +7269,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         baseName,
         reason,
         requestedBy,
-        solicitante
+        solicitante,
+        valorLitro,
+        litrosSolicitados,
+        valor_litro,
+        litros_solicitados
       } = req.body;
       
       // Validações básicas
@@ -7367,6 +7291,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Normalizar campos valor_litro e litros_solicitados (aceita camelCase e snake_case)
+      const valorLitroFinal = valorLitro || valor_litro || null;
+      const litrosSolicitadosFinal = litrosSolicitados || litros_solicitados || null;
+      
       // Obter informações de projeto se necessário
       let projectName = '';
       
@@ -7381,8 +7309,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         INSERT INTO fuel_card_requests (
           plate, odometer, card_number, card_type, amount, provider, fuel_type,
           driver_name, driver_phone, project_id, project_name, base_id, base_name,
-          reason, requested_by, status, requested_at, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'pendente', NOW(), NOW(), NOW())
+          reason, requested_by, valor_litro, litros_solicitados, status, requested_at, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'pendente', NOW(), NOW(), NOW())
         RETURNING *
       `;
       
@@ -7392,7 +7320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await pool.query(query, [
         plate, odometer, cardNumber, cardType, amount, provider, fuelType,
         driverName, driverPhone, projectId, projectName, baseId, baseName,
-        reason, requestedByName
+        reason, requestedByName, valorLitroFinal, litrosSolicitadosFinal
       ]);
       
       return res.status(201).json({

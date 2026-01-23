@@ -43,6 +43,7 @@ const CartaoCombustivelAlairExterno: React.FC = () => {
     cardNumber: '',
     cardType: '',
     amount: '',
+    valorLitro: '',
     provider: '',
     fuelType: '',
     driverName: '',
@@ -168,6 +169,10 @@ const CartaoCombustivelAlairExterno: React.FC = () => {
         return;
       }
 
+      // Calcular litros se valor do litro foi informado
+      const valorLitroNum = formData.valorLitro ? parseFloat(formData.valorLitro.replace(',', '.')) : 0;
+      const litrosCalculados = valorLitroNum > 0 ? amount / valorLitroNum : 0;
+
       // Enviar solicitação
       const response = await fetch('/api/public/fuel-card/request', {
         method: 'POST',
@@ -177,6 +182,8 @@ const CartaoCombustivelAlairExterno: React.FC = () => {
         body: JSON.stringify({
           ...formData,
           amount: amount,
+          valorLitro: valorLitroNum > 0 ? valorLitroNum : null,
+          litrosSolicitados: litrosCalculados > 0 ? parseFloat(litrosCalculados.toFixed(2)) : null,
           projectId: formData.projectId ? parseInt(formData.projectId) : null,
           baseId: parseInt(formData.baseId),
           baseName: 'Alair'
@@ -199,6 +206,7 @@ const CartaoCombustivelAlairExterno: React.FC = () => {
           cardNumber: '',
           cardType: '',
           amount: '',
+          valorLitro: '',
           provider: '',
           fuelType: '',
           driverName: '',
@@ -368,6 +376,40 @@ const CartaoCombustivelAlairExterno: React.FC = () => {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="valorLitro" className="flex items-center mb-2">
+                    <Fuel className="w-4 h-4 mr-2" />
+                    Valor do Litro (R$) *
+                  </Label>
+                  <Input
+                    id="valorLitro"
+                    placeholder="Ex: 6,50"
+                    value={formData.valorLitro}
+                    onChange={(e) => handleInputChange('valorLitro', e.target.value)}
+                    required
+                  />
+                </div>
+
+                {formData.amount && formData.valorLitro && (
+                  <div>
+                    <Label className="flex items-center mb-2">
+                      Litros Estimados
+                    </Label>
+                    <div className="h-10 flex items-center px-3 bg-blue-50 rounded-md border border-blue-200">
+                      <span className="text-lg font-semibold text-blue-700">
+                        {(() => {
+                          const valorLitroNum = parseFloat(formData.valorLitro.replace(',', '.')) || 0;
+                          const valorNum = parseFloat(formData.amount) || 0;
+                          const litros = valorLitroNum > 0 ? (valorNum / valorLitroNum).toFixed(2) : '0.00';
+                          return `${litros} L`;
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Combustível */}

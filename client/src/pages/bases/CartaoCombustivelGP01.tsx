@@ -47,6 +47,7 @@ interface SolicitacaoFormData {
   placaVeiculo: string;
   quilometragem: string;
   valor: string;
+  valorLitro: string;
   tipoCartao: 'vinculado' | 'especifico';
   placaAutomatic: string;
   numeroCartaoEspecifico?: string;
@@ -75,6 +76,7 @@ export default function CartaoCombustivelGP01() {
     placaVeiculo: '',
     quilometragem: '',
     valor: '',
+    valorLitro: '',
     tipoCartao: 'vinculado',
     placaAutomatic: '',
     numeroCartaoEspecifico: '',
@@ -268,7 +270,7 @@ export default function CartaoCombustivelGP01() {
         odometer: formData.quilometragem,
         amount: parseFloat(formData.valor),
         cardType: formData.tipoCartao,
-        cardNumber: formData.tipoCartao === 'especifico' ? formData.numeroCartaoEspecifico : formData.placaVeiculo,
+        cardNumber: formData.placaVeiculo,
         provider: formData.provedorCartao,
         fuelType: formData.tipoCombustivel,
         fuelTime: formData.horarioAbastecimento,
@@ -318,6 +320,7 @@ export default function CartaoCombustivelGP01() {
           placaVeiculo: '',
           quilometragem: '',
           valor: '',
+          valorLitro: '',
           tipoCartao: 'vinculado',
           placaAutomatic: '',
           provedorCartao: 'Ticket',
@@ -513,6 +516,43 @@ export default function CartaoCombustivelGP01() {
                             <p className="text-xs text-gray-500">Valor da recarga solicitada</p>
                           </div>
                         </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="valorLitro" className="text-green-600 font-medium">
+                              ⛽ Valor do Litro (R$)
+                            </Label>
+                            <Input
+                              id="valorLitro"
+                              type="text"
+                              placeholder="Ex: 6,50"
+                              value={formData.valorLitro}
+                              onChange={(e) => setFormData(prev => ({ ...prev, valorLitro: e.target.value }))}
+                              className="h-11"
+                              required
+                            />
+                            <p className="text-xs text-gray-500">Preço por litro do combustível</p>
+                          </div>
+
+                          {formData.valor && formData.valorLitro && (
+                            <div className="space-y-2">
+                              <Label className="text-blue-600 font-medium">
+                                📊 Litros Estimados
+                              </Label>
+                              <div className="h-11 flex items-center px-3 bg-blue-50 rounded-md border border-blue-200">
+                                <span className="text-lg font-semibold text-blue-700">
+                                  {(() => {
+                                    const valorLitroNum = parseFloat(formData.valorLitro.replace(',', '.')) || 0;
+                                    const valorNum = parseFloat(formData.valor) || 0;
+                                    const litros = valorLitroNum > 0 ? (valorNum / valorLitroNum).toFixed(2) : '0.00';
+                                    return `${litros} L`;
+                                  })()}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-500">Cálculo automático baseado no valor</p>
+                            </div>
+                          )}
+                        </div>
+
 
                         <div className="mt-4 space-y-4">
                           <div className="space-y-2">

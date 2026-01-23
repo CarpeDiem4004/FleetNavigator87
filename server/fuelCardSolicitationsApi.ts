@@ -262,8 +262,8 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           '' as id_rota,
           'base_system' as origem_tipo,
           fcr.fuel_type as tipo_combustivel,
-          NULL as valor_litro,
-          NULL as litros_solicitados,
+          fcr.valor_litro as valor_litro,
+          fcr.litros_solicitados as litros_solicitados,
           NULL as data_uso,
           NULL as turno,
           -- Campos específicos do Line Hall (NULL para solicitações das bases)

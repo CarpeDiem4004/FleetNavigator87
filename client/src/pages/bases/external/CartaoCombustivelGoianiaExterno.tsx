@@ -43,6 +43,7 @@ const CartaoCombustivelGoianiaExterno: React.FC = () => {
     cardNumber: '',
     cardType: '',
     amount: '',
+    valorLitro: '',
     provider: '',
     fuelType: '',
     driverName: '',
@@ -167,6 +168,10 @@ const CartaoCombustivelGoianiaExterno: React.FC = () => {
         });
         return;
       }
+
+      // Calcular litros se valor do litro foi informado
+      const valorLitroNum = formData.valorLitro ? parseFloat(formData.valorLitro.replace(',', '.')) : 0;
+      const litrosCalculados = valorLitroNum > 0 ? amount / valorLitroNum : 0;
 
       // Enviar solicitação
       const response = await fetch('/api/public/fuel-card/request', {

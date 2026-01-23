@@ -64,6 +64,7 @@ const formSchema = z.object({
   telefone_celular: z.string().optional(),
   placa: z.string().min(1, 'Placa do veículo é obrigatória'),
   valor: z.string().min(1, 'Valor é obrigatório'),
+  valor_litro: z.string().min(1, 'Valor do litro é obrigatório'),
   projeto: z.string().min(1, 'Projeto é obrigatório'),
   base: z.string().min(1, 'Base é obrigatória'),
   tipo_cartao: z.enum(['vinculado', 'especifico'], {
@@ -107,6 +108,7 @@ export default function BaseCartaoCombustivel({
       telefone_celular: '',
       placa: '',
       valor: '',
+      valor_litro: '',
       projeto: '3', // Fixo para MERCADO LIVRE baseado na base
       base: baseId.toString(), // Fixo baseado na baseId passada
       tipo_cartao: 'vinculado',
@@ -158,15 +160,22 @@ export default function BaseCartaoCombustivel({
         finalCardNumber = data.dados_cartao_especifico || '';
       }
 
+      // Calcular valor do litro e litros
+      const valorNum = parseFloat(data.valor.replace(/[^\d.,]/g, '').replace(',', '.'));
+      const valorLitroNum = data.valor_litro ? parseFloat(data.valor_litro.replace(',', '.')) : 0;
+      const litrosCalculados = valorLitroNum > 0 ? valorNum / valorLitroNum : 0;
+
       const solicitation = {
         ...data,
         numero_cartao: finalCardNumber,
         base_id: baseId,
         base_name: baseName,
-        valor: parseFloat(data.valor.replace(/[^\d.,]/g, '').replace(',', '.')),
+        valor_solicitado: valorNum,
+        valor_litro: valorLitroNum > 0 ? valorLitroNum : null,
+        litros_solicitados: litrosCalculados > 0 ? parseFloat(litrosCalculados.toFixed(2)) : null,
         data_solicitacao: new Date().toISOString(),
         status: 'pendente',
-        origem: 'base_system',
+        origem_tipo: 'base_system',
       };
 
       const res = await apiRequest('POST', '/api/fuel-card-solicitations', solicitation);
@@ -388,6 +397,22 @@ export default function BaseCartaoCombustivel({
                 
                 <FormField
                   control={form.control}
+                  name="valor_litro"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor do Litro (R$)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="6,50" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
                   name="projeto"
                   render={({ field }) => (
                     <FormItem>
@@ -403,6 +428,22 @@ export default function BaseCartaoCombustivel({
                     </FormItem>
                   )}
                 />
+
+                {form.watch('valor') && form.watch('valor_litro') && (
+                  <div className="space-y-2">
+                    <FormLabel>Litros Estimados</FormLabel>
+                    <div className="h-10 flex items-center px-3 bg-blue-50 rounded-md border border-blue-200">
+                      <span className="text-lg font-semibold text-blue-700">
+                        {(() => {
+                          const valorLitroNum = parseFloat(form.watch('valor_litro')?.replace(',', '.') || '0') || 0;
+                          const valorNum = parseFloat(form.watch('valor')?.replace(/[^\d.,]/g, '').replace(',', '.') || '0') || 0;
+                          const litros = valorLitroNum > 0 ? (valorNum / valorLitroNum).toFixed(2) : '0.00';
+                          return `${litros} L`;
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <FormField

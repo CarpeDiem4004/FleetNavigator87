@@ -48,6 +48,7 @@ interface SolicitacaoFormData {
   placaVeiculo: string;
   quilometragem: string;
   valor: string;
+  valorLitro: string;
   tipoCartao: 'vinculado' | 'especifico';
   placaAutomatic: string;
   numeroCartaoEspecifico?: string;
@@ -56,10 +57,11 @@ interface SolicitacaoFormData {
   tipoCombustivel: string;
   horarioAbastecimento: string;
   nomeMotorista: string;
-  nomeSolicitante: string; // Campo separado para o nome do solicitante
+  nomeSolicitante: string;
   celularWhatsApp: string;
   projeto: string;
   base: string;
+  observacoes?: string;
 }
 
 export default function CartaoCombustivelGP02() {
@@ -78,6 +80,7 @@ export default function CartaoCombustivelGP02() {
     placaVeiculo: '',
     quilometragem: '',
     valor: '',
+    valorLitro: '',
     tipoCartao: 'vinculado',
     placaAutomatic: '',
     numeroCartaoEspecifico: '',
@@ -86,7 +89,7 @@ export default function CartaoCombustivelGP02() {
     tipoCombustivel: 'Diesel',
     horarioAbastecimento: '',
     nomeMotorista: '',
-    nomeSolicitante: '', // Campo separado para o nome do solicitante
+    nomeSolicitante: '',
     celularWhatsApp: '',
     projeto: '',
     base: ''
@@ -287,18 +290,25 @@ export default function CartaoCombustivelGP02() {
         return;
       }
 
+      // Calcular litros se valor do litro foi informado
+      const valorLitroNum = formData.valorLitro ? parseFloat(formData.valorLitro.replace(',', '.')) : 0;
+      const valorNum = parseFloat(formData.valor);
+      const litrosCalculados = valorLitroNum > 0 ? valorNum / valorLitroNum : 0;
+
       // Enviar solicitação para API
       const requestData = {
         plate: formData.placaVeiculo,
         odometer: formData.quilometragem,
-        amount: parseFloat(formData.valor),
+        amount: valorNum,
+        valorLitro: valorLitroNum > 0 ? valorLitroNum : null,
+        litrosSolicitados: litrosCalculados > 0 ? parseFloat(litrosCalculados.toFixed(2)) : null,
         cardType: formData.tipoCartao,
         cardNumber: formData.tipoCartao === 'especifico' ? formData.numeroCartaoEspecifico : formData.placaVeiculo,
         provider: formData.provedorCartao,
         fuelType: formData.tipoCombustivel,
         fuelTime: formData.horarioAbastecimento,
         driverName: formData.nomeMotorista,
-        requesterName: formData.nomeSolicitante, // Nome do solicitante (usuário logado)
+        requesterName: formData.nomeSolicitante,
         driverPhone: formData.celularWhatsApp,
         reason: 'Solicitação de recarga de cartão combustível',
         specificCardData: formData.tipoCartao === 'especifico' ? formData.numeroCartaoEspecifico : '',
@@ -306,7 +316,7 @@ export default function CartaoCombustivelGP02() {
         baseId: selectedProject?.bases.find(b => b.id.toString() === formData.base)?.id || 150,
         observations: formData.observacoes || '',
         origem: 'base_system',
-        solicitante: formData.nomeSolicitante || 'GP02 - Jacarei' // Usar nome do solicitante aqui
+        solicitante: formData.nomeSolicitante || 'GP02 - Jacarei'
       };
 
       console.log('Enviando solicitação para API:', requestData);
@@ -344,12 +354,16 @@ export default function CartaoCombustivelGP02() {
           placaVeiculo: '',
           quilometragem: '',
           valor: '',
+          valorLitro: '',
           tipoCartao: 'vinculado',
           placaAutomatic: '',
+          numeroCartaoEspecifico: '',
+          observacoesCartao: '',
           provedorCartao: 'Ticket',
           tipoCombustivel: 'Diesel',
           horarioAbastecimento: '',
           nomeMotorista: '',
+          nomeSolicitante: '',
           celularWhatsApp: '',
           projeto: selectedProject?.id.toString() || '',
           base: ''
@@ -538,6 +552,43 @@ export default function CartaoCombustivelGP02() {
                             />
                             <p className="text-xs text-gray-500">Valor da recarga solicitada</p>
                           </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="valorLitro" className="text-green-600 font-medium">
+                              ⛽ Valor do Litro (R$)
+                            </Label>
+                            <Input
+                              id="valorLitro"
+                              type="text"
+                              placeholder="Ex: 6,50"
+                              value={formData.valorLitro}
+                              onChange={(e) => setFormData(prev => ({ ...prev, valorLitro: e.target.value }))}
+                              className="h-11"
+                              required
+                            />
+                            <p className="text-xs text-gray-500">Preço por litro do combustível</p>
+                          </div>
+
+                          {formData.valor && formData.valorLitro && (
+                            <div className="space-y-2">
+                              <Label className="text-blue-600 font-medium">
+                                📊 Litros Estimados
+                              </Label>
+                              <div className="h-11 flex items-center px-3 bg-blue-50 rounded-md border border-blue-200">
+                                <span className="text-lg font-semibold text-blue-700">
+                                  {(() => {
+                                    const valorLitroNum = parseFloat(formData.valorLitro.replace(',', '.')) || 0;
+                                    const valorNum = parseFloat(formData.valor) || 0;
+                                    const litros = valorLitroNum > 0 ? (valorNum / valorLitroNum).toFixed(2) : '0.00';
+                                    return `${litros} L`;
+                                  })()}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-500">Cálculo automático baseado no valor</p>
+                            </div>
+                          )}
                         </div>
 
                         <div className="mt-4 space-y-4">

@@ -47,6 +47,7 @@ interface SolicitacaoFormData {
   placaVeiculo: string;
   quilometragem: string;
   valor: string;
+  valorLitro: string;
   tipoCartao: 'vinculado' | 'especifico';
   placaAutomatic: string;
   provedorCartao: string;
@@ -63,6 +64,7 @@ const CartaoCombustivelPoa: React.FC = () => {
     placaVeiculo: '',
     quilometragem: '',
     valor: '',
+    valorLitro: '',
     tipoCartao: 'vinculado',
     placaAutomatic: '',
     provedorCartao: 'Ticket',
@@ -232,8 +234,49 @@ const CartaoCombustivelPoa: React.FC = () => {
         return;
       }
 
-      // Simular envio para API
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Calcular litros se valor do litro foi informado
+      const valorLitroNum = formData.valorLitro ? parseFloat(formData.valorLitro.replace(',', '.')) : 0;
+      const valorNum = parseFloat(formData.valor);
+      const litrosCalculados = valorLitroNum > 0 ? valorNum / valorLitroNum : 0;
+
+      // Enviar para API real
+      const requestData = {
+        placa: formData.placaVeiculo,
+        km: parseInt(formData.quilometragem) || 0,
+        tipo_cartao: formData.tipoCartao === 'especifico' ? 'numero' : 'placa',
+        provedor_cartao: formData.provedorCartao,
+        numero_cartao: formData.placaVeiculo,
+        motorista: formData.nomeMotorista,
+        valor_solicitado: valorNum,
+        valor_litro: valorLitroNum > 0 ? valorLitroNum : null,
+        litros_solicitados: litrosCalculados > 0 ? parseFloat(litrosCalculados.toFixed(2)) : null,
+        tipo_combustivel: formData.tipoCombustivel?.toLowerCase() || 'diesel',
+        observacoes: `Horário: ${formData.horarioAbastecimento || 'Não informado'}`,
+        base: selectedProject?.bases.find(b => b.id.toString() === formData.base)?.base_name || 'Base não identificada',
+        id_rota: selectedProject?.bases.find(b => b.id.toString() === formData.base)?.base_code || 'N/A',
+        projeto_id: parseInt(formData.projeto),
+        base_id: parseInt(formData.base),
+        telefone_celular: formData.celularWhatsApp || '',
+        origem_tipo: 'base_system'
+      };
+
+      console.log('Enviando solicitação para API:', requestData);
+
+      const response = await fetch('/api/fuel-card-solicitations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Erro ao enviar solicitação');
+      }
+
+      const result = await response.json();
+      console.log('Resposta da API:', result);
       
       // Adicionar nova solicitação ao histórico
       const novaSolicitacao: SolicitacaoHistorico = {
@@ -259,6 +302,7 @@ const CartaoCombustivelPoa: React.FC = () => {
           placaVeiculo: '',
           quilometragem: '',
           valor: '',
+          valorLitro: '',
           tipoCartao: 'vinculado',
           placaAutomatic: '',
           provedorCartao: 'Ticket',
@@ -426,6 +470,23 @@ const CartaoCombustivelPoa: React.FC = () => {
                               />
                               <p className="text-xs text-gray-500">Valor em reais para carregar</p>
                             </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="valorLitro" className="text-green-600 font-medium">
+                                ⛽ Valor do Litro (R$)
+                              </Label>
+                              <Input
+                                id="valorLitro"
+                                type="text"
+                                placeholder="Ex: 6,50"
+                                value={formData.valorLitro}
+                                onChange={(e) => setFormData(prev => ({ ...prev, valorLitro: e.target.value }))}
+                                className="h-11"
+                                required
+                              />
+                              <p className="text-xs text-gray-500">Preço por litro do combustível</p>
+                            </div>
+
                           </div>
 
                           <div className="mt-4 space-y-3">
