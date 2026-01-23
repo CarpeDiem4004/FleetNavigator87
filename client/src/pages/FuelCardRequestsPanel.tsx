@@ -401,7 +401,7 @@ const FuelCardRequestsPanel: React.FC = () => {
   // Obter detalhes das placas repetidas para exibição no modal
   const getRepeatedPlatesDetails = useMemo(() => {
     const dailyRepeats = getDailyPlateRepeats();
-    const repeatedDetails: { placa: string; data: string; count: number; solicitacoes: FuelCardSolicitation[] }[] = [];
+    const repeatedDetails: { placa: string; data: string; count: number; bases: string[]; solicitacoes: FuelCardSolicitation[] }[] = [];
     
     Object.entries(dailyRepeats).forEach(([placa, dates]) => {
       Object.entries(dates).forEach(([dateStr, count]) => {
@@ -413,10 +413,19 @@ const FuelCardRequestsPanel: React.FC = () => {
             return s.placa === placa && solDate === dateStr;
           });
           
+          // Extrair as bases únicas das solicitações
+          const basesSet = new Set<string>();
+          solicitacoesPlaca.forEach(s => {
+            const base = s.base || s.origin_base || '';
+            if (base) basesSet.add(base);
+          });
+          const bases = Array.from(basesSet);
+          
           repeatedDetails.push({
             placa,
             data: dateStr,
             count,
+            bases,
             solicitacoes: solicitacoesPlaca
           });
         }
@@ -4385,6 +4394,11 @@ const FuelCardRequestsPanel: React.FC = () => {
                             <Truck className="h-5 w-5 text-red-600" />
                             <span className="font-bold text-lg">{item.placa}</span>
                             <Badge variant="destructive">{item.count}x no mesmo dia</Badge>
+                            {item.bases && item.bases.length > 0 && (
+                              <span className="text-sm text-red-700 font-medium">
+                                ({item.bases.join(', ')})
+                              </span>
+                            )}
                           </div>
                           <span className="text-sm text-muted-foreground">
                             {format(new Date(item.data), "dd/MM/yyyy", { locale: ptBR })}
