@@ -43,7 +43,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
-import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download, Search, History, Clock, Wrench, Paperclip, Eye, Upload, RefreshCw, ClipboardList, CheckCircle, RotateCcw, Share, Copy, FileSpreadsheet } from "lucide-react";
+import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download, Search, History, Clock, Wrench, Paperclip, Eye, Upload, RefreshCw, ClipboardList, CheckCircle, RotateCcw, Share, Copy, FileSpreadsheet, AlertTriangle, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import jsPDF from "jspdf";
@@ -170,6 +170,7 @@ export default function Equipment() {
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
   const [isProcessingReturn, setIsProcessingReturn] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [errorModal, setErrorModal] = useState<{ isOpen: boolean; title: string; message: string }>({ isOpen: false, title: '', message: '' });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -311,12 +312,13 @@ export default function Equipment() {
         description: "Equipamento criado com sucesso!",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Erro ao criar equipamento:', error);
-      toast({
-        title: "Erro",
-        description: `Erro ao criar equipamento: ${error.message}`,
-        variant: "destructive",
+      const errorMessage = error?.error || error?.message || 'Erro desconhecido ao criar equipamento';
+      setErrorModal({
+        isOpen: true,
+        title: 'Erro ao Criar Equipamento',
+        message: errorMessage
       });
     },
   });
@@ -336,11 +338,12 @@ export default function Equipment() {
         description: "Equipamento atualizado com sucesso!",
       });
     },
-    onError: (error) => {
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar equipamento",
-        variant: "destructive",
+    onError: (error: any) => {
+      const errorMessage = error?.error || error?.message || 'Erro desconhecido ao atualizar equipamento';
+      setErrorModal({
+        isOpen: true,
+        title: 'Erro ao Atualizar Equipamento',
+        message: errorMessage
       });
     },
   });
@@ -356,11 +359,12 @@ export default function Equipment() {
         description: "Equipamento deletado com sucesso!",
       });
     },
-    onError: (error) => {
-      toast({
-        title: "Erro",
-        description: "Erro ao deletar equipamento",
-        variant: "destructive",
+    onError: (error: any) => {
+      const errorMessage = error?.error || error?.message || 'Erro desconhecido ao deletar equipamento';
+      setErrorModal({
+        isOpen: true,
+        title: 'Erro ao Deletar Equipamento',
+        message: errorMessage
       });
     },
   });
@@ -941,6 +945,31 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      {/* Modal de Erro Centralizado */}
+      {errorModal.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200">
+            <div className="bg-red-500 px-6 py-4 flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-full">
+                <AlertTriangle className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">{errorModal.title}</h3>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-700 text-base leading-relaxed">{errorModal.message}</p>
+            </div>
+            <div className="px-6 pb-6 flex justify-end">
+              <Button 
+                onClick={() => setErrorModal({ isOpen: false, title: '', message: '' })}
+                className="bg-red-500 hover:bg-red-600 text-white px-6"
+              >
+                Entendi
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Controle de Equipamentos</h1>
