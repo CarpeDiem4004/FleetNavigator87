@@ -1,0 +1,204 @@
+Perfeito, isso é **100% caso clássico de divergência entre formulário → backend → painel**.
+Vou te ajudar em **duas frentes**:
+
+1️⃣ **como pedir a revisão de forma clara (mensagem pronta)**
+2️⃣ **como VOCÊ MESMO localizar e corrigir o erro (passo a passo técnico)**
+
+---
+
+## 1️⃣ Como pedir a revisão (mensagem objetiva e técnica)
+
+Você pode enviar algo assim para quem vai revisar (dev, IA, Replit AI ou parceiro):
+
+> Precisamos revisar o fluxo do **formulário de solicitação de abastecimento**.
+>
+> As bases estão preenchendo corretamente o **valor do litro**, porém no **painel administrativo** não está aparecendo a **quantidade de litros** em todas as solicitações.
+>
+> Solicito validar:
+>
+> * Se o campo de **quantidade de litros** está sendo salvo corretamente no banco
+> * Se o backend está retornando esse campo na listagem
+> * Se o frontend do painel está renderizando esse campo corretamente
+>
+> Link do formulário:
+> [https://muricionfleet-joaopaulo60.replit.app/fuel-card/solicitation](https://muricionfleet-joaopaulo60.replit.app/fuel-card/solicitation)
+>
+> O erro parece estar em algum ponto entre **submit do formulário → persistência → leitura no painel**.
+
+Se quiser, deixo essa mensagem mais “manda resolver” ou mais “colaborativa” 😄
+
+---
+
+## 2️⃣ Como resolver isso na prática (passo a passo técnico)
+
+Agora o **ouro** 👇
+Esse problema **não é visual**, é de **fluxo de dados**.
+
+### 🔎 Fluxo correto esperado
+
+```
+Formulário (litros)
+   ↓
+Backend / API
+   ↓
+Banco de dados (campo litros)
+   ↓
+Consulta do painel
+   ↓
+Renderização no card
+```
+
+Vamos checar **onde o dado se perde**.
+
+---
+
+## 3️⃣ Check 1 — O formulário realmente envia os litros?
+
+No **submit do formulário**, valide se existe algo assim:
+
+```js
+const payload = {
+  placa,
+  km,
+  valor_litro,
+  litros, // ⚠️ CONFIRMAR SE EXISTE
+  tipo_combustivel,
+  base_id
+}
+```
+
+🚨 Erros comuns:
+
+* Campo chama `quantidade_litros` no input, mas `litros` no backend
+* Campo é string `"40,0"` e o backend espera number
+* Campo só é enviado quando diesel (e ARLA quebra)
+
+👉 **Teste rápido**
+Abra o DevTools (F12) → Network → Submit → veja o payload
+Se **litros não estiver lá**, o problema já foi achado.
+
+---
+
+## 4️⃣ Check 2 — O backend está salvando?
+
+No backend (API ou Supabase):
+
+### Confirme:
+
+* O campo **existe na tabela**
+* O nome é exatamente o mesmo
+
+Exemplo esperado no banco:
+
+```
+litros NUMERIC
+```
+
+🚨 Erros comuns:
+
+* Campo existe como `qtd_litros`, mas o insert usa `litros`
+* Insert ignora o campo se for `null`
+* Regra condicional tipo:
+
+```js
+if (valor_litro && litros) { ... }
+```
+
+(Se um vier vazio, não salva nenhum)
+
+👉 Rode uma query direto no Supabase:
+
+```sql
+select id, litros, valor_litro
+from solicitacoes_abastecimento
+order by created_at desc;
+```
+
+Se **alguns registros têm litros NULL**, o erro já está antes do painel.
+
+---
+
+## 5️⃣ Check 3 — O painel está buscando esse campo?
+
+Na API que alimenta o painel, confira o SELECT:
+
+❌ ERRADO (muito comum):
+
+```sql
+select placa, km, valor_litro, status
+from solicitacoes_abastecimento
+```
+
+✅ CERTO:
+
+```sql
+select placa, km, valor_litro, litros, status
+from solicitacoes_abastecimento
+```
+
+⚠️ Se estiver usando Supabase JS:
+
+```js
+.select('placa, km, valor_litro, litros, status')
+```
+
+Se não selecionar explicitamente, **o painel nunca verá o campo**.
+
+---
+
+## 6️⃣ Check 4 — O frontend está renderizando?
+
+No card do painel, confirme se existe algo como:
+
+```jsx
+{item.litros ? `${item.litros} L` : '--'}
+```
+
+🚨 Erro clássico:
+
+* Campo vem como `quantidade_litros`
+* Front tenta `item.litros`
+* Resultado: nada aparece
+
+👉 Dica rápida:
+
+```jsx
+console.log(item)
+```
+
+Veja o **nome exato do campo** que está chegando.
+
+---
+
+## 7️⃣ Correção definitiva (boa prática)
+
+💡 **Nunca confiar só no valor do litro**
+
+Sempre calcule e salve:
+
+```
+litros
+valor_litro
+valor_total = litros * valor_litro
+```
+
+Assim o painel pode:
+
+* Mostrar litros
+* Conferir fraude
+* Calcular média por veículo
+* Comparar consumo
+
+---
+
+## 8️⃣ Se quiser, eu faço contigo agora
+
+Se você quiser, no próximo passo posso:
+
+* 🔧 Te passar o **prompt exato para o Replit AI corrigir**
+* 🧠 Revisar o **schema ideal da tabela**
+* 🎯 Te ajudar a criar uma **validação automática** (se litros vazio → bloqueia envio)
+* 📊 Melhorar esse card para ficar **executivo + antifraude**
+
+Me diga:
+👉 o backend é **Express**, **Supabase RPC**, ou **API direto do Supabase JS**?
