@@ -87,6 +87,8 @@ export default function CocaColaOperacao() {
   const [newVehicleModelo, setNewVehicleModelo] = useState('');
   const [newVehicleBaseId, setNewVehicleBaseId] = useState<number | null>(null);
   const [selectedBaseFilter, setSelectedBaseFilter] = useState<string>('all');
+  const [selectedBaseDetail, setSelectedBaseDetail] = useState<CocaColaBase | null>(null);
+  const [baseDetailDialogOpen, setBaseDetailDialogOpen] = useState(false);
 
   const hoje = format(new Date(), 'yyyy-MM-dd');
 
@@ -394,14 +396,19 @@ export default function CocaColaOperacao() {
                       <div className="space-y-2">
                         {bases.filter(b => b.ativo).map(base => {
                           const atualizouHoje = basesAtualizadasHoje.includes(base.id);
+                          const veiculosBase = vehicles.filter(v => v.base_id === base.id);
                           return (
                             <div 
                               key={base.id} 
-                              className={`flex items-center justify-between p-3 rounded-lg ${atualizouHoje ? 'bg-green-50' : 'bg-red-50'}`}
+                              className={`flex items-center justify-between p-3 rounded-lg cursor-pointer hover:opacity-80 transition-opacity ${atualizouHoje ? 'bg-green-50' : 'bg-red-50'}`}
+                              onClick={() => {
+                                setSelectedBaseDetail(base);
+                                setBaseDetailDialogOpen(true);
+                              }}
                             >
                               <div>
                                 <p className="font-medium">{base.nome}</p>
-                                <p className="text-sm text-muted-foreground">{base.cidade}/{base.estado}</p>
+                                <p className="text-sm text-muted-foreground">{base.cidade}/{base.estado} • {veiculosBase.length} veículos</p>
                               </div>
                               {atualizouHoje ? (
                                 <Badge className="bg-green-100 text-green-800">
@@ -745,6 +752,76 @@ export default function CocaColaOperacao() {
           </Tabs>
         </div>
       </div>
+
+      {/* Dialog para mostrar veículos da base */}
+      <Dialog open={baseDetailDialogOpen} onOpenChange={setBaseDetailDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5" />
+              Veículos - {selectedBaseDetail?.nome}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedBaseDetail?.cidade}/{selectedBaseDetail?.estado}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedBaseDetail && (
+            <div className="space-y-4">
+              {(() => {
+                const veiculosBase = vehicles.filter(v => v.base_id === selectedBaseDetail.id);
+                const stats = {
+                  total: veiculosBase.length,
+                  disponivel: veiculosBase.filter(v => v.status === 'disponivel').length,
+                  emRota: veiculosBase.filter(v => v.status === 'em_rota' || v.status === 'rota').length,
+                  manutencao: veiculosBase.filter(v => v.status === 'manutencao').length,
+                  parados: veiculosBase.filter(v => ['sem_equipe', 'baixa_venda'].includes(v.status)).length
+                };
+                return (
+                  <>
+                    <div className="grid grid-cols-5 gap-2 text-center">
+                      <div className="p-2 bg-gray-100 rounded">
+                        <p className="text-lg font-bold">{stats.total}</p>
+                        <p className="text-xs text-muted-foreground">Total</p>
+                      </div>
+                      <div className="p-2 bg-blue-100 rounded">
+                        <p className="text-lg font-bold text-blue-600">{stats.disponivel}</p>
+                        <p className="text-xs text-muted-foreground">Disponível</p>
+                      </div>
+                      <div className="p-2 bg-green-100 rounded">
+                        <p className="text-lg font-bold text-green-600">{stats.emRota}</p>
+                        <p className="text-xs text-muted-foreground">Em Rota</p>
+                      </div>
+                      <div className="p-2 bg-orange-100 rounded">
+                        <p className="text-lg font-bold text-orange-600">{stats.manutencao}</p>
+                        <p className="text-xs text-muted-foreground">Manutenção</p>
+                      </div>
+                      <div className="p-2 bg-red-100 rounded">
+                        <p className="text-lg font-bold text-red-600">{stats.parados}</p>
+                        <p className="text-xs text-muted-foreground">Parados</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                      {veiculosBase.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-4">Nenhum veículo cadastrado nesta base.</p>
+                      ) : (
+                        veiculosBase.map(v => (
+                          <div key={v.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                              <p className="font-medium">{v.placa}</p>
+                              <p className="text-sm text-muted-foreground">{v.modelo}</p>
+                            </div>
+                            {getStatusBadge(v.status)}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
