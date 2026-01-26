@@ -1332,6 +1332,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registradas no início para garantir que não sejam interceptadas pelo Vite
   // ===========================
 
+  // Middleware de autenticação específico para Coca-Cola (valida JWT ou sessão principal)
+  const cocaColaAuth = async (req: any, res: any, next: any) => {
+    try {
+      const jwt = require('jsonwebtoken');
+      const authHeader = req.headers.authorization;
+      
+      // Verificar token JWT da base Coca-Cola
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'coca-cola-secret-key');
+          req.cocaColaUser = decoded;
+          console.log('[COCA-COLA AUTH] JWT válido para:', decoded);
+          return next();
+        } catch (jwtError) {
+          console.log('[COCA-COLA AUTH] Token JWT inválido, tentando sessão principal');
+        }
+      }
+      
+      // Fallback para autenticação principal (admin do sistema)
+      if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+        req.cocaColaUser = { userId: req.user.id, tipo: 'admin', baseId: null };
+        return next();
+      }
+      
+      return res.status(401).json({ message: 'Não autenticado' });
+    } catch (error) {
+      console.error('[COCA-COLA AUTH] Erro no middleware:', error);
+      return res.status(500).json({ message: 'Erro de autenticação' });
+    }
+  };
+
   // Login para bases Coca-Cola (autenticação independente)
   app.post('/api/coca-cola/auth/login', async (req, res) => {
     try {
@@ -1428,9 +1460,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Buscar base Coca-Cola por ID
-  app.get('/api/coca-cola/bases/:id', isAuthenticated, async (req, res) => {
+  app.get('/api/coca-cola/bases/:id', cocaColaAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
+      const cocaColaUser = req.cocaColaUser;
+      
+      // Verificar se usuário tem acesso à base (se não for admin)
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId !== parseInt(id)) {
+        return res.status(403).json({ error: 'Acesso negado a esta base' });
+      }
+      
       const result = await pool.query('SELECT * FROM coca_cola_bases WHERE id = $1', [id]);
       
       if (result.rows.length === 0) {
@@ -1445,8 +1484,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Listar bases Coca-Cola
-  app.get('/api/coca-cola/bases', isAuthenticated, async (req, res) => {
+  app.get('/api/coca-cola/bases', cocaColaAuth, async (req: any, res) => {
     try {
+      const cocaColaUser = req.cocaColaUser;
+      
+      // Se usuário é de base específica, retorna apenas sua base
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
+        const result = await pool.query('SELECT * FROM coca_cola_bases WHERE id = $1', [cocaColaUser.baseId]);
+        return res.json(result.rows);
+      }
+      
+      // Admin vê todas as bases
       const result = await pool.query('SELECT * FROM coca_cola_bases ORDER BY nome');
       console.log('[COCA-COLA] Bases encontradas:', result.rows.length);
       res.json(result.rows);
@@ -1456,9 +1504,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Criar base Coca-Cola
-  app.post('/api/coca-cola/bases', isAuthenticated, async (req, res) => {
+  // Criar base Coca-Cola (apenas admin)
+  app.post('/api/coca-cola/bases', cocaColaAuth, async (req: any, res) => {
     try {
+      const cocaColaUser = req.cocaColaUser;
+      if (cocaColaUser.tipo !== 'admin') {
+        return res.status(403).json({ error: 'Apenas admins podem criar bases' });
+      }
+      
       const { nome, cidade, estado } = req.body;
       const result = await pool.query(
         'INSERT INTO coca_cola_bases (nome, cidade, estado) VALUES ($1, $2, $3) RETURNING *',
@@ -1471,15 +1524,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Listar veículos Coca-Cola
-  app.get('/api/coca-cola/vehicles', isAuthenticated, async (req, res) => {
+  // Listar veículos Coca-Cola (filtrado por base se não for admin)
+  app.get('/api/coca-cola/vehicles', cocaColaAuth, async (req: any, res) => {
     try {
-      const result = await pool.query(`
+      const cocaColaUser = req.cocaColaUser;
+      const { base_id } = req.query;
+      
+      let query = `
         SELECT v.*, b.nome as base_nome 
         FROM coca_cola_vehicles v 
-        LEFT JOIN coca_cola_bases b ON v.base_id = b.id 
-        ORDER BY v.placa
-      `);
+        LEFT JOIN coca_cola_bases b ON v.base_id = b.id
+      `;
+      let params: any[] = [];
+      
+      // Se usuário é de base específica, filtra pela sua base
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
+        query += ' WHERE v.base_id = $1';
+        params = [cocaColaUser.baseId];
+      } else if (base_id) {
+        // Admin pode filtrar por base específica
+        query += ' WHERE v.base_id = $1';
+        params = [base_id];
+      }
+      
+      query += ' ORDER BY v.placa';
+      
+      const result = await pool.query(query, params);
       res.json(result.rows);
     } catch (error) {
       console.error('[COCA-COLA] Erro ao listar veículos:', error);
@@ -1488,17 +1558,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Criar veículo Coca-Cola
-  app.post('/api/coca-cola/vehicles', isAuthenticated, async (req, res) => {
+  app.post('/api/coca-cola/vehicles', cocaColaAuth, async (req: any, res) => {
     try {
-      const { placa, modelo, base_id } = req.body;
+      const cocaColaUser = req.cocaColaUser;
+      let { placa, modelo, base_id, status } = req.body;
+      
+      // Se usuário é de base, usa sua base
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
+        base_id = cocaColaUser.baseId;
+      }
+      
       const result = await pool.query(
         'INSERT INTO coca_cola_vehicles (placa, modelo, base_id, status) VALUES ($1, $2, $3, $4) RETURNING *',
-        [placa.toUpperCase(), modelo, base_id, 'disponivel']
+        [placa.toUpperCase(), modelo, base_id, status || 'disponivel']
       );
       res.status(201).json(result.rows[0]);
     } catch (error) {
       console.error('[COCA-COLA] Erro ao criar veículo:', error);
       res.status(500).json({ error: 'Erro ao criar veículo' });
+    }
+  });
+
+  // Atualizar veículo Coca-Cola (rota PATCH genérica)
+  app.patch('/api/coca-cola/vehicles/:id', cocaColaAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const cocaColaUser = req.cocaColaUser;
+      const { status, oficina, prazo_estimado, motivo_parado } = req.body;
+      
+      // Verificar se veículo pertence à base do usuário
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
+        const vehicleCheck = await pool.query('SELECT base_id FROM coca_cola_vehicles WHERE id = $1', [id]);
+        if (vehicleCheck.rows.length === 0) {
+          return res.status(404).json({ error: 'Veículo não encontrado' });
+        }
+        if (vehicleCheck.rows[0].base_id !== cocaColaUser.baseId) {
+          return res.status(403).json({ error: 'Acesso negado a este veículo' });
+        }
+      }
+      
+      const result = await pool.query(
+        `UPDATE coca_cola_vehicles 
+         SET status = COALESCE($1, status),
+             oficina = COALESCE($2, oficina),
+             prazo_estimado = COALESCE($3, prazo_estimado),
+             motivo_parado = COALESCE($4, motivo_parado)
+         WHERE id = $5 RETURNING *`,
+        [status, oficina, prazo_estimado, motivo_parado, id]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Veículo não encontrado' });
+      }
+      
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao atualizar veículo:', error);
+      res.status(500).json({ error: 'Erro ao atualizar veículo' });
     }
   });
 
@@ -1524,19 +1640,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Listar atualizações diárias Coca-Cola
-  app.get('/api/coca-cola/daily-updates', isAuthenticated, async (req, res) => {
+  app.get('/api/coca-cola/daily-updates', cocaColaAuth, async (req: any, res) => {
     try {
       const { data } = req.query;
+      const cocaColaUser = req.cocaColaUser;
+      
       let query = `
         SELECT u.*, b.nome as base_nome 
         FROM coca_cola_daily_updates u 
         LEFT JOIN coca_cola_bases b ON u.base_id = b.id 
       `;
-      const params: string[] = [];
-      if (data && typeof data === 'string') {
-        query += ' WHERE u.data_atualizacao = $1';
+      const params: any[] = [];
+      let paramIndex = 1;
+      
+      // Filtrar por base se não for admin
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
+        query += ` WHERE u.base_id = $${paramIndex}`;
+        params.push(cocaColaUser.baseId);
+        paramIndex++;
+        if (data && typeof data === 'string') {
+          query += ` AND u.data_atualizacao = $${paramIndex}`;
+          params.push(data);
+        }
+      } else if (data && typeof data === 'string') {
+        query += ` WHERE u.data_atualizacao = $${paramIndex}`;
         params.push(data);
       }
+      
       query += ' ORDER BY u.data_atualizacao DESC, b.nome LIMIT 100';
       const result = await pool.query(query, params);
       res.json(result.rows);
@@ -1547,9 +1677,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Criar/Atualizar registro diário Coca-Cola
-  app.post('/api/coca-cola/daily-updates', isAuthenticated, async (req, res) => {
+  app.post('/api/coca-cola/daily-updates', cocaColaAuth, async (req: any, res) => {
     try {
-      const { base_id, data_atualizacao, total_veiculos, veiculos_rota, veiculos_manutencao, veiculos_disponiveis, veiculos_parados } = req.body;
+      const cocaColaUser = req.cocaColaUser;
+      let { base_id, data_atualizacao, total_veiculos, veiculos_rota, veiculos_manutencao, veiculos_disponiveis, veiculos_parados } = req.body;
+      
+      // Se usuário é de base, usa sua base
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
+        base_id = cocaColaUser.baseId;
+      }
+      
       const atualizado_por = (req as any).user?.name || 'Sistema';
       
       const result = await pool.query(
