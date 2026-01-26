@@ -431,34 +431,89 @@ export default function CocaColaOperacao() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <AlertCircle className="h-5 w-5 text-orange-500" />
-                      Veículos em Manutenção
+                      Veículos Parados
                     </CardTitle>
+                    <CardDescription>
+                      Manutenção, Sem Equipe, Baixa Venda
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {vehicles.filter(v => v.status === 'manutencao').length === 0 ? (
-                      <p className="text-center text-muted-foreground py-8">
-                        Nenhum veículo em manutenção.
-                      </p>
-                    ) : (
-                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                        {vehicles.filter(v => v.status === 'manutencao').map(v => (
-                          <div key={v.id} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                            <div>
-                              <p className="font-medium">{v.placa}</p>
-                              <p className="text-sm text-muted-foreground">{v.modelo}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm font-medium">{v.oficina || 'Oficina N/I'}</p>
-                              {v.prazo_estimado && (
-                                <p className="text-xs text-muted-foreground">
-                                  Prazo: {format(new Date(v.prazo_estimado), 'dd/MM/yyyy')}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {(() => {
+                      const veiculosParadosList = vehicles.filter(v => 
+                        ['manutencao', 'sem_equipe', 'baixa_venda'].includes(v.status)
+                      );
+                      
+                      if (veiculosParadosList.length === 0) {
+                        return (
+                          <p className="text-center text-muted-foreground py-8">
+                            Nenhum veículo parado.
+                          </p>
+                        );
+                      }
+
+                      const basesComVeiculosParados = bases.filter(base => 
+                        veiculosParadosList.some(v => v.base_id === base.id)
+                      );
+
+                      return (
+                        <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                          {basesComVeiculosParados.map(base => {
+                            const veiculosBase = veiculosParadosList.filter(v => v.base_id === base.id);
+                            const manutencao = veiculosBase.filter(v => v.status === 'manutencao');
+                            const semEquipe = veiculosBase.filter(v => v.status === 'sem_equipe');
+                            const baixaVenda = veiculosBase.filter(v => v.status === 'baixa_venda');
+                            
+                            return (
+                              <div key={base.id} className="border rounded-lg p-3">
+                                <p className="font-semibold text-sm mb-2 border-b pb-1">{base.nome} ({veiculosBase.length})</p>
+                                
+                                {manutencao.length > 0 && (
+                                  <div className="mb-2">
+                                    <p className="text-xs font-medium text-orange-600 mb-1">Em Manutenção ({manutencao.length})</p>
+                                    <div className="space-y-1">
+                                      {manutencao.map(v => (
+                                        <div key={v.id} className="flex justify-between items-center text-xs bg-orange-50 p-2 rounded">
+                                          <span className="font-medium">{v.placa}</span>
+                                          <span className="text-muted-foreground">{v.oficina || 'N/I'}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {semEquipe.length > 0 && (
+                                  <div className="mb-2">
+                                    <p className="text-xs font-medium text-yellow-600 mb-1">Sem Equipe ({semEquipe.length})</p>
+                                    <div className="space-y-1">
+                                      {semEquipe.map(v => (
+                                        <div key={v.id} className="flex justify-between items-center text-xs bg-yellow-50 p-2 rounded">
+                                          <span className="font-medium">{v.placa}</span>
+                                          <span className="text-muted-foreground">{v.modelo}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {baixaVenda.length > 0 && (
+                                  <div>
+                                    <p className="text-xs font-medium text-purple-600 mb-1">Baixa Venda ({baixaVenda.length})</p>
+                                    <div className="space-y-1">
+                                      {baixaVenda.map(v => (
+                                        <div key={v.id} className="flex justify-between items-center text-xs bg-purple-50 p-2 rounded">
+                                          <span className="font-medium">{v.placa}</span>
+                                          <span className="text-muted-foreground">{v.modelo}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
               </div>
