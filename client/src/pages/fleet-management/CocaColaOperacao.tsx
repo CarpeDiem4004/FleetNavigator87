@@ -105,7 +105,7 @@ export default function CocaColaOperacao() {
 
   const createBaseMutation = useMutation({
     mutationFn: async (data: { nome: string; cidade: string; estado: string }) => {
-      return apiRequest('/api/coca-cola/bases', { method: 'POST', body: JSON.stringify(data) });
+      return apiRequest('POST', '/api/coca-cola/bases', data);
     },
     onSuccess: () => {
       toast({ title: 'Base criada com sucesso!' });
@@ -122,7 +122,7 @@ export default function CocaColaOperacao() {
 
   const createVehicleMutation = useMutation({
     mutationFn: async (data: { placa: string; modelo: string; base_id: number }) => {
-      return apiRequest('/api/coca-cola/vehicles', { method: 'POST', body: JSON.stringify(data) });
+      return apiRequest('POST', '/api/coca-cola/vehicles', data);
     },
     onSuccess: () => {
       toast({ title: 'Veículo cadastrado com sucesso!' });
@@ -139,7 +139,7 @@ export default function CocaColaOperacao() {
 
   const updateVehicleStatusMutation = useMutation({
     mutationFn: async (data: { id: number; status: string; oficina?: string; prazo_estimado?: string; motivo_parado?: string }) => {
-      return apiRequest(`/api/coca-cola/vehicles/${data.id}/status`, { method: 'PATCH', body: JSON.stringify(data) });
+      return apiRequest('PATCH', `/api/coca-cola/vehicles/${data.id}/status`, data);
     },
     onSuccess: () => {
       toast({ title: 'Status atualizado!' });

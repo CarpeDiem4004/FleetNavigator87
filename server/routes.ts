@@ -26291,6 +26291,134 @@ async function createFuelRequestNotification(fuelRequest) {
 
   // NOTA: Rotas de desvios foram movidas para o início do arquivo (linhas 1304-1309) para evitar interceptação pelo Vite
 
+  // ===========================
+  // ROTAS OPERAÇÃO COCA-COLA
+  // ===========================
+
+  // Listar bases Coca-Cola
+  app.get('/api/coca-cola/bases', isAuthenticated, async (req, res) => {
+    try {
+      const result = await pool.query('SELECT * FROM coca_cola_bases ORDER BY nome');
+      res.json(result.rows);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao listar bases:', error);
+      res.status(500).json({ error: 'Erro ao listar bases' });
+    }
+  });
+
+  // Criar base Coca-Cola
+  app.post('/api/coca-cola/bases', isAuthenticated, async (req, res) => {
+    try {
+      const { nome, cidade, estado } = req.body;
+      const result = await pool.query(
+        'INSERT INTO coca_cola_bases (nome, cidade, estado) VALUES ($1, $2, $3) RETURNING *',
+        [nome, cidade, estado]
+      );
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao criar base:', error);
+      res.status(500).json({ error: 'Erro ao criar base' });
+    }
+  });
+
+  // Listar veículos Coca-Cola
+  app.get('/api/coca-cola/vehicles', isAuthenticated, async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT v.*, b.nome as base_nome 
+        FROM coca_cola_vehicles v 
+        LEFT JOIN coca_cola_bases b ON v.base_id = b.id 
+        ORDER BY v.placa
+      `);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao listar veículos:', error);
+      res.status(500).json({ error: 'Erro ao listar veículos' });
+    }
+  });
+
+  // Criar veículo Coca-Cola
+  app.post('/api/coca-cola/vehicles', isAuthenticated, async (req, res) => {
+    try {
+      const { placa, modelo, base_id } = req.body;
+      const result = await pool.query(
+        'INSERT INTO coca_cola_vehicles (placa, modelo, base_id, status) VALUES ($1, $2, $3, $4) RETURNING *',
+        [placa.toUpperCase(), modelo, base_id, 'disponivel']
+      );
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao criar veículo:', error);
+      res.status(500).json({ error: 'Erro ao criar veículo' });
+    }
+  });
+
+  // Atualizar status do veículo Coca-Cola
+  app.patch('/api/coca-cola/vehicles/:id/status', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, oficina, prazo_estimado, motivo_parado } = req.body;
+      const result = await pool.query(
+        `UPDATE coca_cola_vehicles 
+         SET status = $1, oficina = $2, prazo_estimado = $3, motivo_parado = $4, updated_at = NOW() 
+         WHERE id = $5 RETURNING *`,
+        [status, oficina || null, prazo_estimado || null, motivo_parado || null, id]
+      );
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Veículo não encontrado' });
+      }
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao atualizar veículo:', error);
+      res.status(500).json({ error: 'Erro ao atualizar veículo' });
+    }
+  });
+
+  // Listar atualizações diárias
+  app.get('/api/coca-cola/daily-updates', isAuthenticated, async (req, res) => {
+    try {
+      const { data } = req.query;
+      let query = `
+        SELECT u.*, b.nome as base_nome 
+        FROM coca_cola_daily_updates u 
+        LEFT JOIN coca_cola_bases b ON u.base_id = b.id 
+        ORDER BY u.data_atualizacao DESC, b.nome
+      `;
+      const result = await pool.query(query);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao listar atualizações:', error);
+      res.status(500).json({ error: 'Erro ao listar atualizações' });
+    }
+  });
+
+  // Criar/Atualizar registro diário
+  app.post('/api/coca-cola/daily-updates', isAuthenticated, async (req, res) => {
+    try {
+      const { base_id, data_atualizacao, total_veiculos, veiculos_rota, veiculos_manutencao, veiculos_disponiveis, veiculos_parados } = req.body;
+      const atualizado_por = (req as any).user?.name || 'Sistema';
+      
+      const result = await pool.query(
+        `INSERT INTO coca_cola_daily_updates 
+         (base_id, data_atualizacao, total_veiculos, veiculos_rota, veiculos_manutencao, veiculos_disponiveis, veiculos_parados, atualizado_por)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (base_id, data_atualizacao) 
+         DO UPDATE SET 
+           total_veiculos = EXCLUDED.total_veiculos,
+           veiculos_rota = EXCLUDED.veiculos_rota,
+           veiculos_manutencao = EXCLUDED.veiculos_manutencao,
+           veiculos_disponiveis = EXCLUDED.veiculos_disponiveis,
+           veiculos_parados = EXCLUDED.veiculos_parados,
+           atualizado_por = EXCLUDED.atualizado_por
+         RETURNING *`,
+        [base_id, data_atualizacao, total_veiculos, veiculos_rota, veiculos_manutencao, veiculos_disponiveis, veiculos_parados, atualizado_por]
+      );
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao criar atualização diária:', error);
+      res.status(500).json({ error: 'Erro ao criar atualização' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
