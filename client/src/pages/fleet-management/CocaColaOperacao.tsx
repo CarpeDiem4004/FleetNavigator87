@@ -203,7 +203,7 @@ export default function CocaColaOperacao() {
         base_id: baseId,
         data_atualizacao: hoje,
         total_veiculos: baseVehicles.length,
-        veiculos_rota: baseVehicles.filter(v => v.status === 'rota').length,
+        veiculos_rota: baseVehicles.filter(v => v.status === 'em_rota' || v.status === 'rota').length,
         veiculos_manutencao: baseVehicles.filter(v => v.status === 'manutencao').length,
         veiculos_disponiveis: baseVehicles.filter(v => v.status === 'disponivel').length,
         veiculos_parados: baseVehicles.filter(v => ['falta_equipe', 'aguardando_peca', 'outro'].includes(v.status)).length
@@ -226,7 +226,7 @@ export default function CocaColaOperacao() {
   };
 
   const totalVeiculos = vehicles.length;
-  const veiculosRota = vehicles.filter(v => v.status === 'rota').length;
+  const veiculosRota = vehicles.filter(v => v.status === 'em_rota' || v.status === 'rota').length;
   const veiculosManutencao = vehicles.filter(v => v.status === 'manutencao').length;
   const veiculosDisponiveis = vehicles.filter(v => v.status === 'disponivel').length;
   const veiculosParados = vehicles.filter(v => ['falta_equipe', 'aguardando_peca', 'outro'].includes(v.status)).length;
@@ -246,6 +246,7 @@ export default function CocaColaOperacao() {
     switch (status) {
       case 'disponivel':
         return <Badge className="bg-green-100 text-green-800">Disponível</Badge>;
+      case 'em_rota':
       case 'rota':
         return <Badge className="bg-blue-100 text-blue-800">Em Rota</Badge>;
       case 'manutencao':
@@ -683,7 +684,7 @@ export default function CocaColaOperacao() {
                               <p className="text-sm text-muted-foreground">veículos</p>
                             </div>
                             <div className="text-right text-sm">
-                              <p className="text-green-600">{veiculosBase.filter(v => v.status === 'rota').length} em rota</p>
+                              <p className="text-green-600">{veiculosBase.filter(v => v.status === 'em_rota' || v.status === 'rota').length} em rota</p>
                               <p className="text-orange-600">{veiculosBase.filter(v => v.status === 'manutencao').length} manutenção</p>
                             </div>
                           </div>
