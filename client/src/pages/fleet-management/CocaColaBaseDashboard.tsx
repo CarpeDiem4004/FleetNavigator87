@@ -107,9 +107,17 @@ export default function CocaColaBaseDashboard() {
   const addVehicleMutation = useMutation({
     mutationFn: async (data: typeof newVehicle) => {
       const token = localStorage.getItem('coca_cola_token');
-      return apiRequest('POST', '/api/coca-cola/vehicles', { ...data, base_id: baseId }, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const response = await fetch('/api/coca-cola/vehicles', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        credentials: 'include',
+        body: JSON.stringify({ ...data, base_id: baseId })
       });
+      if (!response.ok) throw new Error('Erro ao adicionar veículo');
+      return response.json();
     },
     onSuccess: () => {
       toast({ title: 'Veículo adicionado com sucesso!' });
@@ -125,9 +133,17 @@ export default function CocaColaBaseDashboard() {
   const updateStatusMutation = useMutation({
     mutationFn: async (data: { id: number; status: string; oficina?: string; prazo_estimado?: string; motivo_parado?: string }) => {
       const token = localStorage.getItem('coca_cola_token');
-      return apiRequest('PATCH', `/api/coca-cola/vehicles/${data.id}`, data, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const response = await fetch(`/api/coca-cola/vehicles/${data.id}`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        credentials: 'include',
+        body: JSON.stringify(data)
       });
+      if (!response.ok) throw new Error('Erro ao atualizar veículo');
+      return response.json();
     },
     onSuccess: () => {
       toast({ title: 'Status atualizado com sucesso!' });

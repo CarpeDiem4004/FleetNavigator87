@@ -1332,6 +1332,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registradas no início para garantir que não sejam interceptadas pelo Vite
   // ===========================
 
+  // Login para bases Coca-Cola (autenticação independente)
+  app.post('/api/coca-cola/auth/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: 'E-mail e senha são obrigatórios' });
+      }
+
+      // Buscar usuário pelo email
+      const result = await pool.query(
+        `SELECT u.*, b.nome as base_nome, b.cidade, b.estado 
+         FROM coca_cola_base_users u
+         LEFT JOIN coca_cola_bases b ON u.base_id = b.id
+         WHERE u.email = $1 AND u.ativo = true`,
+        [email.toLowerCase()]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(401).json({ message: 'Credenciais inválidas' });
+      }
+
+      const user = result.rows[0];
+      
+      // Verificar senha (bcrypt comparison)
+      const bcrypt = require('bcrypt');
+      const validPassword = await bcrypt.compare(password, user.password_hash);
+      
+      if (!validPassword) {
+        return res.status(401).json({ message: 'Credenciais inválidas' });
+      }
+
+      // Atualizar último login
+      await pool.query('UPDATE coca_cola_base_users SET last_login = NOW() WHERE id = $1', [user.id]);
+
+      // Gerar token JWT
+      const jwt = require('jsonwebtoken');
+      const token = jwt.sign(
+        { userId: user.id, baseId: user.base_id, tipo: user.tipo },
+        process.env.JWT_SECRET || 'coca-cola-secret-key',
+        { expiresIn: '24h' }
+      );
+
+      console.log('[COCA-COLA AUTH] Login bem-sucedido:', user.email, '- Base:', user.base_nome || 'Admin');
+
+      res.json({
+        token,
+        user: {
+          id: user.id,
+          nome: user.nome,
+          email: user.email,
+          base_id: user.base_id,
+          base_nome: user.base_nome,
+          tipo: user.tipo
+        }
+      });
+    } catch (error) {
+      console.error('[COCA-COLA AUTH] Erro no login:', error);
+      res.status(500).json({ message: 'Erro interno no servidor' });
+    }
+  });
+
+  // Criar usuário para base Coca-Cola (admin only)
+  app.post('/api/coca-cola/auth/register', isAuthenticated, async (req, res) => {
+    try {
+      const { email, password, nome, base_id, tipo } = req.body;
+      
+      if (!email || !password || !nome) {
+        return res.status(400).json({ message: 'Dados obrigatórios não informados' });
+      }
+
+      // Verificar se email já existe
+      const existing = await pool.query('SELECT id FROM coca_cola_base_users WHERE email = $1', [email.toLowerCase()]);
+      if (existing.rows.length > 0) {
+        return res.status(400).json({ message: 'E-mail já cadastrado' });
+      }
+
+      // Hash da senha
+      const bcrypt = require('bcrypt');
+      const password_hash = await bcrypt.hash(password, 10);
+
+      const result = await pool.query(
+        `INSERT INTO coca_cola_base_users (email, password_hash, nome, base_id, tipo) 
+         VALUES ($1, $2, $3, $4, $5) RETURNING id, email, nome, base_id, tipo`,
+        [email.toLowerCase(), password_hash, nome, base_id || null, tipo || 'base']
+      );
+
+      console.log('[COCA-COLA AUTH] Usuário criado:', result.rows[0].email);
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA AUTH] Erro ao criar usuário:', error);
+      res.status(500).json({ message: 'Erro ao criar usuário' });
+    }
+  });
+
+  // Buscar base Coca-Cola por ID
+  app.get('/api/coca-cola/bases/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const result = await pool.query('SELECT * FROM coca_cola_bases WHERE id = $1', [id]);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Base não encontrada' });
+      }
+      
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao buscar base:', error);
+      res.status(500).json({ error: 'Erro ao buscar base' });
+    }
+  });
+
   // Listar bases Coca-Cola
   app.get('/api/coca-cola/bases', isAuthenticated, async (req, res) => {
     try {
