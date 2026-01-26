@@ -1595,6 +1595,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Converter strings vazias para null (PostgreSQL não aceita "" para tipo date)
+      const safeOficina = oficina === '' ? null : oficina;
+      const safePrazoEstimado = prazo_estimado === '' ? null : prazo_estimado;
+      const safeMotivoParado = motivo_parado === '' ? null : motivo_parado;
+      
       const result = await pool.query(
         `UPDATE coca_cola_vehicles 
          SET status = COALESCE($1, status),
@@ -1602,7 +1607,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
              prazo_estimado = COALESCE($3, prazo_estimado),
              motivo_parado = COALESCE($4, motivo_parado)
          WHERE id = $5 RETURNING *`,
-        [status, oficina, prazo_estimado, motivo_parado, id]
+        [status, safeOficina, safePrazoEstimado, safeMotivoParado, id]
       );
       
       if (result.rows.length === 0) {
