@@ -206,7 +206,7 @@ export default function CocaColaOperacao() {
         veiculos_rota: baseVehicles.filter(v => v.status === 'em_rota' || v.status === 'rota').length,
         veiculos_manutencao: baseVehicles.filter(v => v.status === 'manutencao').length,
         veiculos_disponiveis: baseVehicles.filter(v => v.status === 'disponivel').length,
-        veiculos_parados: baseVehicles.filter(v => ['falta_equipe', 'aguardando_peca', 'outro'].includes(v.status)).length
+        veiculos_parados: baseVehicles.filter(v => ['sem_equipe', 'baixa_venda', 'falta_equipe', 'aguardando_peca', 'outro'].includes(v.status)).length
       });
     },
     onSuccess: () => {
@@ -229,7 +229,7 @@ export default function CocaColaOperacao() {
   const veiculosRota = vehicles.filter(v => v.status === 'em_rota' || v.status === 'rota').length;
   const veiculosManutencao = vehicles.filter(v => v.status === 'manutencao').length;
   const veiculosDisponiveis = vehicles.filter(v => v.status === 'disponivel').length;
-  const veiculosParados = vehicles.filter(v => ['falta_equipe', 'aguardando_peca', 'outro'].includes(v.status)).length;
+  const veiculosParados = vehicles.filter(v => ['sem_equipe', 'baixa_venda', 'falta_equipe', 'aguardando_peca', 'outro'].includes(v.status)).length;
 
   const basesAtualizadasHoje = dailyUpdates.filter(u => u.data_atualizacao === hoje).map(u => u.base_id);
   const basesPendentes = bases.filter(b => b.ativo && !basesAtualizadasHoje.includes(b.id));
@@ -250,7 +250,11 @@ export default function CocaColaOperacao() {
       case 'rota':
         return <Badge className="bg-blue-100 text-blue-800">Em Rota</Badge>;
       case 'manutencao':
-        return <Badge className="bg-orange-100 text-orange-800">Manutenção</Badge>;
+        return <Badge className="bg-orange-100 text-orange-800">Em Manutenção</Badge>;
+      case 'sem_equipe':
+        return <Badge className="bg-yellow-100 text-yellow-800">Sem Equipe</Badge>;
+      case 'baixa_venda':
+        return <Badge className="bg-purple-100 text-purple-800">Baixa Venda</Badge>;
       case 'falta_equipe':
         return <Badge className="bg-yellow-100 text-yellow-800">Falta Equipe</Badge>;
       case 'aguardando_peca':

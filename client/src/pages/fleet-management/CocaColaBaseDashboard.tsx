@@ -166,8 +166,9 @@ export default function CocaColaBaseDashboard() {
     switch (status) {
       case 'em_rota': return <Badge className="bg-green-500">Em Rota</Badge>;
       case 'disponivel': return <Badge className="bg-blue-500">Disponível</Badge>;
-      case 'manutencao': return <Badge className="bg-yellow-500">Manutenção</Badge>;
-      case 'parado': return <Badge className="bg-red-500">Parado</Badge>;
+      case 'manutencao': return <Badge className="bg-yellow-500">Em Manutenção</Badge>;
+      case 'sem_equipe': return <Badge className="bg-orange-500">Sem Equipe</Badge>;
+      case 'baixa_venda': return <Badge className="bg-purple-500">Baixa Venda</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };
@@ -177,7 +178,7 @@ export default function CocaColaBaseDashboard() {
     emRota: vehicles.filter(v => v.status === 'em_rota').length,
     disponiveis: vehicles.filter(v => v.status === 'disponivel').length,
     manutencao: vehicles.filter(v => v.status === 'manutencao').length,
-    parados: vehicles.filter(v => v.status === 'parado').length
+    parados: vehicles.filter(v => ['sem_equipe', 'baixa_venda'].includes(v.status)).length
   };
 
   if (!user) {
@@ -420,13 +421,14 @@ export default function CocaColaBaseDashboard() {
                 <SelectContent>
                   <SelectItem value="disponivel">Disponível</SelectItem>
                   <SelectItem value="em_rota">Em Rota</SelectItem>
-                  <SelectItem value="manutencao">Manutenção</SelectItem>
-                  <SelectItem value="parado">Parado</SelectItem>
+                  <SelectItem value="manutencao">Em Manutenção</SelectItem>
+                  <SelectItem value="sem_equipe">Sem Equipe</SelectItem>
+                  <SelectItem value="baixa_venda">Baixa Venda</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
-            {(statusUpdate.status === 'manutencao' || statusUpdate.status === 'parado') && (
+            {statusUpdate.status === 'manutencao' && (
               <>
                 <div>
                   <Label>Oficina</Label>
