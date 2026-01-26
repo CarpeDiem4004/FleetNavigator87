@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/context/AuthContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -75,6 +76,7 @@ interface CocaColaDailyUpdate {
 export default function CocaColaOperacao() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [newBaseDialogOpen, setNewBaseDialogOpen] = useState(false);
   const [newVehicleDialogOpen, setNewVehicleDialogOpen] = useState(false);
@@ -88,20 +90,64 @@ export default function CocaColaOperacao() {
 
   const hoje = format(new Date(), 'yyyy-MM-dd');
 
-  const { data: bases = [], isLoading: loadingBases, refetch: refetchBases } = useQuery<CocaColaBase[]>({
+  // Função customizada para fetch com credentials
+  const fetchWithCredentials = async (url: string) => {
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  };
+
+  const { data: bases = [], isLoading: loadingBases, refetch: refetchBases, error: basesError } = useQuery<CocaColaBase[]>({
     queryKey: ['/api/coca-cola/bases'],
-    refetchOnWindowFocus: false
+    queryFn: () => fetchWithCredentials('/api/coca-cola/bases'),
+    refetchOnWindowFocus: false,
+    enabled: !!user,
+    retry: 3,
+    retryDelay: 1000,
+    staleTime: 30000
   });
 
   const { data: vehicles = [], isLoading: loadingVehicles, refetch: refetchVehicles } = useQuery<CocaColaVehicle[]>({
     queryKey: ['/api/coca-cola/vehicles'],
-    refetchOnWindowFocus: false
+    queryFn: () => fetchWithCredentials('/api/coca-cola/vehicles'),
+    refetchOnWindowFocus: false,
+    enabled: !!user,
+    retry: 3,
+    retryDelay: 1000,
+    staleTime: 30000
   });
 
   const { data: dailyUpdates = [], refetch: refetchUpdates } = useQuery<CocaColaDailyUpdate[]>({
     queryKey: ['/api/coca-cola/daily-updates', hoje],
-    refetchOnWindowFocus: false
+    queryFn: () => fetchWithCredentials(`/api/coca-cola/daily-updates?data=${hoje}`),
+    refetchOnWindowFocus: false,
+    enabled: !!user,
+    retry: 3,
+    retryDelay: 1000,
+    staleTime: 30000
   });
+
+  // Refetch quando o usuário mudar (após login)
+  useEffect(() => {
+    if (user) {
+      // Pequeno delay para garantir que a sessão foi sincronizada
+      const timer = setTimeout(() => {
+        console.log('[COCA-COLA] Refetching bases após login...');
+        refetchBases();
+        refetchVehicles();
+        refetchUpdates();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
 
   const createBaseMutation = useMutation({
     mutationFn: async (data: { nome: string; cidade: string; estado: string }) => {
