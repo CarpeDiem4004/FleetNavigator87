@@ -195,6 +195,22 @@ export default function FleetManagement() {
                 </Button>
               </CardFooter>
             </Card>
+
+            <Card className="flex flex-col border-red-200 bg-red-50/30">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Truck className="h-5 w-5 text-red-600" />
+                  Operação Coca-Cola
+                </CardTitle>
+              </CardHeader>
+              <CardFooter className="mt-auto">
+                <Button variant="outline" className="w-full border-red-300 text-red-700 hover:bg-red-100" asChild>
+                  <Link href="/fleet-management/coca-cola">
+                    Acessar <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
           </div>
 
           <div className="mt-6">

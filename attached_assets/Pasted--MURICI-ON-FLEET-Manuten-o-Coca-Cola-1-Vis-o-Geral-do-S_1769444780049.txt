@@ -1,0 +1,243 @@
+🟢 MURICI ON FLEET – Manutenção Coca Cola
+
+1️⃣ Visão Geral do Sistema
+Perfis de usuário
+Perfil	Acesso
+Base (Coca-Cola / CD / Unidade)	Atualiza frota diariamente
+Admin (Murici)	Visão geral de todas as bases
+Oficina Murici	Acompanhamento de manutenção
+
+2️⃣ Fluxo por Base (login individual)
+Ao logar:
+
+➡️ Usuário entra direto no portal da sua base
+
+A base deve atualizar TODOS OS DIAS:
+
+Para cada veículo:
+
+
+Saiu em rota? 🚚
+
+Está em manutenção? 🛠
+
+Oficina
+
+Prazo estimado
+
+Parado por:
+
+Falta de equipe
+
+Aguardando peça
+
+Outro motivo
+
+📌 Se não atualizar no dia → base fica pendente no painel executivo
+
+3️⃣ Painel de Disponibilidade da Frota
+Indicadores principais
+
+% Frota disponível hoje
+
+% Frota em rota
+
+% Frota em manutenção
+
+Comparativo:
+
+Hoje x Ontem
+
+Período selecionado (datas)
+
+4️⃣ Painel Executivo (ADMIN)
+Visão diária:
+
+Todas as bases
+
+Status de atualização diária
+
+Bases pendentes (não atualizaram)
+
+Disponibilidade por base
+
+Alertas automáticos
+
+5️⃣ Estrutura do Projeto (Murici On Fleet)
+murici-on-fleet/
+│
+├── login.html
+├── base.html          (portal da base)
+├── admin.html         (painel executivo)
+│
+├── css/
+│   └── style.css
+│
+├── js/
+│   ├── auth.js
+│   ├── data.js
+│   ├── base.js
+│   └── admin.js
+
+6️⃣ Dados simulados (js/data.js)
+const usuarios = [
+  { id: 1, base: "Recife", login: "recife", senha: "123", role: "BASE" },
+  { id: 2, base: "Maceio", login: "maceio", senha: "123", role: "BASE" },
+  { id: 3, base: "Admin", login: "admin", senha: "admin", role: "ADMIN" }
+];
+
+const veiculos = [
+  { placa: "ABC-1234", base: "Recife", status: "ROTA" },
+  { placa: "DEF-5678", base: "Recife", status: "MANUTENCAO", oficina: "Murici", prazo: "2026-01-25" },
+  { placa: "GHI-9999", base: "Maceio", status: "DISPONIVEL" }
+];
+
+const atualizacoes = []; // registros diários
+
+7️⃣ Login com redirecionamento por perfil (login.html)
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Murici On Fleet - Login</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<h2>Murici On Fleet</h2>
+
+<input id="login" placeholder="Usuário">
+<input id="senha" type="password" placeholder="Senha">
+<button onclick="entrar()">Entrar</button>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>
+
+// js/auth.js
+function entrar() {
+  const login = document.getElementById("login").value;
+  const senha = document.getElementById("senha").value;
+
+  const user = usuarios.find(u => u.login === login && u.senha === senha);
+
+  if (!user) {
+    alert("Login inválido");
+    return;
+  }
+
+  localStorage.setItem("usuario", JSON.stringify(user));
+
+  if (user.role === "BASE") location.href = "base.html";
+  else location.href = "admin.html";
+}
+
+8️⃣ Portal da Base (base.html)
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Portal da Base</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<h1 id="titulo"></h1>
+
+<table>
+  <tr>
+    <th>Placa</th>
+    <th>Status</th>
+    <th>Oficina</th>
+    <th>Prazo</th>
+  </tr>
+  <tbody id="lista"></tbody>
+</table>
+
+<button onclick="salvar()">Salvar Atualização Diária</button>
+
+<script src="js/data.js"></script>
+<script src="js/base.js"></script>
+</body>
+</html>
+
+// js/base.js
+const usuario = JSON.parse(localStorage.getItem("usuario"));
+document.getElementById("titulo").innerText = `Base ${usuario.base}`;
+
+const lista = document.getElementById("lista");
+const frota = veiculos.filter(v => v.base === usuario.base);
+
+frota.forEach(v => {
+  lista.innerHTML += `
+    <tr>
+      <td>${v.placa}</td>
+      <td>
+        <select>
+          <option>DISPONIVEL</option>
+          <option>ROTA</option>
+          <option>MANUTENCAO</option>
+          <option>FALTA_EQUIPE</option>
+        </select>
+      </td>
+      <td><input placeholder="Oficina"></td>
+      <td><input type="date"></td>
+    </tr>
+  `;
+});
+
+function salvar() {
+  atualizacoes.push({
+    base: usuario.base,
+    data: new Date().toISOString().split("T")[0]
+  });
+  alert("Atualização diária salva!");
+}
+
+9️⃣ Painel Executivo (admin.html)
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Painel Executivo</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<h1>Painel Executivo - Murici</h1>
+
+<table>
+  <tr>
+    <th>Base</th>
+    <th>Atualizou Hoje?</th>
+  </tr>
+  <tbody id="bases"></tbody>
+</table>
+
+<script src="js/data.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
+
+// js/admin.js
+const hoje = new Date().toISOString().split("T")[0];
+const tbody = document.getElementById("bases");
+
+const bases = [...new Set(usuarios.filter(u => u.role === "BASE").map(u => u.base))];
+
+bases.forEach(base => {
+  const atualizou = atualizacoes.some(a => a.base === base && a.data === hoje);
+  tbody.innerHTML += `
+    <tr style="background:${atualizou ? '#cfc' : '#fcc'}">
+      <td>${base}</td>
+      <td>${atualizou ? "OK" : "PENDENTE"}</td>
+    </tr>
+  `;
+});
+
+🔥 O que este MVP já entrega
+
+✔ Login por base
+✔ Atualização diária obrigatória
+✔ Status detalhado da frota
+✔ Oficina + prazo
+✔ Painel executivo com bases pendentes
+✔ Comparação diária pronta para evoluir
