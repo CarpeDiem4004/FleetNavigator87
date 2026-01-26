@@ -150,6 +150,35 @@ export default function CocaColaOperacao() {
     }
   });
 
+  const saveDailyUpdateMutation = useMutation({
+    mutationFn: async (baseId: number) => {
+      const baseVehicles = vehicles.filter(v => v.base_id === baseId);
+      return apiRequest('POST', '/api/coca-cola/daily-updates', {
+        base_id: baseId,
+        data_atualizacao: hoje,
+        total_veiculos: baseVehicles.length,
+        veiculos_rota: baseVehicles.filter(v => v.status === 'rota').length,
+        veiculos_manutencao: baseVehicles.filter(v => v.status === 'manutencao').length,
+        veiculos_disponiveis: baseVehicles.filter(v => v.status === 'disponivel').length,
+        veiculos_parados: baseVehicles.filter(v => ['falta_equipe', 'aguardando_peca', 'outro'].includes(v.status)).length
+      });
+    },
+    onSuccess: () => {
+      toast({ title: 'Atualização diária salva!' });
+      queryClient.invalidateQueries({ queryKey: ['/api/coca-cola/daily-updates'] });
+    },
+    onError: () => {
+      toast({ variant: 'destructive', title: 'Erro ao salvar atualização' });
+    }
+  });
+
+  const saveAllDailyUpdates = async () => {
+    for (const base of bases.filter(b => b.ativo)) {
+      await saveDailyUpdateMutation.mutateAsync(base.id);
+    }
+    toast({ title: 'Todas as atualizações diárias foram salvas!' });
+  };
+
   const totalVeiculos = vehicles.length;
   const veiculosRota = vehicles.filter(v => v.status === 'rota').length;
   const veiculosManutencao = vehicles.filter(v => v.status === 'manutencao').length;
@@ -208,6 +237,15 @@ export default function CocaColaOperacao() {
               </div>
             </div>
             <div className="flex gap-2">
+              <Button 
+                variant="default" 
+                className="bg-green-600 hover:bg-green-700"
+                onClick={saveAllDailyUpdates}
+                disabled={saveDailyUpdateMutation.isPending || bases.length === 0}
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" /> 
+                {saveDailyUpdateMutation.isPending ? 'Salvando...' : 'Salvar Atualização Diária'}
+              </Button>
               <Button variant="outline" onClick={() => { refetchBases(); refetchVehicles(); refetchUpdates(); }}>
                 <RefreshCw className="h-4 w-4 mr-2" /> Atualizar
               </Button>

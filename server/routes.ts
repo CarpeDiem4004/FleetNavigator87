@@ -26381,9 +26381,14 @@ async function createFuelRequestNotification(fuelRequest) {
         SELECT u.*, b.nome as base_nome 
         FROM coca_cola_daily_updates u 
         LEFT JOIN coca_cola_bases b ON u.base_id = b.id 
-        ORDER BY u.data_atualizacao DESC, b.nome
       `;
-      const result = await pool.query(query);
+      const params: string[] = [];
+      if (data && typeof data === 'string') {
+        query += ' WHERE u.data_atualizacao = $1';
+        params.push(data);
+      }
+      query += ' ORDER BY u.data_atualizacao DESC, b.nome LIMIT 100';
+      const result = await pool.query(query, params);
       res.json(result.rows);
     } catch (error) {
       console.error('[COCA-COLA] Erro ao listar atualizações:', error);
