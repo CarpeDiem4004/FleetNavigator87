@@ -1335,7 +1335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware de autenticação específico para Coca-Cola (valida JWT ou sessão principal)
   const cocaColaAuth = async (req: any, res: any, next: any) => {
     try {
-      const jwt = require('jsonwebtoken');
+      // jwt já importado no topo do arquivo
       const authHeader = req.headers.authorization;
       
       // Verificar token JWT da base Coca-Cola
