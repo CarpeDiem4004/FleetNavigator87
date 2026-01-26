@@ -1388,8 +1388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const user = result.rows[0];
       
-      // Verificar senha (bcrypt comparison)
-      const bcrypt = require('bcrypt');
+      // Verificar senha (bcrypt comparison) - já importado no topo do arquivo
       const validPassword = await bcrypt.compare(password, user.password_hash);
       
       if (!validPassword) {
@@ -1399,8 +1398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Atualizar último login
       await pool.query('UPDATE coca_cola_base_users SET last_login = NOW() WHERE id = $1', [user.id]);
 
-      // Gerar token JWT
-      const jwt = require('jsonwebtoken');
+      // Gerar token JWT - já importado no topo do arquivo
       const token = jwt.sign(
         { userId: user.id, baseId: user.base_id, tipo: user.tipo },
         process.env.JWT_SECRET || 'coca-cola-secret-key',
