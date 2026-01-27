@@ -335,16 +335,12 @@ function RecebimentoOSTab() {
     });
   };
 
-  const handleConfirmAndSendWhatsApp = () => {
+  const handleSendWhatsAppManual = () => {
     if (!selectedRequest) return;
-    updateMutation.mutate({
-      id: selectedRequest.id,
-      data: { ...direcionamentoData, status: 'aprovado' }
-    }, {
-      onSuccess: () => {
-        confirmMutation.mutate(selectedRequest.id);
-      }
-    });
+    if (!window.confirm('Deseja enviar a notificação de confirmação via WhatsApp para o responsável da base?')) {
+      return;
+    }
+    confirmMutation.mutate(selectedRequest.id);
   };
 
   const handleRecusar = (request: MaintenanceRequest) => {
@@ -551,13 +547,13 @@ function RecebimentoOSTab() {
             <Button onClick={handleSaveDirecionamento} disabled={updateMutation.isPending}>
               <Save className="h-4 w-4 mr-2" /> Salvar
             </Button>
-            {selectedRequest?.telefone_responsavel && (
+            {selectedRequest?.telefone_responsavel && selectedRequest?.status === 'aprovado' && !selectedRequest?.whatsapp_enviado && (
               <Button 
                 className="bg-green-600 hover:bg-green-700" 
-                onClick={handleConfirmAndSendWhatsApp}
-                disabled={confirmMutation.isPending || !direcionamentoData.oficina_direcionada}
+                onClick={handleSendWhatsAppManual}
+                disabled={confirmMutation.isPending}
               >
-                Confirmar e Enviar WhatsApp
+                Enviar WhatsApp
               </Button>
             )}
           </DialogFooter>
