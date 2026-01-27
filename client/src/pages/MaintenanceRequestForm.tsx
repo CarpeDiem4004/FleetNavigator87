@@ -13,8 +13,11 @@ const BASES = [
   'BH São Gabriel', 'Cariacica', 'Curitiba', 'Gravataí', 'Itajaí',
   'Manaus', 'Paulínia', 'Ribeirão Preto', 'Salvador', 'São José dos Pinhais',
   'Uberlândia', 'Viana', 'São Paulo', 'Campinas', 'Goiânia', 'Recife', 'Fortaleza',
-  'Coca Cola ABC', 'Coca Cola Aparecida', 'Coca Cola Santos', 'Coca Cola Pinheiros',
-  'Coca Cola Osasco', 'Coca Cola PQ Novo Mundo', 'Coca Cola Embu', 'Coca Cola Ipiranga'
+  'Coca Cola - Aparecida BH', 'Coca Cola - CD ABC', 'Coca Cola - Criciuma',
+  'Coca Cola - Embu', 'Coca Cola - Ipatinga', 'Coca Cola - Ipiranga',
+  'Coca Cola - MD Mini Bodega BH', 'Coca Cola - Mariana', 'Coca Cola - Osasco',
+  'Coca Cola - PQ Novo Mundo', 'Coca Cola - Pinheiros', 'Coca Cola - PonteNova',
+  'Coca Cola - Santos'
 ];
 
 export default function MaintenanceRequestForm() {
