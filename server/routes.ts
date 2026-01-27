@@ -26678,6 +26678,171 @@ async function createFuelRequestNotification(fuelRequest) {
 
   // NOTA: Rotas de desvios e Coca-Cola foram movidas para o início do arquivo para evitar interceptação pelo Vite
 
+  // ===========================
+  // ROTAS RECEBIMENTO DE OS (SOLICITAÇÕES DE MANUTENÇÃO)
+  // ===========================
+
+  // Rota pública para bases enviarem solicitações de OS
+  app.post('/api/public/maintenance-requests', async (req, res) => {
+    try {
+      const {
+        placa, modelo, base_origem, odometro, relato_problema,
+        urgencia, fotos, orcamento_previo, responsavel_base, telefone_responsavel
+      } = req.body;
+
+      if (!placa || !base_origem || !relato_problema || !urgencia) {
+        return res.status(400).json({ success: false, message: 'Campos obrigatórios não preenchidos' });
+      }
+
+      const result = await pool.query(
+        `INSERT INTO maintenance_requests 
+          (placa, modelo, base_origem, odometro, relato_problema, urgencia, fotos, orcamento_previo, responsavel_base, telefone_responsavel, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pendente')
+         RETURNING *`,
+        [placa, modelo || null, base_origem, odometro || null, relato_problema, urgencia, fotos || [], orcamento_previo || null, responsavel_base || null, telefone_responsavel || null]
+      );
+
+      res.json({ success: true, data: result.rows[0] });
+    } catch (error) {
+      console.error('[MaintenanceRequest] Erro ao criar solicitação:', error);
+      res.status(500).json({ success: false, message: 'Erro ao criar solicitação' });
+    }
+  });
+
+  // Listar todas as solicitações de OS (autenticado)
+  app.get('/api/maintenance-requests', isAuthenticated, async (req, res) => {
+    try {
+      const { status } = req.query;
+      let query = 'SELECT * FROM maintenance_requests';
+      const params: string[] = [];
+      
+      if (status && status !== 'all') {
+        query += ' WHERE status = $1';
+        params.push(status as string);
+      }
+      
+      query += ' ORDER BY created_at DESC';
+      
+      const result = await pool.query(query, params);
+      res.json({ success: true, data: result.rows });
+    } catch (error) {
+      console.error('[MaintenanceRequest] Erro ao listar solicitações:', error);
+      res.status(500).json({ success: false, message: 'Erro ao listar solicitações' });
+    }
+  });
+
+  // Atualizar solicitação de OS (direcionamento)
+  app.patch('/api/maintenance-requests/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const {
+        status, oficina_direcionada, data_agendamento, hora_agendamento,
+        instrucoes, responsavel_aprovacao, observacoes
+      } = req.body;
+
+      const result = await pool.query(
+        `UPDATE maintenance_requests SET
+          status = COALESCE($1, status),
+          oficina_direcionada = COALESCE($2, oficina_direcionada),
+          data_agendamento = COALESCE($3, data_agendamento),
+          hora_agendamento = COALESCE($4, hora_agendamento),
+          instrucoes = COALESCE($5, instrucoes),
+          responsavel_aprovacao = COALESCE($6, responsavel_aprovacao),
+          data_aprovacao = CASE WHEN $1 = 'aprovado' THEN NOW() ELSE data_aprovacao END,
+          observacoes = COALESCE($7, observacoes),
+          updated_at = NOW()
+         WHERE id = $8
+         RETURNING *`,
+        [status, oficina_direcionada, data_agendamento || null, hora_agendamento || null, instrucoes, responsavel_aprovacao, observacoes, id]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, message: 'Solicitação não encontrada' });
+      }
+
+      res.json({ success: true, data: result.rows[0] });
+    } catch (error) {
+      console.error('[MaintenanceRequest] Erro ao atualizar solicitação:', error);
+      res.status(500).json({ success: false, message: 'Erro ao atualizar solicitação' });
+    }
+  });
+
+  // Confirmar agendamento e enviar WhatsApp
+  app.post('/api/maintenance-requests/:id/confirm', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const requestResult = await pool.query('SELECT * FROM maintenance_requests WHERE id = $1', [id]);
+      if (requestResult.rows.length === 0) {
+        return res.status(404).json({ success: false, message: 'Solicitação não encontrada' });
+      }
+
+      const request = requestResult.rows[0];
+
+      // Atualizar status para aprovado
+      await pool.query(
+        `UPDATE maintenance_requests SET status = 'aprovado', data_aprovacao = NOW(), updated_at = NOW() WHERE id = $1`,
+        [id]
+      );
+
+      // Enviar WhatsApp se tiver telefone
+      if (request.telefone_responsavel && process.env.ZAPI_INSTANCE_ID && process.env.ZAPI_TOKEN) {
+        try {
+          const phone = request.telefone_responsavel.replace(/\D/g, '');
+          const formattedPhone = phone.startsWith('55') ? phone : `55${phone}`;
+          
+          const dataFormatada = request.data_agendamento 
+            ? new Date(request.data_agendamento).toLocaleDateString('pt-BR')
+            : 'A definir';
+          const horaFormatada = request.hora_agendamento || 'A definir';
+
+          const message = `🚛 *Confirmação de Manutenção - Murici Logística*
+
+Olá! Sua solicitação para o veículo *${request.placa}* foi aprovada.
+
+📍 *Oficina:* ${request.oficina_direcionada || 'A definir'}
+📅 *Data/Hora:* ${dataFormatada} às ${horaFormatada}
+📝 *Instruções:* ${request.instrucoes || 'Levar documentos do veículo'}
+
+Em caso de dúvidas, entre em contato com a Gestão de Frotas.`;
+
+          await fetch(`https://api.z-api.io/instances/${process.env.ZAPI_INSTANCE_ID}/token/${process.env.ZAPI_TOKEN}/send-text`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Client-Token': process.env.ZAPI_CLIENT_TOKEN || '' },
+            body: JSON.stringify({ phone: formattedPhone, message })
+          });
+
+          await pool.query('UPDATE maintenance_requests SET whatsapp_enviado = true WHERE id = $1', [id]);
+        } catch (whatsappError) {
+          console.error('[MaintenanceRequest] Erro ao enviar WhatsApp:', whatsappError);
+        }
+      }
+
+      res.json({ success: true, message: 'Agendamento confirmado e notificação enviada' });
+    } catch (error) {
+      console.error('[MaintenanceRequest] Erro ao confirmar agendamento:', error);
+      res.status(500).json({ success: false, message: 'Erro ao confirmar agendamento' });
+    }
+  });
+
+  // Estatísticas de solicitações
+  app.get('/api/maintenance-requests/stats', isAuthenticated, async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT 
+          COUNT(*) FILTER (WHERE status = 'pendente') as pendentes,
+          COUNT(*) FILTER (WHERE status = 'aprovado') as aprovados,
+          COUNT(*) FILTER (WHERE status = 'recusado') as recusados,
+          COUNT(*) as total
+        FROM maintenance_requests
+      `);
+      res.json({ success: true, data: result.rows[0] });
+    } catch (error) {
+      console.error('[MaintenanceRequest] Erro ao buscar estatísticas:', error);
+      res.status(500).json({ success: false, message: 'Erro ao buscar estatísticas' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
