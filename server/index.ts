@@ -336,6 +336,180 @@ app.get('/api/timezone-status', (req, res) => {
   }
 });
 
+// ROTA PÚBLICA COCA-COLA OS - Registrar ANTES de qualquer middleware para evitar interceptação do Vite
+app.post('/api/public/maintenance-requests', async (req, res) => {
+  try {
+    console.log('[CocaCola OS - index.ts] Recebido body:', JSON.stringify(req.body));
+    
+    const {
+      placa, modelo, base_origem, odometro, relato_problema,
+      urgencia, fotos, responsavel_base, telefone_responsavel
+    } = req.body;
+
+    console.log('[CocaCola OS - index.ts] Campos extraídos:', { placa, modelo, base_origem, relato_problema, urgencia });
+
+    if (!placa || !base_origem || !relato_problema) {
+      console.log('[CocaCola OS - index.ts] Campos obrigatórios faltando:', { placa, base_origem, relato_problema });
+      return res.status(400).json({ success: false, message: 'Campos obrigatórios não preenchidos: placa, base_origem, relato_problema' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO coca_cola_os_requests 
+        (placa, modelo, base_origem, odometro, relato_problema, urgencia, fotos, responsavel_base, telefone_responsavel, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendente')
+       RETURNING *`,
+      [placa, modelo || null, base_origem, odometro ? parseInt(odometro) : null, relato_problema, urgencia || 'media', fotos || [], responsavel_base || null, telefone_responsavel || null]
+    );
+
+    console.log('[CocaCola OS - index.ts] Nova solicitação criada:', result.rows[0].id, 'Placa:', placa, 'Base:', base_origem);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('[CocaCola OS - index.ts] Erro ao criar solicitação:', error);
+    res.status(500).json({ success: false, message: 'Erro ao criar solicitação: ' + (error as Error).message });
+  }
+});
+
+// Rota pública GET para listar OS da Coca-Cola por base
+app.get('/api/public/coca-cola-os', async (req, res) => {
+  try {
+    const { base } = req.query;
+    let query = 'SELECT * FROM coca_cola_os_requests';
+    const params: string[] = [];
+    
+    if (base) {
+      query += ' WHERE base_origem = $1';
+      params.push(base as string);
+    }
+    
+    query += ' ORDER BY created_at DESC';
+    
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('[CocaCola OS - index.ts] Erro ao listar:', error);
+    res.json([]);
+  }
+});
+
+// Rota autenticada para listar todas as solicitações de manutenção
+app.get('/api/maintenance-requests', async (req, res) => {
+  try {
+    const { status, base } = req.query;
+    let query = 'SELECT * FROM coca_cola_os_requests';
+    const params: string[] = [];
+    let paramIndex = 1;
+    const conditions: string[] = [];
+    
+    if (status && status !== 'all') {
+      conditions.push(`status = $${paramIndex}`);
+      params.push(status as string);
+      paramIndex++;
+    }
+    
+    if (base) {
+      conditions.push(`base_origem = $${paramIndex}`);
+      params.push(base as string);
+      paramIndex++;
+    }
+    
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+    
+    query += ' ORDER BY created_at DESC';
+    
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('[Maintenance Requests] Erro ao listar:', error);
+    res.status(500).json({ success: false, message: 'Erro ao listar solicitações' });
+  }
+});
+
+// Rota de estatísticas de solicitações
+app.get('/api/maintenance-requests/stats', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        COUNT(*) FILTER (WHERE status = 'pendente') as pendentes,
+        COUNT(*) FILTER (WHERE status = 'em_analise') as em_analise,
+        COUNT(*) FILTER (WHERE status = 'direcionado') as direcionados,
+        COUNT(*) FILTER (WHERE status = 'agendado') as agendados,
+        COUNT(*) FILTER (WHERE status = 'em_manutencao') as em_manutencao,
+        COUNT(*) FILTER (WHERE status = 'concluido') as concluidos,
+        COUNT(*) as total
+      FROM coca_cola_os_requests
+    `);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('[Maintenance Stats] Erro:', error);
+    res.status(500).json({ success: false, message: 'Erro ao buscar estatísticas' });
+  }
+});
+
+// Rota PATCH para atualizar solicitação de manutenção
+app.patch('/api/maintenance-requests/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      status, oficina_direcionada, data_agendamento, hora_agendamento,
+      instrucoes, observacoes
+    } = req.body;
+
+    const result = await pool.query(
+      `UPDATE coca_cola_os_requests 
+       SET status = COALESCE($1, status),
+           oficina_direcionada = COALESCE($2, oficina_direcionada),
+           data_agendamento = COALESCE($3, data_agendamento),
+           hora_agendamento = COALESCE($4, hora_agendamento),
+           instrucoes = COALESCE($5, instrucoes),
+           observacoes = COALESCE($6, observacoes),
+           updated_at = NOW()
+       WHERE id = $7
+       RETURNING *`,
+      [status, oficina_direcionada, data_agendamento, hora_agendamento, instrucoes, observacoes, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Solicitação não encontrada' });
+    }
+
+    console.log('[Maintenance Requests] Solicitação atualizada:', id);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('[Maintenance Requests] Erro ao atualizar:', error);
+    res.status(500).json({ success: false, message: 'Erro ao atualizar solicitação' });
+  }
+});
+
+// Rota para confirmar recebimento de OS
+app.post('/api/maintenance-requests/:id/confirm', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { confirmado_por, observacoes_confirmacao } = req.body;
+
+    const result = await pool.query(
+      `UPDATE coca_cola_os_requests 
+       SET status = 'em_analise',
+           observacoes = COALESCE(observacoes, '') || ' | Confirmado por: ' || $1 || ' em ' || NOW()::text,
+           updated_at = NOW()
+       WHERE id = $2
+       RETURNING *`,
+      [confirmado_por || 'Sistema', id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Solicitação não encontrada' });
+    }
+
+    console.log('[Maintenance Requests] OS confirmada:', id);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('[Maintenance Requests] Erro ao confirmar:', error);
+    res.status(500).json({ success: false, message: 'Erro ao confirmar recebimento' });
+  }
+});
+
 // ROTAS DE TERCEIROS - Registrar ANTES de qualquer middleware para evitar interceptação do Vite
 app.get('/api/terceiros/admin/stats', async (req, res) => {
   try {
