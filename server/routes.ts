@@ -26685,13 +26685,18 @@ async function createFuelRequestNotification(fuelRequest) {
   // Rota pública para bases Coca-Cola enviarem solicitações de OS
   app.post('/api/public/maintenance-requests', async (req, res) => {
     try {
+      console.log('[CocaCola OS] Recebido body:', JSON.stringify(req.body));
+      
       const {
         placa, modelo, base_origem, odometro, relato_problema,
         urgencia, fotos, responsavel_base, telefone_responsavel
       } = req.body;
 
+      console.log('[CocaCola OS] Campos extraídos:', { placa, modelo, base_origem, relato_problema, urgencia });
+
       if (!placa || !base_origem || !relato_problema) {
-        return res.status(400).json({ success: false, message: 'Campos obrigatórios não preenchidos' });
+        console.log('[CocaCola OS] Campos obrigatórios faltando:', { placa, base_origem, relato_problema });
+        return res.status(400).json({ success: false, message: 'Campos obrigatórios não preenchidos: placa, base_origem, relato_problema' });
       }
 
       const result = await pool.query(
@@ -26706,7 +26711,7 @@ async function createFuelRequestNotification(fuelRequest) {
       res.json({ success: true, data: result.rows[0] });
     } catch (error) {
       console.error('[CocaCola OS] Erro ao criar solicitação:', error);
-      res.status(500).json({ success: false, message: 'Erro ao criar solicitação' });
+      res.status(500).json({ success: false, message: 'Erro ao criar solicitação: ' + (error as Error).message });
     }
   });
 
