@@ -26794,11 +26794,11 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
-  // Listar todas as solicitações de OS (autenticado)
+  // Listar todas as solicitações de OS (autenticado) - busca da tabela coca_cola_os_requests
   app.get('/api/maintenance-requests', isAuthenticated, async (req, res) => {
     try {
       const { status } = req.query;
-      let query = 'SELECT * FROM maintenance_requests';
+      let query = 'SELECT * FROM coca_cola_os_requests';
       const params: string[] = [];
       
       if (status && status !== 'all') {
@@ -26826,19 +26826,17 @@ async function createFuelRequestNotification(fuelRequest) {
       } = req.body;
 
       const result = await pool.query(
-        `UPDATE maintenance_requests SET
+        `UPDATE coca_cola_os_requests SET
           status = COALESCE($1, status),
           oficina_direcionada = COALESCE($2, oficina_direcionada),
           data_agendamento = COALESCE($3, data_agendamento),
           hora_agendamento = COALESCE($4, hora_agendamento),
           instrucoes = COALESCE($5, instrucoes),
-          responsavel_aprovacao = COALESCE($6, responsavel_aprovacao),
-          data_aprovacao = CASE WHEN $1 = 'aprovado' THEN NOW() ELSE data_aprovacao END,
-          observacoes = COALESCE($7, observacoes),
+          observacoes = COALESCE($6, observacoes),
           updated_at = NOW()
-         WHERE id = $8
+         WHERE id = $7
          RETURNING *`,
-        [status, oficina_direcionada, data_agendamento || null, hora_agendamento || null, instrucoes, responsavel_aprovacao, observacoes, id]
+        [status, oficina_direcionada, data_agendamento || null, hora_agendamento || null, instrucoes, observacoes, id]
       );
 
       if (result.rows.length === 0) {
@@ -26857,7 +26855,7 @@ async function createFuelRequestNotification(fuelRequest) {
     try {
       const { id } = req.params;
       
-      const requestResult = await pool.query('SELECT * FROM maintenance_requests WHERE id = $1', [id]);
+      const requestResult = await pool.query('SELECT * FROM coca_cola_os_requests WHERE id = $1', [id]);
       if (requestResult.rows.length === 0) {
         return res.status(404).json({ success: false, message: 'Solicitação não encontrada' });
       }
@@ -26866,7 +26864,7 @@ async function createFuelRequestNotification(fuelRequest) {
 
       // Atualizar status para aprovado
       await pool.query(
-        `UPDATE maintenance_requests SET status = 'aprovado', data_aprovacao = NOW(), updated_at = NOW() WHERE id = $1`,
+        `UPDATE coca_cola_os_requests SET status = 'aprovado', updated_at = NOW() WHERE id = $1`,
         [id]
       );
 
@@ -26910,7 +26908,7 @@ Em caso de dúvidas, entre em contato com a Gestão de Frotas.`;
     }
   });
 
-  // Estatísticas de solicitações
+  // Estatísticas de solicitações - busca da tabela coca_cola_os_requests
   app.get('/api/maintenance-requests/stats', isAuthenticated, async (req, res) => {
     try {
       const result = await pool.query(`
@@ -26919,7 +26917,7 @@ Em caso de dúvidas, entre em contato com a Gestão de Frotas.`;
           COUNT(*) FILTER (WHERE status = 'aprovado') as aprovados,
           COUNT(*) FILTER (WHERE status = 'recusado') as recusados,
           COUNT(*) as total
-        FROM maintenance_requests
+        FROM coca_cola_os_requests
       `);
       res.json({ success: true, data: result.rows[0] });
     } catch (error) {
