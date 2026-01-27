@@ -130,18 +130,15 @@ export default function CocaColaBaseDashboard() {
   const { data: osPendentes = [], refetch: refetchOS } = useQuery<any[]>({
     queryKey: ['/api/maintenance-requests', 'base', base?.nome],
     queryFn: async () => {
-      const token = localStorage.getItem('coca_cola_token');
-      const baseName = base?.nome ? `Coca Cola - ${base.nome}` : '';
-      const response = await fetch(`/api/maintenance-requests?base=${encodeURIComponent(baseName)}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
-      if (!response.ok) return [];
-      const data = await response.json();
-      return data.filter((r: any) => r.status === 'pendente');
+      try {
+        const baseName = base?.nome ? `Coca Cola - ${base.nome}` : '';
+        const response = await fetch(`/api/maintenance-requests?base=${encodeURIComponent(baseName)}`);
+        if (!response.ok) return [];
+        const data = await response.json();
+        return Array.isArray(data) ? data.filter((r: any) => r.status === 'pendente') : [];
+      } catch {
+        return [];
+      }
     },
     enabled: !!user && !!base?.nome
   });
@@ -203,15 +200,20 @@ export default function CocaColaBaseDashboard() {
     mutationFn: async () => {
       if (!osVehicle || !base) throw new Error('Dados incompletos');
       
+      const tiposLabels = TIPOS_MANUTENCAO
+        .filter(t => osForm.tipos.includes(t.id))
+        .map(t => t.label)
+        .join(', ');
+      
       const formData = new FormData();
       formData.append('placa', osVehicle.placa);
       formData.append('modelo', osVehicle.modelo);
       formData.append('base', `Coca Cola - ${base.nome}`);
       formData.append('urgencia', 'media');
-      formData.append('tipo_manutencao', osForm.tipos.join(', '));
+      formData.append('tipo_manutencao', tiposLabels || 'Não especificado');
       formData.append('problema_relatado', osForm.descricao);
-      formData.append('km', osForm.km);
-      formData.append('responsavel_nome', user?.nome || '');
+      formData.append('km', osForm.km || '0');
+      formData.append('responsavel_nome', user?.nome || 'Operador');
       formData.append('responsavel_telefone', '');
       
       if (osForm.foto) {
@@ -223,7 +225,10 @@ export default function CocaColaBaseDashboard() {
         body: formData
       });
       
-      if (!response.ok) throw new Error('Erro ao criar OS');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Erro ao criar OS');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -233,8 +238,8 @@ export default function CocaColaBaseDashboard() {
       setOsForm({ tipos: [], descricao: '', km: '', foto: null, fotoPreview: '' });
       refetchOS();
     },
-    onError: () => {
-      toast({ title: 'Erro ao abrir OS', variant: 'destructive' });
+    onError: (error: Error) => {
+      toast({ title: 'Erro ao abrir OS', description: error.message, variant: 'destructive' });
     }
   });
 
