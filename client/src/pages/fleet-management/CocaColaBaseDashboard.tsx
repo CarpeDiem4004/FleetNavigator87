@@ -127,11 +127,11 @@ export default function CocaColaBaseDashboard() {
 
   // Query para buscar OS pendentes da base
   const { data: osPendentes = [], refetch: refetchOS } = useQuery<any[]>({
-    queryKey: ['/api/maintenance-requests', 'base', base?.nome],
+    queryKey: ['/api/public/coca-cola-os', 'base', base?.nome],
     queryFn: async () => {
       try {
         const baseName = base?.nome ? `Coca Cola - ${base.nome}` : '';
-        const response = await fetch(`/api/maintenance-requests?base=${encodeURIComponent(baseName)}`);
+        const response = await fetch(`/api/public/coca-cola-os?base=${encodeURIComponent(baseName)}`);
         if (!response.ok) return [];
         const data = await response.json();
         return Array.isArray(data) ? data.filter((r: any) => r.status === 'pendente') : [];

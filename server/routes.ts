@@ -26682,30 +26682,110 @@ async function createFuelRequestNotification(fuelRequest) {
   // ROTAS RECEBIMENTO DE OS (SOLICITAÇÕES DE MANUTENÇÃO)
   // ===========================
 
-  // Rota pública para bases enviarem solicitações de OS
+  // Rota pública para bases Coca-Cola enviarem solicitações de OS
   app.post('/api/public/maintenance-requests', async (req, res) => {
     try {
       const {
         placa, modelo, base_origem, odometro, relato_problema,
-        urgencia, fotos, orcamento_previo, responsavel_base, telefone_responsavel
+        urgencia, fotos, responsavel_base, telefone_responsavel
       } = req.body;
 
-      if (!placa || !base_origem || !relato_problema || !urgencia) {
+      if (!placa || !base_origem || !relato_problema) {
         return res.status(400).json({ success: false, message: 'Campos obrigatórios não preenchidos' });
       }
 
       const result = await pool.query(
-        `INSERT INTO maintenance_requests 
-          (placa, modelo, base_origem, odometro, relato_problema, urgencia, fotos, orcamento_previo, responsavel_base, telefone_responsavel, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pendente')
+        `INSERT INTO coca_cola_os_requests 
+          (placa, modelo, base_origem, odometro, relato_problema, urgencia, fotos, responsavel_base, telefone_responsavel, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendente')
          RETURNING *`,
-        [placa, modelo || null, base_origem, odometro || null, relato_problema, urgencia, fotos || [], orcamento_previo || null, responsavel_base || null, telefone_responsavel || null]
+        [placa, modelo || null, base_origem, odometro ? parseInt(odometro) : null, relato_problema, urgencia || 'media', fotos || [], responsavel_base || null, telefone_responsavel || null]
       );
+
+      console.log('[CocaCola OS] Nova solicitação criada:', result.rows[0].id, 'Placa:', placa, 'Base:', base_origem);
+      res.json({ success: true, data: result.rows[0] });
+    } catch (error) {
+      console.error('[CocaCola OS] Erro ao criar solicitação:', error);
+      res.status(500).json({ success: false, message: 'Erro ao criar solicitação' });
+    }
+  });
+
+  // Listar OS da Coca-Cola por base (público)
+  app.get('/api/public/coca-cola-os', async (req, res) => {
+    try {
+      const { base } = req.query;
+      let query = 'SELECT * FROM coca_cola_os_requests';
+      const params: string[] = [];
+      
+      if (base) {
+        query += ' WHERE base_origem = $1';
+        params.push(base as string);
+      }
+      
+      query += ' ORDER BY created_at DESC';
+      
+      const result = await pool.query(query, params);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('[CocaCola OS] Erro ao listar:', error);
+      res.json([]);
+    }
+  });
+
+  // Listar todas as OS Coca-Cola (para gestão)
+  app.get('/api/coca-cola-os', isAuthenticated, async (req, res) => {
+    try {
+      const { status } = req.query;
+      let query = 'SELECT * FROM coca_cola_os_requests';
+      const params: string[] = [];
+      
+      if (status && status !== 'all') {
+        query += ' WHERE status = $1';
+        params.push(status as string);
+      }
+      
+      query += ' ORDER BY created_at DESC';
+      
+      const result = await pool.query(query, params);
+      res.json({ success: true, data: result.rows });
+    } catch (error) {
+      console.error('[CocaCola OS] Erro ao listar:', error);
+      res.status(500).json({ success: false, message: 'Erro ao listar' });
+    }
+  });
+
+  // Atualizar OS Coca-Cola (direcionamento)
+  app.patch('/api/coca-cola-os/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const {
+        status, oficina_direcionada, data_agendamento, hora_agendamento,
+        instrucoes, observacoes, whatsapp_enviado
+      } = req.body;
+
+      const result = await pool.query(
+        `UPDATE coca_cola_os_requests 
+         SET status = COALESCE($1, status),
+             oficina_direcionada = COALESCE($2, oficina_direcionada),
+             data_agendamento = COALESCE($3, data_agendamento),
+             hora_agendamento = COALESCE($4, hora_agendamento),
+             instrucoes = COALESCE($5, instrucoes),
+             observacoes = COALESCE($6, observacoes),
+             whatsapp_enviado = COALESCE($7, whatsapp_enviado),
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $8
+         RETURNING *`,
+        [status, oficina_direcionada, data_agendamento, hora_agendamento, instrucoes, observacoes, whatsapp_enviado, id]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, message: 'OS não encontrada' });
+      }
 
       res.json({ success: true, data: result.rows[0] });
     } catch (error) {
-      console.error('[MaintenanceRequest] Erro ao criar solicitação:', error);
-      res.status(500).json({ success: false, message: 'Erro ao criar solicitação' });
+      console.error('[CocaCola OS] Erro ao atualizar:', error);
+      res.status(500).json({ success: false, message: 'Erro ao atualizar' });
     }
   });
 
