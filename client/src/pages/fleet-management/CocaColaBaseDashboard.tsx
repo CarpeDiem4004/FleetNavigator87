@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -13,7 +15,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   Truck, LogOut, Plus, RefreshCw, Wrench, CheckCircle, 
-  AlertTriangle, Clock, Building, Car, MapPin 
+  AlertTriangle, Clock, Building, Car, MapPin, FileText, Camera, Upload
 } from 'lucide-react';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 
@@ -53,6 +55,26 @@ export default function CocaColaBaseDashboard() {
   const [showUpdateStatus, setShowUpdateStatus] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<CocaColaVehicle | null>(null);
   const [statusUpdate, setStatusUpdate] = useState({ status: '', oficina: '', prazo_estimado: '', motivo_parado: '' });
+  
+  // Estados para abertura de OS
+  const [showOpenOS, setShowOpenOS] = useState(false);
+  const [osVehicle, setOsVehicle] = useState<CocaColaVehicle | null>(null);
+  const [osForm, setOsForm] = useState({
+    tipos: [] as string[],
+    descricao: '',
+    km: '',
+    foto: null as File | null,
+    fotoPreview: ''
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const TIPOS_MANUTENCAO = [
+    { id: 'mecanica', label: 'Mecânica' },
+    { id: 'eletrica', label: 'Elétrica' },
+    { id: 'funilaria', label: 'Funilaria' },
+    { id: 'pneus', label: 'Pneus' },
+    { id: 'revisao', label: 'Revisão' }
+  ];
 
   const baseId = parseInt(params.baseId || '0');
 
@@ -102,6 +124,26 @@ export default function CocaColaBaseDashboard() {
     queryKey: ['/api/coca-cola/vehicles', 'base', baseId],
     queryFn: () => fetchWithAuth(`/api/coca-cola/vehicles?base_id=${baseId}`),
     enabled: !!user && baseId > 0
+  });
+
+  // Query para buscar OS pendentes da base
+  const { data: osPendentes = [], refetch: refetchOS } = useQuery<any[]>({
+    queryKey: ['/api/maintenance-requests', 'base', base?.nome],
+    queryFn: async () => {
+      const token = localStorage.getItem('coca_cola_token');
+      const baseName = base?.nome ? `Coca Cola - ${base.nome}` : '';
+      const response = await fetch(`/api/maintenance-requests?base=${encodeURIComponent(baseName)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      if (!response.ok) return [];
+      const data = await response.json();
+      return data.filter((r: any) => r.status === 'pendente');
+    },
+    enabled: !!user && !!base?.nome
   });
 
   const addVehicleMutation = useMutation({
@@ -155,6 +197,64 @@ export default function CocaColaBaseDashboard() {
       toast({ title: 'Erro ao atualizar status', variant: 'destructive' });
     }
   });
+
+  // Mutation para criar OS
+  const createOSMutation = useMutation({
+    mutationFn: async () => {
+      if (!osVehicle || !base) throw new Error('Dados incompletos');
+      
+      const formData = new FormData();
+      formData.append('placa', osVehicle.placa);
+      formData.append('modelo', osVehicle.modelo);
+      formData.append('base', `Coca Cola - ${base.nome}`);
+      formData.append('urgencia', 'media');
+      formData.append('tipo_manutencao', osForm.tipos.join(', '));
+      formData.append('problema_relatado', osForm.descricao);
+      formData.append('km', osForm.km);
+      formData.append('responsavel_nome', user?.nome || '');
+      formData.append('responsavel_telefone', '');
+      
+      if (osForm.foto) {
+        formData.append('foto', osForm.foto);
+      }
+      
+      const response = await fetch('/api/maintenance-requests', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) throw new Error('Erro ao criar OS');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'OS aberta com sucesso!', description: 'Aguarde o direcionamento da Gestão de Frotas.' });
+      setShowOpenOS(false);
+      setOsVehicle(null);
+      setOsForm({ tipos: [], descricao: '', km: '', foto: null, fotoPreview: '' });
+      refetchOS();
+    },
+    onError: () => {
+      toast({ title: 'Erro ao abrir OS', variant: 'destructive' });
+    }
+  });
+
+  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setOsForm({
+        ...osForm,
+        foto: file,
+        fotoPreview: URL.createObjectURL(file)
+      });
+    }
+  };
+
+  const toggleTipoManutencao = (tipo: string) => {
+    const tipos = osForm.tipos.includes(tipo)
+      ? osForm.tipos.filter(t => t !== tipo)
+      : [...osForm.tipos, tipo];
+    setOsForm({ ...osForm, tipos });
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('coca_cola_user');
@@ -218,7 +318,7 @@ export default function CocaColaBaseDashboard() {
 
       <div className="max-w-7xl mx-auto p-4 space-y-6">
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           <Card>
             <CardContent className="pt-4">
               <div className="flex items-center gap-2">
@@ -274,6 +374,19 @@ export default function CocaColaBaseDashboard() {
                 <div>
                   <p className="text-2xl font-bold text-red-600">{vehicleStats.parados}</p>
                   <p className="text-xs text-gray-500">Parados</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Card OS Pendentes */}
+          <Card className="border-orange-200 bg-orange-50">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <FileText className="w-8 h-8 text-orange-500" />
+                <div>
+                  <p className="text-2xl font-bold text-orange-600">{osPendentes.length}</p>
+                  <p className="text-xs text-orange-600 font-medium">OS Pendentes</p>
                 </div>
               </div>
             </CardContent>
@@ -380,8 +493,20 @@ export default function CocaColaBaseDashboard() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       {getStatusBadge(vehicle.status)}
+                      <Button 
+                        size="sm"
+                        className="bg-amber-500 hover:bg-amber-600 text-white"
+                        onClick={() => {
+                          setOsVehicle(vehicle);
+                          setOsForm({ tipos: [], descricao: '', km: '', foto: null, fotoPreview: '' });
+                          setShowOpenOS(true);
+                        }}
+                      >
+                        <Wrench className="w-4 h-4 mr-1" />
+                        Abrir OS
+                      </Button>
                       <Button 
                         variant="outline" 
                         size="sm"
@@ -470,6 +595,121 @@ export default function CocaColaBaseDashboard() {
               disabled={updateStatusMutation.isPending}
             >
               {updateStatusMutation.isPending ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Abrir OS */}
+      <Dialog open={showOpenOS} onOpenChange={setShowOpenOS}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wrench className="w-5 h-5 text-amber-500" />
+              Abrir Ordem de Serviço
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Veículo preenchido automaticamente */}
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <p className="text-sm text-gray-500">Veículo</p>
+              <p className="font-bold text-lg">{osVehicle?.placa} - {osVehicle?.modelo}</p>
+            </div>
+            
+            {/* Tipo de Manutenção - Checklist */}
+            <div>
+              <Label className="text-sm font-medium">Tipo de Manutenção</Label>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {TIPOS_MANUTENCAO.map((tipo) => (
+                  <div key={tipo.id} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={tipo.id}
+                      checked={osForm.tipos.includes(tipo.id)}
+                      onCheckedChange={() => toggleTipoManutencao(tipo.id)}
+                    />
+                    <label htmlFor={tipo.id} className="text-sm cursor-pointer">{tipo.label}</label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Descrição do Defeito */}
+            <div>
+              <Label>Descrição do Defeito</Label>
+              <Textarea 
+                placeholder="Descreva o problema relatado pelo motorista/operador..."
+                value={osForm.descricao}
+                onChange={(e) => setOsForm({...osForm, descricao: e.target.value})}
+                rows={3}
+              />
+            </div>
+            
+            {/* Quilometragem */}
+            <div>
+              <Label>Quilometragem (KM)</Label>
+              <Input 
+                type="number"
+                placeholder="Ex: 125000"
+                value={osForm.km}
+                onChange={(e) => setOsForm({...osForm, km: e.target.value})}
+              />
+            </div>
+            
+            {/* Upload de Foto */}
+            <div>
+              <Label>Foto do Problema</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFotoChange}
+                className="hidden"
+              />
+              
+              {osForm.fotoPreview ? (
+                <div className="relative mt-2">
+                  <img 
+                    src={osForm.fotoPreview} 
+                    alt="Preview" 
+                    className="w-full h-40 object-cover rounded-lg"
+                  />
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => setOsForm({...osForm, foto: null, fotoPreview: ''})}
+                  >
+                    Remover
+                  </Button>
+                </div>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-2"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Camera className="w-4 h-4 mr-2" />
+                  Tirar Foto / Selecionar
+                </Button>
+              )}
+            </div>
+            
+            {/* Botão Enviar */}
+            <Button 
+              className="w-full bg-amber-500 hover:bg-amber-600"
+              onClick={() => createOSMutation.mutate()}
+              disabled={createOSMutation.isPending || osForm.tipos.length === 0 || !osForm.descricao}
+            >
+              {createOSMutation.isPending ? (
+                'Enviando...'
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Enviar OS
+                </>
+              )}
             </Button>
           </div>
         </DialogContent>
