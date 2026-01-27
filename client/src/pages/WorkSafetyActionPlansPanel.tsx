@@ -257,7 +257,7 @@ export default function WorkSafetyActionPlansPanel() {
   };
 
   const handleSubmit = () => {
-    if (!formData.prazoFinal || !formData.origemAcao || !formData.operacao || !formData.acaoProposta || !formData.responsavelNome) {
+    if (!formData.prazoFinal || !formData.origemAcao || !formData.operacao || !formData.acaoProposta) {
       toast({ title: 'Erro', description: 'Preencha todos os campos obrigatórios', variant: 'destructive' });
       return;
     }
@@ -586,7 +586,7 @@ export default function WorkSafetyActionPlansPanel() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Nome do Responsável *</Label>
+                  <Label>Nome do Responsável (opcional)</Label>
                   <Input
                     placeholder="Nome completo"
                     value={formData.responsavelNome}
