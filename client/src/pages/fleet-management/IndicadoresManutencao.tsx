@@ -225,6 +225,348 @@ interface BipData {
 
 const COLORS = ['#2563eb', '#16a34a', '#eab308', '#dc2626', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899'];
 
+interface MaintenanceRequest {
+  id: number;
+  placa: string;
+  modelo: string | null;
+  base_origem: string;
+  odometro: number | null;
+  relato_problema: string;
+  urgencia: string;
+  fotos: string[] | null;
+  orcamento_previo: number | null;
+  status: string;
+  oficina_direcionada: string | null;
+  data_agendamento: string | null;
+  hora_agendamento: string | null;
+  instrucoes: string | null;
+  responsavel_base: string | null;
+  telefone_responsavel: string | null;
+  responsavel_aprovacao: string | null;
+  data_aprovacao: string | null;
+  observacoes: string | null;
+  whatsapp_enviado: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+function RecebimentoOSTab() {
+  const { toast } = useToast();
+  const [selectedRequest, setSelectedRequest] = useState<MaintenanceRequest | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('pendente');
+  const [direcionamentoData, setDirecionamentoData] = useState({
+    oficina_direcionada: '',
+    data_agendamento: '',
+    hora_agendamento: '',
+    instrucoes: '',
+    observacoes: ''
+  });
+
+  const { data: requests = [], isLoading, refetch } = useQuery<MaintenanceRequest[]>({
+    queryKey: ['/api/maintenance-requests', filterStatus],
+    queryFn: async () => {
+      const res = await fetch(`/api/maintenance-requests?status=${filterStatus}`, { credentials: 'include' });
+      const json = await res.json();
+      return json.data || [];
+    }
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ['/api/maintenance-requests/stats'],
+    queryFn: async () => {
+      const res = await fetch('/api/maintenance-requests/stats', { credentials: 'include' });
+      const json = await res.json();
+      return json.data || { pendentes: 0, aprovados: 0, recusados: 0, total: 0 };
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const res = await fetch(`/api/maintenance-requests/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/maintenance-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/maintenance-requests/stats'] });
+      toast({ title: 'Sucesso', description: 'Solicitação atualizada' });
+      setDialogOpen(false);
+    }
+  });
+
+  const confirmMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/maintenance-requests/${id}/confirm`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/maintenance-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/maintenance-requests/stats'] });
+      toast({ title: 'Sucesso', description: 'Agendamento confirmado e WhatsApp enviado!' });
+      setDialogOpen(false);
+    }
+  });
+
+  const handleDirecionar = (request: MaintenanceRequest) => {
+    setSelectedRequest(request);
+    setDirecionamentoData({
+      oficina_direcionada: request.oficina_direcionada || '',
+      data_agendamento: request.data_agendamento || '',
+      hora_agendamento: request.hora_agendamento || '',
+      instrucoes: request.instrucoes || '',
+      observacoes: request.observacoes || ''
+    });
+    setDialogOpen(true);
+  };
+
+  const handleSaveDirecionamento = () => {
+    if (!selectedRequest) return;
+    updateMutation.mutate({
+      id: selectedRequest.id,
+      data: { ...direcionamentoData, status: 'aprovado' }
+    });
+  };
+
+  const handleConfirmAndSendWhatsApp = () => {
+    if (!selectedRequest) return;
+    updateMutation.mutate({
+      id: selectedRequest.id,
+      data: { ...direcionamentoData, status: 'aprovado' }
+    }, {
+      onSuccess: () => {
+        confirmMutation.mutate(selectedRequest.id);
+      }
+    });
+  };
+
+  const handleRecusar = (request: MaintenanceRequest) => {
+    updateMutation.mutate({ id: request.id, data: { status: 'recusado' } });
+  };
+
+  const getUrgenciaBadge = (urgencia: string) => {
+    switch (urgencia) {
+      case 'baixa': return <Badge className="bg-green-100 text-green-800">Baixa</Badge>;
+      case 'media': return <Badge className="bg-yellow-100 text-yellow-800">Média</Badge>;
+      case 'alta': return <Badge className="bg-orange-100 text-orange-800">Alta</Badge>;
+      case 'veiculo_parado': return <Badge className="bg-red-100 text-red-800">Veículo Parado</Badge>;
+      default: return <Badge>{urgencia}</Badge>;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pendente': return <Badge className="bg-yellow-100 text-yellow-800">Pendente</Badge>;
+      case 'aprovado': return <Badge className="bg-green-100 text-green-800">Aprovado</Badge>;
+      case 'recusado': return <Badge className="bg-red-100 text-red-800">Recusado</Badge>;
+      default: return <Badge>{status}</Badge>;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-4 gap-4">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setFilterStatus('all')}>
+          <CardContent className="pt-4">
+            <div className="text-2xl font-bold">{stats?.total || 0}</div>
+            <p className="text-sm text-muted-foreground">Total de Solicitações</p>
+          </CardContent>
+        </Card>
+        <Card className={`cursor-pointer hover:shadow-md transition-shadow ${filterStatus === 'pendente' ? 'ring-2 ring-yellow-500' : ''}`} onClick={() => setFilterStatus('pendente')}>
+          <CardContent className="pt-4">
+            <div className="text-2xl font-bold text-yellow-600">{stats?.pendentes || 0}</div>
+            <p className="text-sm text-muted-foreground">Pendentes</p>
+          </CardContent>
+        </Card>
+        <Card className={`cursor-pointer hover:shadow-md transition-shadow ${filterStatus === 'aprovado' ? 'ring-2 ring-green-500' : ''}`} onClick={() => setFilterStatus('aprovado')}>
+          <CardContent className="pt-4">
+            <div className="text-2xl font-bold text-green-600">{stats?.aprovados || 0}</div>
+            <p className="text-sm text-muted-foreground">Aprovados</p>
+          </CardContent>
+        </Card>
+        <Card className={`cursor-pointer hover:shadow-md transition-shadow ${filterStatus === 'recusado' ? 'ring-2 ring-red-500' : ''}`} onClick={() => setFilterStatus('recusado')}>
+          <CardContent className="pt-4">
+            <div className="text-2xl font-bold text-red-600">{stats?.recusados || 0}</div>
+            <p className="text-sm text-muted-foreground">Recusados</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <ArrowDownCircle className="h-5 w-5" />
+                Solicitações de Manutenção
+              </CardTitle>
+              <CardDescription>
+                Triagem e direcionamento de veículos para oficinas
+              </CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              Atualizar
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+          ) : requests.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">Nenhuma solicitação encontrada.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Placa</TableHead>
+                  <TableHead>Base</TableHead>
+                  <TableHead>Problema</TableHead>
+                  <TableHead>Urgência</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {requests.map(req => (
+                  <TableRow key={req.id}>
+                    <TableCell className="font-medium">{req.placa}</TableCell>
+                    <TableCell>{req.base_origem}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">{req.relato_problema}</TableCell>
+                    <TableCell>{getUrgenciaBadge(req.urgencia)}</TableCell>
+                    <TableCell>{getStatusBadge(req.status)}</TableCell>
+                    <TableCell>{new Date(req.created_at).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => handleDirecionar(req)}>
+                          <Eye className="h-4 w-4 mr-1" /> Ver/Direcionar
+                        </Button>
+                        {req.status === 'pendente' && (
+                          <Button size="sm" variant="destructive" onClick={() => handleRecusar(req)}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Direcionar Veículo - {selectedRequest?.placa}</DialogTitle>
+            <DialogDescription>
+              Defina a oficina e a data de agendamento para este veículo.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedRequest && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm text-muted-foreground">Base de Origem</p>
+                  <p className="font-medium">{selectedRequest.base_origem}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Urgência</p>
+                  {getUrgenciaBadge(selectedRequest.urgencia)}
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">Relato do Problema</p>
+                  <p className="font-medium">{selectedRequest.relato_problema}</p>
+                </div>
+                {selectedRequest.odometro && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Odômetro</p>
+                    <p className="font-medium">{selectedRequest.odometro?.toLocaleString()} km</p>
+                  </div>
+                )}
+                {selectedRequest.orcamento_previo && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Orçamento Prévio</p>
+                    <p className="font-medium">R$ {Number(selectedRequest.orcamento_previo).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Oficina</Label>
+                  <Input
+                    placeholder="Nome da oficina"
+                    value={direcionamentoData.oficina_direcionada}
+                    onChange={(e) => setDirecionamentoData({...direcionamentoData, oficina_direcionada: e.target.value})}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Data do Agendamento</Label>
+                    <Input
+                      type="date"
+                      value={direcionamentoData.data_agendamento}
+                      onChange={(e) => setDirecionamentoData({...direcionamentoData, data_agendamento: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Horário</Label>
+                    <Input
+                      type="time"
+                      value={direcionamentoData.hora_agendamento}
+                      onChange={(e) => setDirecionamentoData({...direcionamentoData, hora_agendamento: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Instruções para a Base</Label>
+                  <Input
+                    placeholder="Ex: Levar documentos do veículo"
+                    value={direcionamentoData.instrucoes}
+                    onChange={(e) => setDirecionamentoData({...direcionamentoData, instrucoes: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Observações</Label>
+                  <Input
+                    placeholder="Observações adicionais"
+                    value={direcionamentoData.observacoes}
+                    onChange={(e) => setDirecionamentoData({...direcionamentoData, observacoes: e.target.value})}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSaveDirecionamento} disabled={updateMutation.isPending}>
+              <Save className="h-4 w-4 mr-2" /> Salvar
+            </Button>
+            {selectedRequest?.telefone_responsavel && (
+              <Button 
+                className="bg-green-600 hover:bg-green-700" 
+                onClick={handleConfirmAndSendWhatsApp}
+                disabled={confirmMutation.isPending || !direcionamentoData.oficina_direcionada}
+              >
+                Confirmar e Enviar WhatsApp
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 // Interface para Fornecedores
 interface Fornecedor {
   id: number;
@@ -2217,7 +2559,11 @@ export default function IndicadoresManutencao() {
           )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-8">
+              <TabsTrigger value="recebimento" data-testid="tab-recebimento" className="relative">
+                <ArrowDownCircle className="h-4 w-4 mr-2" />
+                Recebimento OS
+              </TabsTrigger>
               <TabsTrigger value="pecas" data-testid="tab-pecas">
                 <Package className="h-4 w-4 mr-2" />
                 Peças
@@ -2247,6 +2593,11 @@ export default function IndicadoresManutencao() {
                 Dashboards
               </TabsTrigger>
             </TabsList>
+
+            {/* Aba de Recebimento de OS */}
+            <TabsContent value="recebimento">
+              <RecebimentoOSTab />
+            </TabsContent>
 
             {/* Aba de Peças */}
             <TabsContent value="pecas">

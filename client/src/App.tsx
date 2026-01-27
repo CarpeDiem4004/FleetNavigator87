@@ -184,6 +184,7 @@ import AbastecimentosPage from "@/pages/AbastecimentosPage";
 import StoppedVehicles from "@/pages/StoppedVehicles";
 import DriverAccess from "@/pages/DriverAccess";
 import DriverMaintenanceRequest from "@/pages/DriverMaintenanceRequest";
+import MaintenanceRequestForm from "@/pages/MaintenanceRequestForm";
 import LineHallVehicleRegistration from "@/pages/LineHallVehicleRegistration";
 import LineHallFuelCardRequests from "@/pages/LineHallFuelCardRequests";
 import LineHaulFuelRequest from "@/pages/LineHaulFuelRequest";
@@ -763,6 +764,9 @@ function App() {
             </Route>
             <Route path="/test-maintenance-plates">
               <TestMaintenancePlates />
+            </Route>
+            <Route path="/solicitar-manutencao">
+              <MaintenanceRequestForm />
             </Route>
             
             {/* Componentes de redirecionamento para usuários específicos */}
