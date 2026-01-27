@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -66,8 +66,7 @@ export default function CocaColaBaseDashboard() {
     foto: null as File | null,
     fotoPreview: ''
   });
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
+    
   const TIPOS_MANUTENCAO = [
     { id: 'mecanica', label: 'Mecânica' },
     { id: 'eletrica', label: 'Elétrica' },
@@ -205,24 +204,26 @@ export default function CocaColaBaseDashboard() {
         .map(t => t.label)
         .join(', ');
       
-      const formData = new FormData();
-      formData.append('placa', osVehicle.placa);
-      formData.append('modelo', osVehicle.modelo);
-      formData.append('base', `Coca Cola - ${base.nome}`);
-      formData.append('urgencia', 'media');
-      formData.append('tipo_manutencao', tiposLabels || 'Não especificado');
-      formData.append('problema_relatado', osForm.descricao);
-      formData.append('km', osForm.km || '0');
-      formData.append('responsavel_nome', user?.nome || 'Operador');
-      formData.append('responsavel_telefone', '');
+      const descricaoCompleta = tiposLabels 
+        ? `[${tiposLabels}] ${osForm.descricao}`
+        : osForm.descricao;
       
-      if (osForm.foto) {
-        formData.append('foto', osForm.foto);
-      }
+      const payload = {
+        placa: osVehicle.placa,
+        modelo: osVehicle.modelo,
+        base_origem: `Coca Cola - ${base.nome}`,
+        odometro: osForm.km || null,
+        relato_problema: descricaoCompleta,
+        urgencia: 'media',
+        responsavel_base: user?.nome || 'Operador',
+        telefone_responsavel: '',
+        fotos: osForm.fotoPreview ? [osForm.fotoPreview] : []
+      };
       
-      const response = await fetch('/api/maintenance-requests', {
+      const response = await fetch('/api/public/maintenance-requests', {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
       
       if (!response.ok) {
@@ -663,9 +664,9 @@ export default function CocaColaBaseDashboard() {
             
             {/* Upload de Foto */}
             <div>
-              <Label>Foto do Problema</Label>
+              <Label>Foto do Problema (opcional)</Label>
               <input
-                ref={fileInputRef}
+                id="os-foto-input"
                 type="file"
                 accept="image/*"
                 capture="environment"
@@ -693,7 +694,7 @@ export default function CocaColaBaseDashboard() {
                 <Button 
                   variant="outline" 
                   className="w-full mt-2"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => document.getElementById('os-foto-input')?.click()}
                 >
                   <Camera className="w-4 h-4 mr-2" />
                   Tirar Foto / Selecionar
