@@ -999,7 +999,11 @@ const DriverAccess: React.FC = () => {
                         <span className="font-medium">KM Total:</span> {request.km_total} km
                       </div>
                       <div>
-                        <span className="font-medium">Horário Preferido:</span> {request.horario_abastecimento === 'antes_17h' ? 'Antes das 17h' : 'Após 18h'}
+                        <span className="font-medium">Horário Preferido:</span> {
+                          request.horario_abastecimento === 'antes_17h' ? 'Antes das 17h' :
+                          request.horario_abastecimento === 'apos_18h' ? 'Após 18h' :
+                          request.horario_abastecimento
+                        }
                       </div>
                       <div>
                         <span className="font-medium">Telefone:</span> {request.telefone_motorista}

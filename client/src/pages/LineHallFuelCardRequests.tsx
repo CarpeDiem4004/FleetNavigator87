@@ -468,7 +468,11 @@ ${new Date().toLocaleString('pt-BR')}`;
                         </div>
                         <div>
                           <span className="font-medium text-gray-600">Horário de Abastecimento:</span>
-                          <p>{request.horario_abastecimento === 'antes_17h' ? 'Antes das 17h' : 'Após as 18h'}</p>
+                          <p>{
+                            request.horario_abastecimento === 'antes_17h' ? 'Antes das 17h' :
+                            request.horario_abastecimento === 'apos_18h' ? 'Após as 18h' :
+                            request.horario_abastecimento
+                          }</p>
                         </div>
                         <div>
                           <span className="font-medium text-gray-600">Telefone:</span>

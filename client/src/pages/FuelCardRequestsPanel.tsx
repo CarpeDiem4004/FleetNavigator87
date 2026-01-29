@@ -3789,7 +3789,11 @@ const FuelCardRequestsPanel: React.FC = () => {
                         )}
                         {selectedSolicitation.horario_abastecimento && (
                           <div className="text-sm">
-                            <span className="font-medium">Horário Abastecimento:</span> {selectedSolicitation.horario_abastecimento === 'antes_17h' ? 'Antes das 17h' : 'Após as 18h'}
+                            <span className="font-medium">Horário Abastecimento:</span> {
+                              selectedSolicitation.horario_abastecimento === 'antes_17h' ? 'Antes das 17h' :
+                              selectedSolicitation.horario_abastecimento === 'apos_18h' ? 'Após as 18h' :
+                              selectedSolicitation.horario_abastecimento
+                            }
                           </div>
                         )}
                       </div>
