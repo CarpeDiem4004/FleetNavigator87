@@ -294,6 +294,7 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
     );
 
     // Buscar OS direcionadas para Oficina Murici (coca_cola_os_requests)
+    // Apenas OS com status em_andamento ou aguardando_peca (não pendentes)
     const osMuriciResult = await pool.query(
       `SELECT 
         os.id,
@@ -319,7 +320,7 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
         'coca_cola' as origem_os
        FROM coca_cola_os_requests os
        WHERE os.oficina_direcionada ILIKE '%murici%'
-         AND (os.status_manutencao IS NULL OR os.status_manutencao NOT IN ('finalizado'))
+         AND os.status_manutencao IN ('em_andamento', 'aguardando_peca')
        ORDER BY os.created_at DESC`
     );
 
