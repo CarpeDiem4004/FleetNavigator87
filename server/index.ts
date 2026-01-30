@@ -474,8 +474,44 @@ app.patch('/api/maintenance-requests/:id', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Solicitação não encontrada' });
     }
 
+    const osData = result.rows[0];
+
+    // Se a oficina direcionada for "Oficina Murici", inserir na tabela oficina_murici_manutencoes
+    if (oficina_direcionada && oficina_direcionada.toLowerCase().includes('murici')) {
+      try {
+        // Verificar se já existe uma manutenção para essa placa em andamento
+        const checkExisting = await pool.query(
+          `SELECT id FROM oficina_murici_manutencoes WHERE placa = $1 AND status != 'finalizado' LIMIT 1`,
+          [osData.placa]
+        );
+
+        if (checkExisting.rows.length === 0) {
+          // Inserir nova manutenção na Oficina Murici
+          await pool.query(
+            `INSERT INTO oficina_murici_manutencoes (
+              placa, km, prazo, descricao_manutencao, status, mecanico, 
+              data_hora_inicio, observacoes, created_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+            [
+              osData.placa,
+              osData.odometro || 0,
+              data_agendamento || new Date().toISOString().split('T')[0],
+              osData.relato_problema || 'Manutenção direcionada via OS Coca-Cola',
+              'em_andamento',
+              'A definir',
+              new Date().toISOString(),
+              `OS Coca-Cola #${osData.id} - Base: ${osData.base_origem}. ${instrucoes || ''} ${observacoes || ''}`
+            ]
+          );
+          console.log('[Maintenance Requests] Manutenção criada na Oficina Murici para placa:', osData.placa);
+        }
+      } catch (insertError) {
+        console.error('[Maintenance Requests] Erro ao inserir na Oficina Murici:', insertError);
+      }
+    }
+
     console.log('[Maintenance Requests] Solicitação atualizada:', id);
-    res.json({ success: true, data: result.rows[0] });
+    res.json({ success: true, data: osData });
   } catch (error) {
     console.error('[Maintenance Requests] Erro ao atualizar:', error);
     res.status(500).json({ success: false, message: 'Erro ao atualizar solicitação' });
