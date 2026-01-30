@@ -293,7 +293,45 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
       [uploadId || 0]
     );
 
-    res.json({ success: true, dados: result.rows });
+    // Buscar OS direcionadas para Oficina Murici (coca_cola_os_requests)
+    const osMuriciResult = await pool.query(
+      `SELECT 
+        os.id,
+        os.placa,
+        NULL as modelo,
+        CASE 
+          WHEN os.status_manutencao = 'finalizado' THEN 'Finalizado'
+          WHEN os.status_manutencao = 'aguardando_peca' THEN 'Aguardando Peças'
+          ELSE 'Em Manutenção'
+        END as status,
+        NULL as orcamento,
+        os.oficina_direcionada as oficina,
+        os.relato_problema as relato,
+        os.data_agendamento::text as data_agenda,
+        EXTRACT(DAY FROM NOW() - os.created_at)::integer as dias,
+        os.mecanico_responsavel as responsavel,
+        os.base_origem as base,
+        os.created_at,
+        0 as total_orcamentos,
+        0 as orcamentos_pendentes,
+        0 as orcamentos_aprovados,
+        'coca_cola' as origem_os
+       FROM coca_cola_os_requests os
+       WHERE os.oficina_direcionada ILIKE '%murici%'
+         AND (os.status_manutencao IS NULL OR os.status_manutencao != 'finalizado')
+       ORDER BY os.created_at DESC`
+    );
+
+    // Combinar os resultados, marcando os da Oficina Murici
+    const dadosCombinados = [
+      ...result.rows,
+      ...osMuriciResult.rows.map(row => ({
+        ...row,
+        is_oficina_murici_os: true
+      }))
+    ];
+
+    res.json({ success: true, dados: dadosCombinados });
   } catch (error) {
     console.error('[INDICADORES] Erro ao buscar dados:', error);
     res.status(500).json({ success: false, message: 'Erro ao buscar dados em manutenção' });
