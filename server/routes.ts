@@ -26787,6 +26787,50 @@ async function createFuelRequestNotification(fuelRequest) {
         return res.status(404).json({ success: false, message: 'OS não encontrada' });
       }
 
+      const os = result.rows[0];
+      
+      // SINCRONIZAÇÃO: Atualizar status do veículo Coca-Cola baseado no status da OS
+      if (os.placa && os.base_origem) {
+        try {
+          const baseNome = os.base_origem.replace('Coca Cola - ', '').trim();
+          
+          const baseResult = await pool.query(
+            'SELECT id FROM coca_cola_bases WHERE nome ILIKE $1 LIMIT 1',
+            [baseNome]
+          );
+          
+          if (baseResult.rows.length > 0) {
+            const baseId = baseResult.rows[0].id;
+            
+            let novoStatusVeiculo = null;
+            let oficinaVeiculo = null;
+            let prazoVeiculo = null;
+            
+            if (status === 'em_andamento' || status === 'aprovado' || oficina_direcionada) {
+              novoStatusVeiculo = 'manutencao';
+              oficinaVeiculo = oficina_direcionada || os.oficina_direcionada;
+              prazoVeiculo = data_agendamento || os.data_agendamento;
+            } else if (status === 'finalizado' || status === 'concluido') {
+              novoStatusVeiculo = 'disponivel';
+              oficinaVeiculo = null;
+              prazoVeiculo = null;
+            }
+            
+            if (novoStatusVeiculo) {
+              await pool.query(
+                `UPDATE coca_cola_vehicles 
+                 SET status = $1, oficina = $2, prazo_estimado = $3, updated_at = NOW()
+                 WHERE placa = $4 AND base_id = $5`,
+                [novoStatusVeiculo, oficinaVeiculo, prazoVeiculo, os.placa, baseId]
+              );
+              console.log(`[CocaCola Sync] Veículo ${os.placa} atualizado para ${novoStatusVeiculo}`);
+            }
+          }
+        } catch (syncError) {
+          console.error('[CocaCola Sync] Erro ao sincronizar status do veículo:', syncError);
+        }
+      }
+
       res.json({ success: true, data: result.rows[0] });
     } catch (error) {
       console.error('[CocaCola OS] Erro ao atualizar:', error);
@@ -26841,6 +26885,55 @@ async function createFuelRequestNotification(fuelRequest) {
 
       if (result.rows.length === 0) {
         return res.status(404).json({ success: false, message: 'Solicitação não encontrada' });
+      }
+
+      const os = result.rows[0];
+      
+      // SINCRONIZAÇÃO: Atualizar status do veículo Coca-Cola baseado no status da OS
+      if (os.placa && os.base_origem) {
+        try {
+          // Extrair nome da base (ex: "Coca Cola - Embu" -> "Embu")
+          const baseNome = os.base_origem.replace('Coca Cola - ', '').trim();
+          
+          // Buscar base e veículo
+          const baseResult = await pool.query(
+            'SELECT id FROM coca_cola_bases WHERE nome ILIKE $1 LIMIT 1',
+            [baseNome]
+          );
+          
+          if (baseResult.rows.length > 0) {
+            const baseId = baseResult.rows[0].id;
+            
+            // Determinar novo status do veículo
+            let novoStatusVeiculo = null;
+            let oficinaVeiculo = null;
+            let prazoVeiculo = null;
+            
+            if (status === 'em_andamento' || status === 'aprovado' || oficina_direcionada) {
+              // OS direcionada/aprovada -> veículo em manutenção
+              novoStatusVeiculo = 'manutencao';
+              oficinaVeiculo = oficina_direcionada || os.oficina_direcionada;
+              prazoVeiculo = data_agendamento || os.data_agendamento;
+            } else if (status === 'finalizado' || status === 'concluido') {
+              // OS finalizada -> veículo disponível
+              novoStatusVeiculo = 'disponivel';
+              oficinaVeiculo = null;
+              prazoVeiculo = null;
+            }
+            
+            if (novoStatusVeiculo) {
+              await pool.query(
+                `UPDATE coca_cola_vehicles 
+                 SET status = $1, oficina = $2, prazo_estimado = $3, updated_at = NOW()
+                 WHERE placa = $4 AND base_id = $5`,
+                [novoStatusVeiculo, oficinaVeiculo, prazoVeiculo, os.placa, baseId]
+              );
+              console.log(`[CocaCola Sync] Veículo ${os.placa} atualizado para ${novoStatusVeiculo}`);
+            }
+          }
+        } catch (syncError) {
+          console.error('[CocaCola Sync] Erro ao sincronizar status do veículo:', syncError);
+        }
       }
 
       res.json({ success: true, data: result.rows[0] });

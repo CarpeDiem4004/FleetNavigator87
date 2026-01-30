@@ -643,6 +643,43 @@ router.put('/dados/:id', isAuthenticated, async (req: Request, res: Response) =>
     let orcamentoCriado = false;
     const manutencaoData = result.rows[0];
 
+    // SINCRONIZAÇÃO: Atualizar status do veículo Coca-Cola quando manutenção é finalizada
+    if (status === 'Finalizado' && manutencaoData.placa) {
+      try {
+        // Buscar se existe OS Coca-Cola para esta placa
+        const osResult = await pool.query(
+          `SELECT os.*, ccb.id as base_id FROM coca_cola_os_requests os
+           LEFT JOIN coca_cola_bases ccb ON os.base_origem ILIKE '%' || ccb.nome || '%'
+           WHERE os.placa = $1 AND os.status_manutencao != 'finalizado'
+           LIMIT 1`,
+          [manutencaoData.placa]
+        );
+
+        if (osResult.rows.length > 0) {
+          const os = osResult.rows[0];
+          
+          // Atualizar OS para finalizado
+          await pool.query(
+            `UPDATE coca_cola_os_requests SET status_manutencao = 'finalizado', updated_at = NOW() WHERE id = $1`,
+            [os.id]
+          );
+
+          // Atualizar veículo para disponível
+          if (os.base_id) {
+            await pool.query(
+              `UPDATE coca_cola_vehicles 
+               SET status = 'disponivel', oficina = NULL, prazo_estimado = NULL, updated_at = NOW()
+               WHERE placa = $1 AND base_id = $2`,
+              [manutencaoData.placa, os.base_id]
+            );
+            console.log(`[CocaCola Sync] Veículo ${manutencaoData.placa} liberado após finalização da manutenção`);
+          }
+        }
+      } catch (syncError) {
+        console.error('[CocaCola Sync] Erro ao sincronizar finalização:', syncError);
+      }
+    }
+
     // Se há peças e oficina, criar orçamento pendente de aprovação
     if (pecas && pecas.length > 0 && manutencaoData.oficina_debito) {
       // Buscar ou criar registro de oficina
