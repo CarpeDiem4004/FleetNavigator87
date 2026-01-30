@@ -15,7 +15,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   Truck, LogOut, Plus, RefreshCw, Wrench, CheckCircle, 
-  AlertTriangle, Clock, Building, Car, MapPin, FileText, Camera, Upload
+  AlertTriangle, Clock, Building, Car, MapPin, FileText, Camera, Upload,
+  TrendingUp, TrendingDown, History, BarChart3, RotateCcw
 } from 'lucide-react';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 
@@ -67,6 +68,10 @@ export default function CocaColaBaseDashboard() {
     foto: null as File | null,
     fotoPreview: ''
   });
+  
+  // Estados para Mini Dashboard de Utilização
+  const [showHistory, setShowHistory] = useState(false);
+  const [showStatistics, setShowStatistics] = useState(false);
     
   const TIPOS_MANUTENCAO = [
     { id: 'mecanica', label: 'Mecânica' },
@@ -141,6 +146,27 @@ export default function CocaColaBaseDashboard() {
       }
     },
     enabled: !!user && !!base?.nome
+  });
+
+  // Query para estatísticas de utilização da frota
+  const { data: fleetStats, refetch: refetchStats } = useQuery<{
+    atual: { total: number; disponiveis: number; em_manutencao: number; em_rota: number; sem_equipe: number; percentual_disponivel: number };
+    historicoDiario: { data: string; total_mudancas: number; para_disponivel: number; para_manutencao: number; resets_automaticos: number }[];
+    rankingManutencao: { placa: string; vezes_em_manutencao: number; ultima_manutencao: string }[];
+  }>({
+    queryKey: ['/api/coca-cola/fleet-statistics', baseId],
+    queryFn: () => fetchWithAuth('/api/coca-cola/fleet-statistics?days=30'),
+    enabled: !!user && baseId > 0
+  });
+
+  // Query para histórico de status dos veículos
+  const { data: vehicleHistory = [] } = useQuery<{
+    id: number; vehicle_id: number; placa: string; status_anterior: string; status_novo: string;
+    motivo: string; tipo_alteracao: string; usuario_responsavel: string; created_at: string;
+  }[]>({
+    queryKey: ['/api/coca-cola/vehicle-history', baseId],
+    queryFn: () => fetchWithAuth('/api/coca-cola/vehicle-history?days=7'),
+    enabled: !!user && baseId > 0 && showHistory
   });
 
   const addVehicleMutation = useMutation({
@@ -399,6 +425,165 @@ export default function CocaColaBaseDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Mini Dashboard de Utilização da Frota */}
+        {fleetStats && (
+          <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-white">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-blue-700">
+                  <BarChart3 className="w-5 h-5" />
+                  Utilização da Frota (30 dias)
+                </CardTitle>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowHistory(true)}
+                    className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                  >
+                    <History className="w-4 h-4 mr-1" /> Histórico
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => refetchStats()}
+                    className="text-green-600 border-green-300 hover:bg-green-50"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-1" /> Atualizar
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {/* Percentual de Disponibilidade */}
+                <div className="bg-white p-4 rounded-lg border shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-500">Disponibilidade</span>
+                    {(fleetStats.atual?.percentual_disponivel || 0) >= 70 ? (
+                      <TrendingUp className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4 text-red-500" />
+                    )}
+                  </div>
+                  <p className={`text-2xl font-bold ${
+                    (fleetStats.atual?.percentual_disponivel || 0) >= 70 ? 'text-green-600' : 
+                    (fleetStats.atual?.percentual_disponivel || 0) >= 50 ? 'text-yellow-600' : 'text-red-600'
+                  }`}>
+                    {fleetStats.atual?.percentual_disponivel || 0}%
+                  </p>
+                  <p className="text-xs text-gray-400">dos veículos disponíveis</p>
+                </div>
+                
+                {/* Mudanças Recentes */}
+                <div className="bg-white p-4 rounded-lg border shadow-sm">
+                  <span className="text-sm text-gray-500">Mudanças (7 dias)</span>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {fleetStats.historicoDiario?.slice(0, 7).reduce((acc, d) => acc + (d.total_mudancas || 0), 0) || 0}
+                  </p>
+                  <p className="text-xs text-gray-400">alterações de status</p>
+                </div>
+                
+                {/* Veículos Problemáticos */}
+                <div className="bg-white p-4 rounded-lg border shadow-sm">
+                  <span className="text-sm text-gray-500">Em Manutenção</span>
+                  <p className="text-2xl font-bold text-yellow-600">
+                    {fleetStats.atual?.em_manutencao || 0}
+                  </p>
+                  <p className="text-xs text-gray-400">veículos atualmente</p>
+                </div>
+                
+                {/* Top Manutenção */}
+                <div className="bg-white p-4 rounded-lg border shadow-sm">
+                  <span className="text-sm text-gray-500">Mais em Manutenção</span>
+                  {fleetStats.rankingManutencao?.length > 0 ? (
+                    <>
+                      <p className="text-lg font-bold text-orange-600">
+                        {fleetStats.rankingManutencao[0]?.placa}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {fleetStats.rankingManutencao[0]?.vezes_em_manutencao}x no período
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-400">Sem dados</p>
+                  )}
+                </div>
+              </div>
+              
+              {/* Indicador Visual de Evolução */}
+              <div className="mt-4 p-3 rounded-lg bg-gray-50 border">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-600">Status da Frota:</span>
+                  <Badge 
+                    variant={
+                      (fleetStats.atual?.percentual_disponivel || 0) >= 70 ? 'default' : 
+                      (fleetStats.atual?.percentual_disponivel || 0) >= 50 ? 'secondary' : 'destructive'
+                    }
+                    className={
+                      (fleetStats.atual?.percentual_disponivel || 0) >= 70 ? 'bg-green-500' : 
+                      (fleetStats.atual?.percentual_disponivel || 0) >= 50 ? 'bg-yellow-500' : ''
+                    }
+                  >
+                    {(fleetStats.atual?.percentual_disponivel || 0) >= 70 ? 'Ótimo' : 
+                     (fleetStats.atual?.percentual_disponivel || 0) >= 50 ? 'Regular' : 'Crítico'}
+                  </Badge>
+                </div>
+                <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all ${
+                      (fleetStats.atual?.percentual_disponivel || 0) >= 70 ? 'bg-green-500' : 
+                      (fleetStats.atual?.percentual_disponivel || 0) >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                    }`}
+                    style={{ width: `${fleetStats.atual?.percentual_disponivel || 0}%` }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Modal de Histórico de Alterações */}
+        <Dialog open={showHistory} onOpenChange={setShowHistory}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <History className="w-5 h-5" />
+                Histórico de Alterações (7 dias)
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              {vehicleHistory.length === 0 ? (
+                <p className="text-center text-gray-500 py-4">Nenhuma alteração registrada no período.</p>
+              ) : (
+                vehicleHistory.map((h) => (
+                  <div key={h.id} className="p-3 bg-gray-50 rounded-lg border flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="font-mono">{h.placa}</Badge>
+                        <span className="text-xs text-gray-400">
+                          {format(new Date(h.created_at), "dd/MM HH:mm", { locale: ptBR })}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center gap-1 text-sm">
+                        <Badge variant="secondary" className="text-red-600 bg-red-50">{h.status_anterior || 'N/A'}</Badge>
+                        <span>→</span>
+                        <Badge variant="secondary" className="text-green-600 bg-green-50">{h.status_novo}</Badge>
+                      </div>
+                      {h.motivo && <p className="text-xs text-gray-500 mt-1">{h.motivo}</p>}
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {h.tipo_alteracao === 'manual' ? 'Manual' : 
+                       h.tipo_alteracao === 'reset_diario' ? 'Reset Diário' : 
+                       h.tipo_alteracao === 'os_direcionada' ? 'OS' : h.tipo_alteracao}
+                    </Badge>
+                  </div>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Actions */}
         <div className="flex gap-2">
