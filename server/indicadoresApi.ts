@@ -326,13 +326,13 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
 
     console.log('[INDICADORES] OS Murici encontradas:', osMuriciResult.rows.length, osMuriciResult.rows.map(r => r.placa));
 
-    // Combinar os resultados, marcando os da Oficina Murici
+    // Combinar os resultados, colocando OS da Oficina Murici no início
     const dadosCombinados = [
-      ...result.rows,
       ...osMuriciResult.rows.map(row => ({
         ...row,
         is_oficina_murici_os: true
-      }))
+      })),
+      ...result.rows
     ];
 
     console.log('[INDICADORES] Total dados combinados:', dadosCombinados.length, '(indicadores:', result.rows.length, '+ OS Murici:', osMuriciResult.rows.length, ')');
