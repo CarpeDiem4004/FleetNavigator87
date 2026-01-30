@@ -282,6 +282,47 @@ const FuelCardAnalyticsDashboard = () => {
     return Array.from(mesesMap.values()).sort((a, b) => a.mes.localeCompare(b.mes));
   }, [analytics]);
 
+  // Dados do gráfico mensal por base (histórico completo)
+  const chartDataMensalPorBase = useMemo(() => {
+    const graficos = analytics?.graficos as any;
+    if (!graficos?.mensalPorBase) return { data: [], bases: [] };
+    
+    // Identificar todas as bases únicas
+    const basesSet = new Set<string>();
+    graficos.mensalPorBase.forEach((item: any) => {
+      basesSet.add(item.base);
+    });
+    const bases = Array.from(basesSet);
+    
+    // Agrupar por mês e criar colunas para cada base
+    const mesesMap = new Map<string, any>();
+    
+    graficos.mensalPorBase.forEach((item: any) => {
+      const mes = item.mes;
+      const base = item.base;
+      const valor = parseFloat(item.valor) || 0;
+      
+      if (!mesesMap.has(mes)) {
+        const mesData: any = { mes };
+        bases.forEach(b => { mesData[b] = 0; });
+        mesesMap.set(mes, mesData);
+      }
+      
+      const mesData = mesesMap.get(mes)!;
+      mesData[base] = valor;
+    });
+    
+    const data = Array.from(mesesMap.values()).sort((a, b) => a.mes.localeCompare(b.mes));
+    return { data, bases };
+  }, [analytics]);
+
+  // Cores para as bases
+  const BASE_COLORS = [
+    '#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00C49F', 
+    '#FFBB28', '#FF8042', '#a4de6c', '#d0ed57', '#83a6ed',
+    '#8dd1e1', '#a28fd8', '#fa8072', '#20b2aa', '#dda0dd'
+  ];
+
   return (
     <AppLayout>
       <div className="container mx-auto py-6">
@@ -485,6 +526,33 @@ const FuelCardAnalyticsDashboard = () => {
                     <Legend />
                     <Bar dataKey="Ticket" stackId="a" fill="#82ca9d" name="Ticket" />
                     <Bar dataKey="Veloe Go" stackId="a" fill="#8884d8" name="Veloe Go" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Gráfico Mensal por Base - Histórico Completo */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Consumo Mensal por Base - Histórico Completo</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={chartDataMensalPorBase.data}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="mes" />
+                    <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                    <Legend />
+                    {chartDataMensalPorBase.bases.map((base, index) => (
+                      <Bar 
+                        key={base} 
+                        dataKey={base} 
+                        stackId="a" 
+                        fill={BASE_COLORS[index % BASE_COLORS.length]} 
+                        name={base} 
+                      />
+                    ))}
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
