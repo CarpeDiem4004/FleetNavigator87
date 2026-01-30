@@ -7,11 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   ArrowLeft, DollarSign, Truck, MapPin, TrendingUp, BarChart3, 
-  Calendar, Filter, RefreshCw, Download
+  Calendar, Filter, RefreshCw, Download, FileSpreadsheet
 } from 'lucide-react';
 import { Link } from 'wouter';
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import * as XLSX from 'xlsx';
+import { useToast } from '@/hooks/use-toast';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, Legend
@@ -24,6 +26,7 @@ function formatCurrency(value: number): string {
 }
 
 export default function LineHaulAnalytics() {
+  const { toast } = useToast();
   const [dataInicio, setDataInicio] = useState(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
   const [dataFim, setDataFim] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [veiculoFilter, setVeiculoFilter] = useState('all');
@@ -59,6 +62,34 @@ export default function LineHaulAnalytics() {
     rotas: [],
     comparativoOperacoes: [],
     rotasAB: []
+  };
+
+  const handleExportRotasExcel = () => {
+    try {
+      if (!data.tabelaAnalitica || data.tabelaAnalitica.length === 0) {
+        toast({ title: 'Sem dados para exportar', variant: 'destructive' });
+        return;
+      }
+      
+      const exportData = data.tabelaAnalitica.map((row: any) => ({
+        'Rota': row.rota || '',
+        'Viagens': row.viagens || 0,
+        'Valor Total (R$)': row.valorTotal || 0,
+        'Custo Médio (R$)': row.custoMedio || 0,
+        'Veículos Envolvidos': row.veiculosEnvolvidos || 0,
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Rotas Line Haul');
+      
+      const fileName = `historico_rotas_linehaul_${format(new Date(), 'dd-MM-yyyy')}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      
+      toast({ title: 'Excel exportado com sucesso!' });
+    } catch (error) {
+      toast({ title: 'Erro ao exportar', variant: 'destructive' });
+    }
   };
 
   return (
@@ -338,11 +369,20 @@ export default function LineHaulAnalytics() {
             </div>
 
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" />
                   Tabela Analítica de Rotas
                 </CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportRotasExcel}
+                  className="flex items-center gap-2"
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Exportar Excel
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
