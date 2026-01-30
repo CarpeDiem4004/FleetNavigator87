@@ -274,10 +274,13 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
     const result = await pool.query(
       `SELECT 
         d.*,
+        COALESCE(b.name, '-') as base,
         COALESCE(orc.total_orcamentos, 0) as total_orcamentos,
         COALESCE(orc.orcamentos_pendentes, 0) as orcamentos_pendentes,
         COALESCE(orc.orcamentos_aprovados, 0) as orcamentos_aprovados
        FROM indicadores_dados d
+       LEFT JOIN vehicles v ON UPPER(v.plate) = UPPER(d.placa)
+       LEFT JOIN bases b ON b.id = v.base_id
        LEFT JOIN LATERAL (
          SELECT 
            COUNT(*) as total_orcamentos,

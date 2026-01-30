@@ -113,6 +113,7 @@ interface Dado {
   id: number;
   placa: string;
   modelo: string;
+  base?: string;
   km: number;
   relato: string;
   data_agenda: string;
@@ -2937,6 +2938,7 @@ export default function IndicadoresManutencao() {
                         <TableHeader>
                           <TableRow>
                             <TableHead className="w-[80px]">Placa</TableHead>
+                            <TableHead className="w-[100px]">Base</TableHead>
                             <TableHead className="w-[100px]">Modelo</TableHead>
                             <TableHead className="w-[100px]">Status</TableHead>
                             <TableHead className="w-[90px]">Orçamento</TableHead>
@@ -2952,6 +2954,7 @@ export default function IndicadoresManutencao() {
                           {dadosFiltrados.map((dado) => (
                             <TableRow key={dado.id} className={dado.orcamentos_pendentes && dado.orcamentos_pendentes > 0 ? 'bg-amber-50/50' : ''}>
                               <TableCell className="font-medium text-xs">{dado.placa}</TableCell>
+                              <TableCell className="text-xs truncate" title={dado.base || '-'}>{dado.base || '-'}</TableCell>
                               <TableCell className="text-xs truncate" title={dado.modelo}>{dado.modelo || '-'}</TableCell>
                               <TableCell>
                                 <Badge 
