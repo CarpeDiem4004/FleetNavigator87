@@ -518,6 +518,43 @@ app.patch('/api/maintenance-requests/:id', async (req, res) => {
   }
 });
 
+// Rota para oficina atualizar dados de manutenção da OS
+app.patch('/api/maintenance-requests/:id/oficina-update', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      status_manutencao, pecas_utilizadas, valor_pecas, valor_mao_obra,
+      mecanico_responsavel, observacoes_oficina, data_finalizacao
+    } = req.body;
+
+    const result = await pool.query(
+      `UPDATE coca_cola_os_requests 
+       SET status_manutencao = COALESCE($1, status_manutencao),
+           pecas_utilizadas = COALESCE($2, pecas_utilizadas),
+           valor_pecas = COALESCE($3, valor_pecas),
+           valor_mao_obra = COALESCE($4, valor_mao_obra),
+           mecanico_responsavel = COALESCE($5, mecanico_responsavel),
+           observacoes_oficina = COALESCE($6, observacoes_oficina),
+           data_finalizacao = COALESCE($7, data_finalizacao),
+           updated_at = NOW()
+       WHERE id = $8
+       RETURNING *`,
+      [status_manutencao, pecas_utilizadas, valor_pecas, valor_mao_obra, 
+       mecanico_responsavel, observacoes_oficina, data_finalizacao, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'OS não encontrada' });
+    }
+
+    console.log('[Oficina Update] OS atualizada pela oficina:', id);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('[Oficina Update] Erro ao atualizar:', error);
+    res.status(500).json({ success: false, message: 'Erro ao atualizar OS' });
+  }
+});
+
 // Rota para confirmar recebimento de OS
 app.post('/api/maintenance-requests/:id/confirm', async (req, res) => {
   try {

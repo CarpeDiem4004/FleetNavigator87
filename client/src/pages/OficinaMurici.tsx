@@ -127,6 +127,19 @@ const OficinaMurici: React.FC = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [statusOriginal, setStatusOriginal] = useState<string | null>(null);
   
+  // Estados para edição de OS recebida
+  const [isOsEditDialogOpen, setIsOsEditDialogOpen] = useState(false);
+  const [currentOsEdit, setCurrentOsEdit] = useState<OSRecebida | null>(null);
+  const [osEditForm, setOsEditForm] = useState({
+    status_manutencao: 'em_andamento',
+    pecas_utilizadas: '',
+    valor_pecas: '',
+    valor_mao_obra: '',
+    mecanico_responsavel: '',
+    observacoes_oficina: '',
+    data_finalizacao: ''
+  });
+  
   // Hook de autenticação para verificar permissões
   const { user } = useAuth();
   const [currentManutencao, setCurrentManutencao] = useState<Manutencao>({
@@ -165,6 +178,60 @@ const OficinaMurici: React.FC = () => {
       }
     } catch (error) {
       console.error('Erro ao carregar OS recebidas:', error);
+    }
+  };
+
+  // Abrir modal de edição de OS recebida
+  const handleEditOsRecebida = (os: OSRecebida) => {
+    setCurrentOsEdit(os);
+    setOsEditForm({
+      status_manutencao: (os as any).status_manutencao || 'em_andamento',
+      pecas_utilizadas: (os as any).pecas_utilizadas || '',
+      valor_pecas: (os as any).valor_pecas?.toString() || '',
+      valor_mao_obra: (os as any).valor_mao_obra?.toString() || '',
+      mecanico_responsavel: (os as any).mecanico_responsavel || '',
+      observacoes_oficina: (os as any).observacoes_oficina || '',
+      data_finalizacao: (os as any).data_finalizacao || ''
+    });
+    setIsOsEditDialogOpen(true);
+  };
+
+  // Salvar edição de OS recebida
+  const handleSaveOsEdit = async () => {
+    if (!currentOsEdit) return;
+
+    try {
+      const response = await fetch(`/api/maintenance-requests/${currentOsEdit.id}/oficina-update`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status_manutencao: osEditForm.status_manutencao,
+          pecas_utilizadas: osEditForm.pecas_utilizadas,
+          valor_pecas: parseFloat(osEditForm.valor_pecas) || 0,
+          valor_mao_obra: parseFloat(osEditForm.valor_mao_obra) || 0,
+          mecanico_responsavel: osEditForm.mecanico_responsavel,
+          observacoes_oficina: osEditForm.observacoes_oficina,
+          data_finalizacao: osEditForm.data_finalizacao || null
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: 'Sucesso',
+          description: 'OS atualizada com sucesso!'
+        });
+        setIsOsEditDialogOpen(false);
+        fetchOsRecebidas();
+      } else {
+        throw new Error('Erro ao atualizar');
+      }
+    } catch (error) {
+      console.error('Erro ao salvar OS:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível salvar as alterações.',
+        variant: 'destructive'
+      });
     }
   };
   
@@ -1058,10 +1125,10 @@ const OficinaMurici: React.FC = () => {
                     <TableHead>Urgência</TableHead>
                     <TableHead>Problema</TableHead>
                     <TableHead>Data Agendada</TableHead>
-                    <TableHead>Horário</TableHead>
-                    <TableHead>Instruções</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Recebida em</TableHead>
+                    <TableHead>Status Oficina</TableHead>
+                    <TableHead>Mecânico</TableHead>
+                    <TableHead>Valor Total</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1072,46 +1139,58 @@ const OficinaMurici: React.FC = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    osRecebidas.map((os) => (
-                      <TableRow key={os.id} className="hover:bg-red-50/50">
-                        <TableCell className="font-bold text-red-700">{os.placa}</TableCell>
-                        <TableCell>{os.base_origem}</TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            os.urgencia === 'alta' ? 'bg-red-100 text-red-800' :
-                            os.urgencia === 'media' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-green-100 text-green-800'
-                          }`}>
-                            {os.urgencia?.charAt(0).toUpperCase() + os.urgencia?.slice(1) || 'Média'}
-                          </span>
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate" title={os.relato_problema}>
-                          {os.relato_problema}
-                        </TableCell>
-                        <TableCell>
-                          {os.data_agendamento ? format(new Date(os.data_agendamento), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
-                        </TableCell>
-                        <TableCell>{os.hora_agendamento || '-'}</TableCell>
-                        <TableCell className="max-w-[150px] truncate" title={os.instrucoes}>
-                          {os.instrucoes || '-'}
-                        </TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            os.status === 'direcionado' ? 'bg-blue-100 text-blue-800' :
-                            os.status === 'em_analise' ? 'bg-yellow-100 text-yellow-800' :
-                            os.status === 'finalizado' ? 'bg-green-100 text-green-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {os.status === 'direcionado' ? 'Direcionado' :
-                             os.status === 'em_analise' ? 'Em Análise' :
-                             os.status === 'finalizado' ? 'Finalizado' : os.status}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          {os.created_at ? format(new Date(os.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : '-'}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    osRecebidas.map((os) => {
+                      const osAny = os as any;
+                      const valorTotal = (parseFloat(osAny.valor_pecas) || 0) + (parseFloat(osAny.valor_mao_obra) || 0);
+                      return (
+                        <TableRow key={os.id} className="hover:bg-red-50/50">
+                          <TableCell className="font-bold text-red-700">{os.placa}</TableCell>
+                          <TableCell>{os.base_origem}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              os.urgencia === 'alta' ? 'bg-red-100 text-red-800' :
+                              os.urgencia === 'media' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-green-100 text-green-800'
+                            }`}>
+                              {os.urgencia?.charAt(0).toUpperCase() + os.urgencia?.slice(1) || 'Média'}
+                            </span>
+                          </TableCell>
+                          <TableCell className="max-w-[200px] truncate" title={os.relato_problema}>
+                            {os.relato_problema}
+                          </TableCell>
+                          <TableCell>
+                            {os.data_agendamento ? format(new Date(os.data_agendamento), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              osAny.status_manutencao === 'em_andamento' ? 'bg-yellow-100 text-yellow-800' :
+                              osAny.status_manutencao === 'aguardando_peca' ? 'bg-blue-100 text-blue-800' :
+                              osAny.status_manutencao === 'finalizado' ? 'bg-green-100 text-green-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {osAny.status_manutencao === 'em_andamento' ? 'Em Andamento' :
+                               osAny.status_manutencao === 'aguardando_peca' ? 'Ag. Peça' :
+                               osAny.status_manutencao === 'finalizado' ? 'Finalizado' : 'Pendente'}
+                            </span>
+                          </TableCell>
+                          <TableCell>{osAny.mecanico_responsavel || '-'}</TableCell>
+                          <TableCell className="font-semibold">
+                            {valorTotal > 0 ? formatCurrency(valorTotal) : '-'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditOsRecebida(os)}
+                              className="text-red-600 border-red-300 hover:bg-red-50"
+                            >
+                              <FileEdit className="h-4 w-4 mr-1" />
+                              Atualizar
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -1515,6 +1594,122 @@ const OficinaMurici: React.FC = () => {
             </Button>
             <Button type="button" onClick={handleSaveManutencao}>
               {isEditMode ? 'Atualizar' : 'Registrar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Edição de OS Recebida */}
+      <Dialog open={isOsEditDialogOpen} onOpenChange={setIsOsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="text-red-700">
+              Atualizar OS - {currentOsEdit?.placa}
+            </DialogTitle>
+            <DialogDescription>
+              Base: {currentOsEdit?.base_origem} | Problema: {currentOsEdit?.relato_problema}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Status da Manutenção</Label>
+                <Select
+                  value={osEditForm.status_manutencao}
+                  onValueChange={(value) => setOsEditForm(prev => ({ ...prev, status_manutencao: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                    <SelectItem value="aguardando_peca">Aguardando Peça</SelectItem>
+                    <SelectItem value="finalizado">Finalizado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Mecânico Responsável</Label>
+                <Input
+                  value={osEditForm.mecanico_responsavel}
+                  onChange={(e) => setOsEditForm(prev => ({ ...prev, mecanico_responsavel: e.target.value }))}
+                  placeholder="Nome do mecânico"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Peças Utilizadas</Label>
+              <Textarea
+                value={osEditForm.pecas_utilizadas}
+                onChange={(e) => setOsEditForm(prev => ({ ...prev, pecas_utilizadas: e.target.value }))}
+                placeholder="Descreva as peças utilizadas na manutenção"
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Valor das Peças (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={osEditForm.valor_pecas}
+                  onChange={(e) => setOsEditForm(prev => ({ ...prev, valor_pecas: e.target.value }))}
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Valor Mão de Obra (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={osEditForm.valor_mao_obra}
+                  onChange={(e) => setOsEditForm(prev => ({ ...prev, valor_mao_obra: e.target.value }))}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Data de Finalização</Label>
+              <Input
+                type="date"
+                value={osEditForm.data_finalizacao}
+                onChange={(e) => setOsEditForm(prev => ({ ...prev, data_finalizacao: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Observações da Oficina</Label>
+              <Textarea
+                value={osEditForm.observacoes_oficina}
+                onChange={(e) => setOsEditForm(prev => ({ ...prev, observacoes_oficina: e.target.value }))}
+                placeholder="Observações sobre a manutenção"
+                rows={2}
+              />
+            </div>
+
+            {/* Resumo de valores */}
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Valor Total:</span>
+                <span className="text-xl font-bold text-green-700">
+                  {formatCurrency((parseFloat(osEditForm.valor_pecas) || 0) + (parseFloat(osEditForm.valor_mao_obra) || 0))}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsOsEditDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveOsEdit} className="bg-red-600 hover:bg-red-700">
+              Salvar Alterações
             </Button>
           </DialogFooter>
         </DialogContent>
