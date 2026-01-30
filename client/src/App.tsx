@@ -1107,6 +1107,7 @@ function App() {
           <ProtectedRoute path="/fuel-cards" component={FuelCardRequestsPanel} />
           {/* Dashboard de análise de consumo de combustível */}
           <ProtectedRoute path="/fuel-card/analytics" component={FuelCardAnalyticsDashboard} />
+          <ProtectedRoute path="/fuel-card-analytics" component={FuelCardAnalyticsDashboard} />
           <ProtectedRoute path="/fuel-card-dashboard" component={FuelCard} />
           {/* Relatório de consumo de combustível */}
           <ProtectedRoute path="/fuel-consumption-report" component={FuelConsumptionReport} />
