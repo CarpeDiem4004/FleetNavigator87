@@ -470,10 +470,10 @@ const FuelCardAnalyticsDashboard = () => {
               </Card>
             </div>
 
-            {/* Gráfico Mensal Detalhado por Operadora */}
+            {/* Gráfico Mensal Detalhado por Operadora - Independente dos filtros de data */}
             <Card className="mb-6">
               <CardHeader>
-                <CardTitle>Consumo Mensal por Operadora (Ticket vs Veloe)</CardTitle>
+                <CardTitle>Consumo Mensal por Operadora - Histórico Completo</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={350}>

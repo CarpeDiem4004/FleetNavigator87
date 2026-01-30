@@ -203,7 +203,8 @@ export async function getFuelCardAnalytics(req: Request, res: Response) {
 
     const graficoMensal = await pool.query(graficoMensalQuery, queryParams);
 
-    // 1.1 Gráfico Mensal por Operadora (Ticket vs Veloe)
+    // 1.1 Gráfico Mensal por Operadora (Ticket vs Veloe) - SEM FILTRO DE DATA
+    // Este gráfico mostra todos os meses disponíveis independente da seleção de período
     const graficoMensalPorOperadoraQuery = `
       SELECT 
         TO_CHAR(data_solicitacao, 'YYYY-MM') as mes,
@@ -214,7 +215,7 @@ export async function getFuelCardAnalytics(req: Request, res: Response) {
         END as operadora,
         SUM(valor_solicitado) as valor
       FROM solicitacoes_fuel_card
-      ${whereClause}
+      WHERE data_solicitacao IS NOT NULL
       GROUP BY TO_CHAR(data_solicitacao, 'YYYY-MM'), 
         CASE 
           WHEN UPPER(COALESCE(provedor_cartao, '')) LIKE '%TICKET%' THEN 'Ticket'
@@ -223,7 +224,7 @@ export async function getFuelCardAnalytics(req: Request, res: Response) {
         END
       ORDER BY mes, operadora
     `;
-    const graficoMensalPorOperadora = await pool.query(graficoMensalPorOperadoraQuery, queryParams);
+    const graficoMensalPorOperadora = await pool.query(graficoMensalPorOperadoraQuery);
 
     // 2. Gráfico por Base (registros Line Haul são identificados pelo campo origem_tipo)
     const graficoPorBaseQuery = `
