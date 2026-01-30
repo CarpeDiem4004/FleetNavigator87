@@ -234,7 +234,12 @@ export default function WorkSafetyAccidentsPanel() {
   const formatDate = (dateStr: string) => {
     if (!dateStr) return 'N/A';
     try {
-      return format(new Date(dateStr), 'dd/MM/yyyy', { locale: ptBR });
+      // Se a data vier apenas como YYYY-MM-DD, adiciona T12:00:00 para evitar problema de fuso horário
+      let dateToFormat = dateStr;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        dateToFormat = `${dateStr}T12:00:00`;
+      }
+      return format(new Date(dateToFormat), 'dd/MM/yyyy', { locale: ptBR });
     } catch {
       return dateStr;
     }
