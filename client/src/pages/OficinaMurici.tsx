@@ -140,6 +140,9 @@ const OficinaMurici: React.FC = () => {
     data_finalizacao: ''
   });
   
+  // Lista de peças individuais
+  const [pecasLista, setPecasLista] = useState<{nome: string; valor: string}[]>([]);
+  
   // Hook de autenticação para verificar permissões
   const { user } = useAuth();
   const [currentManutencao, setCurrentManutencao] = useState<Manutencao>({
@@ -184,21 +187,64 @@ const OficinaMurici: React.FC = () => {
   // Abrir modal de edição de OS recebida
   const handleEditOsRecebida = (os: OSRecebida) => {
     setCurrentOsEdit(os);
+    const osAny = os as any;
+    
+    // Carregar peças existentes do texto
+    const pecasExistentes: {nome: string; valor: string}[] = [];
+    if (osAny.pecas_utilizadas) {
+      const linhas = osAny.pecas_utilizadas.split('\n');
+      linhas.forEach((linha: string) => {
+        const match = linha.match(/^(.+?)\s*-\s*R\$\s*([\d.,]+)/);
+        if (match) {
+          pecasExistentes.push({ nome: match[1].trim(), valor: match[2].replace(',', '.') });
+        }
+      });
+    }
+    setPecasLista(pecasExistentes.length > 0 ? pecasExistentes : []);
+    
     setOsEditForm({
-      status_manutencao: (os as any).status_manutencao || 'em_andamento',
-      pecas_utilizadas: (os as any).pecas_utilizadas || '',
-      valor_pecas: (os as any).valor_pecas?.toString() || '',
-      valor_mao_obra: (os as any).valor_mao_obra?.toString() || '',
-      mecanico_responsavel: (os as any).mecanico_responsavel || '',
-      observacoes_oficina: (os as any).observacoes_oficina || '',
-      data_finalizacao: (os as any).data_finalizacao || ''
+      status_manutencao: osAny.status_manutencao || 'em_andamento',
+      pecas_utilizadas: osAny.pecas_utilizadas || '',
+      valor_pecas: osAny.valor_pecas?.toString() || '',
+      valor_mao_obra: osAny.valor_mao_obra?.toString() || '',
+      mecanico_responsavel: osAny.mecanico_responsavel || '',
+      observacoes_oficina: osAny.observacoes_oficina || '',
+      data_finalizacao: osAny.data_finalizacao || ''
     });
     setIsOsEditDialogOpen(true);
+  };
+
+  // Adicionar nova peça à lista
+  const handleAddPeca = () => {
+    setPecasLista(prev => [...prev, { nome: '', valor: '' }]);
+  };
+
+  // Remover peça da lista
+  const handleRemovePeca = (index: number) => {
+    setPecasLista(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Atualizar peça na lista
+  const handleUpdatePeca = (index: number, field: 'nome' | 'valor', value: string) => {
+    setPecasLista(prev => prev.map((p, i) => i === index ? { ...p, [field]: value } : p));
+  };
+
+  // Calcular valor total das peças
+  const calcularTotalPecas = () => {
+    return pecasLista.reduce((total, p) => total + (parseFloat(p.valor) || 0), 0);
   };
 
   // Salvar edição de OS recebida
   const handleSaveOsEdit = async () => {
     if (!currentOsEdit) return;
+
+    // Formatar lista de peças como texto
+    const pecasTexto = pecasLista
+      .filter(p => p.nome.trim())
+      .map(p => `${p.nome} - R$ ${parseFloat(p.valor || '0').toFixed(2)}`)
+      .join('\n');
+    
+    const totalPecas = calcularTotalPecas();
 
     try {
       const response = await fetch(`/api/maintenance-requests/${currentOsEdit.id}/oficina-update`, {
@@ -206,8 +252,8 @@ const OficinaMurici: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status_manutencao: osEditForm.status_manutencao,
-          pecas_utilizadas: osEditForm.pecas_utilizadas,
-          valor_pecas: parseFloat(osEditForm.valor_pecas) || 0,
+          pecas_utilizadas: pecasTexto,
+          valor_pecas: totalPecas,
           valor_mao_obra: parseFloat(osEditForm.valor_mao_obra) || 0,
           mecanico_responsavel: osEditForm.mecanico_responsavel,
           observacoes_oficina: osEditForm.observacoes_oficina,
@@ -1641,37 +1687,68 @@ const OficinaMurici: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Peças Utilizadas</Label>
-              <Textarea
-                value={osEditForm.pecas_utilizadas}
-                onChange={(e) => setOsEditForm(prev => ({ ...prev, pecas_utilizadas: e.target.value }))}
-                placeholder="Descreva as peças utilizadas na manutenção"
-                rows={3}
-              />
+              <div className="flex justify-between items-center">
+                <Label>Peças Utilizadas</Label>
+                <Button type="button" variant="outline" size="sm" onClick={handleAddPeca} className="text-green-600 border-green-300">
+                  <Plus className="h-4 w-4 mr-1" /> Adicionar Peça
+                </Button>
+              </div>
+              
+              {pecasLista.length === 0 ? (
+                <div className="text-center py-4 text-gray-500 border rounded-lg bg-gray-50">
+                  Nenhuma peça adicionada. Clique em "Adicionar Peça" para começar.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                  {pecasLista.map((peca, index) => (
+                    <div key={index} className="flex gap-2 items-center bg-gray-50 p-2 rounded-lg">
+                      <Input
+                        value={peca.nome}
+                        onChange={(e) => handleUpdatePeca(index, 'nome', e.target.value)}
+                        placeholder="Nome da peça"
+                        className="flex-1"
+                      />
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-500">R$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={peca.valor}
+                          onChange={(e) => handleUpdatePeca(index, 'valor', e.target.value)}
+                          placeholder="0.00"
+                          className="w-24"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemovePeca(index)}
+                        className="text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {pecasLista.length > 0 && (
+                <div className="text-right text-sm font-medium text-gray-600">
+                  Subtotal Peças: {formatCurrency(calcularTotalPecas())}
+                </div>
+              )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Valor das Peças (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={osEditForm.valor_pecas}
-                  onChange={(e) => setOsEditForm(prev => ({ ...prev, valor_pecas: e.target.value }))}
-                  placeholder="0.00"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Valor Mão de Obra (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={osEditForm.valor_mao_obra}
-                  onChange={(e) => setOsEditForm(prev => ({ ...prev, valor_mao_obra: e.target.value }))}
-                  placeholder="0.00"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label>Valor Mão de Obra (R$)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={osEditForm.valor_mao_obra}
+                onChange={(e) => setOsEditForm(prev => ({ ...prev, valor_mao_obra: e.target.value }))}
+                placeholder="0.00"
+              />
             </div>
 
             <div className="space-y-2">
@@ -1695,10 +1772,19 @@ const OficinaMurici: React.FC = () => {
 
             {/* Resumo de valores */}
             <div className="bg-gray-50 p-3 rounded-lg">
+              <div className="flex justify-between items-center text-sm">
+                <span>Peças:</span>
+                <span>{formatCurrency(calcularTotalPecas())}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span>Mão de Obra:</span>
+                <span>{formatCurrency(parseFloat(osEditForm.valor_mao_obra) || 0)}</span>
+              </div>
+              <hr className="my-2" />
               <div className="flex justify-between items-center">
                 <span className="font-medium">Valor Total:</span>
                 <span className="text-xl font-bold text-green-700">
-                  {formatCurrency((parseFloat(osEditForm.valor_pecas) || 0) + (parseFloat(osEditForm.valor_mao_obra) || 0))}
+                  {formatCurrency(calcularTotalPecas() + (parseFloat(osEditForm.valor_mao_obra) || 0))}
                 </span>
               </div>
             </div>
