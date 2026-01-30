@@ -43,9 +43,33 @@ interface SeletorPecasEstoqueProps {
 
 export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }: SeletorPecasEstoqueProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isManualOpen, setIsManualOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [manualPeca, setManualPeca] = useState({ nome: '', valor: '', quantidade: '1' });
   const { toast } = useToast();
+
+  const handleAddManualPeca = () => {
+    if (!manualPeca.nome.trim()) {
+      toast({ title: 'Erro', description: 'Informe o nome da peça', variant: 'destructive' });
+      return;
+    }
+    const valorNum = parseFloat(manualPeca.valor) || 0;
+    const qtdNum = parseInt(manualPeca.quantidade) || 1;
+    const novaPeca: PecaSelecionada = {
+      id: Date.now(),
+      codigo: 'MANUAL',
+      nome: manualPeca.nome.trim(),
+      valor_unitario: valorNum,
+      quantidade: qtdNum,
+      unidade_medida: 'UN',
+      valor_total: valorNum * qtdNum
+    };
+    onPecasChange([...pecasSelecionadas, novaPeca]);
+    setManualPeca({ nome: '', valor: '', quantidade: '1' });
+    setIsManualOpen(false);
+    toast({ title: 'Peça adicionada', description: `${novaPeca.nome} foi adicionada manualmente` });
+  };
 
   // Buscar peças do estoque usando a API do sistema de inventário
   const { data: allParts = [], isLoading: loadingPecas } = useQuery({
@@ -146,13 +170,67 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Label className="text-base font-medium">Peças Utilizadas</Label>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Package className="h-4 w-4 mr-2" />
-              Adicionar do Estoque
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Dialog open={isManualOpen} onOpenChange={setIsManualOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="text-blue-600 border-blue-300 hover:bg-blue-50">
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Manual
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Adicionar Peça Manualmente</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="manual-nome">Nome da Peça *</Label>
+                  <Input
+                    id="manual-nome"
+                    value={manualPeca.nome}
+                    onChange={(e) => setManualPeca(prev => ({ ...prev, nome: e.target.value }))}
+                    placeholder="Ex: Filtro de óleo"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="manual-valor">Valor Unitário (R$)</Label>
+                    <Input
+                      id="manual-valor"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={manualPeca.valor}
+                      onChange={(e) => setManualPeca(prev => ({ ...prev, valor: e.target.value }))}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="manual-quantidade">Quantidade</Label>
+                    <Input
+                      id="manual-quantidade"
+                      type="number"
+                      min="1"
+                      value={manualPeca.quantidade}
+                      onChange={(e) => setManualPeca(prev => ({ ...prev, quantidade: e.target.value }))}
+                      placeholder="1"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" onClick={() => setIsManualOpen(false)}>Cancelar</Button>
+                  <Button onClick={handleAddManualPeca}>Adicionar Peça</Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Package className="h-4 w-4 mr-2" />
+                Adicionar do Estoque
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Selecionar Peças do Estoque</DialogTitle>
@@ -258,6 +336,7 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Lista de peças selecionadas */}
