@@ -135,14 +135,20 @@ export async function getFuelCardAnalytics(req: Request, res: Response) {
       };
     }
 
-    // 3. Maior Base Consumidora
+    // 3. Maior Base Consumidora (tratando registros Line Haul)
     const maiorBaseQuery = `
       SELECT 
-        base,
+        CASE 
+          WHEN origem_tipo = 'line_hall' OR (base IS NULL OR TRIM(base) = '') THEN 'Line Haul'
+          ELSE base
+        END as base,
         SUM(valor_solicitado) as total
       FROM solicitacoes_fuel_card
       ${whereClause}
-      GROUP BY base
+      GROUP BY CASE 
+          WHEN origem_tipo = 'line_hall' OR (base IS NULL OR TRIM(base) = '') THEN 'Line Haul'
+          ELSE base
+        END
       ORDER BY total DESC
       LIMIT 1
     `;
