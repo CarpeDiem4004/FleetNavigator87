@@ -1782,13 +1782,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const cocaColaUser = req.cocaColaUser;
       const { days = 30 } = req.query;
+      const daysInt = parseInt(days as string) || 30;
       
       let baseFilter = '';
-      const params: any[] = [parseInt(days) || 30];
+      const vehicleParams: any[] = [];
       
       if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
-        baseFilter = 'AND v.base_id = $2';
-        params.push(cocaColaUser.baseId);
+        baseFilter = 'AND v.base_id = $1';
+        vehicleParams.push(cocaColaUser.baseId);
       }
       
       // Estatísticas atuais
@@ -1803,9 +1804,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ROUND(COUNT(*) FILTER (WHERE status = 'disponivel')::numeric / NULLIF(COUNT(*), 0) * 100, 1) as percentual_disponivel
         FROM coca_cola_vehicles v
         WHERE 1=1 ${baseFilter}
-      `, params.slice(1));
+      `, vehicleParams);
       
       // Histórico de mudanças por dia
+      const historyBaseFilter = cocaColaUser.tipo === 'base' && cocaColaUser.baseId 
+        ? `AND h.base_id = ${cocaColaUser.baseId}` 
+        : '';
+        
       const dailyHistory = await pool.query(`
         SELECT 
           DATE(created_at) as data,
@@ -1814,8 +1819,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           COUNT(*) FILTER (WHERE status_novo = 'manutencao') as para_manutencao,
           COUNT(*) FILTER (WHERE tipo_alteracao = 'reset_diario') as resets_automaticos
         FROM coca_cola_vehicle_status_history h
-        WHERE h.created_at >= NOW() - INTERVAL '${parseInt(days) || 30} days'
-        ${cocaColaUser.tipo === 'base' && cocaColaUser.baseId ? `AND h.base_id = ${cocaColaUser.baseId}` : ''}
+        WHERE h.created_at >= NOW() - INTERVAL '${daysInt} days'
+        ${historyBaseFilter}
         GROUP BY DATE(created_at)
         ORDER BY data DESC
       `);
@@ -1827,8 +1832,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           COUNT(*) FILTER (WHERE h.status_novo = 'manutencao') as vezes_em_manutencao,
           MAX(h.created_at) as ultima_manutencao
         FROM coca_cola_vehicle_status_history h
-        WHERE h.created_at >= NOW() - INTERVAL '${parseInt(days) || 30} days'
-        ${cocaColaUser.tipo === 'base' && cocaColaUser.baseId ? `AND h.base_id = ${cocaColaUser.baseId}` : ''}
+        WHERE h.created_at >= NOW() - INTERVAL '${daysInt} days'
+        ${historyBaseFilter}
         GROUP BY h.placa
         HAVING COUNT(*) FILTER (WHERE h.status_novo = 'manutencao') > 0
         ORDER BY vezes_em_manutencao DESC
