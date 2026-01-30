@@ -290,6 +290,9 @@ function RecebimentoOSTab() {
     }
   });
 
+  const [showWhatsAppConfirm, setShowWhatsAppConfirm] = useState(false);
+  const [savedRequestData, setSavedRequestData] = useState<{placa: string; oficina: string; data: string; hora: string; telefone: string; instrucoes: string} | null>(null);
+
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
       const res = await fetch(`/api/maintenance-requests/${id}`, {
@@ -304,7 +307,21 @@ function RecebimentoOSTab() {
       queryClient.invalidateQueries({ queryKey: ['/api/maintenance-requests'] });
       queryClient.invalidateQueries({ queryKey: ['/api/maintenance-requests/stats'] });
       toast({ title: 'Sucesso', description: 'Solicitação atualizada' });
-      setDialogOpen(false);
+      
+      if (selectedRequest?.telefone_responsavel && direcionamentoData.oficina_direcionada) {
+        setSavedRequestData({
+          placa: selectedRequest.placa,
+          oficina: direcionamentoData.oficina_direcionada,
+          data: direcionamentoData.data_agendamento,
+          hora: direcionamentoData.hora_agendamento,
+          telefone: selectedRequest.telefone_responsavel,
+          instrucoes: direcionamentoData.instrucoes
+        });
+        setShowWhatsAppConfirm(true);
+        setDialogOpen(false);
+      } else {
+        setDialogOpen(false);
+      }
     }
   });
 
@@ -580,6 +597,74 @@ function RecebimentoOSTab() {
                 Enviar WhatsApp
               </Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Confirmação WhatsApp */}
+      <Dialog open={showWhatsAppConfirm} onOpenChange={setShowWhatsAppConfirm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="text-green-600">📱</span> Enviar Atualização via WhatsApp
+            </DialogTitle>
+            <DialogDescription>
+              Deseja enviar a confirmação do agendamento para o responsável da base?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {savedRequestData && (
+            <div className="space-y-3 p-4 bg-green-50 rounded-lg border border-green-200">
+              <p className="text-sm"><strong>Veículo:</strong> {savedRequestData.placa}</p>
+              <p className="text-sm"><strong>Oficina:</strong> {savedRequestData.oficina}</p>
+              <p className="text-sm"><strong>Data:</strong> {savedRequestData.data ? new Date(savedRequestData.data + 'T12:00:00').toLocaleDateString('pt-BR') : 'Não definida'}</p>
+              <p className="text-sm"><strong>Horário:</strong> {savedRequestData.hora || 'Não definido'}</p>
+              <p className="text-sm"><strong>Telefone:</strong> {savedRequestData.telefone}</p>
+              {savedRequestData.instrucoes && (
+                <p className="text-sm"><strong>Instruções:</strong> {savedRequestData.instrucoes}</p>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => {
+              setShowWhatsAppConfirm(false);
+              setSavedRequestData(null);
+            }}>
+              Fechar
+            </Button>
+            <Button 
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => {
+                if (savedRequestData) {
+                  const telefone = savedRequestData.telefone.replace(/\D/g, '');
+                  const telefoneFormatado = telefone.startsWith('55') ? telefone : `55${telefone}`;
+                  const dataFormatada = savedRequestData.data 
+                    ? new Date(savedRequestData.data + 'T12:00:00').toLocaleDateString('pt-BR')
+                    : 'A definir';
+                  const mensagem = `🔧 *CONFIRMAÇÃO DE AGENDAMENTO - MANUTENÇÃO*
+
+Olá! Informamos que o veículo *${savedRequestData.placa}* foi direcionado para manutenção.
+
+📍 *Oficina:* ${savedRequestData.oficina}
+📅 *Data:* ${dataFormatada}
+⏰ *Horário:* ${savedRequestData.hora || 'A definir'}
+${savedRequestData.instrucoes ? `\n📋 *Instruções:* ${savedRequestData.instrucoes}` : ''}
+
+Por favor, siga as orientações acima para encaminhar o veículo.
+
+_Gestão de Frotas - Murici Transportes_`;
+                  
+                  const url = `https://wa.me/${telefoneFormatado}?text=${encodeURIComponent(mensagem)}`;
+                  window.open(url, '_blank');
+                  setShowWhatsAppConfirm(false);
+                  setSavedRequestData(null);
+                  toast({ title: 'WhatsApp aberto', description: 'A mensagem foi preparada para envio.' });
+                }
+              }}
+            >
+              <span className="mr-2">📲</span> Abrir WhatsApp
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
