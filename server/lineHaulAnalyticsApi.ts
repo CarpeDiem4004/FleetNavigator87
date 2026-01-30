@@ -185,6 +185,27 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
     `;
     const rotasAB = await pool.query(rotasABQuery, params);
 
+    // Query para exportação detalhada com datas
+    const rotasDetalhadasQuery = `
+      SELECT 
+        CASE 
+          WHEN rota_origem IS NOT NULL AND rota_origem != '' AND rota_destino IS NOT NULL AND rota_destino != ''
+          THEN rota_origem || ' → ' || rota_destino
+          WHEN id_rota IS NOT NULL AND id_rota != '' THEN id_rota
+          ELSE COALESCE(provedor_cartao, 'Sem Rota')
+        END as rota,
+        placa,
+        motorista,
+        valor_solicitado,
+        data_solicitacao,
+        data_uso,
+        status
+      FROM solicitacoes_fuel_card
+      ${whereClause}
+      ORDER BY data_solicitacao DESC
+    `;
+    const rotasDetalhadas = await pool.query(rotasDetalhadasQuery, params);
+
     const cards = cardsResult.rows[0];
     const veiculoMaisCaro = veiculoResult.rows[0];
 
@@ -233,6 +254,15 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
           rota: r.rota,
           quantidade: parseInt(r.quantidade),
           valorTotal: parseFloat(r.valor_total)
+        })),
+        rotasDetalhadas: rotasDetalhadas.rows.map(r => ({
+          rota: r.rota,
+          placa: r.placa,
+          motorista: r.motorista,
+          valor: parseFloat(r.valor_solicitado || 0),
+          dataSolicitacao: r.data_solicitacao,
+          dataUso: r.data_uso,
+          status: r.status
         }))
       }
     });

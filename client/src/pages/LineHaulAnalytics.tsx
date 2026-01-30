@@ -64,24 +64,54 @@ export default function LineHaulAnalytics() {
     rotasAB: []
   };
 
+  const formatDateExport = (dateStr: string) => {
+    if (!dateStr) return '';
+    try {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        return format(new Date(`${dateStr}T12:00:00`), 'dd/MM/yyyy', { locale: ptBR });
+      }
+      return format(new Date(dateStr), 'dd/MM/yyyy', { locale: ptBR });
+    } catch {
+      return dateStr;
+    }
+  };
+
   const handleExportRotasExcel = () => {
     try {
-      if (!data.tabelaAnalitica || data.tabelaAnalitica.length === 0) {
+      const wb = XLSX.utils.book_new();
+
+      // Aba 1: Resumo por Rota
+      if (data.tabelaAnalitica && data.tabelaAnalitica.length > 0) {
+        const resumoData = data.tabelaAnalitica.map((row: any) => ({
+          'Rota': row.rota || '',
+          'Viagens': row.viagens || 0,
+          'Valor Total (R$)': row.valorTotal || 0,
+          'Custo Médio (R$)': row.custoMedio || 0,
+          'Veículos Envolvidos': row.veiculosEnvolvidos || 0,
+        }));
+        const wsResumo = XLSX.utils.json_to_sheet(resumoData);
+        XLSX.utils.book_append_sheet(wb, wsResumo, 'Resumo por Rota');
+      }
+
+      // Aba 2: Detalhamento com datas
+      if (data.rotasDetalhadas && data.rotasDetalhadas.length > 0) {
+        const detalhadoData = data.rotasDetalhadas.map((row: any) => ({
+          'Rota': row.rota || '',
+          'Placa': row.placa || '',
+          'Motorista': row.motorista || '',
+          'Valor (R$)': row.valor || 0,
+          'Data Solicitação': formatDateExport(row.dataSolicitacao),
+          'Data de Uso': formatDateExport(row.dataUso),
+          'Status': row.status || '',
+        }));
+        const wsDetalhado = XLSX.utils.json_to_sheet(detalhadoData);
+        XLSX.utils.book_append_sheet(wb, wsDetalhado, 'Detalhamento');
+      }
+
+      if (wb.SheetNames.length === 0) {
         toast({ title: 'Sem dados para exportar', variant: 'destructive' });
         return;
       }
-      
-      const exportData = data.tabelaAnalitica.map((row: any) => ({
-        'Rota': row.rota || '',
-        'Viagens': row.viagens || 0,
-        'Valor Total (R$)': row.valorTotal || 0,
-        'Custo Médio (R$)': row.custoMedio || 0,
-        'Veículos Envolvidos': row.veiculosEnvolvidos || 0,
-      }));
-
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Rotas Line Haul');
       
       const fileName = `historico_rotas_linehaul_${format(new Date(), 'dd-MM-yyyy')}.xlsx`;
       XLSX.writeFile(wb, fileName);
