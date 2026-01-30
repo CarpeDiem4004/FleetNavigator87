@@ -197,16 +197,22 @@ export async function getFuelCardAnalytics(req: Request, res: Response) {
 
     const graficoMensal = await pool.query(graficoMensalQuery, queryParams);
 
-    // 2. Gráfico por Base
+    // 2. Gráfico por Base (registros Line Haul são identificados pelo campo origem_tipo)
     const graficoPorBaseQuery = `
       SELECT 
-        base,
+        CASE 
+          WHEN origem_tipo = 'line_hall' OR (base IS NULL OR TRIM(base) = '') THEN 'Line Haul'
+          ELSE base
+        END as base,
         SUM(valor_solicitado) as total,
         SUM(litros_solicitados) as litros,
         COUNT(*) as quantidade
       FROM solicitacoes_fuel_card
       ${whereClause}
-      GROUP BY base
+      GROUP BY CASE 
+          WHEN origem_tipo = 'line_hall' OR (base IS NULL OR TRIM(base) = '') THEN 'Line Haul'
+          ELSE base
+        END
       ORDER BY total DESC
       LIMIT 10
     `;

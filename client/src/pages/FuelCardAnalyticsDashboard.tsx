@@ -235,7 +235,8 @@ const FuelCardAnalyticsDashboard = () => {
 
   const chartDataBase = useMemo(() => {
     return analytics?.graficos.porBase.map(item => {
-      const baseName = item.base || 'Sem Base';
+      // Registros sem base são do Line Haul (já tratados no backend, mas garantindo aqui também)
+      const baseName = item.base && item.base.trim() !== '' ? item.base : 'Line Haul';
       return {
         base: baseName.length > 20 ? baseName.substring(0, 20) + '...' : baseName,
         total: parseFloat(item.total),
