@@ -483,8 +483,8 @@ const FuelCardAnalyticsDashboard = () => {
                     <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} />
                     <Tooltip formatter={(value: number) => formatCurrency(value)} />
                     <Legend />
-                    <Bar dataKey="Ticket" stackId="a" fill="#8884d8" name="Ticket" />
-                    <Bar dataKey="Veloe Go" stackId="a" fill="#82ca9d" name="Veloe Go" />
+                    <Bar dataKey="Ticket" stackId="a" fill="#82ca9d" name="Ticket" />
+                    <Bar dataKey="Veloe Go" stackId="a" fill="#8884d8" name="Veloe Go" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
