@@ -253,6 +253,35 @@ const FuelCardAnalyticsDashboard = () => {
       })) || [];
   }, [analytics]);
 
+  // Dados do gráfico mensal detalhado por operadora (Ticket vs Veloe)
+  const chartDataMensalPorOperadora = useMemo(() => {
+    const graficos = analytics?.graficos as any;
+    if (!graficos?.mensalPorOperadora) return [];
+    
+    // Agrupar por mês e criar colunas para cada operadora
+    const mesesMap = new Map<string, { mes: string; Ticket: number; 'Veloe Go': number; Total: number }>();
+    
+    graficos.mensalPorOperadora.forEach((item: any) => {
+      const mes = item.mes;
+      const operadora = item.operadora;
+      const valor = parseFloat(item.valor) || 0;
+      
+      if (!mesesMap.has(mes)) {
+        mesesMap.set(mes, { mes, Ticket: 0, 'Veloe Go': 0, Total: 0 });
+      }
+      
+      const mesData = mesesMap.get(mes)!;
+      if (operadora === 'Ticket') {
+        mesData.Ticket = valor;
+      } else if (operadora === 'Veloe Go') {
+        mesData['Veloe Go'] = valor;
+      }
+      mesData.Total += valor;
+    });
+    
+    return Array.from(mesesMap.values()).sort((a, b) => a.mes.localeCompare(b.mes));
+  }, [analytics]);
+
   return (
     <AppLayout>
       <div className="container mx-auto py-6">
@@ -441,12 +470,32 @@ const FuelCardAnalyticsDashboard = () => {
               </Card>
             </div>
 
+            {/* Gráfico Mensal Detalhado por Operadora */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Consumo Mensal por Operadora (Ticket vs Veloe)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={350}>
+                  <BarChart data={chartDataMensalPorOperadora}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="mes" />
+                    <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                    <Legend />
+                    <Bar dataKey="Ticket" stackId="a" fill="#8884d8" name="Ticket" />
+                    <Bar dataKey="Veloe Go" stackId="a" fill="#82ca9d" name="Veloe Go" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
             {/* Gráficos */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               {/* Gráfico Mensal */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Consumo Mensal</CardTitle>
+                  <CardTitle>Consumo Mensal (Total)</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
