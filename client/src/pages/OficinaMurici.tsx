@@ -99,8 +99,27 @@ const statusOptions = [
   { value: 'finalizado', label: 'Finalizado', color: 'bg-green-100 text-green-800' }
 ];
 
+// Interface para OS recebidas do time de manutenção
+interface OSRecebida {
+  id: number;
+  placa: string;
+  base_origem: string;
+  urgencia: string;
+  relato_problema: string;
+  odometro: number;
+  oficina_direcionada: string;
+  data_agendamento: string;
+  hora_agendamento: string;
+  instrucoes: string;
+  observacoes: string;
+  status: string;
+  created_at: string;
+  telefone_contato?: string;
+}
+
 const OficinaMurici: React.FC = () => {
   const [manutencoes, setManutencoes] = useState<Manutencao[]>([]);
+  const [osRecebidas, setOsRecebidas] = useState<OSRecebida[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('todas');
@@ -129,7 +148,25 @@ const OficinaMurici: React.FC = () => {
   useEffect(() => {
     backfillDataFinalizacao();
     fetchManutencoes();
+    fetchOsRecebidas();
   }, []);
+
+  // Buscar OS direcionadas para Oficina Murici
+  const fetchOsRecebidas = async () => {
+    try {
+      const response = await fetch('/api/maintenance-requests');
+      if (response.ok) {
+        const data = await response.json();
+        // Filtrar apenas OS direcionadas para Oficina Murici
+        const osMurici = (data.data || []).filter((os: OSRecebida) => 
+          os.oficina_direcionada && os.oficina_direcionada.toLowerCase().includes('murici')
+        );
+        setOsRecebidas(osMurici);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar OS recebidas:', error);
+    }
+  };
   
   // Preencher datas de finalização para registros finalizados que não têm
   const backfillDataFinalizacao = async () => {
@@ -975,7 +1012,10 @@ const OficinaMurici: React.FC = () => {
               onValueChange={setActiveTab}
               className="w-full sm:w-auto"
             >
-              <TabsList className="grid grid-cols-4 w-full sm:w-[500px]">
+              <TabsList className="grid grid-cols-5 w-full sm:w-[650px]">
+                <TabsTrigger value="os_recebidas" className="bg-red-50 text-red-700 data-[state=active]:bg-red-600 data-[state=active]:text-white">
+                  OS Recebidas ({osRecebidas.length})
+                </TabsTrigger>
                 <TabsTrigger value="todas">
                   Todas ({counterByStatus.total})
                 </TabsTrigger>
@@ -1006,6 +1046,75 @@ const OficinaMurici: React.FC = () => {
           {isLoading ? (
             <div className="flex justify-center items-center h-64">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            </div>
+          ) : activeTab === 'os_recebidas' ? (
+            /* Tabela de OS Recebidas do Time de Manutenção */
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-red-50">
+                    <TableHead>Placa</TableHead>
+                    <TableHead>Base Origem</TableHead>
+                    <TableHead>Urgência</TableHead>
+                    <TableHead>Problema</TableHead>
+                    <TableHead>Data Agendada</TableHead>
+                    <TableHead>Horário</TableHead>
+                    <TableHead>Instruções</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Recebida em</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {osRecebidas.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={9} className="h-24 text-center text-gray-500">
+                        Nenhuma OS direcionada para a Oficina Murici.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    osRecebidas.map((os) => (
+                      <TableRow key={os.id} className="hover:bg-red-50/50">
+                        <TableCell className="font-bold text-red-700">{os.placa}</TableCell>
+                        <TableCell>{os.base_origem}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            os.urgencia === 'alta' ? 'bg-red-100 text-red-800' :
+                            os.urgencia === 'media' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {os.urgencia?.charAt(0).toUpperCase() + os.urgencia?.slice(1) || 'Média'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="max-w-[200px] truncate" title={os.relato_problema}>
+                          {os.relato_problema}
+                        </TableCell>
+                        <TableCell>
+                          {os.data_agendamento ? format(new Date(os.data_agendamento), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
+                        </TableCell>
+                        <TableCell>{os.hora_agendamento || '-'}</TableCell>
+                        <TableCell className="max-w-[150px] truncate" title={os.instrucoes}>
+                          {os.instrucoes || '-'}
+                        </TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            os.status === 'direcionado' ? 'bg-blue-100 text-blue-800' :
+                            os.status === 'em_analise' ? 'bg-yellow-100 text-yellow-800' :
+                            os.status === 'finalizado' ? 'bg-green-100 text-green-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {os.status === 'direcionado' ? 'Direcionado' :
+                             os.status === 'em_analise' ? 'Em Análise' :
+                             os.status === 'finalizado' ? 'Finalizado' : os.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {os.created_at ? format(new Date(os.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : '-'}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
           ) : (
             <div className="overflow-x-auto">
