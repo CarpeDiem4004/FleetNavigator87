@@ -1684,7 +1684,7 @@ const OficinaMurici: React.FC = () => {
 
       {/* Modal de Edição de OS Recebida */}
       <Dialog open={isOsEditDialogOpen} onOpenChange={setIsOsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-red-700">
               Atualizar OS - {currentOsEdit?.placa}
