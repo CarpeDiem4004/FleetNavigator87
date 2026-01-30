@@ -63,6 +63,7 @@ export default function CocaColaBaseDashboard() {
     tipos: [] as string[],
     descricao: '',
     km: '',
+    telefone: '',
     foto: null as File | null,
     fotoPreview: ''
   });
@@ -216,7 +217,7 @@ export default function CocaColaBaseDashboard() {
         relato_problema: descricaoCompleta,
         urgencia: 'media',
         responsavel_base: user?.nome || 'Operador',
-        telefone_responsavel: '',
+        telefone_responsavel: osForm.telefone || '',
         fotos: osForm.fotoPreview ? [osForm.fotoPreview] : []
       };
       
@@ -236,7 +237,7 @@ export default function CocaColaBaseDashboard() {
       toast({ title: 'OS aberta com sucesso!', description: 'Aguarde o direcionamento da Gestão de Frotas.' });
       setShowOpenOS(false);
       setOsVehicle(null);
-      setOsForm({ tipos: [], descricao: '', km: '', foto: null, fotoPreview: '' });
+      setOsForm({ tipos: [], descricao: '', km: '', telefone: '', foto: null, fotoPreview: '' });
       refetchOS();
     },
     onError: (error: Error) => {
@@ -506,7 +507,7 @@ export default function CocaColaBaseDashboard() {
                         className="bg-amber-500 hover:bg-amber-600 text-white"
                         onClick={() => {
                           setOsVehicle(vehicle);
-                          setOsForm({ tipos: [], descricao: '', km: '', foto: null, fotoPreview: '' });
+                          setOsForm({ tipos: [], descricao: '', km: '', telefone: '', foto: null, fotoPreview: '' });
                           setShowOpenOS(true);
                         }}
                       >
@@ -660,6 +661,18 @@ export default function CocaColaBaseDashboard() {
                 value={osForm.km}
                 onChange={(e) => setOsForm({...osForm, km: e.target.value})}
               />
+            </div>
+
+            {/* Telefone para atualizações */}
+            <div>
+              <Label>Telefone para Atualizações</Label>
+              <Input 
+                type="tel"
+                placeholder="Ex: 11999998888"
+                value={osForm.telefone}
+                onChange={(e) => setOsForm({...osForm, telefone: e.target.value})}
+              />
+              <p className="text-xs text-gray-500 mt-1">Receberá atualizações sobre o status da OS</p>
             </div>
             
             {/* Upload de Foto */}
