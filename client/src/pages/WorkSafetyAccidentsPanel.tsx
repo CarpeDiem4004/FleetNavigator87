@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  AlertTriangle, Search, Filter, TrendingUp, Users, Car,
+  AlertTriangle, Search, Filter, TrendingUp, Users, Car, User,
   Calendar, RefreshCw, CheckCircle, Clock, AlertCircle, 
   BarChart3, PieChart, Eye, FileText, Trash2, Download, ArrowLeft
 } from 'lucide-react';
@@ -40,6 +40,33 @@ interface Accident {
   atendimento_medico: boolean;
   status: string;
   created_at: string;
+  email_corporativo?: string;
+  telefone_whatsapp?: string;
+  coordenador_base?: string;
+  nome_responsavel_meli?: string;
+  milha?: string;
+  regional?: string;
+  endereco_ocorrencia?: string;
+  id_rota?: string;
+  transit_time_orh?: string;
+  inicio_rota?: string;
+  ano_veiculo?: string;
+  frota_fixa?: string;
+  tipo_frota?: string;
+  id_matricula?: string;
+  funcao?: string;
+  idade?: string;
+  contratacao?: string;
+  data_admissao?: string;
+  data_primeira_habilitacao?: string;
+  partes_corpo_atingidas?: string;
+  local_atendimento?: string;
+  houve_internacao?: string;
+  nome_medico_crm?: string;
+  cid?: string;
+  registro_policial?: string;
+  protocolo_bo?: string;
+  estado_saude_envolvidos?: string;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
@@ -587,86 +614,245 @@ export default function WorkSafetyAccidentsPanel() {
         </Tabs>
 
         <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-red-600" />
-                Detalhes da Ocorrência
+                Detalhes Completos da Ocorrência
               </DialogTitle>
             </DialogHeader>
             {selectedAccident && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs text-gray-500">Data</Label>
-                    <p className="font-medium">{formatDate(selectedAccident.data_ocorrencia)}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-gray-500">Horário</Label>
-                    <p className="font-medium">{selectedAccident.horario_ocorrencia || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-gray-500">Tipo/Causa</Label>
-                    <p className="font-medium">{selectedAccident.causa_imediata || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-gray-500">Base/Unidade</Label>
-                    <p className="font-medium">{selectedAccident.base_unidade || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-gray-500">Colaborador</Label>
-                    <p className="font-medium">{selectedAccident.nome_colaborador || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-gray-500">Operação</Label>
-                    <p className="font-medium">{selectedAccident.operacao || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-gray-500">Placa</Label>
-                    <p className="font-medium">{selectedAccident.placa_veiculo || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-gray-500">Modelo</Label>
-                    <p className="font-medium">{selectedAccident.modelo_veiculo || 'N/A'}</p>
-                  </div>
-                </div>
-                
-                <div>
-                  <Label className="text-xs text-gray-500">Descrição</Label>
-                  <p className="font-medium text-sm bg-gray-50 p-3 rounded-lg">
-                    {selectedAccident.descricao_detalhada || 'Sem descrição detalhada.'}
-                  </p>
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <Badge className={STATUS_CONFIG[selectedAccident.status]?.color || 'bg-gray-100'}>
+                    {STATUS_CONFIG[selectedAccident.status]?.label || 'Reportado'}
+                  </Badge>
+                  <span className="text-xs text-gray-500">ID: #{selectedAccident.id}</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs text-gray-500">Terceiro Envolvido</Label>
-                    <p className="font-medium">{selectedAccident.terceiro_envolvido ? 'Sim' : 'Não'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-gray-500">Dias Afastado</Label>
-                    <p className="font-medium">{selectedAccident.dias_afastado || 0}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-gray-500">Foi Socorrido</Label>
-                    <p className="font-medium">{selectedAccident.foi_socorrido ? 'Sim' : 'Não'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-gray-500">Atendimento Médico</Label>
-                    <p className="font-medium">{selectedAccident.atendimento_medico ? 'Sim' : 'Não'}</p>
-                  </div>
-                </div>
-
-                <div className="border-t pt-4">
-                  <div className="flex justify-between items-center">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Informações do Responsável
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
                       <Label className="text-xs text-gray-500">Reportado por</Label>
                       <p className="font-medium">{selectedAccident.reportado_por || 'N/A'}</p>
                     </div>
-                    <Badge className={STATUS_CONFIG[selectedAccident.status]?.color || 'bg-gray-100'}>
-                      {STATUS_CONFIG[selectedAccident.status]?.label || 'Reportado'}
-                    </Badge>
+                    <div>
+                      <Label className="text-xs text-gray-500">E-mail Corporativo</Label>
+                      <p className="font-medium text-sm">{selectedAccident.email_corporativo || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Telefone/WhatsApp</Label>
+                      <p className="font-medium">{selectedAccident.telefone_whatsapp || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Coordenador da Base</Label>
+                      <p className="font-medium">{selectedAccident.coordenador_base || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Responsável MELI</Label>
+                      <p className="font-medium">{selectedAccident.nome_responsavel_meli || 'N/A'}</p>
+                    </div>
                   </div>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Dados da Ocorrência
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <Label className="text-xs text-gray-500">Data</Label>
+                      <p className="font-medium">{formatDate(selectedAccident.data_ocorrencia)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Horário</Label>
+                      <p className="font-medium">{selectedAccident.horario_ocorrencia || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Tipo/Causa</Label>
+                      <p className="font-medium text-sm">{selectedAccident.causa_imediata || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Base/Unidade</Label>
+                      <p className="font-medium">{selectedAccident.base_unidade || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Operação</Label>
+                      <p className="font-medium">{selectedAccident.operacao || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Milha</Label>
+                      <p className="font-medium">{selectedAccident.milha || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Regional</Label>
+                      <p className="font-medium">{selectedAccident.regional || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">ID da Rota</Label>
+                      <p className="font-medium">{selectedAccident.id_rota || 'N/A'}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs text-gray-500">Endereço da Ocorrência</Label>
+                      <p className="font-medium text-sm">{selectedAccident.endereco_ocorrencia || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Transit Time/ORH</Label>
+                      <p className="font-medium">{selectedAccident.transit_time_orh || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Início da Rota</Label>
+                      <p className="font-medium">{selectedAccident.inicio_rota || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs text-gray-500">Descrição Detalhada</Label>
+                  <p className="font-medium text-sm bg-gray-50 p-3 rounded-lg mt-1">
+                    {selectedAccident.descricao_detalhada || 'Sem descrição detalhada.'}
+                  </p>
+                </div>
+
+                <div className="bg-orange-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-orange-800 mb-3 flex items-center gap-2">
+                    <Car className="h-4 w-4" />
+                    Dados do Veículo
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <Label className="text-xs text-gray-500">Placa</Label>
+                      <p className="font-medium">{selectedAccident.placa_veiculo || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Modelo</Label>
+                      <p className="font-medium">{selectedAccident.modelo_veiculo || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Ano</Label>
+                      <p className="font-medium">{selectedAccident.ano_veiculo || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Frota Fixa</Label>
+                      <p className="font-medium">{selectedAccident.frota_fixa || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Tipo de Frota</Label>
+                      <p className="font-medium">{selectedAccident.tipo_frota || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Dados do Colaborador Envolvido
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <Label className="text-xs text-gray-500">Nome</Label>
+                      <p className="font-medium">{selectedAccident.nome_colaborador || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">ID/Matrícula</Label>
+                      <p className="font-medium">{selectedAccident.id_matricula || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Função</Label>
+                      <p className="font-medium">{selectedAccident.funcao || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Idade</Label>
+                      <p className="font-medium">{selectedAccident.idade || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Tipo de Contratação</Label>
+                      <p className="font-medium">{selectedAccident.contratacao || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Data de Admissão</Label>
+                      <p className="font-medium">{selectedAccident.data_admissao ? formatDate(selectedAccident.data_admissao) : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Data 1ª Habilitação</Label>
+                      <p className="font-medium">{selectedAccident.data_primeira_habilitacao ? formatDate(selectedAccident.data_primeira_habilitacao) : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Terceiro Envolvido</Label>
+                      <p className="font-medium">{selectedAccident.terceiro_envolvido ? 'Sim' : 'Não'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-red-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-red-800 mb-3 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    Consequências e Atendimento Médico
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <Label className="text-xs text-gray-500">Partes do Corpo Atingidas</Label>
+                      <p className="font-medium text-sm">{selectedAccident.partes_corpo_atingidas || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Dias Afastado</Label>
+                      <p className="font-medium">{selectedAccident.dias_afastado || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Foi Socorrido</Label>
+                      <p className="font-medium">{selectedAccident.foi_socorrido ? 'Sim' : 'Não'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Atendimento Médico</Label>
+                      <p className="font-medium">{selectedAccident.atendimento_medico ? 'Sim' : 'Não'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Local de Atendimento</Label>
+                      <p className="font-medium">{selectedAccident.local_atendimento || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Houve Internação</Label>
+                      <p className="font-medium">{selectedAccident.houve_internacao || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Médico/CRM</Label>
+                      <p className="font-medium">{selectedAccident.nome_medico_crm || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">CID</Label>
+                      <p className="font-medium">{selectedAccident.cid || 'N/A'}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs text-gray-500">Estado de Saúde dos Envolvidos</Label>
+                      <p className="font-medium text-sm">{selectedAccident.estado_saude_envolvidos || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-purple-800 mb-3 flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Registro Policial
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-xs text-gray-500">Registro Policial</Label>
+                      <p className="font-medium">{selectedAccident.registro_policial || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Protocolo B.O.</Label>
+                      <p className="font-medium">{selectedAccident.protocolo_bo || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 text-xs text-gray-500">
+                  Registrado em: {selectedAccident.created_at ? format(new Date(selectedAccident.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'N/A'}
                 </div>
               </div>
             )}
