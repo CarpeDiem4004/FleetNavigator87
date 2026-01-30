@@ -1473,7 +1473,8 @@ const FuelCardRequestsPanel: React.FC = () => {
           const provedor = sol.provedor_cartao || sol.tipo_cartao || 'N/I';
           const cartao = sol.cartao_combustivel || sol.numero_cartao || sol.placa;
           const valor = parseFloat(String(sol.valor_solicitado || 0)) || 0;
-          const dataUso = sol.data_abastecimento ? format(new Date(sol.data_abastecimento), 'dd/MM/yyyy', { locale: ptBR }) : (sol.data_solicitacao ? format(new Date(sol.data_solicitacao), 'dd/MM/yyyy', { locale: ptBR }) : 'N/I');
+          const dataUsoValue = sol.data_uso || sol.data_solicitacao;
+          const dataUso = dataUsoValue ? format(parseLocalDate(dataUsoValue), 'dd/MM/yyyy', { locale: ptBR }) : 'N/I';
           batchMessage += `${idx + 1}. ${sol.placa} - ${sol.motorista || 'Sem motorista'}\n`;
           batchMessage += `   ` + String.fromCodePoint(0x1F4C6) + ` Data Uso: ${dataUso}\n`;
           batchMessage += `   ` + String.fromCodePoint(0x1F4B3) + ` Cartao: ${cartao} | Provedor: ${provedor}\n`;
