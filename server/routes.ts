@@ -1584,13 +1584,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cocaColaUser = req.cocaColaUser;
       const { status, oficina, prazo_estimado, motivo_parado } = req.body;
       
+      // Buscar status anterior para histórico
+      const vehicleCheck = await pool.query('SELECT * FROM coca_cola_vehicles WHERE id = $1', [id]);
+      if (vehicleCheck.rows.length === 0) {
+        return res.status(404).json({ error: 'Veículo não encontrado' });
+      }
+      
+      const vehicleAtual = vehicleCheck.rows[0];
+      
       // Verificar se veículo pertence à base do usuário
       if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
-        const vehicleCheck = await pool.query('SELECT base_id FROM coca_cola_vehicles WHERE id = $1', [id]);
-        if (vehicleCheck.rows.length === 0) {
-          return res.status(404).json({ error: 'Veículo não encontrado' });
-        }
-        if (vehicleCheck.rows[0].base_id !== cocaColaUser.baseId) {
+        if (vehicleAtual.base_id !== cocaColaUser.baseId) {
           return res.status(403).json({ error: 'Acesso negado a este veículo' });
         }
       }
@@ -1605,13 +1609,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
          SET status = COALESCE($1, status),
              oficina = COALESCE($2, oficina),
              prazo_estimado = COALESCE($3, prazo_estimado),
-             motivo_parado = COALESCE($4, motivo_parado)
+             motivo_parado = COALESCE($4, motivo_parado),
+             updated_at = NOW()
          WHERE id = $5 RETURNING *`,
         [status, safeOficina, safePrazoEstimado, safeMotivoParado, id]
       );
       
       if (result.rows.length === 0) {
         return res.status(404).json({ error: 'Veículo não encontrado' });
+      }
+      
+      // Registrar histórico se o status mudou
+      if (status && status !== vehicleAtual.status) {
+        await pool.query(
+          `INSERT INTO coca_cola_vehicle_status_history 
+           (vehicle_id, placa, base_id, status_anterior, status_novo, motivo, tipo_alteracao, usuario_responsavel)
+           VALUES ($1, $2, $3, $4, $5, $6, 'manual', $7)`,
+          [id, vehicleAtual.placa, vehicleAtual.base_id, vehicleAtual.status, status, safeMotivoParado, cocaColaUser.email || 'base']
+        );
+        console.log(`[COCA-COLA HISTORY] Veículo ${vehicleAtual.placa}: ${vehicleAtual.status} -> ${status}`);
       }
       
       res.json(result.rows[0]);
@@ -1711,6 +1727,208 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('[COCA-COLA] Erro ao criar atualização diária:', error);
       res.status(500).json({ error: 'Erro ao criar atualização' });
+    }
+  });
+
+  // =====================================================
+  // ROTAS DE HISTÓRICO E ESTATÍSTICAS COCA-COLA
+  // =====================================================
+
+  // Buscar histórico de status de veículos
+  app.get('/api/coca-cola/vehicle-history', cocaColaAuth, async (req: any, res) => {
+    try {
+      const cocaColaUser = req.cocaColaUser;
+      const { vehicle_id, placa, days = 30 } = req.query;
+      
+      let query = `
+        SELECT h.*, b.nome as base_nome
+        FROM coca_cola_vehicle_status_history h
+        LEFT JOIN coca_cola_bases b ON h.base_id = b.id
+        WHERE h.created_at >= NOW() - INTERVAL '${parseInt(days) || 30} days'
+      `;
+      const params: any[] = [];
+      let paramIndex = 1;
+      
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
+        query += ` AND h.base_id = $${paramIndex}`;
+        params.push(cocaColaUser.baseId);
+        paramIndex++;
+      }
+      
+      if (vehicle_id) {
+        query += ` AND h.vehicle_id = $${paramIndex}`;
+        params.push(vehicle_id);
+        paramIndex++;
+      }
+      
+      if (placa) {
+        query += ` AND h.placa ILIKE $${paramIndex}`;
+        params.push(`%${placa}%`);
+        paramIndex++;
+      }
+      
+      query += ' ORDER BY h.created_at DESC LIMIT 500';
+      
+      const result = await pool.query(query, params);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao buscar histórico:', error);
+      res.status(500).json({ error: 'Erro ao buscar histórico' });
+    }
+  });
+
+  // Estatísticas de utilização da frota
+  app.get('/api/coca-cola/fleet-statistics', cocaColaAuth, async (req: any, res) => {
+    try {
+      const cocaColaUser = req.cocaColaUser;
+      const { days = 30 } = req.query;
+      
+      let baseFilter = '';
+      const params: any[] = [parseInt(days) || 30];
+      
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
+        baseFilter = 'AND v.base_id = $2';
+        params.push(cocaColaUser.baseId);
+      }
+      
+      // Estatísticas atuais
+      const currentStats = await pool.query(`
+        SELECT 
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE status = 'disponivel') as disponiveis,
+          COUNT(*) FILTER (WHERE status = 'manutencao') as em_manutencao,
+          COUNT(*) FILTER (WHERE status = 'em_rota') as em_rota,
+          COUNT(*) FILTER (WHERE status = 'sem_equipe') as sem_equipe,
+          COUNT(*) FILTER (WHERE status = 'baixa_venda') as baixa_venda,
+          ROUND(COUNT(*) FILTER (WHERE status = 'disponivel')::numeric / NULLIF(COUNT(*), 0) * 100, 1) as percentual_disponivel
+        FROM coca_cola_vehicles v
+        WHERE 1=1 ${baseFilter}
+      `, params.slice(1));
+      
+      // Histórico de mudanças por dia
+      const dailyHistory = await pool.query(`
+        SELECT 
+          DATE(created_at) as data,
+          COUNT(*) as total_mudancas,
+          COUNT(*) FILTER (WHERE status_novo = 'disponivel') as para_disponivel,
+          COUNT(*) FILTER (WHERE status_novo = 'manutencao') as para_manutencao,
+          COUNT(*) FILTER (WHERE tipo_alteracao = 'reset_diario') as resets_automaticos
+        FROM coca_cola_vehicle_status_history h
+        WHERE h.created_at >= NOW() - INTERVAL '${parseInt(days) || 30} days'
+        ${cocaColaUser.tipo === 'base' && cocaColaUser.baseId ? `AND h.base_id = ${cocaColaUser.baseId}` : ''}
+        GROUP BY DATE(created_at)
+        ORDER BY data DESC
+      `);
+      
+      // Veículos com mais tempo em manutenção (últimos X dias)
+      const manutencaoRanking = await pool.query(`
+        SELECT 
+          h.placa,
+          COUNT(*) FILTER (WHERE h.status_novo = 'manutencao') as vezes_em_manutencao,
+          MAX(h.created_at) as ultima_manutencao
+        FROM coca_cola_vehicle_status_history h
+        WHERE h.created_at >= NOW() - INTERVAL '${parseInt(days) || 30} days'
+        ${cocaColaUser.tipo === 'base' && cocaColaUser.baseId ? `AND h.base_id = ${cocaColaUser.baseId}` : ''}
+        GROUP BY h.placa
+        HAVING COUNT(*) FILTER (WHERE h.status_novo = 'manutencao') > 0
+        ORDER BY vezes_em_manutencao DESC
+        LIMIT 10
+      `);
+      
+      res.json({
+        atual: currentStats.rows[0],
+        historicoDiario: dailyHistory.rows,
+        rankingManutencao: manutencaoRanking.rows,
+        periodo: `${days} dias`
+      });
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao buscar estatísticas:', error);
+      res.status(500).json({ error: 'Erro ao buscar estatísticas' });
+    }
+  });
+
+  // Executar reset diário manualmente (admin)
+  app.post('/api/coca-cola/daily-reset', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = (req as any).user;
+      const { base_id } = req.body;
+      
+      // Buscar veículos em manutenção/parados para resetar
+      let query = `
+        SELECT v.*, b.nome as base_nome 
+        FROM coca_cola_vehicles v
+        LEFT JOIN coca_cola_bases b ON v.base_id = b.id
+        WHERE v.status IN ('manutencao', 'sem_equipe')
+      `;
+      const params: any[] = [];
+      
+      if (base_id) {
+        query += ' AND v.base_id = $1';
+        params.push(base_id);
+      }
+      
+      const vehicles = await pool.query(query, params);
+      
+      let resetados = 0;
+      for (const vehicle of vehicles.rows) {
+        // Registrar histórico
+        await pool.query(
+          `INSERT INTO coca_cola_vehicle_status_history 
+           (vehicle_id, placa, base_id, status_anterior, status_novo, motivo, tipo_alteracao, usuario_responsavel)
+           VALUES ($1, $2, $3, $4, 'disponivel', 'Reset diário automático - Confirme status real', 'reset_diario', $5)`,
+          [vehicle.id, vehicle.placa, vehicle.base_id, vehicle.status, user?.name || 'Sistema']
+        );
+        
+        // Resetar para disponível
+        await pool.query(
+          `UPDATE coca_cola_vehicles 
+           SET status = 'disponivel', oficina = NULL, prazo_estimado = NULL, updated_at = NOW()
+           WHERE id = $1`,
+          [vehicle.id]
+        );
+        
+        resetados++;
+      }
+      
+      console.log(`[COCA-COLA RESET] ${resetados} veículos resetados para disponível`);
+      res.json({ 
+        success: true, 
+        message: `${resetados} veículo(s) resetado(s) para disponível`,
+        veiculos_resetados: resetados
+      });
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao executar reset diário:', error);
+      res.status(500).json({ error: 'Erro ao executar reset' });
+    }
+  });
+
+  // Verificar veículos pendentes de confirmação (após reset)
+  app.get('/api/coca-cola/pending-confirmation', cocaColaAuth, async (req: any, res) => {
+    try {
+      const cocaColaUser = req.cocaColaUser;
+      
+      // Veículos que foram resetados hoje e precisam confirmação
+      let query = `
+        SELECT DISTINCT v.*, b.nome as base_nome, h.created_at as reset_em
+        FROM coca_cola_vehicles v
+        LEFT JOIN coca_cola_bases b ON v.base_id = b.id
+        INNER JOIN coca_cola_vehicle_status_history h ON v.id = h.vehicle_id
+        WHERE h.tipo_alteracao = 'reset_diario'
+          AND DATE(h.created_at) = CURRENT_DATE
+          AND v.status = 'disponivel'
+      `;
+      
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
+        query += ` AND v.base_id = ${cocaColaUser.baseId}`;
+      }
+      
+      query += ' ORDER BY h.created_at DESC';
+      
+      const result = await pool.query(query);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao buscar pendentes:', error);
+      res.status(500).json({ error: 'Erro ao buscar pendentes' });
     }
   });
 
