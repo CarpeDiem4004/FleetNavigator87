@@ -306,6 +306,7 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
         END as status,
         NULL as orcamento,
         os.oficina_direcionada as oficina,
+        os.oficina_direcionada as oficina_debito,
         os.relato_problema as relato,
         os.data_agendamento::text as data_agenda,
         EXTRACT(DAY FROM NOW() - os.created_at)::integer as dias,
@@ -318,9 +319,11 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
         'coca_cola' as origem_os
        FROM coca_cola_os_requests os
        WHERE os.oficina_direcionada ILIKE '%murici%'
-         AND (os.status_manutencao IS NULL OR os.status_manutencao != 'finalizado')
+         AND (os.status_manutencao IS NULL OR os.status_manutencao NOT IN ('finalizado'))
        ORDER BY os.created_at DESC`
     );
+
+    console.log('[INDICADORES] OS Murici encontradas:', osMuriciResult.rows.length, osMuriciResult.rows.map(r => r.placa));
 
     // Combinar os resultados, marcando os da Oficina Murici
     const dadosCombinados = [
@@ -330,6 +333,8 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
         is_oficina_murici_os: true
       }))
     ];
+
+    console.log('[INDICADORES] Total dados combinados:', dadosCombinados.length, '(indicadores:', result.rows.length, '+ OS Murici:', osMuriciResult.rows.length, ')');
 
     res.json({ success: true, dados: dadosCombinados });
   } catch (error) {
