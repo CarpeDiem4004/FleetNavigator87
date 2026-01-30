@@ -510,6 +510,28 @@ app.post('/api/maintenance-requests/:id/confirm', async (req, res) => {
   }
 });
 
+// Rota para listar fornecedores/oficinas
+app.get('/api/fornecedores', async (req, res) => {
+  try {
+    const { categoria } = req.query;
+    let query = 'SELECT id, nome, categoria, tipo_servico, contato_nome, contato_telefone, is_parceiro, ativo FROM fornecedores WHERE ativo = true';
+    const params: string[] = [];
+    
+    if (categoria) {
+      query += ' AND categoria = $1';
+      params.push(categoria as string);
+    }
+    
+    query += ' ORDER BY nome ASC';
+    
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('[Fornecedores] Erro ao listar:', error);
+    res.json({ success: true, data: [] });
+  }
+});
+
 // ROTAS DE TERCEIROS - Registrar ANTES de qualquer middleware para evitar interceptação do Vite
 app.get('/api/terceiros/admin/stats', async (req, res) => {
   try {

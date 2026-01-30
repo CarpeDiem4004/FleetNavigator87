@@ -1,0 +1,32 @@
+No sistema **Murici On Fleet** (pelo que aparece na tela que você enviou, em gestaoonfleet.com ou similar), o processo de direcionar uma **OS** (Ordem de Serviço) para uma oficina parceira funciona assim, baseado na janela de "Direcionar Veículo" que está aberta na sua captura:
+
+### Onde as OS chegam e são direcionadas para oficinas parceiras
+- As OS (solicitações de manutenção) geralmente aparecem primeiro na aba ou seção **Solicitações de Manutenção** (você tem uma seção chamada "Solicitações de Manutenção" na parte inferior da tela, com lista de veículos como EPPIET71, TESTE123 etc.).
+- Ali você vê as solicitações pendentes, com detalhes como placa, base (ex: Coca Cola - Embu), relato do problema (ex: motor), urgência (Média), km, etc.
+- Para direcionar o veículo/oficina:
+  1. Clique em **Ver/Direcionar** (botão vermelho que aparece na lista de solicitações ou ações).
+  2. Abre exatamente a janela que você mostrou: **Direcionar Veículo - EPPIE71** (ou similar).
+  3. Nessa janela, selecione a **Oficina** no campo "Oficina" → "Nome da oficina".
+     - O sistema mostra uma lista dropdown ou busca dos **parceiros/oficinas cadastrados** no sistema (parceiros previamente cadastrados no módulo de Fornecedores/Oficinas).
+     - Se selecionar uma oficina específica (ex: "Oficina Murici" ou outra parceira), a OS é direcionada para ela.
+  4. Preencha também:
+     - **Data do Agendamento** (calendário dd/mm/aaaa).
+     - **Horário** (relógio ao lado).
+     - **Instruções para a Base** (ex: "Levar documentos do veículo").
+     - **Observações** adicionais.
+  5. Clique em **Salvar** (botão vermelho) para confirmar o direcionamento/agendamento.
+
+### Onde acompanhar as atualizações (em manutenção)
+- Após salvar o direcionamento:
+  - O veículo/OS vai para a seção **Em Manutenção** (você tem um card "Em Manutenção" no topo, com 188 itens, 188 veículos únicos).
+  - Ali as OS ficam visíveis para acompanhamento em tempo real: status, atualizações da oficina (ex: entrada, peças usadas, progresso, saída), histórico, etc.
+  - Pode ter filtros por oficina parceira, urgência, base (Coca Cola etc.), ou veículo específico.
+  - Atualizações da oficina parceira (se integrada) aparecem ali ou via notificações no sistema.
+
+### Dicas rápidas no seu sistema
+- Se a oficina "Murici" (interna ou principal) for selecionada, ela aparece direto para acompanhamento interno.
+- Para oficinas parceiras externas: certifique-se que elas estão cadastradas em **Fornecedores** ou **Oficinas** no menu (provavelmente em Cadastro > Fornecedores/Oficinas).
+- Se não aparecer alguma oficina no dropdown, peça para o administrador cadastrar ou atualizar a lista de parceiros.
+- O sistema parece ter integração com bases como Coca Cola - Embu, então as instruções específicas da base aparecem no campo "Instruções para Base".
+
+Se depois de salvar não aparecer na "Em Manutenção" ou não atualizar, tente atualizar a página (F5) ou verificar em **Histórico** do veículo (pode ter um botão "Histórico" ou "Ver mais" por veículo). Se ainda tiver dúvida ou erro específico, descreva o que acontece após salvar que eu ajudo mais!

@@ -281,6 +281,15 @@ function RecebimentoOSTab() {
     }
   });
 
+  const { data: oficinas = [] } = useQuery<{id: number; nome: string; categoria: string}[]>({
+    queryKey: ['/api/fornecedores/oficinas'],
+    queryFn: async () => {
+      const res = await fetch('/api/fornecedores?categoria=Oficina', { credentials: 'include' });
+      const json = await res.json();
+      return json.data || json || [];
+    }
+  });
+
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
       const res = await fetch(`/api/maintenance-requests/${id}`, {
@@ -499,11 +508,26 @@ function RecebimentoOSTab() {
               <div className="space-y-3">
                 <div className="space-y-2">
                   <Label>Oficina</Label>
-                  <Input
-                    placeholder="Nome da oficina"
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     value={direcionamentoData.oficina_direcionada}
                     onChange={(e) => setDirecionamentoData({...direcionamentoData, oficina_direcionada: e.target.value})}
-                  />
+                  >
+                    <option value="">Selecione uma oficina</option>
+                    <optgroup label="Oficinas Internas">
+                      <option value="Oficina Murici">Oficina Murici</option>
+                      <option value="Oficina Autofrei">Oficina Autofrei</option>
+                      <option value="Oficina Alair">Oficina Alair</option>
+                    </optgroup>
+                    {oficinas.length > 0 && (
+                      <optgroup label="Oficinas Parceiras">
+                        {oficinas.slice(0, 50).map((oficina) => (
+                          <option key={oficina.id} value={oficina.nome}>{oficina.nome}</option>
+                        ))}
+                      </optgroup>
+                    )}
+                    <option value="Outra">Outra (especificar nas observações)</option>
+                  </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
