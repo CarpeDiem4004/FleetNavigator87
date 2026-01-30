@@ -343,13 +343,37 @@ const OficinaMurici: React.FC = () => {
     }
   };
   
+  // Converter OS Coca-Cola para formato de manutenção para exibir nas abas corretas
+  const osConvertidas = osRecebidas
+    .filter((os: any) => os.status_manutencao && os.status_manutencao !== 'pendente')
+    .map((os: any) => ({
+      id: `coca_${os.id}`,
+      placa: os.placa,
+      km: 0,
+      descricao_manutencao: os.relato_problema || 'OS Coca-Cola',
+      status: os.status_manutencao,
+      mecanico: os.mecanico_responsavel || '-',
+      prazo: os.data_agendamento,
+      data_hora_inicio: os.created_at,
+      data_hora_fim: os.data_conclusao,
+      custo_total: (parseFloat(os.valor_pecas) || 0) + (parseFloat(os.valor_mao_obra) || 0),
+      labor_cost: os.valor_mao_obra || 0,
+      observacoes: os.observacoes || '',
+      peças_utilizadas: os.pecas_utilizadas || '',
+      is_coca_cola: true,
+      original_os: os
+    }));
+  
+  // Combinar manutenções regulares com OS Coca-Cola convertidas
+  const todasManutencoes = [...manutencoes, ...osConvertidas];
+  
   // Filtragem de manutenções
-  const filteredManutencoes = manutencoes.filter(m => {
+  const filteredManutencoes = todasManutencoes.filter((m: any) => {
     // Filtro por busca
     const matchesSearch = 
-      m.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       m.mecanico?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.descricao_manutencao.toLowerCase().includes(searchTerm.toLowerCase());
+      m.descricao_manutencao?.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Filtro por tab
     const matchesTab = 
@@ -962,12 +986,17 @@ const OficinaMurici: React.FC = () => {
     }
   };
   
-  // Contador de manutenções por status
+  // Contador de manutenções por status (incluindo OS Coca-Cola)
+  const osEmAndamento = osRecebidas.filter((os: any) => os.status_manutencao === 'em_andamento');
+  const osAguardandoPeca = osRecebidas.filter((os: any) => os.status_manutencao === 'aguardando_peca');
+  const osFinalizadas = osRecebidas.filter((os: any) => os.status_manutencao === 'finalizado');
+  const osPendentes = osRecebidas.filter((os: any) => !os.status_manutencao || os.status_manutencao === 'pendente');
+  
   const counterByStatus = {
-    total: manutencoes.length,
-    em_andamento: manutencoes.filter(m => m.status === 'em_andamento').length,
-    aguardando_peca: manutencoes.filter(m => m.status === 'aguardando_peca').length,
-    finalizado: manutencoes.filter(m => m.status === 'finalizado').length
+    total: manutencoes.length + osEmAndamento.length + osAguardandoPeca.length + osFinalizadas.length,
+    em_andamento: manutencoes.filter(m => m.status === 'em_andamento').length + osEmAndamento.length,
+    aguardando_peca: manutencoes.filter(m => m.status === 'aguardando_peca').length + osAguardandoPeca.length,
+    finalizado: manutencoes.filter(m => m.status === 'finalizado').length + osFinalizadas.length
   };
 
   // Calcular valor total em manutenção
@@ -1127,7 +1156,7 @@ const OficinaMurici: React.FC = () => {
             >
               <TabsList className="grid grid-cols-5 w-full sm:w-[650px]">
                 <TabsTrigger value="os_recebidas" className="bg-red-50 text-red-700 data-[state=active]:bg-red-600 data-[state=active]:text-white">
-                  OS Recebidas ({osRecebidas.length})
+                  OS Recebidas ({osPendentes.length})
                 </TabsTrigger>
                 <TabsTrigger value="todas">
                   Todas ({counterByStatus.total})
@@ -1178,14 +1207,14 @@ const OficinaMurici: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {osRecebidas.length === 0 ? (
+                  {osPendentes.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={9} className="h-24 text-center text-gray-500">
-                        Nenhuma OS direcionada para a Oficina Murici.
+                        Nenhuma OS pendente direcionada para a Oficina Murici.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    osRecebidas.map((os) => {
+                    osPendentes.map((os: any) => {
                       const osAny = os as any;
                       const valorTotal = (parseFloat(osAny.valor_pecas) || 0) + (parseFloat(osAny.valor_mao_obra) || 0);
                       return (
@@ -1266,10 +1295,15 @@ const OficinaMurici: React.FC = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredManutencoes.map((manutencao) => (
-                      <TableRow key={manutencao.id}>
-                        <TableCell className="font-medium">{manutencao.placa}</TableCell>
-                        <TableCell>{manutencao.km.toLocaleString()}</TableCell>
+                    filteredManutencoes.map((manutencao: any) => {
+                      const isCocaCola = manutencao.is_coca_cola === true;
+                      return (
+                      <TableRow key={manutencao.id} className={isCocaCola ? 'bg-red-50/30' : ''}>
+                        <TableCell className={`font-medium ${isCocaCola ? 'text-red-700' : ''}`}>
+                          {manutencao.placa}
+                          {isCocaCola && <span className="ml-1 text-xs text-red-500">(CC)</span>}
+                        </TableCell>
+                        <TableCell>{(manutencao.km || 0).toLocaleString()}</TableCell>
                         <TableCell className="max-w-[200px] truncate" title={manutencao.descricao_manutencao}>
                           {manutencao.descricao_manutencao}
                         </TableCell>
@@ -1296,20 +1330,22 @@ const OficinaMurici: React.FC = () => {
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              onClick={() => handleEditManutencao(manutencao)}
+                              onClick={() => isCocaCola ? handleEditOsRecebida(manutencao.original_os) : handleEditManutencao(manutencao)}
                               title="Editar"
                             >
                               <FileEdit className="h-4 w-4" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => generateMaintenanceReport(manutencao)}
-                              title="Imprimir Relatório"
-                            >
-                              <Printer className="h-4 w-4" />
-                            </Button>
-                            {isAdmin && (
+                            {!isCocaCola && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => generateMaintenanceReport(manutencao)}
+                                title="Imprimir Relatório"
+                              >
+                                <Printer className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {isAdmin && !isCocaCola && (
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
@@ -1322,7 +1358,8 @@ const OficinaMurici: React.FC = () => {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
