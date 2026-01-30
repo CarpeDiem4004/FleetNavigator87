@@ -282,46 +282,33 @@ const FuelCardAnalyticsDashboard = () => {
     return Array.from(mesesMap.values()).sort((a, b) => a.mes.localeCompare(b.mes));
   }, [analytics]);
 
-  // Dados do gráfico mensal por base (histórico completo)
+  // Dados do gráfico mensal Bases vs Line Haul (histórico completo)
   const chartDataMensalPorBase = useMemo(() => {
     const graficos = analytics?.graficos as any;
-    if (!graficos?.mensalPorBase) return { data: [], bases: [] };
+    if (!graficos?.mensalPorBase) return [];
     
-    // Identificar todas as bases únicas
-    const basesSet = new Set<string>();
-    graficos.mensalPorBase.forEach((item: any) => {
-      basesSet.add(item.base);
-    });
-    const bases = Array.from(basesSet);
-    
-    // Agrupar por mês e criar colunas para cada base
-    const mesesMap = new Map<string, any>();
+    // Agrupar por mês e criar colunas para Bases e Line Haul
+    const mesesMap = new Map<string, { mes: string; Bases: number; 'Line Haul': number }>();
     
     graficos.mensalPorBase.forEach((item: any) => {
       const mes = item.mes;
-      const base = item.base;
+      const categoria = item.categoria;
       const valor = parseFloat(item.valor) || 0;
       
       if (!mesesMap.has(mes)) {
-        const mesData: any = { mes };
-        bases.forEach(b => { mesData[b] = 0; });
-        mesesMap.set(mes, mesData);
+        mesesMap.set(mes, { mes, Bases: 0, 'Line Haul': 0 });
       }
       
       const mesData = mesesMap.get(mes)!;
-      mesData[base] = valor;
+      if (categoria === 'Bases') {
+        mesData.Bases = valor;
+      } else if (categoria === 'Line Haul') {
+        mesData['Line Haul'] = valor;
+      }
     });
     
-    const data = Array.from(mesesMap.values()).sort((a, b) => a.mes.localeCompare(b.mes));
-    return { data, bases };
+    return Array.from(mesesMap.values()).sort((a, b) => a.mes.localeCompare(b.mes));
   }, [analytics]);
-
-  // Cores para as bases
-  const BASE_COLORS = [
-    '#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00C49F', 
-    '#FFBB28', '#FF8042', '#a4de6c', '#d0ed57', '#83a6ed',
-    '#8dd1e1', '#a28fd8', '#fa8072', '#20b2aa', '#dda0dd'
-  ];
 
   return (
     <AppLayout>
@@ -531,28 +518,21 @@ const FuelCardAnalyticsDashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Gráfico Mensal por Base - Histórico Completo */}
+            {/* Gráfico Mensal Bases vs Line Haul - Histórico Completo */}
             <Card className="mb-6">
               <CardHeader>
-                <CardTitle>Consumo Mensal por Base - Histórico Completo</CardTitle>
+                <CardTitle>Consumo Mensal: Bases vs Line Haul - Histórico Completo</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                  <BarChart data={chartDataMensalPorBase.data}>
+                <ResponsiveContainer width="100%" height={350}>
+                  <BarChart data={chartDataMensalPorBase}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="mes" />
                     <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} />
                     <Tooltip formatter={(value: number) => formatCurrency(value)} />
                     <Legend />
-                    {chartDataMensalPorBase.bases.map((base, index) => (
-                      <Bar 
-                        key={base} 
-                        dataKey={base} 
-                        stackId="a" 
-                        fill={BASE_COLORS[index % BASE_COLORS.length]} 
-                        name={base} 
-                      />
-                    ))}
+                    <Bar dataKey="Bases" stackId="a" fill="#ff7300" name="Bases" />
+                    <Bar dataKey="Line Haul" stackId="a" fill="#00C49F" name="Line Haul" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>

@@ -226,23 +226,23 @@ export async function getFuelCardAnalytics(req: Request, res: Response) {
     `;
     const graficoMensalPorOperadora = await pool.query(graficoMensalPorOperadoraQuery);
 
-    // 1.2 Gráfico Mensal por Base - SEM FILTRO DE DATA (histórico completo)
+    // 1.2 Gráfico Mensal Bases vs Line Haul - SEM FILTRO DE DATA (histórico completo)
     const graficoMensalPorBaseQuery = `
       SELECT 
         TO_CHAR(data_solicitacao, 'YYYY-MM') as mes,
         CASE 
           WHEN origem_tipo = 'line_hall' OR (base IS NULL OR TRIM(base) = '') THEN 'Line Haul'
-          ELSE base
-        END as base,
+          ELSE 'Bases'
+        END as categoria,
         SUM(valor_solicitado) as valor
       FROM solicitacoes_fuel_card
       WHERE data_solicitacao IS NOT NULL
       GROUP BY TO_CHAR(data_solicitacao, 'YYYY-MM'), 
         CASE 
           WHEN origem_tipo = 'line_hall' OR (base IS NULL OR TRIM(base) = '') THEN 'Line Haul'
-          ELSE base
+          ELSE 'Bases'
         END
-      ORDER BY mes, base
+      ORDER BY mes, categoria
     `;
     const graficoMensalPorBase = await pool.query(graficoMensalPorBaseQuery);
 
