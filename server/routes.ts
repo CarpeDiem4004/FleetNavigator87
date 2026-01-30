@@ -1582,7 +1582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const cocaColaUser = req.cocaColaUser;
-      const { status, oficina, prazo_estimado, motivo_parado } = req.body;
+      const { status, oficina, prazo_estimado, motivo_parado, base_emprestimo } = req.body;
       
       // Buscar status anterior para histórico
       const vehicleCheck = await pool.query('SELECT * FROM coca_cola_vehicles WHERE id = $1', [id]);
@@ -1603,6 +1603,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const safeOficina = oficina === '' ? null : oficina;
       const safePrazoEstimado = prazo_estimado === '' ? null : prazo_estimado;
       const safeMotivoParado = motivo_parado === '' ? null : motivo_parado;
+      const safeBaseEmprestimo = base_emprestimo === '' ? null : base_emprestimo;
       
       const result = await pool.query(
         `UPDATE coca_cola_vehicles 
@@ -1610,9 +1611,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
              oficina = COALESCE($2, oficina),
              prazo_estimado = COALESCE($3, prazo_estimado),
              motivo_parado = COALESCE($4, motivo_parado),
+             base_emprestimo = COALESCE($5, base_emprestimo),
              updated_at = NOW()
-         WHERE id = $5 RETURNING *`,
-        [status, safeOficina, safePrazoEstimado, safeMotivoParado, id]
+         WHERE id = $6 RETURNING *`,
+        [status, safeOficina, safePrazoEstimado, safeMotivoParado, safeBaseEmprestimo, id]
       );
       
       if (result.rows.length === 0) {
@@ -1621,11 +1623,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Registrar histórico se o status mudou
       if (status && status !== vehicleAtual.status) {
+        const motivoHistorico = status === 'emprestado' ? `Emprestado para: ${base_emprestimo || 'N/A'}` : safeMotivoParado;
         await pool.query(
           `INSERT INTO coca_cola_vehicle_status_history 
            (vehicle_id, placa, base_id, status_anterior, status_novo, motivo, tipo_alteracao, usuario_responsavel)
            VALUES ($1, $2, $3, $4, $5, $6, 'manual', $7)`,
-          [id, vehicleAtual.placa, vehicleAtual.base_id, vehicleAtual.status, status, safeMotivoParado, cocaColaUser.email || 'base']
+          [id, vehicleAtual.placa, vehicleAtual.base_id, vehicleAtual.status, status, motivoHistorico, cocaColaUser.email || 'base']
         );
         console.log(`[COCA-COLA HISTORY] Veículo ${vehicleAtual.placa}: ${vehicleAtual.status} -> ${status}`);
       }

@@ -55,7 +55,7 @@ export default function CocaColaBaseDashboard() {
   const [newVehicle, setNewVehicle] = useState({ placa: '', modelo: '', status: 'disponivel' });
   const [showUpdateStatus, setShowUpdateStatus] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<CocaColaVehicle | null>(null);
-  const [statusUpdate, setStatusUpdate] = useState({ status: '', oficina: '', prazo_estimado: '', motivo_parado: '' });
+  const [statusUpdate, setStatusUpdate] = useState({ status: '', oficina: '', prazo_estimado: '', motivo_parado: '', base_emprestimo: '' });
   
   // Estados para abertura de OS
   const [showOpenOS, setShowOpenOS] = useState(false);
@@ -302,6 +302,7 @@ export default function CocaColaBaseDashboard() {
       case 'manutencao': return <Badge className="bg-yellow-500">Em Manutenção</Badge>;
       case 'sem_equipe': return <Badge className="bg-orange-500">Sem Equipe</Badge>;
       case 'baixa_venda': return <Badge className="bg-purple-500">Baixa Venda</Badge>;
+      case 'emprestado': return <Badge className="bg-cyan-500">Emprestado</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };
@@ -741,9 +742,21 @@ export default function CocaColaBaseDashboard() {
                   <SelectItem value="manutencao">Em Manutenção</SelectItem>
                   <SelectItem value="sem_equipe">Sem Equipe</SelectItem>
                   <SelectItem value="baixa_venda">Baixa Venda</SelectItem>
+                  <SelectItem value="emprestado">Emprestado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            
+            {statusUpdate.status === 'emprestado' && (
+              <div>
+                <Label>Base de Destino</Label>
+                <Input 
+                  placeholder="Nome da base onde foi emprestado"
+                  value={statusUpdate.base_emprestimo}
+                  onChange={(e) => setStatusUpdate({...statusUpdate, base_emprestimo: e.target.value})}
+                />
+              </div>
+            )}
             
             {statusUpdate.status === 'manutencao' && (
               <>
