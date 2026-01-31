@@ -1,0 +1,167 @@
+Pelo print dá pra ver um detalhe importante 👀
+👉 Algumas solicitações mostram “(30.2L)” em verde e outras não mostram nada, mesmo tendo valor do litro preenchido no formulário.
+
+Isso indica que o backend até recebe o valor em alguns casos, mas não em todos.
+
+🔎 Diagnóstico provável (90% dos casos)
+
+O problema costuma estar em 1 (ou mais) desses pontos:
+
+1️⃣ Campo não está sendo salvo em todas as submissões
+
+Mesmo aparecendo no formulário, o valor do litro pode:
+
+não estar indo no POST
+
+ou estar indo como null
+
+ou estar sendo sobrescrito
+
+👉 Primeira verificação (Supabase)
+Abra a tabela de solicitações (ex: solicitacoes_abastecimento) e rode:
+
+select 
+  id,
+  base,
+  valor_litro,
+  quantidade_litros,
+  valor_total
+from solicitacoes_abastecimento
+where valor_litro is null
+order by created_at desc;
+
+
+📌 Se aparecer registro → o problema está antes do banco (frontend ou API)
+
+2️⃣ Backend não está recebendo o campo sempre
+
+Muito comum quando:
+
+o campo é opcional no frontend
+
+ou tem name errado
+
+ou o req.body não inclui o campo
+
+👉 No backend (Express / API no Replit)
+Coloque um log antes de salvar:
+
+console.log("REQ BODY:", req.body);
+
+
+E verifique se em TODAS as bases aparece:
+
+valor_litro
+
+
+📌 Se em algumas bases não aparece, o problema é formulário ou JS
+
+3️⃣ Campo com nome diferente (clássico)
+
+Exemplo real que dá exatamente esse sintoma:
+
+Frontend envia:
+
+valorLitro
+
+
+Backend espera:
+
+valor_litro
+
+
+Resultado:
+
+Banco salva null
+
+Tela não mostra nada
+
+👉 Confirme:
+
+name do input
+
+chave enviada no fetch
+
+campo usado no insert do Supabase
+
+4️⃣ Regra condicional por tipo de combustível
+
+Pelo print, tem:
+
+diesel
+
+gasolina
+
+⚠️ Aposto alto que existe algo assim no código:
+
+if (combustivel === 'diesel') {
+  valor_litro = ...
+}
+
+
+Ou:
+
+if (quantidade_litros) {
+  valor_litro = ...
+}
+
+
+👉 Resultado:
+Algumas bases/tipos não entram na regra e o campo nunca é salvo.
+
+5️⃣ O valor está no banco, mas a LISTAGEM não mostra
+
+Outra hipótese comum:
+
+o campo existe no banco
+
+mas o SELECT não traz
+
+Exemplo errado:
+
+select('id, base, valor_total')
+
+
+Correto:
+
+select('id, base, valor_litro, quantidade_litros, valor_total')
+
+
+👉 Compare:
+
+query da listagem
+
+query do detalhe (Visualizar)
+
+Se no “Visualizar” aparece e na lista não → bingo 🎯
+
+🧪 Checklist rápido (faça nessa ordem)
+✅ 1. Banco
+
+valor_litro está NULL nesses registros?
+
+✅ 2. Backend
+
+req.body.valor_litro chega sempre?
+
+✅ 3. Frontend
+
+input tem name="valor_litro"?
+
+não está disabled?
+
+não está dentro de condição?
+
+✅ 4. Query da listagem
+
+o campo está no select()?
+
+🧠 Dica de ouro (pra nunca mais passar isso)
+
+No backend, valide antes de salvar:
+
+if (!valor_litro) {
+  return res.status(400).json({
+    error: "Valor do litro não recebido"
+  });
+}
