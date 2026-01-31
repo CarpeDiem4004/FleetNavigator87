@@ -495,14 +495,18 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       });
     }
     
-    if (!data_uso) {
+    // CORREÇÃO: data_uso e turno são obrigatórios apenas para o sistema principal (bolsão)
+    // Bases (origem_tipo = 'base_system') podem criar solicitações sem esses campos
+    const isBaseSystem = origem_tipo === 'base_system';
+    
+    if (!isBaseSystem && !data_uso) {
       return res.status(400).json({
         success: false,
         message: 'A data de uso é obrigatória'
       });
     }
     
-    if (!turno || (turno !== 'AM' && turno !== 'PM')) {
+    if (!isBaseSystem && (!turno || (turno !== 'AM' && turno !== 'PM'))) {
       return res.status(400).json({
         success: false,
         message: 'O turno (AM ou PM) é obrigatório'
@@ -541,6 +545,7 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
     const valorFinal = valor_solicitado;
     
     console.log("Valor solicitado final que será inserido no banco:", valorFinal);
+    console.log("📊 [VALOR_LITRO] Valor do litro recebido:", valor_litro, "| Tipo:", typeof valor_litro);
     
     // Normalizar nome da base para formato canônico
     const baseNormalizada = base ? normalizeBaseName(base) : null;
