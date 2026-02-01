@@ -63,6 +63,8 @@ export default function FuelCardDraft() {
           placa: request.placa,
           km: request.km,
           valor_solicitado: request.valor_solicitado,
+          valor_litro: request.valor_litro || null,
+          litros_solicitados: request.litros_solicitados || null,
           tipo_cartao: request.tipo_cartao,
           provedor_cartao: request.provedor_cartao,
           numero_cartao: request.numero_cartao,
