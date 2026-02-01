@@ -330,10 +330,16 @@ const CartaoCombustivelSC: React.FC = () => {
       }
 
       // Preparar dados para envio à API
+      const valorNum = parseFloat(formData.valor.replace(',', '.')) || 0;
+      const valorLitroNum = parseFloat(formData.valorLitro.replace(',', '.')) || 0;
+      const litrosCalculados = valorLitroNum > 0 ? parseFloat((valorNum / valorLitroNum).toFixed(2)) : null;
+      
       const requestData = {
         plate: formData.placaVeiculo,
         odometer: parseInt(formData.quilometragem) || 0,
-        amount: parseFloat(formData.valor.replace(',', '.')) || 0,
+        amount: valorNum,
+        valorLitro: valorLitroNum > 0 ? valorLitroNum : null,
+        litros_solicitados: litrosCalculados,
         card_type: formData.tipoCartao,
         provider: formData.provedorCartao,
         card_number: formData.tipoCartao === 'especifico' ? 'Específico' : '',

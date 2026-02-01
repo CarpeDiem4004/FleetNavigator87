@@ -265,6 +265,10 @@ export default function CartaoCombustivelGP01() {
       }
 
       // Enviar solicitação para API
+      const valorNum = parseFloat(formData.valor.replace(',', '.')) || 0;
+      const valorLitroNum = parseFloat(formData.valorLitro.replace(',', '.')) || 0;
+      const litrosCalculados = valorLitroNum > 0 ? parseFloat((valorNum / valorLitroNum).toFixed(2)) : null;
+      
       const requestData = {
         plate: formData.placaVeiculo,
         odometer: formData.quilometragem,
