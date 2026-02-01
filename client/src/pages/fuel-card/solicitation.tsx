@@ -340,15 +340,18 @@ export default function FuelCardSolicitation() {
         return;
       }
       
-      // Validação: formato da placa do cartão manual
-      if (!selectedBaseVehicle?.cartao_abastecimento && manualCardPlate.length < 7) {
-        toast({
-          title: "Placa do cartão inválida",
-          description: "A placa do cartão deve ter 7 caracteres (ex: ABC1D23).",
-          variant: "destructive"
-        });
-        setIsSubmitting(false);
-        return;
+      // Validação: formato da placa do cartão manual usando a mesma validação
+      if (!selectedBaseVehicle?.cartao_abastecimento) {
+        const cardValidation = validateAndFormatPlate(manualCardPlate);
+        if (!cardValidation.isValid) {
+          toast({
+            title: "Placa do cartão inválida",
+            description: "Formato de placa inválido. Use ABC1234 (antigo) ou ABC1D23 (Mercosul).",
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
       }
       
       // Get selected base info for legacy compatibility
@@ -461,14 +464,17 @@ export default function FuelCardSolicitation() {
         return;
       }
       
-      // Validação: formato da placa do cartão manual
-      if (!selectedBaseVehicle?.cartao_abastecimento && manualCardPlate.length < 7) {
-        toast({
-          title: "Placa do cartão inválida",
-          description: "A placa do cartão deve ter 7 caracteres (ex: ABC1D23).",
-          variant: "destructive"
-        });
-        return;
+      // Validação: formato da placa do cartão manual usando a mesma validação
+      if (!selectedBaseVehicle?.cartao_abastecimento) {
+        const cardValidation = validateAndFormatPlate(manualCardPlate);
+        if (!cardValidation.isValid) {
+          toast({
+            title: "Placa do cartão inválida",
+            description: "Formato de placa inválido. Use ABC1234 (antigo) ou ABC1D23 (Mercosul).",
+            variant: "destructive"
+          });
+          return;
+        }
       }
       
       // Get selected base info
