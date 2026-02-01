@@ -42,6 +42,14 @@ interface Vehicle {
   status?: string;
 }
 
+interface BaseVehicle {
+  id: number;
+  plate: string;
+  model?: string;
+  status?: string;
+  cartao_abastecimento?: string | null;
+}
+
 // Schema de validação para solicitação de cartão combustível
 // TODOS os campos são obrigatórios exceto observações
 const solicitacaoSchema = z.object({
@@ -150,7 +158,7 @@ export default function FuelCardSolicitation() {
   const [showDraftSuccess, setShowDraftSuccess] = useState(false);
   const [currentDraftCount, setCurrentDraftCount] = useState(0);
   
-  // Buscar veículos para autocomplete
+  // Buscar veículos para autocomplete (lista global para fallback)
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
     select: (data: any[]) => data.map(v => ({ plate: v.plate, model: v.model, status: v.status })),
@@ -159,6 +167,14 @@ export default function FuelCardSolicitation() {
   
   // State para rastrear veículo selecionado
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  
+  // State para veículos da base selecionada
+  const [baseVehicles, setBaseVehicles] = useState<BaseVehicle[]>([]);
+  const [isLoadingBaseVehicles, setIsLoadingBaseVehicles] = useState(false);
+  
+  // State para cartão do veículo selecionado
+  const [selectedBaseVehicle, setSelectedBaseVehicle] = useState<BaseVehicle | null>(null);
+  const [manualCardPlate, setManualCardPlate] = useState("");
   
   const form = useForm<SolicitacaoValues>({
     resolver: zodResolver(solicitacaoSchema),
@@ -233,8 +249,66 @@ export default function FuelCardSolicitation() {
   useEffect(() => {
     if (selectedProjectId) {
       form.setValue("base_id", "");
+      setBaseVehicles([]);
+      setSelectedBaseVehicle(null);
+      setManualCardPlate("");
+      form.setValue("placa", "");
     }
   }, [selectedProjectId, form]);
+  
+  // Buscar veículos quando a base é selecionada
+  const selectedBaseId = form.watch("base_id");
+  useEffect(() => {
+    async function loadBaseVehicles() {
+      if (!selectedBaseId) {
+        setBaseVehicles([]);
+        setSelectedBaseVehicle(null);
+        setManualCardPlate("");
+        form.setValue("placa", "");
+        return;
+      }
+      
+      setIsLoadingBaseVehicles(true);
+      try {
+        const response = await fetch(`/api/vehicles/by-base/${selectedBaseId}`);
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          setBaseVehicles(data.data || []);
+          console.log(`Veículos carregados para base ${selectedBaseId}:`, data.data?.length);
+        } else {
+          console.error("Erro ao carregar veículos:", data.message);
+          setBaseVehicles([]);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar veículos da base:", error);
+        setBaseVehicles([]);
+      } finally {
+        setIsLoadingBaseVehicles(false);
+      }
+    }
+    
+    loadBaseVehicles();
+    setSelectedBaseVehicle(null);
+    setManualCardPlate("");
+    form.setValue("placa", "");
+  }, [selectedBaseId, form]);
+  
+  // Quando a placa é selecionada, verificar se tem cartão vinculado
+  useEffect(() => {
+    if (selectedPlate && baseVehicles.length > 0) {
+      const vehicle = baseVehicles.find(v => v.plate === selectedPlate);
+      setSelectedBaseVehicle(vehicle || null);
+      
+      if (vehicle?.cartao_abastecimento) {
+        // Tem cartão vinculado - limpar campo manual
+        setManualCardPlate("");
+      }
+    } else {
+      setSelectedBaseVehicle(null);
+      setManualCardPlate("");
+    }
+  }, [selectedPlate, baseVehicles]);
   
   async function onSubmit(values: SolicitacaoValues) {
     setIsSubmitting(true);
@@ -242,10 +316,35 @@ export default function FuelCardSolicitation() {
     
     try {
       // Validação: Bloquear se veículo está em manutenção
-      if (selectedVehicle?.status === 'em_manutencao') {
+      if (selectedBaseVehicle?.status === 'em_manutencao') {
         toast({
           title: "Veículo em manutenção",
           description: `O veículo ${values.placa} está em manutenção e não pode solicitar combustível no momento.`,
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Determinar placa do cartão (automático ou manual)
+      const cartaoFinal = selectedBaseVehicle?.cartao_abastecimento || manualCardPlate;
+      
+      // Validação: cartão obrigatório se não tem vinculado
+      if (!selectedBaseVehicle?.cartao_abastecimento && !manualCardPlate) {
+        toast({
+          title: "Cartão obrigatório",
+          description: "Este veículo não possui cartão vinculado. Por favor, informe a placa do cartão.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Validação: formato da placa do cartão manual
+      if (!selectedBaseVehicle?.cartao_abastecimento && manualCardPlate.length < 7) {
+        toast({
+          title: "Placa do cartão inválida",
+          description: "A placa do cartão deve ter 7 caracteres (ex: ABC1D23).",
           variant: "destructive"
         });
         setIsSubmitting(false);
@@ -263,6 +362,7 @@ export default function FuelCardSolicitation() {
         : localDateToDateOnlyString(new Date(values.data_uso));
       
       console.log('[FUEL-CARD-FRONTEND] Data original:', values.data_uso, '→ Data para envio:', data_uso_corrigida);
+      console.log('[FUEL-CARD-FRONTEND] Cartão final:', cartaoFinal, '(automático:', !!selectedBaseVehicle?.cartao_abastecimento, ')');
       
       const valorSolicitadoNum = unformatCurrency(values.valor_solicitado.toString());
       const valorLitroNum = unformatCurrency(values.valor_litro.toString());
@@ -274,9 +374,9 @@ export default function FuelCardSolicitation() {
         valor_solicitado: valorSolicitadoNum,
         valor_litro: valorLitroNum > 0 ? valorLitroNum : null,
         litros_solicitados: litrosCalculados > 0 ? parseFloat(litrosCalculados.toFixed(2)) : null,
-        tipo_cartao: values.tipo_cartao,
+        tipo_cartao: selectedBaseVehicle?.cartao_abastecimento ? "placa" : "numero",
         provedor_cartao: values.provedor_cartao,
-        numero_cartao: values.numero_cartao || "",
+        numero_cartao: cartaoFinal,
         tipo_combustivel: values.tipo_combustivel,
         motorista: values.nomeMotorista, // Nome do motorista
         solicitante: values.motorista, // Nome do solicitante
@@ -339,10 +439,33 @@ export default function FuelCardSolicitation() {
   function handleAddToDraft(values: SolicitacaoValues) {
     try {
       // Validação: Bloquear se veículo está em manutenção
-      if (selectedVehicle?.status === 'em_manutencao') {
+      if (selectedBaseVehicle?.status === 'em_manutencao') {
         toast({
           title: "Veículo em manutenção",
           description: `O veículo ${values.placa} está em manutenção e não pode solicitar combustível no momento.`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Determinar placa do cartão (automático ou manual)
+      const cartaoFinal = selectedBaseVehicle?.cartao_abastecimento || manualCardPlate;
+      
+      // Validação: cartão obrigatório se não tem vinculado
+      if (!selectedBaseVehicle?.cartao_abastecimento && !manualCardPlate) {
+        toast({
+          title: "Cartão obrigatório",
+          description: "Este veículo não possui cartão vinculado. Por favor, informe a placa do cartão.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Validação: formato da placa do cartão manual
+      if (!selectedBaseVehicle?.cartao_abastecimento && manualCardPlate.length < 7) {
+        toast({
+          title: "Placa do cartão inválida",
+          description: "A placa do cartão deve ter 7 caracteres (ex: ABC1D23).",
           variant: "destructive"
         });
         return;
@@ -367,9 +490,9 @@ export default function FuelCardSolicitation() {
         valor_solicitado: valorSolDraft,
         valor_litro: valorLitDraft > 0 ? valorLitDraft : null,
         litros_solicitados: litrosDraft > 0 ? parseFloat(litrosDraft.toFixed(2)) : null,
-        tipo_cartao: values.tipo_cartao,
+        tipo_cartao: selectedBaseVehicle?.cartao_abastecimento ? "placa" : "numero",
         provedor_cartao: values.provedor_cartao,
-        numero_cartao: values.numero_cartao || "",
+        numero_cartao: cartaoFinal,
         tipo_combustivel: values.tipo_combustivel,
         motorista: values.nomeMotorista,
         solicitante: values.motorista,
@@ -416,6 +539,11 @@ export default function FuelCardSolicitation() {
         data_uso: "",
         turno: undefined
       });
+      
+      // Limpar estados de veículo/cartão
+      setSelectedBaseVehicle(null);
+      setManualCardPlate("");
+      setBaseVehicles([]);
       
     } catch (error) {
       console.error("Erro ao adicionar ao bolsão:", error);
@@ -603,19 +731,116 @@ export default function FuelCardSolicitation() {
           <CardContent className="space-y-4">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                {/* Seleção de Projeto e Base primeiro */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="projeto_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">📁 Projeto</FormLabel>
+                        <FormControl>
+                          <select
+                            className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            style={{ fontSize: '16px', minHeight: '48px' }}
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            disabled={isLoadingProjects}
+                          >
+                            <option value="">{isLoadingProjects ? "Carregando projetos..." : "Selecione um projeto"}</option>
+                            {projects.map((project) => (
+                              <option key={project.id} value={project.id.toString()}>
+                                {project.name}
+                              </option>
+                            ))}
+                          </select>
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          Selecione o projeto para esta solicitação
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="base_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">🏢 Base</FormLabel>
+                        <FormControl>
+                          <select
+                            className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            style={{ fontSize: '16px', minHeight: '48px' }}
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            disabled={!selectedProject || selectedProject.bases.length === 0}
+                          >
+                            <option value="">
+                              {!selectedProject 
+                                ? "Selecione um projeto primeiro"
+                                : selectedProject.bases.length === 0 
+                                  ? "Nenhuma base disponível"
+                                  : "Selecione uma base"}
+                            </option>
+                            {selectedProject?.bases.map((base) => (
+                              <option key={base.id} value={base.id.toString()}>
+                                {getBaseDisplayName(base.base_name)}
+                              </option>
+                            ))}
+                          </select>
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          Base onde o veículo está alocado
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                {/* Dados do veículo - aparecem após selecionar base */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="placa"
                     render={({ field }) => (
-                      <VehiclePlateAutocomplete
-                        form={form}
-                        name="placa"
-                        label="🚗 Placa do Veículo"
-                        placeholder="Digite ou selecione a placa"
-                        helpText="Selecione de veículos cadastrados ou digite uma placa nova"
-                        vehicles={vehicles}
-                      />
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">🚗 Placa do Veículo</FormLabel>
+                        <FormControl>
+                          <select
+                            className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            style={{ fontSize: '16px', minHeight: '48px' }}
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            disabled={!selectedBaseId || isLoadingBaseVehicles}
+                          >
+                            <option value="">
+                              {!selectedBaseId 
+                                ? "Selecione uma base primeiro"
+                                : isLoadingBaseVehicles 
+                                  ? "Carregando veículos..."
+                                  : baseVehicles.length === 0 
+                                    ? "Nenhum veículo encontrado"
+                                    : "Selecione a placa"}
+                            </option>
+                            {baseVehicles.map((v) => (
+                              <option key={v.id} value={v.plate}>
+                                {v.plate} {v.cartao_abastecimento ? '🔗' : '⚠️'}
+                              </option>
+                            ))}
+                          </select>
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          {selectedBaseVehicle?.cartao_abastecimento 
+                            ? "🔗 Cartão vinculado encontrado"
+                            : selectedBaseVehicle 
+                              ? "⚠️ Sem cartão vinculado - digite abaixo"
+                              : "Selecione a placa do veículo"}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
                     )}
                   />
 
@@ -762,38 +987,67 @@ export default function FuelCardSolicitation() {
                   />
                 </div>
                 
+                {/* Campo de cartão - automático ou manual */}
+                {selectedBaseVehicle && (
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 space-y-3">
+                    <h3 className="text-sm font-semibold text-blue-800 flex items-center">
+                      💳 Cartão de Abastecimento
+                    </h3>
+                    
+                    {selectedBaseVehicle.cartao_abastecimento ? (
+                      // Cartão vinculado - campo bloqueado
+                      <div>
+                        <label className="text-sm font-medium text-blue-700 mb-1 block">
+                          Placa do Cartão (Vinculado)
+                        </label>
+                        <Input 
+                          value={selectedBaseVehicle.cartao_abastecimento}
+                          disabled
+                          className="text-base h-12 bg-green-50 border-green-300 font-semibold text-green-800"
+                        />
+                        <p className="text-xs text-green-700 mt-1">
+                          ✓ Cartão vinculado automaticamente à placa do veículo
+                        </p>
+                      </div>
+                    ) : (
+                      // Sem cartão vinculado - campo manual
+                      <div>
+                        <label className="text-sm font-medium text-orange-700 mb-1 block">
+                          Placa do Cartão <span className="text-red-500">*</span>
+                        </label>
+                        <Input 
+                          placeholder="ABC1D23"
+                          value={manualCardPlate}
+                          onChange={(e) => {
+                            let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                            if (value.length > 7) return;
+                            
+                            const rules = [
+                              /[A-Z]/, /[A-Z]/, /[A-Z]/, /[0-9]/, /[A-Z0-9]/, /[0-9]/, /[0-9]/
+                            ];
+                            
+                            for (let i = 0; i < value.length; i++) {
+                              if (!rules[i].test(value[i])) return;
+                            }
+                            
+                            setManualCardPlate(value);
+                          }}
+                          maxLength={7}
+                          className="text-base h-12 uppercase bg-orange-50 border-orange-300"
+                        />
+                        <p className="text-xs text-orange-700 mt-1">
+                          ⚠️ Este veículo não possui cartão vinculado. Digite a placa do cartão que será usado.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
                 <FormField
                   control={form.control}
                   name="tipo_cartao"
                   render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Tipo de Cartão</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          className="flex flex-col space-y-1"
-                        >
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="placa" />
-                            </FormControl>
-                            <FormLabel className="font-normal">
-                              Cartão vinculado à placa do veículo
-                            </FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="numero" />
-                            </FormControl>
-                            <FormLabel className="font-normal">
-                              Cartão específico por placa
-                            </FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                    <input type="hidden" {...field} value="placa" />
                   )}
                 />
                 
@@ -851,44 +1105,7 @@ export default function FuelCardSolicitation() {
 
 
                 
-                {tipoCartao === "numero" && (
-                  <FormField
-                    control={form.control}
-                    name="numero_cartao"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Placa do Cartão</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="ABC1D23" 
-                            value={field.value}
-                            onChange={(e) => {
-                              let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                              if (value.length > 7) return;
-                              
-                              const rules = [
-                                /[A-Z]/, /[A-Z]/, /[A-Z]/, /[0-9]/, /[A-Z0-9]/, /[0-9]/, /[0-9]/
-                              ];
-                              
-                              for (let i = 0; i < value.length; i++) {
-                                if (!rules[i].test(value[i])) return;
-                              }
-                              
-                              field.onChange(value);
-                            }}
-                            maxLength={7}
-                            className="uppercase"
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Informe a placa impressa do cartão que irá usar para abastecer
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-                
+                                
                 {/* Seção Dados do Solicitante */}
                 <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
                   <h3 className="text-sm font-semibold text-orange-800 mb-4 flex items-center">
@@ -942,74 +1159,6 @@ export default function FuelCardSolicitation() {
                       )}
                     />
                   </div>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="projeto_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Projeto</FormLabel>
-                        <FormControl>
-                          <select
-                            className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                            style={{ fontSize: '16px', minHeight: '48px' }}
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            disabled={isLoadingProjects}
-                          >
-                            <option value="">{isLoadingProjects ? "Carregando projetos..." : "Selecione um projeto"}</option>
-                            {projects.map((project) => (
-                              <option key={project.id} value={project.id.toString()}>
-                                {project.name}
-                              </option>
-                            ))}
-                          </select>
-                        </FormControl>
-                        <FormDescription>
-                          Selecione o projeto para esta solicitação
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="base_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Base</FormLabel>
-                        <FormControl>
-                          <select
-                            className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                            style={{ fontSize: '16px', minHeight: '48px' }}
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            disabled={!selectedProject || selectedProject.bases.length === 0}
-                          >
-                            <option value="">
-                              {!selectedProject 
-                                ? "Selecione um projeto primeiro"
-                                : selectedProject.bases.length === 0 
-                                  ? "Nenhuma base disponível"
-                                  : "Selecione uma base"}
-                            </option>
-                            {selectedProject?.bases.map((base) => (
-                              <option key={base.id} value={base.id.toString()}>
-                                {getBaseDisplayName(base.base_name)}
-                              </option>
-                            ))}
-                          </select>
-                        </FormControl>
-                        <FormDescription>
-                          Base onde o veículo está alocado
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
                 
                 <FormField
