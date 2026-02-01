@@ -9047,6 +9047,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Buscar veículos por base para o formulário de solicitação de saldo
+  app.get("/api/vehicles/by-base/:baseId", async (req, res) => {
+    try {
+      const { baseId } = req.params;
+      console.log(`GET /api/vehicles/by-base/${baseId} - Buscando veículos da base`);
+      
+      const query = `
+        SELECT 
+          id,
+          placa as plate,
+          modelo as model,
+          status,
+          cartao_abastecimento
+        FROM veiculos
+        WHERE base_id = $1
+        ORDER BY placa
+      `;
+      
+      const result = await pool.query(query, [baseId]);
+      console.log(`Veículos encontrados para base ${baseId}: ${result.rows.length}`);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows
+      });
+    } catch (error) {
+      console.error("Error fetching vehicles by base:", error);
+      return res.status(500).json({ success: false, message: "Erro ao buscar veículos" });
+    }
+  });
+  
   // Rota para buscar veículos parados com detalhes
   app.get("/api/stopped-vehicles", async (req, res) => {
     try {

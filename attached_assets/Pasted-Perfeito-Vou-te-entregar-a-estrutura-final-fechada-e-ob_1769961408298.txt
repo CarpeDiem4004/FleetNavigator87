@@ -1,0 +1,180 @@
+Perfeito. Vou te entregar **a estrutura final, fechada e objetiva**, já no formato ideal para você **copiar e colar como prompt para o Replit AI** fazer **todas as mudanças no link de solicitação de saldo**, respeitando tudo que você definiu até agora.
+
+---
+
+## 🧠 CONTEXTO GERAL (para o Replit entender)
+
+O sistema é um **link externo de solicitação de saldo** integrado ao Supabase.
+Ele atende **bases, projetos e placas da frota**, com regras específicas de exibição e liberação.
+
+---
+
+## 🎯 OBJETIVO DAS MUDANÇAS
+
+1. **Controlar liberação da solicitação por status da viagem**
+2. **Carregar placas automaticamente no bolsão**
+3. **Vincular cartão à placa quando existir**
+4. **Abrir campo manual de placa quando não existir vínculo**
+5. **Garantir consistência visual, validações e regras já existentes**
+
+---
+
+## 🧱 ESTRUTURA FINAL – REGRAS FUNCIONAIS
+
+### 1️⃣ REGRA DE LIBERAÇÃO DA SOLICITAÇÃO
+
+* Campo obrigatório: **Status da Viagem**
+* Opções:
+
+  * `Em rota` ✅ → **libera solicitação**
+  * Qualquer outro status ❌ → **bloqueia solicitação**
+
+**Comportamento esperado:**
+
+* Se NÃO for “Em rota”:
+
+  * Botão **Solicitar Saldo** fica desabilitado
+  * Exibir aviso:
+
+    > “Solicitação liberada apenas para viagens *Em rota*”
+
+---
+
+### 2️⃣ SELEÇÃO DE PROJETO + BASE
+
+Ao selecionar:
+
+* **Projeto**
+* **Base**
+
+➡️ O sistema deve:
+
+* Consultar o Supabase
+* Filtrar **apenas as placas vinculadas àquela base**
+* Exibir automaticamente essas placas no campo **Bolsão de Placas**
+
+> Nenhuma placa fora da base pode aparecer.
+
+---
+
+### 3️⃣ BOLSÃO DE PLACAS (COMPORTAMENTO INTELIGENTE)
+
+#### Para cada placa selecionada:
+
+🔹 O sistema deve verificar:
+
+* Existe **cartão vinculado à placa**?
+
+  * ✅ **SIM**
+
+    * Mostrar apenas o **cartão atrelado**
+    * Campo bloqueado (somente leitura)
+  * ❌ **NÃO**
+
+    * Abrir campo para **digitação manual da placa do cartão**
+
+---
+
+### 4️⃣ CAMPO MANUAL DE PLACA DO CARTÃO
+
+Quando o cartão **não estiver vinculado**:
+
+* Abrir campo:
+  **“Placa do Cartão”**
+* Aplicar **a mesma regra de formatação e validação já existente no sistema**, por exemplo:
+
+  * Máscara de placa (AAA-1A23 / AAA-1234)
+  * Uppercase automático
+  * Validação de padrão brasileiro
+* Campo obrigatório para seguir com a solicitação
+
+---
+
+### 5️⃣ VALIDAÇÕES OBRIGATÓRIAS ANTES DE ENVIAR
+
+O botão **Solicitar Saldo** só pode liberar se:
+
+* Status da viagem = **Em rota**
+* Projeto selecionado
+* Base selecionada
+* Placa selecionada
+* Cartão:
+
+  * Vinculado automaticamente **OU**
+  * Placa do cartão digitada manualmente e validada
+* Valor do litro preenchido (sem falhas entre bases)
+* Valor solicitado válido
+
+---
+
+## 🗄️ REGRAS DE BACKEND (SUPABASE)
+
+* Garantir que todas as placas tenham:
+
+  * `base_id` corretamente preenchido (conforme planilha Excel já importada)
+* Query padrão:
+
+```sql
+select *
+from veiculos
+where base_id = :baseSelecionada
+and ativo = true
+```
+
+* Verificação de vínculo:
+
+```sql
+select *
+from cartoes
+where placa = :placaSelecionada
+limit 1
+```
+
+---
+
+## 🎨 UX / UI (IMPORTANTE)
+
+* Manter:
+
+  * Layout atual
+  * Componentes existentes
+  * Estilo visual e validações já usadas
+* Apenas:
+
+  * Condicionar exibição
+  * Bloquear/desbloquear campos
+  * Mostrar mensagens claras de erro
+
+---
+
+## 🧪 CENÁRIOS DE TESTE QUE DEVEM FUNCIONAR
+
+✅ Base com placas → placas aparecem
+✅ Base sem placas → bolsão vazio + aviso
+✅ Placa com cartão → cartão automático
+✅ Placa sem cartão → campo manual abre
+✅ Status ≠ Em rota → solicitação bloqueada
+✅ Status = Em rota → solicitação liberada
+
+---
+
+## 🧩 RESULTADO FINAL ESPERADO
+
+Um **link de solicitação de saldo**:
+
+* Inteligente
+* Sem erro de placa ou base
+* Sem falha de valor do litro
+* Com controle total por operação
+* Pronto para escala e auditoria
+
+---
+
+Se quiser, no próximo passo eu posso:
+
+* 🔹 Transformar isso em **checklist técnico**
+* 🔹 Gerar **fluxograma visual**
+* 🔹 Criar **SQL + funções prontas**
+* 🔹 Ajustar o prompt para **Replit AI (modo curto ou agressivo)**
+
+É só dizer como você vai usar 👊
