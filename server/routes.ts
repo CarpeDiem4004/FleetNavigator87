@@ -8161,6 +8161,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET - Buscar base específica por ID (acesso público para páginas de base)
+  app.get('/api/public/bases/:id', async (req, res) => {
+    try {
+      const idParam = req.params.id;
+      let query = '';
+      let params: any[] = [];
+      
+      // Verifica se é um número (ID) ou string (basename)
+      if (!isNaN(parseInt(idParam))) {
+        query = 'SELECT id, name, location, operation, type, active, description FROM bases WHERE id = $1';
+        params = [parseInt(idParam)];
+      } else {
+        query = 'SELECT id, name, location, operation, type, active, description FROM bases WHERE LOWER(basename) = $1 OR LOWER(name) = $1';
+        params = [idParam.toLowerCase()];
+      }
+      
+      const result = await pool.query(query, params);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Base não encontrada',
+          data: null
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar base por ID (público):', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar base',
+        error: error.message
+      });
+    }
+  });
+
   // POST - Criar nova solicitação de cartão combustível (acesso público)
   app.post('/api/public/fuel-card/request', async (req, res) => {
     try {

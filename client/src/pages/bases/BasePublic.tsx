@@ -54,11 +54,11 @@ const BasePublic: React.FC<BasePublicProps> = ({ baseId }) => {
     return () => clearInterval(timer);
   }, []);
 
-  // Buscar dados da base
+  // Buscar dados da base (usando rota pública)
   const { data: base, isLoading, error } = useQuery<Base>({
-    queryKey: ['/api/bases', finalBaseId],
+    queryKey: ['/api/public/bases', finalBaseId],
     queryFn: async () => {
-      const res = await apiRequest('GET', `/api/bases/${finalBaseId}`);
+      const res = await fetch(`/api/public/bases/${finalBaseId}`);
       const data = await res.json();
       return data.data;
     },

@@ -50,7 +50,7 @@ const BaseRouteHandler: React.FC<BaseRouteHandlerProps> = ({ mode }) => {
   const fetchBaseInfo = async (baseId: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/bases/${baseId}`);
+      const response = await fetch(`/api/public/bases/${baseId}`);
       const data = await response.json();
       
       if (data.success && data.data) {
