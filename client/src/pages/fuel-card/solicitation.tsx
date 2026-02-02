@@ -167,7 +167,16 @@ export default function FuelCardSolicitation() {
     setShowRulesDialog(false);
   };
   
-  const [showDraftSuccess, setShowDraftSuccess] = useState(false);
+  // Card de sucesso só aparece após adicionar ao bolsão e some quando visitar o bolsão
+  const [showDraftSuccess, setShowDraftSuccess] = useState(() => {
+    // Não mostrar se acabou de voltar do bolsão
+    const visitedDraft = sessionStorage.getItem('fuel_card_visited_draft');
+    if (visitedDraft) {
+      sessionStorage.removeItem('fuel_card_visited_draft'); // Limpar para próxima vez
+      return false;
+    }
+    return false;
+  });
   const [currentDraftCount, setCurrentDraftCount] = useState(0);
   
   // Buscar veículos para autocomplete (lista global para fallback)
@@ -726,7 +735,10 @@ export default function FuelCardSolicitation() {
                     Você tem <strong>{currentDraftCount}</strong> {currentDraftCount === 1 ? 'solicitação' : 'solicitações'} aguardando envio.
                   </p>
                   <Button
-                    onClick={() => setLocation("/fuel-card/draft")}
+                    onClick={() => {
+                      sessionStorage.setItem('fuel_card_visited_draft', 'true');
+                      setLocation("/fuel-card/draft");
+                    }}
                     className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
                     data-testid="button-view-draft-fixed"
                   >
