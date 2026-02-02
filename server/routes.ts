@@ -9251,20 +9251,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
       
-      const result = insertVehicleSchema.partial().safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ message: "Invalid vehicle data", errors: result.error.format() });
+      console.log('[VEHICLE-UPDATE] Payload recebido:', JSON.stringify(req.body, null, 2));
+      
+      // Usar validação flexível para update parcial - aceitar qualquer campo válido
+      const allowedFields = ['plate', 'model', 'make', 'year', 'vehicleType', 'status', 'baseId', 'fuelType', 'cartaoAbastecimento', 'kmAtual', 'consumoMedioKmL', 'ownership', 'crlvUrl', 'anttUrl', 'isTemporary', 'deactivationDate'];
+      const updateData: any = {};
+      
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          updateData[field] = req.body[field];
+        }
       }
       
-      const updatedVehicle = await storage.updateVehicle(vehicleId, result.data);
+      // Se baseId veio como string, converter para número
+      if (updateData.baseId && typeof updateData.baseId === 'string') {
+        updateData.baseId = parseInt(updateData.baseId, 10);
+      }
+      
+      console.log('[VEHICLE-UPDATE] Dados filtrados para update:', JSON.stringify(updateData, null, 2));
+      
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
+      
+      const updatedVehicle = await storage.updateVehicle(vehicleId, updateData);
       
       if (!updatedVehicle) {
         return res.status(500).json({ message: "Failed to update vehicle" });
       }
       
+      console.log('[VEHICLE-UPDATE] Veículo atualizado com sucesso:', vehicleId);
       return res.status(200).json(updatedVehicle);
     } catch (error) {
-      console.error("Error updating vehicle:", error);
+      console.error("[VEHICLE-UPDATE] Error updating vehicle:", error);
       return res.status(500).json({ message: "Server error", error: String(error) });
     }
   });
