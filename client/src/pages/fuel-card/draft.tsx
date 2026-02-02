@@ -185,6 +185,15 @@ export default function FuelCardDraft() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setLocation("/fuel-card/solicitation")}
+                  className="h-10 w-10 rounded-full hover:bg-blue-100"
+                  title="Voltar ao formulário"
+                >
+                  <ArrowLeft className="h-5 w-5 text-blue-600" />
+                </Button>
                 <ShoppingCart className="h-8 w-8 text-blue-600" />
                 <div>
                   <CardTitle className="text-2xl">Bolsão de Solicitações</CardTitle>
