@@ -187,9 +187,12 @@ export default function CocaColaBaseDashboard() {
     enabled: !!user && baseId > 0
   });
 
-  // Mutation para atualizar status diário
+  // Mutation para atualizar status diário (só permite data de hoje)
   const updateDailyStatusMutation = useMutation({
     mutationFn: async (data: { vehicle_id: number; status: string; observacao?: string }) => {
+      if (!isToday(selectedDate)) {
+        throw new Error('Só é possível atualizar o status do dia atual');
+      }
       const token = localStorage.getItem('coca_cola_token');
       const response = await fetch('/api/coca-cola/vehicle-daily-status', {
         method: 'POST',
@@ -198,9 +201,12 @@ export default function CocaColaBaseDashboard() {
           'Authorization': `Bearer ${token}` 
         },
         credentials: 'include',
-        body: JSON.stringify({ ...data, base_id: baseId })
+        body: JSON.stringify({ ...data, base_id: baseId, data: format(selectedDate, 'yyyy-MM-dd') })
       });
-      if (!response.ok) throw new Error('Erro ao atualizar status');
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
+        throw new Error(err.message || 'Erro ao atualizar status');
+      }
       return response.json();
     },
     onSuccess: () => {

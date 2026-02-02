@@ -2008,9 +2008,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Atualizar status diário de um veículo
   app.post('/api/coca-cola/vehicle-daily-status', cocaColaAuth, async (req: any, res) => {
     try {
-      const { vehicle_id, base_id, status, observacao } = req.body;
+      const { vehicle_id, base_id, status, observacao, data } = req.body;
       const cocaColaUser = req.cocaColaUser;
       const dataHoje = new Date().toISOString().split('T')[0];
+      
+      // Validação: só permite atualizar o dia atual
+      const dataEnviada = data || dataHoje;
+      if (dataEnviada !== dataHoje) {
+        return res.status(403).json({ 
+          error: 'Só é permitido atualizar o status do dia atual',
+          message: 'Só é permitido atualizar o status do dia atual'
+        });
+      }
 
       if (!vehicle_id || !status) {
         return res.status(400).json({ error: 'vehicle_id e status são obrigatórios' });
