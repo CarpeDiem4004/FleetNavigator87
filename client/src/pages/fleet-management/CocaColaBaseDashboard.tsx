@@ -10,13 +10,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, subDays, addDays, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   Truck, LogOut, Plus, RefreshCw, Wrench, CheckCircle, 
   AlertTriangle, Clock, Building, Car, MapPin, FileText, Camera, Upload,
-  TrendingUp, TrendingDown, History, BarChart3, RotateCcw
+  TrendingUp, TrendingDown, History, BarChart3, RotateCcw, CalendarIcon, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 
@@ -72,6 +74,10 @@ export default function CocaColaBaseDashboard() {
   // Estados para Mini Dashboard de Utilização
   const [showHistory, setShowHistory] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
+  
+  // Estados para sistema de Status Diário
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [showCalendar, setShowCalendar] = useState(false);
     
   const TIPOS_MANUTENCAO = [
     { id: 'mecanica', label: 'Mecânica' },
@@ -167,6 +173,68 @@ export default function CocaColaBaseDashboard() {
     queryKey: ['/api/coca-cola/vehicle-history', baseId],
     queryFn: () => fetchWithAuth('/api/coca-cola/vehicle-history?days=7'),
     enabled: !!user && baseId > 0 && showHistory
+  });
+
+  // Query para status diário dos veículos (sistema de calendário)
+  const { data: dailyStatusData, refetch: refetchDailyStatus } = useQuery<{
+    success: boolean;
+    data: { vehicle_id: number; placa: string; modelo: string; status: string; observacao: string | null; updated_by_name: string | null; updated_at: string | null }[];
+    statusCount: { total: number; em_rota: number; em_manutencao: number; parado: number; emprestado: number; baixa_venda: number; sem_equipe: number; nao_informado: number };
+    dataConsulta: string;
+  }>({
+    queryKey: ['/api/coca-cola/vehicle-daily-status', baseId, format(selectedDate, 'yyyy-MM-dd')],
+    queryFn: () => fetchWithAuth(`/api/coca-cola/vehicle-daily-status?base_id=${baseId}&data=${format(selectedDate, 'yyyy-MM-dd')}`),
+    enabled: !!user && baseId > 0
+  });
+
+  // Mutation para atualizar status diário
+  const updateDailyStatusMutation = useMutation({
+    mutationFn: async (data: { vehicle_id: number; status: string; observacao?: string }) => {
+      const token = localStorage.getItem('coca_cola_token');
+      const response = await fetch('/api/coca-cola/vehicle-daily-status', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        credentials: 'include',
+        body: JSON.stringify({ ...data, base_id: baseId })
+      });
+      if (!response.ok) throw new Error('Erro ao atualizar status');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Status diário atualizado!' });
+      refetchDailyStatus();
+    },
+    onError: () => {
+      toast({ title: 'Erro ao atualizar status', variant: 'destructive' });
+    }
+  });
+
+  // Mutation para gerar status diário (iniciar dia)
+  const generateDailyStatusMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('coca_cola_token');
+      const response = await fetch('/api/coca-cola/generate-daily-status', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        credentials: 'include',
+        body: JSON.stringify({ base_id: baseId })
+      });
+      if (!response.ok) throw new Error('Erro ao gerar status');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: `${data.veiculos_criados} veículo(s) inicializado(s) para hoje` });
+      refetchDailyStatus();
+    },
+    onError: () => {
+      toast({ title: 'Erro ao gerar status diário', variant: 'destructive' });
+    }
   });
 
   const addVehicleMutation = useMutation({
@@ -313,6 +381,28 @@ export default function CocaColaBaseDashboard() {
     disponiveis: vehicles.filter(v => v.status === 'disponivel').length,
     manutencao: vehicles.filter(v => v.status === 'manutencao').length,
     parados: vehicles.filter(v => ['sem_equipe', 'baixa_venda'].includes(v.status)).length
+  };
+
+  // Helper para obter o status diário de um veículo
+  const getDailyStatus = (vehicleId: number): string => {
+    if (!dailyStatusData?.data) return 'nao_informado';
+    const found = dailyStatusData.data.find(d => d.vehicle_id === vehicleId);
+    return found?.status || 'nao_informado';
+  };
+
+  // Helper para obter badge do status diário
+  const getDailyStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { label: string; className: string }> = {
+      'em_rota': { label: 'Em Rota', className: 'bg-green-500' },
+      'em_manutencao': { label: 'Em Manutenção', className: 'bg-yellow-500' },
+      'parado': { label: 'Parado', className: 'bg-red-500' },
+      'emprestado': { label: 'Emprestado', className: 'bg-blue-500' },
+      'baixa_venda': { label: 'Baixa/Venda', className: 'bg-orange-500' },
+      'sem_equipe': { label: 'Sem Equipe', className: 'bg-purple-500' },
+      'nao_informado': { label: 'Não Informado', className: 'bg-gray-400' }
+    };
+    const config = statusConfig[status] || statusConfig['nao_informado'];
+    return <Badge className={config.className}>{config.label}</Badge>;
   };
 
   if (!user) {
@@ -643,12 +733,138 @@ export default function CocaColaBaseDashboard() {
           </Button>
         </div>
 
+        {/* Sistema de Status Diário com Calendário */}
+        <Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-white">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="flex items-center gap-2 text-purple-700">
+                <CalendarIcon className="w-5 h-5" />
+                Status Diário da Frota
+              </CardTitle>
+              
+              {/* Navegação de Data */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedDate(subDays(selectedDate, 1))}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                
+                <Popover open={showCalendar} onOpenChange={setShowCalendar}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="min-w-[180px] justify-center font-medium">
+                      <CalendarIcon className="w-4 h-4 mr-2" />
+                      {format(selectedDate, "dd 'de' MMMM, yyyy", { locale: ptBR })}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="center">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(date) => {
+                        if (date) {
+                          setSelectedDate(date);
+                          setShowCalendar(false);
+                        }
+                      }}
+                      locale={ptBR}
+                      disabled={(date) => date > new Date()}
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+                  disabled={isToday(selectedDate)}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                
+                {!isToday(selectedDate) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedDate(new Date())}
+                    className="text-purple-600"
+                  >
+                    Hoje
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          
+          <CardContent>
+            {/* Resumo do Dia */}
+            {dailyStatusData?.statusCount && (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 mb-4">
+                <div className="bg-green-50 p-3 rounded-lg border border-green-200 text-center">
+                  <p className="text-xl font-bold text-green-600">{dailyStatusData.statusCount.em_rota}</p>
+                  <p className="text-xs text-green-700">Em Rota</p>
+                </div>
+                <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-center">
+                  <p className="text-xl font-bold text-yellow-600">{dailyStatusData.statusCount.em_manutencao}</p>
+                  <p className="text-xs text-yellow-700">Manutenção</p>
+                </div>
+                <div className="bg-red-50 p-3 rounded-lg border border-red-200 text-center">
+                  <p className="text-xl font-bold text-red-600">{dailyStatusData.statusCount.parado}</p>
+                  <p className="text-xs text-red-700">Parado</p>
+                </div>
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200 text-center">
+                  <p className="text-xl font-bold text-blue-600">{dailyStatusData.statusCount.emprestado}</p>
+                  <p className="text-xs text-blue-700">Emprestado</p>
+                </div>
+                <div className="bg-orange-50 p-3 rounded-lg border border-orange-200 text-center">
+                  <p className="text-xl font-bold text-orange-600">{dailyStatusData.statusCount.baixa_venda}</p>
+                  <p className="text-xs text-orange-700">Baixa/Venda</p>
+                </div>
+                <div className="bg-purple-50 p-3 rounded-lg border border-purple-200 text-center">
+                  <p className="text-xl font-bold text-purple-600">{dailyStatusData.statusCount.sem_equipe}</p>
+                  <p className="text-xs text-purple-700">Sem Equipe</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-300 text-center">
+                  <p className="text-xl font-bold text-gray-600">{dailyStatusData.statusCount.nao_informado}</p>
+                  <p className="text-xs text-gray-700">Não Informado</p>
+                </div>
+              </div>
+            )}
+
+            {/* Alerta de veículos não informados */}
+            {isToday(selectedDate) && dailyStatusData?.statusCount?.nao_informado > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-amber-500" />
+                  <span className="text-amber-700 font-medium">
+                    {dailyStatusData.statusCount.nao_informado} veículo(s) aguardando atualização de status
+                  </span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => generateDailyStatusMutation.mutate()}
+                  disabled={generateDailyStatusMutation.isPending}
+                  className="border-amber-300 text-amber-700 hover:bg-amber-100"
+                >
+                  <RotateCcw className="w-4 h-4 mr-1" />
+                  Iniciar Dia
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Vehicles List */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Truck className="w-5 h-5" />
-              Veículos da Base
+              Veículos da Base {!isToday(selectedDate) && <Badge variant="secondary">Visualizando: {format(selectedDate, 'dd/MM/yyyy')}</Badge>}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -686,8 +902,37 @@ export default function CocaColaBaseDashboard() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(vehicle.status)}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Status Diário com Dropdown para Hoje */}
+                      {isToday(selectedDate) ? (
+                        <Select
+                          value={getDailyStatus(vehicle.id)}
+                          onValueChange={(value) => {
+                            updateDailyStatusMutation.mutate({
+                              vehicle_id: vehicle.id,
+                              status: value
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="w-[140px] h-8">
+                            <SelectValue>
+                              {getDailyStatusBadge(getDailyStatus(vehicle.id))}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="em_rota">Em Rota</SelectItem>
+                            <SelectItem value="em_manutencao">Manutenção</SelectItem>
+                            <SelectItem value="parado">Parado</SelectItem>
+                            <SelectItem value="emprestado">Emprestado</SelectItem>
+                            <SelectItem value="baixa_venda">Baixa/Venda</SelectItem>
+                            <SelectItem value="sem_equipe">Sem Equipe</SelectItem>
+                            <SelectItem value="nao_informado">Não Informado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        getDailyStatusBadge(getDailyStatus(vehicle.id))
+                      )}
+                      
                       <Button 
                         size="sm"
                         className="bg-amber-500 hover:bg-amber-600 text-white"
