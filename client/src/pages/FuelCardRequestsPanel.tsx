@@ -1845,6 +1845,12 @@ const FuelCardRequestsPanel: React.FC = () => {
                   <BarChart3 className="h-4 w-4" />
                   Análise de Consumo
                 </Button>
+                <Link href="/linehaul/analytics">
+                  <Button variant="secondary" className="flex items-center gap-2 bg-blue-100 text-blue-700 hover:bg-blue-200">
+                    <BarChart3 className="h-4 w-4" />
+                    Analytics
+                  </Button>
+                </Link>
                 {(user?.role === 'admin' || user?.role === 'gestor_combustivel') && (
                   <Button 
                     variant="secondary" 
@@ -2311,12 +2317,6 @@ const FuelCardRequestsPanel: React.FC = () => {
                   <XCircle className="h-4 w-4 text-red-600" />
                   LH Neg ({lineHaulNegadas.length})
                 </TabsTrigger>
-                <Link href="/linehaul/analytics">
-                  <Button variant="outline" size="sm" className="ml-2 flex items-center gap-2 bg-blue-50 hover:bg-blue-100 border-blue-200">
-                    <BarChart3 className="h-4 w-4 text-blue-600" />
-                    <span className="hidden md:inline">Analytics</span>
-                  </Button>
-                </Link>
               </TabsList>
             )}
           </div>
