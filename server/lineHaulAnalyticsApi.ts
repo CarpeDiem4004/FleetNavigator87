@@ -9,7 +9,41 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
     
     console.log('[LINEHAUL-ANALYTICS] Parâmetros recebidos:', { dataInicio, dataFim, veiculo, rota, operacao });
     
-    let whereClause = `WHERE (origem_tipo = 'line_hall' OR base ILIKE 'LH%' OR base ILIKE '%line%hall%' OR base ILIKE '%line%haul%' OR base LIKE 'SC\\_%' ESCAPE '\\' OR base LIKE 'XPT\\_%' ESCAPE '\\')`;
+    // Definir filtros por operação
+    // LINE HAUL PURO: dados inseridos via /linehaul-abastecimento (origem_tipo = 'line_hall')
+    const FILTRO_LINE_HAUL_PURO = `(origem_tipo = 'line_hall')`;
+    
+    // Dentro do Line Haul, filtrar por operação escolhida no formulário
+    const FILTRO_LINE_HAUL_SHOPEE = `(origem_tipo = 'line_hall' AND observacoes ILIKE '%Operação: Shopee%')`;
+    const FILTRO_LINE_HAUL_ML = `(origem_tipo = 'line_hall' AND observacoes ILIKE '%Operação: Mercado Livre%')`;
+    
+    // BASES TRADICIONAIS (não Line Haul)
+    const FILTRO_BASES_SHOPEE = `(base LIKE 'SC\\_%' ESCAPE '\\' AND (origem_tipo IS NULL OR origem_tipo != 'line_hall'))`;
+    const FILTRO_BASES_ML = `(base LIKE 'XPT\\_%' ESCAPE '\\' AND (origem_tipo IS NULL OR origem_tipo != 'line_hall'))`;
+    
+    // TODAS as operações Line Haul (puro) + bases tradicionais
+    const FILTRO_TODAS = `(${FILTRO_LINE_HAUL_PURO} OR ${FILTRO_BASES_SHOPEE} OR ${FILTRO_BASES_ML})`;
+    
+    // Determinar filtro de operação baseado no parâmetro
+    let filtroOperacao = FILTRO_TODAS;
+    if (operacao === 'line_haul') {
+      // Apenas dados inseridos via /linehaul-abastecimento
+      filtroOperacao = FILTRO_LINE_HAUL_PURO;
+    } else if (operacao === 'line_haul_shopee') {
+      // Line Haul com operação Shopee
+      filtroOperacao = FILTRO_LINE_HAUL_SHOPEE;
+    } else if (operacao === 'line_haul_ml') {
+      // Line Haul com operação Mercado Livre
+      filtroOperacao = FILTRO_LINE_HAUL_ML;
+    } else if (operacao === 'bases_shopee') {
+      // Apenas bases tradicionais SC_*
+      filtroOperacao = FILTRO_BASES_SHOPEE;
+    } else if (operacao === 'bases_ml') {
+      // Apenas bases tradicionais XPT_*
+      filtroOperacao = FILTRO_BASES_ML;
+    }
+    
+    let whereClause = `WHERE ${filtroOperacao}`;
     const params: any[] = [];
     let paramIndex = 1;
     
@@ -34,12 +68,6 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
     if (rota && rota !== 'all') {
       whereClause += ` AND id_rota ILIKE $${paramIndex}`;
       params.push(`%${rota}%`);
-      paramIndex++;
-    }
-    
-    if (operacao && operacao !== 'all') {
-      whereClause += ` AND observacoes ILIKE $${paramIndex}`;
-      params.push(`%Operação: ${operacao}%`);
       paramIndex++;
     }
 
@@ -136,7 +164,7 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
         COUNT(DISTINCT placa) as veiculos_envolvidos
       FROM solicitacoes_fuel_card
       ${whereClause}
-      GROUP BY rota
+      GROUP BY 1
       ORDER BY valor_total DESC
     `;
     const tabelaAnalitica = await pool.query(tabelaAnaliticaQuery, params);
@@ -157,21 +185,74 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
     `;
     const rotasResult = await pool.query(rotasQuery, params);
 
+    // Query de comparativo com 3 cards: Bases Shopee, Bases ML, Line Haul Total
+    let comparativoWhere = `WHERE (
+      (base LIKE 'SC\\_%' ESCAPE '\\' AND (origem_tipo IS NULL OR origem_tipo != 'line_hall')) OR 
+      (base LIKE 'XPT\\_%' ESCAPE '\\' AND (origem_tipo IS NULL OR origem_tipo != 'line_hall')) OR 
+      (origem_tipo = 'line_hall')
+    )`;
+    const comparativoParams: any[] = [];
+    let compParamIdx = 1;
+    
+    if (dataInicio) {
+      comparativoWhere += ` AND DATE(created_at) >= $${compParamIdx}`;
+      comparativoParams.push(dataInicio);
+      compParamIdx++;
+    }
+    if (dataFim) {
+      comparativoWhere += ` AND DATE(created_at) <= $${compParamIdx}`;
+      comparativoParams.push(dataFim);
+      compParamIdx++;
+    }
+    
     const comparativoOperacoesQuery = `
       SELECT 
         CASE 
-          WHEN observacoes ILIKE '%Mercado Livre%' OR base LIKE 'XPT\\_%' ESCAPE '\\' THEN 'Mercado Livre'
-          WHEN observacoes ILIKE '%Shopee%' OR base ILIKE '%SHOPEE%' OR base LIKE 'SC\\_%' ESCAPE '\\' THEN 'Shopee'
-          ELSE 'Line Haul'
+          WHEN base LIKE 'SC\\_%' ESCAPE '\\' AND (origem_tipo IS NULL OR origem_tipo != 'line_hall') THEN 'Shopee'
+          WHEN base LIKE 'XPT\\_%' ESCAPE '\\' AND (origem_tipo IS NULL OR origem_tipo != 'line_hall') THEN 'Mercado Livre'
+          WHEN origem_tipo = 'line_hall' THEN 'Line Haul'
+          ELSE 'Outros'
         END as operacao,
         COUNT(*) as solicitacoes,
         SUM(valor_solicitado) as valor_total
       FROM solicitacoes_fuel_card
-      WHERE (origem_tipo = 'line_hall' OR base ILIKE 'LH%' OR base ILIKE '%line%hall%' OR base ILIKE '%line%haul%' OR base LIKE 'SC\\_%' ESCAPE '\\' OR base LIKE 'XPT\\_%' ESCAPE '\\')
-      GROUP BY operacao
+      ${comparativoWhere}
+      GROUP BY 1
       ORDER BY valor_total DESC
     `;
-    const comparativoOperacoes = await pool.query(comparativoOperacoesQuery);
+    const comparativoOperacoes = await pool.query(comparativoOperacoesQuery, comparativoParams);
+    
+    // Query para detalhamento dentro do Line Haul (Shopee vs ML)
+    let lineHaulDetalheWhere = `WHERE origem_tipo = 'line_hall'`;
+    const lineHaulDetalheParams: any[] = [];
+    let lhParamIdx = 1;
+    
+    if (dataInicio) {
+      lineHaulDetalheWhere += ` AND DATE(created_at) >= $${lhParamIdx}`;
+      lineHaulDetalheParams.push(dataInicio);
+      lhParamIdx++;
+    }
+    if (dataFim) {
+      lineHaulDetalheWhere += ` AND DATE(created_at) <= $${lhParamIdx}`;
+      lineHaulDetalheParams.push(dataFim);
+      lhParamIdx++;
+    }
+    
+    const lineHaulDetalheQuery = `
+      SELECT 
+        CASE 
+          WHEN observacoes ILIKE '%Operação: Shopee%' THEN 'LH Shopee'
+          WHEN observacoes ILIKE '%Operação: Mercado Livre%' THEN 'LH Mercado Livre'
+          ELSE 'LH Outros'
+        END as operacao,
+        COUNT(*) as solicitacoes,
+        SUM(valor_solicitado) as valor_total
+      FROM solicitacoes_fuel_card
+      ${lineHaulDetalheWhere}
+      GROUP BY 1
+      ORDER BY valor_total DESC
+    `;
+    const lineHaulDetalhe = await pool.query(lineHaulDetalheQuery, lineHaulDetalheParams);
 
     const rotasABQuery = `
       SELECT 
@@ -248,6 +329,11 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
         veiculos: veiculosResult.rows.map(r => r.placa),
         rotas: rotasResult.rows.map(r => r.rota),
         comparativoOperacoes: comparativoOperacoes.rows.map(r => ({
+          operacao: r.operacao,
+          solicitacoes: parseInt(r.solicitacoes),
+          valorTotal: parseFloat(r.valor_total)
+        })),
+        lineHaulDetalhe: lineHaulDetalhe.rows.map(r => ({
           operacao: r.operacao,
           solicitacoes: parseInt(r.solicitacoes),
           valorTotal: parseFloat(r.valor_total)
