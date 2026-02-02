@@ -71,11 +71,25 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
       paramIndex++;
     }
 
-    // Função de normalização de rota (mesma em todas as queries para consistência)
+    // Função de normalização de cidade (padroniza nomes e estados)
+    // 1. Remove espaços extras
+    // 2. Padroniza " - " para " – " (en-dash)
+    // 3. Remove traços duplicados "– –" para "–"
+    const NORMALIZAR_CIDADE = (campo: string) => `
+      INITCAP(TRIM(
+        REGEXP_REPLACE(
+          REGEXP_REPLACE(
+            REGEXP_REPLACE(${campo}, '\\s+', ' ', 'g'),
+          ' - ', ' – ', 'g'),
+        '– –', '–', 'g')
+      ))
+    `;
+    
+    // Função de normalização de rota completa
     const ROTA_NORMALIZADA = `
       CASE 
         WHEN rota_origem IS NOT NULL AND rota_origem != '' AND rota_destino IS NOT NULL AND rota_destino != ''
-        THEN INITCAP(TRIM(REGEXP_REPLACE(rota_origem, '\\s+', ' ', 'g'))) || ' → ' || INITCAP(TRIM(REGEXP_REPLACE(rota_destino, '\\s+', ' ', 'g')))
+        THEN ${NORMALIZAR_CIDADE('rota_origem')} || ' → ' || ${NORMALIZAR_CIDADE('rota_destino')}
         WHEN id_rota IS NOT NULL AND id_rota != '' THEN UPPER(TRIM(id_rota))
         ELSE COALESCE(provedor_cartao, 'Sem Rota')
       END
