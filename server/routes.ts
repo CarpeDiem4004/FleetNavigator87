@@ -9053,16 +9053,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { baseId } = req.params;
       console.log(`GET /api/vehicles/by-base/${baseId} - Buscando veículos da base`);
       
+      // Primeiro tenta buscar diretamente pelo base_id
+      // Se não encontrar, tenta encontrar o bases.id correspondente via project_bases
       const query = `
         SELECT 
-          id,
-          placa as plate,
-          modelo as model,
-          status,
-          cartao_abastecimento
-        FROM veiculos
-        WHERE base_id = $1
-        ORDER BY placa
+          v.id,
+          v.placa as plate,
+          v.modelo as model,
+          v.status,
+          v.cartao_abastecimento
+        FROM veiculos v
+        WHERE v.base_id = $1
+           OR v.base_id IN (
+             SELECT b.id FROM bases b
+             INNER JOIN project_bases pb ON 
+               UPPER(b.name) LIKE '%' || pb.base_code || '%'
+               OR UPPER(b.name) LIKE REPLACE(UPPER(pb.base_name), '_', '%')
+             WHERE pb.id = $1
+           )
+        ORDER BY v.placa
       `;
       
       const result = await pool.query(query, [baseId]);
