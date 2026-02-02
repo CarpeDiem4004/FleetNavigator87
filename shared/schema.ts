@@ -1798,3 +1798,36 @@ export const insertWorkSafetyActionPlanSchema = createInsertSchema(workSafetyAct
 
 export type WorkSafetyActionPlan = typeof workSafetyActionPlans.$inferSelect;
 export type InsertWorkSafetyActionPlan = z.infer<typeof insertWorkSafetyActionPlanSchema>;
+
+// ========== Vehicle Daily Status (Status Diário de Veículos) ==========
+// Sistema para rastrear status diário dos veículos com histórico
+export const vehicleDailyStatusEnum = pgEnum('vehicle_daily_status_type', [
+  'em_rota',
+  'em_manutencao',
+  'parado',
+  'emprestado',
+  'baixa_venda',
+  'sem_equipe',
+  'nao_informado'
+]);
+
+export const vehicleDailyStatus = pgTable("vehicle_daily_status", {
+  id: serial("id").primaryKey(),
+  vehicleId: integer("vehicle_id").notNull(),
+  baseId: integer("base_id"),
+  data: date("data").notNull(),
+  status: text("status").notNull().default('nao_informado'),
+  observacao: text("observacao"),
+  updatedBy: integer("updated_by"),
+  updatedByName: text("updated_by_name"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertVehicleDailyStatusSchema = createInsertSchema(vehicleDailyStatus, {
+  status: z.enum(['em_rota', 'em_manutencao', 'parado', 'emprestado', 'baixa_venda', 'sem_equipe', 'nao_informado']).default('nao_informado'),
+  observacao: z.string().optional().nullable(),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type VehicleDailyStatus = typeof vehicleDailyStatus.$inferSelect;
+export type InsertVehicleDailyStatus = z.infer<typeof insertVehicleDailyStatusSchema>;
