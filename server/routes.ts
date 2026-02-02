@@ -1983,6 +1983,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         emprestado: 0,
         baixa_venda: 0,
         sem_equipe: 0,
+        d_mais_1: 0,
+        pernoite: 0,
         nao_informado: 0
       };
 
