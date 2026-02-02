@@ -71,6 +71,16 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
       paramIndex++;
     }
 
+    // Função de normalização de rota (mesma em todas as queries para consistência)
+    const ROTA_NORMALIZADA = `
+      CASE 
+        WHEN rota_origem IS NOT NULL AND rota_origem != '' AND rota_destino IS NOT NULL AND rota_destino != ''
+        THEN INITCAP(TRIM(REGEXP_REPLACE(rota_origem, '\\s+', ' ', 'g'))) || ' → ' || INITCAP(TRIM(REGEXP_REPLACE(rota_destino, '\\s+', ' ', 'g')))
+        WHEN id_rota IS NOT NULL AND id_rota != '' THEN UPPER(TRIM(id_rota))
+        ELSE COALESCE(provedor_cartao, 'Sem Rota')
+      END
+    `;
+
     const cardsQuery = `
       SELECT 
         COALESCE(SUM(valor_solicitado), 0) as custo_total,
@@ -95,12 +105,7 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
 
     const rotasMaisRealizadasQuery = `
       SELECT 
-        CASE 
-          WHEN rota_origem IS NOT NULL AND rota_origem != '' AND rota_destino IS NOT NULL AND rota_destino != ''
-          THEN INITCAP(TRIM(rota_origem)) || ' → ' || INITCAP(TRIM(rota_destino))
-          WHEN id_rota IS NOT NULL AND id_rota != '' THEN UPPER(TRIM(id_rota))
-          ELSE COALESCE(provedor_cartao, 'Sem Rota')
-        END as rota,
+        ${ROTA_NORMALIZADA} as rota,
         COUNT(*) as quantidade
       FROM solicitacoes_fuel_card
       ${whereClause}
@@ -112,12 +117,7 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
 
     const rotasMaisCarasQuery = `
       SELECT 
-        CASE 
-          WHEN rota_origem IS NOT NULL AND rota_origem != '' AND rota_destino IS NOT NULL AND rota_destino != ''
-          THEN INITCAP(TRIM(rota_origem)) || ' → ' || INITCAP(TRIM(rota_destino))
-          WHEN id_rota IS NOT NULL AND id_rota != '' THEN UPPER(TRIM(id_rota))
-          ELSE COALESCE(provedor_cartao, 'Sem Rota')
-        END as rota,
+        ${ROTA_NORMALIZADA} as rota,
         SUM(valor_solicitado) as valor
       FROM solicitacoes_fuel_card
       ${whereClause}
@@ -149,15 +149,10 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
       ORDER BY DATE(created_at)
     `;
     const evolucaoCusto = await pool.query(evolucaoCustoQuery, params);
-
+    
     const tabelaAnaliticaQuery = `
       SELECT 
-        CASE 
-          WHEN rota_origem IS NOT NULL AND rota_origem != '' AND rota_destino IS NOT NULL AND rota_destino != ''
-          THEN INITCAP(TRIM(rota_origem)) || ' → ' || INITCAP(TRIM(rota_destino))
-          WHEN id_rota IS NOT NULL AND id_rota != '' THEN UPPER(TRIM(id_rota))
-          ELSE COALESCE(provedor_cartao, 'Sem Rota')
-        END as rota,
+        ${ROTA_NORMALIZADA} as rota,
         COUNT(*) as viagens,
         SUM(valor_solicitado) as valor_total,
         AVG(valor_solicitado) as custo_medio,
@@ -271,18 +266,14 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
     // Query para exportação detalhada com datas
     const rotasDetalhadasQuery = `
       SELECT 
-        CASE 
-          WHEN rota_origem IS NOT NULL AND rota_origem != '' AND rota_destino IS NOT NULL AND rota_destino != ''
-          THEN INITCAP(TRIM(rota_origem)) || ' → ' || INITCAP(TRIM(rota_destino))
-          WHEN id_rota IS NOT NULL AND id_rota != '' THEN UPPER(TRIM(id_rota))
-          ELSE COALESCE(provedor_cartao, 'Sem Rota')
-        END as rota,
+        ${ROTA_NORMALIZADA} as rota,
         UPPER(TRIM(placa)) as placa,
         INITCAP(TRIM(motorista)) as motorista,
         valor_solicitado,
         data_solicitacao,
         data_uso,
-        status
+        status,
+        id
       FROM solicitacoes_fuel_card
       ${whereClause}
       ORDER BY data_solicitacao DESC
