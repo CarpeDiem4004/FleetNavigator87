@@ -721,7 +721,7 @@ export default function FuelCardSolicitation() {
           </Alert>
         )}
         
-        {/* Card de sucesso - permanece fixo após primeira solicitação */}
+        {/* Card de sucesso - aparece apenas após adicionar ao bolsão */}
         {showDraftSuccess && (
           <Card className="mb-6 bg-green-50 border-green-200 shadow-lg" data-testid="draft-success-card">
             <CardContent className="pt-6">
@@ -749,6 +749,27 @@ export default function FuelCardSolicitation() {
               </div>
             </CardContent>
           </Card>
+        )}
+        
+        {/* Botão persistente para acessar o bolsão - aparece quando há itens e card de sucesso não está visível */}
+        {!showDraftSuccess && draftCount > 0 && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between" data-testid="draft-access-bar">
+            <div className="flex items-center gap-3">
+              <ShoppingCart className="h-5 w-5 text-blue-600" />
+              <span className="text-blue-800 font-medium">
+                {draftCount} {draftCount === 1 ? 'solicitação' : 'solicitações'} no bolsão
+              </span>
+            </div>
+            <Button
+              onClick={() => setLocation("/fuel-card/draft")}
+              variant="outline"
+              className="border-blue-300 text-blue-700 hover:bg-blue-100"
+              data-testid="button-access-draft"
+            >
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              Ver Bolsão
+            </Button>
+          </div>
         )}
         
         <Card className="shadow-lg border-0 bg-white/95 backdrop-blur-sm">
