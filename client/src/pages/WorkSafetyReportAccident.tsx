@@ -199,7 +199,9 @@ export default function WorkSafetyReportAccident() {
     estadoSaudeEnvolvidos: '',
   });
 
-  const isMeliOperation = formData.operacao === 'Mercado Livre (MELI)';
+  const isMeliOperation = formData.operacao.toUpperCase().includes('MERCADO') || 
+                          formData.operacao.toUpperCase().includes('MELI') ||
+                          formData.operacao.toUpperCase().includes('XPT');
 
   const mutation = useMutation({
     mutationFn: async (data: typeof formData) => {
