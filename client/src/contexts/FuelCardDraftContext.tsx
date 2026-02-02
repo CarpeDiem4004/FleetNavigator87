@@ -41,30 +41,40 @@ const FuelCardDraftContext = createContext<FuelCardDraftContextType | undefined>
 const STORAGE_KEY = 'fuel_card_draft_requests';
 
 export function FuelCardDraftProvider({ children }: { children: ReactNode }) {
-  const [draftRequests, setDraftRequests] = useState<DraftFuelCardRequest[]>([]);
-
-  // Carregar do localStorage na inicialização
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
+  // Inicializar diretamente do localStorage para evitar condição de corrida
+  const [draftRequests, setDraftRequests] = useState<DraftFuelCardRequest[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
         const parsed = JSON.parse(stored);
-        setDraftRequests(parsed);
-      } catch (error) {
-        console.error('Erro ao carregar bolsão:', error);
-        localStorage.removeItem(STORAGE_KEY);
+        console.log('[BOLSÃO] Carregado do localStorage:', parsed.length, 'itens');
+        return parsed;
       }
+    } catch (error) {
+      console.error('[BOLSÃO] Erro ao carregar:', error);
+      localStorage.removeItem(STORAGE_KEY);
     }
+    return [];
+  });
+  
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Marcar como inicializado após primeira renderização
+  useEffect(() => {
+    setIsInitialized(true);
   }, []);
 
-  // Salvar no localStorage sempre que mudar
+  // Salvar no localStorage sempre que mudar (apenas após inicialização)
   useEffect(() => {
+    if (!isInitialized) return;
+    
+    console.log('[BOLSÃO] Salvando no localStorage:', draftRequests.length, 'itens');
     if (draftRequests.length > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(draftRequests));
     } else {
       localStorage.removeItem(STORAGE_KEY);
     }
-  }, [draftRequests]);
+  }, [draftRequests, isInitialized]);
 
   // Sincronizar entre abas/componentes usando eventos de storage
   useEffect(() => {
