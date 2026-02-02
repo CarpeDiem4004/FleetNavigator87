@@ -478,6 +478,7 @@ const VehiclesNew: React.FC = () => {
       console.log(`Excluindo veículo com ID ${id} via API REST`);
       const response = await fetch(`/api/vehicles/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       
       if (!response.ok) {
@@ -534,6 +535,7 @@ const VehiclesNew: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(mappedData),
       });
       
