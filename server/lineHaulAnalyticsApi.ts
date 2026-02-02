@@ -72,16 +72,16 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
     }
 
     // Função de normalização de cidade (padroniza nomes e estados)
-    // 1. Remove espaços extras
-    // 2. Padroniza " - " para " – " (en-dash)
-    // 3. Remove traços duplicados "– –" para "–"
+    // Remove estado do final e retorna apenas nome da cidade padronizado
     const NORMALIZAR_CIDADE = (campo: string) => `
       INITCAP(TRIM(
         REGEXP_REPLACE(
           REGEXP_REPLACE(
-            REGEXP_REPLACE(${campo}, '\\s+', ' ', 'g'),
-          ' - ', ' – ', 'g'),
-        '– –', '–', 'g')
+            REGEXP_REPLACE(
+              REGEXP_REPLACE(${campo}, '\\s+', ' ', 'g'),
+            '\\s*[-–]\\s*[A-Za-z]{2}\\s*$', '', 'gi'),
+          '\\s+[A-Za-z]{2}\\s*$', '', 'gi'),
+        '\\.\\s*$', '', 'g')
       ))
     `;
     
