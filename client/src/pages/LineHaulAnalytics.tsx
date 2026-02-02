@@ -165,8 +165,11 @@ export default function LineHaulAnalytics() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas as operações</SelectItem>
-                    <SelectItem value="Shopee">🟠 Shopee</SelectItem>
-                    <SelectItem value="Mercado Livre">🔵 Mercado Livre</SelectItem>
+                    <SelectItem value="line_haul">🚛 Line Haul (Total)</SelectItem>
+                    <SelectItem value="line_haul_shopee">🟠 LH Shopee</SelectItem>
+                    <SelectItem value="line_haul_ml">🔵 LH Mercado Livre</SelectItem>
+                    <SelectItem value="bases_shopee">📦 Bases Shopee (SC_*)</SelectItem>
+                    <SelectItem value="bases_ml">📦 Bases ML (XPT_*)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
