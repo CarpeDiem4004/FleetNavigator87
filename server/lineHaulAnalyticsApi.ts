@@ -7,7 +7,9 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
   try {
     const { dataInicio, dataFim, veiculo, rota, operacao } = req.query;
     
-    let whereClause = `WHERE (origem_tipo = 'line_hall' OR base ILIKE 'LH%' OR base ILIKE '%line%hall%' OR base ILIKE '%line%haul%' OR base ILIKE 'SC\\_%' OR base ILIKE 'XPT\\_%')`;
+    console.log('[LINEHAUL-ANALYTICS] Parâmetros recebidos:', { dataInicio, dataFim, veiculo, rota, operacao });
+    
+    let whereClause = `WHERE (origem_tipo = 'line_hall' OR base ILIKE 'LH%' OR base ILIKE '%line%hall%' OR base ILIKE '%line%haul%' OR base LIKE 'SC\\_%' ESCAPE '\\' OR base LIKE 'XPT\\_%' ESCAPE '\\')`;
     const params: any[] = [];
     let paramIndex = 1;
     
@@ -74,7 +76,7 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
         COUNT(*) as quantidade
       FROM solicitacoes_fuel_card
       ${whereClause}
-      GROUP BY rota
+      GROUP BY 1
       ORDER BY quantidade DESC
       LIMIT 10
     `;
@@ -91,7 +93,7 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
         SUM(valor_solicitado) as valor
       FROM solicitacoes_fuel_card
       ${whereClause}
-      GROUP BY rota
+      GROUP BY 1
       ORDER BY valor DESC
       LIMIT 10
     `;
@@ -158,14 +160,14 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
     const comparativoOperacoesQuery = `
       SELECT 
         CASE 
-          WHEN observacoes ILIKE '%Mercado Livre%' THEN 'Mercado Livre'
-          WHEN observacoes ILIKE '%Shopee%' OR base ILIKE '%SHOPEE%' THEN 'Shopee'
-          ELSE 'Shopee'
+          WHEN observacoes ILIKE '%Mercado Livre%' OR base LIKE 'XPT\\_%' ESCAPE '\\' THEN 'Mercado Livre'
+          WHEN observacoes ILIKE '%Shopee%' OR base ILIKE '%SHOPEE%' OR base LIKE 'SC\\_%' ESCAPE '\\' THEN 'Shopee'
+          ELSE 'Line Haul'
         END as operacao,
         COUNT(*) as solicitacoes,
         SUM(valor_solicitado) as valor_total
       FROM solicitacoes_fuel_card
-      WHERE (origem_tipo = 'line_hall' OR base ILIKE 'LH%' OR base ILIKE '%line%hall%' OR base ILIKE '%line%haul%' OR base ILIKE 'SC\\_%' OR base ILIKE 'XPT\\_%')
+      WHERE (origem_tipo = 'line_hall' OR base ILIKE 'LH%' OR base ILIKE '%line%hall%' OR base ILIKE '%line%haul%' OR base LIKE 'SC\\_%' ESCAPE '\\' OR base LIKE 'XPT\\_%' ESCAPE '\\')
       GROUP BY operacao
       ORDER BY valor_total DESC
     `;
@@ -179,7 +181,7 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
       FROM solicitacoes_fuel_card
       ${whereClause}
         AND (rota_origem IS NOT NULL AND rota_origem != '' OR rota_destino IS NOT NULL AND rota_destino != '')
-      GROUP BY INITCAP(TRIM(rota_origem)), INITCAP(TRIM(rota_destino))
+      GROUP BY 1
       ORDER BY quantidade DESC
       LIMIT 15
     `;

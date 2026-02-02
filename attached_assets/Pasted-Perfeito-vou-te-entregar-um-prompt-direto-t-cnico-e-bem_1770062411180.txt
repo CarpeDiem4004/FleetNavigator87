@@ -1,0 +1,159 @@
+Perfeito — vou te entregar **um prompt direto, técnico e bem objetivo** pra você colar no **Replit AI / IA do dev** e ela investigar **por que o Analytics do Line Haul está zerado**, mesmo havendo dados no sistema.
+
+---
+
+## 🎯 PROMPT PARA INVESTIGAR FALHA NO ANALYTICS LINE HAUL
+
+> **Contexto:**
+> A tela **Analytics Line Haul** está carregando corretamente, porém **todos os indicadores e gráficos estão zerados**, mesmo havendo registros de viagens no banco de dados.
+>
+> **Filtros aplicados:**
+>
+> * Data início: `01/12/2025`
+> * Data fim: `31/12/2025`
+> * Operação: Todas
+> * Veículo: Todos
+> * Rota: Todas
+> * Timezone: `America/Sao_Paulo`
+>
+> **Problema:**
+> Nenhum dado é exibido:
+>
+> * Custo Total = R$ 0,00
+> * Total de Viagens = 0
+> * Rotas Distintas = 0
+> * Custo Médio por Viagem = R$ 0,00
+> * Gráfico Top 15 Rotas não renderiza dados
+
+---
+
+### 🔍 **Verificações obrigatórias que você deve fazer no código**
+
+1️⃣ **Query principal do Analytics**
+
+* Verifique se a query está apontando para a tabela correta (ex: `line_hall`, `line_hall_shopee`, ou similar)
+* Confirme se existe `WHERE data BETWEEN data_inicio AND data_fim`
+* Verifique se o campo de data usado é:
+
+  * `created_at`
+  * `data_viagem`
+  * `data_carregamento`
+* Confirme se o timezone não está excluindo registros (`AT TIME ZONE 'America/Sao_Paulo'`)
+
+---
+
+2️⃣ **Filtro de operação / projeto**
+
+* Verifique se o filtro `operacao` está sendo aplicado mesmo quando “Todas as operações” está selecionado
+* Confirme se não existe algo como:
+
+```sql
+WHERE operacao = NULL
+```
+
+(⚠️ isso retorna zero resultados)
+
+---
+
+3️⃣ **Cálculo de custo**
+
+* Verifique se o custo está sendo calculado com campos que podem estar `NULL`, como:
+
+  * valor_total
+  * custo_viagem
+  * litros * valor_litro
+* Garanta uso de `COALESCE()`:
+
+```sql
+SUM(COALESCE(valor_total, 0))
+```
+
+---
+
+4️⃣ **Total de viagens**
+
+* Confirme se o contador usa:
+
+```sql
+COUNT(id)
+```
+
+e não:
+
+```sql
+COUNT(valor_total)
+```
+
+(se `valor_total` estiver nulo, o count retorna 0)
+
+---
+
+5️⃣ **Rotas distintas**
+
+* Verifique se os campos `origem` e `destino` não estão vazios
+* Confirme se a concatenação não está gerando `NULL`:
+
+```sql
+COUNT(DISTINCT CONCAT(origem, ' - ', destino))
+```
+
+---
+
+6️⃣ **Veículo mais caro**
+
+* Confirme se existe `GROUP BY placa`
+* Verifique se o ORDER BY está correto:
+
+```sql
+ORDER BY SUM(valor_total) DESC
+LIMIT 1
+```
+
+---
+
+7️⃣ **Backend → Frontend**
+
+* Logar o retorno da API:
+
+```js
+console.log("Analytics response:", data)
+```
+
+* Confirmar se:
+
+  * A API retorna dados
+  * O frontend não está bloqueando render por `data.length === 0`
+  * Não existe erro silencioso no `.map()`
+
+---
+
+8️⃣ **Teste rápido obrigatório**
+Execute no Supabase SQL Editor:
+
+```sql
+SELECT COUNT(*) 
+FROM line_hall_shopee
+WHERE data BETWEEN '2025-12-01' AND '2025-12-31';
+```
+
+Se retornar **> 0**, o erro está **no backend ou filtros**, não no banco.
+
+---
+
+### ✅ Resultado esperado
+
+Após a correção:
+
+* KPIs devem refletir os dados reais
+* Gráfico Top 15 Rotas deve renderizar
+* Filtros não devem zerar a query quando estiverem em “Todos”
+
+---
+
+Se quiser, no próximo passo eu posso:
+
+* 🔧 **montar a query SQL correta do Analytics**
+* 🧠 **revisar o endpoint do backend**
+* 🎨 **validar a renderização do gráfico no frontend**
+
+Só me dizer **onde está esse Analytics hoje (Express, Next, API Route, Supabase RPC)** 👌
