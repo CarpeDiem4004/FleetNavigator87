@@ -67,8 +67,8 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
       SELECT 
         CASE 
           WHEN rota_origem IS NOT NULL AND rota_origem != '' AND rota_destino IS NOT NULL AND rota_destino != ''
-          THEN SUBSTRING(rota_origem FROM 1 FOR 20) || ' → ' || SUBSTRING(rota_destino FROM 1 FOR 20)
-          WHEN id_rota IS NOT NULL AND id_rota != '' THEN id_rota
+          THEN INITCAP(TRIM(rota_origem)) || ' → ' || INITCAP(TRIM(rota_destino))
+          WHEN id_rota IS NOT NULL AND id_rota != '' THEN UPPER(TRIM(id_rota))
           ELSE COALESCE(provedor_cartao, 'Sem Rota')
         END as rota,
         COUNT(*) as quantidade
@@ -84,8 +84,8 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
       SELECT 
         CASE 
           WHEN rota_origem IS NOT NULL AND rota_origem != '' AND rota_destino IS NOT NULL AND rota_destino != ''
-          THEN SUBSTRING(rota_origem FROM 1 FOR 20) || ' → ' || SUBSTRING(rota_destino FROM 1 FOR 20)
-          WHEN id_rota IS NOT NULL AND id_rota != '' THEN id_rota
+          THEN INITCAP(TRIM(rota_origem)) || ' → ' || INITCAP(TRIM(rota_destino))
+          WHEN id_rota IS NOT NULL AND id_rota != '' THEN UPPER(TRIM(id_rota))
           ELSE COALESCE(provedor_cartao, 'Sem Rota')
         END as rota,
         SUM(valor_solicitado) as valor
@@ -124,8 +124,8 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
       SELECT 
         CASE 
           WHEN rota_origem IS NOT NULL AND rota_origem != '' AND rota_destino IS NOT NULL AND rota_destino != ''
-          THEN SUBSTRING(rota_origem FROM 1 FOR 25) || ' → ' || SUBSTRING(rota_destino FROM 1 FOR 25)
-          WHEN id_rota IS NOT NULL AND id_rota != '' THEN id_rota
+          THEN INITCAP(TRIM(rota_origem)) || ' → ' || INITCAP(TRIM(rota_destino))
+          WHEN id_rota IS NOT NULL AND id_rota != '' THEN UPPER(TRIM(id_rota))
           ELSE COALESCE(provedor_cartao, 'Sem Rota')
         END as rota,
         COUNT(*) as viagens,
@@ -173,13 +173,13 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
 
     const rotasABQuery = `
       SELECT 
-        COALESCE(NULLIF(rota_origem, ''), 'N/A') || ' → ' || COALESCE(NULLIF(rota_destino, ''), 'N/A') as rota,
+        INITCAP(TRIM(COALESCE(NULLIF(rota_origem, ''), 'N/A'))) || ' → ' || INITCAP(TRIM(COALESCE(NULLIF(rota_destino, ''), 'N/A'))) as rota,
         COUNT(*) as quantidade,
         SUM(valor_solicitado) as valor_total
       FROM solicitacoes_fuel_card
       ${whereClause}
         AND (rota_origem IS NOT NULL AND rota_origem != '' OR rota_destino IS NOT NULL AND rota_destino != '')
-      GROUP BY rota_origem, rota_destino
+      GROUP BY INITCAP(TRIM(rota_origem)), INITCAP(TRIM(rota_destino))
       ORDER BY quantidade DESC
       LIMIT 15
     `;
@@ -190,12 +190,12 @@ router.get('/api/linehaul/analytics', async (req: Request, res: Response) => {
       SELECT 
         CASE 
           WHEN rota_origem IS NOT NULL AND rota_origem != '' AND rota_destino IS NOT NULL AND rota_destino != ''
-          THEN rota_origem || ' → ' || rota_destino
-          WHEN id_rota IS NOT NULL AND id_rota != '' THEN id_rota
+          THEN INITCAP(TRIM(rota_origem)) || ' → ' || INITCAP(TRIM(rota_destino))
+          WHEN id_rota IS NOT NULL AND id_rota != '' THEN UPPER(TRIM(id_rota))
           ELSE COALESCE(provedor_cartao, 'Sem Rota')
         END as rota,
-        placa,
-        motorista,
+        UPPER(TRIM(placa)) as placa,
+        INITCAP(TRIM(motorista)) as motorista,
         valor_solicitado,
         data_solicitacao,
         data_uso,
