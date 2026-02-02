@@ -154,7 +154,19 @@ export default function FuelCardSolicitation() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const { addToDraft, draftCount} = useFuelCardDraft();
-  const [showRulesDialog, setShowRulesDialog] = useState(true);
+  
+  // Verificar se já leu as regras nessa sessão
+  const [showRulesDialog, setShowRulesDialog] = useState(() => {
+    const alreadyRead = sessionStorage.getItem('fuel_card_rules_read');
+    return !alreadyRead; // Mostrar apenas se NÃO leu
+  });
+  
+  // Marcar como lido quando fechar o modal
+  const handleCloseRulesDialog = () => {
+    sessionStorage.setItem('fuel_card_rules_read', 'true');
+    setShowRulesDialog(false);
+  };
+  
   const [showDraftSuccess, setShowDraftSuccess] = useState(false);
   const [currentDraftCount, setCurrentDraftCount] = useState(0);
   
@@ -662,7 +674,7 @@ export default function FuelCardSolicitation() {
           
           <DialogFooter>
             <Button 
-              onClick={() => setShowRulesDialog(false)}
+              onClick={handleCloseRulesDialog}
               className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
               data-testid="button-rules-acknowledge"
             >
