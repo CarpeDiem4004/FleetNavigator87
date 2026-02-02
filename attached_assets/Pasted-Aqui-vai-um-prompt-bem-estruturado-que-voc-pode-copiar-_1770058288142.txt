@@ -1,0 +1,45 @@
+Aqui vai um **prompt bem estruturado** que você pode copiar e colar diretamente para enviar ao suporte técnico da plataforma (seja por chat, e-mail ou ticket no sistema da Gestão On Fleet / NEXTfleet):
+
+---
+
+**Assunto:** Dados não aparecem no Analytics Line Haul – Análise de rotas, custos e veículos
+
+Olá, equipe de suporte!
+
+Estou acessando o módulo **Analytics Line Haul** (Análise de rotas, custos e veículos) na plataforma, mas nenhum dado está sendo exibido.
+
+Detalhes da consulta atual:
+- Período selecionado: Data Início **01/12/2025** até Data Fim **31/12/2025**
+- Operação: Todas as operações
+- Veículo: Todos os veículos
+- Rota: Todas as rotas
+
+Resultados exibidos:
+- Custo Total: R$ 0,00
+- Total Viagens: 0
+- Rotas Distintas: 0
+- Custo Médio/Viagem: R$ 0,00
+- Veículo + Caro: R$ 0,00
+- A seção "Top 15 Rotas (Origem → Destino) - Mais Solicitadas" aparece vazia, sem nenhuma linha na tabela.
+
+Gostaria de ajuda para identificar o motivo de os dados não estarem aparecendo. Podem verificar:
+
+1. Se há viagens/line hauls registradas no sistema nesse período (dezembro/2025)?
+2. Se os filtros padrão estão corretos ou se há algum filtro oculto/bug impedindo a exibição?
+3. Se o módulo Analytics Line Haul exige alguma configuração prévia, integração ou ativação específica para puxar os dados?
+4. Se há atraso no processamento dos dados ou necessidade de reindexação/atualização manual?
+5. Permissões do meu usuário (João Paulo) – será que falta alguma liberação para visualizar esses relatórios?
+
+Anexei print da tela para facilitar (ou descrevi acima).
+
+Agradeço desde já pela atenção e aguardo retorno o mais breve possível!
+
+Atenciosamente,  
+João Paulo  
+[Seu e-mail ou contato]
+
+---
+
+Esse prompt é claro, objetivo, inclui todos os detalhes relevantes da sua tela e já antecipa as perguntas mais comuns que o suporte costuma fazer. Isso acelera muito a resolução.
+
+Se você tiver acesso a um chat ou ticket no sistema, cole exatamente assim que eles vão entender rapidinho o problema. Boa sorte! Se precisar ajustar algo, é só falar.
