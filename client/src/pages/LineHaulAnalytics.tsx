@@ -61,7 +61,8 @@ export default function LineHaulAnalytics() {
     veiculos: [],
     rotas: [],
     comparativoOperacoes: [],
-    rotasAB: []
+    rotasAB: [],
+    rotasDetalhadas: []
   };
 
   const formatDateExport = (dateStr: string) => {
