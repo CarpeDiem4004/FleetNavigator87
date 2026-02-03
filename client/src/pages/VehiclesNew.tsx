@@ -393,6 +393,15 @@ const VehiclesNew: React.FC = () => {
   const [documentosDialogOpen, setDocumentosDialogOpen] = useState(false);
   const [selectedVehicleDocumentos, setSelectedVehicleDocumentos] = useState<Vehicle | null>(null);
   
+  // Estados para importação de bases
+  const [isImportBasesDialogOpen, setIsImportBasesDialogOpen] = useState(false);
+  const [selectedBasesFile, setSelectedBasesFile] = useState<globalThis.File | null>(null);
+  const [isUploadingBases, setIsUploadingBases] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    success: boolean;
+    resumo: { total: number; atualizados: number; placasNaoEncontradas: number; basesNaoEncontradas: number };
+    detalhes: { placasNaoEncontradas: string[]; basesNaoEncontradas: string[]; erros: string[] };
+  } | null>(null);
 
   // Função para carregar veículos usando a API REST
   const fetchVehicles = async () => {
@@ -629,6 +638,83 @@ const VehiclesNew: React.FC = () => {
     }
   };
 
+  // Função para importar planilha de bases (atualizar placa -> base)
+  const handleImportBases = async () => {
+    if (!selectedBasesFile) {
+      toast({
+        title: "Nenhum arquivo selecionado",
+        description: "Por favor, selecione um arquivo Excel para importar.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUploadingBases(true);
+    setImportResult(null);
+    
+    try {
+      // Importar a biblioteca xlsx dinamicamente
+      const XLSX = await import('xlsx');
+      
+      // Ler o arquivo
+      const arrayBuffer = await selectedBasesFile.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+      
+      // Mapear os dados para o formato esperado pela API
+      const mappedData = jsonData.map((row: any) => {
+        // Tentar encontrar a coluna de placa (diferentes possíveis nomes)
+        const placa = row.placa || row.Placa || row.PLACA || row.plate || row.Plate || Object.values(row)[0];
+        // Tentar encontrar a coluna de base (diferentes possíveis nomes)
+        const base = row.base || row.Base || row.BASE || row.base_nome || row.Base_Nome || Object.values(row)[1];
+        
+        return { placa, base };
+      });
+      
+      // Filtrar linhas válidas
+      const validData = mappedData.filter(item => item.placa && item.base);
+      
+      if (validData.length === 0) {
+        throw new Error('Nenhuma linha válida encontrada. Verifique se a planilha tem colunas "Placa" e "Base".');
+      }
+      
+      // Enviar para a API
+      const response = await fetch('/api/vehicles/import-spreadsheet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ data: validData })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao importar planilha');
+      }
+
+      const result = await response.json();
+      setImportResult(result);
+      
+      // Recarregar lista de veículos
+      await fetchVehicles();
+      
+      toast({
+        title: "Importacao concluida",
+        description: `${result.resumo.atualizados} veiculos atualizados de ${result.resumo.total} linhas`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error("Erro ao importar planilha:", error);
+      toast({
+        title: "Erro na importacao",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploadingBases(false);
+    }
+  };
+
   return (
     <MainLayoutSimple>
       <div className="space-y-6">
@@ -704,14 +790,15 @@ const VehiclesNew: React.FC = () => {
           </TabsList>
           
           <TabsContent value="list" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <Upload className="h-4 w-4" />
-                    Importar Manutenção
-                  </Button>
-                </DialogTrigger>
+            <div className="flex justify-between items-center flex-wrap gap-2">
+              <div className="flex gap-2">
+                <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <Upload className="h-4 w-4" />
+                      Importar Manutencao
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Importar Planilha de Manutenção</DialogTitle>
@@ -775,6 +862,113 @@ const VehiclesNew: React.FC = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+
+              {/* Botão de Importar Bases */}
+              <Dialog open={isImportBasesDialogOpen} onOpenChange={(open) => {
+                setIsImportBasesDialogOpen(open);
+                if (!open) {
+                  setSelectedBasesFile(null);
+                  setImportResult(null);
+                }
+              }}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2 ml-2">
+                    <File className="h-4 w-4" />
+                    Atualizar Bases
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Importar Planilha de Placas e Bases</DialogTitle>
+                    <DialogDescription>
+                      Atualize as bases dos veiculos em massa. Envie uma planilha com as colunas "Placa" e "Base".
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="import-bases-file">Arquivo Excel (.xlsx ou .xls)</Label>
+                      <Input
+                        id="import-bases-file"
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={(e) => setSelectedBasesFile(e.target.files?.[0] || null)}
+                      />
+                      {selectedBasesFile && (
+                        <p className="text-sm text-gray-500">
+                          Arquivo selecionado: {selectedBasesFile.name}
+                        </p>
+                      )}
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div className="flex gap-2">
+                        <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div className="text-sm text-blue-800">
+                          <p className="font-medium mb-1">Formato da planilha:</p>
+                          <ul className="list-disc list-inside space-y-1">
+                            <li>Coluna 1: <strong>Placa</strong> (ex: GAX9F44)</li>
+                            <li>Coluna 2: <strong>Base</strong> (ex: GP02 JACAREI, LH01 LINE HALL)</li>
+                            <li>Placas nao encontradas serao ignoradas</li>
+                            <li>Bases serao identificadas pelo nome (busca aproximada)</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Resultado da importação */}
+                    {importResult && (
+                      <div className={`border rounded-lg p-4 ${importResult.resumo.atualizados > 0 ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+                        <h4 className="font-medium mb-2">Resultado da Importacao:</h4>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>Total de linhas: <strong>{importResult.resumo.total}</strong></div>
+                          <div>Veiculos atualizados: <strong className="text-green-600">{importResult.resumo.atualizados}</strong></div>
+                          <div>Placas nao encontradas: <strong className="text-yellow-600">{importResult.resumo.placasNaoEncontradas}</strong></div>
+                          <div>Bases nao encontradas: <strong className="text-red-600">{importResult.resumo.basesNaoEncontradas}</strong></div>
+                        </div>
+                        
+                        {importResult.detalhes.basesNaoEncontradas.length > 0 && (
+                          <div className="mt-3 text-sm">
+                            <p className="font-medium text-red-600">Bases nao encontradas:</p>
+                            <p className="text-gray-600">{importResult.detalhes.basesNaoEncontradas.join(', ')}</p>
+                          </div>
+                        )}
+                        
+                        {importResult.detalhes.placasNaoEncontradas.length > 0 && (
+                          <div className="mt-2 text-sm">
+                            <p className="font-medium text-yellow-600">Placas nao encontradas (primeiras 20):</p>
+                            <p className="text-gray-600 text-xs">{importResult.detalhes.placasNaoEncontradas.slice(0, 20).join(', ')}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setIsImportBasesDialogOpen(false);
+                        setSelectedBasesFile(null);
+                        setImportResult(null);
+                      }}
+                    >
+                      Fechar
+                    </Button>
+                    <Button 
+                      onClick={handleImportBases}
+                      disabled={!selectedBasesFile || isUploadingBases}
+                    >
+                      {isUploadingBases ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                          Processando...
+                        </>
+                      ) : (
+                        'Importar Planilha'
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              </div>
               
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />

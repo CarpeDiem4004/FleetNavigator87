@@ -9566,6 +9566,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Importar planilha de veículos (atualizar placa -> base)
+  app.post("/api/vehicles/import-spreadsheet", isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const { data } = req.body; // Array de objetos { placa, base }
+      
+      if (!Array.isArray(data) || data.length === 0) {
+        return res.status(400).json({ message: "Dados inválidos. Envie um array de objetos com placa e base." });
+      }
+      
+      console.log(`[IMPORT] Iniciando importação de ${data.length} veículos`);
+      
+      // Buscar todas as bases para fazer o match por nome
+      const basesResult = await pool.query('SELECT id, name FROM bases WHERE active = true ORDER BY name');
+      const basesMap = new Map<string, number>();
+      basesResult.rows.forEach((b: any) => {
+        // Normalizar o nome da base para comparação
+        const normalizedName = b.name.toLowerCase().trim();
+        basesMap.set(normalizedName, b.id);
+      });
+      
+      let atualizados = 0;
+      let naoEncontrados: string[] = [];
+      let basesNaoEncontradas: string[] = [];
+      let erros: string[] = [];
+      
+      for (const row of data) {
+        const placa = row.placa?.toString().trim().toUpperCase();
+        const baseNome = row.base?.toString().trim();
+        
+        if (!placa || !baseNome) {
+          erros.push(`Linha inválida: placa=${placa}, base=${baseNome}`);
+          continue;
+        }
+        
+        // Buscar o ID da base pelo nome (case insensitive)
+        const baseNomeNormalizado = baseNome.toLowerCase();
+        let baseId = basesMap.get(baseNomeNormalizado);
+        
+        // Se não encontrou exato, tentar busca parcial
+        if (!baseId) {
+          for (const [nome, id] of basesMap.entries()) {
+            if (nome.includes(baseNomeNormalizado) || baseNomeNormalizado.includes(nome)) {
+              baseId = id;
+              break;
+            }
+          }
+        }
+        
+        if (!baseId) {
+          if (!basesNaoEncontradas.includes(baseNome)) {
+            basesNaoEncontradas.push(baseNome);
+          }
+          continue;
+        }
+        
+        // Atualizar o veículo
+        try {
+          const updateResult = await pool.query(
+            'UPDATE vehicles SET base_id = $1, updated_at = NOW() WHERE plate = $2',
+            [baseId, placa]
+          );
+          
+          if (updateResult.rowCount === 0) {
+            naoEncontrados.push(placa);
+          } else {
+            atualizados++;
+          }
+        } catch (updateError: any) {
+          erros.push(`Erro ao atualizar ${placa}: ${updateError.message}`);
+        }
+      }
+      
+      console.log(`[IMPORT] Importação concluída: ${atualizados} atualizados, ${naoEncontrados.length} placas não encontradas, ${basesNaoEncontradas.length} bases não encontradas`);
+      
+      return res.json({
+        success: true,
+        resumo: {
+          total: data.length,
+          atualizados,
+          placasNaoEncontradas: naoEncontrados.length,
+          basesNaoEncontradas: basesNaoEncontradas.length
+        },
+        detalhes: {
+          placasNaoEncontradas: naoEncontrados.slice(0, 50), // Limitar para não sobrecarregar
+          basesNaoEncontradas,
+          erros: erros.slice(0, 20)
+        }
+      });
+    } catch (error: any) {
+      console.error("[IMPORT] Erro na importação:", error);
+      return res.status(500).json({ message: "Erro ao processar importação", error: error.message });
+    }
+  });
+
   app.put("/api/vehicles/:id", isAuthenticated, async (req, res) => {
     try {
       if (!req.user) {
