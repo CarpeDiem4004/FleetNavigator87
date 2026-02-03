@@ -9581,14 +9581,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[IMPORT] Iniciando importação de ${data.length} veículos`);
       
+      // Função para normalizar nomes de bases para comparação
+      const normalizeBaseName = (name: string): string => {
+        return name
+          .toLowerCase()
+          .replace(/[_\-\(\)]/g, ' ')  // Substituir underscores, hifens e parênteses por espaço
+          .replace(/\s+/g, ' ')         // Múltiplos espaços -> um espaço
+          .trim();
+      };
+      
+      // Extrair código da base (ex: SC_ARACATUBA_SSP10 -> ssp10)
+      const extractBaseCode = (name: string): string | null => {
+        const match = name.match(/([A-Z]{2,3}\d+)/i);
+        return match ? match[1].toLowerCase() : null;
+      };
+      
       // Buscar todas as bases para fazer o match por nome
-      const basesResult = await pool.query('SELECT id, name FROM bases WHERE active = true ORDER BY name');
-      const basesMap = new Map<string, number>();
-      basesResult.rows.forEach((b: any) => {
-        // Normalizar o nome da base para comparação
-        const normalizedName = b.name.toLowerCase().trim();
-        basesMap.set(normalizedName, b.id);
+      const basesResult = await pool.query('SELECT id, name, basename FROM bases WHERE active = true ORDER BY name');
+      const bases = basesResult.rows as { id: number; name: string; basename: string | null }[];
+      
+      // Criar múltiplos mapeamentos para melhor match
+      const basesById = new Map<number, { id: number; name: string; basename: string | null }>();
+      const basesByNormalizedName = new Map<string, number>();
+      const basesByBasename = new Map<string, number>();
+      const basesByCode = new Map<string, number>();
+      
+      bases.forEach((b) => {
+        basesById.set(b.id, b);
+        
+        // Mapeamento por nome normalizado
+        const normalizedName = normalizeBaseName(b.name);
+        basesByNormalizedName.set(normalizedName, b.id);
+        
+        // Mapeamento por basename
+        if (b.basename) {
+          basesByBasename.set(b.basename.toLowerCase(), b.id);
+          basesByBasename.set(normalizeBaseName(b.basename), b.id);
+        }
+        
+        // Mapeamento por código extraído
+        const code = extractBaseCode(b.name);
+        if (code) {
+          basesByCode.set(code, b.id);
+        }
+        if (b.basename) {
+          const basenameCode = extractBaseCode(b.basename);
+          if (basenameCode) {
+            basesByCode.set(basenameCode, b.id);
+          }
+        }
       });
+      
+      // Função para encontrar base_id a partir do nome da planilha
+      const findBaseId = (inputName: string): number | null => {
+        const normalized = normalizeBaseName(inputName);
+        const inputCode = extractBaseCode(inputName);
+        
+        // 1. Match exato por nome normalizado
+        if (basesByNormalizedName.has(normalized)) {
+          return basesByNormalizedName.get(normalized)!;
+        }
+        
+        // 2. Match por basename
+        const inputAsBasename = inputName.toLowerCase().replace(/\s+/g, '_');
+        if (basesByBasename.has(inputAsBasename)) {
+          return basesByBasename.get(inputAsBasename)!;
+        }
+        if (basesByBasename.has(normalized.replace(/\s+/g, '_'))) {
+          return basesByBasename.get(normalized.replace(/\s+/g, '_'))!;
+        }
+        
+        // 3. Match por código (SSP10, SPR1, etc.)
+        if (inputCode && basesByCode.has(inputCode)) {
+          return basesByCode.get(inputCode)!;
+        }
+        
+        // 4. Match parcial - verificar se o nome normalizado contém ou é contido
+        for (const [baseName, baseId] of basesByNormalizedName.entries()) {
+          if (baseName.includes(normalized) || normalized.includes(baseName)) {
+            return baseId;
+          }
+        }
+        
+        // 5. Match por palavras-chave importantes
+        const keywords = normalized.split(' ').filter(k => k.length > 2);
+        for (const [baseName, baseId] of basesByNormalizedName.entries()) {
+          const baseWords = baseName.split(' ');
+          const matchCount = keywords.filter(k => baseWords.some(bw => bw.includes(k) || k.includes(bw))).length;
+          if (matchCount >= 2 || (keywords.length === 1 && matchCount === 1)) {
+            return baseId;
+          }
+        }
+        
+        return null;
+      };
       
       let atualizados = 0;
       let naoEncontrados: string[] = [];
@@ -9604,19 +9690,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           continue;
         }
         
-        // Buscar o ID da base pelo nome (case insensitive)
-        const baseNomeNormalizado = baseNome.toLowerCase();
-        let baseId = basesMap.get(baseNomeNormalizado);
-        
-        // Se não encontrou exato, tentar busca parcial
-        if (!baseId) {
-          for (const [nome, id] of basesMap.entries()) {
-            if (nome.includes(baseNomeNormalizado) || baseNomeNormalizado.includes(nome)) {
-              baseId = id;
-              break;
-            }
-          }
-        }
+        // Buscar o ID da base usando algoritmo melhorado
+        const baseId = findBaseId(baseNome);
         
         if (!baseId) {
           if (!basesNaoEncontradas.includes(baseNome)) {
