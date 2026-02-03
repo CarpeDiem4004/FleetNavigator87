@@ -2015,6 +2015,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cocaColaUser = req.cocaColaUser;
       const dataHoje = new Date().toISOString().split('T')[0];
       
+      console.log('[COCA-COLA STATUS] Recebendo atualização:', { vehicle_id, base_id, status, data, dataHoje });
+      
       // Validação: só permite atualizar o dia atual
       const dataEnviada = data || dataHoje;
       if (dataEnviada !== dataHoje) {
@@ -2053,10 +2055,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cocaColaUser?.nome || 'Sistema'
       ]);
 
+      console.log('[COCA-COLA STATUS] Atualização realizada com sucesso:', result.rows[0]);
       res.json({ success: true, data: result.rows[0] });
-    } catch (error) {
-      console.error('[COCA-COLA] Erro ao atualizar status diário:', error);
-      res.status(500).json({ error: 'Erro ao atualizar status' });
+    } catch (error: any) {
+      console.error('[COCA-COLA STATUS] Erro ao atualizar status diário:', error?.message || error);
+      res.status(500).json({ error: 'Erro ao atualizar status', details: error?.message });
     }
   });
 
