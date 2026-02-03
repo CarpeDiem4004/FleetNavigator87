@@ -821,6 +821,8 @@ function App() {
           <ProtectedRoute path="/equipment" component={Equipment} />
           <Route path="/equipment/request" component={EquipmentRequest} />
           <ProtectedRoute path="/equipment/requests/admin" component={EquipmentRequestsAdmin} />
+          {/* Rota pública de acesso externo DEVE vir ANTES das rotas protegidas */}
+          <Route path="/fleet-management/towing-partners/external-access/:token" component={TowingPartnerExternalAccess} />
           <ProtectedRoute path="/fleet-management/towing-partners" component={TowingPartnersPage} />
           <ProtectedRoute path="/fleet-management/towing-partners/new" component={NewTowingPartnerPage} />
           <ProtectedRoute path="/fleet-management/towing-partners/requests" component={TowingRequestsPage} />
@@ -828,7 +830,6 @@ function App() {
           <ProtectedRoute path="/fleet-management/towing-partners/servicos-pendentes" component={ServicosPendentesPage} />
           <ProtectedRoute path="/fleet-management/towing-partners/financeiro" component={FinanceiroGuincho} />
           <ProtectedRoute path="/fleet-management/towing-partners-payments" component={TowingPaymentsPage} />
-          <Route path="/fleet-management/towing-partners/external-access/:token" component={TowingPartnerExternalAccess} />
           <ProtectedRoute path="/fleet-management/towing-partners/6" component={FordPartnerDetail} />
           <ProtectedRoute path="/fleet-management/towing-partners/:id" component={EditableTowingPartnerDetailPage} />
           <ProtectedRoute path="/accidents" component={Accidents} />
