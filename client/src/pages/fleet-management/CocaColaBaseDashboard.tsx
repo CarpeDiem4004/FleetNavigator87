@@ -292,9 +292,13 @@ export default function CocaColaBaseDashboard() {
       toast({ title: 'Status atualizado com sucesso!' });
       setShowUpdateStatus(false);
       setSelectedVehicle(null);
+      // Invalidar cache e forçar refetch
+      queryClient.invalidateQueries({ queryKey: ['/api/coca-cola/vehicles'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/coca-cola/fleet-statistics'] });
       refetchVehicles();
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('[COCA-COLA] Erro ao atualizar status:', error);
       toast({ title: 'Erro ao atualizar status', variant: 'destructive' });
     }
   });
@@ -988,7 +992,8 @@ export default function CocaColaBaseDashboard() {
                             status: vehicle.status,
                             oficina: vehicle.oficina || '',
                             prazo_estimado: vehicle.prazo_estimado || '',
-                            motivo_parado: vehicle.motivo_parado || ''
+                            motivo_parado: vehicle.motivo_parado || '',
+                            base_emprestimo: vehicle.base_emprestimo || ''
                           });
                           setShowUpdateStatus(true);
                         }}
