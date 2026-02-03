@@ -8170,10 +8170,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verifica se é um número (ID) ou string (basename)
       if (!isNaN(parseInt(idParam))) {
-        query = 'SELECT id, name, location, operation, type, active, description FROM bases WHERE id = $1';
+        query = 'SELECT id, name, location, operation, type, active, basename, has_maintenance, has_tires FROM bases WHERE id = $1';
         params = [parseInt(idParam)];
       } else {
-        query = 'SELECT id, name, location, operation, type, active, description FROM bases WHERE LOWER(basename) = $1 OR LOWER(name) = $1';
+        query = 'SELECT id, name, location, operation, type, active, basename, has_maintenance, has_tires FROM bases WHERE LOWER(basename) = $1 OR LOWER(name) = $1';
         params = [idParam.toLowerCase()];
       }
       
