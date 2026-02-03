@@ -2428,6 +2428,15 @@ export async function validatePendingSolicitations(req: Request, res: Response) 
     
     console.log(`[VALIDATE-PENDING] Validando ${solicitations.length} solicitações`);
     
+    // Regra: só validar data atual e no máximo um dia para frente
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const amanha = new Date(hoje);
+    amanha.setDate(amanha.getDate() + 1);
+    amanha.setHours(23, 59, 59, 999);
+    
+    console.log(`[VALIDATE-PENDING] Período válido: ${hoje.toISOString()} até ${amanha.toISOString()}`);
+    
     const results: any[] = [];
     
     for (const sol of solicitations) {
@@ -2439,6 +2448,31 @@ export async function validatePendingSolicitations(req: Request, res: Response) 
           placa,
           validado: false,
           motivo: 'Dados incompletos'
+        });
+        continue;
+      }
+      
+      // Verificar se a data está dentro do período permitido (hoje ou amanhã)
+      let dataUsoDate: Date;
+      if (data_uso.includes('-')) {
+        const [ano, mes, dia] = data_uso.split('-').map(Number);
+        dataUsoDate = new Date(ano, mes - 1, dia);
+      } else if (data_uso.includes('/')) {
+        const [dia, mes, ano] = data_uso.split('/').map(Number);
+        dataUsoDate = new Date(ano, mes - 1, dia);
+      } else {
+        dataUsoDate = new Date(data_uso);
+      }
+      dataUsoDate.setHours(12, 0, 0, 0); // Meio-dia para evitar problemas de timezone
+      
+      if (dataUsoDate < hoje || dataUsoDate > amanha) {
+        console.log(`[VALIDATE-PENDING] Data ${data_uso} fora do período válido para placa ${placa}`);
+        results.push({
+          id,
+          placa,
+          data_uso,
+          validado: false,
+          motivo: `Data fora do período: apenas hoje ou amanhã são validados`
         });
         continue;
       }
