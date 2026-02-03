@@ -90,6 +90,16 @@ async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<
     let viagemEncontrada = false;
     let origemEncontrada = '';
     let destinoEncontrado = '';
+    let dataEncontrada = '';
+    
+    // Calcular data de amanhã para busca flexível
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const amanha = new Date(hoje);
+    amanha.setDate(amanha.getDate() + 1);
+    const amanhaFormatada = `${String(amanha.getDate()).padStart(2, '0')}/${String(amanha.getMonth() + 1).padStart(2, '0')}/${amanha.getFullYear()}`;
+    
+    console.log(`[GOOGLE_SHEETS] Buscando data: ${dataFormatada} ou ${amanhaFormatada}`);
     
     for (const row of rows) {
       const cells = row.c || [];
@@ -132,13 +142,17 @@ async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<
         vehicleNumber = String(vehicleNumberCell.v).toUpperCase().replace(/[^A-Z0-9]/g, '');
       }
       
-      // Comparar data e placa (verificar ambos campos de veículo)
+      // Comparar placa (verificar ambos campos de veículo)
       const placaMatch = usedVehicle === placaNormalizada || vehicleNumber === placaNormalizada || 
                          usedVehicle.includes(placaNormalizada) || vehicleNumber.includes(placaNormalizada) ||
                          placaNormalizada.includes(usedVehicle) || placaNormalizada.includes(vehicleNumber);
       
-      if (dataLinha === dataFormatada && placaMatch) {
+      // Busca flexível: aceita data exata OU amanhã
+      const dataMatch = dataLinha === dataFormatada || dataLinha === amanhaFormatada;
+      
+      if (dataMatch && placaMatch) {
         viagemEncontrada = true;
+        dataEncontrada = dataLinha;
         
         // Pegar origem (coluna K - índice 10: origin_station_code)
         const origemCell = cells[10];
@@ -152,7 +166,7 @@ async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<
           destinoEncontrado = String(destinoCell.v);
         }
         
-        console.log(`[GOOGLE_SHEETS] Viagem encontrada! Veículo: ${usedVehicle || vehicleNumber}, Origem: ${origemEncontrada}, Destino: ${destinoEncontrado}`);
+        console.log(`[GOOGLE_SHEETS] Viagem encontrada! Data: ${dataEncontrada}, Veículo: ${usedVehicle || vehicleNumber}, Origem: ${origemEncontrada}, Destino: ${destinoEncontrado}`);
         break;
       }
     }
@@ -2428,56 +2442,28 @@ export async function validatePendingSolicitations(req: Request, res: Response) 
     
     console.log(`[VALIDATE-PENDING] Validando ${solicitations.length} solicitações`);
     
-    // Regra: só validar data atual e no máximo um dia para frente
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    const amanha = new Date(hoje);
-    amanha.setDate(amanha.getDate() + 1);
-    amanha.setHours(23, 59, 59, 999);
-    
-    console.log(`[VALIDATE-PENDING] Período válido: ${hoje.toISOString()} até ${amanha.toISOString()}`);
+    // Busca flexível: valida considerando hoje e amanhã na planilha
+    console.log(`[VALIDATE-PENDING] Iniciando validação flexível (hoje/amanhã)`);
     
     const results: any[] = [];
     
     for (const sol of solicitations) {
       const { id, placa, data_uso } = sol;
       
-      if (!placa || !data_uso) {
+      if (!placa) {
         results.push({
           id,
           placa,
           validado: false,
-          motivo: 'Dados incompletos'
+          motivo: 'Placa não informada'
         });
         continue;
       }
       
-      // Verificar se a data está dentro do período permitido (hoje ou amanhã)
-      let dataUsoDate: Date;
-      if (data_uso.includes('-')) {
-        const [ano, mes, dia] = data_uso.split('-').map(Number);
-        dataUsoDate = new Date(ano, mes - 1, dia);
-      } else if (data_uso.includes('/')) {
-        const [dia, mes, ano] = data_uso.split('/').map(Number);
-        dataUsoDate = new Date(ano, mes - 1, dia);
-      } else {
-        dataUsoDate = new Date(data_uso);
-      }
-      dataUsoDate.setHours(12, 0, 0, 0); // Meio-dia para evitar problemas de timezone
+      // Se não tiver data_uso, usa a data de hoje
+      const dataParaValidar = data_uso || new Date().toISOString().split('T')[0];
       
-      if (dataUsoDate < hoje || dataUsoDate > amanha) {
-        console.log(`[VALIDATE-PENDING] Data ${data_uso} fora do período válido para placa ${placa}`);
-        results.push({
-          id,
-          placa,
-          data_uso,
-          validado: false,
-          motivo: `Data fora do período: apenas hoje ou amanhã são validados`
-        });
-        continue;
-      }
-      
-      const resultado = await validateWithGoogleSheet(placa, data_uso);
+      const resultado = await validateWithGoogleSheet(placa, dataParaValidar);
       
       results.push({
         id,
