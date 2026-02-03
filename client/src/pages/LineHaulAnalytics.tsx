@@ -81,7 +81,22 @@ export default function LineHaulAnalytics() {
     try {
       const wb = XLSX.utils.book_new();
 
-      // Aba 1: Resumo por Rota
+      // Aba 1: Detalhamento (placa a placa) - PRINCIPAL
+      if (data.rotasDetalhadas && data.rotasDetalhadas.length > 0) {
+        const detalhadoData = data.rotasDetalhadas.map((row: any) => ({
+          'Data Solicitação': formatDateExport(row.dataSolicitacao),
+          'Data de Uso': formatDateExport(row.dataUso),
+          'Placa': row.placa || '',
+          'Motorista': row.motorista || '',
+          'Rota': row.rota || '',
+          'Valor (R$)': row.valor || 0,
+          'Status': row.status || '',
+        }));
+        const wsDetalhado = XLSX.utils.json_to_sheet(detalhadoData);
+        XLSX.utils.book_append_sheet(wb, wsDetalhado, 'Viagens Detalhadas');
+      }
+
+      // Aba 2: Resumo por Rota (agrupado)
       if (data.tabelaAnalitica && data.tabelaAnalitica.length > 0) {
         const resumoData = data.tabelaAnalitica.map((row: any) => ({
           'Rota': row.rota || '',
@@ -94,27 +109,12 @@ export default function LineHaulAnalytics() {
         XLSX.utils.book_append_sheet(wb, wsResumo, 'Resumo por Rota');
       }
 
-      // Aba 2: Detalhamento com datas
-      if (data.rotasDetalhadas && data.rotasDetalhadas.length > 0) {
-        const detalhadoData = data.rotasDetalhadas.map((row: any) => ({
-          'Rota': row.rota || '',
-          'Placa': row.placa || '',
-          'Motorista': row.motorista || '',
-          'Valor (R$)': row.valor || 0,
-          'Data Solicitação': formatDateExport(row.dataSolicitacao),
-          'Data de Uso': formatDateExport(row.dataUso),
-          'Status': row.status || '',
-        }));
-        const wsDetalhado = XLSX.utils.json_to_sheet(detalhadoData);
-        XLSX.utils.book_append_sheet(wb, wsDetalhado, 'Detalhamento');
-      }
-
       if (wb.SheetNames.length === 0) {
         toast({ title: 'Sem dados para exportar', variant: 'destructive' });
         return;
       }
       
-      const fileName = `historico_rotas_linehaul_${format(new Date(), 'dd-MM-yyyy')}.xlsx`;
+      const fileName = `viagens_linehaul_detalhadas_${format(new Date(), 'dd-MM-yyyy')}.xlsx`;
       XLSX.writeFile(wb, fileName);
       
       toast({ title: 'Excel exportado com sucesso!' });
