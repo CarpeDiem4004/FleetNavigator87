@@ -1961,7 +1961,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           v.id as vehicle_id,
           v.placa,
           v.modelo,
-          v.tipo_veiculo,
           COALESCE(s.status, 'nao_informado') as status,
           s.observacao,
           s.updated_by_name,
