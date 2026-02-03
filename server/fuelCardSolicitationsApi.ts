@@ -150,6 +150,11 @@ async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<
       // Busca flexível: aceita data exata OU amanhã
       const dataMatch = dataLinha === dataFormatada || dataLinha === amanhaFormatada;
       
+      // Debug: mostrar comparações para a placa buscada
+      if (vehicleNumber === placaNormalizada) {
+        console.log(`[GOOGLE_SHEETS] DEBUG - Linha encontrada: data=${dataLinha}, vehicleNumber=${vehicleNumber}, dataMatch=${dataMatch}`);
+      }
+      
       if (dataMatch && placaMatch) {
         viagemEncontrada = true;
         dataEncontrada = dataLinha;
