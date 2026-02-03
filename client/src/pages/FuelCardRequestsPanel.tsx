@@ -806,25 +806,26 @@ const FuelCardRequestsPanel: React.FC = () => {
         description: `Consultando ${pendingLineHaul.length} solicitações na planilha Google`,
       });
       
-      const response = await apiRequest('/api/fuel-card-solicitations/validate-pending', {
-        method: 'POST',
-        body: JSON.stringify({
-          solicitations: pendingLineHaul.map(sol => {
-            // Usar data_uso se disponível, senão usar data_solicitacao
-            let dataParaValidar = sol.data_uso;
-            if (!dataParaValidar && sol.data_solicitacao) {
-              // Extrair apenas a parte da data (YYYY-MM-DD) da data de solicitação
-              const dataSol = new Date(sol.data_solicitacao);
-              dataParaValidar = dataSol.toISOString().split('T')[0];
-            }
-            return {
-              id: sol.id,
-              placa: sol.placa,
-              data_uso: dataParaValidar
-            };
-          })
-        })
+      const solicitationsData = pendingLineHaul.map(sol => {
+        // Usar data_uso se disponível, senão usar data_solicitacao
+        let dataParaValidar = sol.data_uso;
+        if (!dataParaValidar && sol.data_solicitacao) {
+          // Extrair apenas a parte da data (YYYY-MM-DD) da data de solicitação
+          const dataSol = new Date(sol.data_solicitacao);
+          dataParaValidar = dataSol.toISOString().split('T')[0];
+        }
+        return {
+          id: sol.id,
+          placa: sol.placa,
+          data_uso: dataParaValidar
+        };
       });
+      
+      const res = await apiRequest('POST', '/api/fuel-card-solicitations/validate-pending', {
+        solicitations: solicitationsData
+      });
+      
+      const response = await res.json();
       
       if (response.success) {
         // Atualizar o estado com os resultados da validação
