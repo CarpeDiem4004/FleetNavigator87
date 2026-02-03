@@ -9385,21 +9385,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Buscar veículos por base para o formulário de solicitação de saldo
+  // IMPORTANTE: Usar tabela 'vehicles' (inglês) que é a fonte primária de dados
   app.get("/api/vehicles/by-base/:baseId", async (req, res) => {
     try {
       const { baseId } = req.params;
-      console.log(`GET /api/vehicles/by-base/${baseId} - Buscando veículos da base`);
+      console.log(`GET /api/vehicles/by-base/${baseId} - Buscando veículos da base (tabela vehicles)`);
       
+      // Busca na tabela vehicles (inglês) que é a fonte correta de dados
       // O formulário envia project_bases.id, mas veículos são salvos com bases.id
-      // Precisamos fazer o mapeamento correto usando basename
       const query = `
         SELECT 
           v.id,
-          v.placa as plate,
-          v.modelo as model,
+          v.plate,
+          v.model,
           v.status,
           v.cartao_abastecimento
-        FROM veiculos v
+        FROM vehicles v
         WHERE 
           -- Busca direta se o ID for igual (caso onde project_bases.id = bases.id)
           v.base_id = $1
@@ -9417,17 +9418,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               b.name ILIKE '%' || pb.base_code || '%'
             WHERE pb.id = $1
           )
-        ORDER BY v.placa
+        ORDER BY v.plate
       `;
       
       const result = await pool.query(query, [baseId]);
       console.log(`Veículos encontrados para base ${baseId}: ${result.rows.length}`);
       
-      // Se não encontrou, verificar se há veículos na bases.id correspondente
+      // Se não encontrou, verificar mapeamento para debug
       if (result.rows.length === 0) {
-        console.log(`Nenhum veículo encontrado diretamente. Verificando mapeamento...`);
+        console.log(`Nenhum veículo encontrado. Verificando mapeamento...`);
         const mappingCheck = await pool.query(`
-          SELECT pb.id as pb_id, pb.base_name, b.id as base_id, b.name
+          SELECT pb.id as pb_id, pb.base_name, b.id as base_id, b.name,
+                 (SELECT COUNT(*) FROM vehicles WHERE base_id = b.id) as count_vehicles
           FROM project_bases pb
           LEFT JOIN bases b ON LOWER(b.basename) = LOWER(pb.base_name)
           WHERE pb.id = $1
