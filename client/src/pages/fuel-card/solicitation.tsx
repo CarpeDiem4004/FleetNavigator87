@@ -860,35 +860,32 @@ export default function FuelCardSolicitation() {
                       <FormItem>
                         <FormLabel className="text-sm font-medium">🚗 Placa do Veículo</FormLabel>
                         <FormControl>
-                          <select
-                            className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                            style={{ fontSize: '16px', minHeight: '48px' }}
+                          <Combobox
                             value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            disabled={!selectedBaseId || isLoadingBaseVehicles}
-                          >
-                            <option value="">
-                              {!selectedBaseId 
+                            onChange={field.onChange}
+                            options={baseVehicles.map((v) => ({
+                              value: v.plate,
+                              label: `${v.plate} ${v.cartao_abastecimento ? '🔗' : '⚠️'}`
+                            }))}
+                            placeholder={
+                              !selectedBaseId 
                                 ? "Selecione uma base primeiro"
                                 : isLoadingBaseVehicles 
                                   ? "Carregando veículos..."
                                   : baseVehicles.length === 0 
                                     ? "Nenhum veículo encontrado"
-                                    : "Selecione a placa"}
-                            </option>
-                            {baseVehicles.map((v) => (
-                              <option key={v.id} value={v.plate}>
-                                {v.plate} {v.cartao_abastecimento ? '🔗' : '⚠️'}
-                              </option>
-                            ))}
-                          </select>
+                                    : "Digite ou selecione a placa"
+                            }
+                            emptyMessage="Nenhuma placa encontrada"
+                            disabled={!selectedBaseId || isLoadingBaseVehicles}
+                          />
                         </FormControl>
                         <FormDescription className="text-xs">
                           {selectedBaseVehicle?.cartao_abastecimento 
                             ? "🔗 Cartão vinculado encontrado"
                             : selectedBaseVehicle 
                               ? "⚠️ Sem cartão vinculado - digite abaixo"
-                              : "Selecione a placa do veículo"}
+                              : "Digite para buscar ou selecione a placa"}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
