@@ -90,6 +90,7 @@ import LineHaulPage from "@/pages/LineHaulPage";
 import LineHaulAnalytics from "@/pages/LineHaulAnalytics";
 import MessagesAttendancePage from "@/pages/MessagesAttendancePage";
 import LineHaulWhatsAppPanel from "@/pages/LineHaulWhatsAppPanel";
+import TripsExportReport from "@/pages/TripsExportReport";
 import HistoricoConsolidado from "@/pages/postos/HistoricoConsolidado";
 import PostosVisaoGeralIntegrada from "@/pages/postos/PostosVisaoGeralIntegrada";
 import PostoDetalhesPage from "@/pages/postos/PostoDetalhesPage";
@@ -845,6 +846,7 @@ function App() {
           <ProtectedRoute path="/relatorio-consumo" component={RelatorioConsumo} />
           <ProtectedRoute path="/line-haul" component={LineHaulPage} />
           <ProtectedRoute path="/linehaul/analytics" component={LineHaulAnalytics} />
+          <ProtectedRoute path="/trips-export" component={TripsExportReport} />
           <ProtectedRoute path="/painel-atendimento-saldo" component={MessagesAttendancePage} />
           <ProtectedRoute path="/line-haul/whatsapp" component={LineHaulWhatsAppPanel} />
           <ProtectedRoute path="/users" component={UsersNew} />

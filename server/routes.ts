@@ -125,6 +125,7 @@ import { getRelatorioConsumo } from "./relatorioConsumoApi";
 import indicadoresApi from "./indicadoresApi";
 import manutencaoHistoricoApi from "./manutencaoHistoricoApi";
 import veiculosApi from "./veiculosApi";
+import viagensApi from "./routes/viagensApi";
 // import { supabaseInsertHandler } from "./routes/supabaseInsertRoute"; // Desabilitado - usando versão PostgreSQL direta
 import postoSupabaseRoutes from "./routes/postoSupabaseRoutes";
 import postoRoutes from "./routes/postoRoutes.js";
@@ -3036,6 +3037,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas do Line Hall (motoristas)
   app.use('/api/line-hall', lineHallRoutes);
   app.use(lineHaulAnalyticsApi);
+  
+  // Registrar rotas de viagens (exportação de relatórios)
+  app.use(viagensApi);
   
   // Redirecionar requisições de recebimentos do Guarulhos V2 para a rota especializada
   app.get('/api/recebimentos/guarulhos_v2', async (req, res) => {
