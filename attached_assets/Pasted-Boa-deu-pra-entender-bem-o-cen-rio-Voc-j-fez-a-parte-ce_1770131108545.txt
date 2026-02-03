@@ -1,0 +1,195 @@
+Boa, deu pra entender bem o cenário 👍
+Você já fez a parte certa (vincular as placas à base no cadastro), então se **no sistema elas estão com a base correta, mas não aparecem no formulário**, quase sempre é problema de **filtro / query / relacionamento no backend ou no select do front**.
+
+Vamos por partes, direto ao ponto:
+
+---
+
+## 🔎 O que provavelmente está acontecendo
+
+Pelo fluxo da tela:
+
+1. Seleciona **Projeto**
+2. Seleciona **Base**
+3. Campo **Placa** deveria filtrar por base
+
+Então o select de placas deve estar fazendo algo tipo:
+
+```sql
+SELECT * FROM vehicles WHERE base_id = ?
+```
+
+Se **algumas não aparecem**, normalmente é:
+
+### 🚨 Causas mais comuns
+
+### 1. ❌ Filtro errado no backend
+
+Ex:
+
+```sql
+WHERE base = "Coca Cola Jurubatuba"
+```
+
+(em vez de usar ID)
+
+👉 Se estiver filtrando por **nome da base**, pode falhar por:
+
+* espaço extra
+* maiúscula/minúscula
+* acento
+* nome diferente no cadastro
+
+✅ **Certo:**
+
+```sql
+WHERE base_id = 3
+```
+
+Sempre usar ID, nunca texto.
+
+---
+
+### 2. ❌ Tipo da base diferente (string vs number)
+
+Ex:
+
+```js
+vehicle.base_id === selectedBaseId
+```
+
+mas:
+
+* `vehicle.base_id = "3"`
+* `selectedBaseId = 3`
+
+JS não bate.
+
+✅ Corrigir:
+
+```js
+Number(vehicle.base_id) === Number(selectedBaseId)
+```
+
+---
+
+### 3. ❌ Campo nulo/inativo nas placas
+
+Pode ter filtro escondido tipo:
+
+```sql
+WHERE base_id = ?
+AND status = 'Ativo'
+```
+
+ou
+
+```sql
+AND deleted_at IS NULL
+```
+
+👉 Algumas placas podem estar:
+
+* Inativas
+* Soft deleted
+* Sem status
+
+Confere no banco.
+
+---
+
+### 4. ❌ Cache do front
+
+Se vocês atualizaram base no cadastro recentemente:
+
+* o select pode estar usando lista cacheada
+* ou carregada só no load da página
+
+👉 solução:
+recarregar ao mudar a base:
+
+```js
+useEffect(() => {
+  fetchPlacas(baseId)
+}, [baseId])
+```
+
+---
+
+### 5. ❌ JOIN errado na API
+
+Se a API faz join:
+
+```sql
+JOIN bases b ON b.id = vehicles.base_id
+```
+
+e tiver:
+
+* base_id inválido
+* base deletada
+
+o INNER JOIN remove o veículo do resultado.
+
+✅ Trocar para:
+
+```sql
+LEFT JOIN
+```
+
+---
+
+## ✅ Como diagnosticar rápido (bem prático)
+
+### Teste direto no banco:
+
+Roda:
+
+```sql
+SELECT placa, base_id
+FROM vehicles
+WHERE base_id = X
+```
+
+Conta quantos vêm.
+
+Depois compara com:
+
+* quantos aparecem no formulário
+
+Se o banco retornar mais → problema é na API/front.
+
+---
+
+### Teste no backend
+
+Loga a query:
+
+```js
+console.log(baseId)
+console.log(result.length)
+```
+
+---
+
+## 🎯 Minha aposta (90% dos casos)
+
+Pelo que você descreveu:
+
+> "atualizamos na base de cadastro mais mesmo assim nao aparece"
+
+👉 quase certeza que:
+
+### 👉 o select está filtrando por nome da base ou string, não por ID.
+
+Esse erro é clássico.
+
+---
+
+Se quiser, me manda:
+
+* trecho do backend que busca as placas
+  ou
+* função do front que carrega o select
+
+que eu já te digo exatamente onde corrigir 👌

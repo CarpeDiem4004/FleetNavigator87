@@ -9390,8 +9390,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { baseId } = req.params;
       console.log(`GET /api/vehicles/by-base/${baseId} - Buscando veículos da base`);
       
-      // Primeiro tenta buscar diretamente pelo base_id
-      // Se não encontrar, tenta encontrar o bases.id correspondente via project_bases
+      // O formulário envia project_bases.id, mas veículos são salvos com bases.id
+      // Precisamos fazer o mapeamento correto usando basename
       const query = `
         SELECT 
           v.id,
@@ -9400,19 +9400,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
           v.status,
           v.cartao_abastecimento
         FROM veiculos v
-        WHERE v.base_id = $1
-           OR v.base_id IN (
-             SELECT b.id FROM bases b
-             INNER JOIN project_bases pb ON 
-               UPPER(b.name) LIKE '%' || pb.base_code || '%'
-               OR UPPER(b.name) LIKE REPLACE(UPPER(pb.base_name), '_', '%')
-             WHERE pb.id = $1
-           )
+        WHERE 
+          -- Busca direta se o ID for igual (caso onde project_bases.id = bases.id)
+          v.base_id = $1
+          -- Busca via mapeamento project_bases -> bases usando basename
+          OR v.base_id IN (
+            SELECT b.id FROM bases b
+            INNER JOIN project_bases pb ON 
+              LOWER(b.basename) = LOWER(pb.base_name)
+            WHERE pb.id = $1
+          )
+          -- Fallback: busca por código da base no nome
+          OR v.base_id IN (
+            SELECT b.id FROM bases b
+            INNER JOIN project_bases pb ON 
+              b.name ILIKE '%' || pb.base_code || '%'
+            WHERE pb.id = $1
+          )
         ORDER BY v.placa
       `;
       
       const result = await pool.query(query, [baseId]);
       console.log(`Veículos encontrados para base ${baseId}: ${result.rows.length}`);
+      
+      // Se não encontrou, verificar se há veículos na bases.id correspondente
+      if (result.rows.length === 0) {
+        console.log(`Nenhum veículo encontrado diretamente. Verificando mapeamento...`);
+        const mappingCheck = await pool.query(`
+          SELECT pb.id as pb_id, pb.base_name, b.id as base_id, b.name
+          FROM project_bases pb
+          LEFT JOIN bases b ON LOWER(b.basename) = LOWER(pb.base_name)
+          WHERE pb.id = $1
+        `, [baseId]);
+        if (mappingCheck.rows.length > 0) {
+          console.log(`Mapeamento encontrado:`, mappingCheck.rows[0]);
+        }
+      }
       
       return res.status(200).json({
         success: true,
