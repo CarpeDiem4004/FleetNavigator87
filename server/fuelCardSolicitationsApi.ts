@@ -2379,3 +2379,114 @@ export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: R
     });
   }
 }
+
+/**
+ * Consulta a planilha Google Sheets para verificar viagem de uma placa/data
+ * Rota: GET /api/fuel-card-solicitations/validate-sheet
+ */
+export async function validateSheetForRequest(req: Request, res: Response) {
+  try {
+    const { placa, data_uso } = req.query;
+    
+    if (!placa || !data_uso) {
+      return res.status(400).json({
+        success: false,
+        message: 'Placa e data_uso são obrigatórios'
+      });
+    }
+    
+    const resultado = await validateWithGoogleSheet(String(placa), String(data_uso));
+    
+    return res.json({
+      success: true,
+      data: resultado
+    });
+  } catch (error: any) {
+    console.error('[VALIDATE-SHEET] Erro:', error.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao consultar planilha',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Valida múltiplas solicitações pendentes com a planilha Google Sheets
+ * Rota: POST /api/fuel-card-solicitations/validate-pending
+ */
+export async function validatePendingSolicitations(req: Request, res: Response) {
+  try {
+    const { solicitations } = req.body;
+    
+    if (!solicitations || !Array.isArray(solicitations)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Lista de solicitações é obrigatória'
+      });
+    }
+    
+    console.log(`[VALIDATE-PENDING] Validando ${solicitations.length} solicitações`);
+    
+    const results: any[] = [];
+    
+    for (const sol of solicitations) {
+      const { id, placa, data_uso } = sol;
+      
+      if (!placa || !data_uso) {
+        results.push({
+          id,
+          placa,
+          validado: false,
+          motivo: 'Dados incompletos'
+        });
+        continue;
+      }
+      
+      const resultado = await validateWithGoogleSheet(placa, data_uso);
+      
+      results.push({
+        id,
+        placa,
+        data_uso,
+        validado: resultado.liberado,
+        origem: resultado.origem || '',
+        destino: resultado.destino || '',
+        motivo: resultado.motivo
+      });
+      
+      // Se a viagem foi encontrada, atualizar a solicitação no banco com origem e destino
+      if (resultado.liberado && (resultado.origem || resultado.destino)) {
+        try {
+          await pool.query(`
+            UPDATE solicitacoes_fuel_card 
+            SET rota_origem = COALESCE($1, rota_origem),
+                rota_destino = COALESCE($2, rota_destino)
+            WHERE id = $3
+          `, [resultado.origem, resultado.destino, id]);
+          console.log(`[VALIDATE-PENDING] Atualizado ID ${id} com origem: ${resultado.origem}, destino: ${resultado.destino}`);
+        } catch (updateErr: any) {
+          console.error(`[VALIDATE-PENDING] Erro ao atualizar ID ${id}:`, updateErr.message);
+        }
+      }
+    }
+    
+    // Limpar cache para refletir atualizações
+    cacheData = null;
+    
+    return res.json({
+      success: true,
+      data: results,
+      total: results.length,
+      validados: results.filter(r => r.validado).length,
+      nao_validados: results.filter(r => !r.validado).length
+    });
+  } catch (error: any) {
+    console.error('[VALIDATE-PENDING] Erro:', error.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao validar solicitações',
+      error: error.message
+    });
+  }
+}

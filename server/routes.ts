@@ -93,7 +93,9 @@ import {
   exportFuelCardSolicitationsByDate,
   exportFuelCardSolicitationsByFuelDate,
   createFuelCardRequest,
-  getFuelCardSolicitationsCounts
+  getFuelCardSolicitationsCounts,
+  validateSheetForRequest,
+  validatePendingSolicitations
 } from "./fuelCardSolicitationsApi";
 import { getFuelCardAnalytics } from "./fuelCardAnalyticsApi";
 import { getFuelConsumptionReport, getBasesForFilter } from "./routes/fuelConsumptionReportApi";
@@ -15443,6 +15445,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/fuel-card-solicitations/export-veloe', isAuthenticated, blockFuelCardForOperador1LineHaul, exportVeloeToExcel);
   // Rota para exportação Ticket - formato simples PLACA/VALOR (pendentes do dia)
   app.get('/api/fuel-card-solicitations/export-ticket', isAuthenticated, blockFuelCardForOperador1LineHaul, exportTicketCards);
+  // Rotas para validação com planilha Google Sheets
+  app.get('/api/fuel-card-solicitations/validate-sheet', isAuthenticated, blockFuelCardForOperador1LineHaul, validateSheetForRequest);
+  app.post('/api/fuel-card-solicitations/validate-pending', isAuthenticated, blockFuelCardForOperador1LineHaul, validatePendingSolicitations);
   app.get('/api/fuel-card-solicitations/:id', isAuthenticated, blockFuelCardForOperador1LineHaul, getFuelCardSolicitationById);
   app.post('/api/fuel-card-solicitations', blockFuelCardForOperador1LineHaul, createFuelCardSolicitation);
   app.put('/api/fuel-card-solicitations/:id/status', isAuthenticated, blockFuelCardForOperador1LineHaul, updateFuelCardSolicitationStatus);

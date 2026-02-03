@@ -149,6 +149,10 @@ const FuelCardRequestsPanel: React.FC = () => {
   // Estado para notificação de novas mensagens WhatsApp
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   
+  // Estado para validação de planilha Google Sheets
+  const [validatingSheet, setValidatingSheet] = useState(false);
+  const [sheetValidationResults, setSheetValidationResults] = useState<Record<number, { validado: boolean; origem?: string; destino?: string; motivo?: string }>>({});
+  
   // Verificar parâmetros da URL para modo Line Haul
   const urlParams = new URLSearchParams(window.location.search);
   const isLineHaulMode = urlParams.get('mode') === 'linehaul';
@@ -773,6 +777,78 @@ const FuelCardRequestsPanel: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Função para validar solicitações pendentes com a planilha Google Sheets
+  const validatePendingWithSheet = async () => {
+    try {
+      setValidatingSheet(true);
+      
+      // Filtrar apenas solicitações Line Haul pendentes que têm data de uso
+      const pendingLineHaul = solicitations.filter(sol => 
+        sol.origem_tipo === 'line_hall' && 
+        (sol.status === 'Pendente' || sol.status === 'pendente') &&
+        sol.data_uso
+      );
+      
+      if (pendingLineHaul.length === 0) {
+        toast({
+          title: 'Nenhuma solicitação para validar',
+          description: 'Não há solicitações Line Haul pendentes com data de uso.',
+          variant: 'default'
+        });
+        return;
+      }
+      
+      toast({
+        title: 'Validando planilha...',
+        description: `Consultando ${pendingLineHaul.length} solicitações na planilha Google`,
+      });
+      
+      const response = await apiRequest('/api/fuel-card-solicitations/validate-pending', {
+        method: 'POST',
+        body: JSON.stringify({
+          solicitations: pendingLineHaul.map(sol => ({
+            id: sol.id,
+            placa: sol.placa,
+            data_uso: sol.data_uso
+          }))
+        })
+      });
+      
+      if (response.success) {
+        // Atualizar o estado com os resultados da validação
+        const resultsMap: Record<number, any> = {};
+        for (const result of response.data) {
+          resultsMap[result.id] = result;
+        }
+        setSheetValidationResults(resultsMap);
+        
+        // Recarregar solicitações para pegar origem/destino atualizados
+        await fetchSolicitations();
+        
+        toast({
+          title: 'Validação concluída',
+          description: `${response.validados} viagens encontradas, ${response.nao_validados} não encontradas`,
+          variant: response.validados > 0 ? 'default' : 'destructive'
+        });
+      } else {
+        toast({
+          title: 'Erro na validação',
+          description: response.message || 'Erro ao consultar planilha',
+          variant: 'destructive'
+        });
+      }
+    } catch (error: any) {
+      console.error('[VALIDATE-SHEET] Erro:', error);
+      toast({
+        title: 'Erro de conexão',
+        description: 'Não foi possível consultar a planilha',
+        variant: 'destructive'
+      });
+    } finally {
+      setValidatingSheet(false);
     }
   };
 
@@ -3381,7 +3457,28 @@ const FuelCardRequestsPanel: React.FC = () => {
                 <CardTitle>Solicitações Pendentes - Line Haul</CardTitle>
                 <CardDescription>Mostrando {lineHaulPendentes.length} solicitações pendentes</CardDescription>
               </div>
-              <Button onClick={fetchSolicitations} variant="outline" size="sm">Atualizar</Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={validatePendingWithSheet} 
+                  variant="outline" 
+                  size="sm"
+                  disabled={validatingSheet}
+                  className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                >
+                  {validatingSheet ? (
+                    <>
+                      <Clock className="w-4 h-4 mr-1 animate-spin" />
+                      Validando...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-4 h-4 mr-1" />
+                      Validar Planilha
+                    </>
+                  )}
+                </Button>
+                <Button onClick={fetchSolicitations} variant="outline" size="sm">Atualizar</Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -3406,6 +3503,21 @@ const FuelCardRequestsPanel: React.FC = () => {
                         <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_calculado || solicitacao.valor_solicitado)} - {solicitacao.km_total || '-'} km</p>
                         {solicitacao.rota_origem && solicitacao.rota_destino && (
                           <p className="text-xs text-blue-600">{solicitacao.rota_origem} → {solicitacao.rota_destino}</p>
+                        )}
+                        {sheetValidationResults[solicitacao.id] && (
+                          <Badge 
+                            variant="outline" 
+                            className={sheetValidationResults[solicitacao.id].validado 
+                              ? 'bg-green-100 text-green-700 border-green-300 mt-1' 
+                              : 'bg-red-100 text-red-700 border-red-300 mt-1'
+                            }
+                          >
+                            {sheetValidationResults[solicitacao.id].validado ? (
+                              <><CheckCircle2 className="w-3 h-3 mr-1" />Viagem OK</>
+                            ) : (
+                              <><XCircle className="w-3 h-3 mr-1" />Não encontrado</>
+                            )}
+                          </Badge>
                         )}
                       </div>
                       <div className="lg:col-span-2">
