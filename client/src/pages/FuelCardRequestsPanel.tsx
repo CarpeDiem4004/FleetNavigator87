@@ -785,17 +785,17 @@ const FuelCardRequestsPanel: React.FC = () => {
     try {
       setValidatingSheet(true);
       
-      // Filtrar apenas solicitações Line Haul pendentes que têm data de uso
+      // Filtrar apenas solicitações Line Haul pendentes
+      // Se não tiver data_uso, usa a data_solicitacao
       const pendingLineHaul = solicitations.filter(sol => 
         sol.origem_tipo === 'line_hall' && 
-        (sol.status === 'Pendente' || sol.status === 'pendente') &&
-        sol.data_uso
+        (sol.status === 'Pendente' || sol.status === 'pendente')
       );
       
       if (pendingLineHaul.length === 0) {
         toast({
           title: 'Nenhuma solicitação para validar',
-          description: 'Não há solicitações Line Haul pendentes com data de uso.',
+          description: 'Não há solicitações Line Haul pendentes.',
           variant: 'default'
         });
         return;
@@ -809,11 +809,20 @@ const FuelCardRequestsPanel: React.FC = () => {
       const response = await apiRequest('/api/fuel-card-solicitations/validate-pending', {
         method: 'POST',
         body: JSON.stringify({
-          solicitations: pendingLineHaul.map(sol => ({
-            id: sol.id,
-            placa: sol.placa,
-            data_uso: sol.data_uso
-          }))
+          solicitations: pendingLineHaul.map(sol => {
+            // Usar data_uso se disponível, senão usar data_solicitacao
+            let dataParaValidar = sol.data_uso;
+            if (!dataParaValidar && sol.data_solicitacao) {
+              // Extrair apenas a parte da data (YYYY-MM-DD) da data de solicitação
+              const dataSol = new Date(sol.data_solicitacao);
+              dataParaValidar = dataSol.toISOString().split('T')[0];
+            }
+            return {
+              id: sol.id,
+              placa: sol.placa,
+              data_uso: dataParaValidar
+            };
+          })
         })
       });
       
