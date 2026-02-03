@@ -2645,6 +2645,7 @@ app.use((req, res, next) => {
       '/api/work-safety/trainings', // API pública de treinamentos
       '/api/work-safety/bases', // API pública para listar bases
       '/fleet-management/towing-partners/external-access/', // Acesso externo parceiros de guincho
+      '/external-access/', // Acesso externo parceiros de guincho (rota curta)
     ];
     
     // Verificar se a rota atual é pública (não precisa de autenticação)

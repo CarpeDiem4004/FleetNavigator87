@@ -803,7 +803,8 @@ function App() {
           <ProtectedRoute path="/refueling" component={RefuelingNew} />
           <ProtectedRoute path="/fines" component={FinesNew} />
           {/* Line Hall removido conforme solicitação */}
-          {/* IMPORTANTE: Rota pública de acesso externo DEVE vir ANTES de /fleet-management */}
+          {/* IMPORTANTE: Rotas públicas de acesso externo DEVEM vir ANTES de /fleet-management */}
+          <Route path="/external-access/:token" component={TowingPartnerExternalAccess} />
           <Route path="/fleet-management/towing-partners/external-access/:token" component={TowingPartnerExternalAccess} />
           <ProtectedRoute path="/fleet-management" component={FleetManagement} />
           <ProtectedRoute path="/fleet-management/inventory" component={InventoryPage} />
