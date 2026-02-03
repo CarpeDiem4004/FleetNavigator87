@@ -51,8 +51,18 @@ export function Combobox({
       )
     : options
 
+  // Limpa o termo de busca quando o popover é aberto/fechado
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!disabled) {
+      setOpen(isOpen)
+      if (isOpen) {
+        setSearchTerm("") // Limpa a busca ao abrir
+      }
+    }
+  }
+
   return (
-    <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
