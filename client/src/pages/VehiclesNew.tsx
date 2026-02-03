@@ -395,8 +395,10 @@ const VehiclesNew: React.FC = () => {
   
   // Estados para importação de bases
   const [isImportBasesDialogOpen, setIsImportBasesDialogOpen] = useState(false);
-  const [selectedBasesFile, setSelectedBasesFile] = useState<globalThis.File | null>(null);
+  const [selectedBasesFileName, setSelectedBasesFileName] = useState<string | null>(null);
+  const [parsedBasesData, setParsedBasesData] = useState<{placa: string; base: string}[] | null>(null);
   const [isUploadingBases, setIsUploadingBases] = useState(false);
+  const [isParsingFile, setIsParsingFile] = useState(false);
   const [importResult, setImportResult] = useState<{
     success: boolean;
     resumo: { total: number; atualizados: number; placasNaoEncontradas: number; basesNaoEncontradas: number };
@@ -638,11 +640,71 @@ const VehiclesNew: React.FC = () => {
     }
   };
 
+  // Função para processar arquivo Excel imediatamente quando selecionado
+  const handleBasesFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setSelectedBasesFileName(null);
+      setParsedBasesData(null);
+      return;
+    }
+    
+    setSelectedBasesFileName(file.name);
+    setIsParsingFile(true);
+    setParsedBasesData(null);
+    
+    try {
+      // Ler o arquivo IMEDIATAMENTE para evitar NotReadableError
+      const arrayBuffer = await file.arrayBuffer();
+      
+      // Importar a biblioteca xlsx dinamicamente
+      const XLSX = await import('xlsx');
+      
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+      
+      // Mapear os dados para o formato esperado pela API
+      const mappedData = jsonData.map((row: any) => {
+        const placa = row.placa || row.Placa || row.PLACA || row.plate || row.Plate || Object.values(row)[0];
+        const base = row.base || row.Base || row.BASE || row.base_nome || row.Base_Nome || Object.values(row)[1];
+        return { placa: String(placa || ''), base: String(base || '') };
+      });
+      
+      // Filtrar linhas válidas
+      const validData = mappedData.filter(item => item.placa && item.base);
+      
+      if (validData.length === 0) {
+        throw new Error('Nenhuma linha válida encontrada.');
+      }
+      
+      setParsedBasesData(validData);
+      toast({
+        title: "Arquivo processado",
+        description: `${validData.length} linhas válidas encontradas`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error("Erro ao processar arquivo:", error);
+      setSelectedBasesFileName(null);
+      setParsedBasesData(null);
+      toast({
+        title: "Erro ao ler arquivo",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive"
+      });
+    } finally {
+      setIsParsingFile(false);
+      // Limpar input para permitir reselecionar o mesmo arquivo
+      e.target.value = '';
+    }
+  };
+
   // Função para importar planilha de bases (atualizar placa -> base)
   const handleImportBases = async () => {
-    if (!selectedBasesFile) {
+    if (!parsedBasesData || parsedBasesData.length === 0) {
       toast({
-        title: "Nenhum arquivo selecionado",
+        title: "Nenhum arquivo processado",
         description: "Por favor, selecione um arquivo Excel para importar.",
         variant: "destructive"
       });
@@ -653,38 +715,12 @@ const VehiclesNew: React.FC = () => {
     setImportResult(null);
     
     try {
-      // Importar a biblioteca xlsx dinamicamente
-      const XLSX = await import('xlsx');
-      
-      // Ler o arquivo
-      const arrayBuffer = await selectedBasesFile.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-      
-      // Mapear os dados para o formato esperado pela API
-      const mappedData = jsonData.map((row: any) => {
-        // Tentar encontrar a coluna de placa (diferentes possíveis nomes)
-        const placa = row.placa || row.Placa || row.PLACA || row.plate || row.Plate || Object.values(row)[0];
-        // Tentar encontrar a coluna de base (diferentes possíveis nomes)
-        const base = row.base || row.Base || row.BASE || row.base_nome || row.Base_Nome || Object.values(row)[1];
-        
-        return { placa, base };
-      });
-      
-      // Filtrar linhas válidas
-      const validData = mappedData.filter(item => item.placa && item.base);
-      
-      if (validData.length === 0) {
-        throw new Error('Nenhuma linha válida encontrada. Verifique se a planilha tem colunas "Placa" e "Base".');
-      }
-      
-      // Enviar para a API
+      // Enviar dados já processados para a API
       const response = await fetch('/api/vehicles/import-spreadsheet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ data: validData })
+        body: JSON.stringify({ data: parsedBasesData })
       });
 
       if (!response.ok) {
@@ -867,7 +903,8 @@ const VehiclesNew: React.FC = () => {
               <Dialog open={isImportBasesDialogOpen} onOpenChange={(open) => {
                 setIsImportBasesDialogOpen(open);
                 if (!open) {
-                  setSelectedBasesFile(null);
+                  setSelectedBasesFileName(null);
+                  setParsedBasesData(null);
                   setImportResult(null);
                 }
               }}>
@@ -891,11 +928,18 @@ const VehiclesNew: React.FC = () => {
                         id="import-bases-file"
                         type="file"
                         accept=".xlsx,.xls,.csv"
-                        onChange={(e) => setSelectedBasesFile(e.target.files?.[0] || null)}
+                        onChange={handleBasesFileSelect}
+                        disabled={isParsingFile}
                       />
-                      {selectedBasesFile && (
-                        <p className="text-sm text-gray-500">
-                          Arquivo selecionado: {selectedBasesFile.name}
+                      {isParsingFile && (
+                        <p className="text-sm text-blue-600 flex items-center gap-2">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600" />
+                          Processando arquivo...
+                        </p>
+                      )}
+                      {selectedBasesFileName && parsedBasesData && (
+                        <p className="text-sm text-green-600">
+                          Arquivo: {selectedBasesFileName} ({parsedBasesData.length} linhas prontas)
                         </p>
                       )}
                     </div>
@@ -946,7 +990,8 @@ const VehiclesNew: React.FC = () => {
                       variant="outline" 
                       onClick={() => {
                         setIsImportBasesDialogOpen(false);
-                        setSelectedBasesFile(null);
+                        setSelectedBasesFileName(null);
+                        setParsedBasesData(null);
                         setImportResult(null);
                       }}
                     >
@@ -954,12 +999,12 @@ const VehiclesNew: React.FC = () => {
                     </Button>
                     <Button 
                       onClick={handleImportBases}
-                      disabled={!selectedBasesFile || isUploadingBases}
+                      disabled={!parsedBasesData || isUploadingBases || isParsingFile}
                     >
                       {isUploadingBases ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                          Processando...
+                          Enviando...
                         </>
                       ) : (
                         'Importar Planilha'

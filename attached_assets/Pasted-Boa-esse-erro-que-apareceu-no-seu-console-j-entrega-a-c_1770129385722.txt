@@ -1,0 +1,159 @@
+Boa, esse erro que apareceu no seu console já entrega a causa 👇
+
+> **NotReadableError: The requested file could not be read (permission problems or file reference acquired after close)**
+
+👉 Isso **não é erro do banco nem da planilha em si**
+👉 é erro de **leitura do arquivo no navegador (frontend)**
+
+Ou seja: o sistema **nem chegou a enviar o Excel pro backend**.
+
+---
+
+# 🔥 Principais causas desse erro
+
+## ✅ 1. Input file sendo reutilizado (MAIS COMUM)
+
+Se você:
+
+* seleciona o arquivo
+* fecha modal
+* abre de novo
+* tenta importar
+
+O browser perde a referência do arquivo por segurança → 💥 NotReadableError
+
+### ✔️ Correção
+
+Sempre:
+👉 selecionar o arquivo **de novo** antes de importar
+
+ou no código React/JS:
+
+```js
+input.value = ""
+```
+
+quando fechar o modal.
+
+---
+
+## ✅ 2. Arquivo aberto no Excel
+
+Windows bloqueia leitura quando:
+
+* Excel está aberto
+* OneDrive sincronizando
+* Google Drive travando
+
+### ✔️ Teste rápido
+
+Feche:
+
+* Excel
+* OneDrive/Drive
+* reenvie
+
+---
+
+## ✅ 3. Nome com espaço/acentos
+
+Seu arquivo:
+
+```
+placas e bases.xlsx
+```
+
+às vezes quebra dependendo do parser/lib
+
+### ✔️ Teste
+
+Renomeia pra:
+
+```
+placas_bases.xlsx
+```
+
+---
+
+## ✅ 4. Bug no código do upload (React / input file)
+
+Se estiver usando algo tipo:
+
+```js
+const file = event.target.files[0]
+```
+
+mas depois acessa fora do handler → referência some.
+
+### ✔️ Forma segura:
+
+```js
+const handleUpload = async (e) => {
+  const file = e.target.files[0]
+
+  const data = await file.arrayBuffer() // já lê na hora
+}
+```
+
+ou:
+
+```js
+const reader = new FileReader()
+reader.readAsArrayBuffer(file)
+```
+
+---
+
+## ✅ 5. Problema comum com xlsx + replit
+
+Como você está rodando em:
+
+```
+.replit.dev
+```
+
+às vezes o lib `xlsx` falha com:
+
+```js
+readFile()
+```
+
+### ✔️ usar:
+
+```js
+read(arrayBuffer)
+```
+
+em vez de:
+
+```js
+readFile()
+```
+
+---
+
+# 🔍 Checklist rápido pra você testar agora
+
+### 1️⃣ Fechar Excel
+
+### 2️⃣ Renomear arquivo (sem espaço)
+
+### 3️⃣ Reabrir modal
+
+### 4️⃣ Selecionar arquivo de novo
+
+### 5️⃣ Importar
+
+90% das vezes resolve aqui.
+
+---
+
+# 💡 Se continuar dando erro
+
+Me manda:
+👉 o código do botão "Importar Planilha"
+👉 função JS/React que lê o arquivo
+
+Que eu já ajusto pra você na hora.
+
+Provavelmente é só trocar a forma de leitura do FileReader 👍
