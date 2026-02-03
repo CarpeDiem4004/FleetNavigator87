@@ -46,10 +46,8 @@ async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<
     console.log(`[GOOGLE_SHEETS] Consultando planilha para placa ${placaNormalizada} na data ${dataFormatada}`);
     
     // Usar a API pública do Google Sheets (planilha deve estar compartilhada como "Qualquer pessoa com o link pode ver")
-    // Range: A:L para pegar todas as colunas necessárias (A=Data, J=Placa, K=Origem, L=Destino)
-    const sheetName = 'Planilha1'; // Nome padrão da aba
-    const range = `${sheetName}!A:L`;
-    const apiUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+    // Não especificar sheet para usar a aba padrão (primeira aba)
+    const apiUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json`;
     
     console.log('[GOOGLE_SHEETS] Fazendo requisição para:', apiUrl);
     
