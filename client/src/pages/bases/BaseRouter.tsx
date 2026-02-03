@@ -41,7 +41,7 @@ const BaseRouter: React.FC = () => {
       const baseId = parseInt(baseCode);
       if (!isNaN(baseId)) {
         console.log('[BaseRouter] Buscando por ID:', baseId);
-        const response = await fetch(`/api/bases/${baseId}`);
+        const response = await fetch(`/api/public/bases/${baseId}`);
         const data = await response.json();
         
         if (data.success && data.data) {

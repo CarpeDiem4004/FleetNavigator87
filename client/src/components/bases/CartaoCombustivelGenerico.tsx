@@ -116,7 +116,7 @@ function CartaoCombustivelGenericoContent({ baseId }: CartaoCombustivelGenericoP
     const fetchBaseInfo = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/bases/${baseId}`);
+        const response = await fetch(`/api/public/bases/${baseId}`);
         const data = await response.json();
         
         if (data.success && data.data) {

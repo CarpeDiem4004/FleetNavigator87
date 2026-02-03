@@ -50,7 +50,7 @@ const LoginBaseGenerico: React.FC = () => {
       // Se baseId é um número puro, busca diretamente por ID
       const baseIdNum = parseInt(baseId);
       if (!isNaN(baseIdNum)) {
-        const response = await fetch(`/api/bases/${baseIdNum}`);
+        const response = await fetch(`/api/public/bases/${baseIdNum}`);
         const data = await response.json();
         
         if (data.success && data.data) {

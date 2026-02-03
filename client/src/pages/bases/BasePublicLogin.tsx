@@ -36,7 +36,7 @@ export default function BasePublicLogin() {
   const fetchBaseInfo = async (id: string) => {
     try {
       setLoadingBase(true);
-      const response = await fetch(`/api/bases/${id}`);
+      const response = await fetch(`/api/public/bases/${id}`);
       const data = await response.json();
       
       if (data.success && data.data) {
