@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, History, Clock, MapPin, Truck, DollarSign, FileClock, FileText, CheckCircle } from 'lucide-react';
+import { Loader2, History, Clock, MapPin, Truck, DollarSign, FileClock, FileText, CheckCircle, Lock, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { formatDateShortBrasilia } from '@/lib/date-utils';
@@ -39,6 +39,27 @@ import {
 import { Badge } from "@/components/ui/badge";
 import Logo from '@/components/Logo';
 
+const PARTNER_PASSWORDS: Record<string, string> = {
+  'TESTE_ALLAN_DE_SOUZA_VIEIRA_TOKEN': 'Allan@2025',
+  'TESTE_FORD_TOKEN': 'Ford@2025',
+  'TESTE_GUINCHO_ÁGUIA_TOKEN': 'Aguia@2025',
+  'GILSON_FERNANDES': 'Gilson@2025',
+  'FERNANDES_GONCALVES': 'Gilson@2025',
+  'CAIO_RAMOS': 'Caio@2025',
+  'CLAUDIO_DE_OLIVEIRA': 'Claudio@2025',
+  'DAIANE_DO_VALE_AMARAL': 'Daiane@2025',
+  'DELOES_GUINCHOS': 'Deloes@2025',
+};
+
+function getPasswordForToken(token: string): string {
+  for (const [key, password] of Object.entries(PARTNER_PASSWORDS)) {
+    if (token.includes(key) || token === key) {
+      return password;
+    }
+  }
+  return 'Guincho@2025';
+}
+
 export default function TowingPartnerExternalAccess() {
   const { token } = useParams();
   const { toast } = useToast();
@@ -51,11 +72,45 @@ export default function TowingPartnerExternalAccess() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   
-  // Estados para histórico de serviços
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [authenticating, setAuthenticating] = useState(false);
+  
   const [activeTab, setActiveTab] = useState("novo");
   const [historyLoading, setHistoryLoading] = useState(false);
   const [serviceHistory, setServiceHistory] = useState<any[]>([]);
   const [historyError, setHistoryError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const storedAuth = sessionStorage.getItem(`towing_auth_${token}`);
+    if (storedAuth === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, [token]);
+
+  const handlePasswordLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthenticating(true);
+    setPasswordError('');
+    
+    const expectedPassword = getPasswordForToken(token || '');
+    
+    setTimeout(() => {
+      if (password === expectedPassword) {
+        setIsAuthenticated(true);
+        sessionStorage.setItem(`towing_auth_${token}`, 'true');
+        toast({
+          title: 'Acesso autorizado',
+          description: `Bem-vindo, ${partnerInfo?.name}!`,
+        });
+      } else {
+        setPasswordError('Senha incorreta. Tente novamente.');
+      }
+      setAuthenticating(false);
+    }, 500);
+  };
 
   // Formulário
   const [formData, setFormData] = useState({
@@ -611,6 +666,76 @@ export default function TowingPartnerExternalAccess() {
               Entre em contato com o gerente de frota para obter um novo link de acesso.
             </p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 space-y-4 bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="w-full max-w-md">
+          <Card className="shadow-xl">
+            <CardHeader className="text-center pb-2">
+              <div className="flex justify-center mb-4">
+                <Logo size="lg" />
+              </div>
+              <CardTitle className="text-2xl">Acesso Parceiro de Guincho</CardTitle>
+              <CardDescription className="text-base">
+                {partnerInfo?.name || 'Parceiro'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePasswordLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="flex items-center gap-2">
+                    <Lock className="h-4 w-4" />
+                    Senha de Acesso
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Digite sua senha"
+                      className="pr-10"
+                      autoFocus
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  {passwordError && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      {passwordError}
+                    </p>
+                  )}
+                </div>
+                <Button type="submit" className="w-full" disabled={authenticating || !password}>
+                  {authenticating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Verificando...
+                    </>
+                  ) : (
+                    'Entrar'
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+            <CardFooter className="flex flex-col text-center text-sm text-muted-foreground">
+              <p>Sistema de Gestão de Frotas</p>
+              <p className="text-xs mt-1">Murici Transportes</p>
+            </CardFooter>
+          </Card>
         </div>
       </div>
     );
