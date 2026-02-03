@@ -5,6 +5,65 @@ import { normalizeBaseName } from '../shared/baseNormalization';
 import { sendFuelCardRechargeNotificationZAPI, isZAPIConfigured } from './services/zapiWhatsAppService';
 
 /**
+ * Valida solicitação de abastecimento com a planilha do Google Sheets
+ * Consulta a Web App do Google Apps Script para verificar se existe uma viagem
+ * programada para a data e placa informadas
+ */
+async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<{
+  liberado: boolean;
+  origem?: string;
+  destino?: string;
+  motivo: string;
+}> {
+  const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+  
+  if (!webhookUrl) {
+    console.log('[GOOGLE_SHEETS] URL do webhook não configurada, liberando sem validação');
+    return { liberado: true, motivo: 'Validação desabilitada (URL não configurada)' };
+  }
+  
+  try {
+    // Formatar data para DD/MM/AAAA
+    let dataFormatada = dataUso;
+    if (dataUso && dataUso.includes('-')) {
+      const [ano, mes, dia] = dataUso.split('-');
+      dataFormatada = `${dia}/${mes}/${ano}`;
+    }
+    
+    console.log(`[GOOGLE_SHEETS] Consultando planilha para placa ${placa} na data ${dataFormatada}`);
+    
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        data_solicitacao: dataFormatada,
+        placa_veiculo: placa.toUpperCase().replace(/[^A-Z0-9]/g, '')
+      })
+    });
+    
+    if (!response.ok) {
+      console.error('[GOOGLE_SHEETS] Erro na resposta:', response.status, response.statusText);
+      return { liberado: true, motivo: 'Erro na validação, liberando por segurança' };
+    }
+    
+    const resultado = await response.json();
+    console.log('[GOOGLE_SHEETS] Resultado da consulta:', resultado);
+    
+    return {
+      liberado: resultado.liberar_abastecimento === true,
+      origem: resultado.origem || '',
+      destino: resultado.destino || '',
+      motivo: resultado.motivo || 'Sem motivo informado'
+    };
+  } catch (error: any) {
+    console.error('[GOOGLE_SHEETS] Erro ao consultar planilha:', error.message);
+    return { liberado: true, motivo: 'Erro de conexão, liberando por segurança' };
+  }
+}
+
+/**
  * Determina o consumo médio baseado no modelo do veículo
  * Regras atualizadas conforme solicitação
  */
@@ -513,11 +572,36 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       });
     }
     
+    // VALIDAÇÃO COM PLANILHA GOOGLE SHEETS
+    // Apenas para solicitações do Line Haul (origem_tipo = 'line_hall')
+    let rotaOrigem = '';
+    let rotaDestino = '';
+    
+    if (origem_tipo === 'line_hall' && data_uso_corrigida) {
+      console.log(`[GOOGLE_SHEETS] Iniciando validação para Line Haul - Placa: ${placa}, Data: ${data_uso_corrigida}`);
+      
+      const validacaoGoogle = await validateWithGoogleSheet(placa, data_uso_corrigida);
+      
+      if (!validacaoGoogle.liberado) {
+        console.log(`[GOOGLE_SHEETS] ❌ Abastecimento NEGADO: ${validacaoGoogle.motivo}`);
+        return res.status(400).json({
+          success: false,
+          message: `Abastecimento não autorizado: ${validacaoGoogle.motivo}`,
+          validacao_google: false
+        });
+      }
+      
+      // Se encontrou, pegar origem e destino da planilha
+      rotaOrigem = validacaoGoogle.origem || '';
+      rotaDestino = validacaoGoogle.destino || '';
+      console.log(`[GOOGLE_SHEETS] ✅ Abastecimento LIBERADO - Origem: ${rotaOrigem}, Destino: ${rotaDestino}`);
+    }
+    
     const query = `
       INSERT INTO solicitacoes_fuel_card
-        (placa, km, km_veiculo, tipo_cartao, provedor_cartao, numero_cartao, motorista, solicitante, telefone_celular, observacoes, status, data_solicitacao, valor_solicitado, valor_litro, litros_solicitados, tipo_combustivel, base, id_rota, origem_tipo, data_uso, turno)
+        (placa, km, km_veiculo, tipo_cartao, provedor_cartao, numero_cartao, motorista, solicitante, telefone_celular, observacoes, status, data_solicitacao, valor_solicitado, valor_litro, litros_solicitados, tipo_combustivel, base, id_rota, origem_tipo, data_uso, turno, rota_origem, rota_destino)
       VALUES
-        ($1, $2, $2, $3, $4, $5, $6, $7, $8, $9, 'pendente', NOW(), $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        ($1, $2, $2, $3, $4, $5, $6, $7, $8, $9, 'pendente', NOW(), $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
       RETURNING *
     `;
     
@@ -569,7 +653,9 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       id_rota || null,
       origem_tipo || 'tradicional', // Padrão para 'tradicional' se não informado
       data_uso_corrigida, // Data prevista de uso do saldo (corrigida para timezone BR)
-      turno || null // Turno (AM/PM)
+      turno || null, // Turno (AM/PM)
+      rotaOrigem || null, // Origem da rota (da planilha Google)
+      rotaDestino || null // Destino da rota (da planilha Google)
     ];
     
     console.log(`🔄 [BOLSÃO-BACKEND-${requestId}] Executando INSERT no banco de dados...`);
