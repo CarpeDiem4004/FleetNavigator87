@@ -1,0 +1,82 @@
+Para resolver esse problema de duas tabelas com informações conflitantes, você precisa **unificar os dados** em uma única fonte de verdade. Aqui está a solução passo a passo:
+
+## 1. **Analisar e Corrigir os Dados**
+Primeiro, identifique qual base de dados é a correta para cada veículo:
+
+```sql
+-- Verificar inconsistências
+SELECT 
+    v.placa,
+    v.base_id as base_id_vehicles,
+    ve.base_id as base_id_veiculos,
+    v.Base as base_vehicles,
+    ve.Base as base_veiculos
+FROM vehicles v
+LEFT JOIN veiculos ve ON v.placa = ve.placa
+WHERE v.base_id != ve.base_id OR ve.base_id IS NULL;
+```
+
+## 2. **Escolher a Fonte Principal**
+Como a tela já usa `vehicles` corretamente, mantenha esta como principal:
+
+```sql
+-- Atualizar a tabela veículos para ficar consistente (se necessário)
+UPDATE veiculos ve
+JOIN vehicles v ON ve.placa = v.placa
+SET 
+    ve.base_id = v.base_id,
+    ve.Base = v.Base
+WHERE ve.base_id != v.base_id;
+```
+
+## 3. **Corrigir a API**
+Modifique a API para usar apenas a tabela `vehicles`:
+
+```python
+# Antes (errado):
+def buscar_por_base(base_id):
+    query = "SELECT * FROM veiculos WHERE base_id = %s"
+    
+# Depois (correto):
+def buscar_por_base(base_id):
+    query = "SELECT * FROM vehicles WHERE base_id = %s"
+```
+
+## 4. **Prevenir Futuros Erros**
+- **Remover a tabela `veiculos`** (se for redundante)
+  ```sql
+  DROP TABLE veiculos;
+  ```
+
+- **Ou criar uma view unificada** (se precisar manter ambas):
+  ```sql
+  CREATE VIEW veiculos_unificados AS
+  SELECT placa, base_id, Base FROM vehicles;
+  
+  -- Atualizar API para usar a view
+  def buscar_por_base(base_id):
+      query = "SELECT * FROM veiculos_unificados WHERE base_id = %s"
+  ```
+
+## 5. **Adicionar Validação de Dados**
+Para evitar que isso aconteça novamente:
+
+```sql
+-- Criar trigger para sincronizar as tabelas (se mantiver ambas)
+CREATE TRIGGER sync_vehicles AFTER UPDATE ON vehicles
+FOR EACH ROW
+BEGIN
+    UPDATE veiculos 
+    SET base_id = NEW.base_id, 
+        Base = NEW.Base 
+    WHERE placa = NEW.placa;
+END;
+```
+
+## Resumo da Solução:
+1. **Padronize** usando apenas a tabela `vehicles`
+2. **Atualize a API** para consultar somente `vehicles`
+3. **Remova ou desative** a tabela `veiculos` do fluxo principal
+4. **Documente** qual é a fonte oficial de dados
+
+Dessa forma, você terá uma única fonte de consulta, eliminando os conflitos de dados.
