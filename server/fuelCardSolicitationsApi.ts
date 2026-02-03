@@ -6,8 +6,14 @@ import { sendFuelCardRechargeNotificationZAPI, isZAPIConfigured } from './servic
 
 /**
  * Valida solicitação de abastecimento com a planilha do Google Sheets
- * Consulta a Web App do Google Apps Script para verificar se existe uma viagem
+ * Usa a API pública do Google Sheets para verificar se existe uma viagem
  * programada para a data e placa informadas
+ * 
+ * Estrutura da planilha:
+ * - Coluna A: Data (formato DD/MM/AAAA)
+ * - Coluna J: Placa do veículo
+ * - Coluna K: Origem
+ * - Coluna L: Destino
  */
 async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<{
   liberado: boolean;
@@ -15,48 +21,157 @@ async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<
   destino?: string;
   motivo: string;
 }> {
-  const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+  // ID da planilha de controle de viagens Line Haul
+  const SPREADSHEET_ID = '1LpUcSeFzvyqrkEjH5ORyEEfm0rfpqgOorYmIyNZLoks';
   
-  if (!webhookUrl) {
-    console.log('[GOOGLE_SHEETS] URL do webhook não configurada, liberando sem validação');
-    return { liberado: true, motivo: 'Validação desabilitada (URL não configurada)' };
+  // Verificar se a integração está habilitada
+  const integrationEnabled = process.env.GOOGLE_SHEETS_INTEGRATION_ENABLED !== 'false';
+  
+  if (!integrationEnabled) {
+    console.log('[GOOGLE_SHEETS] Integração desabilitada, liberando sem validação');
+    return { liberado: true, motivo: 'Validação desabilitada' };
   }
   
   try {
-    // Formatar data para DD/MM/AAAA
+    // Formatar data para DD/MM/AAAA para comparação
     let dataFormatada = dataUso;
     if (dataUso && dataUso.includes('-')) {
       const [ano, mes, dia] = dataUso.split('-');
       dataFormatada = `${dia}/${mes}/${ano}`;
     }
     
-    console.log(`[GOOGLE_SHEETS] Consultando planilha para placa ${placa} na data ${dataFormatada}`);
+    // Normalizar placa para comparação (remover caracteres especiais)
+    const placaNormalizada = placa.toUpperCase().replace(/[^A-Z0-9]/g, '');
     
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
+    console.log(`[GOOGLE_SHEETS] Consultando planilha para placa ${placaNormalizada} na data ${dataFormatada}`);
+    
+    // Usar a API pública do Google Sheets (planilha deve estar compartilhada como "Qualquer pessoa com o link pode ver")
+    // Range: A:L para pegar todas as colunas necessárias (A=Data, J=Placa, K=Origem, L=Destino)
+    const sheetName = 'Planilha1'; // Nome padrão da aba
+    const range = `${sheetName}!A:L`;
+    const apiUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+    
+    console.log('[GOOGLE_SHEETS] Fazendo requisição para:', apiUrl);
+    
+    const response = await fetch(apiUrl, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        data_solicitacao: dataFormatada,
-        placa_veiculo: placa.toUpperCase().replace(/[^A-Z0-9]/g, '')
-      })
+        'Accept': 'application/json',
+      }
     });
     
     if (!response.ok) {
       console.error('[GOOGLE_SHEETS] Erro na resposta:', response.status, response.statusText);
-      return { liberado: true, motivo: 'Erro na validação, liberando por segurança' };
+      return { liberado: true, motivo: 'Erro ao acessar planilha, liberando por segurança' };
     }
     
-    const resultado = await response.json();
-    console.log('[GOOGLE_SHEETS] Resultado da consulta:', resultado);
+    const text = await response.text();
     
-    return {
-      liberado: resultado.liberar_abastecimento === true,
-      origem: resultado.origem || '',
-      destino: resultado.destino || '',
-      motivo: resultado.motivo || 'Sem motivo informado'
-    };
+    // A resposta vem no formato: google.visualization.Query.setResponse({...})
+    // Precisamos extrair o JSON de dentro
+    const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?$/);
+    if (!jsonMatch) {
+      console.error('[GOOGLE_SHEETS] Formato de resposta inesperado');
+      return { liberado: true, motivo: 'Formato de resposta inesperado, liberando por segurança' };
+    }
+    
+    const jsonData = JSON.parse(jsonMatch[1]);
+    const rows = jsonData.table?.rows || [];
+    
+    console.log(`[GOOGLE_SHEETS] Total de linhas na planilha: ${rows.length}`);
+    
+    // Procurar linha que corresponde à data e placa
+    // Estrutura real da planilha:
+    // - A (índice 0): sta_origin_date - Data
+    // - F (índice 5): used_vehicle - Veículo usado (pode conter placa)
+    // - J (índice 9): vehicle_number - Número do veículo
+    // - K (índice 10): origin_station_code - Origem
+    // - L (índice 11): destination_station_code - Destino
+    let viagemEncontrada = false;
+    let origemEncontrada = '';
+    let destinoEncontrado = '';
+    
+    for (const row of rows) {
+      const cells = row.c || [];
+      
+      // Pegar valor da data (coluna A - índice 0: sta_origin_date)
+      const dataCell = cells[0];
+      let dataLinha = '';
+      if (dataCell) {
+        if (dataCell.f) {
+          // Valor formatado
+          dataLinha = dataCell.f;
+        } else if (dataCell.v) {
+          // Valor bruto - pode ser Date ou string
+          if (typeof dataCell.v === 'string' && dataCell.v.startsWith('Date(')) {
+            // Formato Date(ano, mes, dia)
+            const match = dataCell.v.match(/Date\((\d+),(\d+),(\d+)\)/);
+            if (match) {
+              const dia = match[3].padStart(2, '0');
+              const mes = (parseInt(match[2]) + 1).toString().padStart(2, '0'); // Mês é 0-indexed
+              const ano = match[1];
+              dataLinha = `${dia}/${mes}/${ano}`;
+            }
+          } else {
+            dataLinha = String(dataCell.v);
+          }
+        }
+      }
+      
+      // Pegar valor da placa do veículo usado (coluna F - índice 5: used_vehicle)
+      const usedVehicleCell = cells[5];
+      let usedVehicle = '';
+      if (usedVehicleCell && usedVehicleCell.v) {
+        usedVehicle = String(usedVehicleCell.v).toUpperCase().replace(/[^A-Z0-9]/g, '');
+      }
+      
+      // Também verificar vehicle_number (coluna J - índice 9)
+      const vehicleNumberCell = cells[9];
+      let vehicleNumber = '';
+      if (vehicleNumberCell && vehicleNumberCell.v) {
+        vehicleNumber = String(vehicleNumberCell.v).toUpperCase().replace(/[^A-Z0-9]/g, '');
+      }
+      
+      // Comparar data e placa (verificar ambos campos de veículo)
+      const placaMatch = usedVehicle === placaNormalizada || vehicleNumber === placaNormalizada || 
+                         usedVehicle.includes(placaNormalizada) || vehicleNumber.includes(placaNormalizada) ||
+                         placaNormalizada.includes(usedVehicle) || placaNormalizada.includes(vehicleNumber);
+      
+      if (dataLinha === dataFormatada && placaMatch) {
+        viagemEncontrada = true;
+        
+        // Pegar origem (coluna K - índice 10: origin_station_code)
+        const origemCell = cells[10];
+        if (origemCell && origemCell.v) {
+          origemEncontrada = String(origemCell.v);
+        }
+        
+        // Pegar destino (coluna L - índice 11: destination_station_code)
+        const destinoCell = cells[11];
+        if (destinoCell && destinoCell.v) {
+          destinoEncontrado = String(destinoCell.v);
+        }
+        
+        console.log(`[GOOGLE_SHEETS] Viagem encontrada! Veículo: ${usedVehicle || vehicleNumber}, Origem: ${origemEncontrada}, Destino: ${destinoEncontrado}`);
+        break;
+      }
+    }
+    
+    if (viagemEncontrada) {
+      return {
+        liberado: true,
+        origem: origemEncontrada,
+        destino: destinoEncontrado,
+        motivo: 'Viagem autorizada na planilha'
+      };
+    } else {
+      console.log(`[GOOGLE_SHEETS] Viagem NÃO encontrada para ${placaNormalizada} em ${dataFormatada}`);
+      return {
+        liberado: false,
+        motivo: `Viagem não encontrada na planilha para a placa ${placa} na data ${dataFormatada}`
+      };
+    }
+    
   } catch (error: any) {
     console.error('[GOOGLE_SHEETS] Erro ao consultar planilha:', error.message);
     return { liberado: true, motivo: 'Erro de conexão, liberando por segurança' };
