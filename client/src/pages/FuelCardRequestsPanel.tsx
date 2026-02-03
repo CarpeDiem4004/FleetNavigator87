@@ -3505,19 +3505,26 @@ const FuelCardRequestsPanel: React.FC = () => {
                           <p className="text-xs text-blue-600">{solicitacao.rota_origem} → {solicitacao.rota_destino}</p>
                         )}
                         {sheetValidationResults[solicitacao.id] && (
-                          <Badge 
-                            variant="outline" 
-                            className={sheetValidationResults[solicitacao.id].validado 
-                              ? 'bg-green-100 text-green-700 border-green-300 mt-1' 
-                              : 'bg-red-100 text-red-700 border-red-300 mt-1'
-                            }
-                          >
-                            {sheetValidationResults[solicitacao.id].validado ? (
-                              <><CheckCircle2 className="w-3 h-3 mr-1" />Viagem OK</>
-                            ) : (
-                              <><XCircle className="w-3 h-3 mr-1" />Não encontrado</>
+                          <div className="mt-1">
+                            <Badge 
+                              variant="outline" 
+                              className={sheetValidationResults[solicitacao.id].validado 
+                                ? 'bg-green-100 text-green-700 border-green-300' 
+                                : 'bg-red-100 text-red-700 border-red-300'
+                              }
+                            >
+                              {sheetValidationResults[solicitacao.id].validado ? (
+                                <><CheckCircle2 className="w-3 h-3 mr-1" />Viagem OK</>
+                              ) : (
+                                <><XCircle className="w-3 h-3 mr-1" />Não encontrado</>
+                              )}
+                            </Badge>
+                            {sheetValidationResults[solicitacao.id].validado && sheetValidationResults[solicitacao.id].origem && (
+                              <p className="text-xs text-green-600 mt-0.5">
+                                Planilha: {sheetValidationResults[solicitacao.id].origem} → {sheetValidationResults[solicitacao.id].destino}
+                              </p>
                             )}
-                          </Badge>
+                          </div>
                         )}
                       </div>
                       <div className="lg:col-span-2">
