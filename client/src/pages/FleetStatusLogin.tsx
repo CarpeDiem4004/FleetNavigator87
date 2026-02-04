@@ -43,7 +43,7 @@ export default function FleetStatusLogin() {
         description: `Bem-vindo, ${userData.name}!`,
       });
 
-      window.location.href = '/fleet-status/base';
+      navigate('/fleet-status/base');
       
     } catch (error: any) {
       console.error('Erro no login:', error);
