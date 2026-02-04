@@ -54,6 +54,7 @@ import ServicosPendentesPage from "@/pages/fleet-management/towing-partners/serv
 import FinanceiroGuincho from "@/pages/fleet-management/towing-partners/financeiro";
 import FleetStatusBasePage from "@/pages/FleetStatusBasePage";
 import FleetStatusDashboard from "@/pages/FleetStatusDashboard";
+import FleetStatusLogin from "@/pages/FleetStatusLogin";
 import TimezoneTest from "@/pages/timezone-test";
 import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
 import ProtectedBaseRoute from "@/components/ProtectedBaseRoute";
@@ -846,6 +847,7 @@ function App() {
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
           
           {/* Sistema de Status de Frota por Base */}
+          <Route path="/fleet-status/login" component={FleetStatusLogin} />
           <ProtectedRoute path="/fleet-status/base" component={FleetStatusBasePage} />
           <ProtectedRoute path="/fleet-status/dashboard" component={FleetStatusDashboard} />
           
