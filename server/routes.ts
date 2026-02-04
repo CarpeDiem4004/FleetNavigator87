@@ -6631,6 +6631,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Excluir manutenção do Line Haul (apenas admin)
+  app.delete('/api/line-hall/maintenance-requests/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = (req as any).user;
+      
+      // Verificar se é admin
+      if (!user || !['admin', 'ceo', 'gerente_geral'].includes(user.role?.toLowerCase())) {
+        return res.status(403).json({
+          success: false,
+          message: 'Apenas administradores podem excluir manutenções'
+        });
+      }
+      
+      // Verificar se a manutenção existe
+      const checkQuery = 'SELECT * FROM linehall_maintenance WHERE id = $1';
+      const checkResult = await pool.query(checkQuery, [id]);
+      
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Manutenção não encontrada'
+        });
+      }
+      
+      const maintenance = checkResult.rows[0];
+      
+      // Excluir ordens de serviço relacionadas primeiro
+      await pool.query('DELETE FROM linehall_maintenance_workorders WHERE maintenance_request_id = $1', [id]);
+      
+      // Excluir a manutenção
+      await pool.query('DELETE FROM linehall_maintenance WHERE id = $1', [id]);
+      
+      console.log(`[LINE-HALL] Manutenção ID ${id} excluída por ${user.email}`);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Manutenção excluída com sucesso',
+        data: { id, vehicle_plate: maintenance.vehicle_plate }
+      });
+    } catch (error: any) {
+      console.error('Erro ao excluir manutenção:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao excluir manutenção',
+        error: error.message
+      });
+    }
+  });
+
   // Função helper para criar registros de histórico da placa
   async function createPlateHistory(plate: string, eventType: string, description: string, metadata: any = {}) {
     try {

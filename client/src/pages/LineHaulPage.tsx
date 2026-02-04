@@ -403,6 +403,9 @@ const LineHaulPage = () => {
 
   const [showMaintenanceDetails, setShowMaintenanceDetails] = useState(false);
   const [selectedMaintenanceForDetails, setSelectedMaintenanceForDetails] = useState<MaintenanceRequest | null>(null);
+  const [showDeleteMaintenanceDialog, setShowDeleteMaintenanceDialog] = useState(false);
+  const [maintenanceToDelete, setMaintenanceToDelete] = useState<MaintenanceRequest | null>(null);
+  const [isDeletingMaintenance, setIsDeletingMaintenance] = useState(false);
 
   // Estados para novo formulário de manutenção
   const [showNewMaintenanceDialog, setShowNewMaintenanceDialog] = useState(false);
@@ -2173,6 +2176,43 @@ const LineHaulPage = () => {
     }
   };
 
+  // Função para excluir manutenção (apenas admin)
+  const handleDeleteMaintenance = async () => {
+    if (!maintenanceToDelete) return;
+    
+    setIsDeletingMaintenance(true);
+    try {
+      const res = await apiRequest('DELETE', `/api/line-hall/maintenance-requests/${maintenanceToDelete.id}`);
+      const response = await res.json();
+      
+      if (response.success) {
+        toast({
+          title: "Manutenção excluída",
+          description: `Manutenção da placa ${maintenanceToDelete.vehicle_plate} excluída com sucesso!`
+        });
+        setShowDeleteMaintenanceDialog(false);
+        setMaintenanceToDelete(null);
+        await fetchMaintenanceRequests();
+        await fetchStats();
+      } else {
+        toast({
+          title: "Erro",
+          description: response.message || "Erro ao excluir manutenção",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao excluir manutenção:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir manutenção",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeletingMaintenance(false);
+    }
+  };
+
   // Buscar lista de oficinas
   const fetchWorkshops = async () => {
     try {
@@ -2708,6 +2748,21 @@ const LineHaulPage = () => {
                             >
                               <History className="h-4 w-4" />
                             </Button>
+                            {/* Botão de excluir - apenas para admin */}
+                            {['admin', 'ceo', 'gerente_geral'].includes(user?.role?.toLowerCase() || '') && (
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                className="h-8 px-2 text-gray-600 hover:text-red-600"
+                                onClick={() => {
+                                  setMaintenanceToDelete(request);
+                                  setShowDeleteMaintenanceDialog(true);
+                                }}
+                                title="Excluir manutenção"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                           
                           {request.status === 'pendente' && (
@@ -6235,6 +6290,64 @@ const LineHaulPage = () => {
               </Button>
               <Button variant="outline" onClick={() => setShowMaintenanceDetails(false)}>
                 Fechar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog de Confirmação de Exclusão de Manutenção */}
+        <Dialog open={showDeleteMaintenanceDialog} onOpenChange={setShowDeleteMaintenanceDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <AlertTriangle className="h-5 w-5" />
+                Confirmar Exclusão
+              </DialogTitle>
+              <DialogDescription>
+                Tem certeza que deseja excluir esta manutenção? Esta ação não pode ser desfeita.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {maintenanceToDelete && (
+              <div className="py-4 space-y-2">
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="font-bold text-lg">{maintenanceToDelete.vehicle_plate}</p>
+                  <p className="text-sm text-gray-600">{maintenanceToDelete.description}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Status: {maintenanceToDelete.status === 'concluida' ? 'Concluída' : 
+                             maintenanceToDelete.status === 'em_andamento' ? 'Em Andamento' : 'Pendente'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteMaintenanceDialog(false);
+                  setMaintenanceToDelete(null);
+                }}
+                disabled={isDeletingMaintenance}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteMaintenance}
+                disabled={isDeletingMaintenance}
+              >
+                {isDeletingMaintenance ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Excluindo...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Excluir
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
