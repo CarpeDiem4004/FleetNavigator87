@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,7 @@ export default function FleetStatusLogin() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const { toast } = useToast();
+  const { login, user } = useAuth();
   const [_, navigate] = useLocation();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -28,31 +30,17 @@ export default function FleetStatusLogin() {
     try {
       setLoading(true);
       
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: email, password }),
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Credenciais inválidas');
-      }
-
-      const userData = await response.json();
-      console.log('Resposta do login:', userData);
+      const userData = await login(email, password);
+      console.log('Login bem-sucedido:', userData);
       
-      if (userData.token) {
-        localStorage.setItem('authToken', userData.token);
-        document.cookie = `authToken=${userData.token}; path=/; max-age=86400; SameSite=Lax`;
+      if (!userData.base_id && !userData.baseId) {
+        setErrorMessage('Usuário não está vinculado a nenhuma base. Contate o administrador.');
+        return;
       }
-
-      const userName = userData.name || userData.user?.name || email;
 
       toast({
         title: 'Login realizado com sucesso!',
-        description: `Bem-vindo, ${userName}!`,
+        description: `Bem-vindo, ${userData.name}!`,
       });
 
       window.location.href = '/fleet-status/base';
@@ -60,11 +48,6 @@ export default function FleetStatusLogin() {
     } catch (error: any) {
       console.error('Erro no login:', error);
       setErrorMessage(error.message || 'Erro ao fazer login');
-      toast({
-        title: 'Erro no login',
-        description: error.message || 'Credenciais inválidas',
-        variant: 'destructive'
-      });
     } finally {
       setLoading(false);
     }
