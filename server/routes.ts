@@ -15449,6 +15449,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rotas para validação com planilha Google Sheets
   app.get('/api/fuel-card-solicitations/validate-sheet', isAuthenticated, blockFuelCardForOperador1LineHaul, validateSheetForRequest);
   app.post('/api/fuel-card-solicitations/validate-pending', isAuthenticated, blockFuelCardForOperador1LineHaul, validatePendingSolicitations);
+  // Rota pública para validação de planilha (sem autenticação)
+  app.post('/api/public/fuel-card-solicitations/validate-pending', validatePendingSolicitations);
   app.get('/api/fuel-card-solicitations/:id', isAuthenticated, blockFuelCardForOperador1LineHaul, getFuelCardSolicitationById);
   app.post('/api/fuel-card-solicitations', blockFuelCardForOperador1LineHaul, createFuelCardSolicitation);
   app.put('/api/fuel-card-solicitations/:id/status', isAuthenticated, blockFuelCardForOperador1LineHaul, updateFuelCardSolicitationStatus);

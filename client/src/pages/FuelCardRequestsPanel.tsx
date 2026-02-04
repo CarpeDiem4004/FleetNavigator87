@@ -822,8 +822,11 @@ const FuelCardRequestsPanel: React.FC = () => {
         };
       });
       
-      const res = await apiRequest('POST', '/api/fuel-card-solicitations/validate-pending', {
-        solicitations: solicitationsData
+      // Usar rota pública para validação (não requer autenticação)
+      const res = await fetch('/api/public/fuel-card-solicitations/validate-pending', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ solicitations: solicitationsData })
       });
       
       const response = await res.json();
