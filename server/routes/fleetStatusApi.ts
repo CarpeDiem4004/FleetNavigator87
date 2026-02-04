@@ -579,51 +579,64 @@ router.get('/api/fleet-status/dashboard', isAuthenticated, async (req: Request, 
     
     const today = getTodayBrasil();
     
-    // Buscar todas as bases com veículos
-    const { data: basesComVeiculos, error: basesError } = await supabase
-      .from('vehicles')
-      .select('base_id')
-      .not('base_id', 'is', null);
+    console.log('[FLEET-STATUS-DASHBOARD] Buscando dados do PostgreSQL local');
     
-    if (basesError) {
-      console.error('[FLEET-STATUS] Erro bases:', basesError);
-      return res.status(500).json({ success: false, error: basesError.message });
+    // Buscar todas as bases com veículos do PostgreSQL local
+    const basesComVeiculosResult = await pool.query(
+      `SELECT DISTINCT base_id FROM vehicles WHERE base_id IS NOT NULL`
+    );
+    const baseIds = basesComVeiculosResult.rows.map((r: any) => r.base_id);
+    
+    console.log(`[FLEET-STATUS-DASHBOARD] Encontradas ${baseIds.length} bases com veículos`);
+    
+    if (baseIds.length === 0) {
+      return res.json({ 
+        success: true, 
+        data: {
+          dataReferencia: today,
+          totais: { totalVeiculos: 0, atualizados: 0, pendentes: 0, percentualAtualizado: 0, totalBases: 0, basesInadimplentes: 0 },
+          resumoPorBase: [],
+          basesInadimplentes: []
+        }
+      });
     }
     
-    const baseIds = Array.from(new Set(basesComVeiculos?.map((v: any) => v.base_id) || [])) as number[];
-    
     // Buscar detalhes das bases
-    const { data: bases, error: basesInfoError } = await supabase
-      .from('bases')
-      .select('id, name, basename')
-      .in('id', baseIds);
+    const basesResult = await pool.query(
+      `SELECT id, name, basename FROM bases WHERE id = ANY($1)`,
+      [baseIds]
+    );
+    const bases = basesResult.rows;
     
     // Contar veículos por base
-    const { data: veiculosPorBase, error: countError } = await supabase
-      .from('vehicles')
-      .select('base_id')
-      .in('base_id', baseIds);
+    const veiculosPorBaseResult = await pool.query(
+      `SELECT base_id, COUNT(*) as total FROM vehicles WHERE base_id = ANY($1) GROUP BY base_id`,
+      [baseIds]
+    );
+    const veiculosPorBase = veiculosPorBaseResult.rows;
     
     // Buscar atualizações de hoje
-    const { data: atualizacoesHoje, error: atualizacoesError } = await supabase
-      .from('fleet_status_daily')
-      .select('base_id, status')
-      .eq('data_atualizacao', today);
+    const atualizacoesResult = await pool.query(
+      `SELECT base_id, status FROM fleet_status_daily WHERE data_atualizacao = $1`,
+      [today]
+    );
+    const atualizacoesHoje = atualizacoesResult.rows;
     
     // Montar resumo por base
-    const resumoPorBase = bases?.map(base => {
-      const totalVeiculos = veiculosPorBase?.filter(v => v.base_id === base.id).length || 0;
-      const atualizados = atualizacoesHoje?.filter(a => a.base_id === base.id).length || 0;
+    const resumoPorBase = bases.map((base: any) => {
+      const veiculosBase = veiculosPorBase.find((v: any) => v.base_id === base.id);
+      const totalVeiculos = veiculosBase ? parseInt(veiculosBase.total) : 0;
+      const atualizados = atualizacoesHoje.filter((a: any) => a.base_id === base.id).length;
       const pendentes = totalVeiculos - atualizados;
       const percentual = totalVeiculos > 0 ? ((atualizados / totalVeiculos) * 100) : 0;
       
       // Contar por status
       const statusCount = atualizacoesHoje
-        ?.filter(a => a.base_id === base.id)
-        .reduce((acc: any, curr) => {
+        .filter((a: any) => a.base_id === base.id)
+        .reduce((acc: any, curr: any) => {
           acc[curr.status] = (acc[curr.status] || 0) + 1;
           return acc;
-        }, {}) || {};
+        }, {});
       
       return {
         baseId: base.id,
@@ -635,10 +648,10 @@ router.get('/api/fleet-status/dashboard', isAuthenticated, async (req: Request, 
         statusCount,
         inadimplente: pendentes > 0
       };
-    }) || [];
+    });
     
     // Totais gerais
-    const totalGeral = resumoPorBase.reduce((acc, base) => ({
+    const totalGeral = resumoPorBase.reduce((acc: any, base: any) => ({
       totalVeiculos: acc.totalVeiculos + base.totalVeiculos,
       atualizados: acc.atualizados + base.atualizados,
       pendentes: acc.pendentes + base.pendentes
@@ -649,7 +662,9 @@ router.get('/api/fleet-status/dashboard', isAuthenticated, async (req: Request, 
       : 0;
     
     // Bases inadimplentes (com pendências)
-    const basesInadimplentes = resumoPorBase.filter(b => b.inadimplente);
+    const basesInadimplentes = resumoPorBase.filter((b: any) => b.inadimplente);
+    
+    console.log(`[FLEET-STATUS-DASHBOARD] Total: ${totalGeral.totalVeiculos} veículos, ${resumoPorBase.length} bases`);
     
     res.json({ 
       success: true, 
@@ -661,7 +676,7 @@ router.get('/api/fleet-status/dashboard', isAuthenticated, async (req: Request, 
           totalBases: resumoPorBase.length,
           basesInadimplentes: basesInadimplentes.length
         },
-        resumoPorBase: resumoPorBase.sort((a, b) => Number(a.percentualAtualizado) - Number(b.percentualAtualizado)),
+        resumoPorBase: resumoPorBase.sort((a: any, b: any) => Number(a.percentualAtualizado) - Number(b.percentualAtualizado)),
         basesInadimplentes
       }
     });
