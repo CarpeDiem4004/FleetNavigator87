@@ -2491,9 +2491,49 @@ export async function validatePendingSolicitations(req: Request, res: Response) 
         motivo: resultado.motivo
       });
       
-      // NÃO atualizar a solicitação - apenas retornar dados da planilha para exibição
-      // A validação é apenas consulta, não modifica os dados originais da solicitação
-      console.log(`[VALIDATE-PENDING] Consulta ID ${id}: tripNumber=${resultado.tripNumber}, origem=${resultado.origem}, destino=${resultado.destino}`);
+      // Salvar dados da planilha em campos SEPARADOS (nunca modificar rota_origem/rota_destino originais)
+      if (resultado.liberado) {
+        try {
+          await pool.query(`
+            UPDATE solicitacoes_fuel_card 
+            SET trip_number = $1, 
+                planilha_origem = $2, 
+                planilha_destino = $3, 
+                planilha_data = $4,
+                conferido_em = NOW()
+            WHERE id = $5
+          `, [
+            resultado.tripNumber || null,
+            resultado.origem || null,
+            resultado.destino || null,
+            resultado.dataEncontrada || null,
+            id
+          ]);
+          
+          // Também atualizar histórico se existir
+          await pool.query(`
+            UPDATE historico_rotas_linehaul 
+            SET planilha_trip_number = $1, 
+                planilha_origem = $2, 
+                planilha_destino = $3, 
+                planilha_data = $4,
+                conferido_em = NOW()
+            WHERE solicitacao_id = $5
+          `, [
+            resultado.tripNumber || null,
+            resultado.origem || null,
+            resultado.destino || null,
+            resultado.dataEncontrada || null,
+            id
+          ]);
+          
+          console.log(`[VALIDATE-PENDING] Dados da planilha salvos para ID ${id}: tripNumber=${resultado.tripNumber}, origem=${resultado.origem}, destino=${resultado.destino}`);
+        } catch (updateError: any) {
+          console.error(`[VALIDATE-PENDING] Erro ao salvar dados da planilha ID ${id}:`, updateError.message);
+        }
+      } else {
+        console.log(`[VALIDATE-PENDING] Consulta ID ${id}: viagem não encontrada na planilha`);
+      }
     }
     
     // Limpar cache para refletir atualizações
