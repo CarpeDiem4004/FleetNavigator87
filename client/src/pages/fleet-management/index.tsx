@@ -15,7 +15,8 @@ import {
   AlertCircle,
   Package,
   BarChart3,
-  Car
+  Car,
+  ClipboardCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
@@ -206,6 +207,22 @@ export default function FleetManagement() {
               <CardFooter className="mt-auto">
                 <Button variant="outline" className="w-full border-red-300 text-red-700 hover:bg-red-100" asChild>
                   <Link href="/fleet-management/coca-cola">
+                    Acessar <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card className="flex flex-col border-green-200 bg-green-50/30">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <ClipboardCheck className="h-5 w-5 text-green-600" />
+                  Status Diário da Frota
+                </CardTitle>
+              </CardHeader>
+              <CardFooter className="mt-auto">
+                <Button variant="outline" className="w-full border-green-300 text-green-700 hover:bg-green-100" asChild>
+                  <Link href="/fleet-status/dashboard">
                     Acessar <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
