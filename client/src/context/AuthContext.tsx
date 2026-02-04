@@ -40,13 +40,60 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Chave para armazenar usuário no localStorage (para persistência entre navegações SPA)
+const AUTH_USER_KEY = 'auth_user_session';
+const AUTH_TIMESTAMP_KEY = 'auth_user_timestamp';
+const SESSION_MAX_AGE = 24 * 60 * 60 * 1000; // 24 horas em ms
+
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  // VERIFICAÇÃO SIMPLES: Apenas autenticação por sessão
+  // Função para salvar usuário no localStorage
+  const saveUserToStorage = (userData: User) => {
+    try {
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(userData));
+      localStorage.setItem(AUTH_TIMESTAMP_KEY, Date.now().toString());
+    } catch (e) {
+      console.warn('[AuthContext] Erro ao salvar usuário no localStorage:', e);
+    }
+  };
+
+  // Função para recuperar usuário do localStorage
+  const getUserFromStorage = (): User | null => {
+    try {
+      const storedUser = localStorage.getItem(AUTH_USER_KEY);
+      const timestamp = localStorage.getItem(AUTH_TIMESTAMP_KEY);
+      
+      if (!storedUser || !timestamp) return null;
+      
+      // Verificar se a sessão expirou
+      const age = Date.now() - parseInt(timestamp, 10);
+      if (age > SESSION_MAX_AGE) {
+        clearUserStorage();
+        return null;
+      }
+      
+      return JSON.parse(storedUser) as User;
+    } catch (e) {
+      console.warn('[AuthContext] Erro ao recuperar usuário do localStorage:', e);
+      return null;
+    }
+  };
+
+  // Função para limpar localStorage
+  const clearUserStorage = () => {
+    try {
+      localStorage.removeItem(AUTH_USER_KEY);
+      localStorage.removeItem(AUTH_TIMESTAMP_KEY);
+    } catch (e) {
+      console.warn('[AuthContext] Erro ao limpar localStorage:', e);
+    }
+  };
+
+  // VERIFICAÇÃO: Primeiro tenta servidor, depois localStorage como fallback
   useEffect(() => {
     const checkAuth = async () => {
       console.log("Verificando autenticação tradicional...");
@@ -76,14 +123,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           };
           
           setUser(formattedUser);
+          saveUserToStorage(formattedUser);
           console.log("Usuário autenticado:", formattedUser);
         } else {
-          console.log("Nenhuma sessão encontrada");
-          setUser(null);
+          console.log("Nenhuma sessão no servidor, verificando localStorage...");
+          // Fallback: verificar localStorage
+          const storedUser = getUserFromStorage();
+          if (storedUser) {
+            console.log("Usuário recuperado do localStorage:", storedUser);
+            setUser(storedUser);
+          } else {
+            console.log("Nenhuma sessão encontrada");
+            setUser(null);
+          }
         }
       } catch (error) {
         console.error("Erro ao verificar autenticação:", error);
-        setUser(null);
+        // Em caso de erro, tentar localStorage
+        const storedUser = getUserFromStorage();
+        if (storedUser) {
+          console.log("Usuário recuperado do localStorage após erro:", storedUser);
+          setUser(storedUser);
+        } else {
+          setUser(null);
+        }
       }
       
       setIsLoading(false);
@@ -125,6 +188,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       };
 
       setUser(formattedUser);
+      saveUserToStorage(formattedUser); // Persistir no localStorage
       
       toast({
         title: "Login realizado",
@@ -186,6 +250,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       };
 
       setUser(formattedUser);
+      saveUserToStorage(formattedUser); // Persistir no localStorage
       
       toast({
         title: "Login realizado",
@@ -236,6 +301,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       };
 
       setUser(formattedUser);
+      saveUserToStorage(formattedUser); // Persistir no localStorage
       
       toast({
         title: "Conta criada",
@@ -272,6 +338,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.error("Erro no logout:", error);
     }
     
+    clearUserStorage(); // Limpar localStorage
     setUser(null);
     setLocation('/login');
     
