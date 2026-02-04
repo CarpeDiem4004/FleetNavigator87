@@ -2489,21 +2489,9 @@ export async function validatePendingSolicitations(req: Request, res: Response) 
         motivo: resultado.motivo
       });
       
-      // Se a viagem foi encontrada, atualizar a solicitação no banco com origem, destino e trip_number
-      if (resultado.liberado && (resultado.origem || resultado.destino || resultado.tripNumber)) {
-        try {
-          await pool.query(`
-            UPDATE solicitacoes_fuel_card 
-            SET rota_origem = COALESCE($1, rota_origem),
-                rota_destino = COALESCE($2, rota_destino),
-                trip_number = COALESCE($3, trip_number)
-            WHERE id = $4
-          `, [resultado.origem, resultado.destino, resultado.tripNumber, id]);
-          console.log(`[VALIDATE-PENDING] Atualizado ID ${id} com tripNumber: ${resultado.tripNumber}, origem: ${resultado.origem}, destino: ${resultado.destino}`);
-        } catch (updateErr: any) {
-          console.error(`[VALIDATE-PENDING] Erro ao atualizar ID ${id}:`, updateErr.message);
-        }
-      }
+      // NÃO atualizar a solicitação - apenas retornar dados da planilha para exibição
+      // A validação é apenas consulta, não modifica os dados originais da solicitação
+      console.log(`[VALIDATE-PENDING] Consulta ID ${id}: tripNumber=${resultado.tripNumber}, origem=${resultado.origem}, destino=${resultado.destino}`);
     }
     
     // Limpar cache para refletir atualizações
