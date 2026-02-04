@@ -8432,10 +8432,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         operacao,
         provedor_cartao,
         incluir_arla,
+        retorno_vazio,
         data_solicitacao,
         horario_solicitacao,
         placa_cartao
       } = req.body;
+      
+      const isRetornoVazio = retorno_vazio === 'true' || retorno_vazio === true;
 
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
       
@@ -8483,14 +8486,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         rota_destino,
         operacao,
         provedor_cartao,
-        incluir_arla
+        incluir_arla,
+        retorno_vazio: isRetornoVazio
       });
 
-      // Validações básicas
-      if (!motorista_nome || !veiculo_placa || !rota_origem || !rota_destino) {
+      // Validações básicas - rota é opcional se retorno vazio
+      if (!motorista_nome || !veiculo_placa) {
         return res.status(400).json({
           success: false,
-          message: 'Campos obrigatórios: nome do motorista, placa, origem e destino'
+          message: 'Campos obrigatórios: nome do motorista e placa'
+        });
+      }
+      
+      if (!isRetornoVazio && (!rota_origem || !rota_destino)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Campos obrigatórios: origem e destino (ou marque Retorno Vazio)'
         });
       }
 
@@ -8656,11 +8667,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           origem_tipo, rota_origem, rota_destino, km_total, valor_calculado,
           horario_abastecimento, calculo_detalhes, observacoes, veiculo_modelo,
           km_veiculo, foto_painel_path, foto_cartao_path, placa_cartao,
-          valor_litro, litros_solicitados
+          valor_litro, litros_solicitados, retorno_vazio
         ) VALUES (
           $1, $2, $3, $4, $5, $6, 'Pendente', $7,
           'line_hall', $8, $9, $10, $11, $12, $13, $14, $15,
-          $16, $17, $18, $19, $20, $21
+          $16, $17, $18, $19, $20, $21, $22
         )
         RETURNING *
       `;
@@ -8688,10 +8699,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fotoCartaoPath,
         placa_cartao || null,
         precoLitro, // valor_litro - preço do litro usado no cálculo
-        litrosEstimados // litros_solicitados - quantidade de litros calculada
+        litrosEstimados, // litros_solicitados - quantidade de litros calculada
+        isRetornoVazio // retorno_vazio
       ]);
 
       console.log('[LINEHAUL-PUBLIC-REQUEST] Solicitação criada:', result.rows[0].id);
+      
+      // Salvar histórico de rota
+      try {
+        const historicoQuery = `
+          INSERT INTO historico_rotas_linehaul (
+            solicitacao_id, placa, motorista, rota_origem, rota_destino,
+            km_total, retorno_vazio, data_solicitacao
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+        `;
+        await pool.query(historicoQuery, [
+          result.rows[0].id,
+          plateClean,
+          motorista_nome,
+          isRetornoVazio ? 'RETORNO VAZIO' : rota_origem,
+          isRetornoVazio ? 'RETORNO VAZIO' : rota_destino,
+          kmTotal,
+          isRetornoVazio
+        ]);
+        console.log('[LINEHAUL-PUBLIC-REQUEST] Histórico de rota salvo');
+      } catch (histError) {
+        console.error('[LINEHAUL-PUBLIC-REQUEST] Erro ao salvar histórico:', histError);
+        // Não falha a solicitação se o histórico não for salvo
+      }
 
       return res.status(201).json({
         success: true,

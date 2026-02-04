@@ -98,6 +98,7 @@ export default function LineHaulFuelRequest() {
     provedorCartao: "veloe" as "veloe" | "ticket",
     arla: false,
     placaCartao: "",
+    retornoVazio: false,
   });
 
   const [fotoPainel, setFotoPainel] = useState<File | null>(null);
@@ -322,6 +323,7 @@ export default function LineHaulFuelRequest() {
       formData.append("operacao", form.operacao);
       formData.append("provedor_cartao", form.provedorCartao);
       formData.append("incluir_arla", form.arla ? "true" : "false");
+      formData.append("retorno_vazio", form.retornoVazio ? "true" : "false");
       formData.append("data_solicitacao", new Date().toISOString().split('T')[0]);
       formData.append("horario_solicitacao", new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
       formData.append("foto_painel", fotoPainel!);
@@ -531,6 +533,7 @@ export default function LineHaulFuelRequest() {
                   provedorCartao: "veloe",
                   arla: false,
                   placaCartao: "",
+                  retornoVazio: false,
                 });
                 setFotoPainel(null);
                 setFotoCartao(null);
@@ -669,26 +672,52 @@ export default function LineHaulFuelRequest() {
                 />
               </div>
 
+              {/* Checkbox Retorno Vazio */}
+              <div className="flex items-center gap-3 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <Checkbox
+                  id="retornoVazio"
+                  checked={form.retornoVazio}
+                  onCheckedChange={(checked) => {
+                    setForm({ 
+                      ...form, 
+                      retornoVazio: checked === true,
+                      localInicio: checked === true ? "RETORNO VAZIO" : "",
+                      destino: checked === true ? "RETORNO VAZIO" : ""
+                    });
+                  }}
+                  data-testid="checkbox-retorno-vazio"
+                />
+                <Label htmlFor="retornoVazio" className="flex items-center gap-2 cursor-pointer">
+                  <Truck className="h-5 w-5 text-orange-600" />
+                  <div>
+                    <span className="font-semibold text-orange-900">Retorno Vazio?</span>
+                    <p className="text-xs text-orange-700">Marque se o veículo está retornando sem rota definida</p>
+                  </div>
+                </Label>
+              </div>
+
               <div className="space-y-2 relative">
                 <Label htmlFor="localInicio" className="flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
-                  Local de Início *
+                  Local de Início {!form.retornoVazio && '*'}
                 </Label>
                 <Input
                   ref={originInputRef}
                   id="localInicio"
                   type="text"
-                  placeholder="Digite para buscar..."
+                  placeholder={form.retornoVazio ? "Retorno vazio - sem rota" : "Digite para buscar..."}
                   value={form.localInicio}
                   onChange={(e) => setForm({ ...form, localInicio: e.target.value })}
                   onFocus={() => {
-                    if (form.localInicio.length >= 1 && filteredOrigins.length > 0) {
+                    if (!form.retornoVazio && form.localInicio.length >= 1 && filteredOrigins.length > 0) {
                       setShowOriginSuggestions(true);
                     }
                   }}
-                  required
+                  required={!form.retornoVazio}
+                  disabled={form.retornoVazio}
                   autoComplete="off"
                   data-testid="input-origin"
+                  className={form.retornoVazio ? "bg-gray-100 text-gray-500" : ""}
                 />
                 {showOriginSuggestions && filteredOrigins.length > 0 && (
                   <div
@@ -716,23 +745,25 @@ export default function LineHaulFuelRequest() {
               <div className="space-y-2 relative">
                 <Label htmlFor="destino" className="flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
-                  Destino *
+                  Destino {!form.retornoVazio && '*'}
                 </Label>
                 <Input
                   ref={destinationInputRef}
                   id="destino"
                   type="text"
-                  placeholder="Digite para buscar..."
+                  placeholder={form.retornoVazio ? "Retorno vazio - sem rota" : "Digite para buscar..."}
                   value={form.destino}
                   onChange={(e) => setForm({ ...form, destino: e.target.value })}
                   onFocus={() => {
-                    if (form.destino.length >= 1 && filteredDestinations.length > 0) {
+                    if (!form.retornoVazio && form.destino.length >= 1 && filteredDestinations.length > 0) {
                       setShowDestinationSuggestions(true);
                     }
                   }}
-                  required
+                  required={!form.retornoVazio}
+                  disabled={form.retornoVazio}
                   autoComplete="off"
                   data-testid="input-destination"
+                  className={form.retornoVazio ? "bg-gray-100 text-gray-500" : ""}
                 />
                 {showDestinationSuggestions && filteredDestinations.length > 0 && (
                   <div
