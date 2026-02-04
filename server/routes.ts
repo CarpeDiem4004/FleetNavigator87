@@ -9461,11 +9461,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
               LOWER(b.basename) = LOWER(pb.base_name)
             WHERE pb.id = $1
           )
+          -- Busca via mapeamento por nome exato da base
+          OR v.base_id IN (
+            SELECT b.id FROM bases b
+            INNER JOIN project_bases pb ON 
+              LOWER(b.name) = LOWER(pb.base_name)
+            WHERE pb.id = $1
+          )
           -- Fallback: busca por código da base no nome
           OR v.base_id IN (
             SELECT b.id FROM bases b
             INNER JOIN project_bases pb ON 
               b.name ILIKE '%' || pb.base_code || '%'
+            WHERE pb.id = $1
+          )
+          -- Fallback 2: busca por basename igual ao base_code
+          OR v.base_id IN (
+            SELECT b.id FROM bases b
+            INNER JOIN project_bases pb ON 
+              LOWER(b.basename) = LOWER(pb.base_code)
             WHERE pb.id = $1
           )
         ORDER BY v.plate
