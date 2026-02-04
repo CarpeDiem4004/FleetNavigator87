@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
+import { useAuth } from '@/context/AuthContext';
 import { 
   BarChart3, 
   AlertTriangle, 
@@ -78,9 +79,18 @@ const STATUS_COLORS: Record<string, string> = {
 export default function FleetStatusDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
+  const { user } = useAuth();
+  const userId = user?.id;
 
   const { data: dashboardData, isLoading, refetch } = useQuery<{ success: boolean; data: DashboardData }>({
-    queryKey: ['/api/fleet-status/dashboard'],
+    queryKey: ['/api/fleet-status/public/dashboard', userId],
+    queryFn: async () => {
+      const response = await fetch(`/api/fleet-status/public/dashboard?userId=${userId || ''}`, {
+        credentials: 'include'
+      });
+      return response.json();
+    },
+    enabled: !!userId,
     refetchInterval: 60000
   });
 

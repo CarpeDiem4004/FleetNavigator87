@@ -216,6 +216,119 @@ router.get('/api/fleet-status/public/base/:baseId/vehicles', async (req: Request
   }
 });
 
+// GET - Dashboard público (permite acesso de qualquer usuário autenticado via localStorage)
+router.get('/api/fleet-status/public/dashboard', async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.query;
+    const today = getTodayBrasil();
+    
+    console.log('[FLEET-STATUS-PUBLIC-DASHBOARD] Buscando dados do PostgreSQL local - userId:', userId);
+    
+    // Buscar todas as bases com veículos do PostgreSQL local
+    const basesComVeiculosResult = await pool.query(
+      `SELECT DISTINCT base_id FROM vehicles WHERE base_id IS NOT NULL`
+    );
+    const baseIds = basesComVeiculosResult.rows.map((r: any) => r.base_id);
+    
+    console.log(`[FLEET-STATUS-PUBLIC-DASHBOARD] Encontradas ${baseIds.length} bases com veículos`);
+    
+    if (baseIds.length === 0) {
+      return res.json({ 
+        success: true, 
+        data: {
+          dataReferencia: today,
+          totais: { totalVeiculos: 0, atualizados: 0, pendentes: 0, percentualAtualizado: 0, totalBases: 0, basesInadimplentes: 0 },
+          resumoPorBase: [],
+          basesInadimplentes: []
+        }
+      });
+    }
+    
+    // Buscar detalhes das bases
+    const basesResult = await pool.query(
+      `SELECT id, name, basename FROM bases WHERE id = ANY($1)`,
+      [baseIds]
+    );
+    const bases = basesResult.rows;
+    
+    // Contar veículos por base
+    const veiculosPorBaseResult = await pool.query(
+      `SELECT base_id, COUNT(*) as total FROM vehicles WHERE base_id = ANY($1) GROUP BY base_id`,
+      [baseIds]
+    );
+    const veiculosPorBase = veiculosPorBaseResult.rows;
+    
+    // Buscar atualizações de hoje
+    const atualizacoesResult = await pool.query(
+      `SELECT base_id, status FROM fleet_status_daily WHERE data_atualizacao = $1`,
+      [today]
+    );
+    const atualizacoesHoje = atualizacoesResult.rows;
+    
+    // Montar resumo por base
+    const resumoPorBase = bases.map((base: any) => {
+      const veiculosBase = veiculosPorBase.find((v: any) => v.base_id === base.id);
+      const totalVeiculos = veiculosBase ? parseInt(veiculosBase.total) : 0;
+      const atualizados = atualizacoesHoje.filter((a: any) => a.base_id === base.id).length;
+      const pendentes = totalVeiculos - atualizados;
+      const percentual = totalVeiculos > 0 ? ((atualizados / totalVeiculos) * 100) : 0;
+      
+      // Contar por status
+      const statusCount = atualizacoesHoje
+        .filter((a: any) => a.base_id === base.id)
+        .reduce((acc: any, curr: any) => {
+          acc[curr.status] = (acc[curr.status] || 0) + 1;
+          return acc;
+        }, {});
+      
+      return {
+        baseId: base.id,
+        baseName: base.name || base.basename,
+        totalVeiculos,
+        atualizados,
+        pendentes,
+        percentualAtualizado: percentual.toFixed(2),
+        statusCount,
+        inadimplente: pendentes > 0
+      };
+    });
+    
+    // Totais gerais
+    const totalGeral = resumoPorBase.reduce((acc: any, base: any) => ({
+      totalVeiculos: acc.totalVeiculos + base.totalVeiculos,
+      atualizados: acc.atualizados + base.atualizados,
+      pendentes: acc.pendentes + base.pendentes
+    }), { totalVeiculos: 0, atualizados: 0, pendentes: 0 });
+    
+    const percentualGeral = totalGeral.totalVeiculos > 0 
+      ? ((totalGeral.atualizados / totalGeral.totalVeiculos) * 100).toFixed(2)
+      : 0;
+    
+    // Bases inadimplentes (com pendências)
+    const basesInadimplentes = resumoPorBase.filter((b: any) => b.inadimplente);
+    
+    console.log(`[FLEET-STATUS-PUBLIC-DASHBOARD] Total: ${totalGeral.totalVeiculos} veículos, ${resumoPorBase.length} bases`);
+    
+    res.json({ 
+      success: true, 
+      data: {
+        dataReferencia: today,
+        totais: {
+          ...totalGeral,
+          percentualAtualizado: percentualGeral,
+          totalBases: resumoPorBase.length,
+          basesInadimplentes: basesInadimplentes.length
+        },
+        resumoPorBase: resumoPorBase.sort((a: any, b: any) => Number(a.percentualAtualizado) - Number(b.percentualAtualizado)),
+        basesInadimplentes
+      }
+    });
+  } catch (error: any) {
+    console.error('[FLEET-STATUS-PUBLIC-DASHBOARD] Erro:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST - Criar/Atualizar status diário de um veículo (com validação de acesso)
 router.post('/api/fleet-status/daily', isAuthenticated, async (req: Request, res: Response) => {
   try {
