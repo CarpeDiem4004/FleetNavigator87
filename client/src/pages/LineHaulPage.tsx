@@ -2749,7 +2749,7 @@ const LineHaulPage = () => {
                               <History className="h-4 w-4" />
                             </Button>
                             {/* Botão de excluir - apenas para admin */}
-                            {['admin', 'ceo', 'gerente_geral'].includes(user?.role?.toLowerCase() || '') && (
+                            {(user?.role && ['admin', 'ceo', 'gerente_geral'].includes(user.role.toLowerCase())) && (
                               <Button 
                                 size="sm" 
                                 variant="ghost"
