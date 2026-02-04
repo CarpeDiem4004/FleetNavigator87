@@ -1831,3 +1831,140 @@ export const insertVehicleDailyStatusSchema = createInsertSchema(vehicleDailySta
 
 export type VehicleDailyStatus = typeof vehicleDailyStatus.$inferSelect;
 export type InsertVehicleDailyStatus = z.infer<typeof insertVehicleDailyStatusSchema>;
+
+// ========== Fleet Status History (Histórico de Status da Frota) ==========
+// Tabela para armazenar histórico de todas as alterações de status
+export const fleetStatusHistory = pgTable("fleet_status_history", {
+  id: serial("id").primaryKey(),
+  vehicleId: integer("vehicle_id").notNull().references(() => vehicles.id),
+  vehiclePlate: text("vehicle_plate").notNull(),
+  baseId: integer("base_id").notNull().references(() => bases.id),
+  baseName: text("base_name").notNull(),
+  statusAnterior: text("status_anterior"),
+  statusNovo: text("status_novo").notNull(),
+  observacao: text("observacao"),
+  localManutencao: text("local_manutencao"),
+  prazoManutencao: date("prazo_manutencao"),
+  baseEmprestadaId: integer("base_emprestada_id").references(() => bases.id),
+  baseEmprestadaNome: text("base_emprestada_nome"),
+  dataDevolucao: date("data_devolucao"),
+  updatedBy: integer("updated_by").notNull().references(() => users.id),
+  updatedByName: text("updated_by_name").notNull(),
+  dataAlteracao: timestamp("data_alteracao").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertFleetStatusHistorySchema = createInsertSchema(fleetStatusHistory).omit({ 
+  id: true, 
+  createdAt: true 
+});
+
+export type FleetStatusHistory = typeof fleetStatusHistory.$inferSelect;
+export type InsertFleetStatusHistory = z.infer<typeof insertFleetStatusHistorySchema>;
+
+// ========== Fleet Update Alerts (Alertas de Atualização de Frota) ==========
+// Tabela para rastrear bases que não fizeram atualizações diárias
+export const fleetUpdateAlerts = pgTable("fleet_update_alerts", {
+  id: serial("id").primaryKey(),
+  baseId: integer("base_id").notNull().references(() => bases.id),
+  baseName: text("base_name").notNull(),
+  dataReferencia: date("data_referencia").notNull(),
+  totalVeiculos: integer("total_veiculos").notNull(),
+  veiculosAtualizados: integer("veiculos_atualizados").notNull().default(0),
+  veiculosPendentes: integer("veiculos_pendentes").notNull().default(0),
+  percentualAtualizado: decimal("percentual_atualizado", { precision: 5, scale: 2 }).default("0"),
+  status: text("status").notNull().default('pendente'), // 'pendente', 'parcial', 'completo'
+  notificado: boolean("notificado").default(false),
+  dataNotificacao: timestamp("data_notificacao"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertFleetUpdateAlertSchema = createInsertSchema(fleetUpdateAlerts).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+export type FleetUpdateAlert = typeof fleetUpdateAlerts.$inferSelect;
+export type InsertFleetUpdateAlert = z.infer<typeof insertFleetUpdateAlertSchema>;
+
+// ========== Fleet Status Daily Extended (Status Diário Estendido) ==========
+// Versão estendida da tabela de status diário com mais campos
+export const fleetStatusDaily = pgTable("fleet_status_daily", {
+  id: serial("id").primaryKey(),
+  vehicleId: integer("vehicle_id").notNull().references(() => vehicles.id),
+  vehiclePlate: text("vehicle_plate").notNull(),
+  baseId: integer("base_id").notNull().references(() => bases.id),
+  baseName: text("base_name").notNull(),
+  dataAtualizacao: date("data_atualizacao").notNull(),
+  status: text("status").notNull().default('nao_informado'), // 'em_rota', 'sem_equipe', 'manutencao', 'emprestado', 'devolvido', 'nao_informado'
+  motivo: text("motivo"),
+  localManutencao: text("local_manutencao"),
+  prazoManutencao: date("prazo_manutencao"),
+  baseEmprestadaId: integer("base_emprestada_id").references(() => bases.id),
+  baseEmprestadaNome: text("base_emprestada_nome"),
+  dataDevolucao: date("data_devolucao"),
+  updatedBy: integer("updated_by").notNull().references(() => users.id),
+  updatedByName: text("updated_by_name").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertFleetStatusDailySchema = createInsertSchema(fleetStatusDaily, {
+  status: z.enum(['em_rota', 'sem_equipe', 'manutencao', 'emprestado', 'devolvido', 'nao_informado']).default('nao_informado'),
+  motivo: z.string().optional().nullable(),
+  localManutencao: z.string().optional().nullable(),
+  prazoManutencao: z.string().optional().nullable(),
+  baseEmprestadaNome: z.string().optional().nullable(),
+  dataDevolucao: z.string().optional().nullable(),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type FleetStatusDaily = typeof fleetStatusDaily.$inferSelect;
+export type InsertFleetStatusDaily = z.infer<typeof insertFleetStatusDailySchema>;
+
+// Relations para Fleet Status
+export const fleetStatusHistoryRelations = relations(fleetStatusHistory, ({ one }) => ({
+  vehicle: one(vehicles, {
+    fields: [fleetStatusHistory.vehicleId],
+    references: [vehicles.id],
+  }),
+  base: one(bases, {
+    fields: [fleetStatusHistory.baseId],
+    references: [bases.id],
+  }),
+  baseEmprestada: one(bases, {
+    fields: [fleetStatusHistory.baseEmprestadaId],
+    references: [bases.id],
+  }),
+  updatedByUser: one(users, {
+    fields: [fleetStatusHistory.updatedBy],
+    references: [users.id],
+  }),
+}));
+
+export const fleetStatusDailyRelations = relations(fleetStatusDaily, ({ one }) => ({
+  vehicle: one(vehicles, {
+    fields: [fleetStatusDaily.vehicleId],
+    references: [vehicles.id],
+  }),
+  base: one(bases, {
+    fields: [fleetStatusDaily.baseId],
+    references: [bases.id],
+  }),
+  baseEmprestada: one(bases, {
+    fields: [fleetStatusDaily.baseEmprestadaId],
+    references: [bases.id],
+  }),
+  updatedByUser: one(users, {
+    fields: [fleetStatusDaily.updatedBy],
+    references: [users.id],
+  }),
+}));
+
+export const fleetUpdateAlertsRelations = relations(fleetUpdateAlerts, ({ one }) => ({
+  base: one(bases, {
+    fields: [fleetUpdateAlerts.baseId],
+    references: [bases.id],
+  }),
+}));
