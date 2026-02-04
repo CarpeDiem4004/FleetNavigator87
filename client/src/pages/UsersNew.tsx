@@ -46,12 +46,11 @@ interface User {
   id: number;
   name: string;
   email: string;
-  role: 'admin' | 'ceo' | 'gerente_geral' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall' | 'coordenador' | 'gestor_equipamentos';
+  role: 'admin' | 'ceo' | 'gerente_geral' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall' | 'coordenador' | 'gestor_equipamentos' | 'operador_status_frota';
   baseId: number | null;
   baseName: string | null;
   lastLogin: string | null;
   isActive: boolean;
-  // Campos do banco, utilizados para compatibilidade
   base_id?: number | null;
   basename?: string | null;
   is_active?: boolean;
@@ -86,7 +85,8 @@ const translateUserRole = (role: string): string => {
     operador: 'Operador',
     oficina: 'Oficina',
     pneus: 'Especialista em Pneus',
-    posto: 'Posto (Abastecimento)'
+    posto: 'Posto (Abastecimento)',
+    operador_status_frota: 'Operador Status da Frota'
   };
   return roles[role] || role;
 };
@@ -105,7 +105,8 @@ const getRoleBadgeClass = (role: string): string => {
     operador: 'bg-green-100 text-green-800',
     oficina: 'bg-amber-100 text-amber-800',
     pneus: 'bg-teal-100 text-teal-800',
-    posto: 'bg-red-100 text-red-800'
+    posto: 'bg-red-100 text-red-800',
+    operador_status_frota: 'bg-lime-100 text-lime-800'
   };
   return classes[role] || 'bg-gray-100 text-gray-800';
 };
@@ -696,7 +697,7 @@ const UsersNew: React.FC = () => {
                     <NativeSelect
                       id="role"
                       value={newUser.role}
-                      onChange={(e) => setNewUser({...newUser, role: e.target.value as 'admin' | 'ceo' | 'gerente_geral' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall' | 'coordenador' | 'gestor_equipamentos'})}
+                      onChange={(e) => setNewUser({...newUser, role: e.target.value as 'admin' | 'ceo' | 'gerente_geral' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall' | 'coordenador' | 'gestor_equipamentos' | 'operador_status_frota'})}
                       options={[
                         { value: 'admin', label: 'Administrador' },
                         { value: 'ceo', label: 'CEO' },
@@ -708,6 +709,7 @@ const UsersNew: React.FC = () => {
                         { value: 'coordenador', label: 'Coordenador de Projeto' },
                         { value: 'line_hall', label: 'Line Hall' },
                         { value: 'operador', label: 'Operador' },
+                        { value: 'operador_status_frota', label: 'Operador Status da Frota' },
                         { value: 'posto', label: 'Posto (Abastecimento)' },
                         { value: 'oficina', label: 'Oficina' },
                         { value: 'pneus', label: 'Especialista em Pneus' }

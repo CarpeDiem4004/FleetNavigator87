@@ -12,7 +12,7 @@ export const tireStatusEnum = pgEnum('tire_status', ['em_uso', 'estoque', 'desca
 export const fuelTypeEnum = pgEnum('fuel_type', ['arla', 'diesel']);
 export const fineStatusEnum = pgEnum('fine_status', ['pendente', 'paga', 'contestada']);
 export const tripStatusEnum = pgEnum('trip_status', ['programada', 'carregando', 'aguardando_carga', 'em_transito', 'finalizada']);
-export const userRoleEnum = pgEnum('user_role', ['admin', 'ceo', 'gerente_geral', 'gestor', 'operador', 'oficina', 'pneus', 'gestor_frota', 'posto', 'line_hall', 'gestor_equipamentos']);
+export const userRoleEnum = pgEnum('user_role', ['admin', 'ceo', 'gerente_geral', 'gestor', 'operador', 'oficina', 'pneus', 'gestor_frota', 'posto', 'line_hall', 'gestor_equipamentos', 'operador_status_frota']);
 
 // Enum para roles de usuários em bases específicas (sistema de segurança de links externos)
 export const baseUserRoleEnum = pgEnum('base_user_role', ['admin_base', 'gestor_base', 'operador_base', 'visualizador']);

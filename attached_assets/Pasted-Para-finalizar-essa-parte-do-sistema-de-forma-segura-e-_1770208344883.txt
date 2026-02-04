@@ -1,0 +1,178 @@
+Para finalizar essa parte do sistema de forma segura e integrada ao cadastro de usuários que já existe no seu sistema de gestão de frota, vamos vincular cada usuário à sua **base** de forma controlada. O objetivo é:
+
+- Permitir que cada usuário (da base) acesse apenas os dados da sua própria base.
+- Manter a segurança (evitar acesso cruzado entre bases).
+- Facilitar o direcionamento automático após o login.
+
+### Passo 1 – Ajuste no Banco de Dados (já sugerido antes, mas reforçando)
+
+Adicione (ou confirme que existe) o vínculo entre usuário e base:
+
+```sql
+-- Se ainda não existir, adicione a coluna na tabela de usuários existente
+ALTER TABLE usuarios 
+ADD COLUMN IF NOT EXISTS id_base INTEGER REFERENCES bases(id_base);
+
+-- Opcional: índice para melhorar performance
+CREATE INDEX idx_usuarios_id_base ON usuarios(id_base);
+
+-- Recomendado: torne a coluna NOT NULL para usuários de base (depois de migrar os dados existentes)
+-- ALTER TABLE usuarios ALTER COLUMN id_base SET NOT NULL;
+```
+
+**Observação importante**:  
+Se a tabela de usuários já tem muitos registros, faça uma migração cuidadosa:
+1. Adicione a coluna como NULLable primeiro.
+2. Preencha os valores existentes (via script ou interface admin).
+3. Depois torne NOT NULL se for regra de negócio.
+
+### Passo 2 – Ajuste no Formulário de Cadastro de Usuário (já existente)
+
+No cadastro/edição de usuário (geralmente feito por administradores), adicione o campo de **Base**:
+
+#### Exemplo de HTML + Backend (conceitual)
+
+**Frontend (HTML/Formulário):**
+```html
+<!-- Dentro do formulário de cadastro/edição de usuário -->
+<div class="form-group">
+    <label for="id_base">Base de Acesso</label>
+    <select name="id_base" id="id_base" class="form-control" required>
+        <option value="">Selecione a base...</option>
+        <?php foreach ($bases as $base): ?>
+            <option value="<?= $base['id_base'] ?>" 
+                    <?= (isset($usuario['id_base']) && $usuario['id_base'] == $base['id_base']) ? 'selected' : '' ?>>
+                <?= htmlspecialchars($base['nome']) ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+    <small class="form-text text-muted">
+        O usuário só poderá visualizar e editar veículos/status da base selecionada.
+    </small>
+</div>
+```
+
+**Backend – Validação e Salvamento (exemplo em PHP, mas adapte à sua linguagem):**
+
+```php
+// No momento de salvar o usuário (INSERT ou UPDATE)
+if ($_POST) {
+    $id_usuario = $_POST['id_usuario'] ?? null; // se for edição
+    $nome       = trim($_POST['nome']);
+    $email      = trim($_POST['email']);
+    $id_base    = !empty($_POST['id_base']) ? (int)$_POST['id_base'] : null;
+    
+    // Validação importante
+    if (empty($id_base)) {
+        $erros[] = "É obrigatório selecionar uma base para este usuário.";
+    }
+    
+    // Verifica se a base existe (segurança extra)
+    $baseExiste = $db->query("SELECT 1 FROM bases WHERE id_base = ?", [$id_base])->fetch();
+    if (!$baseExiste) {
+        $erros[] = "Base selecionada não existe.";
+    }
+    
+    if (empty($erros)) {
+        if ($id_usuario) {
+            // UPDATE
+            $db->query(
+                "UPDATE usuarios SET nome = ?, email = ?, id_base = ? WHERE id_usuario = ?",
+                [$nome, $email, $id_base, $id_usuario]
+            );
+        } else {
+            // INSERT (exemplo com senha)
+            $senha_hash = password_hash($_POST['senha'], PASSWORD_DEFAULT);
+            $db->query(
+                "INSERT INTO usuarios (nome, email, senha, id_base, ativo) 
+                 VALUES (?, ?, ?, ?, 1)",
+                [$nome, $email, $senha_hash, $id_base]
+            );
+        }
+    }
+}
+```
+
+### Passo 3 – Login Seguro + Direcionamento Automático
+
+Após o login bem-sucedido, guarde a informação da base no **session** ou no **token JWT**.
+
+**Exemplo em PHP (session):**
+
+```php
+// Após validar login
+session_start();
+
+$_SESSION['id_usuario']   = $usuario['id_usuario'];
+$_SESSION['nome']         = $usuario['nome'];
+$_SESSION['id_base']      = $usuario['id_base'];
+$_SESSION['role']         = $usuario['role'] ?? 'base'; // 'base' ou 'admin'
+
+// Redirecionamento inteligente
+if ($usuario['role'] === 'admin') {
+    header("Location: /dashboard-principal");
+} else {
+    // Usuário comum → vai direto para a visão da sua base
+    header("Location: /frota-minha-base");
+}
+exit;
+```
+
+**Ou com JWT (mais moderno):**
+
+No token inclua o `id_base`:
+
+```json
+{
+  "sub": 123,
+  "nome": "João da Base SP",
+  "id_base": 5,
+  "role": "base",
+  "exp": 1735689600
+}
+```
+
+### Passo 4 – Restrição de Acesso em TODAS as consultas
+
+Sempre filtre por `id_base` do usuário logado. Exemplos:
+
+```sql
+-- Listar veículos da base do usuário logado
+SELECT * FROM veiculos 
+WHERE id_base_atual = :id_base_logado;
+
+-- Listar status diários
+SELECT sd.* FROM status_diario sd
+INNER JOIN veiculos v ON sd.id_veiculo = v.id_veiculo
+WHERE v.id_base_atual = :id_base_logado
+  AND sd.data_atualizacao = CURRENT_DATE;
+```
+
+No código backend, passe sempre o `:id_base_logado` vindo da sessão/token.
+
+### Passo 5 – Link de Acesso (opcional – portal por base)
+
+Se quiser dar um link específico por base (ex.: para envio por e-mail), você pode criar uma página de login pré-preenchida:
+
+Exemplo de URL:
+```
+https://seusistema.com/login?base=5
+```
+
+No formulário de login:
+- Se vier `?base=5`, pré-selecione a base no dropdown (ou mostre o nome da base).
+- Ou crie um subdomínio/subpasta por base (mais avançado): `https://base-sp.seusistema.com`
+
+### Resumo – O que fazer agora (ordem sugerida)
+
+1. Adicione a coluna `id_base` na tabela `usuarios` (se ainda não tiver).
+2. Atualize o formulário de cadastro/edição de usuário para incluir o select de bases.
+3. Valide que `id_base` é obrigatório e existe.
+4. No login, guarde `id_base` na sessão ou token.
+5. Redirecione usuário comum para a página da sua frota (`/frota-minha-base`).
+6. Em **todas** as consultas de frota/status, filtre por `id_base` do usuário logado.
+7. Teste com 2–3 usuários de bases diferentes para garantir isolamento.
+
+Se me passar qual linguagem/framework você usa no sistema atual (PHP puro, Laravel, Node.js, Python/Django, etc.), consigo dar exemplos de código ainda mais exatos e prontos para copiar/colar.
+
+Precisa de ajuda em algum desses pontos específicos?

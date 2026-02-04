@@ -144,6 +144,8 @@ export default function SignIn({ oficina = false }: SignInProps) {
             navigate('/oficina/dashboard');
           } else if (userRole === 'line_hall' || userRole === 'operador_1_line_haul') {
             navigate('/line-haul');
+          } else if (userRole === 'operador_status_frota') {
+            navigate('/fleet-status/base');
           } else if (user.basename === "Gestão de Frotas") {
             navigate('/fleet-management');
           } else {
@@ -183,6 +185,8 @@ export default function SignIn({ oficina = false }: SignInProps) {
             navigate('/oficina/dashboard');
           } else if (userRole2 === 'line_hall' || userRole2 === 'operador_1_line_haul') {
             navigate('/line-haul');
+          } else if (userRole2 === 'operador_status_frota') {
+            navigate('/fleet-status/base');
           } else if (user.basename === "Gestão de Frotas") {
             navigate('/fleet-management');
           } else {
