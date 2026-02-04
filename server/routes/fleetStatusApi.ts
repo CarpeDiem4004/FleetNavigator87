@@ -146,6 +146,96 @@ router.get('/api/fleet-status/base/:baseId/vehicles', isAuthenticated, async (re
   }
 });
 
+// GET - Rota pública para buscar veículos de uma base (usado quando autenticação é via localStorage)
+// Esta rota valida o userId e baseId para garantir segurança
+router.get('/api/fleet-status/public/base/:baseId/vehicles', async (req: Request, res: Response) => {
+  try {
+    const { baseId } = req.params;
+    const { userId } = req.query;
+    const today = getTodayBrasil();
+    
+    console.log(`[FLEET-STATUS-PUBLIC] Buscando veículos - BaseId: ${baseId}, UserId: ${userId}`);
+    
+    // Validar se o userId pertence à base
+    if (userId) {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id, base_id, role')
+        .eq('id', Number(userId))
+        .single();
+      
+      if (userError || !userData) {
+        console.error('[FLEET-STATUS-PUBLIC] Usuário não encontrado:', userError);
+        return res.status(403).json({ success: false, error: 'Usuário não autorizado' });
+      }
+      
+      // Verificar se o usuário tem acesso à base
+      const hasAccess = ADMIN_ROLES.includes(userData.role) || 
+                       (userData.base_id && Number(userData.base_id) === Number(baseId));
+      
+      if (!hasAccess) {
+        return res.status(403).json({ success: false, error: 'Você não tem acesso a esta base' });
+      }
+    }
+    
+    // Buscar veículos da base
+    const { data: vehicles, error: vehiclesError } = await supabase
+      .from('vehicles')
+      .select('id, plate, model, make, vehicle_type, status, base_id')
+      .eq('base_id', baseId)
+      .order('plate');
+    
+    if (vehiclesError) {
+      console.error('[FLEET-STATUS-PUBLIC] Erro ao buscar veículos:', vehiclesError);
+      return res.status(500).json({ success: false, error: vehiclesError.message });
+    }
+    
+    // Buscar status do dia para esses veículos
+    const vehicleIds = vehicles?.map(v => v.id) || [];
+    
+    const { data: statusData, error: statusError } = await supabase
+      .from('fleet_status_daily')
+      .select('*')
+      .in('vehicle_id', vehicleIds)
+      .eq('data_atualizacao', today);
+    
+    if (statusError) {
+      console.error('[FLEET-STATUS-PUBLIC] Erro ao buscar status:', statusError);
+    }
+    
+    // Combinar veículos com status
+    const vehiclesWithStatus = vehicles?.map(vehicle => {
+      const statusRecord = statusData?.find(s => s.vehicle_id === vehicle.id);
+      return {
+        ...vehicle,
+        statusDiario: statusRecord || null,
+        atualizado: !!statusRecord
+      };
+    }) || [];
+    
+    const totalVeiculos = vehiclesWithStatus.length;
+    const atualizados = vehiclesWithStatus.filter(v => v.atualizado).length;
+    const pendentes = totalVeiculos - atualizados;
+    const percentual = totalVeiculos > 0 ? ((atualizados / totalVeiculos) * 100).toFixed(2) : 0;
+    
+    console.log(`[FLEET-STATUS-PUBLIC] Retornando ${totalVeiculos} veículos para base ${baseId}`);
+    
+    res.json({ 
+      success: true, 
+      data: vehiclesWithStatus,
+      resumo: {
+        total: totalVeiculos,
+        atualizados,
+        pendentes,
+        percentualAtualizado: percentual
+      }
+    });
+  } catch (error: any) {
+    console.error('[FLEET-STATUS-PUBLIC] Erro:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST - Criar/Atualizar status diário de um veículo (com validação de acesso)
 router.post('/api/fleet-status/daily', isAuthenticated, async (req: Request, res: Response) => {
   try {

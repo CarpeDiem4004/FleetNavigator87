@@ -114,17 +114,20 @@ export default function FleetStatusBasePage() {
     }
   }, [authLoading, user, navigate]);
 
+  const userId = user?.id;
+  
   const { data: vehiclesData, isLoading, refetch } = useQuery({
-    queryKey: ['/api/fleet-status/base', baseId, 'vehicles'],
+    queryKey: ['/api/fleet-status/public/base', baseId, 'vehicles'],
     queryFn: async () => {
-      if (!baseId) return { data: [], resumo: { total: 0, atualizados: 0, pendentes: 0, percentualAtualizado: 0 } };
-      const response = await fetch(`/api/fleet-status/base/${baseId}/vehicles`, {
+      if (!baseId || !userId) return { data: [], resumo: { total: 0, atualizados: 0, pendentes: 0, percentualAtualizado: 0 } };
+      // Usar a rota pública que valida por userId
+      const response = await fetch(`/api/fleet-status/public/base/${baseId}/vehicles?userId=${userId}`, {
         credentials: 'include'
       });
       const result = await response.json();
       return result;
     },
-    enabled: !!baseId,
+    enabled: !!baseId && !!userId,
     refetchInterval: 30000
   });
 
