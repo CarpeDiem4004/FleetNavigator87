@@ -144,17 +144,16 @@ async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<
         vehicleNumber = String(vehicleNumberCell.v).toUpperCase().replace(/[^A-Z0-9]/g, '');
       }
       
-      // Comparar placa (verificar ambos campos de veículo)
-      const placaMatch = usedVehicle === placaNormalizada || vehicleNumber === placaNormalizada || 
-                         usedVehicle.includes(placaNormalizada) || vehicleNumber.includes(placaNormalizada) ||
-                         placaNormalizada.includes(usedVehicle) || placaNormalizada.includes(vehicleNumber);
+      // Comparar placa - IGUALDADE ESTRITA OBRIGATÓRIA
+      // Não usar includes pois causa falsos positivos
+      const placaMatch = usedVehicle === placaNormalizada || vehicleNumber === placaNormalizada;
       
       // Busca flexível: aceita data exata OU amanhã
       const dataMatch = dataLinha === dataFormatada || dataLinha === amanhaFormatada;
       
-      // Debug: mostrar comparações para a placa buscada
-      if (vehicleNumber === placaNormalizada) {
-        console.log(`[GOOGLE_SHEETS] DEBUG - Linha encontrada: data=${dataLinha}, vehicleNumber=${vehicleNumber}, dataMatch=${dataMatch}`);
+      // Debug: mostrar comparações quando data corresponde
+      if (dataMatch && (usedVehicle || vehicleNumber)) {
+        console.log(`[GOOGLE_SHEETS] Comparando: buscando=${placaNormalizada}, usedVehicle=${usedVehicle}, vehicleNumber=${vehicleNumber}, placaMatch=${placaMatch}`);
       }
       
       if (dataMatch && placaMatch) {

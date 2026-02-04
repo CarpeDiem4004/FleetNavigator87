@@ -1,0 +1,190 @@
+🔎 ANÁLISE DO PROBLEMA (POR QUE OS DADOS ESTÃO SE REPETINDO)
+❌ Sintoma visível
+
+Todas as placas estão exibindo:
+
+Mesmo Trip
+
+Mesma Rota
+
+Mesma Data
+
+Mesmo sendo solicitações diferentes.
+
+🎯 Causa MAIS PROVÁVEL (90% dos casos)
+
+👉 Os dados de viagem (Trip / Rota / Data) estão sendo buscados:
+
+fora do loop
+
+ou com query genérica
+
+ou usando o último registro encontrado
+
+ou usando join sem filtro pela placa / solicitação
+
+Resultado:
+📌 O mesmo objeto de viagem é reaproveitado para todas as placas.
+
+🚨 Erros técnicos comuns que geram isso
+1️⃣ Join sem chave correta
+
+Exemplo errado:
+
+LEFT JOIN viagens v ON v.operacao = 'LINE_HAUL'
+
+
+✔️ O correto:
+
+LEFT JOIN viagens v ON v.placa = s.placa
+
+
+ou melhor ainda:
+
+LEFT JOIN viagens v ON v.solicitacao_id = s.id
+
+2️⃣ Query busca viagem fora do contexto da solicitação
+
+Exemplo típico de erro:
+
+const viagem = await getUltimaViagemLineHaul()
+
+
+Depois:
+
+solicitacoes.map(s => ({
+  ...s,
+  viagem
+}))
+
+
+💥 Resultado: mesma viagem pra todo mundo
+
+3️⃣ Frontend usando estado global errado
+
+Exemplo:
+
+const [viagem, setViagem] = useState(null)
+
+
+E dentro do map:
+
+viagem.trip
+viagem.rota
+
+
+👉 Isso sempre repete o mesmo dado.
+
+4️⃣ Backend retorna dados agregados
+
+Exemplo:
+
+SELECT trip, rota, data
+FROM viagens
+WHERE operacao = 'LINE_HAUL'
+LIMIT 1;
+
+
+Isso não respeita a placa nem a solicitação.
+
+✅ REGRA CORRETA DE NEGÓCIO (O QUE TEM QUE ACONTECER)
+
+Cada card deve mostrar EXCLUSIVAMENTE:
+
+Trip, Rota e Data
+🔗 da mesma solicitação que pediu o saldo
+
+📌 Nunca:
+
+da última viagem
+
+da última rota
+
+da operação inteira
+
+🎯 PROMPT PRONTO PARA O REPLIT AI (CORREÇÃO DEFINITIVA)
+
+Problema crítico identificado:
+Na tela Solicitações Pendentes – Line Haul, os campos:
+
+Trip
+
+Rota
+
+Data
+
+estão sendo exibidos iguais para todas as placas, mesmo sendo solicitações diferentes.
+
+Causa provável:
+Os dados de viagem estão sendo buscados de forma global ou agregada, e não estão vinculados corretamente à solicitação ou à placa.
+
+✅ REGRA OBRIGATÓRIA
+
+Cada card deve exibir somente os dados da viagem vinculada àquela solicitação específica.
+
+🔐 CORREÇÃO OBRIGATÓRIA NO BACKEND
+
+A query deve:
+
+Vincular viagem ↔ solicitação
+
+Nunca usar dados globais
+
+Exemplo correto:
+
+SELECT
+  s.id,
+  s.placa,
+  s.motorista,
+  v.trip,
+  v.rota,
+  v.data
+FROM solicitacoes s
+LEFT JOIN viagens v
+  ON v.solicitacao_id = s.id
+WHERE s.operacao = 'LINE_HAUL'
+  AND s.status = 'PENDENTE';
+
+
+Se não existir solicitacao_id, usar:
+
+ON v.placa = s.placa
+AND v.data = s.data_viagem
+
+🧠 FRONTEND – REGRA OBRIGATÓRIA
+
+Dentro do .map() das solicitações:
+
+Usar somente os dados vindos daquele item
+
+Proibido usar estado global para viagem
+
+Exemplo correto:
+
+solicitacoes.map(item => (
+  <div>
+    <p>Trip: {item.trip}</p>
+    <p>Rota: {item.rota}</p>
+    <p>Data: {item.data}</p>
+  </div>
+))
+
+🚫 COMPORTAMENTO PROIBIDO
+
+Reutilizar última viagem
+
+Usar query genérica de viagens
+
+Exibir dados que não pertençam à solicitação
+
+✅ RESULTADO ESPERADO
+
+Cada placa exibe:
+
+Trip correta
+
+Rota correta
+
+Data correta
+
+Sem repetição indevida.
