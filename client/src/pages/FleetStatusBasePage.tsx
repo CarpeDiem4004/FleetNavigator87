@@ -80,7 +80,23 @@ export default function FleetStatusBasePage() {
   const [authChecked, setAuthChecked] = useState(false);
 
   const baseId = user?.base_id || user?.baseId;
-  const baseName = user?.basename || user?.name || 'Base';
+
+  // Buscar nome da base do servidor
+  const { data: baseData } = useQuery({
+    queryKey: ['/api/bases', baseId],
+    queryFn: async () => {
+      if (!baseId) return null;
+      const response = await fetch(`/api/bases/${baseId}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!baseId,
+    staleTime: 1000 * 60 * 5, // Cache por 5 minutos
+  });
+
+  const baseName = baseData?.name || user?.basename || 'Base';
 
   // Verificação de autenticação com delay para permitir localStorage ser consultado
   useEffect(() => {
