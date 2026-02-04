@@ -8537,21 +8537,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
       }
 
-      // Se é retorno vazio, forçar valores padrão e pular busca de rota
+      // Sempre calcular km baseado na rota (retorno vazio é apenas uma marcação)
       let kmTotal = 0;
       let fonteKm = 'tabela';
       let origemFinal = rota_origem;
       let destinoFinal = rota_destino;
       
       if (isRetornoVazio) {
-        console.log('[LINEHAUL-PUBLIC-REQUEST] Retorno Vazio - pulando busca de rota');
-        origemFinal = 'RETORNO VAZIO';
-        destinoFinal = 'RETORNO VAZIO';
-        kmTotal = 0;
-        fonteKm = 'retorno_vazio';
-      } else {
-        const origemNorm = normalizeString(rota_origem);
-        const destinoNorm = normalizeString(rota_destino);
+        console.log('[LINEHAUL-PUBLIC-REQUEST] Retorno Vazio marcado - km será calculado normalmente');
+      }
+      
+      const origemNorm = normalizeString(rota_origem);
+      const destinoNorm = normalizeString(rota_destino);
 
         console.log('[LINEHAUL-PUBLIC-REQUEST] Buscando rota:', origemNorm, '→', destinoNorm);
       const routeQuery = `
@@ -8602,7 +8599,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('[LINEHAUL-PUBLIC-REQUEST] Erro ao calcular via Google Maps:', googleError);
         }
       }
-      } // Fecha o else do isRetornoVazio
 
       // Calcular valor baseado no modelo do veículo
       function getConsumoByModel(modelo: string): number {
