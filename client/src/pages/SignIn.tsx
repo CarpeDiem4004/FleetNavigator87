@@ -33,6 +33,8 @@ export default function SignIn({ oficina = false }: SignInProps) {
         navigate('/oficina/dashboard');
       } else if (user.role === 'line_hall' || user.role === 'operador_1_line_haul') {
         navigate('/line-haul');
+      } else if (user.role === 'operador_status_frota') {
+        navigate('/fleet-status/base');
       } else {
         navigate('/');
       }

@@ -186,7 +186,7 @@ const UsersNew: React.FC = () => {
           id: user.id,
           name: user.name,
           email: user.email,
-          role: (user.role || 'operador') as 'admin' | 'ceo' | 'gerente_geral' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall' | 'coordenador' | 'gestor_equipamentos',
+          role: (user.role || 'operador') as 'admin' | 'ceo' | 'gerente_geral' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota' | 'gestor_combustivel' | 'line_hall' | 'coordenador' | 'gestor_equipamentos' | 'operador_status_frota',
           baseId: user.baseId || user.base_id || null,
           baseName: user.baseName || user.basename || null,
           lastLogin: user.lastLogin || user.last_login || null,
