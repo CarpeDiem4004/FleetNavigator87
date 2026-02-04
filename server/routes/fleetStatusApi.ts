@@ -329,6 +329,186 @@ router.get('/api/fleet-status/public/dashboard', async (req: Request, res: Respo
   }
 });
 
+// POST - Atualização pública de status (validação via userId no body)
+router.post('/api/fleet-status/public/daily', async (req: Request, res: Response) => {
+  try {
+    const { 
+      userId,
+      vehicle_id, 
+      vehicle_plate, 
+      base_id, 
+      base_name, 
+      status, 
+      motivo,
+      local_manutencao,
+      prazo_manutencao,
+      base_emprestada_id,
+      base_emprestada_nome,
+      data_devolucao
+    } = req.body;
+    
+    console.log('[FLEET-STATUS-PUBLIC-DAILY] Requisição recebida:', { userId, vehicle_id, base_id, status });
+    
+    // Validar campos obrigatórios
+    if (!vehicle_id || !base_id || !status) {
+      return res.status(400).json({ success: false, error: 'Campos obrigatórios: vehicle_id, base_id, status' });
+    }
+    
+    // Validar usuário via userId
+    let user: any = null;
+    if (userId) {
+      const userResult = await pool.query(
+        `SELECT id, name, role, base_id FROM users WHERE id = $1`,
+        [Number(userId)]
+      );
+      if (userResult.rows.length > 0) {
+        user = userResult.rows[0];
+      }
+    }
+    
+    if (!user) {
+      console.log('[FLEET-STATUS-PUBLIC-DAILY] Usuário não encontrado:', userId);
+      return res.status(401).json({ success: false, error: 'Usuário não autenticado' });
+    }
+    
+    // Validar acesso à base
+    if (!userHasAccessToBase(user, Number(base_id))) {
+      return res.status(403).json({ success: false, error: 'Você não tem acesso a esta base' });
+    }
+    
+    // Verificar se o veículo pertence à base (usando PostgreSQL local)
+    const vehicleResult = await pool.query(
+      `SELECT id, plate, base_id FROM vehicles WHERE id = $1`,
+      [vehicle_id]
+    );
+    
+    if (vehicleResult.rows.length === 0) {
+      console.log(`[FLEET-STATUS-PUBLIC-DAILY] Veículo não encontrado no PostgreSQL local: ${vehicle_id}`);
+      return res.status(404).json({ success: false, error: 'Veículo não encontrado' });
+    }
+    
+    const vehicleCheck = vehicleResult.rows[0];
+    
+    if (Number(vehicleCheck.base_id) !== Number(base_id)) {
+      return res.status(403).json({ success: false, error: 'Este veículo não pertence a esta base' });
+    }
+    
+    const today = getTodayBrasil();
+    
+    // Verificar se já existe registro para este veículo hoje (PostgreSQL local)
+    const existingResult = await pool.query(
+      `SELECT id, status FROM fleet_status_daily WHERE vehicle_id = $1 AND data_atualizacao = $2`,
+      [vehicle_id, today]
+    );
+    
+    const existing = existingResult.rows[0] || null;
+    const statusAnterior = existing?.status || null;
+    
+    let result;
+    
+    if (existing) {
+      // Atualizar registro existente
+      const updateResult = await pool.query(
+        `UPDATE fleet_status_daily SET
+          vehicle_plate = $1,
+          base_id = $2,
+          base_name = $3,
+          status = $4,
+          motivo = $5,
+          local_manutencao = $6,
+          prazo_manutencao = $7,
+          base_emprestada_id = $8,
+          base_emprestada_nome = $9,
+          data_devolucao = $10,
+          updated_by = $11,
+          updated_by_name = $12,
+          updated_at = NOW()
+        WHERE id = $13
+        RETURNING *`,
+        [
+          vehicle_plate || vehicleCheck.plate,
+          base_id,
+          base_name,
+          status,
+          motivo || null,
+          local_manutencao || null,
+          prazo_manutencao || null,
+          base_emprestada_id || null,
+          base_emprestada_nome || null,
+          data_devolucao || null,
+          user?.id || 1,
+          user?.name || 'Sistema',
+          existing.id
+        ]
+      );
+      result = updateResult.rows[0];
+    } else {
+      // Inserir novo registro
+      const insertResult = await pool.query(
+        `INSERT INTO fleet_status_daily (
+          vehicle_id, vehicle_plate, base_id, base_name, data_atualizacao,
+          status, motivo, local_manutencao, prazo_manutencao,
+          base_emprestada_id, base_emprestada_nome, data_devolucao,
+          updated_by, updated_by_name, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+        RETURNING *`,
+        [
+          vehicle_id,
+          vehicle_plate || vehicleCheck.plate,
+          base_id,
+          base_name,
+          today,
+          status,
+          motivo || null,
+          local_manutencao || null,
+          prazo_manutencao || null,
+          base_emprestada_id || null,
+          base_emprestada_nome || null,
+          data_devolucao || null,
+          user?.id || 1,
+          user?.name || 'Sistema'
+        ]
+      );
+      result = insertResult.rows[0];
+    }
+    
+    // Registrar histórico se houve mudança de status (PostgreSQL local)
+    if (statusAnterior !== status) {
+      await pool.query(
+        `INSERT INTO fleet_status_history (
+          vehicle_id, vehicle_plate, base_id, base_name,
+          status_anterior, status_novo, observacao,
+          local_manutencao, prazo_manutencao,
+          base_emprestada_id, base_emprestada_nome, data_devolucao,
+          updated_by, updated_by_name, data_alteracao
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())`,
+        [
+          vehicle_id,
+          vehicle_plate,
+          base_id,
+          base_name,
+          statusAnterior,
+          status,
+          motivo || null,
+          local_manutencao || null,
+          prazo_manutencao || null,
+          base_emprestada_id || null,
+          base_emprestada_nome || null,
+          data_devolucao || null,
+          user?.id || 1,
+          user?.name || 'Sistema'
+        ]
+      );
+    }
+    
+    console.log(`[FLEET-STATUS-PUBLIC-DAILY] Status atualizado: ${vehicle_plate} -> ${status}`);
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error('[FLEET-STATUS-PUBLIC-DAILY] Erro:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST - Criar/Atualizar status diário de um veículo (com validação de acesso)
 router.post('/api/fleet-status/daily', isAuthenticated, async (req: Request, res: Response) => {
   try {
@@ -357,16 +537,18 @@ router.post('/api/fleet-status/daily', isAuthenticated, async (req: Request, res
       return res.status(403).json({ success: false, error: 'Você não tem acesso a esta base' });
     }
     
-    // Verificar se o veículo pertence à base
-    const { data: vehicleCheck, error: vehicleError } = await supabase
-      .from('vehicles')
-      .select('id, plate, base_id')
-      .eq('id', vehicle_id)
-      .single();
+    // Verificar se o veículo pertence à base (usando PostgreSQL local)
+    const vehicleResult = await pool.query(
+      `SELECT id, plate, base_id FROM vehicles WHERE id = $1`,
+      [vehicle_id]
+    );
     
-    if (vehicleError || !vehicleCheck) {
+    if (vehicleResult.rows.length === 0) {
+      console.log(`[FLEET-STATUS] Veículo não encontrado no PostgreSQL local: ${vehicle_id}`);
       return res.status(404).json({ success: false, error: 'Veículo não encontrado' });
     }
+    
+    const vehicleCheck = vehicleResult.rows[0];
     
     if (Number(vehicleCheck.base_id) !== Number(base_id)) {
       return res.status(403).json({ success: false, error: 'Este veículo não pertence a esta base' });
@@ -374,84 +556,110 @@ router.post('/api/fleet-status/daily', isAuthenticated, async (req: Request, res
     
     const today = getTodayBrasil();
     
-    // Verificar se já existe registro para este veículo hoje
-    const { data: existing, error: checkError } = await supabase
-      .from('fleet_status_daily')
-      .select('id, status')
-      .eq('vehicle_id', vehicle_id)
-      .eq('data_atualizacao', today)
-      .single();
+    // Verificar se já existe registro para este veículo hoje (PostgreSQL local)
+    const existingResult = await pool.query(
+      `SELECT id, status FROM fleet_status_daily WHERE vehicle_id = $1 AND data_atualizacao = $2`,
+      [vehicle_id, today]
+    );
     
+    const existing = existingResult.rows[0] || null;
     const statusAnterior = existing?.status || null;
-    
-    const recordData = {
-      vehicle_id,
-      vehicle_plate: vehicle_plate || vehicleCheck.plate,
-      base_id,
-      base_name,
-      data_atualizacao: today,
-      status,
-      motivo,
-      local_manutencao,
-      prazo_manutencao,
-      base_emprestada_id,
-      base_emprestada_nome,
-      data_devolucao,
-      updated_by: user?.id || 1,
-      updated_by_name: user?.name || 'Sistema',
-      updated_at: new Date().toISOString()
-    };
     
     let result;
     
     if (existing) {
       // Atualizar registro existente
-      const { data, error } = await supabase
-        .from('fleet_status_daily')
-        .update(recordData)
-        .eq('id', existing.id)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('[FLEET-STATUS] Erro ao atualizar:', error);
-        return res.status(500).json({ success: false, error: error.message });
-      }
-      result = data;
+      const updateResult = await pool.query(
+        `UPDATE fleet_status_daily SET
+          vehicle_plate = $1,
+          base_id = $2,
+          base_name = $3,
+          status = $4,
+          motivo = $5,
+          local_manutencao = $6,
+          prazo_manutencao = $7,
+          base_emprestada_id = $8,
+          base_emprestada_nome = $9,
+          data_devolucao = $10,
+          updated_by = $11,
+          updated_by_name = $12,
+          updated_at = NOW()
+        WHERE id = $13
+        RETURNING *`,
+        [
+          vehicle_plate || vehicleCheck.plate,
+          base_id,
+          base_name,
+          status,
+          motivo || null,
+          local_manutencao || null,
+          prazo_manutencao || null,
+          base_emprestada_id || null,
+          base_emprestada_nome || null,
+          data_devolucao || null,
+          user?.id || 1,
+          user?.name || 'Sistema',
+          existing.id
+        ]
+      );
+      result = updateResult.rows[0];
     } else {
       // Inserir novo registro
-      const { data, error } = await supabase
-        .from('fleet_status_daily')
-        .insert(recordData)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('[FLEET-STATUS] Erro ao inserir:', error);
-        return res.status(500).json({ success: false, error: error.message });
-      }
-      result = data;
+      const insertResult = await pool.query(
+        `INSERT INTO fleet_status_daily (
+          vehicle_id, vehicle_plate, base_id, base_name, data_atualizacao,
+          status, motivo, local_manutencao, prazo_manutencao,
+          base_emprestada_id, base_emprestada_nome, data_devolucao,
+          updated_by, updated_by_name, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+        RETURNING *`,
+        [
+          vehicle_id,
+          vehicle_plate || vehicleCheck.plate,
+          base_id,
+          base_name,
+          today,
+          status,
+          motivo || null,
+          local_manutencao || null,
+          prazo_manutencao || null,
+          base_emprestada_id || null,
+          base_emprestada_nome || null,
+          data_devolucao || null,
+          user?.id || 1,
+          user?.name || 'Sistema'
+        ]
+      );
+      result = insertResult.rows[0];
     }
     
-    // Registrar histórico se houve mudança de status
+    // Registrar histórico se houve mudança de status (PostgreSQL local)
     if (statusAnterior !== status) {
-      await supabase.from('fleet_status_history').insert({
-        vehicle_id,
-        vehicle_plate,
-        base_id,
-        base_name,
-        status_anterior: statusAnterior,
-        status_novo: status,
-        observacao: motivo,
-        local_manutencao,
-        prazo_manutencao,
-        base_emprestada_id,
-        base_emprestada_nome,
-        data_devolucao,
-        updated_by: user?.id || 1,
-        updated_by_name: user?.name || 'Sistema',
-        data_alteracao: new Date().toISOString()
-      });
+      await pool.query(
+        `INSERT INTO fleet_status_history (
+          vehicle_id, vehicle_plate, base_id, base_name,
+          status_anterior, status_novo, observacao,
+          local_manutencao, prazo_manutencao,
+          base_emprestada_id, base_emprestada_nome, data_devolucao,
+          updated_by, updated_by_name, data_alteracao
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())`,
+        [
+          vehicle_id,
+          vehicle_plate,
+          base_id,
+          base_name,
+          statusAnterior,
+          status,
+          motivo || null,
+          local_manutencao || null,
+          prazo_manutencao || null,
+          base_emprestada_id || null,
+          base_emprestada_nome || null,
+          data_devolucao || null,
+          user?.id || 1,
+          user?.name || 'Sistema'
+        ]
+      );
     }
     
     // Atualizar alertas da base

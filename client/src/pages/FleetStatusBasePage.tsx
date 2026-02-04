@@ -133,11 +133,22 @@ export default function FleetStatusBasePage() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: StatusUpdate) => {
-      return apiRequest('POST', '/api/fleet-status/daily', data);
+      // Usar rota pública com userId para autenticação via localStorage
+      const response = await fetch('/api/fleet-status/public/daily', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ ...data, userId })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Erro ao atualizar status');
+      }
+      return result;
     },
     onSuccess: () => {
       toast({ title: 'Status atualizado com sucesso!' });
-      queryClient.invalidateQueries({ queryKey: ['/api/fleet-status/base'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/fleet-status/public/base', baseId, userId] });
       setIsDialogOpen(false);
       setSelectedVehicle(null);
     },
