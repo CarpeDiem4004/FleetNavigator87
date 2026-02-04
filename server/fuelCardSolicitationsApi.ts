@@ -21,6 +21,7 @@ async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<
   origem?: string;
   destino?: string;
   tripNumber?: string;
+  dataEncontrada?: string;
   motivo: string;
 }> {
   // ID da planilha de controle de viagens Line Haul
@@ -189,6 +190,7 @@ async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<
         origem: origemEncontrada,
         destino: destinoEncontrado,
         tripNumber: tripNumberEncontrado,
+        dataEncontrada: dataEncontrada,
         motivo: 'Viagem autorizada na planilha'
       };
     } else {
@@ -2486,6 +2488,7 @@ export async function validatePendingSolicitations(req: Request, res: Response) 
         origem: resultado.origem || '',
         destino: resultado.destino || '',
         tripNumber: resultado.tripNumber || '',
+        dataEncontrada: resultado.dataEncontrada || '',
         motivo: resultado.motivo
       });
       

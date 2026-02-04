@@ -152,7 +152,7 @@ const FuelCardRequestsPanel: React.FC = () => {
   
   // Estado para validação de planilha Google Sheets
   const [validatingSheet, setValidatingSheet] = useState(false);
-  const [sheetValidationResults, setSheetValidationResults] = useState<Record<number, { validado: boolean; origem?: string; destino?: string; motivo?: string }>>({});
+  const [sheetValidationResults, setSheetValidationResults] = useState<Record<number, { validado: boolean; origem?: string; destino?: string; tripNumber?: string; dataEncontrada?: string; motivo?: string }>>({});
   
   // Verificar parâmetros da URL para modo Line Haul
   const urlParams = new URLSearchParams(window.location.search);
@@ -3537,10 +3537,18 @@ const FuelCardRequestsPanel: React.FC = () => {
                                 <><XCircle className="w-3 h-3 mr-1" />Não encontrado</>
                               )}
                             </Badge>
-                            {sheetValidationResults[solicitacao.id].validado && sheetValidationResults[solicitacao.id].origem && (
-                              <p className="text-xs text-green-600 mt-0.5">
-                                Planilha: {sheetValidationResults[solicitacao.id].origem} → {sheetValidationResults[solicitacao.id].destino}
-                              </p>
+                            {sheetValidationResults[solicitacao.id].validado && (
+                              <div className="text-xs text-green-600 mt-0.5 space-y-0.5">
+                                {sheetValidationResults[solicitacao.id].tripNumber && (
+                                  <p><strong>Trip:</strong> {sheetValidationResults[solicitacao.id].tripNumber}</p>
+                                )}
+                                {sheetValidationResults[solicitacao.id].origem && (
+                                  <p><strong>Rota:</strong> {sheetValidationResults[solicitacao.id].origem} → {sheetValidationResults[solicitacao.id].destino}</p>
+                                )}
+                                {sheetValidationResults[solicitacao.id].dataEncontrada && (
+                                  <p><strong>Data:</strong> {sheetValidationResults[solicitacao.id].dataEncontrada}</p>
+                                )}
+                              </div>
                             )}
                           </div>
                         )}
