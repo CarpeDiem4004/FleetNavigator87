@@ -846,10 +846,10 @@ function App() {
           <ProtectedRoute path="/work-safety/planos-acao" component={WorkSafetyActionPlansPanel} />
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
           
-          {/* Sistema de Status de Frota por Base */}
+          {/* Sistema de Status de Frota por Base - Rotas com autenticação própria */}
           <Route path="/fleet-status/login" component={FleetStatusLogin} />
-          <ProtectedRoute path="/fleet-status/base" component={FleetStatusBasePage} />
-          <ProtectedRoute path="/fleet-status/dashboard" component={FleetStatusDashboard} />
+          <Route path="/fleet-status/base" component={FleetStatusBasePage} />
+          <Route path="/fleet-status/dashboard" component={FleetStatusDashboard} />
           
           <ProtectedRoute path="/conferencia-rotas" component={ConferenciaRotas} />
           <ProtectedRoute path="/relatorio-consumo" component={RelatorioConsumo} />

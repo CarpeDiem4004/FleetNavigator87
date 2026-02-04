@@ -68,7 +68,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function FleetStatusBasePage() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
@@ -76,8 +76,14 @@ export default function FleetStatusBasePage() {
   const [formData, setFormData] = useState<Partial<StatusUpdate>>({});
   const [searchTerm, setSearchTerm] = useState('');
 
-  const baseId = user?.base_id;
+  const baseId = user?.base_id || user?.baseId;
   const baseName = user?.basename || user?.name || 'Base';
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      window.location.href = '/fleet-status/login';
+    }
+  }, [authLoading, user]);
 
   const { data: vehiclesData, isLoading, refetch } = useQuery({
     queryKey: ['/api/fleet-status/base', baseId, 'vehicles'],
