@@ -25,6 +25,37 @@ export default function FuelCardDraft() {
   
   const duplicates = getDuplicates();
 
+  // Calcular placas repetidas inválidas para exibição
+  const getInvalidDuplicatePlates = (): string[] => {
+    const plateGroups: Record<string, string[]> = {};
+    for (const request of draftRequests) {
+      const plate = request.placa.toUpperCase();
+      if (!plateGroups[plate]) {
+        plateGroups[plate] = [];
+      }
+      plateGroups[plate].push(request.tipo_combustivel.toLowerCase());
+    }
+    
+    const invalidPlates: string[] = [];
+    for (const [plate, fuelTypes] of Object.entries(plateGroups)) {
+      if (fuelTypes.length > 1) {
+        if (fuelTypes.length === 2) {
+          const sorted = [...fuelTypes].sort();
+          const isValidException = sorted[0] === 'arla' && sorted[1] === 'diesel';
+          if (!isValidException) {
+            invalidPlates.push(plate);
+          }
+        } else {
+          invalidPlates.push(plate);
+        }
+      }
+    }
+    return invalidPlates;
+  };
+
+  const invalidDuplicatePlates = getInvalidDuplicatePlates();
+  const hasInvalidDuplicates = invalidDuplicatePlates.length > 0;
+
   const handleRemove = (id: string) => {
     removeFromDraft(id);
     toast({
@@ -33,12 +64,60 @@ export default function FuelCardDraft() {
     });
   };
 
+  // Função para validar placas repetidas no bolsão
+  // Regra: Não permitir placa repetida, EXCETO se for exatamente 1 Diesel + 1 ARLA
+  const validateDuplicatePlates = (): { isValid: boolean; invalidPlates: string[] } => {
+    const plateGroups: Record<string, string[]> = {};
+    
+    // Agrupar solicitações por placa
+    for (const request of draftRequests) {
+      const plate = request.placa.toUpperCase();
+      if (!plateGroups[plate]) {
+        plateGroups[plate] = [];
+      }
+      plateGroups[plate].push(request.tipo_combustivel.toLowerCase());
+    }
+    
+    const invalidPlates: string[] = [];
+    
+    // Verificar cada grupo de placa
+    for (const [plate, fuelTypes] of Object.entries(plateGroups)) {
+      if (fuelTypes.length > 1) {
+        // Placa repetida - verificar se é a exceção permitida (1 diesel + 1 arla)
+        if (fuelTypes.length === 2) {
+          const sorted = [...fuelTypes].sort();
+          const isValidException = sorted[0] === 'arla' && sorted[1] === 'diesel';
+          if (!isValidException) {
+            invalidPlates.push(plate);
+          }
+        } else {
+          // Mais de 2 solicitações para mesma placa - sempre inválido
+          invalidPlates.push(plate);
+        }
+      }
+    }
+    
+    return { isValid: invalidPlates.length === 0, invalidPlates };
+  };
+
   const handleSendAll = async () => {
     if (draftRequests.length === 0) {
       toast({
         title: "Bolsão vazio",
         description: "Adicione solicitações antes de enviar",
         variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar placas repetidas antes de enviar
+    const validation = validateDuplicatePlates();
+    if (!validation.isValid) {
+      toast({
+        title: "❌ Placa repetida detectada",
+        description: `Não é permitido enviar solicitações com placa repetida. Exceção: 1 Diesel + 1 ARLA. Placas com problema: ${validation.invalidPlates.join(', ')}`,
+        variant: "destructive",
+        duration: 6000,
       });
       return;
     }
@@ -208,8 +287,21 @@ export default function FuelCardDraft() {
             </div>
           </CardHeader>
           <CardContent>
+            {/* Alerta de placas repetidas inválidas */}
+            {hasInvalidDuplicates && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>❌ Placa repetida detectada!</strong><br />
+                  Não é permitido enviar solicitações com a mesma placa, exceto 1 Diesel + 1 ARLA.<br />
+                  <span className="font-semibold">Placas com problema: {invalidDuplicatePlates.join(', ')}</span><br />
+                  Remova as solicitações duplicadas para poder enviar.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Alerta de duplicatas */}
-            {duplicates.length > 0 && (
+            {duplicates.length > 0 && !hasInvalidDuplicates && (
               <Alert variant="destructive" className="mb-4">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
@@ -234,24 +326,33 @@ export default function FuelCardDraft() {
                 <div className="space-y-3 mb-6">
                   {draftRequests.map((request, index) => {
                     const isDuplicate = duplicates.includes(request.id);
+                    const isInvalidPlate = invalidDuplicatePlates.includes(request.placa.toUpperCase());
+                    const hasError = isDuplicate || isInvalidPlate;
                     return (
                       <div
                         key={request.id}
                         className={`p-4 border rounded-lg ${
-                          isDuplicate 
-                            ? 'border-red-300 bg-red-50' 
-                            : 'border-gray-200 bg-white'
+                          isInvalidPlate 
+                            ? 'border-red-500 bg-red-100 ring-2 ring-red-400' 
+                            : isDuplicate 
+                              ? 'border-red-300 bg-red-50' 
+                              : 'border-gray-200 bg-white'
                         }`}
                       >
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <div className="flex flex-wrap items-center gap-3 mb-3">
                               <Badge variant="outline">#{index + 1}</Badge>
+                              {isInvalidPlate && (
+                                <Badge variant="destructive" className="animate-pulse">
+                                  ⚠️ PLACA DUPLICADA
+                                </Badge>
+                              )}
                               <div className="flex items-center gap-2">
                                 <span className="text-gray-600 text-sm font-medium">🚗 Placa do Carro:</span>
                                 <span 
                                   className={`font-bold text-xl ${
-                                    isDuplicate ? 'text-red-600' : 'text-gray-900'
+                                    hasError ? 'text-red-600' : 'text-gray-900'
                                   }`}
                                 >
                                   {request.placa}
@@ -261,7 +362,7 @@ export default function FuelCardDraft() {
                                 <span className="text-gray-600 text-sm font-medium">💳 Placa do Cartão:</span>
                                 <span 
                                   className={`font-bold text-xl ${
-                                    isDuplicate ? 'text-red-600' : 'text-blue-700'
+                                    hasError ? 'text-red-600' : 'text-blue-700'
                                   }`}
                                 >
                                   {request.tipo_cartao === "numero" && request.numero_cartao 
@@ -269,7 +370,7 @@ export default function FuelCardDraft() {
                                     : request.placa}
                                 </span>
                               </div>
-                              {isDuplicate && (
+                              {isDuplicate && !isInvalidPlate && (
                                 <Badge variant="destructive">Duplicata Detectada</Badge>
                               )}
                             </div>
@@ -375,13 +476,23 @@ export default function FuelCardDraft() {
                     
                     <Button
                       onClick={handleSendAll}
-                      disabled={isSending}
-                      className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                      disabled={isSending || hasInvalidDuplicates}
+                      className={`flex-1 ${
+                        hasInvalidDuplicates 
+                          ? 'bg-gray-400 cursor-not-allowed' 
+                          : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
+                      }`}
+                      title={hasInvalidDuplicates ? 'Remova as placas duplicadas para enviar' : ''}
                     >
                       {isSending ? (
                         <>
                           <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                           Enviando...
+                        </>
+                      ) : hasInvalidDuplicates ? (
+                        <>
+                          <AlertTriangle className="mr-2 h-5 w-5" />
+                          Corrija as duplicatas
                         </>
                       ) : (
                         <>
