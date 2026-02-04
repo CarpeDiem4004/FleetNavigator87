@@ -383,6 +383,8 @@ const VehiclesNew: React.FC = () => {
   const { toast } = useToast();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedBaseFilter, setSelectedBaseFilter] = useState<string>('');
+  const [availableBases, setAvailableBases] = useState<{id: number; name: string}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("list");
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
@@ -440,6 +442,12 @@ const VehiclesNew: React.FC = () => {
         basesMap.set(base.id, base.name || base.nome);
       });
       
+      // Salvar lista de bases disponíveis para o filtro
+      setAvailableBases(basesArray.map((base: any) => ({
+        id: base.id,
+        name: base.name || base.nome
+      })));
+      
       // Adicionar nome da base a cada veículo e mapear campos
       const vehiclesWithBaseNames = vehiclesData.map((vehicle: any) => {
         return {
@@ -471,13 +479,18 @@ const VehiclesNew: React.FC = () => {
     fetchVehicles();
   }, []);
 
-  // Filtrar veículos com base no termo de busca
-  const filteredVehicles = vehicles.filter(
-    (vehicle) => 
+  // Filtrar veículos com base no termo de busca e base selecionada
+  const filteredVehicles = vehicles.filter((vehicle) => {
+    const matchesSearch = !searchTerm || 
       (vehicle.placa && vehicle.placa.toLowerCase().includes(searchTerm.toLowerCase())) || 
       (vehicle.marca && vehicle.marca.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (vehicle.modelo && vehicle.modelo.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+      (vehicle.modelo && vehicle.modelo.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (vehicle.base_nome && vehicle.base_nome.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesBase = !selectedBaseFilter || vehicle.base_id?.toString() === selectedBaseFilter;
+    
+    return matchesSearch && matchesBase;
+  });
 
   // Excluir veículo usando a API REST
   const handleDeleteVehicle = async (id: number) => {
@@ -1025,6 +1038,23 @@ const VehiclesNew: React.FC = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
+              
+              <Select
+                value={selectedBaseFilter}
+                onValueChange={(value) => setSelectedBaseFilter(value)}
+              >
+                <SelectTrigger className="w-[250px]">
+                  <SelectValue placeholder="Filtrar por Base" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas as Bases</SelectItem>
+                  {availableBases.map((base) => (
+                    <SelectItem key={base.id} value={base.id.toString()}>
+                      {base.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             <Card>
