@@ -263,6 +263,7 @@ export function interceptAndFixUrls(): void {
             '/logout',
             '/dashboard',
             '/fleet-management',
+            '/fleet-status',
             '/oficina',
             '/partner'
           ];
@@ -298,6 +299,7 @@ export function interceptAndFixUrls(): void {
             '/logout',
             '/dashboard',
             '/fleet-management',
+            '/fleet-status',
             '/oficina',
             '/partner'
           ];
