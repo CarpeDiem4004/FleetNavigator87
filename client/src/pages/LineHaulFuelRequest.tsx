@@ -680,9 +680,7 @@ export default function LineHaulFuelRequest() {
                   onCheckedChange={(checked) => {
                     setForm({ 
                       ...form, 
-                      retornoVazio: checked === true,
-                      localInicio: checked === true ? "RETORNO VAZIO" : "",
-                      destino: checked === true ? "RETORNO VAZIO" : ""
+                      retornoVazio: checked === true
                     });
                   }}
                   data-testid="checkbox-retorno-vazio"
@@ -691,7 +689,7 @@ export default function LineHaulFuelRequest() {
                   <Truck className="h-5 w-5 text-orange-600" />
                   <div>
                     <span className="font-semibold text-orange-900">Retorno Vazio?</span>
-                    <p className="text-xs text-orange-700">Marque se o veículo está retornando sem rota definida</p>
+                    <p className="text-xs text-orange-700">Marque se o veículo está retornando sem rota definida (km será 0)</p>
                   </div>
                 </Label>
               </div>
@@ -699,25 +697,23 @@ export default function LineHaulFuelRequest() {
               <div className="space-y-2 relative">
                 <Label htmlFor="localInicio" className="flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
-                  Local de Início {!form.retornoVazio && '*'}
+                  Local de Início *
                 </Label>
                 <Input
                   ref={originInputRef}
                   id="localInicio"
                   type="text"
-                  placeholder={form.retornoVazio ? "Retorno vazio - sem rota" : "Digite para buscar..."}
+                  placeholder="Digite para buscar..."
                   value={form.localInicio}
                   onChange={(e) => setForm({ ...form, localInicio: e.target.value })}
                   onFocus={() => {
-                    if (!form.retornoVazio && form.localInicio.length >= 1 && filteredOrigins.length > 0) {
+                    if (form.localInicio.length >= 1 && filteredOrigins.length > 0) {
                       setShowOriginSuggestions(true);
                     }
                   }}
-                  required={!form.retornoVazio}
-                  disabled={form.retornoVazio}
+                  required
                   autoComplete="off"
                   data-testid="input-origin"
-                  className={form.retornoVazio ? "bg-gray-100 text-gray-500" : ""}
                 />
                 {showOriginSuggestions && filteredOrigins.length > 0 && (
                   <div
@@ -745,25 +741,23 @@ export default function LineHaulFuelRequest() {
               <div className="space-y-2 relative">
                 <Label htmlFor="destino" className="flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
-                  Destino {!form.retornoVazio && '*'}
+                  Destino *
                 </Label>
                 <Input
                   ref={destinationInputRef}
                   id="destino"
                   type="text"
-                  placeholder={form.retornoVazio ? "Retorno vazio - sem rota" : "Digite para buscar..."}
+                  placeholder="Digite para buscar..."
                   value={form.destino}
                   onChange={(e) => setForm({ ...form, destino: e.target.value })}
                   onFocus={() => {
-                    if (!form.retornoVazio && form.destino.length >= 1 && filteredDestinations.length > 0) {
+                    if (form.destino.length >= 1 && filteredDestinations.length > 0) {
                       setShowDestinationSuggestions(true);
                     }
                   }}
-                  required={!form.retornoVazio}
-                  disabled={form.retornoVazio}
+                  required
                   autoComplete="off"
                   data-testid="input-destination"
-                  className={form.retornoVazio ? "bg-gray-100 text-gray-500" : ""}
                 />
                 {showDestinationSuggestions && filteredDestinations.length > 0 && (
                   <div
