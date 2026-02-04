@@ -84,6 +84,7 @@ interface FuelCardSolicitation {
   veiculo_modelo?: string;
   rota_origem?: string;
   rota_destino?: string;
+  trip_number?: string;
   km_total?: number;
   horario_abastecimento?: string;
   telefone_motorista?: string;
@@ -3301,6 +3302,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                           <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_calculado || solicitacao.valor_solicitado)} - {solicitacao.km_total || '-'} km</p>
                           {solicitacao.rota_origem && solicitacao.rota_destino && (
                             <p className="text-xs text-blue-600">
+                              {solicitacao.trip_number && <span className="font-semibold">[{solicitacao.trip_number}] </span>}
                               {solicitacao.rota_origem} → {solicitacao.rota_destino}
                             </p>
                           )}
@@ -3512,7 +3514,10 @@ const FuelCardRequestsPanel: React.FC = () => {
                         <p className="text-sm text-gray-600">{solicitacao.motorista || 'Motorista não informado'}</p>
                         <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_calculado || solicitacao.valor_solicitado)} - {solicitacao.km_total || '-'} km</p>
                         {solicitacao.rota_origem && solicitacao.rota_destino && (
-                          <p className="text-xs text-blue-600">{solicitacao.rota_origem} → {solicitacao.rota_destino}</p>
+                          <p className="text-xs text-blue-600">
+                            {solicitacao.trip_number && <span className="font-semibold">[{solicitacao.trip_number}] </span>}
+                            {solicitacao.rota_origem} → {solicitacao.rota_destino}
+                          </p>
                         )}
                         {sheetValidationResults[solicitacao.id] && (
                           <div className="mt-1">
@@ -3904,6 +3909,11 @@ const FuelCardRequestsPanel: React.FC = () => {
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                       <Label className="text-blue-800 font-semibold">Detalhes da Rota (Line Hall)</Label>
                       <div className="mt-2 space-y-2">
+                        {selectedSolicitation.trip_number && (
+                          <div className="text-sm">
+                            <span className="font-medium">Trip Number:</span> {selectedSolicitation.trip_number}
+                          </div>
+                        )}
                         <div className="text-sm">
                           <span className="font-medium">Rota:</span> {selectedSolicitation.rota_origem} → {selectedSolicitation.rota_destino}
                         </div>
@@ -4378,6 +4388,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                             <div className="flex items-center gap-2 text-sm">
                               <span className="text-gray-500">Rota:</span>
                               <span className="font-medium text-blue-600">
+                                {item.trip_number && <span>[{item.trip_number}] </span>}
                                 {item.rota_origem || 'Não informado'} → {item.rota_destino || 'Não informado'}
                               </span>
                             </div>

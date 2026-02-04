@@ -11,6 +11,7 @@ import { sendFuelCardRechargeNotificationZAPI, isZAPIConfigured } from './servic
  * 
  * Estrutura da planilha:
  * - Coluna A: Data (formato DD/MM/AAAA)
+ * - Coluna B: Trip Number (número da viagem)
  * - Coluna J: Placa do veículo
  * - Coluna K: Origem
  * - Coluna L: Destino
@@ -19,6 +20,7 @@ async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<
   liberado: boolean;
   origem?: string;
   destino?: string;
+  tripNumber?: string;
   motivo: string;
 }> {
   // ID da planilha de controle de viagens Line Haul
@@ -88,6 +90,7 @@ async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<
     let viagemEncontrada = false;
     let origemEncontrada = '';
     let destinoEncontrado = '';
+    let tripNumberEncontrado = '';
     let dataEncontrada = '';
     
     // Calcular data de amanhã para busca flexível
@@ -157,6 +160,12 @@ async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<
         viagemEncontrada = true;
         dataEncontrada = dataLinha;
         
+        // Pegar trip_number (coluna B - índice 1)
+        const tripNumberCell = cells[1];
+        if (tripNumberCell && tripNumberCell.v) {
+          tripNumberEncontrado = String(tripNumberCell.v);
+        }
+        
         // Pegar origem (coluna K - índice 10: origin_station_code)
         const origemCell = cells[10];
         if (origemCell && origemCell.v) {
@@ -169,7 +178,7 @@ async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<
           destinoEncontrado = String(destinoCell.v);
         }
         
-        console.log(`[GOOGLE_SHEETS] Viagem encontrada! Data: ${dataEncontrada}, Veículo: ${usedVehicle || vehicleNumber}, Origem: ${origemEncontrada}, Destino: ${destinoEncontrado}`);
+        console.log(`[GOOGLE_SHEETS] Viagem encontrada! Data: ${dataEncontrada}, TripNumber: ${tripNumberEncontrado}, Veículo: ${usedVehicle || vehicleNumber}, Origem: ${origemEncontrada}, Destino: ${destinoEncontrado}`);
         break;
       }
     }
@@ -179,6 +188,7 @@ async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<
         liberado: true,
         origem: origemEncontrada,
         destino: destinoEncontrado,
+        tripNumber: tripNumberEncontrado,
         motivo: 'Viagem autorizada na planilha'
       };
     } else {
@@ -2475,19 +2485,21 @@ export async function validatePendingSolicitations(req: Request, res: Response) 
         validado: resultado.liberado,
         origem: resultado.origem || '',
         destino: resultado.destino || '',
+        tripNumber: resultado.tripNumber || '',
         motivo: resultado.motivo
       });
       
-      // Se a viagem foi encontrada, atualizar a solicitação no banco com origem e destino
-      if (resultado.liberado && (resultado.origem || resultado.destino)) {
+      // Se a viagem foi encontrada, atualizar a solicitação no banco com origem, destino e trip_number
+      if (resultado.liberado && (resultado.origem || resultado.destino || resultado.tripNumber)) {
         try {
           await pool.query(`
             UPDATE solicitacoes_fuel_card 
             SET rota_origem = COALESCE($1, rota_origem),
-                rota_destino = COALESCE($2, rota_destino)
-            WHERE id = $3
-          `, [resultado.origem, resultado.destino, id]);
-          console.log(`[VALIDATE-PENDING] Atualizado ID ${id} com origem: ${resultado.origem}, destino: ${resultado.destino}`);
+                rota_destino = COALESCE($2, rota_destino),
+                trip_number = COALESCE($3, trip_number)
+            WHERE id = $4
+          `, [resultado.origem, resultado.destino, resultado.tripNumber, id]);
+          console.log(`[VALIDATE-PENDING] Atualizado ID ${id} com tripNumber: ${resultado.tripNumber}, origem: ${resultado.origem}, destino: ${resultado.destino}`);
         } catch (updateErr: any) {
           console.error(`[VALIDATE-PENDING] Erro ao atualizar ID ${id}:`, updateErr.message);
         }
