@@ -8537,14 +8537,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
       }
 
-      const origemNorm = normalizeString(rota_origem);
-      const destinoNorm = normalizeString(rota_destino);
-
-      console.log('[LINEHAUL-PUBLIC-REQUEST] Buscando rota:', origemNorm, '→', destinoNorm);
-
-      // Buscar distância na tabela de rotas (tenta ambas as direções, sem acentos)
+      // Se é retorno vazio, forçar valores padrão e pular busca de rota
       let kmTotal = 0;
       let fonteKm = 'tabela';
+      let origemFinal = rota_origem;
+      let destinoFinal = rota_destino;
+      
+      if (isRetornoVazio) {
+        console.log('[LINEHAUL-PUBLIC-REQUEST] Retorno Vazio - pulando busca de rota');
+        origemFinal = 'RETORNO VAZIO';
+        destinoFinal = 'RETORNO VAZIO';
+        kmTotal = 0;
+        fonteKm = 'retorno_vazio';
+      } else {
+        const origemNorm = normalizeString(rota_origem);
+        const destinoNorm = normalizeString(rota_destino);
+
+        console.log('[LINEHAUL-PUBLIC-REQUEST] Buscando rota:', origemNorm, '→', destinoNorm);
       const routeQuery = `
         SELECT km_total, origem, destino
         FROM line_hall_routes 
@@ -8593,6 +8602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('[LINEHAUL-PUBLIC-REQUEST] Erro ao calcular via Google Maps:', googleError);
         }
       }
+      } // Fecha o else do isRetornoVazio
 
       // Calcular valor baseado no modelo do veículo
       function getConsumoByModel(modelo: string): number {
@@ -8686,8 +8696,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         valorCalculado,
         provedorFormatado,
         data_solicitacao || new Date().toISOString().split('T')[0],
-        rota_origem,
-        rota_destino,
+        origemFinal,
+        destinoFinal,
         kmTotal,
         valorCalculado,
         horario_abastecimento || '',
@@ -8717,8 +8727,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           result.rows[0].id,
           plateClean,
           motorista_nome,
-          isRetornoVazio ? 'RETORNO VAZIO' : rota_origem,
-          isRetornoVazio ? 'RETORNO VAZIO' : rota_destino,
+          origemFinal,
+          destinoFinal,
           kmTotal,
           isRetornoVazio
         ]);
