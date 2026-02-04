@@ -688,8 +688,8 @@ export default function LineHaulFuelRequest() {
                 <Label htmlFor="retornoVazio" className="flex items-center gap-2 cursor-pointer">
                   <Truck className="h-5 w-5 text-orange-600" />
                   <div>
-                    <span className="font-semibold text-orange-900">Retorno Vazio?</span>
-                    <p className="text-xs text-orange-700">Marque se o veículo está retornando sem rota definida (km será 0)</p>
+                    <span className="font-semibold text-orange-900">Em Rota Vazio?</span>
+                    <p className="text-xs text-orange-700">Marque se o veículo está em rota vazio</p>
                   </div>
                 </Label>
               </div>
