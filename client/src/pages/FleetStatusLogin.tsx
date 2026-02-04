@@ -47,13 +47,16 @@ export default function FleetStatusLogin() {
         document.cookie = `authToken=${userData.token}; path=/; max-age=86400; SameSite=Lax`;
       }
 
-      if (!userData.user?.base_id) {
+      const userBase = userData.base_id || userData.user?.base_id;
+      const userName = userData.name || userData.user?.name || email;
+      
+      if (!userBase) {
         throw new Error('Usuário não está vinculado a nenhuma base. Contate o administrador.');
       }
 
       toast({
         title: 'Login realizado com sucesso!',
-        description: `Bem-vindo, ${userData.user?.name || email}!`,
+        description: `Bem-vindo, ${userName}!`,
       });
 
       navigate('/fleet-status/base');
