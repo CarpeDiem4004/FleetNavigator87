@@ -1157,13 +1157,6 @@ const LineHaulPage = () => {
       }
     } catch (error) {
       console.error('Erro ao buscar estatísticas:', error);
-      // Definir valores padrão se não conseguir buscar
-      setStats(prev => ({
-        ...prev,
-        checklistStats: { pendentes: 12, concluidos: 45, total: 57 },
-        maintenanceStats: { pendentes: 8, emAndamento: 3, concluidas: 22, total: 33 },
-        garageStats: { total_veiculos: 15, media_dias: 3 }
-      }));
     }
   };
 
