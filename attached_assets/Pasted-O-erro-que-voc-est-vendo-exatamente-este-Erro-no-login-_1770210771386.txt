@@ -1,0 +1,160 @@
+O erro que você está vendo é exatamente este:
+
+```
+Erro no login: Error: Usuário não está vinculado a nenhuma base. Contate o administrador.
+```
+
+Isso acontece porque **o sistema de login (frontend + Supabase/Auth)** não está encontrando o vínculo entre o usuário logado e uma base, mesmo que você veja o usuário cadastrado na lista com a base aparentemente associada.
+
+Vamos corrigir isso de forma sistemática.
+
+### 1. Verifique o que está realmente salvo no banco (prioridade alta)
+
+Entre no **Supabase Dashboard** → **Table Editor** → tabela `usuarios` (ou qual for o nome exato da sua tabela de usuários).
+
+Procure o registro do usuário `teste10@teste10.com` e responda essas perguntas:
+
+- Existe a coluna `id_base`?
+- O valor em `id_base` está preenchido? (ex.: 1, 5, 24 etc.)
+- Esse valor corresponde exatamente a um `id_base` que existe na tabela `bases`?
+- A coluna `id_base` é do tipo correto? (integer / bigint, não text)
+
+**Se `id_base` estiver NULL ou vazio** → esse é o problema principal.
+
+### 2. Corrija o cadastro para sempre salvar o `id_base`
+
+No código onde você cadastra/edita o usuário (provavelmente em um admin ou formulário de criação), certifique-se de que:
+
+- O campo `id_base` vem do formulário (select com as bases)
+- Ele é salvo corretamente no Supabase
+
+Exemplo de código de inserção/atualização (usando Supabase JS client):
+
+```javascript
+// Exemplo de criação de usuário + vínculo
+const { data, error } = await supabase
+  .from('usuarios')
+  .insert({
+    nome: 'teste',
+    email: 'teste10@teste10.com',
+    senha_hash: hashedPassword,           // ou omita se usa auth nativo
+    role: 'operador',
+    id_base: selectedBaseId,               // ← ISSO É OBRIGATÓRIO
+    ativo: true
+  });
+
+if (error) console.error('Erro ao criar usuário:', error);
+```
+
+Ou na edição:
+
+```javascript
+await supabase
+  .from('usuarios')
+  .update({ id_base: novaBaseSelecionada })
+  .eq('email', 'teste10@teste10.com');
+```
+
+**Ação imediata**:  
+Edite manualmente esse usuário no Supabase Dashboard e coloque um valor válido em `id_base` (pegue um ID real da tabela `bases`).
+
+Depois tente logar novamente.
+
+### 3. Verifique como o login busca o `id_base`
+
+No código do login (provavelmente em `handleLogin` no arquivo `FleetStatusLogin.tsx` ou similar), veja como ele carrega os dados do usuário após autenticação.
+
+Padrão comum com Supabase Auth + tabela customizada:
+
+```javascript
+// Após signInWithPassword ou signInWithOtp
+const { data: { user } } = await supabase.auth.getUser();
+
+if (user) {
+  // Busca dados adicionais do perfil
+  const { data: profile, error } = await supabase
+    .from('usuarios')
+    .select('id_usuario, nome, role, id_base, ativo')
+    .eq('email', user.email)           // ou .eq('id', user.id) se usar UUID
+    .single();
+
+  if (error || !profile) {
+    throw new Error('Perfil não encontrado');
+  }
+
+  if (!profile.id_base) {
+    throw new Error('Usuário não está vinculado a nenhuma base. Contate o administrador.');
+  }
+
+  // Salva no contexto / store
+  setUser({
+    ...profile,
+    email: user.email,
+    id_base: profile.id_base   // ← aqui deve estar vindo preenchido
+  });
+}
+```
+
+**Problemas comuns nesse trecho:**
+
+- Está buscando por `email` mas o registro no banco tem email diferente (case sensitive, espaço extra)?
+- A query retorna `null` porque a condição está errada?
+- Você usa `id` (UUID do auth) ao invés de `email`? Então mude para:
+
+```javascript
+.eq('id', user.id)
+```
+
+### 4. Teste rápido no console do navegador
+
+Após logar (mesmo que dê erro), abra o console e digite:
+
+```js
+supabase.auth.getUser().then(res => console.log(res))
+```
+
+Depois rode:
+
+```js
+supabase
+  .from('usuarios')
+  .select('id_base')
+  .eq('email', 'teste10@teste10.com')
+  .single()
+  .then(res => console.log(res))
+```
+
+Se retornar `{ id_base: null }` ou `{ data: null }` → o vínculo não existe no banco.
+
+### 5. Solução passo a passo recomendada agora
+
+1. Vá no Supabase → tabela `usuarios` → encontre `teste10@teste10.com`
+2. Coloque manualmente um valor válido em `id_base` (ex.: 1, se existir base com id 1)
+3. Salve
+4. Faça logout (se necessário)
+5. Tente logar novamente com `teste10@teste10.com`
+6. Se ainda der erro → abra o console e rode a query acima para confirmar o que está retornando
+
+### 6. Prevenção futura
+
+No formulário de cadastro de usuário (admin):
+
+- Torne o campo **Base** obrigatório (required no HTML + validação no código)
+- Mostre erro claro se tentar salvar sem selecionar base
+
+Exemplo:
+
+```javascript
+if (!form.id_base) {
+  alert('Você deve selecionar uma base para este usuário');
+  return;
+}
+```
+
+Depois que corrigir esse usuário de teste, o login deve passar e direcionar para a tela da frota da base correta.
+
+Se depois de preencher `id_base` manualmente ainda der erro, compartilhe:
+- O retorno exato da query no console
+- O trecho de código onde faz `throw new Error('Usuário não está vinculado...')`
+
+Assim consigo apontar exatamente onde está falhando. Boa sorte!

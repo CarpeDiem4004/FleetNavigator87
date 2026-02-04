@@ -41,25 +41,21 @@ export default function FleetStatusLogin() {
       }
 
       const userData = await response.json();
+      console.log('Resposta do login:', userData);
       
       if (userData.token) {
         localStorage.setItem('authToken', userData.token);
         document.cookie = `authToken=${userData.token}; path=/; max-age=86400; SameSite=Lax`;
       }
 
-      const userBase = userData.base_id || userData.user?.base_id;
       const userName = userData.name || userData.user?.name || email;
-      
-      if (!userBase) {
-        throw new Error('Usuário não está vinculado a nenhuma base. Contate o administrador.');
-      }
 
       toast({
         title: 'Login realizado com sucesso!',
         description: `Bem-vindo, ${userName}!`,
       });
 
-      navigate('/fleet-status/base');
+      window.location.href = '/fleet-status/base';
       
     } catch (error: any) {
       console.error('Erro no login:', error);
