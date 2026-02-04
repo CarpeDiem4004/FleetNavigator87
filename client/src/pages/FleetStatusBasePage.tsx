@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -71,19 +72,31 @@ export default function FleetStatusBasePage() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<StatusUpdate>>({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [authChecked, setAuthChecked] = useState(false);
 
   const baseId = user?.base_id || user?.baseId;
   const baseName = user?.basename || user?.name || 'Base';
 
+  // Verificação de autenticação com delay para permitir localStorage ser consultado
   useEffect(() => {
-    if (!authLoading && !user) {
-      window.location.href = '/fleet-status/login';
+    if (!authLoading) {
+      // Pequeno delay para garantir que o estado esteja estável
+      const timer = setTimeout(() => {
+        if (!user) {
+          console.log('[FleetStatusBase] Usuário não autenticado, redirecionando...');
+          navigate('/fleet-status/login');
+        } else {
+          setAuthChecked(true);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [authLoading, user]);
+  }, [authLoading, user, navigate]);
 
   const { data: vehiclesData, isLoading, refetch } = useQuery({
     queryKey: ['/api/fleet-status/base', baseId, 'vehicles'],
