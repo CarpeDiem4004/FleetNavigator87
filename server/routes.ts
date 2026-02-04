@@ -191,6 +191,7 @@ import {
   deleteActionPlan,
   notifyResponsible
 } from "./routes/workSafetyActionPlansApi";
+import fleetStatusApi from "./routes/fleetStatusApi";
 import recebimentosOsascoV2Routes from "./routes/recebimentosOsascoV2.js";
 import osascoV2RecebimentosDirecto from "./routes/osascoV2RecebimentosDirecto.js";
 import { db, pool } from "./db.js";
@@ -23171,6 +23172,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rotas para gestão de pneus
   app.use('/api/pneus', pneusRoutes);
+  
+  // Registrar rotas para sistema de status de frota por base
+  app.use(fleetStatusApi);
   
   // Rota especializada para Guarulhos V2 que preserva os valores reais dos campos 
   app.use('/api/guarulhos-v2', guarulhosV2Routes);

@@ -52,6 +52,8 @@ import TowingPartnerExternalAccess from "@/pages/fleet-management/towing-partner
 import TowingPaymentsPage from "@/pages/fleet-management/towing-partners/payments";
 import ServicosPendentesPage from "@/pages/fleet-management/towing-partners/servicos-pendentes";
 import FinanceiroGuincho from "@/pages/fleet-management/towing-partners/financeiro";
+import FleetStatusBasePage from "@/pages/FleetStatusBasePage";
+import FleetStatusDashboard from "@/pages/FleetStatusDashboard";
 import TimezoneTest from "@/pages/timezone-test";
 import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
 import ProtectedBaseRoute from "@/components/ProtectedBaseRoute";
@@ -842,6 +844,11 @@ function App() {
           <ProtectedRoute path="/work-safety/acidentes" component={WorkSafetyAccidentsPanel} />
           <ProtectedRoute path="/work-safety/planos-acao" component={WorkSafetyActionPlansPanel} />
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
+          
+          {/* Sistema de Status de Frota por Base */}
+          <ProtectedRoute path="/fleet-status/base" component={FleetStatusBasePage} />
+          <ProtectedRoute path="/fleet-status/dashboard" component={FleetStatusDashboard} />
+          
           <ProtectedRoute path="/conferencia-rotas" component={ConferenciaRotas} />
           <ProtectedRoute path="/relatorio-consumo" component={RelatorioConsumo} />
           <ProtectedRoute path="/line-haul" component={LineHaulPage} />
