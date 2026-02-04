@@ -589,7 +589,33 @@ const UsersNew: React.FC = () => {
         }
       }
       
-      // Armazenar a senha gerada e mostrar o diálogo
+      // Fechar o modal de adicionar imediatamente
+      setIsAddDialogOpen(false);
+      
+      // Limpar formulário
+      setNewUser({
+        name: '',
+        email: '',
+        role: 'operador',
+        baseId: null,
+        baseName: null,
+        lastLogin: null,
+        isActive: true
+      });
+      setPassword('');
+      setConfirmPassword('');
+      setSelectedProjects([]);
+      setSelectedBases([]);
+      
+      // Mostrar mensagem de sucesso
+      toast({
+        title: "Usuário cadastrado com sucesso!",
+        description: newUser.role === 'coordenador' 
+          ? "Coordenador criado com permissões específicas."
+          : `${newUser.name} foi adicionado ao sistema.`,
+      });
+      
+      // Armazenar a senha gerada e mostrar o diálogo de senha
       if (data.generatedPassword) {
         setGeneratedPassword(data.generatedPassword);
         setIsShowPasswordDialogOpen(true);
@@ -598,36 +624,8 @@ const UsersNew: React.FC = () => {
       // Atualizar a lista de usuários
       handleUserDataChanged();
       
-      // Limpar formulário mas manter o modal aberto se precisar exibir a senha
-      if (!data.generatedPassword) {
-        // Se não tiver senha gerada, fechar o modal
-        setIsAddDialogOpen(false);
-        
-        // Limpar formulário
-        setNewUser({
-          name: '',
-          email: '',
-          role: 'operador',
-          baseId: null,
-          baseName: null,
-          lastLogin: null,
-          isActive: true
-        });
-        setPassword('');
-        setConfirmPassword('');
-        setSelectedProjects([]);
-        setSelectedBases([]);
-      }
-      
       // Atualizar lista de bases após adicionar um usuário
       queryClient.invalidateQueries({ queryKey: ['/api/hybrid/bases'] });
-      
-      toast({
-        title: "Usuário adicionado",
-        description: newUser.role === 'coordenador' 
-          ? "Coordenador criado com sucesso com permissões específicas!"
-          : "Usuário criado com sucesso!",
-      });
     } catch (error: any) {
       console.error('Erro ao adicionar usuário:', error);
       toast({
