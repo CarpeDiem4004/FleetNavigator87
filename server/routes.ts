@@ -2426,7 +2426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           v.id as vehicle_id,
           v.placa,
           v.modelo,
-          'emprestado' as status,
+          COALESCE(s.status, 'emprestado') as status,
           s.observacao,
           s.updated_by_name,
           s.updated_at,
@@ -2434,7 +2434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           true as is_emprestado_aqui,
           b.nome as base_origem_nome
         FROM coca_cola_vehicles v
-        INNER JOIN vehicle_daily_status s ON v.id = s.vehicle_id AND s.data = $2 AND s.status = 'emprestado' AND s.base_emprestimo_id = $1
+        INNER JOIN vehicle_daily_status s ON v.id = s.vehicle_id AND s.data = $2 AND s.base_emprestimo_id = $1
         LEFT JOIN coca_cola_bases b ON v.base_id = b.id
         WHERE v.base_id != $1
         
