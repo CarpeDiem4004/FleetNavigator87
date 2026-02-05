@@ -258,22 +258,20 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
             console.log(`[isAdmin] Token JWT Supabase validado para usuário: ${supabaseUser.email}`);
           }
         } catch (supabaseError) {
-          console.log('[isAdmin] Token não é do Supabase, tentando verificar token híbrido...');
+          console.log('[isAdmin] Token não é do Supabase, tentando verificar token próprio...');
           
-          // Tentar JWT híbrido
+          // Tentar JWT próprio
           try {
-            const jwt = require('jsonwebtoken');
-            const verifyResult = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
+            const jwtModule = await import('../utils/jwt');
+            const secret = process.env.JWT_SECRET || 'muricion-fleet-secret-key';
+            const verifyResult = jwtModule.verifyToken(token, secret);
             
             if (verifyResult && (verifyResult.email || verifyResult.id)) {
               user = verifyResult;
-              console.log(`[isAdmin] Token JWT híbrido validado para ${verifyResult.email || verifyResult.id}`);
-            } else if (verifyResult && verifyResult.user) {
-              user = verifyResult.user;
-              console.log(`[isAdmin] Token JWT híbrido com wrapper validado para usuário: ${verifyResult.user.email}`);
+              console.log(`[isAdmin] Token JWT próprio validado para ${verifyResult.email || verifyResult.id}`);
             }
           } catch (hybridError) {
-            console.error('[isAdmin] Erro ao validar token JWT híbrido:', hybridError);
+            console.error('[isAdmin] Erro ao validar token JWT próprio:', hybridError);
           }
         }
       } catch (jwtError) {
@@ -447,19 +445,26 @@ export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: 
         // Extrair token
         const token = extractJwtToken(authHeader);
         
-        // Tentar verificar token JWT híbrido
-        const hybridModule = await import('../../hybrid-user-service');
-        const hybridService = hybridModule.getHybridUserService();
-        const verifyResult = await hybridService.verifyToken(token, true);
+        // Verificar token JWT próprio diretamente
+        const jwtModule = await import('../utils/jwt');
+        const secret = process.env.JWT_SECRET || 'muricion-fleet-secret-key';
+        const decoded = jwtModule.verifyToken(token, secret);
         
-        if (verifyResult) {
-          console.log(`[hasMaintenanceAccessV2] Token JWT híbrido validado para ${verifyResult.user?.email || verifyResult.email}`);
+        if (decoded && (decoded.email || decoded.id)) {
+          console.log(`[hasMaintenanceAccessV2] Token JWT próprio validado para ${decoded.email}`);
           
           // Normalizar dados do usuário
-          const user = verifyResult.user || verifyResult;
+          const user = {
+            id: decoded.id,
+            email: decoded.email,
+            role: decoded.role,
+            baseId: decoded.baseId,
+            basename: decoded.basename
+          };
           
           // Anexar dados do usuário à requisição para uso posterior
           (req as any).user = user;
+          req.user = user as any;
           
           // LIBERADO PARA: admin, gestor_frota, gerente_geral, CEO, gestor, operador, manutencao
           if (isUserAdmin(user) || isUserInFleetManagement(user) || 
