@@ -2585,7 +2585,7 @@ app.use((req, res, next) => {
 
   // Middleware de verificação de autenticação para rotas protegidas
   // Deve ser adicionado ANTES da configuração do Vite para interceptar requisições
-  app.use((req, res, next) => {
+  app.use(async (req, res, next) => {
     // Lista de rotas que precisam de autenticação
     const protectedRoutes = [
       '/bases/campinas',
@@ -2680,13 +2680,35 @@ app.use((req, res, next) => {
       return next();
     }
     
-    // Verificar se o usuário está autenticado (tradicional, Supabase ou híbrido)
+    // Verificar se o usuário está autenticado (tradicional, Supabase, híbrido ou JWT próprio)
     const isAuthenticated = req.isAuthenticated && req.isAuthenticated();
     const hasHybridUser = !!(req as any).hybridUser;
     const hasSupabaseUser = !!(req as any).supabaseUser;
-    const isUserAuthenticated = isAuthenticated || hasHybridUser || hasSupabaseUser;
     
-    console.log(`[AUTH-MIDDLEWARE] Usuário autenticado: ${isAuthenticated} | Híbrido: ${hasHybridUser} | Supabase: ${hasSupabaseUser} | Total: ${isUserAuthenticated}`);
+    // Verificar JWT próprio do header Authorization
+    let hasOwnJwt = false;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const jwtModule = await import('./utils/jwt');
+        const secret = process.env.JWT_SECRET || 'muricion-fleet-secret-key';
+        const decoded = jwtModule.verifyToken(token, secret);
+        if (decoded && (decoded.email || decoded.id)) {
+          hasOwnJwt = true;
+          // Anexar usuário à requisição
+          (req as any).user = decoded;
+          req.user = decoded as any;
+          console.log(`[AUTH-MIDDLEWARE] JWT próprio validado para ${decoded.email}`);
+        }
+      } catch (jwtError) {
+        console.log('[AUTH-MIDDLEWARE] Erro ao verificar JWT próprio');
+      }
+    }
+    
+    const isUserAuthenticated = isAuthenticated || hasHybridUser || hasSupabaseUser || hasOwnJwt;
+    
+    console.log(`[AUTH-MIDDLEWARE] Usuário autenticado: ${isAuthenticated} | Híbrido: ${hasHybridUser} | Supabase: ${hasSupabaseUser} | JWT: ${hasOwnJwt} | Total: ${isUserAuthenticated}`);
     
     if (!isUserAuthenticated) {
       console.log(`[AUTH-MIDDLEWARE] Acesso negado para rota protegida: ${req.path}`);
