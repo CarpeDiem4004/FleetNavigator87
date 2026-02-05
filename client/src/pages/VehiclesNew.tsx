@@ -48,6 +48,31 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+// Função auxiliar para obter o token JWT
+const getAuthHeaders = (): HeadersInit => {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json'
+  };
+  const token = localStorage.getItem('jwt_token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+};
+
+// Fetch autenticado - adiciona automaticamente o token JWT
+const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
+  const headers = getAuthHeaders();
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...headers,
+      ...(options.headers || {})
+    },
+    credentials: 'include'
+  });
+};
+
 // Tipo para representar os dados de um veículo
 interface Vehicle {
   id: number;
@@ -178,7 +203,7 @@ const EditVehicleForm: React.FC<EditVehicleFormProps> = ({ vehicle, onUpdate, on
   useEffect(() => {
     const fetchBases = async () => {
       try {
-        const response = await fetch('/api/bases');
+        const response = await fetchWithAuth('/api/bases');
         if (response.ok) {
           const result = await response.json();
           setBases(result.success && result.data ? result.data : []);
@@ -423,9 +448,9 @@ const VehiclesNew: React.FC = () => {
   const fetchVehicles = async () => {
     setIsLoading(true);
     try {
-      // Buscar todos os veículos usando a API REST
+      // Buscar todos os veículos usando a API REST com autenticação JWT
       console.log('Buscando veículos via API REST');
-      const vehiclesResponse = await fetch('/api/vehicles');
+      const vehiclesResponse = await fetchWithAuth('/api/vehicles');
       
       if (!vehiclesResponse.ok) {
         throw new Error(`Erro ao buscar veículos: ${vehiclesResponse.status}`);
@@ -435,7 +460,7 @@ const VehiclesNew: React.FC = () => {
       console.log('Veículos recebidos da API:', vehiclesData);
       
       // Buscar bases para mapear os nomes
-      const basesResponse = await fetch('/api/bases');
+      const basesResponse = await fetchWithAuth('/api/bases');
       
       if (!basesResponse.ok) {
         throw new Error(`Erro ao buscar bases: ${basesResponse.status}`);
@@ -512,9 +537,8 @@ const VehiclesNew: React.FC = () => {
 
     try {
       console.log(`Excluindo veículo com ID ${id} via API REST`);
-      const response = await fetch(`/api/vehicles/${id}`, {
+      const response = await fetchWithAuth(`/api/vehicles/${id}`, {
         method: 'DELETE',
-        credentials: 'include',
       });
       
       if (!response.ok) {
@@ -566,12 +590,8 @@ const VehiclesNew: React.FC = () => {
       
       console.log('Dados mapeados para envio:', mappedData);
       
-      const response = await fetch(`/api/vehicles/${editingVehicle.id}`, {
+      const response = await fetchWithAuth(`/api/vehicles/${editingVehicle.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
         body: JSON.stringify(mappedData),
       });
       
@@ -630,9 +650,12 @@ const VehiclesNew: React.FC = () => {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
+      const token = localStorage.getItem('jwt_token');
       const response = await fetch('/api/maintenance/import', {
         method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         body: formData,
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -741,10 +764,8 @@ const VehiclesNew: React.FC = () => {
     
     try {
       // Enviar dados já processados para a API
-      const response = await fetch('/api/vehicles/import-spreadsheet', {
+      const response = await fetchWithAuth('/api/vehicles/import-spreadsheet', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ data: parsedBasesData })
       });
 
@@ -842,9 +863,8 @@ const VehiclesNew: React.FC = () => {
     setIsUploadingCartoes(true);
     
     try {
-      const response = await fetch('/api/vehicles/import-cartoes', {
+      const response = await fetchWithAuth('/api/vehicles/import-cartoes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dados: parsedCartoesData }),
       });
 
