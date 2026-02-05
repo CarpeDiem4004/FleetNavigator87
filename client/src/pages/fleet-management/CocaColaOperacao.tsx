@@ -33,7 +33,8 @@ import {
   Calendar,
   TrendingUp,
   TrendingDown,
-  ArrowLeft
+  ArrowLeft,
+  Download
 } from 'lucide-react';
 import { Link } from 'wouter';
 
@@ -237,6 +238,24 @@ export default function CocaColaOperacao() {
     }
   });
 
+  const syncFromMainMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('POST', '/api/coca-cola/vehicles/sync-from-main', {});
+    },
+    onSuccess: (data: any) => {
+      toast({ 
+        title: 'Sincronização concluída!', 
+        description: `${data.adicionados || 0} veículos importados da frota principal` 
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/coca-cola/vehicles'] });
+      refetchVehicles();
+      refetchBases();
+    },
+    onError: () => {
+      toast({ variant: 'destructive', title: 'Erro ao importar veículos da frota principal' });
+    }
+  });
+
   const saveAllDailyUpdates = async () => {
     for (const base of bases.filter(b => b.ativo)) {
       await saveDailyUpdateMutation.mutateAsync(base.id);
@@ -324,6 +343,15 @@ export default function CocaColaOperacao() {
               >
                 <Package className="h-4 w-4 mr-2" /> 
                 {syncVehiclesMutation.isPending ? 'Sincronizando...' : 'Sincronizar com Frota'}
+              </Button>
+              <Button 
+                variant="outline"
+                className="border-purple-500 text-purple-600 hover:bg-purple-50"
+                onClick={() => syncFromMainMutation.mutate()}
+                disabled={syncFromMainMutation.isPending}
+              >
+                <Download className="h-4 w-4 mr-2" /> 
+                {syncFromMainMutation.isPending ? 'Importando...' : 'Importar da Frota'}
               </Button>
               <Button variant="outline" onClick={() => { refetchBases(); refetchVehicles(); refetchUpdates(); }}>
                 <RefreshCw className="h-4 w-4 mr-2" /> Atualizar

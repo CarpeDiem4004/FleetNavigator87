@@ -1,0 +1,97 @@
+Perfeito — isso aqui é clássico de desalinhamento entre módulo operacional e cadastro mestre 👍
+Vou te entregar exatamente o texto/prompt para você mandar para a IA (Replit AI ou outra), já direcionando para a causa real e a correção certa, sem gambiarra.
+
+Antes, só pra alinhar o diagnóstico 👇
+👉 O problema NÃO é visual
+👉 É estrutural / relacional
+
+Hoje você tem:
+
+Bases do Projeto Coca-Cola aparecendo no Dashboard Operacional
+
+Mas não aparecem no Cadastro/Edição de Veículos
+
+Isso normalmente acontece por 1 (ou mais) desses 4 pontos:
+
+Bases do Coca-Cola estão em outra tabela (ex: bases_operacao, bases_coca_cola)
+
+O select do cadastro de veículo filtra apenas bases_ativas = true
+
+O select usa tipo_base = 'operacional' e Coca-Cola está como projeto
+
+O front consome endpoint diferente do dashboard
+
+🔥 PROMPT PRONTO PARA ENVIAR À IA (COPIA E COLA)
+
+Use exatamente assim 👇
+
+Analise o sistema de gestão de frotas (Supabase + Replit).
+
+PROBLEMA:
+As bases do projeto Coca-Cola aparecem corretamente no módulo de Operação/Dashboard,
+porém NÃO aparecem no cadastro e edição de veículos para seleção de base.
+
+OBJETIVO:
+Garantir que TODAS as bases do projeto Coca-Cola apareçam:
+- no select de base ao cadastrar veículo
+- no select de base ao editar veículo
+- mantendo consistência com o dashboard operacional
+
+TAREFAS OBRIGATÓRIAS:
+1. Verificar de onde o dashboard de Operação Coca-Cola está carregando as bases
+   (tabela, view ou endpoint).
+2. Verificar de onde o formulário de cadastro/edição de veículos carrega as bases.
+3. Comparar filtros aplicados (ex: ativo, tipo_base, projeto, operação).
+4. Unificar a fonte de dados:
+   - Ou criar uma VIEW única de bases
+   - Ou ajustar o select para buscar TODAS as bases válidas do projeto Coca-Cola
+5. Ajustar o frontend para usar a mesma fonte de dados do dashboard.
+
+REGRAS:
+- Não duplicar base
+- Não hardcodar projeto no front
+- Base selecionada no veículo deve refletir imediatamente no dashboard
+
+ENTREGAR:
+- Diagnóstico exato do erro
+- SQL corrigido (ou VIEW recomendada)
+- Endpoint ajustado (se houver)
+- Alteração no componente do select de bases (frontend)
+
+🧠 DICA DE OURO (arquitetura correta)
+
+Se você quiser blindar isso pra sempre, o certo é:
+
+✅ Criar uma VIEW única no Supabase
+
+Exemplo conceitual:
+
+view_bases_disponiveis
+
+
+Que una:
+
+bases operacionais
+
+bases por projeto (Coca-Cola, Shopee, etc)
+
+com flags:
+
+projeto
+
+ativa
+
+tipo_base
+
+E TODO o sistema consome essa view:
+
+cadastro de veículo
+
+edição
+
+dashboard
+
+filtros
+
+👉 Resultado:
+Nunca mais base some de um módulo e aparece em outro.

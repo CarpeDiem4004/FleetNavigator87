@@ -1780,6 +1780,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // SINCRONIZAÇÃO REVERSA: Da frota principal para Coca-Cola
+  // Quando veículos são cadastrados na tabela 'vehicles' com base Coca-Cola,
+  // sincroniza para a tabela 'coca_cola_vehicles'
+  app.post('/api/coca-cola/vehicles/sync-from-main', isAuthenticated, async (req, res) => {
+    const client = await pool.connect();
+    try {
+      console.log('[COCA-COLA SYNC REVERSA] Iniciando sincronização da frota principal para Coca-Cola...');
+      
+      // Mapeamento entre bases da tabela principal e coca_cola_bases
+      const baseMapping: Record<number, number> = {
+        47: 2,   // COCA COLA (ABC) -> CD ABC
+        48: 1,   // COCA COLA (APARECIDA) -> Aparecida - BH
+        49: 3,   // COCA COLA (CRICIUMA) -> Criciuma
+        50: 5,   // COCA COLA (IPATINGA) -> Ipatinga
+        51: 14,  // COCA COLA (JURUBATUBA) -> Jurubatuba
+        52: 7,   // COCA COLA (MARIANA) -> Mariana
+        53: 10,  // COCA COLA (PINHEIROS) -> Pinheiros
+        54: 11,  // COCA COLA (PONTE NOVA) -> PonteNova
+        55: 13   // COCA COLA SANTOS -> Santos
+      };
+      
+      const cocaColaBaseIds = Object.keys(baseMapping).map(Number);
+      
+      // Buscar veículos da frota principal com bases Coca-Cola que NÃO existem em coca_cola_vehicles
+      const missingVehicles = await client.query(`
+        SELECT v.plate, v.model, v.base_id, v.status, b.name as base_nome
+        FROM vehicles v
+        LEFT JOIN bases b ON v.base_id = b.id
+        WHERE v.base_id = ANY($1)
+        AND NOT EXISTS (
+          SELECT 1 FROM coca_cola_vehicles ccv WHERE UPPER(ccv.placa) = UPPER(v.plate)
+        )
+        ORDER BY b.name, v.plate
+      `, [cocaColaBaseIds]);
+      
+      const veiculosFaltantes = missingVehicles.rows;
+      console.log(`[COCA-COLA SYNC REVERSA] Encontrados ${veiculosFaltantes.length} veículos para adicionar ao Coca-Cola`);
+      
+      if (veiculosFaltantes.length === 0) {
+        client.release();
+        return res.json({
+          success: true,
+          message: 'Todos os veículos já estão sincronizados com Coca-Cola',
+          adicionados: 0,
+          erros: 0,
+          detalhes: []
+        });
+      }
+      
+      // Mapear status da tabela principal para Coca-Cola
+      const mapStatus = (mainStatus: string): string => {
+        const statusMap: Record<string, string> = {
+          'ativo': 'disponivel',
+          'em_operacao': 'disponivel',
+          'em_rota': 'rota',
+          'manutenção': 'manutencao',
+          'em_manutencao': 'manutencao',
+          'parado': 'manutencao',
+          'inativo': 'inativo'
+        };
+        return statusMap[mainStatus] || 'disponivel';
+      };
+      
+      await client.query('BEGIN');
+      
+      let adicionados = 0;
+      let erros = 0;
+      const detalhes: any[] = [];
+      
+      for (const veiculo of veiculosFaltantes) {
+        try {
+          const cocaColaBaseId = baseMapping[veiculo.base_id];
+          if (!cocaColaBaseId) {
+            console.log(`[COCA-COLA SYNC REVERSA] Base ${veiculo.base_id} não mapeada, pulando veículo ${veiculo.plate}`);
+            continue;
+          }
+          
+          const statusCocaCola = mapStatus(veiculo.status);
+          
+          await client.query(`
+            INSERT INTO coca_cola_vehicles (placa, modelo, base_id, status, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, NOW(), NOW())
+          `, [
+            veiculo.plate.toUpperCase(),
+            veiculo.model || 'Não informado',
+            cocaColaBaseId,
+            statusCocaCola
+          ]);
+          
+          adicionados++;
+          detalhes.push({
+            placa: veiculo.plate,
+            base_origem: veiculo.base_nome,
+            base_destino_id: cocaColaBaseId,
+            status: 'adicionado'
+          });
+          console.log(`[COCA-COLA SYNC REVERSA] Veículo ${veiculo.plate} adicionado ao Coca-Cola (base_id: ${cocaColaBaseId})`);
+        } catch (insertError: any) {
+          erros++;
+          detalhes.push({
+            placa: veiculo.plate,
+            status: 'erro',
+            mensagem: insertError.message
+          });
+          console.error(`[COCA-COLA SYNC REVERSA] Erro ao adicionar ${veiculo.plate}:`, insertError.message);
+        }
+      }
+      
+      if (adicionados > 0) {
+        await client.query('COMMIT');
+      } else {
+        await client.query('ROLLBACK');
+      }
+      
+      console.log(`[COCA-COLA SYNC REVERSA] Sincronização concluída: ${adicionados} adicionados, ${erros} erros`);
+      
+      res.json({
+        success: true,
+        message: `Sincronização concluída: ${adicionados} veículos adicionados ao Coca-Cola`,
+        adicionados,
+        erros,
+        detalhes
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('[COCA-COLA SYNC REVERSA] Erro na sincronização:', error);
+      res.status(500).json({ error: 'Erro ao sincronizar veículos para Coca-Cola' });
+    } finally {
+      client.release();
+    }
+  });
+
   // Verificar veículos Coca-Cola faltantes (preview sem adicionar)
   app.get('/api/coca-cola/vehicles/missing', isAuthenticated, async (req, res) => {
     try {
