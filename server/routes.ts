@@ -1521,7 +1521,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         values.push(ativo);
       }
       if (password) {
-        const bcrypt = require('bcrypt');
         const password_hash = await bcrypt.hash(password, 10);
         updates.push(`password_hash = $${paramIndex++}`);
         values.push(password_hash);
