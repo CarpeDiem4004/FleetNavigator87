@@ -11,6 +11,7 @@ import createMemoryStore from "memorystore";
 import { pool } from "./db";
 import connectPg from "connect-pg-simple";
 import { createClient } from '@supabase/supabase-js';
+import { generateToken } from './utils/jwt';
 
 declare global {
   namespace Express {
@@ -702,12 +703,27 @@ export function setupAuth(app: Express) {
       
       console.log(`[login-base] Login bem-sucedido: ${user.email} (Base: ${user.basename})`);
       
+      // Gerar JWT próprio para autenticação cross-domain
+      const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key';
+      const token = generateToken(
+        { 
+          id: user.id, 
+          email: user.email, 
+          role: user.role,
+          baseId: user.base_id,
+          basename: user.basename
+        }, 
+        jwtSecret, 
+        { expiresIn: '30d' }
+      );
+      
       // Remover senha antes de retornar
       const userWithoutPassword = { ...user, password: undefined };
       
       return res.json({
         success: true,
         user: userWithoutPassword,
+        token: token,
         message: `Bem-vindo, ${user.name}!`
       });
       

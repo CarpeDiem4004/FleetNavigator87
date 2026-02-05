@@ -227,51 +227,40 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   /**
-   * Login usando Supabase Auth + Backend
+   * Login - verifica credenciais diretamente no backend (banco local)
    * 
    * Fluxo:
-   * 1. Autenticar com Supabase Auth para obter access_token
-   * 2. Usar access_token para buscar dados do usuário no backend
-   * 3. O access_token é automaticamente salvo pelo Supabase no localStorage
+   * 1. Enviar email/password para o backend
+   * 2. Backend valida e retorna JWT + dados do usuário
+   * 3. JWT salvo no localStorage para requisições subsequentes
    */
   const login = async (email: string, password: string): Promise<User> => {
-    console.log("[Auth] Tentando login via Supabase:", email);
+    console.log("[Auth] Tentando login:", email);
     
     try {
-      // PASSO 1: Autenticar com Supabase
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (authError) {
-        console.error("[Auth] Erro no Supabase Auth:", authError.message);
-        throw new Error(authError.message);
-      }
-      
-      if (!authData.session?.access_token) {
-        throw new Error("Falha ao obter token de autenticação");
-      }
-      
-      console.log("[Auth] Supabase Auth bem-sucedido, buscando dados do usuário...");
-      
-      // PASSO 2: Buscar dados do usuário no backend usando Bearer Token
-      const response = await fetch('/api/user', {
-        method: 'GET',
+      // Autenticar diretamente no backend com email/password
+      const response = await fetch('/api/auth/login-base', {
+        method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authData.session.access_token}`
-        }
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email, password })
       });
       
       if (!response.ok) {
-        // Usuário não existe no backend, fazer signOut do Supabase
-        await supabase.auth.signOut();
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || 'Usuário não encontrado no sistema');
       }
       
-      const userData = await response.json();
+      const responseData = await response.json();
+      const userData = responseData.user;
+      
+      // Salvar token JWT para requisições subsequentes
+      if (responseData.token) {
+        localStorage.setItem('jwt_token', responseData.token);
+      }
+      
       console.log("[Auth] Login completo:", userData.email);
       
       const formattedUser: User = {
@@ -305,46 +294,35 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   /**
-   * Login de base usando Supabase Auth + Bearer Token
+   * Login de base - verifica credenciais diretamente no backend (banco local)
    */
   const loginBase = async (email: string, password: string, baseId?: number): Promise<User> => {
-    console.log("[Auth] Tentando login de base via Supabase:", email, "Base ID:", baseId);
+    console.log("[Auth] Tentando login de base:", email, "Base ID:", baseId);
     
     try {
-      // PASSO 1: Autenticar com Supabase
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (authError) {
-        console.error("[Auth] Erro no Supabase Auth:", authError.message);
-        throw new Error(authError.message);
-      }
-      
-      if (!authData.session?.access_token) {
-        throw new Error("Falha ao obter token de autenticação");
-      }
-      
-      // PASSO 2: Verificar permissões de base com Bearer Token
+      // Autenticar diretamente no backend com email/password
       const response = await fetch('/api/auth/login-base', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authData.session.access_token}`
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ baseId })
+        credentials: 'include',
+        body: JSON.stringify({ email, password, baseId })
       });
 
       if (!response.ok) {
-        // Falha no login de base, fazer signOut do Supabase
-        await supabase.auth.signOut();
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Erro ao acessar base');
+        throw new Error(errorData.message || 'Credenciais inválidas');
       }
       
       const responseData = await response.json();
       const userData = responseData.user;
+      
+      // Salvar token JWT se retornado pelo backend
+      if (responseData.token) {
+        localStorage.setItem('jwt_token', responseData.token);
+      }
+      
       console.log("[Auth] loginBase - Usuário autenticado:", userData.email);
       
       const formattedUser: User = {
@@ -435,9 +413,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     console.log("[Auth] Fazendo logout...");
     
     try {
-      // Fazer logout do Supabase (principal)
-      await supabase.auth.signOut();
-      console.log("[Auth] Logout Supabase bem-sucedido");
+      // Limpar JWT do localStorage
+      localStorage.removeItem('jwt_token');
       
       // Também chamar logout do backend (para limpar qualquer sessão residual)
       await fetch('/api/logout', {
@@ -446,6 +423,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }).catch(() => {
         // Ignorar erro no logout do backend
       });
+      
+      // Fazer logout do Supabase se houver sessão ativa
+      await supabase.auth.signOut().catch(() => {});
     } catch (error) {
       console.error("[Auth] Erro no logout:", error);
     }

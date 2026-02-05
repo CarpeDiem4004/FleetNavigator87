@@ -3,45 +3,29 @@ import { PostgrestResponse } from '@supabase/supabase-js';
 import { supabase } from "./supabaseClient";
 
 /**
- * AUTENTICAÇÃO BASEADA EM BEARER TOKEN (Supabase Auth)
+ * AUTENTICAÇÃO BASEADA EM JWT PRÓPRIO
  * 
  * Por que NÃO usar cookies:
  * - Cookies são vinculados ao domínio onde são criados (*.replit.dev)
  * - Quando acessado via domínio customizado (gestaoonfleet.com.br), cookies não são enviados
  * - Navegadores modernos bloqueiam cookies third-party por segurança
- * - SameSite e Secure flags criam incompatibilidades entre domínios
  * 
- * Por que Bearer Token resolve definitivamente:
- * - Token armazenado no localStorage do cliente (persistSession do Supabase)
+ * Por que JWT próprio resolve definitivamente:
+ * - Token gerado pelo backend ao fazer login
+ * - Armazenado no localStorage do cliente
  * - Enviado explicitamente no header Authorization a cada requisição
  * - NÃO depende de domínio ou cookies
  * - Funciona igualmente em QUALQUER ambiente
  */
 
 /**
- * Obtém o access_token atual do Supabase
- * O Supabase gerencia automaticamente:
- * - Refresh do token antes de expirar
- * - Persistência no localStorage
- * - Validação do token
+ * Obtém o JWT token do localStorage
  */
-async function getSupabaseAccessToken(): Promise<string | null> {
+function getJwtToken(): string | null {
   try {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    
-    if (error) {
-      console.warn('[Auth] Erro ao obter sessão Supabase:', error.message);
-      return null;
-    }
-    
-    if (!session?.access_token) {
-      console.log('[Auth] Nenhuma sessão Supabase ativa');
-      return null;
-    }
-    
-    return session.access_token;
+    return localStorage.getItem('jwt_token');
   } catch (error) {
-    console.error('[Auth] Exceção ao obter token:', error);
+    console.error('[Auth] Erro ao obter JWT do localStorage:', error);
     return null;
   }
 }
@@ -131,20 +115,17 @@ export async function apiRequest(
     return mockResponse;
   }
   
-  // Para API backend: SEMPRE usar Bearer Token do Supabase
+  // Para API backend: usar JWT do localStorage
   const headers: HeadersInit = {};
   
   if (!isFormData) {
     headers["Content-Type"] = "application/json";
   }
   
-  // Obter e adicionar Bearer Token do Supabase
-  const accessToken = await getSupabaseAccessToken();
-  if (accessToken) {
-    headers["Authorization"] = `Bearer ${accessToken}`;
-    console.log('[apiRequest] Bearer Token adicionado para:', url);
-  } else {
-    console.log('[apiRequest] Sem token Supabase disponível para:', url);
+  // Obter e adicionar JWT do localStorage
+  const jwtToken = getJwtToken();
+  if (jwtToken) {
+    headers["Authorization"] = `Bearer ${jwtToken}`;
   }
   
   const requestConfig: RequestInit = {
@@ -208,15 +189,15 @@ export const getQueryFn: <T>(options: {
       return data;
     }
     
-    // Para API backend: SEMPRE usar Bearer Token do Supabase
+    // Para API backend: usar JWT do localStorage
     const headers: HeadersInit = {
       "Content-Type": "application/json"
     };
     
-    // Obter e adicionar Bearer Token do Supabase
-    const accessToken = await getSupabaseAccessToken();
-    if (accessToken) {
-      headers["Authorization"] = `Bearer ${accessToken}`;
+    // Obter e adicionar JWT do localStorage
+    const jwtToken = getJwtToken();
+    if (jwtToken) {
+      headers["Authorization"] = `Bearer ${jwtToken}`;
     }
     
     // Construir URL com parâmetros da queryKey
