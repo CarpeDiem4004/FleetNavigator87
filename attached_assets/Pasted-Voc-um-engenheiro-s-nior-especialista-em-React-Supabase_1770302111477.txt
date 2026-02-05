@@ -1,0 +1,63 @@
+Você é um engenheiro sênior especialista em React + Supabase + Auth + RBAC.
+
+CENÁRIO:
+Tenho um sistema de gestão de frotas (Murici On Fleet 2.0).
+O login funciona, o usuário está autenticado, porém ao acessar a página de GESTÃO DE FROTA / BASE DE VEÍCULOS ocorre erro 401 (Unauthorized) e os veículos não carregam corretamente.
+
+EVIDÊNCIAS:
+- Console mostra:
+  - Failed to load resource: 401
+  - Nenhuma sessão no servidor
+  - Token inválido ou não enviado
+  - AuthContext Provider valores inconsistentes
+- ProtectedRoute permite acesso, mas a API falha
+- Supabase Auth está ativo
+- A tabela veículos existe e está populada
+- O sistema é multi-base (cada base só pode ver seus veículos)
+
+OBJETIVO:
+1️⃣ Identificar a CAUSA RAIZ do erro (não soluções paliativas)
+2️⃣ Verificar:
+   - AuthContext
+   - Recuperação do token
+   - Envio do Authorization Bearer
+   - Relação user → base → veículos
+   - RLS no Supabase
+   - Filtros por base_id
+3️⃣ Corrigir DEFINITIVAMENTE o acesso à base de veículos
+4️⃣ Garantir que:
+   - Usuário autenticado SEMPRE tenha sessão válida
+   - Token seja enviado corretamente em TODAS as requisições
+   - Cada base veja apenas seus veículos
+   - O erro 401 não volte a ocorrer
+
+ENTREGÁVEIS OBRIGATÓRIOS:
+- Diagnóstico técnico claro (onde e por que está quebrando)
+- Correção no frontend (AuthContext / fetch / axios)
+- Correção no backend ou Supabase (RLS / policies)
+- Exemplo de código FINAL e FUNCIONAL
+- Checklist de validação pós-correção
+
+REGRAS:
+❌ Não sugerir soluções genéricas
+❌ Não ignorar RLS
+❌ Não mascarar erro com try/catch
+✅ Resolver de forma estrutural e escalável
+
+Analise o código atual do projeto e implemente a solução correta.
+🧠 O que esse prompt força a IA a fazer
+✔ Parar de “chutar”
+✔ Auditar AuthContext + Token + RLS
+✔ Identificar se o erro é:
+
+Token não persistido
+
+Header Authorization ausente
+
+Policy errada no Supabase
+
+base_id não sincronizado com o usuário
+
+Requisição feita antes da sessão existir
+
+✔ Entregar código corrigido, não explicação vaga
