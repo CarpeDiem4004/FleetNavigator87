@@ -1667,11 +1667,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Sincronizar veículos Coca-Cola com tabela principal de veículos
   app.post('/api/coca-cola/vehicles/sync-to-main', isAuthenticated, async (req, res) => {
+    const client = await pool.connect();
     try {
       console.log('[COCA-COLA SYNC] Iniciando sincronização de veículos para tabela principal...');
       
       // Buscar veículos das bases Coca-Cola que NÃO existem na tabela principal
-      const missingVehicles = await pool.query(`
+      const missingVehicles = await client.query(`
         SELECT ccv.placa, ccv.modelo, ccv.base_id, ccv.status, b.nome as base_nome
         FROM coca_cola_vehicles ccv
         LEFT JOIN coca_cola_bases b ON ccv.base_id = b.id
@@ -1685,6 +1686,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[COCA-COLA SYNC] Encontrados ${veiculosFaltantes.length} veículos para adicionar`);
       
       if (veiculosFaltantes.length === 0) {
+        client.release();
         return res.json({
           success: true,
           message: 'Todos os veículos já estão sincronizados',
@@ -1694,28 +1696,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Adicionar cada veículo à tabela principal
+      // Mapear status do Coca-Cola para status da tabela principal
+      const mapStatus = (cocaColaStatus: string): string => {
+        const statusMap: Record<string, string> = {
+          'disponivel': 'ativo',
+          'rota': 'ativo',
+          'em_rota': 'ativo',
+          'manutencao': 'manutenção',
+          'em_manutencao': 'manutenção',
+          'aguardando_peca': 'manutenção',
+          'falta_equipe': 'ativo',
+          'sem_equipe': 'ativo',
+          'baixa_venda': 'inativo',
+          'inativo': 'inativo',
+          'outro': 'ativo'
+        };
+        return statusMap[cocaColaStatus] || 'ativo';
+      };
+      
+      // Usar transação para garantir consistência
+      await client.query('BEGIN');
+      
       let adicionados = 0;
       let erros = 0;
       const detalhes: any[] = [];
       
       for (const veiculo of veiculosFaltantes) {
         try {
-          // Mapear status do Coca-Cola para status da tabela principal
-          let statusPrincipal = 'ativo';
-          if (veiculo.status === 'manutencao' || veiculo.status === 'em_manutencao') {
-            statusPrincipal = 'manutenção';
-          } else if (veiculo.status === 'baixa_venda' || veiculo.status === 'inativo') {
-            statusPrincipal = 'inativo';
-          }
+          const statusPrincipal = mapStatus(veiculo.status);
           
-          await pool.query(`
+          await client.query(`
             INSERT INTO vehicles (plate, model, make, status, base_id, vehicle_type, fuel_type, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, 'caminhão', 'diesel', NOW(), NOW())
           `, [
             veiculo.placa.toUpperCase(),
             veiculo.modelo || 'Não informado',
-            veiculo.modelo || 'Não informado', // make = modelo por padrão
+            veiculo.modelo || 'Não informado',
             statusPrincipal,
             veiculo.base_id
           ]);
@@ -1739,6 +1755,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Commit da transação apenas se houve pelo menos um sucesso
+      if (adicionados > 0) {
+        await client.query('COMMIT');
+      } else {
+        await client.query('ROLLBACK');
+      }
+      
       console.log(`[COCA-COLA SYNC] Sincronização concluída: ${adicionados} adicionados, ${erros} erros`);
       
       res.json({
@@ -1749,8 +1772,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         detalhes
       });
     } catch (error) {
+      await client.query('ROLLBACK');
       console.error('[COCA-COLA SYNC] Erro na sincronização:', error);
       res.status(500).json({ error: 'Erro ao sincronizar veículos' });
+    } finally {
+      client.release();
     }
   });
 
