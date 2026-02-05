@@ -82,6 +82,11 @@ export default function CocaColaBaseDashboard() {
   const [observationVehicle, setObservationVehicle] = useState<{ id: number; placa: string } | null>(null);
   const [observationStatus, setObservationStatus] = useState('');
   const [observationText, setObservationText] = useState('');
+  
+  // Estados para modal de empréstimo
+  const [showEmprestimoDialog, setShowEmprestimoDialog] = useState(false);
+  const [emprestimoVehicle, setEmprestimoVehicle] = useState<{ id: number; placa: string } | null>(null);
+  const [emprestimoBaseId, setEmprestimoBaseId] = useState<string>('');
     
   const TIPOS_MANUTENCAO = [
     { id: 'mecanica', label: 'Mecânica' },
@@ -133,6 +138,13 @@ export default function CocaColaBaseDashboard() {
     queryKey: ['/api/coca-cola/bases', baseId],
     queryFn: () => fetchWithAuth(`/api/coca-cola/bases/${baseId}`),
     enabled: !!user && baseId > 0
+  });
+
+  // Query para buscar todas as bases (para seleção de empréstimo)
+  const { data: allBases = [] } = useQuery<CocaColaBase[]>({
+    queryKey: ['/api/coca-cola/bases'],
+    queryFn: () => fetchWithAuth('/api/coca-cola/bases'),
+    enabled: !!user
   });
 
   const { data: vehicles = [], isLoading: loadingVehicles, refetch: refetchVehicles } = useQuery<CocaColaVehicle[]>({
@@ -937,7 +949,11 @@ export default function CocaColaBaseDashboard() {
                         <Select
                           value={getDailyStatus(vehicle.id)}
                           onValueChange={(value) => {
-                            if (statusRequiresObservation(value)) {
+                            if (value === 'emprestado') {
+                              setEmprestimoVehicle({ id: vehicle.id, placa: vehicle.placa });
+                              setEmprestimoBaseId('');
+                              setShowEmprestimoDialog(true);
+                            } else if (statusRequiresObservation(value)) {
                               setObservationVehicle({ id: vehicle.id, placa: vehicle.placa });
                               setObservationStatus(value);
                               setObservationText('');
@@ -982,23 +998,6 @@ export default function CocaColaBaseDashboard() {
                       >
                         <Wrench className="w-4 h-4 mr-1" />
                         Abrir OS
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          setSelectedVehicle(vehicle);
-                          setStatusUpdate({
-                            status: vehicle.status,
-                            oficina: vehicle.oficina || '',
-                            prazo_estimado: vehicle.prazo_estimado || '',
-                            motivo_parado: vehicle.motivo_parado || '',
-                            base_emprestimo: vehicle.base_emprestimo || ''
-                          });
-                          setShowUpdateStatus(true);
-                        }}
-                      >
-                        Atualizar
                       </Button>
                     </div>
                   </div>
@@ -1266,6 +1265,64 @@ export default function CocaColaBaseDashboard() {
                 className={observationStatus === 'd_mais_1' ? 'bg-cyan-500 hover:bg-cyan-600' : 'bg-indigo-500 hover:bg-indigo-600'}
               >
                 {updateDailyStatusMutation.isPending ? 'Salvando...' : 'Confirmar'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Empréstimo - Selecionar Base de Destino */}
+      <Dialog open={showEmprestimoDialog} onOpenChange={setShowEmprestimoDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Empréstimo de Veículo - {emprestimoVehicle?.placa}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="font-medium">Base de Destino</Label>
+              <Select value={emprestimoBaseId} onValueChange={setEmprestimoBaseId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a base de destino" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allBases.filter(b => b.id !== baseId).map(b => (
+                    <SelectItem key={b.id} value={b.id.toString()}>{b.nome} - {b.cidade}/{b.estado}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground mt-1">
+                Selecione a base que está pegando o veículo emprestado. O veículo aparecerá na lista desta base.
+              </p>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowEmprestimoDialog(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (!emprestimoBaseId) {
+                    toast({
+                      title: 'Base obrigatória',
+                      description: 'Por favor, selecione a base de destino',
+                      variant: 'destructive'
+                    });
+                    return;
+                  }
+                  if (emprestimoVehicle) {
+                    const baseDestino = allBases.find(b => b.id === parseInt(emprestimoBaseId));
+                    updateDailyStatusMutation.mutate({
+                      vehicle_id: emprestimoVehicle.id,
+                      status: 'emprestado',
+                      observacao: `Emprestado para: ${baseDestino?.nome || emprestimoBaseId}`,
+                      base_emprestimo_id: parseInt(emprestimoBaseId)
+                    });
+                    setShowEmprestimoDialog(false);
+                  }
+                }}
+                disabled={updateDailyStatusMutation.isPending}
+                className="bg-blue-500 hover:bg-blue-600"
+              >
+                {updateDailyStatusMutation.isPending ? 'Salvando...' : 'Confirmar Empréstimo'}
               </Button>
             </div>
           </div>

@@ -2281,7 +2281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Base ID é obrigatório' });
       }
 
-      // Buscar veículos da base com status do dia
+      // Buscar veículos da base com status do dia + veículos emprestados para esta base
       const query = `
         SELECT 
           v.id as vehicle_id,
@@ -2291,11 +2291,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           s.observacao,
           s.updated_by_name,
           s.updated_at,
-          s.id as status_id
+          s.id as status_id,
+          false as is_emprestado_aqui,
+          NULL as base_origem_nome
         FROM coca_cola_vehicles v
         LEFT JOIN vehicle_daily_status s ON v.id = s.vehicle_id AND s.data = $2
         WHERE v.base_id = $1
-        ORDER BY v.placa
+        
+        UNION ALL
+        
+        SELECT 
+          v.id as vehicle_id,
+          v.placa,
+          v.modelo,
+          'emprestado' as status,
+          s.observacao,
+          s.updated_by_name,
+          s.updated_at,
+          s.id as status_id,
+          true as is_emprestado_aqui,
+          b.nome as base_origem_nome
+        FROM coca_cola_vehicles v
+        INNER JOIN vehicle_daily_status s ON v.id = s.vehicle_id AND s.data = $2 AND s.status = 'emprestado' AND s.base_emprestimo_id = $1
+        LEFT JOIN coca_cola_bases b ON v.base_id = b.id
+        WHERE v.base_id != $1
+        
+        ORDER BY placa
       `;
 
       const result = await pool.query(query, [baseId, dataConsulta]);
@@ -2336,11 +2357,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Atualizar status diário de um veículo
   app.post('/api/coca-cola/vehicle-daily-status', cocaColaAuth, async (req: any, res) => {
     try {
-      const { vehicle_id, base_id, status, observacao, data } = req.body;
+      const { vehicle_id, base_id, status, observacao, data, base_emprestimo_id } = req.body;
       const cocaColaUser = req.cocaColaUser;
       const dataHoje = new Date().toISOString().split('T')[0];
       
-      console.log('[COCA-COLA STATUS] Recebendo atualização:', { vehicle_id, base_id, status, data, dataHoje });
+      console.log('[COCA-COLA STATUS] Recebendo atualização:', { vehicle_id, base_id, status, data, dataHoje, base_emprestimo_id });
       
       // Validação: só permite atualizar o dia atual
       const dataEnviada = data || dataHoje;
@@ -2358,13 +2379,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Upsert - inserir ou atualizar se já existir
       const query = `
         INSERT INTO vehicle_daily_status 
-          (vehicle_id, base_id, data, status, observacao, updated_by, updated_by_name, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+          (vehicle_id, base_id, data, status, observacao, updated_by, updated_by_name, updated_at, base_emprestimo_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8)
         ON CONFLICT (vehicle_id, data) 
         DO UPDATE SET 
           status = EXCLUDED.status,
           observacao = EXCLUDED.observacao,
           updated_by = EXCLUDED.updated_by,
+          base_emprestimo_id = EXCLUDED.base_emprestimo_id,
           updated_by_name = EXCLUDED.updated_by_name,
           updated_at = NOW()
         RETURNING *
@@ -2377,7 +2399,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status,
         observacao || null,
         cocaColaUser?.id || null,
-        cocaColaUser?.nome || 'Sistema'
+        cocaColaUser?.nome || 'Sistema',
+        base_emprestimo_id || null
       ]);
 
       console.log('[COCA-COLA STATUS] Atualização realizada com sucesso:', result.rows[0]);
