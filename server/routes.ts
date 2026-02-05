@@ -1506,6 +1506,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Listar TODAS as bases Coca-Cola (para empréstimo de veículos)
+  app.get('/api/coca-cola/all-bases', cocaColaAuth, async (req: any, res) => {
+    try {
+      const result = await pool.query('SELECT * FROM coca_cola_bases ORDER BY nome');
+      console.log('[COCA-COLA] Todas as bases encontradas:', result.rows.length);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao listar todas as bases:', error);
+      res.status(500).json({ error: 'Erro ao listar bases' });
+    }
+  });
+
   // Criar base Coca-Cola (apenas admin)
   app.post('/api/coca-cola/bases', cocaColaAuth, async (req: any, res) => {
     try {

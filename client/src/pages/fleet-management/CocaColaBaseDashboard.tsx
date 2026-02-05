@@ -142,8 +142,8 @@ export default function CocaColaBaseDashboard() {
 
   // Query para buscar todas as bases (para seleção de empréstimo)
   const { data: allBases = [] } = useQuery<CocaColaBase[]>({
-    queryKey: ['/api/coca-cola/bases'],
-    queryFn: () => fetchWithAuth('/api/coca-cola/bases'),
+    queryKey: ['/api/coca-cola/all-bases'],
+    queryFn: () => fetchWithAuth('/api/coca-cola/all-bases'),
     enabled: !!user
   });
 
