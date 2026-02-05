@@ -228,16 +228,24 @@ export function setupAuth(app: Express) {
   
   // Middleware para configurar sessão e cookies
   app.use((req, res, next) => {
+    // CORREÇÃO: Usar X-Forwarded-Host para detectar o domínio real quando acessado via proxy/deployment
+    const forwardedHost = req.headers['x-forwarded-host'] as string || '';
+    const hostHeader = req.headers['host'] as string || '';
+    const effectiveHostname = forwardedHost || hostHeader || req.hostname;
+    
     // Verificar se estamos no ambiente de produção ou teste
-    const isDev = req.hostname.includes('replit.dev') || req.hostname.includes('localhost');
-    const isProd = req.hostname.includes('gestaoonfleet.com.br');
+    const isDev = effectiveHostname.includes('replit.dev') || effectiveHostname.includes('replit.app') || effectiveHostname.includes('localhost');
+    const isProd = effectiveHostname.includes('gestaoonfleet.com.br');
+    
+    // Log de diagnóstico
+    console.log(`[Cookie Middleware] effectiveHostname: ${effectiveHostname}, isDev: ${isDev}, isProd: ${isProd}, forwardedHost: ${forwardedHost}`);
     
     // Guardar o cookie original
     const originalCookie = res.getHeader('set-cookie');
     
     // Ajustar domínio do cookie se necessário
     if (req.session) {
-      if (isProd && req.hostname.includes('gestaoonfleet.com.br')) {
+      if (isProd) {
         // Configurar domínio do cookie para o domínio personalizado
         const domainName = '.gestaoonfleet.com.br';
         if ((req.session as any).cookie.domain !== domainName) {
@@ -255,9 +263,9 @@ export function setupAuth(app: Express) {
         // CORREÇÃO CRÍTICA: Verificar o protocolo REAL da requisição
         const forwardedProto = req.headers['x-forwarded-proto'] as string | undefined;
         const isHttps = req.secure || forwardedProto === 'https';
-        const isReplitHost = req.hostname.includes('.replit.');
+        const isReplitHost = effectiveHostname.includes('.replit.') || effectiveHostname.includes('replit.app');
         
-        console.log(`[Cookie Middleware/Auth] hostname: ${req.hostname}, isHttps: ${isHttps}, isReplitHost: ${isReplitHost}`);
+        console.log(`[Cookie Middleware/Auth] effectiveHostname: ${effectiveHostname}, isHttps: ${isHttps}, isReplitHost: ${isReplitHost}`);
         
         // Só usar secure=true se for HTTPS E host Replit
         if (isHttps && isReplitHost) {

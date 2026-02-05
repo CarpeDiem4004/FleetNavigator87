@@ -79,14 +79,19 @@ async function throwIfResNotOk(res: Response, skipAutoLogout: boolean = false) {
     // Tratar 401 - sessão inválida
     if (res.status === 401 && !skipAutoLogout) {
       // Verificar se é uma rota que realmente requer autenticação
+      // CORREÇÃO CRÍTICA: NÃO incluir /api/user aqui! 
+      // O /api/user é usado para verificação inicial e pode falhar por cookies não enviados.
+      // Se limparmos o localStorage quando /api/user retorna 401, criamos um loop de login.
       const url = res.url || '';
-      const isAuthRequiredRoute = url.includes('/api/user') || 
-                                   url.includes('/api/vehicles') || 
+      const isAuthRequiredRoute = url.includes('/api/vehicles') || 
                                    url.includes('/api/maintenance') ||
                                    url.includes('/api/bases') ||
                                    url.includes('/api/drivers');
       
-      if (isAuthRequiredRoute) {
+      // Ignorar /api/user - deixar o AuthContext lidar com isso via localStorage fallback
+      const isUserCheck = url.includes('/api/user');
+      
+      if (isAuthRequiredRoute && !isUserCheck) {
         // Tentar ressincronizar primeiro
         const resyncSuccessful = await trySessionResync();
         if (!resyncSuccessful) {
