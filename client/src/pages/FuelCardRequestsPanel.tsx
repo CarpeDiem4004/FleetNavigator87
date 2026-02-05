@@ -104,6 +104,7 @@ interface FuelCardSolicitation {
   // Timestamp real da criação da solicitação
   created_at?: string;
   placa_cartao?: string;
+  retorno_vazio?: boolean; // Flag indicando se é retorno vazio (em rota vazio)
 }
 
 const FuelCardRequestsPanel: React.FC = () => {
@@ -3300,7 +3301,14 @@ const FuelCardRequestsPanel: React.FC = () => {
                         
                         {/* Placa e Motorista */}
                         <div className="lg:col-span-3">
-                          <p className="font-medium text-lg">{solicitacao.placa}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-lg">{solicitacao.placa}</p>
+                            {solicitacao.retorno_vazio && (
+                              <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
+                                🔄 Vazio
+                              </Badge>
+                            )}
+                          </div>
                           <p className="text-sm text-gray-600">{solicitacao.motorista || 'Motorista não informado'}</p>
                           <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_calculado || solicitacao.valor_solicitado)} - {solicitacao.km_total || '-'} km</p>
                           {solicitacao.rota_origem && solicitacao.rota_destino && (
@@ -3505,8 +3513,13 @@ const FuelCardRequestsPanel: React.FC = () => {
                   <div key={`${solicitacao.id}-pending-${index}`} className="p-4 rounded-lg border bg-orange-50 border-orange-200 border-l-4 border-l-orange-500">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
                       <div className="lg:col-span-3">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-medium text-lg">{solicitacao.placa}</p>
+                          {solicitacao.retorno_vazio && (
+                            <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
+                              🔄 Vazio
+                            </Badge>
+                          )}
                           {repeatedPlacasLineHaul.has(solicitacao.placa) && (
                             <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300 animate-pulse">
                               <AlertCircle className="w-3 h-3 mr-1" />
@@ -3662,7 +3675,14 @@ const FuelCardRequestsPanel: React.FC = () => {
                   <div key={`${solicitacao.id}-attended-${index}`} className="p-4 rounded-lg border bg-green-50 border-green-200 border-l-4 border-l-green-500">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
                       <div className="lg:col-span-3">
-                        <p className="font-medium text-lg">{solicitacao.placa}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-lg">{solicitacao.placa}</p>
+                          {solicitacao.retorno_vazio && (
+                            <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
+                              🔄 Vazio
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-sm text-gray-600">{solicitacao.motorista || 'Motorista não informado'}</p>
                         <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_calculado || solicitacao.valor_solicitado)} - {solicitacao.km_total || '-'} km</p>
                       </div>
@@ -3752,7 +3772,14 @@ const FuelCardRequestsPanel: React.FC = () => {
                   <div key={`${solicitacao.id}-denied-${index}`} className="p-4 rounded-lg border bg-red-50 border-red-200 border-l-4 border-l-red-500">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
                       <div className="lg:col-span-3">
-                        <p className="font-medium text-lg">{solicitacao.placa}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-lg">{solicitacao.placa}</p>
+                          {solicitacao.retorno_vazio && (
+                            <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
+                              🔄 Vazio
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-sm text-gray-600">{solicitacao.motorista || 'Motorista não informado'}</p>
                         <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_calculado || solicitacao.valor_solicitado)} - {solicitacao.km_total || '-'} km</p>
                       </div>
@@ -3806,7 +3833,14 @@ const FuelCardRequestsPanel: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Placa do Veículo</Label>
-                      <div className="text-lg font-medium">{selectedSolicitation.placa}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-lg font-medium">{selectedSolicitation.placa}</div>
+                        {selectedSolicitation.retorno_vazio && (
+                          <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
+                            🔄 Vazio
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <Label>Solicitante</Label>
