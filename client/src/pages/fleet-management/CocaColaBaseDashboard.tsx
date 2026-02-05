@@ -416,6 +416,13 @@ export default function CocaColaBaseDashboard() {
     return found?.status || 'nao_informado';
   };
 
+  // Helper para obter a observação do status diário (para mostrar base de empréstimo)
+  const getDailyObservacao = (vehicleId: number): string | null => {
+    if (!dailyStatusData?.data) return null;
+    const found = dailyStatusData.data.find(d => d.vehicle_id === vehicleId);
+    return found?.observacao || null;
+  };
+
   // Helper para obter badge do status diário
   const getDailyStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; className: string }> = {
@@ -922,7 +929,7 @@ export default function CocaColaBaseDashboard() {
                       <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                         <Truck className="w-6 h-6 text-red-600" />
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <p className="font-bold text-lg">{vehicle.placa}</p>
                         <p className="text-sm text-gray-500">{vehicle.modelo}</p>
                         {vehicle.oficina && (
@@ -933,6 +940,13 @@ export default function CocaColaBaseDashboard() {
                           </p>
                         )}
                       </div>
+                      {/* Mostrar base de empréstimo quando status for emprestado */}
+                      {getDailyStatus(vehicle.id) === 'emprestado' && getDailyObservacao(vehicle.id) && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-1 text-blue-700 text-sm">
+                          <MapPin className="w-3 h-3 inline mr-1" />
+                          {getDailyObservacao(vehicle.id)?.replace('Emprestado para: ', '')}
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex items-center gap-2 flex-wrap">
