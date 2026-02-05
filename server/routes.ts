@@ -2499,6 +2499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Upsert - inserir ou atualizar se já existir
+      // IMPORTANTE: Preservar base_emprestimo_id existente quando não enviado explicitamente
       const query = `
         INSERT INTO vehicle_daily_status 
           (vehicle_id, base_id, data, status, observacao, updated_by, updated_by_name, updated_at, base_emprestimo_id)
@@ -2508,9 +2509,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status = EXCLUDED.status,
           observacao = EXCLUDED.observacao,
           updated_by = EXCLUDED.updated_by,
-          base_emprestimo_id = EXCLUDED.base_emprestimo_id,
           updated_by_name = EXCLUDED.updated_by_name,
-          updated_at = NOW()
+          updated_at = NOW(),
+          base_emprestimo_id = CASE 
+            WHEN $8 IS NOT NULL THEN $8
+            ELSE vehicle_daily_status.base_emprestimo_id 
+          END
         RETURNING *
       `;
 
@@ -2522,7 +2526,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         observacao || null,
         cocaColaUser?.id || null,
         cocaColaUser?.nome || 'Sistema',
-        base_emprestimo_id || null
+        base_emprestimo_id !== undefined ? base_emprestimo_id : null
       ]);
 
       console.log('[COCA-COLA STATUS] Atualização realizada com sucesso:', result.rows[0]);
