@@ -433,9 +433,9 @@ export default function CocaColaBaseDashboard() {
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
-  // Status que requerem observação obrigatória
+  // Status que requerem observação obrigatória (justificativa)
   const statusRequiresObservation = (status: string) => {
-    return ['d_mais_1', 'pernoite'].includes(status);
+    return ['d_mais_1', 'pernoite', 'sem_equipe'].includes(status);
   };
 
   if (!user) {
@@ -836,7 +836,7 @@ export default function CocaColaBaseDashboard() {
           <CardContent>
             {/* Resumo do Dia */}
             {dailyStatusData?.statusCount && (
-              <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2 mb-4">
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 mb-4">
                 <div className="bg-green-50 p-3 rounded-lg border border-green-200 text-center">
                   <p className="text-xl font-bold text-green-600">{dailyStatusData.statusCount.em_rota}</p>
                   <p className="text-xs text-green-700">Em Rota</p>
@@ -844,10 +844,6 @@ export default function CocaColaBaseDashboard() {
                 <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-center">
                   <p className="text-xl font-bold text-yellow-600">{dailyStatusData.statusCount.em_manutencao}</p>
                   <p className="text-xs text-yellow-700">Manutenção</p>
-                </div>
-                <div className="bg-red-50 p-3 rounded-lg border border-red-200 text-center">
-                  <p className="text-xl font-bold text-red-600">{dailyStatusData.statusCount.parado}</p>
-                  <p className="text-xs text-red-700">Parado</p>
                 </div>
                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-200 text-center">
                   <p className="text-xl font-bold text-blue-600">{dailyStatusData.statusCount.emprestado}</p>
@@ -869,14 +865,10 @@ export default function CocaColaBaseDashboard() {
                   <p className="text-xl font-bold text-indigo-600">{dailyStatusData.statusCount.pernoite || 0}</p>
                   <p className="text-xs text-indigo-700">Pernoite</p>
                 </div>
-                <div className="bg-gray-50 p-3 rounded-lg border border-gray-300 text-center">
-                  <p className="text-xl font-bold text-gray-600">{dailyStatusData.statusCount.nao_informado}</p>
-                  <p className="text-xs text-gray-700">Não Informado</p>
-                </div>
               </div>
             )}
 
-            {/* Alerta de veículos não informados */}
+            {/* Alerta de veículos sem status atualizado */}
             {isToday(selectedDate) && dailyStatusData?.statusCount?.nao_informado > 0 && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -965,6 +957,7 @@ export default function CocaColaBaseDashboard() {
                               });
                             }
                           }}
+                          disabled={getDailyStatus(vehicle.id) === 'emprestado'}
                         >
                           <SelectTrigger className="w-[140px] h-8">
                             <SelectValue>
@@ -974,13 +967,11 @@ export default function CocaColaBaseDashboard() {
                           <SelectContent>
                             <SelectItem value="em_rota">Em Rota</SelectItem>
                             <SelectItem value="em_manutencao">Manutenção</SelectItem>
-                            <SelectItem value="parado">Parado</SelectItem>
                             <SelectItem value="emprestado">Emprestado</SelectItem>
                             <SelectItem value="baixa_venda">Baixa/Venda</SelectItem>
                             <SelectItem value="sem_equipe">Sem Equipe</SelectItem>
                             <SelectItem value="d_mais_1">D+1</SelectItem>
                             <SelectItem value="pernoite">Pernoite</SelectItem>
-                            <SelectItem value="nao_informado">Não Informado</SelectItem>
                           </SelectContent>
                         </Select>
                       ) : (
@@ -1220,18 +1211,20 @@ export default function CocaColaBaseDashboard() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {observationStatus === 'd_mais_1' ? 'D+1' : 'Pernoite'} - {observationVehicle?.placa}
+              {observationStatus === 'd_mais_1' ? 'D+1' : observationStatus === 'sem_equipe' ? 'Sem Equipe' : 'Pernoite'} - {observationVehicle?.placa}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <Label className="font-medium">
-                Observação {observationStatus === 'd_mais_1' ? '(informar motivo do D+1)' : '(informar local do pernoite)'}
+                Justificativa {observationStatus === 'd_mais_1' ? '(informar motivo do D+1)' : observationStatus === 'sem_equipe' ? '(informar motivo da falta de equipe)' : '(informar local do pernoite)'}
               </Label>
               <Textarea
                 placeholder={observationStatus === 'd_mais_1' 
                   ? 'Descreva o motivo do D+1 (ex: atraso na carga, problema na via, etc.)'
-                  : 'Informe o local onde o veículo pernoitará (ex: Posto Shell - Campinas, Pátio cliente - São Paulo, etc.)'
+                  : observationStatus === 'sem_equipe'
+                    ? 'Descreva o motivo da falta de equipe (ex: motorista de férias, atestado médico, etc.)'
+                    : 'Informe o local onde o veículo pernoitará (ex: Posto Shell - Campinas, Pátio cliente - São Paulo, etc.)'
                 }
                 value={observationText}
                 onChange={(e) => setObservationText(e.target.value)}
@@ -1262,7 +1255,7 @@ export default function CocaColaBaseDashboard() {
                   }
                 }}
                 disabled={updateDailyStatusMutation.isPending}
-                className={observationStatus === 'd_mais_1' ? 'bg-cyan-500 hover:bg-cyan-600' : 'bg-indigo-500 hover:bg-indigo-600'}
+                className={observationStatus === 'd_mais_1' ? 'bg-cyan-500 hover:bg-cyan-600' : observationStatus === 'sem_equipe' ? 'bg-purple-500 hover:bg-purple-600' : 'bg-indigo-500 hover:bg-indigo-600'}
               >
                 {updateDailyStatusMutation.isPending ? 'Salvando...' : 'Confirmar'}
               </Button>
