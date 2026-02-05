@@ -18,7 +18,7 @@ import { ptBR } from 'date-fns/locale';
 import { 
   Truck, LogOut, Plus, RefreshCw, Wrench, CheckCircle, 
   AlertTriangle, Clock, Building, Car, MapPin, FileText, Camera, Upload,
-  TrendingUp, TrendingDown, History, BarChart3, RotateCcw, CalendarIcon, ChevronLeft, ChevronRight
+  TrendingUp, TrendingDown, History, BarChart3, RotateCcw, CalendarIcon, ChevronLeft, ChevronRight, ArrowLeft
 } from 'lucide-react';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 
@@ -256,6 +256,32 @@ export default function CocaColaBaseDashboard() {
     },
     onError: () => {
       toast({ title: 'Erro ao gerar status diário', variant: 'destructive' });
+    }
+  });
+
+  // Mutation para devolver veículo emprestado
+  const returnVehicleMutation = useMutation({
+    mutationFn: async (vehicle_id: number) => {
+      const token = localStorage.getItem('coca_cola_token');
+      const response = await fetch('/api/coca-cola/vehicle-return', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        credentials: 'include',
+        body: JSON.stringify({ vehicle_id })
+      });
+      if (!response.ok) throw new Error('Erro ao devolver veículo');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: 'Sucesso', description: data.message });
+      refetchDailyStatus();
+      refetchVehicles();
+    },
+    onError: () => {
+      toast({ title: 'Erro ao devolver veículo', variant: 'destructive' });
     }
   });
 
@@ -1004,9 +1030,9 @@ export default function CocaColaBaseDashboard() {
                       {/* Status Diário com Dropdown para Hoje */}
                       {isToday(selectedDate) ? (
                         <Select
-                          value={getDailyStatus(vehicle.id)}
+                          value={vehicle.is_emprestado_aqui ? 'emprestado' : getDailyStatus(vehicle.id)}
                           onValueChange={(value) => {
-                            if (value === 'emprestado') {
+                            if (value === 'emprestado' && !vehicle.is_emprestado_aqui) {
                               setEmprestimoVehicle({ id: vehicle.id, placa: vehicle.placa });
                               setEmprestimoBaseId('');
                               setShowEmprestimoDialog(true);
@@ -1022,17 +1048,17 @@ export default function CocaColaBaseDashboard() {
                               });
                             }
                           }}
-                          disabled={getDailyStatus(vehicle.id) === 'emprestado'}
+                          disabled={getDailyStatus(vehicle.id) === 'emprestado' && !vehicle.is_emprestado_aqui}
                         >
                           <SelectTrigger className="w-[140px] h-8">
                             <SelectValue>
-                              {getDailyStatusBadge(getDailyStatus(vehicle.id))}
+                              {getDailyStatusBadge(vehicle.is_emprestado_aqui ? 'emprestado' : getDailyStatus(vehicle.id))}
                             </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="em_rota">Em Rota</SelectItem>
                             <SelectItem value="em_manutencao">Manutenção</SelectItem>
-                            <SelectItem value="emprestado">Emprestado</SelectItem>
+                            {!vehicle.is_emprestado_aqui && <SelectItem value="emprestado">Emprestado</SelectItem>}
                             <SelectItem value="baixa_venda">Baixa/Venda</SelectItem>
                             <SelectItem value="sem_equipe">Sem Equipe</SelectItem>
                             <SelectItem value="d_mais_1">D+1</SelectItem>
@@ -1041,6 +1067,24 @@ export default function CocaColaBaseDashboard() {
                         </Select>
                       ) : (
                         getDailyStatusBadge(getDailyStatus(vehicle.id))
+                      )}
+                      
+                      {/* Botão Devolver para veículos emprestados recebidos */}
+                      {vehicle.is_emprestado_aqui && isToday(selectedDate) && (
+                        <Button 
+                          size="sm"
+                          variant="outline"
+                          className="border-green-500 text-green-600 hover:bg-green-50"
+                          onClick={() => {
+                            if (confirm(`Devolver veículo ${vehicle.placa} para a base de origem (${vehicle.base_origem_nome})?`)) {
+                              returnVehicleMutation.mutate(vehicle.id);
+                            }
+                          }}
+                          disabled={returnVehicleMutation.isPending}
+                        >
+                          <ArrowLeft className="w-4 h-4 mr-1" />
+                          {returnVehicleMutation.isPending ? 'Devolvendo...' : 'Devolver'}
+                        </Button>
                       )}
                       
                       <Button 

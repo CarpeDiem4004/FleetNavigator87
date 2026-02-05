@@ -2612,6 +2612,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Devolver veículo emprestado à base de origem
+  app.post('/api/coca-cola/vehicle-return', cocaColaAuth, async (req: any, res) => {
+    try {
+      const { vehicle_id } = req.body;
+      const dataHoje = new Date().toISOString().split('T')[0];
+      const cocaColaUser = req.cocaColaUser;
+
+      if (!vehicle_id) {
+        return res.status(400).json({ error: 'vehicle_id é obrigatório' });
+      }
+
+      console.log('[COCA-COLA RETURN] Devolvendo veículo:', vehicle_id);
+
+      // Buscar o veículo para saber a base de origem
+      const vehicleResult = await pool.query(
+        'SELECT id, placa, base_id FROM coca_cola_vehicles WHERE id = $1',
+        [vehicle_id]
+      );
+
+      if (vehicleResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Veículo não encontrado' });
+      }
+
+      const vehicle = vehicleResult.rows[0];
+      const baseOrigemId = vehicle.base_id;
+
+      // Atualizar o status do veículo na base de origem para 'em_rota' (removendo o empréstimo)
+      await pool.query(`
+        UPDATE vehicle_daily_status 
+        SET status = 'em_rota', 
+            observacao = 'Devolvido de empréstimo',
+            base_emprestimo_id = NULL,
+            updated_by_name = $3,
+            updated_at = NOW()
+        WHERE vehicle_id = $1 AND data = $2
+      `, [vehicle_id, dataHoje, cocaColaUser?.nome || 'Sistema']);
+
+      console.log('[COCA-COLA RETURN] Veículo', vehicle.placa, 'devolvido à base', baseOrigemId);
+
+      res.json({
+        success: true,
+        message: `Veículo ${vehicle.placa} devolvido com sucesso`,
+        vehicle_id,
+        base_origem_id: baseOrigemId
+      });
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao devolver veículo:', error);
+      res.status(500).json({ error: 'Erro ao devolver veículo' });
+    }
+  });
+
   // Histórico de status por data (calendário)
   app.get('/api/coca-cola/vehicle-daily-status/history', cocaColaAuth, async (req: any, res) => {
     try {
