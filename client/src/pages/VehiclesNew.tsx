@@ -449,15 +449,20 @@ const VehiclesNew: React.FC = () => {
     setIsLoading(true);
     try {
       // Buscar todos os veículos usando a API REST com autenticação JWT
-      console.log('Buscando veículos via API REST');
+      console.log('[Vehicles] Iniciando busca de veículos...');
+      console.log('[Vehicles] Token JWT disponível:', !!localStorage.getItem('jwt_token'));
+      
       const vehiclesResponse = await fetchWithAuth('/api/vehicles');
+      console.log('[Vehicles] Resposta recebida, status:', vehiclesResponse.status);
       
       if (!vehiclesResponse.ok) {
-        throw new Error(`Erro ao buscar veículos: ${vehiclesResponse.status}`);
+        const errorText = await vehiclesResponse.text();
+        console.error('[Vehicles] Erro HTTP:', vehiclesResponse.status, errorText);
+        throw new Error(`Erro ao buscar veículos: ${vehiclesResponse.status} - ${errorText}`);
       }
       
       const vehiclesData = await vehiclesResponse.json();
-      console.log('Veículos recebidos da API:', vehiclesData);
+      console.log('[Vehicles] Veículos recebidos:', vehiclesData?.length || 0, 'registros');
       
       // Buscar bases para mapear os nomes
       const basesResponse = await fetchWithAuth('/api/bases');
@@ -500,10 +505,12 @@ const VehiclesNew: React.FC = () => {
       
       setVehicles(vehiclesWithBaseNames);
     } catch (error) {
-      console.error('Erro ao buscar veículos:', error);
+      console.error('[Vehicles] Erro ao buscar veículos:', error);
+      console.error('[Vehicles] Tipo do erro:', error?.constructor?.name);
+      console.error('[Vehicles] Mensagem:', error instanceof Error ? error.message : String(error));
       toast({
         title: 'Erro ao carregar veículos',
-        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        description: error instanceof Error ? error.message : 'Erro de rede. Verifique sua conexão.',
         variant: 'destructive'
       });
     } finally {
