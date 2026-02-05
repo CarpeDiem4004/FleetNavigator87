@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
+import { supabase } from '@/lib/supabaseClient';
 
 interface User {
   id: number;
@@ -93,56 +94,84 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  // VERIFICAÇÃO: Primeiro tenta servidor, depois localStorage como fallback
+  /**
+   * VERIFICAÇÃO DE AUTENTICAÇÃO COM BEARER TOKEN (Supabase Auth)
+   * 
+   * Fluxo:
+   * 1. Verificar se há sessão Supabase ativa
+   * 2. Se sim, obter access_token e chamar /api/user com Bearer Token
+   * 3. Se não, verificar localStorage como fallback
+   * 
+   * Por que Bearer Token:
+   * - Não depende de cookies (resolve problema do domínio customizado)
+   * - Token enviado explicitamente no header Authorization
+   * - Funciona em qualquer domínio
+   */
   useEffect(() => {
     const checkAuth = async () => {
-      console.log("Verificando autenticação tradicional...");
+      console.log("[Auth] Verificando autenticação via Supabase...");
       
       try {
-        const response = await fetch('/api/user', {
-          method: 'GET',
-          credentials: 'include', // CRÍTICO: incluir cookies
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          cache: 'no-store'
-        });
+        // PASSO 1: Verificar sessão Supabase
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        if (response.ok) {
-          const userData = await response.json();
-          console.log("Sessão encontrada:", userData);
+        if (sessionError) {
+          console.warn("[Auth] Erro ao obter sessão Supabase:", sessionError.message);
+        }
+        
+        if (session?.access_token) {
+          console.log("[Auth] Sessão Supabase encontrada, verificando com backend...");
           
-          const formattedUser: User = {
-            id: userData.id,
-            name: userData.name,
-            email: userData.email,
-            role: userData.role,
-            baseId: userData.base_id || userData.baseId,
-            basename: userData.basename,
-            oficina_id: userData.oficina_id
-          };
+          // PASSO 2: Chamar /api/user com Bearer Token
+          const response = await fetch('/api/user', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            },
+            cache: 'no-store'
+          });
           
-          setUser(formattedUser);
-          saveUserToStorage(formattedUser);
-          console.log("Usuário autenticado:", formattedUser);
-        } else {
-          console.log("Nenhuma sessão no servidor, verificando localStorage...");
-          // Fallback: verificar localStorage
-          const storedUser = getUserFromStorage();
-          if (storedUser) {
-            console.log("Usuário recuperado do localStorage:", storedUser);
-            setUser(storedUser);
+          if (response.ok) {
+            const userData = await response.json();
+            console.log("[Auth] Usuário autenticado via Bearer Token:", userData.email);
+            
+            const formattedUser: User = {
+              id: userData.id,
+              name: userData.name,
+              email: userData.email,
+              role: userData.role,
+              baseId: userData.base_id || userData.baseId,
+              basename: userData.basename,
+              oficina_id: userData.oficina_id
+            };
+            
+            setUser(formattedUser);
+            saveUserToStorage(formattedUser);
+            setIsLoading(false);
+            return;
           } else {
-            console.log("Nenhuma sessão encontrada");
-            setUser(null);
+            console.log("[Auth] Bearer Token inválido ou usuário não encontrado no backend");
           }
         }
+        
+        // PASSO 3: Fallback - verificar localStorage
+        console.log("[Auth] Sem sessão Supabase, verificando localStorage...");
+        const storedUser = getUserFromStorage();
+        if (storedUser) {
+          console.log("[Auth] Usuário recuperado do localStorage:", storedUser.email);
+          setUser(storedUser);
+        } else {
+          console.log("[Auth] Nenhuma sessão encontrada");
+          setUser(null);
+        }
+        
       } catch (error) {
-        console.error("Erro ao verificar autenticação:", error);
+        console.error("[Auth] Erro ao verificar autenticação:", error);
         // Em caso de erro, tentar localStorage
         const storedUser = getUserFromStorage();
         if (storedUser) {
-          console.log("Usuário recuperado do localStorage após erro:", storedUser);
+          console.log("[Auth] Usuário recuperado do localStorage após erro:", storedUser.email);
           setUser(storedUser);
         } else {
           setUser(null);
@@ -150,32 +179,100 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
       
       setIsLoading(false);
-      console.log("Verificação concluída, isLoading=false");
     };
 
     checkAuth();
+    
+    // Escutar mudanças de autenticação do Supabase
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("[Auth] Estado de autenticação mudou:", event);
+      
+      if (event === 'SIGNED_IN' && session?.access_token) {
+        // Usuário logou no Supabase, buscar dados do backend
+        try {
+          const response = await fetch('/api/user', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          });
+          
+          if (response.ok) {
+            const userData = await response.json();
+            const formattedUser: User = {
+              id: userData.id,
+              name: userData.name,
+              email: userData.email,
+              role: userData.role,
+              baseId: userData.base_id || userData.baseId,
+              basename: userData.basename,
+              oficina_id: userData.oficina_id
+            };
+            setUser(formattedUser);
+            saveUserToStorage(formattedUser);
+          }
+        } catch (error) {
+          console.error("[Auth] Erro ao sincronizar após login Supabase:", error);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        clearUserStorage();
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
+  /**
+   * Login usando Supabase Auth + Backend
+   * 
+   * Fluxo:
+   * 1. Autenticar com Supabase Auth para obter access_token
+   * 2. Usar access_token para buscar dados do usuário no backend
+   * 3. O access_token é automaticamente salvo pelo Supabase no localStorage
+   */
   const login = async (email: string, password: string): Promise<User> => {
-    console.log("Tentando login:", email);
+    console.log("[Auth] Tentando login via Supabase:", email);
     
     try {
-      const response = await fetch('/api/login', {
-        method: 'POST',
+      // PASSO 1: Autenticar com Supabase
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (authError) {
+        console.error("[Auth] Erro no Supabase Auth:", authError.message);
+        throw new Error(authError.message);
+      }
+      
+      if (!authData.session?.access_token) {
+        throw new Error("Falha ao obter token de autenticação");
+      }
+      
+      console.log("[Auth] Supabase Auth bem-sucedido, buscando dados do usuário...");
+      
+      // PASSO 2: Buscar dados do usuário no backend usando Bearer Token
+      const response = await fetch('/api/user', {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ username: email, password }),
+          'Authorization': `Bearer ${authData.session.access_token}`
+        }
       });
-
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro no login');
+        // Usuário não existe no backend, fazer signOut do Supabase
+        await supabase.auth.signOut();
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Usuário não encontrado no sistema');
       }
-
+      
       const userData = await response.json();
-      console.log("Login bem-sucedido:", userData);
+      console.log("[Auth] Login completo:", userData.email);
       
       const formattedUser: User = {
         id: userData.id,
@@ -188,7 +285,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       };
 
       setUser(formattedUser);
-      saveUserToStorage(formattedUser); // Persistir no localStorage
+      saveUserToStorage(formattedUser);
       
       toast({
         title: "Login realizado",
@@ -197,7 +294,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       return formattedUser;
     } catch (error) {
-      console.error("Erro no login:", error);
+      console.error("[Auth] Erro no login:", error);
       toast({
         title: "Erro no login",
         description: error instanceof Error ? error.message : "Erro desconhecido",
@@ -207,37 +304,48 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  /**
+   * Login de base usando Supabase Auth + Bearer Token
+   */
   const loginBase = async (email: string, password: string, baseId?: number): Promise<User> => {
-    console.log("[loginBase] Tentando login de base:", email, "Base ID:", baseId);
+    console.log("[Auth] Tentando login de base via Supabase:", email, "Base ID:", baseId);
     
     try {
+      // PASSO 1: Autenticar com Supabase
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (authError) {
+        console.error("[Auth] Erro no Supabase Auth:", authError.message);
+        throw new Error(authError.message);
+      }
+      
+      if (!authData.session?.access_token) {
+        throw new Error("Falha ao obter token de autenticação");
+      }
+      
+      // PASSO 2: Verificar permissões de base com Bearer Token
       const response = await fetch('/api/auth/login-base', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authData.session.access_token}`
         },
-        credentials: 'include',
-        body: JSON.stringify({ email, password, baseId }),
+        body: JSON.stringify({ baseId })
       });
 
-      const responseData = await response.json();
-      console.log("[loginBase] Resposta do servidor:", responseData);
-
-      // Verificar se houve erro de acesso negado
       if (!response.ok) {
-        const errorMessage = responseData.message || 'Erro no login da base';
-        
-        // Tratamento especial para acesso negado
-        if (response.status === 403 || responseData.errorCode === 'ACCESS_DENIED') {
-          console.log("[loginBase] ACESSO NEGADO:", errorMessage);
-          throw new Error(errorMessage);
-        }
-        
-        throw new Error(errorMessage);
+        // Falha no login de base, fazer signOut do Supabase
+        await supabase.auth.signOut();
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Erro ao acessar base');
       }
       
-      // O backend retorna { success: true, user: {...}, message: '...' }
-      const userData = responseData.user || responseData;
+      const responseData = await response.json();
+      const userData = responseData.user;
+      console.log("[Auth] loginBase - Usuário autenticado:", userData.email);
       
       const formattedUser: User = {
         id: userData.id,
@@ -320,25 +428,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  /**
+   * Logout - Desconecta do Supabase e limpa estado local
+   */
   const logout = async (): Promise<void> => {
-    console.log("Fazendo logout...");
+    console.log("[Auth] Fazendo logout...");
     
     try {
-      const response = await fetch('/api/logout', {
+      // Fazer logout do Supabase (principal)
+      await supabase.auth.signOut();
+      console.log("[Auth] Logout Supabase bem-sucedido");
+      
+      // Também chamar logout do backend (para limpar qualquer sessão residual)
+      await fetch('/api/logout', {
         method: 'POST',
         credentials: 'include',
+      }).catch(() => {
+        // Ignorar erro no logout do backend
       });
-
-      if (response.ok) {
-        console.log("Logout bem-sucedido");
-      } else {
-        console.warn("Erro no logout, mas continuando...");
-      }
     } catch (error) {
-      console.error("Erro no logout:", error);
+      console.error("[Auth] Erro no logout:", error);
     }
     
-    clearUserStorage(); // Limpar localStorage
+    clearUserStorage();
     setUser(null);
     setLocation('/login');
     

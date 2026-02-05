@@ -2,105 +2,63 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { PostgrestResponse } from '@supabase/supabase-js';
 import { supabase } from "./supabaseClient";
 
-// Estado para controlar tentativas de ressincronização
-let isAttemptingResync = false;
-let lastResyncAttempt = 0;
-const RESYNC_COOLDOWN = 10000; // 10 segundos entre tentativas
+/**
+ * AUTENTICAÇÃO BASEADA EM BEARER TOKEN (Supabase Auth)
+ * 
+ * Por que NÃO usar cookies:
+ * - Cookies são vinculados ao domínio onde são criados (*.replit.dev)
+ * - Quando acessado via domínio customizado (gestaoonfleet.com.br), cookies não são enviados
+ * - Navegadores modernos bloqueiam cookies third-party por segurança
+ * - SameSite e Secure flags criam incompatibilidades entre domínios
+ * 
+ * Por que Bearer Token resolve definitivamente:
+ * - Token armazenado no localStorage do cliente (persistSession do Supabase)
+ * - Enviado explicitamente no header Authorization a cada requisição
+ * - NÃO depende de domínio ou cookies
+ * - Funciona igualmente em QUALQUER ambiente
+ */
 
-// Função para tentar ressincronizar a sessão
-async function trySessionResync(): Promise<boolean> {
-  // Evitar chamadas múltiplas simultaneamente
-  if (isAttemptingResync) {
-    return false;
-  }
-  
-  // Evitar chamadas frequentes demais
-  const now = Date.now();
-  if (now - lastResyncAttempt < RESYNC_COOLDOWN) {
-    return false;
-  }
-  
-  console.log('[QueryClient] Tentando ressincronizar a sessão após erro 401...');
-  isAttemptingResync = true;
-  lastResyncAttempt = now;
-  
+/**
+ * Obtém o access_token atual do Supabase
+ * O Supabase gerencia automaticamente:
+ * - Refresh do token antes de expirar
+ * - Persistência no localStorage
+ * - Validação do token
+ */
+async function getSupabaseAccessToken(): Promise<string | null> {
   try {
-    // Tentar importar o contexto de autenticação do Supabase
-    // Precisamos usar dynamic import para evitar dependência circular
-    const authModule = await import('../context/SupabaseAuthContext');
+    const { data: { session }, error } = await supabase.auth.getSession();
     
-    if (typeof window !== 'undefined') {
-      // @ts-ignore - Acessando uma variável global definida pelo hook de autenticação
-      const authContext = window.__SUPABASE_AUTH_CONTEXT__;
-      
-      if (authContext && authContext.resyncSession) {
-        const success = await authContext.resyncSession();
-        console.log(`[QueryClient] Ressincronização ${success ? 'bem-sucedida' : 'falhou'}`);
-        return success;
-      }
+    if (error) {
+      console.warn('[Auth] Erro ao obter sessão Supabase:', error.message);
+      return null;
     }
     
-    return false;
+    if (!session?.access_token) {
+      console.log('[Auth] Nenhuma sessão Supabase ativa');
+      return null;
+    }
+    
+    return session.access_token;
   } catch (error) {
-    console.error('[QueryClient] Erro ao tentar ressincronizar sessão:', error);
-    return false;
-  } finally {
-    isAttemptingResync = false;
+    console.error('[Auth] Exceção ao obter token:', error);
+    return null;
   }
 }
 
-async function handleSessionInvalidation() {
-  console.log('[QueryClient] Sessão inválida detectada - fazendo logout automático');
-  
-  // Limpar localStorage
-  localStorage.removeItem('auth_user_session');
-  localStorage.removeItem('auth_user_timestamp');
-  localStorage.removeItem('authToken');
-  
-  // Fazer logout no servidor para limpar cookie
-  try {
-    await fetch('/api/logout', { 
-      method: 'POST',
-      credentials: 'include' 
-    });
-  } catch (e) {
-    console.log('[QueryClient] Erro ao fazer logout no servidor:', e);
-  }
-  
-  // Redirecionar para login apenas se não estiver já na página de login
-  if (!window.location.pathname.includes('/login')) {
-    console.log('[QueryClient] Redirecionando para login...');
-    window.location.href = '/login';
-  }
-}
-
-async function throwIfResNotOk(res: Response, skipAutoLogout: boolean = false) {
+/**
+ * Processa resposta de erro
+ * NÃO faz logout automático baseado apenas em 401
+ * Deixa o AuthContext lidar com estados de autenticação
+ */
+async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    // Tratar 401 - sessão inválida
-    if (res.status === 401 && !skipAutoLogout) {
-      // Verificar se é uma rota que realmente requer autenticação
-      // CORREÇÃO CRÍTICA: NÃO incluir /api/user aqui! 
-      // O /api/user é usado para verificação inicial e pode falhar por cookies não enviados.
-      // Se limparmos o localStorage quando /api/user retorna 401, criamos um loop de login.
-      const url = res.url || '';
-      const isAuthRequiredRoute = url.includes('/api/vehicles') || 
-                                   url.includes('/api/maintenance') ||
-                                   url.includes('/api/bases') ||
-                                   url.includes('/api/drivers');
-      
-      // Ignorar /api/user - deixar o AuthContext lidar com isso via localStorage fallback
-      const isUserCheck = url.includes('/api/user');
-      
-      if (isAuthRequiredRoute && !isUserCheck) {
-        // Tentar ressincronizar primeiro
-        const resyncSuccessful = await trySessionResync();
-        if (!resyncSuccessful) {
-          // Se não conseguiu ressincronizar, fazer logout automático
-          await handleSessionInvalidation();
-          return;
-        }
-        throw new Error(`401: Sessão ressincronizada, tente novamente`);
-      }
+    // Para 401, apenas loggar - NÃO fazer logout automático
+    // O AuthContext é responsável por gerenciar o estado de autenticação
+    if (res.status === 401) {
+      console.log('[QueryClient] Resposta 401 - Requisição não autorizada:', res.url);
+      // NÃO limpar localStorage ou redirecionar aqui
+      // Isso causava o loop de login
     }
     
     const text = (await res.text()) || res.statusText;
@@ -113,6 +71,10 @@ interface DataWithId {
   [key: string]: any;
 }
 
+/**
+ * Função principal para requisições à API
+ * SEMPRE envia Bearer Token do Supabase quando disponível
+ */
 export async function apiRequest(
   method: string,
   url: string,
@@ -120,7 +82,7 @@ export async function apiRequest(
   forceAuth: boolean = false,
   isFormData: boolean = false,
 ): Promise<Response> {
-  // If it's a Supabase endpoint, use Supabase client
+  // Se for endpoint Supabase direto, usar o cliente Supabase
   if (url.startsWith('/api/supabase/')) {
     const endpoint = url.replace('/api/supabase/', '');
     const [table, action] = endpoint.split('/');
@@ -147,7 +109,7 @@ export async function apiRequest(
         break;
       case 'delete':
         if (data && typeof data === 'object' && 'id' in (data as DataWithId)) {
-          result = await supabase.from(table).delete().eq('id', (data as DataWithId).id);
+          result = await supabase.from(table).delete().eq('id', (data as DataWithId).id).select() as PostgrestResponse<any>;
         }
         break;
       default:
@@ -158,7 +120,6 @@ export async function apiRequest(
       throw new Error(result.error.message);
     }
     
-    // Create a mock Response object to maintain compatibility
     const mockResponse = {
       ok: true,
       status: 200,
@@ -170,35 +131,29 @@ export async function apiRequest(
     return mockResponse;
   }
   
-  // Otherwise use regular fetch for backend API
-  // ⚠️ DESABILITANDO JWT AUTOMÁTICO PARA EVITAR CONFLITOS COM AUTENTICAÇÃO POR SESSÃO
-  // O sistema está usando autenticação por sessão (cookies) que já funciona corretamente
-  // Remover qualquer JWT inválido que possa estar causando conflitos
-  const problematicToken = localStorage.getItem('authToken');
-  if (problematicToken) {
-    console.log('[apiRequest] Removendo JWT problemático do localStorage para evitar conflitos');
-    localStorage.removeItem('authToken');
-  }
-  
-  // Configurar os cabeçalhos - sempre incluir Content-Type para consistência
-  // exceto se estiver enviando FormData
+  // Para API backend: SEMPRE usar Bearer Token do Supabase
   const headers: HeadersInit = {};
   
   if (!isFormData) {
     headers["Content-Type"] = "application/json";
   }
   
-  // 🛡️ NÃO ADICIONAR JWT - Usar apenas autenticação por sessão (cookies)
-  console.log('[apiRequest] Usando apenas autenticação por sessão (cookies) para:', url);
+  // Obter e adicionar Bearer Token do Supabase
+  const accessToken = await getSupabaseAccessToken();
+  if (accessToken) {
+    headers["Authorization"] = `Bearer ${accessToken}`;
+    console.log('[apiRequest] Bearer Token adicionado para:', url);
+  } else {
+    console.log('[apiRequest] Sem token Supabase disponível para:', url);
+  }
   
-  // Configuração da requisição
   const requestConfig: RequestInit = {
     method,
     headers,
-    credentials: "include", // Importante para manter a sessão
+    // Manter credentials para compatibilidade, mas autenticação é via Bearer Token
+    credentials: "include",
   };
   
-  // Adicionar corpo apenas se necessário
   if (data) {
     if (isFormData && data instanceof FormData) {
       requestConfig.body = data;
@@ -207,16 +162,19 @@ export async function apiRequest(
     }
   }
   
-  console.log(`[apiRequest] Enviando requisição ${method} para ${url} ${isFormData ? 'com FormData' : ''}`);
+  console.log(`[apiRequest] ${method} ${url}`);
   
-  // Fazer a requisição
   const res = await fetch(url, requestConfig);
-
   await throwIfResNotOk(res);
   return res;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
+
+/**
+ * Query function para TanStack Query
+ * SEMPRE envia Bearer Token do Supabase quando disponível
+ */
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
@@ -224,12 +182,11 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     const [urlOrTable, ...params] = queryKey as [string, ...any[]];
     
-    // If the query key starts with '/api/supabase/', use Supabase client
+    // Se for Supabase, usar cliente direto
     if (typeof urlOrTable === 'string' && urlOrTable.startsWith('/api/supabase/')) {
       const table = urlOrTable.replace('/api/supabase/', '');
       let query = supabase.from(table).select('*');
       
-      // Apply filters if params contains filter object
       if (params.length > 0 && typeof params[0] === 'object' && params[0] !== null) {
         const filters = params[0] as Record<string, any>;
         Object.entries(filters).forEach(([key, value]) => {
@@ -251,23 +208,16 @@ export const getQueryFn: <T>(options: {
       return data;
     }
     
-    // Otherwise use regular fetch for backend API
-    // ⚠️ DESABILITANDO JWT AUTOMÁTICO PARA EVITAR CONFLITOS COM AUTENTICAÇÃO POR SESSÃO
-    // O sistema está usando autenticação por sessão (cookies) que já funciona corretamente
-    // Remover qualquer JWT inválido que possa estar causando conflitos
-    const problematicToken = localStorage.getItem('authToken');
-    if (problematicToken) {
-      console.log('[QueryClient] Removendo JWT problemático do localStorage para evitar conflitos');
-      localStorage.removeItem('authToken');
-    }
-    
-    // Configurar os cabeçalhos sem JWT
+    // Para API backend: SEMPRE usar Bearer Token do Supabase
     const headers: HeadersInit = {
-      "Content-Type": "application/json" // Adicionar Content-Type para consistência
+      "Content-Type": "application/json"
     };
     
-    // 🛡️ NÃO ADICIONAR JWT - Usar apenas autenticação por sessão (cookies)
-    console.log('[QueryClient] Usando apenas autenticação por sessão (cookies) para GET:', urlOrTable);
+    // Obter e adicionar Bearer Token do Supabase
+    const accessToken = await getSupabaseAccessToken();
+    if (accessToken) {
+      headers["Authorization"] = `Bearer ${accessToken}`;
+    }
     
     // Construir URL com parâmetros da queryKey
     let finalUrl = urlOrTable;
@@ -291,44 +241,26 @@ export const getQueryFn: <T>(options: {
       ? `${finalUrl}&_t=${Date.now()}`
       : `${finalUrl}?_t=${Date.now()}`;
     
-    console.log(`[QueryClient] Enviando requisição GET para ${urlWithTimestamp}`);
-    let res = await fetch(urlWithTimestamp, {
-      credentials: "include",
+    const res = await fetch(urlWithTimestamp, {
+      method: 'GET',
       headers,
-      cache: "no-store" // Forçar navegador a não usar cache
+      credentials: "include",
     });
 
-    // Se receber 401, tenta ressincronizar a sessão e repetir a requisição
+    // Para 401 em verificação de usuário, retornar null ao invés de erro
     if (res.status === 401) {
-      // Para o modo returnNull, retornar null sem tentar ressincronizar
       if (unauthorizedBehavior === "returnNull") {
         return null;
       }
-      
-      // Tenta ressincronizar a sessão
-      const resyncSuccessful = await trySessionResync();
-      
-      // Se a ressincronização for bem-sucedida, tenta a requisição novamente
-      if (resyncSuccessful) {
-        console.log('[QueryClient] Sessão ressincronizada com sucesso, repetindo requisição:', urlOrTable);
-        const retryUrlWithTimestamp = finalUrl.includes('?') 
-          ? `${finalUrl}&_t=${Date.now()}`
-          : `${finalUrl}?_t=${Date.now()}`;
-          
-        res = await fetch(retryUrlWithTimestamp, {
-          credentials: "include",
-          headers,
-          cache: "no-store"
-        });
-      } else {
-        // Ressincronização falhou - fazer logout automático
-        console.log('[QueryClient] Ressincronização falhou, fazendo logout automático');
-        await handleSessionInvalidation();
-        return null;
-      }
+      // Não fazer logout automático - deixar AuthContext lidar
+      throw new Error("401: Não autorizado");
     }
 
-    await throwIfResNotOk(res, true); // skipAutoLogout = true pois já tratamos acima
+    if (!res.ok) {
+      const text = (await res.text()) || res.statusText;
+      throw new Error(`${res.status}: ${text}`);
+    }
+
     return await res.json();
   };
 
@@ -338,9 +270,14 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: 0, // Sempre considerar dados stale
-      cacheTime: 0, // Não manter cache
-      retry: false,
+      staleTime: 30000, // 30 segundos
+      retry: (failureCount, error) => {
+        // Não retry para erros de autenticação
+        if (error instanceof Error && error.message.includes('401')) {
+          return false;
+        }
+        return failureCount < 2;
+      },
     },
     mutations: {
       retry: false,

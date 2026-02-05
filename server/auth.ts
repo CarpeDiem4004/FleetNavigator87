@@ -606,71 +606,109 @@ export function setupAuth(app: Express) {
   });
 
   // API específica para login de bases (operadores)
+  // Suporta AMBOS: Bearer Token (Supabase Auth) OU email/password tradicional
   app.post("/api/auth/login-base", async (req, res) => {
-    const { email, password } = req.body;
-    
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email e senha são obrigatórios" });
-    }
+    const { baseId } = req.body;
+    const authHeader = req.headers.authorization;
     
     try {
-      console.log(`[login-base] Tentativa de login para: ${email}`);
+      let user: any = null;
       
-      // Buscar usuário por email
-      const user = await storage.getUserByEmail(email);
+      // MÉTODO 1: Bearer Token (Supabase Auth) - PREFERIDO
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const jwtToken = authHeader.split(' ')[1];
+        console.log(`[login-base] Tentativa via Bearer Token`);
+        
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+        
+        if (!supabaseUrl || !supabaseKey) {
+          console.error(`[login-base] ERRO: Configuração Supabase ausente`);
+          return res.status(500).json({ message: "Erro de configuração do servidor" });
+        }
+        
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        const { data: { user: supaUser }, error } = await supabase.auth.getUser(jwtToken);
+        
+        if (error || !supaUser?.email) {
+          console.log(`[login-base] Token inválido:`, error?.message);
+          return res.status(401).json({ message: "Token inválido ou expirado" });
+        }
+        
+        console.log(`[login-base] Token válido para: ${supaUser.email}`);
+        user = await storage.getUserByEmail(supaUser.email);
+        
+        if (!user) {
+          console.log(`[login-base] Usuário não encontrado no banco: ${supaUser.email}`);
+          return res.status(401).json({ message: "Usuário não encontrado no sistema" });
+        }
+      }
       
+      // MÉTODO 2: Email/Password tradicional (fallback para compatibilidade)
       if (!user) {
-        console.log(`[login-base] Usuário não encontrado: ${email}`);
-        return res.status(401).json({ message: "Credenciais inválidas" });
-      }
-      
-      // Verificar senha (suporte a bcrypt e scrypt legado)
-      let isPasswordValid = false;
-      
-      if (user.password && user.password.startsWith('$2b$')) {
-        // Verificação de senha com bcrypt
-        isPasswordValid = await bcrypt.compare(password, user.password);
-        console.log(`[login-base] Verificação bcrypt resultado: ${isPasswordValid}`);
-      } else if (user.password && user.password.includes('.')) {
-        // Verificação de senha com hash scrypt antigo
-        isPasswordValid = await comparePasswords(password, user.password);
-        console.log(`[login-base] Verificação scrypt resultado: ${isPasswordValid}`);
-      } else {
-        // Para compatibilidade com senhas antigas sem hash
-        isPasswordValid = password === user.password;
-        console.log(`[login-base] ATENÇÃO: Usuário ${email} está usando senha não-hashed. Recomenda-se atualizar.`);
-      }
-      
-      if (!isPasswordValid) {
-        console.log(`[login-base] Senha inválida para: ${email}`);
-        return res.status(401).json({ message: "Credenciais inválidas" });
+        const { email, password } = req.body;
+        
+        if (!email || !password) {
+          return res.status(400).json({ message: "Credenciais não fornecidas" });
+        }
+        
+        console.log(`[login-base] Tentativa via email/password para: ${email}`);
+        user = await storage.getUserByEmail(email);
+        
+        if (!user) {
+          console.log(`[login-base] Usuário não encontrado: ${email}`);
+          return res.status(401).json({ message: "Credenciais inválidas" });
+        }
+        
+        // Verificar senha
+        let isPasswordValid = false;
+        if (user.password && user.password.startsWith('$2b$')) {
+          isPasswordValid = await bcrypt.compare(password, user.password);
+        } else if (user.password && user.password.includes('.')) {
+          isPasswordValid = await comparePasswords(password, user.password);
+        } else {
+          isPasswordValid = password === user.password;
+        }
+        
+        if (!isPasswordValid) {
+          console.log(`[login-base] Senha inválida para: ${email}`);
+          return res.status(401).json({ message: "Credenciais inválidas" });
+        }
       }
       
       // Verificar se é um usuário autorizado (operador, admin, gestor)
       if (!['operador', 'admin', 'gestor', 'posto', 'gestor_combustivel'].includes(user.role)) {
-        console.log(`[login-base] Acesso negado - usuário não autorizado: ${email} (Role: ${user.role})`);
+        console.log(`[login-base] Acesso negado - usuário não autorizado: ${user.email} (Role: ${user.role})`);
         return res.status(403).json({ 
           message: "Acesso negado. Este login é apenas para operadores de base e administradores." 
         });
       }
       
-      // Fazer login e estabelecer sessão
-      req.login(user, (loginErr) => {
-        if (loginErr) {
-          console.error("[login-base] Erro ao estabelecer sessão:", loginErr);
-          return res.status(500).json({ message: "Erro interno do servidor" });
+      // Verificar acesso à base se baseId foi fornecido
+      if (baseId) {
+        const parsedBaseId = parseInt(baseId);
+        const hasAccess = await storage.checkUserBaseAccess(user.id, parsedBaseId, user.role);
+        
+        if (!hasAccess) {
+          console.log(`[login-base] ACESSO NEGADO - Usuário ${user.email} não tem permissão para base ${parsedBaseId}`);
+          return res.status(403).json({ 
+            success: false,
+            message: 'Você não tem permissão para acessar esta base',
+            errorCode: 'ACCESS_DENIED'
+          });
         }
-        
-        console.log(`[login-base] Login bem-sucedido para operador: ${user.email} (Base: ${user.basename})`);
-        
-        // Remover senha antes de retornar
-        const userWithoutPassword = { ...user, password: undefined };
-        
-        return res.json({
-          success: true,
-          user: userWithoutPassword,
-          message: `Bem-vindo, ${user.name}!`
-        });
+        console.log(`[login-base] ACESSO LIBERADO - Usuário ${user.email} autorizado para base ${parsedBaseId}`);
+      }
+      
+      console.log(`[login-base] Login bem-sucedido: ${user.email} (Base: ${user.basename})`);
+      
+      // Remover senha antes de retornar
+      const userWithoutPassword = { ...user, password: undefined };
+      
+      return res.json({
+        success: true,
+        user: userWithoutPassword,
+        message: `Bem-vindo, ${user.name}!`
       });
       
     } catch (error) {
