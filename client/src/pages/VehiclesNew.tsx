@@ -407,6 +407,18 @@ const VehiclesNew: React.FC = () => {
     detalhes: { placasNaoEncontradas: string[]; basesNaoEncontradas: string[]; erros: string[] };
   } | null>(null);
 
+  // Estados para importação de cartões de abastecimento
+  const [isImportCartoesDialogOpen, setIsImportCartoesDialogOpen] = useState(false);
+  const [selectedCartoesFileName, setSelectedCartoesFileName] = useState<string | null>(null);
+  const [parsedCartoesData, setParsedCartoesData] = useState<{placa: string; cartao: string}[] | null>(null);
+  const [isUploadingCartoes, setIsUploadingCartoes] = useState(false);
+  const [isParsingCartoesFile, setIsParsingCartoesFile] = useState(false);
+  const [importCartoesResult, setImportCartoesResult] = useState<{
+    success: boolean;
+    resumo: { total: number; atualizados: number; placasNaoEncontradas: number };
+    detalhes: { placasNaoEncontradas: string[]; erros: string[] };
+  } | null>(null);
+
   // Função para carregar veículos usando a API REST
   const fetchVehicles = async () => {
     setIsLoading(true);
@@ -764,6 +776,105 @@ const VehiclesNew: React.FC = () => {
     }
   };
 
+  // Função para processar arquivo de cartões quando selecionado
+  const handleCartoesFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setSelectedCartoesFileName(null);
+      setParsedCartoesData(null);
+      return;
+    }
+    
+    setSelectedCartoesFileName(file.name);
+    setIsParsingCartoesFile(true);
+    setParsedCartoesData(null);
+    
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const XLSX = await import('xlsx');
+      
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+      
+      const mappedData = jsonData.map((row: any) => {
+        const placa = row.placa || row.Placa || row.PLACA || row.plate || row.Plate || Object.values(row)[0];
+        const cartao = row.cartao || row.Cartao || row.CARTAO || row.cartao_abastecimento || row.Cartao_Abastecimento || row.card || row.Card || Object.values(row)[1];
+        return { placa: String(placa || '').trim().toUpperCase(), cartao: String(cartao || '').trim() };
+      });
+      
+      const validData = mappedData.filter(item => item.placa && item.cartao);
+      
+      if (validData.length === 0) {
+        throw new Error('Nenhuma linha válida encontrada. Verifique se a planilha tem colunas "Placa" e "Cartão".');
+      }
+      
+      setParsedCartoesData(validData);
+      toast({
+        title: "Arquivo processado",
+        description: `${validData.length} linhas válidas encontradas`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Erro ao processar arquivo:', error);
+      toast({
+        title: "Erro ao processar arquivo",
+        description: error instanceof Error ? error.message : "Formato inválido",
+        variant: "destructive"
+      });
+      setSelectedCartoesFileName(null);
+    } finally {
+      setIsParsingCartoesFile(false);
+    }
+  };
+
+  // Função para enviar dados de cartões para o servidor
+  const handleImportCartoes = async () => {
+    if (!parsedCartoesData || parsedCartoesData.length === 0) {
+      toast({
+        title: "Nenhum dado para importar",
+        description: "Por favor, selecione um arquivo válido primeiro.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUploadingCartoes(true);
+    
+    try {
+      const response = await fetch('/api/vehicles/import-cartoes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dados: parsedCartoesData }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao importar cartões');
+      }
+
+      const result = await response.json();
+      setImportCartoesResult(result);
+      
+      await fetchVehicles();
+      
+      toast({
+        title: "Importação concluída",
+        description: `${result.resumo.atualizados} veículos atualizados de ${result.resumo.total} linhas`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error("Erro ao importar cartões:", error);
+      toast({
+        title: "Erro na importação",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploadingCartoes(false);
+    }
+  };
+
   return (
     <MainLayoutSimple>
       <div className="space-y-6">
@@ -1021,6 +1132,135 @@ const VehiclesNew: React.FC = () => {
                         </>
                       ) : (
                         'Importar Planilha'
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Botão de Importar Cartões de Abastecimento */}
+              <Dialog open={isImportCartoesDialogOpen} onOpenChange={(open) => {
+                setIsImportCartoesDialogOpen(open);
+                if (!open) {
+                  setSelectedCartoesFileName(null);
+                  setParsedCartoesData(null);
+                  setImportCartoesResult(null);
+                }
+              }}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2 ml-2">
+                    <Upload className="h-4 w-4" />
+                    Importar Cartões
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Importar Cartões de Abastecimento</DialogTitle>
+                    <DialogDescription>
+                      Atualize os cartões de abastecimento dos veículos em massa. Envie uma planilha com as colunas "Placa" e "Cartão".
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="import-cartoes-file">Arquivo Excel (.xlsx ou .xls)</Label>
+                      <Input
+                        id="import-cartoes-file"
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={handleCartoesFileSelect}
+                        disabled={isParsingCartoesFile}
+                      />
+                      {isParsingCartoesFile && (
+                        <p className="text-sm text-blue-600 flex items-center gap-2">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600" />
+                          Processando arquivo...
+                        </p>
+                      )}
+                      {selectedCartoesFileName && parsedCartoesData && (
+                        <p className="text-sm text-green-600">
+                          Arquivo: {selectedCartoesFileName} ({parsedCartoesData.length} linhas prontas)
+                        </p>
+                      )}
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div className="flex gap-2">
+                        <FileText className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div className="text-sm text-blue-800">
+                          <p className="font-medium mb-1">Formato do arquivo:</p>
+                          <ul className="list-disc list-inside space-y-1">
+                            <li>Coluna 1: <strong>Placa</strong> do veículo (ex: ABC1234)</li>
+                            <li>Coluna 2: <strong>Cartão</strong> de abastecimento (ex: 5431-1234-5678-9012)</li>
+                            <li>A primeira linha deve conter os cabeçalhos</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Preview dos dados */}
+                    {parsedCartoesData && parsedCartoesData.length > 0 && (
+                      <div className="border rounded-lg p-3 bg-gray-50 max-h-40 overflow-y-auto">
+                        <p className="font-medium text-sm mb-2">Preview (primeiras 5 linhas):</p>
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="text-left py-1 px-2">Placa</th>
+                              <th className="text-left py-1 px-2">Cartão</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {parsedCartoesData.slice(0, 5).map((item, idx) => (
+                              <tr key={idx} className="border-b last:border-0">
+                                <td className="py-1 px-2 font-mono">{item.placa}</td>
+                                <td className="py-1 px-2 font-mono">{item.cartao}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    
+                    {/* Resultado da importação */}
+                    {importCartoesResult && (
+                      <div className={`border rounded-lg p-4 ${importCartoesResult.resumo.atualizados > 0 ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+                        <h4 className="font-medium mb-2">Resultado da Importação:</h4>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>Total de linhas: <strong>{importCartoesResult.resumo.total}</strong></div>
+                          <div>Veículos atualizados: <strong className="text-green-600">{importCartoesResult.resumo.atualizados}</strong></div>
+                          <div>Placas não encontradas: <strong className="text-yellow-600">{importCartoesResult.resumo.placasNaoEncontradas}</strong></div>
+                        </div>
+                        
+                        {importCartoesResult.detalhes.placasNaoEncontradas.length > 0 && (
+                          <div className="mt-2 text-sm">
+                            <p className="font-medium text-yellow-600">Placas não encontradas (primeiras 20):</p>
+                            <p className="text-gray-600 text-xs">{importCartoesResult.detalhes.placasNaoEncontradas.slice(0, 20).join(', ')}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setIsImportCartoesDialogOpen(false);
+                        setSelectedCartoesFileName(null);
+                        setParsedCartoesData(null);
+                        setImportCartoesResult(null);
+                      }}
+                    >
+                      Fechar
+                    </Button>
+                    <Button 
+                      onClick={handleImportCartoes}
+                      disabled={!parsedCartoesData || isUploadingCartoes || isParsingCartoesFile}
+                    >
+                      {isUploadingCartoes ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                          Enviando...
+                        </>
+                      ) : (
+                        'Importar Cartões'
                       )}
                     </Button>
                   </DialogFooter>
