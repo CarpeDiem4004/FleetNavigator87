@@ -423,6 +423,20 @@ export default function CocaColaBaseDashboard() {
     return found?.observacao || null;
   };
 
+  // Helper para verificar se o veículo foi emprestado PARA esta base (veio de outra base)
+  const isVehicleEmprestadoAqui = (vehicleId: number): boolean => {
+    if (!dailyStatusData?.data) return false;
+    const found = dailyStatusData.data.find(d => d.vehicle_id === vehicleId);
+    return found?.is_emprestado_aqui === true;
+  };
+
+  // Helper para obter o nome da base de origem (quando veículo é emprestado para esta base)
+  const getBaseOrigemNome = (vehicleId: number): string | null => {
+    if (!dailyStatusData?.data) return null;
+    const found = dailyStatusData.data.find(d => d.vehicle_id === vehicleId);
+    return found?.base_origem_nome || null;
+  };
+
   // Helper para obter badge do status diário
   const getDailyStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; className: string }> = {
@@ -940,12 +954,19 @@ export default function CocaColaBaseDashboard() {
                           </p>
                         )}
                       </div>
-                      {/* Mostrar base de empréstimo quando status for emprestado */}
-                      {getDailyStatus(vehicle.id) === 'emprestado' && getDailyObservacao(vehicle.id) && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-1 text-blue-700 text-sm">
-                          <MapPin className="w-3 h-3 inline mr-1" />
-                          {getDailyObservacao(vehicle.id)?.replace('Emprestado para: ', '')}
-                        </div>
+                      {/* Mostrar base de empréstimo - destino quando emprestou, origem quando recebeu */}
+                      {getDailyStatus(vehicle.id) === 'emprestado' && (
+                        isVehicleEmprestadoAqui(vehicle.id) ? (
+                          <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-1 text-green-700 text-sm">
+                            <MapPin className="w-3 h-3 inline mr-1" />
+                            Origem: {getBaseOrigemNome(vehicle.id) || 'Outra base'}
+                          </div>
+                        ) : getDailyObservacao(vehicle.id) && (
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-1 text-blue-700 text-sm">
+                            <MapPin className="w-3 h-3 inline mr-1" />
+                            {getDailyObservacao(vehicle.id)?.replace('Emprestado para: ', '')}
+                          </div>
+                        )
                       )}
                     </div>
                     
