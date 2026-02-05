@@ -1665,6 +1665,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sincronizar veículos Coca-Cola com tabela principal de veículos
+  app.post('/api/coca-cola/vehicles/sync-to-main', isAuthenticated, async (req, res) => {
+    try {
+      console.log('[COCA-COLA SYNC] Iniciando sincronização de veículos para tabela principal...');
+      
+      // Buscar veículos das bases Coca-Cola que NÃO existem na tabela principal
+      const missingVehicles = await pool.query(`
+        SELECT ccv.placa, ccv.modelo, ccv.base_id, ccv.status, b.nome as base_nome
+        FROM coca_cola_vehicles ccv
+        LEFT JOIN coca_cola_bases b ON ccv.base_id = b.id
+        WHERE NOT EXISTS (
+          SELECT 1 FROM vehicles v WHERE UPPER(v.plate) = UPPER(ccv.placa)
+        )
+        ORDER BY b.nome, ccv.placa
+      `);
+      
+      const veiculosFaltantes = missingVehicles.rows;
+      console.log(`[COCA-COLA SYNC] Encontrados ${veiculosFaltantes.length} veículos para adicionar`);
+      
+      if (veiculosFaltantes.length === 0) {
+        return res.json({
+          success: true,
+          message: 'Todos os veículos já estão sincronizados',
+          adicionados: 0,
+          erros: 0,
+          detalhes: []
+        });
+      }
+      
+      // Adicionar cada veículo à tabela principal
+      let adicionados = 0;
+      let erros = 0;
+      const detalhes: any[] = [];
+      
+      for (const veiculo of veiculosFaltantes) {
+        try {
+          // Mapear status do Coca-Cola para status da tabela principal
+          let statusPrincipal = 'ativo';
+          if (veiculo.status === 'manutencao' || veiculo.status === 'em_manutencao') {
+            statusPrincipal = 'manutenção';
+          } else if (veiculo.status === 'baixa_venda' || veiculo.status === 'inativo') {
+            statusPrincipal = 'inativo';
+          }
+          
+          await pool.query(`
+            INSERT INTO vehicles (plate, model, make, status, base_id, vehicle_type, fuel_type, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, 'caminhão', 'diesel', NOW(), NOW())
+          `, [
+            veiculo.placa.toUpperCase(),
+            veiculo.modelo || 'Não informado',
+            veiculo.modelo || 'Não informado', // make = modelo por padrão
+            statusPrincipal,
+            veiculo.base_id
+          ]);
+          
+          adicionados++;
+          detalhes.push({
+            placa: veiculo.placa,
+            base: veiculo.base_nome,
+            status: 'adicionado'
+          });
+          console.log(`[COCA-COLA SYNC] Veículo ${veiculo.placa} adicionado à tabela principal`);
+        } catch (insertError: any) {
+          erros++;
+          detalhes.push({
+            placa: veiculo.placa,
+            base: veiculo.base_nome,
+            status: 'erro',
+            mensagem: insertError.message
+          });
+          console.error(`[COCA-COLA SYNC] Erro ao adicionar ${veiculo.placa}:`, insertError.message);
+        }
+      }
+      
+      console.log(`[COCA-COLA SYNC] Sincronização concluída: ${adicionados} adicionados, ${erros} erros`);
+      
+      res.json({
+        success: true,
+        message: `Sincronização concluída: ${adicionados} veículos adicionados`,
+        adicionados,
+        erros,
+        detalhes
+      });
+    } catch (error) {
+      console.error('[COCA-COLA SYNC] Erro na sincronização:', error);
+      res.status(500).json({ error: 'Erro ao sincronizar veículos' });
+    }
+  });
+
+  // Verificar veículos Coca-Cola faltantes (preview sem adicionar)
+  app.get('/api/coca-cola/vehicles/missing', isAuthenticated, async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT ccv.placa, ccv.modelo, ccv.status, b.nome as base_nome, b.cidade, b.estado
+        FROM coca_cola_vehicles ccv
+        LEFT JOIN coca_cola_bases b ON ccv.base_id = b.id
+        WHERE NOT EXISTS (
+          SELECT 1 FROM vehicles v WHERE UPPER(v.plate) = UPPER(ccv.placa)
+        )
+        ORDER BY b.nome, ccv.placa
+      `);
+      
+      res.json({
+        total: result.rows.length,
+        veiculos: result.rows
+      });
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao buscar veículos faltantes:', error);
+      res.status(500).json({ error: 'Erro ao buscar veículos faltantes' });
+    }
+  });
+
   // Listar atualizações diárias Coca-Cola
   app.get('/api/coca-cola/daily-updates', cocaColaAuth, async (req: any, res) => {
     try {
