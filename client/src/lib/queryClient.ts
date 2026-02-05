@@ -49,14 +49,51 @@ async function trySessionResync(): Promise<boolean> {
   }
 }
 
-async function throwIfResNotOk(res: Response) {
+async function handleSessionInvalidation() {
+  console.log('[QueryClient] Sessão inválida detectada - fazendo logout automático');
+  
+  // Limpar localStorage
+  localStorage.removeItem('auth_user_session');
+  localStorage.removeItem('auth_user_timestamp');
+  localStorage.removeItem('authToken');
+  
+  // Fazer logout no servidor para limpar cookie
+  try {
+    await fetch('/api/logout', { 
+      method: 'POST',
+      credentials: 'include' 
+    });
+  } catch (e) {
+    console.log('[QueryClient] Erro ao fazer logout no servidor:', e);
+  }
+  
+  // Redirecionar para login apenas se não estiver já na página de login
+  if (!window.location.pathname.includes('/login')) {
+    console.log('[QueryClient] Redirecionando para login...');
+    window.location.href = '/login';
+  }
+}
+
+async function throwIfResNotOk(res: Response, skipAutoLogout: boolean = false) {
   if (!res.ok) {
-    // Tentar ressincronizar sessão em caso de erro 401
-    if (res.status === 401) {
-      const resyncSuccessful = await trySessionResync();
-      if (resyncSuccessful) {
-        // Optamos por não repetir automaticamente a requisição aqui
-        // Em vez disso, o usuário ou o código que chamou a API pode decidir tentar novamente
+    // Tratar 401 - sessão inválida
+    if (res.status === 401 && !skipAutoLogout) {
+      // Verificar se é uma rota que realmente requer autenticação
+      const url = res.url || '';
+      const isAuthRequiredRoute = url.includes('/api/user') || 
+                                   url.includes('/api/vehicles') || 
+                                   url.includes('/api/maintenance') ||
+                                   url.includes('/api/bases') ||
+                                   url.includes('/api/drivers');
+      
+      if (isAuthRequiredRoute) {
+        // Tentar ressincronizar primeiro
+        const resyncSuccessful = await trySessionResync();
+        if (!resyncSuccessful) {
+          // Se não conseguiu ressincronizar, fazer logout automático
+          await handleSessionInvalidation();
+          return;
+        }
         throw new Error(`401: Sessão ressincronizada, tente novamente`);
       }
     }
@@ -269,20 +306,24 @@ export const getQueryFn: <T>(options: {
       // Se a ressincronização for bem-sucedida, tenta a requisição novamente
       if (resyncSuccessful) {
         console.log('[QueryClient] Sessão ressincronizada com sucesso, repetindo requisição:', urlOrTable);
-        // Repetir a requisição com o mesmo token JWT se disponível
         const retryUrlWithTimestamp = finalUrl.includes('?') 
           ? `${finalUrl}&_t=${Date.now()}`
           : `${finalUrl}?_t=${Date.now()}`;
           
         res = await fetch(retryUrlWithTimestamp, {
           credentials: "include",
-          headers, // Reutilizar o mesmo objeto de cabeçalhos com o token
+          headers,
           cache: "no-store"
         });
+      } else {
+        // Ressincronização falhou - fazer logout automático
+        console.log('[QueryClient] Ressincronização falhou, fazendo logout automático');
+        await handleSessionInvalidation();
+        return null;
       }
     }
 
-    await throwIfResNotOk(res);
+    await throwIfResNotOk(res, true); // skipAutoLogout = true pois já tratamos acima
     return await res.json();
   };
 
