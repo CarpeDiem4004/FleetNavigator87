@@ -1461,6 +1461,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Listar todos os usuários Coca-Cola
+  app.get('/api/coca-cola/users', isAuthenticated, async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT u.id, u.email, u.nome, u.base_id, u.tipo, u.ativo, u.created_at, u.last_login,
+                b.nome as base_nome, b.cidade, b.estado
+         FROM coca_cola_base_users u
+         LEFT JOIN coca_cola_bases b ON u.base_id = b.id
+         ORDER BY u.nome`
+      );
+      res.json(result.rows);
+    } catch (error) {
+      console.error('[COCA-COLA USERS] Erro ao listar usuários:', error);
+      res.status(500).json({ message: 'Erro ao listar usuários' });
+    }
+  });
+
+  // Atualizar usuário Coca-Cola
+  app.put('/api/coca-cola/users/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { email, password, nome, base_id, tipo, ativo } = req.body;
+
+      // Verificar se email já existe (exceto para o próprio usuário)
+      if (email) {
+        const existing = await pool.query(
+          'SELECT id FROM coca_cola_base_users WHERE email = $1 AND id != $2',
+          [email.toLowerCase(), id]
+        );
+        if (existing.rows.length > 0) {
+          return res.status(400).json({ message: 'E-mail já cadastrado para outro usuário' });
+        }
+      }
+
+      // Construir query dinamicamente
+      const updates: string[] = [];
+      const values: any[] = [];
+      let paramIndex = 1;
+
+      if (email) {
+        updates.push(`email = $${paramIndex++}`);
+        values.push(email.toLowerCase());
+      }
+      if (nome) {
+        updates.push(`nome = $${paramIndex++}`);
+        values.push(nome);
+      }
+      if (base_id !== undefined) {
+        updates.push(`base_id = $${paramIndex++}`);
+        values.push(base_id || null);
+      }
+      if (tipo) {
+        updates.push(`tipo = $${paramIndex++}`);
+        values.push(tipo);
+      }
+      if (ativo !== undefined) {
+        updates.push(`ativo = $${paramIndex++}`);
+        values.push(ativo);
+      }
+      if (password) {
+        const bcrypt = require('bcrypt');
+        const password_hash = await bcrypt.hash(password, 10);
+        updates.push(`password_hash = $${paramIndex++}`);
+        values.push(password_hash);
+      }
+
+      if (updates.length === 0) {
+        return res.status(400).json({ message: 'Nenhum dado para atualizar' });
+      }
+
+      values.push(id);
+      const result = await pool.query(
+        `UPDATE coca_cola_base_users SET ${updates.join(', ')} WHERE id = $${paramIndex} 
+         RETURNING id, email, nome, base_id, tipo, ativo`,
+        values
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'Usuário não encontrado' });
+      }
+
+      console.log('[COCA-COLA USERS] Usuário atualizado:', result.rows[0].email);
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA USERS] Erro ao atualizar usuário:', error);
+      res.status(500).json({ message: 'Erro ao atualizar usuário' });
+    }
+  });
+
+  // Deletar usuário Coca-Cola
+  app.delete('/api/coca-cola/users/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const result = await pool.query(
+        'DELETE FROM coca_cola_base_users WHERE id = $1 RETURNING id, email',
+        [id]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'Usuário não encontrado' });
+      }
+
+      console.log('[COCA-COLA USERS] Usuário deletado:', result.rows[0].email);
+      res.json({ message: 'Usuário deletado com sucesso' });
+    } catch (error) {
+      console.error('[COCA-COLA USERS] Erro ao deletar usuário:', error);
+      res.status(500).json({ message: 'Erro ao deletar usuário' });
+    }
+  });
+
   // Buscar base Coca-Cola por ID
   app.get('/api/coca-cola/bases/:id', cocaColaAuth, async (req: any, res) => {
     try {

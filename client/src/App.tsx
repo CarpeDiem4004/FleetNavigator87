@@ -133,6 +133,7 @@ import IndicadoresManutencao from "@/pages/fleet-management/IndicadoresManutenca
 import CocaColaOperacao from "@/pages/fleet-management/CocaColaOperacao";
 import CocaColaBaseLogin from "@/pages/fleet-management/CocaColaBaseLogin";
 import CocaColaBaseDashboard from "@/pages/fleet-management/CocaColaBaseDashboard";
+import CocaColaUsuarios from "@/pages/fleet-management/CocaColaUsuarios";
 import BudgetManagementPage from "@/pages/fleet-management/BudgetManagementPage";
 import WorkshopBudgets from "@/pages/fleet-management/WorkshopBudgets";
 import InventoryPage from "@/pages/fleet-management/InventoryPage";
@@ -818,6 +819,7 @@ function App() {
           <ProtectedRoute path="/fleet-management/maintenance-management" component={MaintenanceManagement} />
           <ProtectedRoute path="/fleet-management/indicadores-manutencao" component={IndicadoresManutencao} />
           <ProtectedRoute path="/fleet-management/coca-cola" component={CocaColaOperacao} />
+          <ProtectedRoute path="/fleet-management/coca-cola/usuarios" component={CocaColaUsuarios} />
           <Route path="/coca-cola/login" component={CocaColaBaseLogin} />
           <Route path="/fleet-management/coca-cola/base/:baseId" component={CocaColaBaseDashboard} />
           <ProtectedRoute path="/fleet-management/budgets" component={BudgetManagementPage} />

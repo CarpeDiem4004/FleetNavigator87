@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -75,6 +76,7 @@ interface CocaColaDailyUpdate {
 }
 
 export default function CocaColaOperacao() {
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -373,7 +375,7 @@ export default function CocaColaOperacao() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="dashboard">
                 <BarChart3 className="h-4 w-4 mr-2" /> Dashboard
               </TabsTrigger>
@@ -385,6 +387,9 @@ export default function CocaColaOperacao() {
               </TabsTrigger>
               <TabsTrigger value="historico">
                 <Calendar className="h-4 w-4 mr-2" /> Histórico
+              </TabsTrigger>
+              <TabsTrigger value="usuarios" onClick={() => setLocation('/fleet-management/coca-cola/usuarios')}>
+                <Users className="h-4 w-4 mr-2" /> Usuários
               </TabsTrigger>
             </TabsList>
 
