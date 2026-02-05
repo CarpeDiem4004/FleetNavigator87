@@ -9881,6 +9881,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Importação em massa de cartões de abastecimento (Placa -> Cartão)
+  app.post("/api/vehicles/import-cartoes", isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const { dados } = req.body; // Array de objetos { placa, cartao }
+      
+      if (!Array.isArray(dados) || dados.length === 0) {
+        return res.status(400).json({ message: "Dados inválidos. Envie um array de objetos com placa e cartao." });
+      }
+      
+      console.log(`[IMPORT-CARTOES] Iniciando importação de ${dados.length} cartões`);
+      
+      // Buscar todos os veículos para fazer o match por placa
+      const vehiclesResult = await pool.query('SELECT id, plate FROM vehicles ORDER BY plate');
+      const vehicles = vehiclesResult.rows as { id: number; plate: string }[];
+      
+      // Criar mapeamento de placa -> id
+      const vehiclesByPlate = new Map<string, number>();
+      vehicles.forEach((v) => {
+        vehiclesByPlate.set(v.plate.toUpperCase().replace(/[^A-Z0-9]/g, ''), v.id);
+      });
+      
+      // Processar cada linha da planilha
+      let atualizados = 0;
+      const naoEncontrados: string[] = [];
+      const erros: string[] = [];
+      
+      for (const item of dados) {
+        const { placa, cartao } = item;
+        
+        if (!placa || !cartao) {
+          erros.push(`Linha inválida: placa="${placa}", cartao="${cartao}"`);
+          continue;
+        }
+        
+        // Normalizar placa para busca
+        const normalizedPlate = placa.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const vehicleId = vehiclesByPlate.get(normalizedPlate);
+        
+        if (!vehicleId) {
+          naoEncontrados.push(placa);
+          continue;
+        }
+        
+        try {
+          // Atualizar o cartão de abastecimento do veículo
+          await pool.query(
+            'UPDATE vehicles SET cartao_abastecimento = $1 WHERE id = $2',
+            [cartao, vehicleId]
+          );
+          atualizados++;
+        } catch (updateError: any) {
+          erros.push(`Erro ao atualizar ${placa}: ${updateError.message}`);
+        }
+      }
+      
+      console.log(`[IMPORT-CARTOES] Importação concluída: ${atualizados} atualizados, ${naoEncontrados.length} placas não encontradas`);
+      
+      return res.json({
+        success: true,
+        resumo: {
+          total: dados.length,
+          atualizados,
+          placasNaoEncontradas: naoEncontrados.length
+        },
+        detalhes: {
+          placasNaoEncontradas: naoEncontrados.slice(0, 50),
+          erros: erros.slice(0, 20)
+        }
+      });
+    } catch (error: any) {
+      console.error("[IMPORT-CARTOES] Erro na importação:", error);
+      return res.status(500).json({ message: "Erro ao processar importação de cartões", error: error.message });
+    }
+  });
+
   app.put("/api/vehicles/:id", isAuthenticated, async (req, res) => {
     try {
       if (!req.user) {
