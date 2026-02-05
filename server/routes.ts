@@ -1696,6 +1696,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Mapeamento de coca_cola_bases.id para bases.id
+      const baseMapping: Record<number, number> = {
+        1: 48,   // Aparecida - BH → COCA COLA (APARECIDA)
+        2: 47,   // CD ABC → COCA COLA (ABC)
+        3: 49,   // Criciuma → COCA COLA (CRICIUMA)
+        4: 68,   // Embu → MM05 (OSASCO) - aproximação
+        5: 50,   // Ipatinga → COCA COLA (IPATINGA)
+        6: 53,   // Ipiranga → COCA COLA (PINHEIROS) - aproximação
+        7: 52,   // Mariana → COCA COLA (MARIANA)
+        8: 48,   // MD MINI BODEGA BH → COCA COLA (APARECIDA) - aproximação
+        9: 68,   // Osasco → MM05 (OSASCO)
+        10: 53,  // Pinheiros → COCA COLA (PINHEIROS)
+        11: 54,  // PonteNova → COCA COLA (PONTE NOVA)
+        12: 118, // PQ Novo Mundo → SC (PQ NOVO MUNDO) SSP40
+        13: 55,  // Santos → COCA COLA SANTOS
+        14: 51   // Jurubatuba → COCA COLA (JURUBATUBA)
+      };
+      
+      // Função para obter o base_id correto da tabela principal
+      const getMainBaseId = (cocaColaBaseId: number): number => {
+        return baseMapping[cocaColaBaseId] || 47; // Default para COCA COLA (ABC)
+      };
+      
       // Mapear status do Coca-Cola para status da tabela principal
       const mapStatus = (cocaColaStatus: string): string => {
         const statusMap: Record<string, string> = {
@@ -1724,6 +1747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const veiculo of veiculosFaltantes) {
         try {
           const statusPrincipal = mapStatus(veiculo.status);
+          const mainBaseId = getMainBaseId(veiculo.base_id);
           
           await client.query(`
             INSERT INTO vehicles (plate, model, make, status, base_id, vehicle_type, fuel_type, created_at, updated_at)
@@ -1733,7 +1757,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             veiculo.modelo || 'Não informado',
             veiculo.modelo || 'Não informado',
             statusPrincipal,
-            veiculo.base_id
+            mainBaseId
           ]);
           
           adicionados++;
