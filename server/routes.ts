@@ -7557,7 +7557,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             s.foto_painel_path,
             s.foto_cartao_path,
             s.km_veiculo,
-            s.placa_cartao
+            s.placa_cartao,
+            s.retorno_vazio
           FROM solicitacoes_fuel_card s
           LEFT JOIN veiculos v ON s.placa = v.placa
 
@@ -7601,7 +7602,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             NULL::text as foto_painel_path,
             NULL::text as foto_cartao_path,
             fcr.odometer as km_veiculo,
-            NULL::varchar as placa_cartao
+            NULL::varchar as placa_cartao,
+            false as retorno_vazio
           FROM fuel_card_requests fcr
           LEFT JOIN bases b ON fcr.base_id = b.id
           LEFT JOIN veiculos v ON fcr.plate = v.placa
@@ -7650,7 +7652,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             lh.foto_painel_path,
             lh.foto_cartao_path,
             lh.km_total as km_veiculo,
-            NULL::varchar as placa_cartao
+            NULL::varchar as placa_cartao,
+            false as retorno_vazio
           FROM linehall_fuel_card_requests lh
           LEFT JOIN veiculos v ON lh.veiculo_placa = v.placa
 
