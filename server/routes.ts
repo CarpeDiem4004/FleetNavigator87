@@ -1665,6 +1665,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Atualizar base do veículo Coca-Cola
+  app.patch('/api/coca-cola/vehicles/:id/base', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { base_id } = req.body;
+      
+      if (!base_id) {
+        return res.status(400).json({ error: 'Base ID é obrigatório' });
+      }
+      
+      const result = await pool.query(
+        `UPDATE coca_cola_vehicles 
+         SET base_id = $1, updated_at = NOW() 
+         WHERE id = $2 RETURNING *`,
+        [base_id, id]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Veículo não encontrado' });
+      }
+      
+      console.log(`[COCA-COLA] Base do veículo ${id} atualizada para ${base_id}`);
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao atualizar base do veículo:', error);
+      res.status(500).json({ error: 'Erro ao atualizar base do veículo' });
+    }
+  });
+
   // Sincronizar veículos Coca-Cola com tabela principal de veículos
   app.post('/api/coca-cola/vehicles/sync-to-main', isAuthenticated, async (req, res) => {
     const client = await pool.connect();

@@ -199,6 +199,19 @@ export default function CocaColaOperacao() {
     }
   });
 
+  const updateVehicleBaseMutation = useMutation({
+    mutationFn: async (data: { id: number; base_id: number }) => {
+      return apiRequest('PATCH', `/api/coca-cola/vehicles/${data.id}/base`, data);
+    },
+    onSuccess: () => {
+      toast({ title: 'Base atualizada!' });
+      queryClient.invalidateQueries({ queryKey: ['/api/coca-cola/vehicles'] });
+    },
+    onError: () => {
+      toast({ variant: 'destructive', title: 'Erro ao atualizar base' });
+    }
+  });
+
   const saveDailyUpdateMutation = useMutation({
     mutationFn: async (baseId: number) => {
       const baseVehicles = vehicles.filter(v => v.base_id === baseId);
@@ -684,7 +697,21 @@ export default function CocaColaOperacao() {
                           <TableRow key={v.id}>
                             <TableCell className="font-medium">{v.placa}</TableCell>
                             <TableCell>{v.modelo}</TableCell>
-                            <TableCell>{bases.find(b => b.id === v.base_id)?.nome || '-'}</TableCell>
+                            <TableCell>
+                              <Select 
+                                value={v.base_id?.toString() || ''} 
+                                onValueChange={(newBaseId) => updateVehicleBaseMutation.mutate({ id: v.id, base_id: parseInt(newBaseId) })}
+                              >
+                                <SelectTrigger className="w-[130px]">
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {bases.map(base => (
+                                    <SelectItem key={base.id} value={base.id.toString()}>{base.nome}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
                             <TableCell>{getStatusBadge(v.status)}</TableCell>
                             <TableCell>{v.oficina || v.motivo_parado || '-'}</TableCell>
                             <TableCell>
