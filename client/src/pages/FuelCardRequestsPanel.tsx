@@ -3303,11 +3303,6 @@ const FuelCardRequestsPanel: React.FC = () => {
                         <div className="lg:col-span-3">
                           <div className="flex items-center gap-2">
                             <p className="font-medium text-lg">{solicitacao.placa}</p>
-                            {solicitacao.retorno_vazio && (
-                              <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
-                                🔄 Vazio
-                              </Badge>
-                            )}
                           </div>
                           <p className="text-sm text-gray-600">{solicitacao.motorista || 'Motorista não informado'}</p>
                           <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_calculado || solicitacao.valor_solicitado)} - {solicitacao.km_total || '-'} km</p>
@@ -3333,6 +3328,11 @@ const FuelCardRequestsPanel: React.FC = () => {
                                   : 'bg-orange-100 text-orange-800 border-orange-300'}
                               >
                                 {solicitacao.provedor_cartao?.toLowerCase().includes('veloe') ? 'Veloe' : 'Ticket'}
+                              </Badge>
+                            )}
+                            {solicitacao.retorno_vazio && (
+                              <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300 text-xs font-semibold">
+                                Vazio
                               </Badge>
                             )}
                           </div>
@@ -3515,11 +3515,6 @@ const FuelCardRequestsPanel: React.FC = () => {
                       <div className="lg:col-span-3">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-medium text-lg">{solicitacao.placa}</p>
-                          {solicitacao.retorno_vazio && (
-                            <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
-                              🔄 Vazio
-                            </Badge>
-                          )}
                           {repeatedPlacasLineHaul.has(solicitacao.placa) && (
                             <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300 animate-pulse">
                               <AlertCircle className="w-3 h-3 mr-1" />
@@ -3572,6 +3567,11 @@ const FuelCardRequestsPanel: React.FC = () => {
                           {solicitacao.provedor_cartao && (
                             <Badge variant="outline" className={solicitacao.provedor_cartao?.toLowerCase().includes('veloe') ? 'bg-green-100 text-green-800 border-green-300' : 'bg-orange-100 text-orange-800 border-orange-300'}>
                               {solicitacao.provedor_cartao?.toLowerCase().includes('veloe') ? 'Veloe' : 'Ticket'}
+                            </Badge>
+                          )}
+                          {solicitacao.retorno_vazio && (
+                            <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300 text-xs font-semibold">
+                              Vazio
                             </Badge>
                           )}
                         </div>
@@ -3675,14 +3675,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                   <div key={`${solicitacao.id}-attended-${index}`} className="p-4 rounded-lg border bg-green-50 border-green-200 border-l-4 border-l-green-500">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
                       <div className="lg:col-span-3">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-lg">{solicitacao.placa}</p>
-                          {solicitacao.retorno_vazio && (
-                            <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
-                              🔄 Vazio
-                            </Badge>
-                          )}
-                        </div>
+                        <p className="font-medium text-lg">{solicitacao.placa}</p>
                         <p className="text-sm text-gray-600">{solicitacao.motorista || 'Motorista não informado'}</p>
                         <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_calculado || solicitacao.valor_solicitado)} - {solicitacao.km_total || '-'} km</p>
                       </div>
@@ -3692,6 +3685,11 @@ const FuelCardRequestsPanel: React.FC = () => {
                           {solicitacao.provedor_cartao && (
                             <Badge variant="outline" className={solicitacao.provedor_cartao?.toLowerCase().includes('veloe') ? 'bg-green-100 text-green-800 border-green-300' : 'bg-orange-100 text-orange-800 border-orange-300'}>
                               {solicitacao.provedor_cartao?.toLowerCase().includes('veloe') ? 'Veloe' : 'Ticket'}
+                            </Badge>
+                          )}
+                          {solicitacao.retorno_vazio && (
+                            <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300 text-xs font-semibold">
+                              Vazio
                             </Badge>
                           )}
                         </div>
@@ -3772,14 +3770,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                   <div key={`${solicitacao.id}-denied-${index}`} className="p-4 rounded-lg border bg-red-50 border-red-200 border-l-4 border-l-red-500">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
                       <div className="lg:col-span-3">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-lg">{solicitacao.placa}</p>
-                          {solicitacao.retorno_vazio && (
-                            <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
-                              🔄 Vazio
-                            </Badge>
-                          )}
-                        </div>
+                        <p className="font-medium text-lg">{solicitacao.placa}</p>
                         <p className="text-sm text-gray-600">{solicitacao.motorista || 'Motorista não informado'}</p>
                         <p className="text-xs text-gray-700 font-medium">{formatCurrency(solicitacao.valor_calculado || solicitacao.valor_solicitado)} - {solicitacao.km_total || '-'} km</p>
                       </div>
@@ -3789,6 +3780,11 @@ const FuelCardRequestsPanel: React.FC = () => {
                           {solicitacao.provedor_cartao && (
                             <Badge variant="outline" className={solicitacao.provedor_cartao?.toLowerCase().includes('veloe') ? 'bg-green-100 text-green-800 border-green-300' : 'bg-orange-100 text-orange-800 border-orange-300'}>
                               {solicitacao.provedor_cartao?.toLowerCase().includes('veloe') ? 'Veloe' : 'Ticket'}
+                            </Badge>
+                          )}
+                          {solicitacao.retorno_vazio && (
+                            <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300 text-xs font-semibold">
+                              Vazio
                             </Badge>
                           )}
                         </div>
@@ -3836,8 +3832,8 @@ const FuelCardRequestsPanel: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <div className="text-lg font-medium">{selectedSolicitation.placa}</div>
                         {selectedSolicitation.retorno_vazio && (
-                          <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
-                            🔄 Vazio
+                          <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300 text-xs font-semibold">
+                            Vazio
                           </Badge>
                         )}
                       </div>
