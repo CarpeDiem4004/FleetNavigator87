@@ -194,7 +194,7 @@ export default function CocaColaBaseDashboard() {
   // Query para status diário dos veículos (sistema de calendário)
   const { data: dailyStatusData, refetch: refetchDailyStatus } = useQuery<{
     success: boolean;
-    data: { vehicle_id: number; placa: string; modelo: string; status: string; observacao: string | null; updated_by_name: string | null; updated_at: string | null }[];
+    data: { vehicle_id: number; placa: string; modelo: string; status: string; observacao: string | null; updated_by_name: string | null; updated_at: string | null; is_emprestado_aqui?: boolean; base_origem_nome?: string | null }[];
     statusCount: { total: number; em_rota: number; em_manutencao: number; parado: number; emprestado: number; baixa_venda: number; sem_equipe: number; d_mais_1: number; pernoite: number; nao_informado: number };
     dataConsulta: string;
   }>({
@@ -408,6 +408,36 @@ export default function CocaColaBaseDashboard() {
     manutencao: vehicles.filter(v => v.status === 'manutencao').length,
     parados: vehicles.filter(v => ['sem_equipe', 'baixa_venda'].includes(v.status)).length
   };
+
+  // Combinar veículos da base com veículos emprestados de outras bases
+  const allVehiclesWithLoaned = useMemo(() => {
+    const ownVehicles = vehicles.map(v => ({ ...v, is_emprestado_aqui: false, base_origem_nome: null as string | null }));
+    
+    // Buscar veículos emprestados de outras bases (is_emprestado_aqui = true)
+    const loanedVehicles: typeof ownVehicles = [];
+    if (dailyStatusData?.data) {
+      dailyStatusData.data
+        .filter(d => d.is_emprestado_aqui === true)
+        .forEach(d => {
+          // Verificar se já não está na lista
+          if (!ownVehicles.find(v => v.id === d.vehicle_id)) {
+            loanedVehicles.push({
+              id: d.vehicle_id,
+              placa: d.placa,
+              modelo: d.modelo,
+              base_id: 0,
+              status: 'disponivel',
+              oficina: null,
+              prazo_estimado: null,
+              is_emprestado_aqui: true,
+              base_origem_nome: d.base_origem_nome || null
+            });
+          }
+        });
+    }
+    
+    return [...ownVehicles, ...loanedVehicles];
+  }, [vehicles, dailyStatusData]);
 
   // Helper para obter o status diário de um veículo
   const getDailyStatus = (vehicleId: number): string => {
@@ -926,7 +956,7 @@ export default function CocaColaBaseDashboard() {
               <div className="text-center py-8">
                 <div className="animate-spin h-8 w-8 border-4 border-red-600 border-t-transparent rounded-full mx-auto" />
               </div>
-            ) : vehicles.length === 0 ? (
+            ) : allVehiclesWithLoaned.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Car className="w-12 h-12 mx-auto mb-2 opacity-50" />
                 <p>Nenhum veículo cadastrado</p>
@@ -934,14 +964,14 @@ export default function CocaColaBaseDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {vehicles.map((vehicle) => (
+                {allVehiclesWithLoaned.map((vehicle) => (
                   <div 
                     key={vehicle.id} 
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border hover:bg-gray-100 transition-colors"
+                    className={`flex items-center justify-between p-4 rounded-lg border hover:bg-gray-100 transition-colors ${vehicle.is_emprestado_aqui ? 'bg-green-50 border-green-200' : 'bg-gray-50'}`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                        <Truck className="w-6 h-6 text-red-600" />
+                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${vehicle.is_emprestado_aqui ? 'bg-green-100' : 'bg-red-100'}`}>
+                        <Truck className={`w-6 h-6 ${vehicle.is_emprestado_aqui ? 'text-green-600' : 'text-red-600'}`} />
                       </div>
                       <div className="flex-1">
                         <p className="font-bold text-lg">{vehicle.placa}</p>
