@@ -220,6 +220,23 @@ export default function CocaColaOperacao() {
     }
   });
 
+  const syncVehiclesMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('POST', '/api/coca-cola/vehicles/sync-to-main', {});
+    },
+    onSuccess: (data: any) => {
+      toast({ 
+        title: 'Sincronização concluída!', 
+        description: `${data.adicionados || 0} veículos adicionados à frota principal` 
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/coca-cola/vehicles'] });
+    },
+    onError: () => {
+      toast({ variant: 'destructive', title: 'Erro ao sincronizar veículos' });
+    }
+  });
+
   const saveAllDailyUpdates = async () => {
     for (const base of bases.filter(b => b.ativo)) {
       await saveDailyUpdateMutation.mutateAsync(base.id);
@@ -298,6 +315,15 @@ export default function CocaColaOperacao() {
               >
                 <CheckCircle2 className="h-4 w-4 mr-2" /> 
                 {saveDailyUpdateMutation.isPending ? 'Salvando...' : 'Salvar Atualização Diária'}
+              </Button>
+              <Button 
+                variant="outline"
+                className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                onClick={() => syncVehiclesMutation.mutate()}
+                disabled={syncVehiclesMutation.isPending}
+              >
+                <Package className="h-4 w-4 mr-2" /> 
+                {syncVehiclesMutation.isPending ? 'Sincronizando...' : 'Sincronizar com Frota'}
               </Button>
               <Button variant="outline" onClick={() => { refetchBases(); refetchVehicles(); refetchUpdates(); }}>
                 <RefreshCw className="h-4 w-4 mr-2" /> Atualizar
