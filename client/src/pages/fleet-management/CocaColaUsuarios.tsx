@@ -63,10 +63,7 @@ export default function CocaColaUsuarios() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/coca-cola/auth/register', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
+      return apiRequest('POST', '/api/coca-cola/auth/register', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/coca-cola/users'] });
@@ -84,10 +81,7 @@ export default function CocaColaUsuarios() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      return apiRequest(`/api/coca-cola/users/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      });
+      return apiRequest('PUT', `/api/coca-cola/users/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/coca-cola/users'] });
@@ -105,7 +99,7 @@ export default function CocaColaUsuarios() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/coca-cola/users/${id}`, { method: 'DELETE' });
+      return apiRequest('DELETE', `/api/coca-cola/users/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/coca-cola/users'] });
