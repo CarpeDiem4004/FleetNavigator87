@@ -78,6 +78,7 @@ export const SupabaseAuthProvider = ({ children }: SupabaseAuthProviderProps) =>
   }, [resyncSession]);
 
   // Obtém informações do usuário da API após autenticação no Supabase
+  // CORREÇÃO: Não limpar dados quando não há usuário Supabase, pois pode haver sessão Express válida
   useEffect(() => {
     const fetchUserFromAPI = async () => {
       if (supabaseUser) {
@@ -144,8 +145,12 @@ export const SupabaseAuthProvider = ({ children }: SupabaseAuthProviderProps) =>
           });
         }
       } else {
-        console.log('Supabase: Usuário não autenticado, limpando dados');
-        setUser(null);
+        // CORREÇÃO CRÍTICA: NÃO limpar dados automaticamente quando não há sessão Supabase
+        // O sistema também usa autenticação Express (sessão tradicional), então não podemos
+        // assumir que a falta de sessão Supabase significa que o usuário não está autenticado.
+        // O AuthContext (context/AuthContext.tsx) é quem gerencia a autenticação tradicional.
+        console.log('Supabase: Sem sessão Supabase - NÃO limpando dados (autenticação tradicional pode estar ativa)');
+        // NÃO fazer: setUser(null); - Isso causava loop de login ao interferir com AuthContext
       }
       
       setIsLoading(false);

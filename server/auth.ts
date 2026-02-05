@@ -244,6 +244,11 @@ export function setupAuth(app: Express) {
           console.log(`[SessionMiddleware] Ajustando domínio do cookie para: ${domainName} (request para ${req.hostname}${req.path})`);
           (req.session as any).cookie.domain = domainName;
         }
+        // CORREÇÃO: Configurar secure e sameSite para produção HTTPS
+        (req.session as any).cookie.secure = true; // REQUERIDO para HTTPS
+        (req.session as any).cookie.sameSite = 'lax'; // Lax é seguro para same-site
+        (req.session as any).cookie.httpOnly = true;
+        console.log('[Cookie Middleware/Auth] Configurado para Produção gestaoonfleet.com.br: secure=true, sameSite=lax');
       } else if (isDev) {
         // Para ambiente de desenvolvimento/teste
         
