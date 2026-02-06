@@ -15472,6 +15472,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/hybrid/users/:id/reset-password", isAuthenticated, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { password } = req.body;
+      
+      if (userId === 1) {
+        return res.status(403).json({ message: "A senha do administrador principal não pode ser alterada" });
+      }
+      
+      if (!password) {
+        return res.status(400).json({ message: "Senha é obrigatória" });
+      }
+      
+      console.log(`HybridAPI: Redefinindo senha para usuário ID ${userId}...`);
+      
+      const hashedPassword = await hashPassword(password);
+      const updatedUser = await storage.updateUser(userId, { password: hashedPassword });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+      
+      console.log(`HybridAPI: Senha do usuário ID ${userId} (${updatedUser.email}) redefinida com sucesso.`);
+      
+      res.json({ 
+        message: "Senha redefinida com sucesso",
+        user: { id: updatedUser.id, name: updatedUser.name, email: updatedUser.email }
+      });
+    } catch (error) {
+      console.error("HybridAPI: Erro ao redefinir senha:", error);
+      res.status(500).json({ message: "Erro ao redefinir senha" });
+    }
+  });
+
   app.get("/api/hybrid/bases", isAuthenticated, async (req, res) => {
     try {
       console.log("HybridAPI: Obtendo lista de bases...");
