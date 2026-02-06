@@ -1726,12 +1726,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const key of Object.keys(firstRow)) {
         const normalized = key.toLowerCase().trim()
           .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        if (normalized.includes('placa')) headerMap[key] = 'placa';
+        if (normalized.includes('cartao') || normalized.includes('abastecimento') || normalized.includes('card') || (normalized.includes('placa') && normalized.includes('cart'))) headerMap[key] = 'cartao_abastecimento';
+        else if (normalized === 'placa' || (normalized.includes('placa') && !normalized.includes('cart'))) headerMap[key] = 'placa';
         else if (normalized.includes('modelo')) headerMap[key] = 'modelo';
         else if (normalized.includes('modal')) headerMap[key] = 'modal';
         else if (normalized.includes('base')) headerMap[key] = 'base';
-        else if (normalized.includes('cartao') || normalized.includes('abastecimento') || normalized.includes('card')) headerMap[key] = 'cartao_abastecimento';
       }
+
+      console.log('[COCA-COLA IMPORT] Headers detectados:', JSON.stringify(headerMap));
+      console.log('[COCA-COLA IMPORT] Primeira linha dados:', JSON.stringify(rawData[0]));
 
       if (!headerMap || !Object.values(headerMap).includes('placa')) {
         return res.status(400).json({ error: 'Coluna "Placa" não encontrada na planilha' });
