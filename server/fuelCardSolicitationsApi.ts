@@ -376,7 +376,14 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           COALESCE(s.valor_solicitado, 0) as valor_calculado,
           NULL::json as calculo_detalhes,
           -- Incluir cartão combustível do veículo
-          COALESCE(v.cartao_abastecimento, s.numero_cartao, '') as cartao_combustivel
+          COALESCE(v.cartao_abastecimento, s.numero_cartao, '') as cartao_combustivel,
+          -- Campos de validação da planilha
+          s.planilha_origem,
+          s.planilha_destino,
+          s.planilha_data,
+          s.conferido_em,
+          s.rota_validada,
+          s.validacao_motivo
         FROM solicitacoes_fuel_card s
         LEFT JOIN veiculos v ON s.placa = v.placa
         ${whereConditions}
@@ -434,7 +441,14 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
             ELSE NULL
           END as calculo_detalhes,
           -- Incluir cartão combustível do veículo para Line Hall também
-          COALESCE(lhv.cartao_combustivel, v.cartao_abastecimento, lh.numero_cartao, '') as cartao_combustivel
+          COALESCE(lhv.cartao_combustivel, v.cartao_abastecimento, lh.numero_cartao, '') as cartao_combustivel,
+          -- Campos de validação da planilha (N/A para Line Hall Shopee direto)
+          NULL::varchar as planilha_origem,
+          NULL::varchar as planilha_destino,
+          NULL::varchar as planilha_data,
+          NULL::timestamp as conferido_em,
+          NULL::boolean as rota_validada,
+          NULL::text as validacao_motivo
         FROM linehall_fuel_card_requests lh
         LEFT JOIN linehall_vehicles lhv ON lh.veiculo_placa = lhv.placa
         LEFT JOIN veiculos v ON lh.veiculo_placa = v.placa
@@ -478,7 +492,14 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           COALESCE(fcr.amount::numeric, 0) as valor_calculado,
           NULL::json as calculo_detalhes,
           -- Incluir cartão combustível do veículo
-          COALESCE(v.cartao_abastecimento, fcr.card_number, '') as cartao_combustivel
+          COALESCE(v.cartao_abastecimento, fcr.card_number, '') as cartao_combustivel,
+          -- Campos de validação da planilha (N/A para base_system)
+          NULL::varchar as planilha_origem,
+          NULL::varchar as planilha_destino,
+          NULL::varchar as planilha_data,
+          NULL::timestamp as conferido_em,
+          NULL::boolean as rota_validada,
+          NULL::text as validacao_motivo
         FROM fuel_card_requests fcr
         LEFT JOIN bases b ON fcr.base_id = b.id
         LEFT JOIN veiculos v ON fcr.plate = v.placa
@@ -2492,25 +2513,30 @@ export async function validatePendingSolicitations(req: Request, res: Response) 
       });
       
       // Salvar dados da planilha em campos SEPARADOS (nunca modificar rota_origem/rota_destino originais)
-      if (resultado.liberado) {
-        try {
-          await pool.query(`
-            UPDATE solicitacoes_fuel_card 
-            SET trip_number = $1, 
-                planilha_origem = $2, 
-                planilha_destino = $3, 
-                planilha_data = $4,
-                conferido_em = NOW()
-            WHERE id = $5
-          `, [
-            resultado.tripNumber || null,
-            resultado.origem || null,
-            resultado.destino || null,
-            resultado.dataEncontrada || null,
-            id
-          ]);
-          
-          // Também atualizar histórico se existir
+      // SEMPRE salvar resultado da validação, tanto para rotas encontradas quanto não encontradas
+      try {
+        await pool.query(`
+          UPDATE solicitacoes_fuel_card 
+          SET trip_number = COALESCE($1, trip_number), 
+              planilha_origem = $2, 
+              planilha_destino = $3, 
+              planilha_data = $4,
+              conferido_em = NOW(),
+              rota_validada = $5,
+              validacao_motivo = $6
+          WHERE id = $7
+        `, [
+          resultado.tripNumber || null,
+          resultado.origem || null,
+          resultado.destino || null,
+          resultado.dataEncontrada || null,
+          resultado.liberado,
+          resultado.motivo || null,
+          id
+        ]);
+        
+        // Também atualizar histórico se existir
+        if (resultado.liberado) {
           await pool.query(`
             UPDATE historico_rotas_linehaul 
             SET planilha_trip_number = $1, 
@@ -2526,13 +2552,11 @@ export async function validatePendingSolicitations(req: Request, res: Response) 
             resultado.dataEncontrada || null,
             id
           ]);
-          
-          console.log(`[VALIDATE-PENDING] Dados da planilha salvos para ID ${id}: tripNumber=${resultado.tripNumber}, origem=${resultado.origem}, destino=${resultado.destino}`);
-        } catch (updateError: any) {
-          console.error(`[VALIDATE-PENDING] Erro ao salvar dados da planilha ID ${id}:`, updateError.message);
         }
-      } else {
-        console.log(`[VALIDATE-PENDING] Consulta ID ${id}: viagem não encontrada na planilha`);
+        
+        console.log(`[VALIDATE-PENDING] Dados da validação salvos para ID ${id}: encontrada=${resultado.liberado}, tripNumber=${resultado.tripNumber}, origem=${resultado.origem}, destino=${resultado.destino}, motivo=${resultado.motivo}`);
+      } catch (updateError: any) {
+        console.error(`[VALIDATE-PENDING] Erro ao salvar dados da planilha ID ${id}:`, updateError.message);
       }
     }
     

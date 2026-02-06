@@ -104,7 +104,14 @@ interface FuelCardSolicitation {
   // Timestamp real da criação da solicitação
   created_at?: string;
   placa_cartao?: string;
-  retorno_vazio?: boolean; // Flag indicando se é retorno vazio (em rota vazio)
+  retorno_vazio?: boolean;
+  // Campos de validação da planilha (conferência de rotas)
+  planilha_origem?: string;
+  planilha_destino?: string;
+  planilha_data?: string;
+  conferido_em?: string;
+  rota_validada?: boolean;
+  validacao_motivo?: string;
 }
 
 const FuelCardRequestsPanel: React.FC = () => {
@@ -4010,6 +4017,48 @@ const FuelCardRequestsPanel: React.FC = () => {
                           <div className="text-lg font-bold text-green-800">
                             <span className="font-medium">Valor Total:</span> R$ {selectedSolicitation.calculo_detalhes.valor_total}
                           </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Validação da Planilha de Rotas */}
+                  {selectedSolicitation.conferido_em && (
+                    <div className={`p-4 rounded-lg border ${selectedSolicitation.rota_validada ? 'bg-emerald-50 border-emerald-200' : 'bg-orange-50 border-orange-200'}`}>
+                      <Label className={`font-semibold flex items-center gap-2 ${selectedSolicitation.rota_validada ? 'text-emerald-800' : 'text-orange-800'}`}>
+                        <FileText className="h-4 w-4" />
+                        Conferência da Planilha de Rotas
+                      </Label>
+                      <div className="mt-2 space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="font-medium">Status:</span>
+                          {selectedSolicitation.rota_validada ? (
+                            <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">
+                              <CheckCircle2 className="h-3 w-3 mr-1" /> Rota Encontrada
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-orange-100 text-orange-800 border-orange-300">
+                              <AlertCircle className="h-3 w-3 mr-1" /> Rota Não Encontrada
+                            </Badge>
+                          )}
+                        </div>
+                        {selectedSolicitation.validacao_motivo && (
+                          <div className="text-sm">
+                            <span className="font-medium">Motivo:</span> {selectedSolicitation.validacao_motivo}
+                          </div>
+                        )}
+                        {selectedSolicitation.planilha_origem && selectedSolicitation.planilha_destino && (
+                          <div className="text-sm">
+                            <span className="font-medium">Rota na Planilha:</span> {selectedSolicitation.planilha_origem} → {selectedSolicitation.planilha_destino}
+                          </div>
+                        )}
+                        {selectedSolicitation.planilha_data && (
+                          <div className="text-sm">
+                            <span className="font-medium">Data na Planilha:</span> {selectedSolicitation.planilha_data}
+                          </div>
+                        )}
+                        <div className="text-xs text-gray-500 pt-1 border-t border-gray-200">
+                          Conferido em: {format(new Date(selectedSolicitation.conferido_em), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                         </div>
                       </div>
                     </div>
