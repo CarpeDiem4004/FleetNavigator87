@@ -1704,6 +1704,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Importar/atualizar veículos Coca-Cola via planilha Excel
+  app.post('/api/coca-cola/vehicles/import', cocaColaAuth, uploadExcel.single('file'), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+      }
+
+      const XLSX = await import('xlsx');
+      const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const rawData: any[] = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+      if (rawData.length === 0) {
+        return res.status(400).json({ error: 'Planilha vazia' });
+      }
+
+      const headerMap: Record<string, string> = {};
+      const firstRow = rawData[0];
+      for (const key of Object.keys(firstRow)) {
+        const normalized = key.toLowerCase().trim()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (normalized.includes('placa')) headerMap[key] = 'placa';
+        else if (normalized.includes('modelo')) headerMap[key] = 'modelo';
+        else if (normalized.includes('modal')) headerMap[key] = 'modal';
+        else if (normalized.includes('base')) headerMap[key] = 'base';
+        else if (normalized.includes('cartao') || normalized.includes('abastecimento') || normalized.includes('card')) headerMap[key] = 'cartao_abastecimento';
+      }
+
+      if (!headerMap || !Object.values(headerMap).includes('placa')) {
+        return res.status(400).json({ error: 'Coluna "Placa" não encontrada na planilha' });
+      }
+
+      const basesResult = await pool.query('SELECT id, nome FROM coca_cola_bases');
+      const basesMap: Record<string, number> = {};
+      for (const b of basesResult.rows) {
+        basesMap[b.nome.toUpperCase().trim()] = b.id;
+      }
+
+      let inserted = 0;
+      let updated = 0;
+      let errors: string[] = [];
+
+      for (let i = 0; i < rawData.length; i++) {
+        const row = rawData[i];
+        const mapped: any = {};
+        for (const [origKey, mappedKey] of Object.entries(headerMap)) {
+          mapped[mappedKey] = row[origKey] !== undefined && row[origKey] !== null ? String(row[origKey]).trim() : '';
+        }
+
+        if (!mapped.placa) {
+          continue;
+        }
+
+        const placa = mapped.placa.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (placa.length < 5) {
+          errors.push(`Linha ${i + 2}: Placa "${mapped.placa}" inválida`);
+          continue;
+        }
+
+        const modelo = mapped.modelo || '';
+        const modal = mapped.modal || '';
+        const cartao = mapped.cartao_abastecimento || '';
+
+        let baseId: number | null = null;
+        if (mapped.base) {
+          const baseKey = mapped.base.toUpperCase().trim();
+          if (basesMap[baseKey]) {
+            baseId = basesMap[baseKey];
+          } else {
+            const partialMatch = Object.entries(basesMap).find(([name]) => 
+              name.includes(baseKey) || baseKey.includes(name)
+            );
+            if (partialMatch) {
+              baseId = partialMatch[1];
+            }
+          }
+        }
+
+        const existing = await pool.query(
+          'SELECT id FROM coca_cola_vehicles WHERE UPPER(REPLACE(placa, \'-\', \'\')) = $1',
+          [placa]
+        );
+
+        if (existing.rows.length > 0) {
+          const sets: string[] = [];
+          const params: any[] = [];
+          let paramIdx = 1;
+          const hasModalCol = Object.values(headerMap).includes('modal');
+          const hasCartaoCol = Object.values(headerMap).includes('cartao_abastecimento');
+
+          if (modelo) { sets.push(`modelo = $${paramIdx++}`); params.push(modelo); }
+          if (hasModalCol) { sets.push(`modal = $${paramIdx++}`); params.push(modal || null); }
+          if (hasCartaoCol) { sets.push(`cartao_abastecimento = $${paramIdx++}`); params.push(cartao || null); }
+          if (baseId) { sets.push(`base_id = $${paramIdx++}`); params.push(baseId); }
+          sets.push(`updated_at = NOW()`);
+
+          if (sets.length > 0) {
+            params.push(existing.rows[0].id);
+            await pool.query(
+              `UPDATE coca_cola_vehicles SET ${sets.join(', ')} WHERE id = $${paramIdx}`,
+              params
+            );
+            updated++;
+          }
+        } else {
+          await pool.query(
+            `INSERT INTO coca_cola_vehicles (placa, modelo, modal, cartao_abastecimento, base_id, status, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, 'disponivel', NOW(), NOW())`,
+            [placa, modelo || null, modal || null, cartao || null, baseId]
+          );
+          inserted++;
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `Importação concluída: ${inserted} veículos inseridos, ${updated} atualizados`,
+        inserted,
+        updated,
+        total: inserted + updated,
+        errors: errors.length > 0 ? errors : undefined
+      });
+    } catch (error: any) {
+      console.error('[COCA-COLA] Erro na importação:', error);
+      res.status(500).json({ error: 'Erro ao processar planilha: ' + error.message });
+    }
+  });
+
   // Atualizar veículo Coca-Cola (rota PATCH genérica)
   app.patch('/api/coca-cola/vehicles/:id', cocaColaAuth, async (req: any, res) => {
     try {

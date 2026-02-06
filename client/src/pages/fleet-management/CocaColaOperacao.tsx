@@ -35,7 +35,9 @@ import {
   TrendingUp,
   TrendingDown,
   ArrowLeft,
-  Download
+  Download,
+  Upload,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Link } from 'wouter';
 
@@ -52,6 +54,8 @@ interface CocaColaVehicle {
   id: number;
   placa: string;
   modelo: string;
+  modal?: string;
+  cartao_abastecimento?: string;
   base_id: number;
   base_nome?: string;
   status: 'disponivel' | 'rota' | 'manutencao' | 'falta_equipe' | 'aguardando_peca' | 'outro';
@@ -92,6 +96,9 @@ export default function CocaColaOperacao() {
   const [selectedBaseFilter, setSelectedBaseFilter] = useState<string>('all');
   const [selectedBaseDetail, setSelectedBaseDetail] = useState<CocaColaBase | null>(null);
   const [baseDetailDialogOpen, setBaseDetailDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const hoje = format(new Date(), 'yyyy-MM-dd');
 
@@ -270,6 +277,43 @@ export default function CocaColaOperacao() {
       toast({ variant: 'destructive', title: 'Erro ao importar veículos da frota principal' });
     }
   });
+
+  const handleImportVehicles = async () => {
+    if (!importFile) return;
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', importFile);
+      const token = localStorage.getItem('jwt_token');
+      const response = await fetch('/api/coca-cola/vehicles/import', {
+        method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        credentials: 'include',
+        body: formData,
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        toast({
+          title: 'Importação concluída!',
+          description: `${result.inserted} inseridos, ${result.updated} atualizados`,
+        });
+        setImportDialogOpen(false);
+        setImportFile(null);
+        queryClient.invalidateQueries({ queryKey: ['/api/coca-cola/vehicles'] });
+        refetchVehicles();
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Erro na importação',
+          description: result.error || 'Erro desconhecido',
+        });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Erro ao importar planilha' });
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const saveAllDailyUpdates = async () => {
     for (const base of bases.filter(b => b.ativo)) {
@@ -592,7 +636,7 @@ export default function CocaColaOperacao() {
             </TabsContent>
 
             <TabsContent value="veiculos" className="space-y-6 mt-6">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-wrap justify-between items-center gap-2">
                 <div className="flex gap-4 items-center">
                   <Select value={selectedBaseFilter} onValueChange={setSelectedBaseFilter}>
                     <SelectTrigger className="w-[200px]">
@@ -609,12 +653,16 @@ export default function CocaColaOperacao() {
                     {filteredVehicles.length} veículos
                   </span>
                 </div>
-                <Dialog open={newVehicleDialogOpen} onOpenChange={setNewVehicleDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" /> Novo Veículo
-                    </Button>
-                  </DialogTrigger>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+                    <Upload className="h-4 w-4 mr-2" /> Importar Planilha
+                  </Button>
+                  <Dialog open={newVehicleDialogOpen} onOpenChange={setNewVehicleDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="h-4 w-4 mr-2" /> Novo Veículo
+                      </Button>
+                    </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Cadastrar Veículo</DialogTitle>
@@ -670,7 +718,58 @@ export default function CocaColaOperacao() {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
+                </div>
               </div>
+
+              <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <FileSpreadsheet className="h-5 w-5" />
+                      Importar/Atualizar Veículos
+                    </DialogTitle>
+                    <DialogDescription>
+                      Envie uma planilha Excel (.xlsx) com as colunas: Placa, Modelo, Modal, Base, Cartão de Abastecimento.
+                      Se um veículo com a mesma placa já existir, seus dados serão atualizados.
+                      Colunas sem dados serão deixadas em branco.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                      <input
+                        type="file"
+                        accept=".xlsx,.xls"
+                        onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                        className="hidden"
+                        id="import-vehicle-file"
+                      />
+                      <label htmlFor="import-vehicle-file" className="cursor-pointer">
+                        <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                        {importFile ? (
+                          <p className="text-sm font-medium">{importFile.name}</p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Clique para selecionar a planilha</p>
+                        )}
+                      </label>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-3 text-xs text-blue-800 space-y-1">
+                      <p className="font-semibold">Formato esperado da planilha:</p>
+                      <p>- Coluna obrigatória: <strong>Placa</strong></p>
+                      <p>- Colunas opcionais: Modelo, Modal, Base, Cartão de Abastecimento</p>
+                      <p>- Se a placa já existir, os dados serão atualizados</p>
+                      <p>- Placas novas serão cadastradas automaticamente</p>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => { setImportDialogOpen(false); setImportFile(null); }}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleImportVehicles} disabled={!importFile || importing}>
+                      {importing ? 'Importando...' : 'Importar'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
               <Card>
                 <CardContent className="p-0">
@@ -679,21 +778,22 @@ export default function CocaColaOperacao() {
                       <TableRow>
                         <TableHead>Placa</TableHead>
                         <TableHead>Modelo</TableHead>
+                        <TableHead>Modal</TableHead>
                         <TableHead>Base</TableHead>
+                        <TableHead>Cartão Abast.</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Oficina/Motivo</TableHead>
-                        <TableHead>Prazo</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {loadingVehicles ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8">Carregando...</TableCell>
+                          <TableCell colSpan={8} className="text-center py-8">Carregando...</TableCell>
                         </TableRow>
                       ) : filteredVehicles.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                             Nenhum veículo cadastrado
                           </TableCell>
                         </TableRow>
@@ -702,6 +802,7 @@ export default function CocaColaOperacao() {
                           <TableRow key={v.id}>
                             <TableCell className="font-medium">{v.placa}</TableCell>
                             <TableCell>{v.modelo}</TableCell>
+                            <TableCell>{v.modal || '-'}</TableCell>
                             <TableCell>
                               <Select 
                                 value={v.base_id?.toString() || ''} 
@@ -717,11 +818,9 @@ export default function CocaColaOperacao() {
                                 </SelectContent>
                               </Select>
                             </TableCell>
+                            <TableCell className="text-sm">{v.cartao_abastecimento || '-'}</TableCell>
                             <TableCell>{getStatusBadge(v.status)}</TableCell>
                             <TableCell>{v.oficina || v.motivo_parado || '-'}</TableCell>
-                            <TableCell>
-                              {v.prazo_estimado ? format(new Date(v.prazo_estimado), 'dd/MM/yyyy') : '-'}
-                            </TableCell>
                             <TableCell className="text-right">
                               <Select 
                                 value={v.status} 
