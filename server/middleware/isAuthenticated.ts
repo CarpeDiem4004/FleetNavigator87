@@ -71,14 +71,8 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
 // Também exportar o isAuthenticated como isAuthenticatedBySessionOrJwt para leitura semântica mais clara
 export const isAuthenticatedBySessionOrJwt = isAuthenticated;
 
-/**
- * Middleware para verificar autenticação baseada em token JWT (Supabase)
- * Este middleware verifica apenas o token JWT no cabeçalho Authorization
- * e adiciona as informações do usuário a req.supabaseUser
- */
 export const isJwtAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Obter e validar o token do cabeçalho Authorization
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -86,18 +80,39 @@ export const isJwtAuthenticated = async (req: Request, res: Response, next: Next
     }
     
     const token = extractJwtToken(authHeader);
-    const user = await validateSupabaseToken(token);
     
-    // Anexar o usuário à requisição
-    (req as any).supabaseUser = user;
+    // PRIORIDADE 1: JWT próprio (customizado)
+    try {
+      const jwtModule = await import('../utils/jwt');
+      const secret = process.env.JWT_SECRET || 'muricion-fleet-secret-key';
+      const decoded = jwtModule.verifyToken(token, secret);
+      
+      if (decoded && (decoded.email || decoded.id)) {
+        const user = {
+          id: decoded.id,
+          email: decoded.email,
+          role: decoded.role,
+          baseId: decoded.baseId,
+          basename: decoded.basename,
+          name: decoded.name || decoded.email
+        };
+        req.user = user as any;
+        (req as any).user = user;
+        return next();
+      }
+    } catch (e) {}
     
-    // Continuar
-    next();
+    // PRIORIDADE 2: Supabase (fallback)
+    try {
+      const supabaseUser = await validateSupabaseToken(token);
+      if (supabaseUser) {
+        (req as any).supabaseUser = supabaseUser;
+        return next();
+      }
+    } catch (e) {}
+    
+    return res.status(401).json({ message: "Token de autenticação inválido" });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return res.status(401).json({ message: "Token de autenticação inválido" });
-    }
-    console.error('Erro ao processar token JWT:', error);
     return res.status(500).json({ message: "Erro no servidor" });
   }
 };

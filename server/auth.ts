@@ -44,76 +44,53 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-// Função para verificar token JWT e retornar usuário
 async function verifyJwtToken(token: string): Promise<SelectUser | null> {
   try {
-    console.log(`[JWT Verify] Verificando token (primeiros 10 caracteres): ${token.substring(0, 10)}...`);
-    
-    // Verificar se estamos no modo de emergência/bypass para desenvolvimento
-    if (process.env.NODE_ENV === 'development' && token.startsWith('eyJhbGciOi')) {
-      try {
-        // Decodificar token JWT manualmente (apenas partes básicas)
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          // Decodificar payload (2ª parte)
-          const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-          
-          if (payload && payload.sub) {
-            // No modo de desenvolvimento, tentamos encontrar o usuário pelo ID
-            const userId = payload.sub;
-            console.log(`[JWT Verify] Usando modo de desenvolvimento para usuário ID: ${userId}`);
-            
-            // Buscar usuário diretamente do PostgreSQL
-            const user = await storage.getUser(Number(userId));
-            if (user) {
-              console.log(`[JWT Verify] Usuário encontrado no modo de desenvolvimento: ${user.email}`);
-              return user;
-            }
-          }
+    // PRIORIDADE 1: JWT próprio (customizado)
+    try {
+      const { verifyToken } = await import('./utils/jwt');
+      const secret = process.env.JWT_SECRET || 'muricion-fleet-secret-key';
+      const decoded = verifyToken(token, secret);
+      
+      if (decoded && (decoded.email || decoded.id)) {
+        const { rows } = await pool.query(
+          'SELECT * FROM users WHERE email = $1',
+          [decoded.email]
+        );
+        if (rows.length > 0) {
+          return rows[0];
         }
-      } catch (decodeErr) {
-        console.warn("[JWT Verify] Erro ao decodificar token manualmente:", decodeErr);
+        if (decoded.id) {
+          const user = await storage.getUser(Number(decoded.id));
+          if (user) return user;
+        }
       }
+    } catch (customJwtErr) {
+      // JWT próprio falhou, tentar Supabase
     }
     
-    // Tentar o método padrão do Supabase
-    // Criar cliente Supabase com service key
-    const supabase = createClient(
-      process.env.SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-    );
-    
-    // Verificar o token JWT
-    const { data, error } = await supabase.auth.getUser(token);
-    
-    if (error || !data.user) {
-      console.error("[JWT Verify] Erro ao verificar token:", error);
-      return null;
+    // PRIORIDADE 2: Supabase (fallback)
+    try {
+      const supabase = createClient(
+        process.env.SUPABASE_URL || '',
+        process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+      );
+      
+      const { data, error } = await supabase.auth.getUser(token);
+      
+      if (!error && data.user && data.user.email) {
+        const { rows } = await pool.query(
+          'SELECT * FROM users WHERE email = $1',
+          [data.user.email]
+        );
+        if (rows.length > 0) return rows[0];
+      }
+    } catch (supabaseErr) {
+      // Supabase também falhou
     }
     
-    // Obter email do usuário
-    const userEmail = data.user.email;
-    if (!userEmail) {
-      console.error("[JWT Verify] Token não contém email do usuário");
-      return null;
-    }
-    
-    console.log(`[JWT Verify] Token válido para o email: ${userEmail}`);
-    
-    // Buscar usuário no banco de dados
-    const { rows } = await pool.query(
-      'SELECT * FROM users WHERE email = $1',
-      [userEmail]
-    );
-    
-    if (rows.length === 0) {
-      console.error(`[JWT Verify] Usuário não encontrado para o email: ${userEmail}`);
-      return null;
-    }
-    
-    return rows[0];
+    return null;
   } catch (error) {
-    console.error("[JWT Verify] Erro ao verificar token JWT:", error);
     return null;
   }
 }

@@ -157,12 +157,31 @@ export async function unifiedAuthMiddleware(req, res, next) {
       });
     }
 
-    // ESTRATÉGIA 3: Verificar token JWT
+    // ESTRATÉGIA 3: JWT próprio (customizado) - PRIORIDADE MÁXIMA
+    try {
+      const customSecret = process.env.JWT_SECRET || 'muricion-fleet-secret-key';
+      const decoded = jwt.verify(token, customSecret);
+      
+      if (decoded && (decoded.email || decoded.id)) {
+        req.user = {
+          id: decoded.id,
+          name: decoded.name || decoded.email,
+          email: decoded.email,
+          role: decoded.role,
+          baseId: decoded.baseId,
+          basename: decoded.basename,
+          oficinaId: decoded.oficinaId
+        };
+        return next();
+      }
+    } catch (customJwtError) {
+      // JWT próprio falhou, tentar outras estratégias
+    }
+
+    // ESTRATÉGIA 3.5: JWT com chave Supabase (compatibilidade)
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
-      console.log('[UnifiedAuth] Token JWT verificado:', decoded.sub);
       
-      // Se precisar validar dados do usuário, adicionar verificação adicional aqui
       req.user = {
         id: decoded.sub,
         name: decoded.name,
@@ -174,10 +193,10 @@ export async function unifiedAuthMiddleware(req, res, next) {
       
       return next();
     } catch (jwtError) {
-      console.log('[UnifiedAuth] Falha ao verificar JWT, tentando Supabase:', jwtError.message);
+      // JWT Supabase-key falhou
     }
 
-    // ESTRATÉGIA 4: Verificar token via Supabase
+    // ESTRATÉGIA 4: Verificar token via Supabase API (fallback)
     try {
       const { data, error } = await supabase.auth.getUser(token);
       
@@ -185,9 +204,6 @@ export async function unifiedAuthMiddleware(req, res, next) {
         throw new Error(error?.message || 'Token Supabase inválido');
       }
       
-      console.log('[UnifiedAuth] Token Supabase verificado:', data.user.id);
-      
-      // Mapear usuário do Supabase para formato padrão do sistema
       req.user = {
         id: data.user.id,
         email: data.user.email,
@@ -197,7 +213,7 @@ export async function unifiedAuthMiddleware(req, res, next) {
       
       return next();
     } catch (supabaseError) {
-      console.error('[UnifiedAuth] Falha ao verificar token Supabase:', supabaseError.message);
+      // Supabase também falhou
     }
 
     // Se chegou aqui, todas as estratégias falharam
