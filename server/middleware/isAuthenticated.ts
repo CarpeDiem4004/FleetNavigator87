@@ -1,54 +1,69 @@
 import { Request, Response, NextFunction } from 'express';
 import { validateSupabaseToken, extractJwtToken, AuthError } from '../utils/auth';
 
-// Middleware personalizado que permite acesso público às rotas de projetos
 export const isAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
-  console.log(`[isAuthenticated] 🔍 MIDDLEWARE EXECUTADO para: ${req.originalUrl}`);
-  console.log(`[isAuthenticated] 🔍 Headers: ${JSON.stringify({hasAuth: !!req.headers.authorization, hasCookie: !!req.headers.cookie})}`);
-  
   // Permitir acesso público às rotas de projetos e bases para formulários de postos
   if (req.path.startsWith('/api/projects') || req.path.startsWith('/api/bases') || req.path.includes('projects-with-bases')) {
-    console.log('[isAuthenticated] Permitindo acesso público às rotas de projetos e bases para formulários');
     (req as any).user = { id: 1, name: 'Sistema Público', email: 'public@muricionfleet.com', role: 'admin' };
     return next();
   }
 
-  // Para outras rotas, verificar autenticação
+  // Permitir acesso público à validação de tokens de oficinas
+  if (req.path === '/api/workshops/validate-token' || req.path === '/api/workshops/test') {
+    return next();
+  }
+
   // PRIORIDADE 1: Verificar se o usuário está autenticado via sessão
-  const hasValidSession = req.isAuthenticated && req.isAuthenticated();
-  const hasUser = req.user && req.user.id;
-  
-  console.log(`[isAuthenticated] Debug sessão - hasValidSession: ${hasValidSession}, hasUser: ${!!hasUser}, userEmail: ${req.user?.email}`);
-  
-  if (hasValidSession && hasUser) {
-    console.log(`[isAuthenticated] ✅ Sessão válida para usuário: ${req.user?.email} - ACESSO LIBERADO`);
+  if (req.isAuthenticated && req.isAuthenticated() && req.user && req.user.id) {
     return next();
   }
   
-  // PRIORIDADE 2: Verificar token JWT APENAS se não estiver autenticado por sessão
+  // PRIORIDADE 2: Verificar token JWT
   const authHeader = req.headers.authorization;
   
-  console.log(`[isAuthenticated] Sessão inválida - Verificando JWT. Header: ${authHeader ? 'presente' : 'ausente'}`);
-  
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.log(`[isAuthenticated] ❌ Acesso negado - sem sessão válida e sem JWT para: ${req.originalUrl}`);
     return res.status(401).json({ message: "Não autenticado" });
   }
   
   try {
-    // Extrair token JWT
     const token = extractJwtToken(authHeader);
-    console.log('[isAuthenticated] Sessão inválida, tentando JWT...');
     
-    // Verificar com Supabase
-    const supabaseUser = await validateSupabaseToken(token);
-    if (supabaseUser) {
-      (req as any).supabaseUser = supabaseUser;
-      console.log(`[isAuthenticated] Token JWT validado para usuário: ${supabaseUser.email}`);
-      return next();
+    // PRIORIDADE 2A: JWT próprio (customizado) - funciona em qualquer domínio
+    try {
+      const jwtModule = await import('../utils/jwt');
+      const secret = process.env.JWT_SECRET || 'muricion-fleet-secret-key';
+      const decoded = jwtModule.verifyToken(token, secret);
+      
+      if (decoded && (decoded.email || decoded.id)) {
+        const user = {
+          id: decoded.id,
+          email: decoded.email,
+          role: decoded.role,
+          baseId: decoded.baseId,
+          basename: decoded.basename,
+          name: decoded.name || decoded.email
+        };
+        req.user = user as any;
+        (req as any).user = user;
+        return next();
+      }
+    } catch (jwtError) {
+      // JWT próprio falhou, tentar Supabase
     }
+    
+    // PRIORIDADE 2B: Verificar com Supabase (fallback)
+    try {
+      const supabaseUser = await validateSupabaseToken(token);
+      if (supabaseUser) {
+        (req as any).supabaseUser = supabaseUser;
+        return next();
+      }
+    } catch (supabaseError) {
+      // Supabase também falhou
+    }
+    
+    return res.status(401).json({ message: "Token de autenticação inválido ou expirado" });
   } catch (error) {
-    console.error('[isAuthenticated] Erro ao validar JWT:', error);
     return res.status(401).json({ message: "Token de autenticação inválido" });
   }
 };

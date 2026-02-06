@@ -29,76 +29,66 @@ export const blockFuelCardForOperador1LineHaul = (req: Request, res: Response, n
 export const isAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
   // Se o usuário está autenticado via sessão, continuar
   if (req.isAuthenticated && req.isAuthenticated()) {
-    console.log(`[isAuthenticated] Sessão válida para usuário: ${req.user?.email}`);
     return next();
   }
   
   // Permitir acesso público às rotas de projetos e bases para formulários de postos
   if (req.path.startsWith('/api/projects') || req.path.startsWith('/api/bases') || req.path.includes('projects-with-bases')) {
-    console.log('[isAuthenticated] Permitindo acesso público às rotas de projetos e bases para formulários');
     (req as any).user = { id: 1, name: 'Sistema Público', email: 'public@muricionfleet.com', role: 'admin' };
     return next();
   }
 
   // Permitir acesso público à validação de tokens de oficinas
   if (req.path === '/api/workshops/validate-token' || req.path === '/api/workshops/test') {
-    console.log('[isAuthenticated] Permitindo acesso público à validação de token de oficina');
     return next();
   }
   
   // Verificar se existe header de autorização com token JWT
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    // Log mais conciso para evitar spam
-  if (req.originalUrl.includes('/api/user') || req.originalUrl.includes('/auth')) {
-    console.log('Acesso não autenticado a', req.originalUrl, {
-      hasSession: !!req.session,
-      sessionID: req.sessionID,
-      hasAuth: !!req.headers.authorization
-    });
-  }
     return res.status(401).json({ message: "Não autenticado" });
   }
   
   try {
-    // Extrair token JWT
     const token = extractJwtToken(authHeader);
-    console.log('[isAuthenticated] Token JWT encontrado, verificando com múltiplos métodos...');
     
-    // Tentativa 1: Verificar com o Supabase
+    // PRIORIDADE 1: Verificar JWT próprio (customizado) - funciona em qualquer domínio
     try {
-      const supabaseUser = await validateSupabaseToken(token);
-      if (supabaseUser) {
-        // Usuário autenticado via JWT Supabase, anexá-lo à requisição
-        (req as any).supabaseUser = supabaseUser;
-        console.log(`[isAuthenticated] Token JWT Supabase validado para usuário: ${supabaseUser.email}`);
-        return next();
-      }
-    } catch (supabaseError) {
-      console.log('[isAuthenticated] Token não é do Supabase, tentando verificar token hybrid...');
-    }
-    
-    // Tentativa 2: Verificar com o serviço híbrido
-    try {
-      // Importar o módulo dinamicamente para evitar dependência circular
-      const hybridModule = await import('../utils/jwt');
-      
-      // Verificar token JWT com a biblioteca jsonwebtoken
+      const jwtModule = await import('../utils/jwt');
       const secret = process.env.JWT_SECRET || 'muricion-fleet-secret-key';
-      const decoded = hybridModule.verifyToken(token, secret);
+      const decoded = jwtModule.verifyToken(token, secret);
       
-      if (decoded) {
-        // Anexar o usuário decodificado à requisição
-        req.user = decoded;
-        console.log(`[isAuthenticated] Token JWT validado para usuário: ${decoded.email}`);
+      if (decoded && (decoded.email || decoded.id)) {
+        const user = {
+          id: decoded.id,
+          email: decoded.email,
+          role: decoded.role,
+          baseId: decoded.baseId,
+          basename: decoded.basename,
+          name: decoded.name || decoded.email
+        };
+        req.user = user as any;
+        (req as any).user = user;
+        console.log(`[isAuthenticated] JWT próprio validado para: ${user.email} (${req.method} ${req.path})`);
         return next();
       }
     } catch (jwtError) {
-      console.error('[isAuthenticated] Erro ao verificar token JWT:', jwtError);
+      // JWT próprio falhou, tentar Supabase
     }
     
-    // Se chegou aqui, nenhum método de verificação do token funcionou
-    console.log('[isAuthenticated] Token JWT inválido ou expirado');
+    // PRIORIDADE 2: Verificar com o Supabase (fallback)
+    try {
+      const supabaseUser = await validateSupabaseToken(token);
+      if (supabaseUser) {
+        (req as any).supabaseUser = supabaseUser;
+        console.log(`[isAuthenticated] Token Supabase validado para: ${supabaseUser.email}`);
+        return next();
+      }
+    } catch (supabaseError) {
+      // Supabase também falhou
+    }
+    
+    console.log(`[isAuthenticated] Token inválido para ${req.method} ${req.path}`);
     return res.status(401).json({ message: "Token de autenticação inválido ou expirado" });
     
   } catch (error) {
