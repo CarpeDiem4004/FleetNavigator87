@@ -2899,6 +2899,181 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== ESTATÍSTICAS GLOBAIS COCA-COLA (TODAS AS BASES) ==========
+
+  app.get('/api/coca-cola/global-daily-stats', cocaColaAuth, async (req: any, res) => {
+    try {
+      const { data } = req.query;
+      const dataConsulta = data || new Date().toISOString().split('T')[0];
+
+      const query = `
+        SELECT 
+          COALESCE(s.status, 'nao_informado') as status,
+          COUNT(*) as count
+        FROM coca_cola_vehicles v
+        LEFT JOIN vehicle_daily_status s ON v.id = s.vehicle_id AND s.data = $1
+        GROUP BY COALESCE(s.status, 'nao_informado')
+      `;
+
+      const result = await pool.query(query, [dataConsulta]);
+      const totalVehicles = await pool.query('SELECT COUNT(*) as total FROM coca_cola_vehicles');
+      const total = parseInt(totalVehicles.rows[0]?.total || '0');
+
+      const statusCounts: Record<string, number> = {};
+      result.rows.forEach((r: any) => {
+        statusCounts[r.status] = parseInt(r.count);
+      });
+
+      res.json({
+        success: true,
+        data: dataConsulta,
+        total,
+        statusCounts,
+        percentages: {
+          em_rota: total > 0 ? Math.round(((statusCounts['em_rota'] || 0) / total) * 100) : 0,
+          disponivel: total > 0 ? Math.round((((statusCounts['nao_informado'] || 0) + (statusCounts['disponivel'] || 0)) / total) * 100) : 0,
+          em_manutencao: total > 0 ? Math.round(((statusCounts['em_manutencao'] || 0) / total) * 100) : 0,
+          parados: total > 0 ? Math.round((((statusCounts['sem_equipe'] || 0) + (statusCounts['baixa_venda'] || 0) + (statusCounts['parado'] || 0)) / total) * 100) : 0,
+          emprestado: total > 0 ? Math.round(((statusCounts['emprestado'] || 0) / total) * 100) : 0,
+        },
+        counts: {
+          em_rota: statusCounts['em_rota'] || 0,
+          disponivel: (statusCounts['nao_informado'] || 0) + (statusCounts['disponivel'] || 0),
+          em_manutencao: statusCounts['em_manutencao'] || 0,
+          parados: (statusCounts['sem_equipe'] || 0) + (statusCounts['baixa_venda'] || 0) + (statusCounts['parado'] || 0),
+          emprestado: statusCounts['emprestado'] || 0,
+        }
+      });
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao buscar stats globais:', error);
+      res.status(500).json({ error: 'Erro ao buscar estatísticas globais' });
+    }
+  });
+
+  app.get('/api/coca-cola/global-period-stats', cocaColaAuth, async (req: any, res) => {
+    try {
+      const { data_inicio, data_fim } = req.query;
+      if (!data_inicio || !data_fim) {
+        return res.status(400).json({ error: 'Data inicial e final são obrigatórias' });
+      }
+
+      const totalVehicles = await pool.query('SELECT COUNT(*) as total FROM coca_cola_vehicles');
+      const total = parseInt(totalVehicles.rows[0]?.total || '0');
+
+      const query = `
+        SELECT 
+          s.data,
+          COALESCE(s.status, 'nao_informado') as status,
+          COUNT(*) as count
+        FROM vehicle_daily_status s
+        INNER JOIN coca_cola_vehicles v ON s.vehicle_id = v.id
+        WHERE s.data BETWEEN $1 AND $2
+        GROUP BY s.data, COALESCE(s.status, 'nao_informado')
+        ORDER BY s.data
+      `;
+
+      const result = await pool.query(query, [data_inicio, data_fim]);
+
+      const dailyData: Record<string, Record<string, number>> = {};
+      result.rows.forEach((r: any) => {
+        const dateKey = typeof r.data === 'string' ? r.data.split('T')[0] : new Date(r.data).toISOString().split('T')[0];
+        if (!dailyData[dateKey]) dailyData[dateKey] = {};
+        dailyData[dateKey][r.status] = parseInt(r.count);
+      });
+
+      const days = Object.keys(dailyData);
+      let totalEmRota = 0, totalManutencao = 0, totalParados = 0, totalDisponivel = 0;
+      const daysCount = days.length || 1;
+
+      days.forEach(day => {
+        const d = dailyData[day];
+        totalEmRota += d['em_rota'] || 0;
+        totalManutencao += d['em_manutencao'] || 0;
+        totalParados += (d['sem_equipe'] || 0) + (d['baixa_venda'] || 0) + (d['parado'] || 0);
+        totalDisponivel += (d['nao_informado'] || 0) + (d['disponivel'] || 0);
+      });
+
+      const totalRegistros = daysCount * total || 1;
+
+      res.json({
+        success: true,
+        data_inicio,
+        data_fim,
+        total_veiculos: total,
+        dias_com_dados: daysCount,
+        percentages: {
+          em_rota: total > 0 ? Math.round((totalEmRota / totalRegistros) * 100) : 0,
+          disponivel: total > 0 ? Math.round((totalDisponivel / totalRegistros) * 100) : 0,
+          em_manutencao: total > 0 ? Math.round((totalManutencao / totalRegistros) * 100) : 0,
+          parados: total > 0 ? Math.round((totalParados / totalRegistros) * 100) : 0,
+        },
+        daily: Object.entries(dailyData).map(([data, counts]) => ({
+          data,
+          em_rota: counts['em_rota'] || 0,
+          em_manutencao: counts['em_manutencao'] || 0,
+          parados: (counts['sem_equipe'] || 0) + (counts['baixa_venda'] || 0) + (counts['parado'] || 0),
+          disponivel: (counts['nao_informado'] || 0) + (counts['disponivel'] || 0),
+        }))
+      });
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao buscar stats por período:', error);
+      res.status(500).json({ error: 'Erro ao buscar estatísticas do período' });
+    }
+  });
+
+  app.get('/api/coca-cola/stopped-vehicles', cocaColaAuth, async (req: any, res) => {
+    try {
+      const { data } = req.query;
+      const dataConsulta = data || new Date().toISOString().split('T')[0];
+
+      const query = `
+        SELECT 
+          v.id,
+          v.placa,
+          v.modelo,
+          s.status,
+          s.observacao,
+          s.updated_by_name,
+          b.nome as base_nome,
+          b.id as base_id
+        FROM vehicle_daily_status s
+        INNER JOIN coca_cola_vehicles v ON s.vehicle_id = v.id
+        LEFT JOIN coca_cola_bases b ON v.base_id = b.id
+        WHERE s.data = $1
+          AND s.status IN ('em_manutencao', 'sem_equipe', 'baixa_venda', 'parado')
+        ORDER BY b.nome, s.status, v.placa
+      `;
+
+      const result = await pool.query(query, [dataConsulta]);
+
+      const groupedByBase: Record<string, { base_nome: string; base_id: number; vehicles: any[] }> = {};
+      result.rows.forEach((r: any) => {
+        const key = r.base_nome || 'Sem Base';
+        if (!groupedByBase[key]) {
+          groupedByBase[key] = { base_nome: key, base_id: r.base_id, vehicles: [] };
+        }
+        groupedByBase[key].vehicles.push({
+          id: r.id,
+          placa: r.placa,
+          modelo: r.modelo,
+          status: r.status,
+          observacao: r.observacao,
+          updated_by_name: r.updated_by_name
+        });
+      });
+
+      res.json({
+        success: true,
+        data: dataConsulta,
+        total_parados: result.rows.length,
+        bases: Object.values(groupedByBase)
+      });
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao buscar veículos parados:', error);
+      res.status(500).json({ error: 'Erro ao buscar veículos parados' });
+    }
+  });
+
   // Health check endpoints para deployments
   // ROTAS DE ALTA PRIORIDADE - DEPOIS DA AUTENTICAÇÃO
   

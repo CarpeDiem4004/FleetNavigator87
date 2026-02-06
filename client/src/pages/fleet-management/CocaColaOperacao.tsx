@@ -37,7 +37,11 @@ import {
   ArrowLeft,
   Download,
   Upload,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Search,
+  CalendarRange,
+  MessageSquare,
+  Eye
 } from 'lucide-react';
 import { Link } from 'wouter';
 
@@ -101,8 +105,10 @@ export default function CocaColaOperacao() {
   const [importing, setImporting] = useState(false);
 
   const hoje = format(new Date(), 'yyyy-MM-dd');
+  const [periodoInicio, setPeriodoInicio] = useState('');
+  const [periodoFim, setPeriodoFim] = useState('');
+  const [showPeriodStats, setShowPeriodStats] = useState(false);
 
-  // Função customizada para fetch com credentials
   const fetchWithCredentials = async (url: string) => {
     const response = await fetch(url, {
       method: 'GET',
@@ -147,6 +153,40 @@ export default function CocaColaOperacao() {
     staleTime: 30000
   });
 
+  const { data: globalDailyStats, refetch: refetchGlobalStats } = useQuery<any>({
+    queryKey: ['/api/coca-cola/global-daily-stats', hoje],
+    queryFn: () => fetchWithCredentials(`/api/coca-cola/global-daily-stats?data=${hoje}`),
+    refetchOnWindowFocus: false,
+    enabled: !!user,
+    retry: 3,
+    staleTime: 30000
+  });
+
+  const { data: stoppedVehiclesData, refetch: refetchStopped } = useQuery<any>({
+    queryKey: ['/api/coca-cola/stopped-vehicles', hoje],
+    queryFn: () => fetchWithCredentials(`/api/coca-cola/stopped-vehicles?data=${hoje}`),
+    refetchOnWindowFocus: false,
+    enabled: !!user,
+    retry: 3,
+    staleTime: 30000
+  });
+
+  const { data: periodStats, refetch: refetchPeriodStats } = useQuery<any>({
+    queryKey: ['/api/coca-cola/global-period-stats', periodoInicio, periodoFim],
+    queryFn: () => fetchWithCredentials(`/api/coca-cola/global-period-stats?data_inicio=${periodoInicio}&data_fim=${periodoFim}`),
+    refetchOnWindowFocus: false,
+    enabled: !!user && showPeriodStats && !!periodoInicio && !!periodoFim,
+    retry: 2,
+    staleTime: 30000
+  });
+
+  const handleConsultarPeriodo = () => {
+    if (periodoInicio && periodoFim) {
+      setShowPeriodStats(true);
+      refetchPeriodStats();
+    }
+  };
+
   // Refetch quando o usuário mudar (após login)
   useEffect(() => {
     if (user) {
@@ -156,6 +196,8 @@ export default function CocaColaOperacao() {
         refetchBases();
         refetchVehicles();
         refetchUpdates();
+        refetchGlobalStats();
+        refetchStopped();
       }, 1000);
       return () => clearTimeout(timer);
     }
@@ -322,18 +364,19 @@ export default function CocaColaOperacao() {
     toast({ title: 'Todas as atualizações diárias foram salvas!' });
   };
 
-  const totalVeiculos = vehicles.length;
-  const veiculosRota = vehicles.filter(v => v.status === 'em_rota' || v.status === 'rota').length;
-  const veiculosManutencao = vehicles.filter(v => v.status === 'manutencao').length;
-  const veiculosDisponiveis = vehicles.filter(v => v.status === 'disponivel').length;
-  const veiculosParados = vehicles.filter(v => ['sem_equipe', 'baixa_venda', 'falta_equipe', 'aguardando_peca', 'outro'].includes(v.status)).length;
+  const totalVeiculos = globalDailyStats?.total || vehicles.length;
+  const veiculosRota = globalDailyStats?.counts?.em_rota || vehicles.filter(v => v.status === 'em_rota' || v.status === 'rota').length;
+  const veiculosManutencao = globalDailyStats?.counts?.em_manutencao || vehicles.filter(v => v.status === 'manutencao').length;
+  const veiculosDisponiveis = globalDailyStats?.counts?.disponivel || vehicles.filter(v => v.status === 'disponivel').length;
+  const veiculosParados = globalDailyStats?.counts?.parados || vehicles.filter(v => ['sem_equipe', 'baixa_venda', 'falta_equipe', 'aguardando_peca', 'outro'].includes(v.status)).length;
 
   const basesAtualizadasHoje = dailyUpdates.filter(u => u.data_atualizacao === hoje).map(u => u.base_id);
   const basesPendentes = bases.filter(b => b.ativo && !basesAtualizadasHoje.includes(b.id));
 
-  const percDisponivel = totalVeiculos > 0 ? Math.round((veiculosDisponiveis / totalVeiculos) * 100) : 0;
-  const percRota = totalVeiculos > 0 ? Math.round((veiculosRota / totalVeiculos) * 100) : 0;
-  const percManutencao = totalVeiculos > 0 ? Math.round((veiculosManutencao / totalVeiculos) * 100) : 0;
+  const percDisponivel = globalDailyStats?.percentages?.disponivel ?? (totalVeiculos > 0 ? Math.round((veiculosDisponiveis / totalVeiculos) * 100) : 0);
+  const percRota = globalDailyStats?.percentages?.em_rota ?? (totalVeiculos > 0 ? Math.round((veiculosRota / totalVeiculos) * 100) : 0);
+  const percManutencao = globalDailyStats?.percentages?.em_manutencao ?? (totalVeiculos > 0 ? Math.round((veiculosManutencao / totalVeiculos) * 100) : 0);
+  const percParados = globalDailyStats?.percentages?.parados ?? (totalVeiculos > 0 ? Math.round((veiculosParados / totalVeiculos) * 100) : 0);
 
   const filteredVehicles = selectedBaseFilter === 'all' 
     ? vehicles 
@@ -412,7 +455,7 @@ export default function CocaColaOperacao() {
                 <Download className="h-4 w-4 mr-2" /> 
                 {syncFromMainMutation.isPending ? 'Importando...' : 'Importar da Frota'}
               </Button>
-              <Button variant="outline" onClick={() => { refetchBases(); refetchVehicles(); refetchUpdates(); }}>
+              <Button variant="outline" onClick={() => { refetchBases(); refetchVehicles(); refetchUpdates(); refetchGlobalStats(); refetchStopped(); }}>
                 <RefreshCw className="h-4 w-4 mr-2" /> Atualizar
               </Button>
             </div>
@@ -484,13 +527,109 @@ export default function CocaColaOperacao() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between">
-                      <span className="text-3xl font-bold text-red-600">{veiculosParados}</span>
+                      <span className="text-3xl font-bold text-red-600">{percParados}%</span>
                       <AlertCircle className="h-8 w-8 text-red-500" />
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">Falta equipe / Peça</p>
+                    <p className="text-sm text-muted-foreground mt-1">{veiculosParados} veículos</p>
                   </CardContent>
                 </Card>
               </div>
+
+              <Card className="border border-blue-200 bg-gradient-to-r from-blue-50 to-white">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-blue-700 text-base">
+                    <CalendarRange className="w-5 h-5" />
+                    Consultar Período
+                  </CardTitle>
+                  <CardDescription>Veja as porcentagens da frota em um período específico</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Data Inicial</Label>
+                      <Input 
+                        type="date" 
+                        value={periodoInicio} 
+                        onChange={e => { setPeriodoInicio(e.target.value); setShowPeriodStats(false); }}
+                        className="w-40"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Data Final</Label>
+                      <Input 
+                        type="date" 
+                        value={periodoFim} 
+                        onChange={e => { setPeriodoFim(e.target.value); setShowPeriodStats(false); }}
+                        className="w-40"
+                      />
+                    </div>
+                    <Button 
+                      onClick={handleConsultarPeriodo}
+                      disabled={!periodoInicio || !periodoFim}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Search className="w-4 h-4 mr-1" /> Consultar
+                    </Button>
+                  </div>
+
+                  {showPeriodStats && periodStats && (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium text-blue-700 mb-3">
+                        Resultado: {format(new Date(periodoInicio + 'T12:00:00'), 'dd/MM/yyyy')} a {format(new Date(periodoFim + 'T12:00:00'), 'dd/MM/yyyy')} 
+                        <span className="text-muted-foreground ml-2">({periodStats.dias_com_dados} dias com dados)</span>
+                      </p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                          <p className="text-2xl font-bold text-green-600">{periodStats.percentages?.disponivel || 0}%</p>
+                          <p className="text-xs text-green-700">Frota Disponível</p>
+                        </div>
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                          <p className="text-2xl font-bold text-blue-600">{periodStats.percentages?.em_rota || 0}%</p>
+                          <p className="text-xs text-blue-700">Em Rota</p>
+                        </div>
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center">
+                          <p className="text-2xl font-bold text-orange-600">{periodStats.percentages?.em_manutencao || 0}%</p>
+                          <p className="text-xs text-orange-700">Em Manutenção</p>
+                        </div>
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                          <p className="text-2xl font-bold text-red-600">{periodStats.percentages?.parados || 0}%</p>
+                          <p className="text-xs text-red-700">Parados</p>
+                        </div>
+                      </div>
+
+                      {periodStats.daily && periodStats.daily.length > 0 && (
+                        <div className="mt-4">
+                          <p className="text-xs font-medium text-muted-foreground mb-2">Detalhamento por dia:</p>
+                          <div className="max-h-[200px] overflow-y-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="text-xs">Data</TableHead>
+                                  <TableHead className="text-xs text-center">Disponível</TableHead>
+                                  <TableHead className="text-xs text-center">Em Rota</TableHead>
+                                  <TableHead className="text-xs text-center">Manutenção</TableHead>
+                                  <TableHead className="text-xs text-center">Parados</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {periodStats.daily.map((day: any) => (
+                                  <TableRow key={day.data}>
+                                    <TableCell className="text-xs">{format(new Date(day.data + 'T12:00:00'), 'dd/MM/yyyy')}</TableCell>
+                                    <TableCell className="text-xs text-center text-green-600">{day.disponivel}</TableCell>
+                                    <TableCell className="text-xs text-center text-blue-600">{day.em_rota}</TableCell>
+                                    <TableCell className="text-xs text-center text-orange-600">{day.em_manutencao}</TableCell>
+                                    <TableCell className="text-xs text-center text-red-600">{day.parados}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
@@ -546,84 +685,108 @@ export default function CocaColaOperacao() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <AlertCircle className="h-5 w-5 text-orange-500" />
+                      <AlertCircle className="h-5 w-5 text-red-500" />
                       Veículos Parados
                     </CardTitle>
                     <CardDescription>
-                      Manutenção, Sem Equipe, Baixa Venda
+                      Manutenção, Sem Equipe, Baixa Venda — com observações das bases
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {(() => {
-                      const veiculosParadosList = vehicles.filter(v => 
-                        ['manutencao', 'sem_equipe', 'baixa_venda'].includes(v.status)
-                      );
+                      const stoppedBases = stoppedVehiclesData?.bases || [];
+                      const totalStopped = stoppedVehiclesData?.total_parados || 0;
                       
-                      if (veiculosParadosList.length === 0) {
+                      if (stoppedBases.length === 0) {
+                        const veiculosParadosList = vehicles.filter(v => 
+                          ['manutencao', 'sem_equipe', 'baixa_venda'].includes(v.status)
+                        );
+                        
+                        if (veiculosParadosList.length === 0) {
+                          return (
+                            <p className="text-center text-muted-foreground py-8">
+                              Nenhum veículo parado hoje.
+                            </p>
+                          );
+                        }
+
+                        const basesComVeiculosParados = bases.filter(base => 
+                          veiculosParadosList.some(v => v.base_id === base.id)
+                        );
+
                         return (
-                          <p className="text-center text-muted-foreground py-8">
-                            Nenhum veículo parado.
-                          </p>
+                          <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                            {basesComVeiculosParados.map(base => {
+                              const veiculosBase = veiculosParadosList.filter(v => v.base_id === base.id);
+                              return (
+                                <div key={base.id} className="border rounded-lg p-3">
+                                  <p className="font-semibold text-sm mb-2 border-b pb-1">{base.nome} ({veiculosBase.length})</p>
+                                  <div className="space-y-1">
+                                    {veiculosBase.map(v => (
+                                      <div key={v.id} className="flex justify-between items-center text-xs bg-gray-50 p-2 rounded">
+                                        <span className="font-medium">{v.placa}</span>
+                                        <span className="text-muted-foreground">{v.modelo}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         );
                       }
 
-                      const basesComVeiculosParados = bases.filter(base => 
-                        veiculosParadosList.some(v => v.base_id === base.id)
-                      );
+                      const getStatusColor = (status: string) => {
+                        switch (status) {
+                          case 'em_manutencao': return { bg: 'bg-orange-50', text: 'text-orange-600', label: 'Em Manutenção' };
+                          case 'sem_equipe': return { bg: 'bg-yellow-50', text: 'text-yellow-600', label: 'Sem Equipe' };
+                          case 'baixa_venda': return { bg: 'bg-purple-50', text: 'text-purple-600', label: 'Baixa Venda' };
+                          case 'parado': return { bg: 'bg-red-50', text: 'text-red-600', label: 'Parado' };
+                          default: return { bg: 'bg-gray-50', text: 'text-gray-600', label: status };
+                        }
+                      };
 
                       return (
-                        <div className="space-y-4 max-h-[400px] overflow-y-auto">
-                          {basesComVeiculosParados.map(base => {
-                            const veiculosBase = veiculosParadosList.filter(v => v.base_id === base.id);
-                            const manutencao = veiculosBase.filter(v => v.status === 'manutencao');
-                            const semEquipe = veiculosBase.filter(v => v.status === 'sem_equipe');
-                            const baixaVenda = veiculosBase.filter(v => v.status === 'baixa_venda');
-                            
+                        <div className="space-y-4 max-h-[500px] overflow-y-auto">
+                          <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-center">
+                            <span className="text-sm font-semibold text-red-700">Total de veículos parados hoje: {totalStopped}</span>
+                          </div>
+                          {stoppedBases.map((baseGroup: any) => {
+                            const byStatus: Record<string, any[]> = {};
+                            baseGroup.vehicles.forEach((v: any) => {
+                              if (!byStatus[v.status]) byStatus[v.status] = [];
+                              byStatus[v.status].push(v);
+                            });
+
                             return (
-                              <div key={base.id} className="border rounded-lg p-3">
-                                <p className="font-semibold text-sm mb-2 border-b pb-1">{base.nome} ({veiculosBase.length})</p>
-                                
-                                {manutencao.length > 0 && (
-                                  <div className="mb-2">
-                                    <p className="text-xs font-medium text-orange-600 mb-1">Em Manutenção ({manutencao.length})</p>
-                                    <div className="space-y-1">
-                                      {manutencao.map(v => (
-                                        <div key={v.id} className="flex justify-between items-center text-xs bg-orange-50 p-2 rounded">
-                                          <span className="font-medium">{v.placa}</span>
-                                          <span className="text-muted-foreground">{v.oficina || 'N/I'}</span>
-                                        </div>
-                                      ))}
+                              <div key={baseGroup.base_id} className="border rounded-lg p-3">
+                                <p className="font-semibold text-sm mb-2 border-b pb-1">
+                                  {baseGroup.base_nome} ({baseGroup.vehicles.length})
+                                </p>
+                                {Object.entries(byStatus).map(([status, vList]) => {
+                                  const color = getStatusColor(status);
+                                  return (
+                                    <div key={status} className="mb-2">
+                                      <p className={`text-xs font-medium ${color.text} mb-1`}>{color.label} ({vList.length})</p>
+                                      <div className="space-y-1">
+                                        {vList.map((v: any) => (
+                                          <div key={v.id} className={`text-xs ${color.bg} p-2 rounded`}>
+                                            <div className="flex justify-between items-center">
+                                              <span className="font-medium">{v.placa}</span>
+                                              <span className="text-muted-foreground">{v.modelo}</span>
+                                            </div>
+                                            {v.observacao && (
+                                              <div className="mt-1 flex items-start gap-1 text-gray-600">
+                                                <MessageSquare className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                                <span className="italic">{v.observacao}</span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
                                     </div>
-                                  </div>
-                                )}
-                                
-                                {semEquipe.length > 0 && (
-                                  <div className="mb-2">
-                                    <p className="text-xs font-medium text-yellow-600 mb-1">Sem Equipe ({semEquipe.length})</p>
-                                    <div className="space-y-1">
-                                      {semEquipe.map(v => (
-                                        <div key={v.id} className="flex justify-between items-center text-xs bg-yellow-50 p-2 rounded">
-                                          <span className="font-medium">{v.placa}</span>
-                                          <span className="text-muted-foreground">{v.modelo}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {baixaVenda.length > 0 && (
-                                  <div>
-                                    <p className="text-xs font-medium text-purple-600 mb-1">Baixa Venda ({baixaVenda.length})</p>
-                                    <div className="space-y-1">
-                                      {baixaVenda.map(v => (
-                                        <div key={v.id} className="flex justify-between items-center text-xs bg-purple-50 p-2 rounded">
-                                          <span className="font-medium">{v.placa}</span>
-                                          <span className="text-muted-foreground">{v.modelo}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
+                                  );
+                                })}
                               </div>
                             );
                           })}
