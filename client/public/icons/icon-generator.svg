@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="64" fill="#2563eb"/>
+  
+  <!-- Truck Icon -->
+  <g transform="translate(64, 128)">
+    <!-- Cab -->
+    <rect x="0" y="128" width="128" height="128" rx="16" fill="#ffffff"/>
+    <!-- Trailer -->
+    <rect x="144" y="96" width="240" height="160" rx="16" fill="#ffffff"/>
+    
+    <!-- Windows -->
+    <rect x="16" y="144" width="96" height="64" rx="8" fill="#2563eb"/>
+    <rect x="160" y="112" width="48" height="32" rx="4" fill="#2563eb"/>
+    <rect x="224" y="112" width="48" height="32" rx="4" fill="#2563eb"/>
+    <rect x="288" y="112" width="48" height="32" rx="4" fill="#2563eb"/>
+    
+    <!-- Wheels -->
+    <circle cx="64" cy="288" r="32" fill="#1f2937"/>
+    <circle cx="64" cy="288" r="20" fill="#374151"/>
+    
+    <circle cx="192" cy="288" r="32" fill="#1f2937"/>
+    <circle cx="192" cy="288" r="20" fill="#374151"/>
+    
+    <circle cx="320" cy="288" r="32" fill="#1f2937"/>
+    <circle cx="320" cy="288" r="20" fill="#374151"/>
+    
+    <!-- Details -->
+    <rect x="32" y="200" width="64" height="8" rx="4" fill="#2563eb"/>
+    <rect x="160" y="168" width="208" height="16" rx="8" fill="#2563eb"/>
+  </g>
+  
+  <!-- Route lines -->
+  <g stroke="#ffffff" stroke-width="4" fill="none" opacity="0.7">
+    <path d="M 80 400 Q 200 360 320 400 Q 400 440 480 400" stroke-dasharray="8,8"/>
+  </g>
+  
+  <!-- Mobile indicator -->
+  <g transform="translate(400, 80)">
+    <rect width="48" height="80" rx="8" fill="#ffffff"/>
+    <rect x="4" y="4" width="40" height="60" rx="4" fill="#2563eb"/>
+    <circle cx="24" cy="72" r="4" fill="#2563eb"/>
+  </g>
+</svg>
