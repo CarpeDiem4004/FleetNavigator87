@@ -25360,6 +25360,159 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Servir arquivos estáticos para uploads de documentos
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
+  // === SOLICITAÇÕES DE MANUTENÇÃO (coca_cola_os_requests) ===
+
+  // Listar OS por base (público, para visualização pela base)
+  app.get('/api/public/coca-cola-os', async (req: any, res: any) => {
+    try {
+      const { base } = req.query;
+      let query = 'SELECT * FROM coca_cola_os_requests';
+      const params: string[] = [];
+      
+      if (base) {
+        query += ' WHERE base_origem = $1';
+        params.push(base as string);
+      }
+      
+      query += ' ORDER BY created_at DESC';
+      
+      const result = await pool.query(query, params);
+      res.json(result.rows);
+    } catch (error: any) {
+      console.error('[CocaCola OS] Erro ao listar:', error);
+      res.json([]);
+    }
+  });
+
+  // Criar solicitação de manutenção (bases do fleet status)
+  app.post('/api/maintenance-requests', async (req: any, res: any) => {
+    try {
+      const {
+        placa, modelo, base_origem, odometro, relato_problema,
+        tipo_manutencao, urgencia, responsavel_base, telefone_responsavel
+      } = req.body;
+
+      if (!placa || !base_origem || !relato_problema) {
+        return res.status(400).json({ success: false, message: 'Campos obrigatórios: placa, base_origem, relato_problema' });
+      }
+
+      const result = await pool.query(
+        `INSERT INTO coca_cola_os_requests 
+          (placa, modelo, base_origem, odometro, relato_problema, tipo_manutencao, urgencia, responsavel_base, telefone_responsavel, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendente')
+         RETURNING *`,
+        [
+          placa, modelo || null, base_origem, 
+          odometro ? parseInt(odometro) : null, relato_problema,
+          tipo_manutencao || 'corretiva', urgencia || 'media',
+          responsavel_base || null, telefone_responsavel || null
+        ]
+      );
+
+      console.log(`[MaintenanceRequest] Nova solicitação criada id=${result.rows[0].id} placa=${placa} base=${base_origem}`);
+      res.json({ success: true, data: result.rows[0] });
+    } catch (error: any) {
+      console.error('[MaintenanceRequest] Erro ao criar solicitação:', error);
+      res.status(500).json({ success: false, message: 'Erro ao criar solicitação: ' + error.message });
+    }
+  });
+
+  // Listar solicitações de OS (autenticado)
+  app.get('/api/maintenance-requests', isAuthenticated, async (req: any, res: any) => {
+    try {
+      const { status } = req.query;
+      let query = 'SELECT * FROM coca_cola_os_requests';
+      const params: string[] = [];
+      
+      if (status && status !== 'all') {
+        query += ' WHERE status = $1';
+        params.push(status as string);
+      }
+      
+      query += ' ORDER BY created_at DESC';
+      
+      const result = await pool.query(query, params);
+      res.json({ success: true, data: result.rows });
+    } catch (error: any) {
+      console.error('[MaintenanceRequest] Erro ao listar solicitações:', error);
+      res.status(500).json({ success: false, message: 'Erro ao listar solicitações' });
+    }
+  });
+
+  // Atualizar solicitação de OS (direcionamento)
+  app.patch('/api/maintenance-requests/:id', isAuthenticated, async (req: any, res: any) => {
+    try {
+      const { id } = req.params;
+      const {
+        status, oficina_direcionada, data_agendamento, hora_agendamento,
+        instrucoes, responsavel_aprovacao, observacoes
+      } = req.body;
+
+      const result = await pool.query(
+        `UPDATE coca_cola_os_requests SET
+          status = COALESCE($1, status),
+          oficina_direcionada = COALESCE($2, oficina_direcionada),
+          data_agendamento = COALESCE($3, data_agendamento),
+          hora_agendamento = COALESCE($4, hora_agendamento),
+          instrucoes = COALESCE($5, instrucoes),
+          observacoes = COALESCE($6, observacoes),
+          updated_at = NOW()
+         WHERE id = $7
+         RETURNING *`,
+        [status, oficina_direcionada, data_agendamento || null, hora_agendamento || null, instrucoes, observacoes, id]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, message: 'Solicitação não encontrada' });
+      }
+
+      res.json({ success: true, data: result.rows[0] });
+    } catch (error: any) {
+      console.error('[MaintenanceRequest] Erro ao atualizar solicitação:', error);
+      res.status(500).json({ success: false, message: 'Erro ao atualizar solicitação' });
+    }
+  });
+
+  // Confirmar agendamento e enviar WhatsApp manual
+  app.post('/api/maintenance-requests/:id/confirm', isAuthenticated, async (req: any, res: any) => {
+    try {
+      const { id } = req.params;
+      
+      const requestResult = await pool.query('SELECT * FROM coca_cola_os_requests WHERE id = $1', [id]);
+      if (requestResult.rows.length === 0) {
+        return res.status(404).json({ success: false, message: 'Solicitação não encontrada' });
+      }
+
+      await pool.query(
+        `UPDATE coca_cola_os_requests SET status = 'aprovado', updated_at = NOW() WHERE id = $1`,
+        [id]
+      );
+
+      res.json({ success: true, message: 'Agendamento confirmado' });
+    } catch (error: any) {
+      console.error('[MaintenanceRequest] Erro ao confirmar agendamento:', error);
+      res.status(500).json({ success: false, message: 'Erro ao confirmar agendamento' });
+    }
+  });
+
+  // Estatísticas de solicitações
+  app.get('/api/maintenance-requests/stats', isAuthenticated, async (req: any, res: any) => {
+    try {
+      const result = await pool.query(`
+        SELECT 
+          COUNT(*) FILTER (WHERE status = 'pendente') as pendentes,
+          COUNT(*) FILTER (WHERE status = 'aprovado') as aprovados,
+          COUNT(*) FILTER (WHERE status = 'recusado') as recusados,
+          COUNT(*) as total
+        FROM coca_cola_os_requests
+      `);
+      res.json({ success: true, data: result.rows[0] });
+    } catch (error: any) {
+      console.error('[MaintenanceRequest] Erro ao buscar estatísticas:', error);
+      res.status(500).json({ success: false, message: 'Erro ao buscar estatísticas' });
+    }
+  });
+
   return httpServer;
 }
 
@@ -28423,6 +28576,39 @@ async function createFuelRequestNotification(fuelRequest) {
     } catch (error) {
       console.error('[CocaCola OS] Erro ao atualizar:', error);
       res.status(500).json({ success: false, message: 'Erro ao atualizar' });
+    }
+  });
+
+  // Criar solicitação de manutenção (bases do fleet status)
+  app.post('/api/maintenance-requests', async (req, res) => {
+    try {
+      const {
+        placa, modelo, base_origem, odometro, relato_problema,
+        tipo_manutencao, urgencia, responsavel_base, telefone_responsavel
+      } = req.body;
+
+      if (!placa || !base_origem || !relato_problema) {
+        return res.status(400).json({ success: false, message: 'Campos obrigatórios: placa, base_origem, relato_problema' });
+      }
+
+      const result = await pool.query(
+        `INSERT INTO coca_cola_os_requests 
+          (placa, modelo, base_origem, odometro, relato_problema, tipo_manutencao, urgencia, responsavel_base, telefone_responsavel, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendente')
+         RETURNING *`,
+        [
+          placa, modelo || null, base_origem, 
+          odometro ? parseInt(odometro) : null, relato_problema,
+          tipo_manutencao || 'corretiva', urgencia || 'media',
+          responsavel_base || null, telefone_responsavel || null
+        ]
+      );
+
+      console.log(`[MaintenanceRequest] Nova solicitação criada id=${result.rows[0].id} placa=${placa} base=${base_origem}`);
+      res.json({ success: true, data: result.rows[0] });
+    } catch (error) {
+      console.error('[MaintenanceRequest] Erro ao criar solicitação:', error);
+      res.status(500).json({ success: false, message: 'Erro ao criar solicitação: ' + (error as Error).message });
     }
   });
 
