@@ -95,7 +95,8 @@ import {
   createFuelCardRequest,
   getFuelCardSolicitationsCounts,
   validateSheetForRequest,
-  validatePendingSolicitations
+  validatePendingSolicitations,
+  calcularDataConsulta
 } from "./fuelCardSolicitationsApi";
 import { getFuelCardAnalytics } from "./fuelCardAnalyticsApi";
 import { getFuelConsumptionReport, getBasesForFilter } from "./routes/fuelConsumptionReportApi";
@@ -9241,6 +9242,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calcular litros estimados
       const litrosEstimados = kmTotal > 0 ? parseFloat(((kmTotal + kmAcrescimo) / consumo).toFixed(2)) : 0;
 
+      // REGRA DE HORÁRIO: Calcular data_uso com base no horário de abastecimento
+      // Até 16h → hoje | Após 18h → D+1 | 16:01-17:59 → hoje
+      const dataUsoCalculada = calcularDataConsulta(horario_abastecimento);
+      console.log(`[LINEHAUL-PUBLIC-REQUEST] Regra de horário: horário=${horario_abastecimento} → data_uso=${dataUsoCalculada}`);
+
       // Inserir na tabela solicitacoes_fuel_card com origem_tipo = 'line_hall'
       const insertQuery = `
         INSERT INTO solicitacoes_fuel_card (
@@ -9249,11 +9255,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           origem_tipo, rota_origem, rota_destino, km_total, valor_calculado,
           horario_abastecimento, calculo_detalhes, observacoes, veiculo_modelo,
           km_veiculo, foto_painel_path, foto_cartao_path, placa_cartao,
-          valor_litro, litros_solicitados, retorno_vazio
+          valor_litro, litros_solicitados, retorno_vazio, data_uso
         ) VALUES (
           $1, $2, $3, $4, $5, $6, 'Pendente', $7,
           'line_hall', $8, $9, $10, $11, $12, $13, $14, $15,
-          $16, $17, $18, $19, $20, $21, $22
+          $16, $17, $18, $19, $20, $21, $22, $23
         )
         RETURNING *
       `;
@@ -9282,7 +9288,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         placa_cartao || null,
         precoLitro, // valor_litro - preço do litro usado no cálculo
         litrosEstimados, // litros_solicitados - quantidade de litros calculada
-        isRetornoVazio // retorno_vazio
+        isRetornoVazio, // retorno_vazio
+        dataUsoCalculada // data_uso calculada pela regra de horário
       ]);
 
       console.log('[LINEHAUL-PUBLIC-REQUEST] Solicitação criada:', result.rows[0].id);

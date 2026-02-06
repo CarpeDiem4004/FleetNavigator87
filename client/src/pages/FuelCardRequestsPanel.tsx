@@ -816,17 +816,16 @@ const FuelCardRequestsPanel: React.FC = () => {
       });
       
       const solicitationsData = pendingLineHaul.map(sol => {
-        // Usar data_uso se disponível, senão usar data_solicitacao
         let dataParaValidar = sol.data_uso;
         if (!dataParaValidar && sol.data_solicitacao) {
-          // Extrair apenas a parte da data (YYYY-MM-DD) da data de solicitação
           const dataSol = new Date(sol.data_solicitacao);
           dataParaValidar = dataSol.toISOString().split('T')[0];
         }
         return {
           id: sol.id,
           placa: sol.placa,
-          data_uso: dataParaValidar
+          data_uso: dataParaValidar,
+          horario_abastecimento: sol.horario_abastecimento
         };
       });
       

@@ -5,6 +5,55 @@ import { normalizeBaseName } from '../shared/baseNormalization';
 import { sendFuelCardRechargeNotificationZAPI, isZAPIConfigured } from './services/zapiWhatsAppService';
 
 /**
+ * Calcula a data de consulta na planilha com base no horário de abastecimento selecionado.
+ * Regra de negócio:
+ * - Até 16:00 → data atual
+ * - Após 18:00 → data atual + 1 dia (D+1)
+ * - Entre 16:01 e 17:59 → data atual
+ */
+export function calcularDataConsulta(horarioAbastecimento: string | null | undefined, dataBase?: string): string {
+  const hoje = dataBase ? new Date(dataBase + 'T12:00:00') : new Date();
+  const dataAtualStr = hoje.toISOString().split('T')[0];
+  
+  if (!horarioAbastecimento) {
+    return dataAtualStr;
+  }
+  
+  const horarioLower = horarioAbastecimento.toLowerCase().trim();
+  
+  const match = horarioAbastecimento.match(/^(\d{1,2}):(\d{2})$/);
+  if (match) {
+    const hora = parseInt(match[1]);
+    const minuto = parseInt(match[2]);
+    const totalMinutos = hora * 60 + minuto;
+    
+    if (totalMinutos >= 18 * 60) {
+      const amanha = new Date(hoje);
+      amanha.setDate(amanha.getDate() + 1);
+      const dataAmanha = amanha.toISOString().split('T')[0];
+      console.log(`[DATA-CONSULTA] Horário "${horarioAbastecimento}" (${hora}:${String(minuto).padStart(2,'0')}) → ≥18:00 → D+1: ${dataAmanha}`);
+      return dataAmanha;
+    }
+    
+    console.log(`[DATA-CONSULTA] Horário "${horarioAbastecimento}" (${hora}:${String(minuto).padStart(2,'0')}) → <18:00 → Data atual: ${dataAtualStr}`);
+    return dataAtualStr;
+  }
+  
+  if (horarioLower.includes('após 18') || horarioLower.includes('apos 18') || 
+      horarioLower === 'após 18h' || horarioLower === 'apos_18h' || 
+      horarioLower === 'depois_18h' || horarioLower === 'depois 18h') {
+    const amanha = new Date(hoje);
+    amanha.setDate(amanha.getDate() + 1);
+    const dataAmanha = amanha.toISOString().split('T')[0];
+    console.log(`[DATA-CONSULTA] Horário "${horarioAbastecimento}" → Token "Após 18h" → D+1: ${dataAmanha}`);
+    return dataAmanha;
+  }
+  
+  console.log(`[DATA-CONSULTA] Horário "${horarioAbastecimento}" → Formato não reconhecido → Data atual: ${dataAtualStr}`);
+  return dataAtualStr;
+}
+
+/**
  * Valida solicitação de abastecimento com a planilha do Google Sheets
  * Usa a API pública do Google Sheets para verificar se existe uma viagem
  * programada para a data e placa informadas
@@ -740,6 +789,17 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
     // Apenas para solicitações do Line Haul (origem_tipo = 'line_hall')
     let rotaOrigem = '';
     let rotaDestino = '';
+    
+    // REGRA DE HORÁRIO: Calcular data de consulta com base no horário de abastecimento
+    // Até 16h → hoje | Após 18h → D+1 | 16:01-17:59 → hoje
+    const horarioAbastecimentoReq = req.body.horario_abastecimento;
+    if (origem_tipo === 'line_hall' && horarioAbastecimentoReq) {
+      const dataConsultaPlanilha = calcularDataConsulta(horarioAbastecimentoReq, data_uso_corrigida || undefined);
+      if (dataConsultaPlanilha !== data_uso_corrigida) {
+        console.log(`[FUEL-CARD] Regra de horário aplicada: data_uso original=${data_uso_corrigida} → data_consulta=${dataConsultaPlanilha} (horário=${horarioAbastecimentoReq})`);
+        data_uso_corrigida = dataConsultaPlanilha;
+      }
+    }
     
     if (origem_tipo === 'line_hall' && data_uso_corrigida) {
       console.log(`[GOOGLE_SHEETS] Iniciando validação para Line Haul - Placa: ${placa}, Data: ${data_uso_corrigida}`);
@@ -2483,7 +2543,7 @@ export async function validatePendingSolicitations(req: Request, res: Response) 
     const results: any[] = [];
     
     for (const sol of solicitations) {
-      const { id, placa, data_uso } = sol;
+      const { id, placa, data_uso, horario_abastecimento } = sol;
       
       if (!placa) {
         results.push({
@@ -2495,8 +2555,16 @@ export async function validatePendingSolicitations(req: Request, res: Response) 
         continue;
       }
       
-      // Se não tiver data_uso, usa a data de hoje
-      const dataParaValidar = data_uso || new Date().toISOString().split('T')[0];
+      // REGRA DE HORÁRIO: Calcular data de consulta com base no horário de abastecimento
+      // Até 16h → hoje | Após 18h → D+1 | 16:01-17:59 → hoje
+      const dataBaseParaCalculo = data_uso || new Date().toISOString().split('T')[0];
+      const dataParaValidar = horario_abastecimento 
+        ? calcularDataConsulta(horario_abastecimento, dataBaseParaCalculo)
+        : dataBaseParaCalculo;
+      
+      if (dataParaValidar !== dataBaseParaCalculo) {
+        console.log(`[VALIDATE-PENDING] Regra de horário aplicada para ID ${id}: ${dataBaseParaCalculo} → ${dataParaValidar} (horário=${horario_abastecimento})`);
+      }
       
       const resultado = await validateWithGoogleSheet(placa, dataParaValidar);
       
