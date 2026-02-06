@@ -143,14 +143,7 @@ async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<
     let tripNumberEncontrado = '';
     let dataEncontrada = '';
     
-    // Calcular data de amanhã para busca flexível
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    const amanha = new Date(hoje);
-    amanha.setDate(amanha.getDate() + 1);
-    const amanhaFormatada = `${String(amanha.getDate()).padStart(2, '0')}/${String(amanha.getMonth() + 1).padStart(2, '0')}/${amanha.getFullYear()}`;
-    
-    console.log(`[GOOGLE_SHEETS] Buscando data: ${dataFormatada} ou ${amanhaFormatada}`);
+    console.log(`[GOOGLE_SHEETS] Buscando data EXATA: ${dataFormatada} (busca flexível removida - regra de horário já calcula data correta)`);
     
     for (const row of rows) {
       const cells = row.c || [];
@@ -197,8 +190,7 @@ async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<
       // Não usar includes pois causa falsos positivos
       const placaMatch = usedVehicle === placaNormalizada || vehicleNumber === placaNormalizada;
       
-      // Busca flexível: aceita data exata OU amanhã
-      const dataMatch = dataLinha === dataFormatada || dataLinha === amanhaFormatada;
+      const dataMatch = dataLinha === dataFormatada;
       
       // Debug: mostrar comparações quando data corresponde
       if (dataMatch && (usedVehicle || vehicleNumber)) {
@@ -2591,7 +2583,8 @@ export async function validatePendingSolicitations(req: Request, res: Response) 
               planilha_data = $4,
               conferido_em = NOW(),
               rota_validada = $5,
-              validacao_motivo = $6
+              validacao_motivo = $6,
+              data_uso = COALESCE(data_uso, $8)
           WHERE id = $7
         `, [
           resultado.tripNumber || null,
@@ -2600,7 +2593,8 @@ export async function validatePendingSolicitations(req: Request, res: Response) 
           resultado.dataEncontrada || null,
           resultado.liberado,
           resultado.motivo || null,
-          id
+          id,
+          dataParaValidar
         ]);
         
         // Também atualizar histórico se existir
