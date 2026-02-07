@@ -149,6 +149,17 @@ export default function FleetStatusBasePage() {
 
   const baseName = baseData?.data?.name || baseData?.name || user?.basename || 'Base';
 
+  const { data: allBasesData } = useQuery({
+    queryKey: ['/api/hybrid/bases'],
+    queryFn: async () => {
+      const response = await fetch('/api/hybrid/bases', { credentials: 'include' });
+      if (!response.ok) return { bases: [] };
+      return response.json();
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+  const allBases: { id: number; name: string }[] = allBasesData?.bases || [];
+
   useEffect(() => {
     if (!authLoading) {
       const timer = setTimeout(() => {
@@ -693,12 +704,25 @@ export default function FleetStatusBasePage() {
             {formData.status === 'emprestado' && (
               <>
                 <div>
-                  <Label>Base Destino</Label>
-                  <Input
+                  <Label>Base Destino *</Label>
+                  <Select
                     value={formData.base_emprestada_nome || ''}
-                    onChange={(e) => setFormData({ ...formData, base_emprestada_nome: e.target.value })}
-                    placeholder="Nome da base que recebeu"
-                  />
+                    onValueChange={(value) => setFormData({ ...formData, base_emprestada_nome: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a base de destino" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {allBases
+                        .filter(b => b.id !== baseId)
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map(b => (
+                          <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>
+                        ))
+                      }
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500 mt-1">Selecione a base que está recebendo o veículo emprestado.</p>
                 </div>
                 <div>
                   <Label>Previsão de Retorno</Label>
