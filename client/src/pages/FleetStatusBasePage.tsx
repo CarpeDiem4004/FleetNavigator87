@@ -26,7 +26,9 @@ import {
   Calendar,
   Plus,
   ClipboardList,
-  Send
+  Send,
+  LogOut,
+  User
 } from 'lucide-react';
 
 interface Vehicle {
@@ -106,7 +108,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function FleetStatusBasePage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, logout } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
@@ -361,8 +363,36 @@ export default function FleetStatusBasePage() {
     );
   }
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/fleet-status/login');
+    } catch (error) {
+      navigate('/fleet-status/login');
+    }
+  };
+
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
+      <div className="flex items-center justify-between bg-white border rounded-lg px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="bg-orange-100 p-2 rounded-full">
+            <Truck className="w-5 h-5 text-orange-600" />
+          </div>
+          <div>
+            <div className="font-semibold text-gray-900">{baseName}</div>
+            <div className="text-sm text-gray-500 flex items-center gap-1">
+              <User className="w-3 h-3" />
+              {user?.name || user?.email || 'Usuário'}
+            </div>
+          </div>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleLogout} className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+          <LogOut className="w-4 h-4 mr-2" />
+          Sair
+        </Button>
+      </div>
+
       <Card>
         <CardHeader className="pb-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
