@@ -678,7 +678,20 @@ export function setupAuth(app: Express) {
         console.log(`[login-base] ACESSO LIBERADO - Usuário ${user.email} autorizado para base ${parsedBaseId}`);
       }
       
-      console.log(`[login-base] Login bem-sucedido: ${user.email} (Base: ${user.basename})`);
+      let resolvedBasename = user.basename;
+      const userBaseId = user.base_id || user.baseId;
+      if (!resolvedBasename && userBaseId) {
+        try {
+          const baseInfo = await storage.getBase(userBaseId);
+          if (baseInfo) {
+            resolvedBasename = baseInfo.name;
+          }
+        } catch (e) {
+          console.log(`[login-base] Erro ao buscar nome da base ${userBaseId}:`, e);
+        }
+      }
+      
+      console.log(`[login-base] Login bem-sucedido: ${user.email} (Base: ${resolvedBasename})`);
       
       // Gerar JWT próprio para autenticação cross-domain
       const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key';
@@ -688,14 +701,14 @@ export function setupAuth(app: Express) {
           email: user.email, 
           role: user.role,
           baseId: user.base_id,
-          basename: user.basename
+          basename: resolvedBasename
         }, 
         jwtSecret, 
         { expiresIn: '30d' }
       );
       
       // Remover senha antes de retornar
-      const userWithoutPassword = { ...user, password: undefined };
+      const userWithoutPassword = { ...user, password: undefined, basename: resolvedBasename };
       
       return res.json({
         success: true,

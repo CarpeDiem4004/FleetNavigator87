@@ -147,7 +147,7 @@ export default function FleetStatusBasePage() {
     staleTime: 1000 * 60 * 5,
   });
 
-  const baseName = baseData?.name || user?.basename || 'Base';
+  const baseName = baseData?.data?.name || baseData?.name || user?.basename || 'Base';
 
   useEffect(() => {
     if (!authLoading) {
