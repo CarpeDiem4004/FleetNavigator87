@@ -150,9 +150,9 @@ export default function FleetStatusBasePage() {
   const baseName = baseData?.data?.name || baseData?.name || user?.basename || 'Base';
 
   const { data: allBasesData } = useQuery({
-    queryKey: ['/api/hybrid/bases'],
+    queryKey: ['/api/fleet-status/public/bases-list'],
     queryFn: async () => {
-      const response = await fetch('/api/hybrid/bases', { credentials: 'include' });
+      const response = await fetch('/api/fleet-status/public/bases-list');
       if (!response.ok) return { bases: [] };
       return response.json();
     },

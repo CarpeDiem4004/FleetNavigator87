@@ -147,6 +147,17 @@ router.get('/api/fleet-status/base/:baseId/vehicles', isAuthenticated, async (re
   }
 });
 
+// GET - Lista pública de bases para dropdown de empréstimo de veículos
+router.get('/api/fleet-status/public/bases-list', async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query('SELECT id, name FROM bases WHERE active = true ORDER BY name');
+    res.json({ success: true, bases: result.rows });
+  } catch (error: any) {
+    console.error('[FLEET-STATUS] Erro ao listar bases:', error);
+    res.status(500).json({ success: false, error: 'Erro ao listar bases' });
+  }
+});
+
 // GET - Rota pública para buscar veículos de uma base (usado quando autenticação é via localStorage)
 // Esta rota busca os veículos diretamente pela base sem exigir sessão do servidor
 router.get('/api/fleet-status/public/base/:baseId/vehicles', async (req: Request, res: Response) => {
