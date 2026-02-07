@@ -654,8 +654,8 @@ export function setupAuth(app: Express) {
         }
       }
       
-      // Verificar se é um usuário autorizado (operador, admin, gestor)
-      if (!['operador', 'admin', 'gestor', 'posto', 'gestor_combustivel', 'operador_status_frota'].includes(user.role)) {
+      // Verificar se é um usuário autorizado (operador, admin, gestor, line_hall, etc.)
+      if (!['operador', 'admin', 'gestor', 'posto', 'gestor_combustivel', 'operador_status_frota', 'line_hall', 'coordenador', 'oficina', 'pneus'].includes(user.role)) {
         console.log(`[login-base] Acesso negado - usuário não autorizado: ${user.email} (Role: ${user.role})`);
         return res.status(403).json({ 
           message: "Acesso negado. Este login é apenas para operadores de base e administradores." 
