@@ -10825,6 +10825,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const basesResult = await pool.query('SELECT id, name, basename FROM bases WHERE active = true ORDER BY name');
       const bases = basesResult.rows as { id: number; name: string; basename: string | null }[];
       
+      const projectsResult = await pool.query('SELECT id, name FROM projects ORDER BY name');
+      const projects = projectsResult.rows as { id: number; name: string }[];
+      
       const basesByNormalizedName = new Map<string, number>();
       const basesByBasename = new Map<string, number>();
       const basesByCode = new Map<string, number>();
@@ -10863,12 +10866,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return null;
       };
       
+      const findProjectId = (inputName: string): number | null => {
+        if (!inputName) return null;
+        const normalized = inputName.toLowerCase().trim();
+        for (const p of projects) {
+          if (p.name.toLowerCase() === normalized) return p.id;
+        }
+        for (const p of projects) {
+          if (p.name.toLowerCase().includes(normalized) || normalized.includes(p.name.toLowerCase())) return p.id;
+        }
+        return null;
+      };
+      
       let atualizados = 0;
       let criados = 0;
       const naoEncontrados: string[] = [];
       const basesNaoEncontradas: string[] = [];
+      const projetosNaoEncontrados: string[] = [];
       const erros: string[] = [];
       const detalhesAtualizados: { placa: string; campos: string[] }[] = [];
+      const detalhesCriados: string[] = [];
       
       for (const row of dados) {
         const placa = row.placa?.toString().trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -10882,6 +10899,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const modelo = row.modelo?.toString().trim() || null;
         const baseNome = row.base?.toString().trim() || null;
         const cartao = row.cartao?.toString().trim() || null;
+        const projetoNome = row.projeto?.toString().trim() || null;
         
         let baseId: number | null = null;
         if (baseNome) {
@@ -10891,9 +10909,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
+        let projectId: number | null = null;
+        if (projetoNome) {
+          projectId = findProjectId(projetoNome);
+          if (!projectId && !projetosNaoEncontrados.includes(projetoNome)) {
+            projetosNaoEncontrados.push(projetoNome);
+          }
+        }
+        
         try {
           const existingVehicle = await pool.query(
-            "SELECT id, plate, make, model, base_id, cartao_abastecimento FROM vehicles WHERE UPPER(REPLACE(plate, '-', '')) = $1",
+            "SELECT id, plate, make, model, base_id, project_id, cartao_abastecimento FROM vehicles WHERE UPPER(REPLACE(plate, '-', '')) = $1",
             [placa]
           );
           
@@ -10918,6 +10944,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               params.push(baseId);
               camposAtualizados.push('base');
             }
+            if (projectId) {
+              updates.push(`project_id = $${paramIdx++}`);
+              params.push(projectId);
+              camposAtualizados.push('projeto');
+            }
             if (cartao) {
               updates.push(`cartao_abastecimento = $${paramIdx++}`);
               params.push(cartao);
@@ -10939,18 +10970,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             const insertPlate = placa.length === 7 ? placa.substring(0, 3) + placa.substring(3) : placa;
             await pool.query(
-              `INSERT INTO vehicles (plate, make, model, base_id, cartao_abastecimento, vehicle_type, status, ownership, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, $5, 'truck', 'active', 'murici', NOW(), NOW())`,
-              [insertPlate, marca || 'N/D', modelo || 'N/D', baseId, cartao]
+              `INSERT INTO vehicles (plate, make, model, base_id, project_id, cartao_abastecimento, vehicle_type, status, ownership, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, $6, 'truck', 'active', 'murici', NOW(), NOW())`,
+              [insertPlate, marca || 'N/D', modelo || 'N/D', baseId, projectId, cartao]
             );
             criados++;
+            if (detalhesCriados.length < 50) {
+              detalhesCriados.push(insertPlate);
+            }
           }
         } catch (updateError: any) {
           erros.push(`Erro ao processar ${placa}: ${updateError.message}`);
         }
       }
       
-      console.log(`[IMPORT-COMPLETE] Concluída: ${atualizados} atualizados, ${criados} criados, ${basesNaoEncontradas.length} bases não encontradas`);
+      console.log(`[IMPORT-COMPLETE] Concluída: ${atualizados} atualizados, ${criados} criados, ${basesNaoEncontradas.length} bases não encontradas, ${projetosNaoEncontrados.length} projetos não encontrados`);
       
       return res.json({
         success: true,
@@ -10959,11 +10993,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           atualizados,
           criados,
           basesNaoEncontradas: basesNaoEncontradas.length,
+          projetosNaoEncontrados: projetosNaoEncontrados.length,
           erros: erros.length
         },
         detalhes: {
           atualizados: detalhesAtualizados,
+          criados: detalhesCriados,
           basesNaoEncontradas,
+          projetosNaoEncontrados,
           erros: erros.slice(0, 20)
         }
       });

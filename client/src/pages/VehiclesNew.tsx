@@ -447,13 +447,13 @@ const VehiclesNew: React.FC = () => {
   // Estados para importação completa de veículos
   const [isImportCompleteDialogOpen, setIsImportCompleteDialogOpen] = useState(false);
   const [selectedCompleteFileName, setSelectedCompleteFileName] = useState<string | null>(null);
-  const [parsedCompleteData, setParsedCompleteData] = useState<{placa: string; marca: string; modelo: string; base: string; cartao: string}[] | null>(null);
+  const [parsedCompleteData, setParsedCompleteData] = useState<{placa: string; marca: string; modelo: string; projeto: string; base: string; cartao: string}[] | null>(null);
   const [isUploadingComplete, setIsUploadingComplete] = useState(false);
   const [isParsingCompleteFile, setIsParsingCompleteFile] = useState(false);
   const [importCompleteResult, setImportCompleteResult] = useState<{
     success: boolean;
-    resumo: { total: number; atualizados: number; criados: number; basesNaoEncontradas: number; erros: number };
-    detalhes: { atualizados: { placa: string; campos: string[] }[]; basesNaoEncontradas: string[]; erros: string[] };
+    resumo: { total: number; atualizados: number; criados: number; basesNaoEncontradas: number; projetosNaoEncontrados: number; erros: number };
+    detalhes: { atualizados: { placa: string; campos: string[] }[]; basesNaoEncontradas: string[]; projetosNaoEncontrados: string[]; erros: string[] };
   } | null>(null);
 
   // Função para carregar veículos usando a API REST
@@ -940,11 +940,13 @@ const VehiclesNew: React.FC = () => {
         const marca = row.marca || row.Marca || row.MARCA || row.make || row.Make || '';
         const modelo = row.modelo || row.Modelo || row.MODELO || row.model || row.Model || '';
         const base = row.base || row.Base || row.BASE || row.unidade || row.Unidade || '';
+        const projeto = row.projeto || row.Projeto || row.PROJETO || row.project || row.Project || '';
         const cartao = row.cartao || row.Cartao || row.CARTAO || row['cartão'] || row['Cartão'] || row.cartao_abastecimento || row['placa do cartão'] || row['Placa do Cartão'] || row['placa_cartao'] || row.card || '';
         return { 
           placa: String(placa || '').trim().toUpperCase(), 
           marca: String(marca || '').trim(),
           modelo: String(modelo || '').trim(),
+          projeto: String(projeto || '').trim(),
           base: String(base || '').trim(),
           cartao: String(cartao || '').trim()
         };
@@ -1464,6 +1466,7 @@ const VehiclesNew: React.FC = () => {
                             <li><strong>Placa</strong> (obrigatório) - Placa do veículo</li>
                             <li><strong>Marca</strong> - Marca do veículo (ex: VAN, TRUCK)</li>
                             <li><strong>Modelo</strong> - Modelo do veículo (ex: Sprinter 313)</li>
+                            <li><strong>Projeto</strong> - Nome do projeto (ex: LINE HALL, COCA-COLA)</li>
                             <li><strong>Base</strong> - Nome da base/unidade</li>
                             <li><strong>Cartão</strong> - Placa do cartão de abastecimento</li>
                           </ul>
@@ -1481,6 +1484,7 @@ const VehiclesNew: React.FC = () => {
                               <th className="text-left py-1 px-1">Placa</th>
                               <th className="text-left py-1 px-1">Marca</th>
                               <th className="text-left py-1 px-1">Modelo</th>
+                              <th className="text-left py-1 px-1">Projeto</th>
                               <th className="text-left py-1 px-1">Base</th>
                               <th className="text-left py-1 px-1">Cartão</th>
                             </tr>
@@ -1491,6 +1495,7 @@ const VehiclesNew: React.FC = () => {
                                 <td className="py-1 px-1 font-mono">{item.placa}</td>
                                 <td className="py-1 px-1">{item.marca || '-'}</td>
                                 <td className="py-1 px-1">{item.modelo || '-'}</td>
+                                <td className="py-1 px-1">{item.projeto || '-'}</td>
                                 <td className="py-1 px-1">{item.base || '-'}</td>
                                 <td className="py-1 px-1">{item.cartao || '-'}</td>
                               </tr>
@@ -1508,11 +1513,20 @@ const VehiclesNew: React.FC = () => {
                           <div>Atualizados: <strong className="text-blue-600">{importCompleteResult.resumo.atualizados}</strong></div>
                           <div>Novos criados: <strong className="text-green-600">{importCompleteResult.resumo.criados}</strong></div>
                           <div>Bases não encontradas: <strong className="text-orange-600">{importCompleteResult.resumo.basesNaoEncontradas}</strong></div>
+                          {importCompleteResult.resumo.projetosNaoEncontrados > 0 && (
+                            <div>Projetos não encontrados: <strong className="text-orange-600">{importCompleteResult.resumo.projetosNaoEncontrados}</strong></div>
+                          )}
                         </div>
                         {importCompleteResult.detalhes.basesNaoEncontradas.length > 0 && (
                           <div className="mt-2">
                             <p className="text-xs font-medium text-orange-700">Bases não reconhecidas:</p>
                             <p className="text-xs text-orange-600">{importCompleteResult.detalhes.basesNaoEncontradas.join(', ')}</p>
+                          </div>
+                        )}
+                        {importCompleteResult.detalhes.projetosNaoEncontrados && importCompleteResult.detalhes.projetosNaoEncontrados.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-xs font-medium text-orange-700">Projetos não reconhecidos:</p>
+                            <p className="text-xs text-orange-600">{importCompleteResult.detalhes.projetosNaoEncontrados.join(', ')}</p>
                           </div>
                         )}
                         {importCompleteResult.detalhes.erros.length > 0 && (
