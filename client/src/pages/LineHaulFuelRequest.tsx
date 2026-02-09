@@ -15,61 +15,22 @@ interface VehiclePlate {
   modelo?: string;
 }
 
-// Lista de rotas organizadas (Cidade – UF)
-const ROTAS_LINE_HAUL = [
-  "Aparecida – SP",
-  "Araçatuba – SP",
-  "Araucária – PR",
-  "Araraquara – SP",
-  "Artur Alvim – SP",
-  "Assis – SP",
-  "Bauru – SP",
-  "Belo Horizonte – MG",
-  "Betim – MG",
-  "Campo Grande – MS",
-  "Cascavel – PR",
-  "Cordovil – RJ",
-  "Cravinhos – SP",
-  "Curitiba – PR",
-  "Duque de Caxias – RJ",
-  "Franca – SP",
-  "Franco da Rocha – SP",
-  "Goiânia – GO",
-  "Guaratinguetá – SP",
-  "Guarulhos – SP",
-  "Itajaí – SC",
-  "Itapeva – MG",
-  "Itapeva – SP",
-  "Itaquaquecetuba – SP",
-  "Itirapina – SP",
-  "Itupeva – SP",
-  "Limeira – SP",
-  "Louveira – SP",
-  "Maringá – PR",
-  "Mogi Guaçu – SP",
-  "Mogi Mirim – SP",
-  "Osasco – SP",
-  "Patos de Minas – MG",
-  "Ponta Grossa – PR",
-  "Praia Grande – SP",
-  "Ribeirão Preto – SP",
-  "Rio de Janeiro – RJ",
-  "Santana de Parnaíba – SP",
-  "Santo André – SP",
-  "São Bernardo ABC – SP",
-  "São Bernardo do Campo – SP",
-  "São Carlos – SP",
-  "São João de Meriti – RJ",
-  "São José – SC",
-  "São José do Rio Preto – SP",
-  "São Paulo – SP",
-  "Sete Lagoas – MG",
-  "Tatuí – SP",
-  "Toledo – PR",
-  "Tremembé – MG",
-  "Três Lagoas – MS",
-  "Tuiuti – SP",
-  "Uberaba – MG",
+const ROTAS_LINE_HAUL_FALLBACK = [
+  "Aparecida – SP", "Araçatuba – SP", "Araucária – PR", "Araraquara – SP",
+  "Artur Alvim – SP", "Assis – SP", "Bauru – SP", "Belo Horizonte – MG",
+  "Betim – MG", "Campo Grande – MS", "Cascavel – PR", "Cordovil – RJ",
+  "Cravinhos – SP", "Curitiba – PR", "Duque de Caxias – RJ", "Franca – SP",
+  "Franco da Rocha – SP", "Goiânia – GO", "Guaratinguetá – SP", "Guarulhos – SP",
+  "Itajaí – SC", "Itapeva – MG", "Itapeva – SP", "Itaquaquecetuba – SP",
+  "Itirapina – SP", "Itupeva – SP", "Limeira – SP", "Louveira – SP",
+  "Maringá – PR", "Mogi Guaçu – SP", "Mogi Mirim – SP", "Osasco – SP",
+  "Patos de Minas – MG", "Ponta Grossa – PR", "Praia Grande – SP",
+  "Ribeirão Preto – SP", "Rio de Janeiro – RJ", "Santana de Parnaíba – SP",
+  "Santo André – SP", "São Bernardo ABC – SP", "São Bernardo do Campo – SP",
+  "São Carlos – SP", "São João de Meriti – RJ", "São José – SC",
+  "São José do Rio Preto – SP", "São Paulo – SP", "Sete Lagoas – MG",
+  "Tatuí – SP", "Toledo – PR", "Tremembé – MG", "Três Lagoas – MS",
+  "Tuiuti – SP", "Uberaba – MG",
 ];
 
 export default function LineHaulFuelRequest() {
@@ -137,6 +98,8 @@ export default function LineHaulFuelRequest() {
   const plateInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
+  const [routePoints, setRoutePoints] = useState<string[]>(ROTAS_LINE_HAUL_FALLBACK);
+
   // Estados para autocomplete de rotas
   const [filteredOrigins, setFilteredOrigins] = useState<string[]>([]);
   const [filteredDestinations, setFilteredDestinations] = useState<string[]>([]);
@@ -161,7 +124,22 @@ export default function LineHaulFuelRequest() {
         console.error("Erro ao carregar placas:", err);
       }
     }
+    async function loadRoutePoints() {
+      try {
+        const response = await fetch("/api/public/linehaul/route-points");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && Array.isArray(data.points) && data.points.length > 0) {
+            const combined = new Set([...data.points, ...ROTAS_LINE_HAUL_FALLBACK]);
+            setRoutePoints(Array.from(combined).sort());
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao carregar pontos de rota:", err);
+      }
+    }
     loadPlates();
+    loadRoutePoints();
   }, []);
 
   useEffect(() => {
@@ -214,7 +192,7 @@ export default function LineHaulFuelRequest() {
   // Filtrar rotas de origem conforme digita
   useEffect(() => {
     if (form.localInicio.length >= 1) {
-      const filtered = ROTAS_LINE_HAUL.filter(rota => 
+      const filtered = routePoints.filter(rota => 
         rota.toLowerCase().includes(form.localInicio.toLowerCase())
       ).slice(0, 8);
       setFilteredOrigins(filtered);
@@ -223,12 +201,12 @@ export default function LineHaulFuelRequest() {
       setFilteredOrigins([]);
       setShowOriginSuggestions(false);
     }
-  }, [form.localInicio]);
+  }, [form.localInicio, routePoints]);
 
   // Filtrar rotas de destino conforme digita
   useEffect(() => {
     if (form.destino.length >= 1) {
-      const filtered = ROTAS_LINE_HAUL.filter(rota => 
+      const filtered = routePoints.filter(rota => 
         rota.toLowerCase().includes(form.destino.toLowerCase())
       ).slice(0, 8);
       setFilteredDestinations(filtered);
@@ -237,7 +215,29 @@ export default function LineHaulFuelRequest() {
       setFilteredDestinations([]);
       setShowDestinationSuggestions(false);
     }
-  }, [form.destino]);
+  }, [form.destino, routePoints]);
+
+  // Auto-buscar distância quando origem e destino são selecionados
+  useEffect(() => {
+    if (form.localInicio && form.destino && form.localInicio !== form.destino) {
+      const isOriginFromList = routePoints.some(r => r.toLowerCase() === form.localInicio.toLowerCase());
+      const isDestFromList = routePoints.some(r => r.toLowerCase() === form.destino.toLowerCase());
+      if (isOriginFromList && isDestFromList) {
+        setLoadingDistance(true);
+        fetch(`/api/public/linehaul/route-distance?origem=${encodeURIComponent(form.localInicio)}&destino=${encodeURIComponent(form.destino)}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.distancia_km > 0) {
+              setRouteDistance(data.distancia_km);
+            } else {
+              setRouteDistance(0);
+            }
+          })
+          .catch(() => setRouteDistance(0))
+          .finally(() => setLoadingDistance(false));
+      }
+    }
+  }, [form.localInicio, form.destino, routePoints]);
 
   function selectPlate(plate: VehiclePlate) {
     setForm({ ...form, placa: plate.placa });
@@ -781,6 +781,17 @@ export default function LineHaulFuelRequest() {
                   </div>
                 )}
               </div>
+
+              {form.localInicio && form.destino && (
+                <div className={`p-3 rounded-lg border ${routeDistance > 0 ? 'bg-green-50 border-green-200' : loadingDistance ? 'bg-blue-50 border-blue-200' : 'bg-yellow-50 border-yellow-200'}`}>
+                  <div className="flex items-center gap-2">
+                    <MapPin className={`h-4 w-4 ${routeDistance > 0 ? 'text-green-600' : loadingDistance ? 'text-blue-600' : 'text-yellow-600'}`} />
+                    <span className="text-sm font-medium">
+                      KM da Rota: {loadingDistance ? 'Calculando...' : routeDistance > 0 ? `${routeDistance.toLocaleString('pt-BR')} km` : 'Não cadastrada'}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="horario" className="flex items-center gap-2">

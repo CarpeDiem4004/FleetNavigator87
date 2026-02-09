@@ -9220,6 +9220,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET - Buscar pontos de rota cadastrados (acesso público)
+  app.get('/api/public/linehaul/route-points', async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT DISTINCT point FROM (
+          SELECT nome_ponto_a AS point FROM line_hall_routes WHERE nome_ponto_a IS NOT NULL AND nome_ponto_a != ''
+          UNION
+          SELECT nome_ponto_b AS point FROM line_hall_routes WHERE nome_ponto_b IS NOT NULL AND nome_ponto_b != ''
+        ) AS points
+        ORDER BY point
+      `);
+      
+      const points = result.rows.map((r: any) => r.point);
+      return res.json({ success: true, points });
+    } catch (error) {
+      console.error('[LINEHAUL-ROUTE-POINTS] Erro:', error);
+      return res.json({ success: true, points: [] });
+    }
+  });
+
   // GET - Buscar distância da rota Line Haul (acesso público)
   app.get('/api/public/linehaul/route-distance', async (req, res) => {
     try {
@@ -9233,16 +9253,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Normalizar nomes removendo traços e caracteres especiais
+      const normalizeRouteName = (name: string) => String(name).replace(/[–—-]/g, " ").replace(/\s+/g, " ").trim();
+      const origemNorm = normalizeRouteName(String(origem));
+      const destinoNorm = normalizeRouteName(String(destino));
+      
       // Primeiro: Buscar rota na tabela line_hall_routes usando os nomes dos pontos
       const query = `
         SELECT km_total 
         FROM line_hall_routes 
-        WHERE (LOWER(nome_ponto_a) LIKE LOWER($1) AND LOWER(nome_ponto_b) LIKE LOWER($2))
-           OR (LOWER(nome_ponto_b) LIKE LOWER($1) AND LOWER(nome_ponto_a) LIKE LOWER($2))
+        WHERE (LOWER(REPLACE(REPLACE(nome_ponto_a, chr(8211), ' '), '-', ' ')) LIKE LOWER($1) AND LOWER(REPLACE(REPLACE(nome_ponto_b, chr(8211), ' '), '-', ' ')) LIKE LOWER($2))
+           OR (LOWER(REPLACE(REPLACE(nome_ponto_b, chr(8211), ' '), '-', ' ')) LIKE LOWER($1) AND LOWER(REPLACE(REPLACE(nome_ponto_a, chr(8211), ' '), '-', ' ')) LIKE LOWER($2))
         LIMIT 1
       `;
       
-      const result = await pool.query(query, [`%${origem}%`, `%${destino}%`]);
+      const result = await pool.query(query, [`%${origemNorm}%`, `%${destinoNorm}%`]);
       
       if (result.rows.length > 0 && result.rows[0].km_total > 0) {
         console.log(`[LINEHAUL-ROUTE-DISTANCE] Rota encontrada no banco: ${origem} -> ${destino} = ${result.rows[0].km_total} km`);
