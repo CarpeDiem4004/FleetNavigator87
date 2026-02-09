@@ -936,12 +936,18 @@ const VehiclesNew: React.FC = () => {
       const jsonData = XLSX.utils.sheet_to_json(firstSheet);
       
       const mappedData = jsonData.map((row: any) => {
-        const placa = row.placa || row.Placa || row.PLACA || row.plate || row.Plate || '';
-        const marca = row.marca || row.Marca || row.MARCA || row.make || row.Make || '';
-        const modelo = row.modelo || row.Modelo || row.MODELO || row.model || row.Model || '';
-        const base = row.base || row.Base || row.BASE || row.unidade || row.Unidade || '';
-        const projeto = row.projeto || row.Projeto || row.PROJETO || row.project || row.Project || '';
-        const cartao = row.cartao || row.Cartao || row.CARTAO || row['cartão'] || row['Cartão'] || row.cartao_abastecimento || row['placa do cartão'] || row['Placa do Cartão'] || row['placa_cartao'] || row.card || '';
+        const normalizedRow: any = {};
+        Object.keys(row).forEach(key => {
+          const cleanKey = key.replace(/[:\s]/g, '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          normalizedRow[cleanKey] = row[key];
+        });
+        
+        const placa = normalizedRow.placa || normalizedRow.plate || '';
+        const marca = normalizedRow.marca || normalizedRow.make || '';
+        const modelo = normalizedRow.modelo || normalizedRow.model || '';
+        const base = normalizedRow.base || normalizedRow.unidade || '';
+        const projeto = normalizedRow.projeto || normalizedRow.project || '';
+        const cartao = normalizedRow.cartao || normalizedRow.placadocartao || normalizedRow.placacartao || normalizedRow.placadocartao || normalizedRow.cartaoabastecimento || normalizedRow.card || '';
         return { 
           placa: String(placa || '').trim().toUpperCase(), 
           marca: String(marca || '').trim(),
