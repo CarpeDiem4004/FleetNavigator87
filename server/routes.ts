@@ -1654,28 +1654,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const cocaColaUser = req.cocaColaUser;
       const { base_id } = req.query;
+      const todayDate = new Date().toISOString().split('T')[0];
       
       let query = `
-        SELECT v.*, b.nome as base_nome 
+        SELECT v.*, b.nome as base_nome,
+               vds.status as status_diario,
+               vds.observacao as observacao_diaria,
+               vds.updated_by_name as atualizado_por,
+               vds.base_emprestimo_id
         FROM coca_cola_vehicles v 
         LEFT JOIN coca_cola_bases b ON v.base_id = b.id
+        LEFT JOIN vehicle_daily_status vds ON vds.vehicle_id = v.id AND vds.data = $1
       `;
-      let params: any[] = [];
+      let params: any[] = [todayDate];
       
       // Se usuário é de base específica, filtra pela sua base
       if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
-        query += ' WHERE v.base_id = $1';
-        params = [cocaColaUser.baseId];
+        query += ' WHERE v.base_id = $2';
+        params.push(cocaColaUser.baseId);
       } else if (base_id) {
         // Admin pode filtrar por base específica
-        query += ' WHERE v.base_id = $1';
-        params = [base_id];
+        query += ' WHERE v.base_id = $2';
+        params.push(base_id);
       }
       
       query += ' ORDER BY v.placa';
       
       const result = await pool.query(query, params);
-      res.json(result.rows);
+      const rows = result.rows.map((v: any) => ({
+        ...v,
+        status_efetivo: v.status_diario || v.status,
+        atualizado_hoje: !!v.status_diario,
+      }));
+      res.json(rows);
     } catch (error) {
       console.error('[COCA-COLA] Erro ao listar veículos:', error);
       res.status(500).json({ error: 'Erro ao listar veículos' });

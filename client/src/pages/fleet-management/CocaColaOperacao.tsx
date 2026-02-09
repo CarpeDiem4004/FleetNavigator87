@@ -63,6 +63,10 @@ interface CocaColaVehicle {
   base_id: number;
   base_nome?: string;
   status: 'disponivel' | 'rota' | 'manutencao' | 'falta_equipe' | 'aguardando_peca' | 'outro';
+  status_efetivo?: string;
+  observacao_diaria?: string;
+  atualizado_por?: string;
+  atualizado_hoje?: boolean;
   oficina?: string;
   prazo_estimado?: string;
   motivo_parado?: string;
@@ -270,10 +274,10 @@ export default function CocaColaOperacao() {
         base_id: baseId,
         data_atualizacao: hoje,
         total_veiculos: baseVehicles.length,
-        veiculos_rota: baseVehicles.filter(v => v.status === 'em_rota' || v.status === 'rota').length,
-        veiculos_manutencao: baseVehicles.filter(v => v.status === 'manutencao').length,
-        veiculos_disponiveis: baseVehicles.filter(v => v.status === 'disponivel').length,
-        veiculos_parados: baseVehicles.filter(v => ['sem_equipe', 'baixa_venda', 'falta_equipe', 'aguardando_peca', 'outro'].includes(v.status)).length
+        veiculos_rota: baseVehicles.filter(v => ['em_rota', 'rota'].includes(v.status_efetivo || v.status)).length,
+        veiculos_manutencao: baseVehicles.filter(v => ['manutencao', 'em_manutencao'].includes(v.status_efetivo || v.status)).length,
+        veiculos_disponiveis: baseVehicles.filter(v => (v.status_efetivo || v.status) === 'disponivel').length,
+        veiculos_parados: baseVehicles.filter(v => ['sem_equipe', 'baixa_venda', 'falta_equipe', 'aguardando_peca', 'parado', 'outro'].includes(v.status_efetivo || v.status)).length
       });
     },
     onSuccess: () => {
@@ -1174,10 +1178,10 @@ export default function CocaColaOperacao() {
                 const veiculosBase = vehicles.filter(v => v.base_id === selectedBaseDetail.id);
                 const stats = {
                   total: veiculosBase.length,
-                  disponivel: veiculosBase.filter(v => v.status === 'disponivel').length,
-                  emRota: veiculosBase.filter(v => v.status === 'em_rota' || v.status === 'rota').length,
-                  manutencao: veiculosBase.filter(v => v.status === 'manutencao').length,
-                  parados: veiculosBase.filter(v => ['sem_equipe', 'baixa_venda'].includes(v.status)).length
+                  disponivel: veiculosBase.filter(v => (v.status_efetivo || v.status) === 'disponivel').length,
+                  emRota: veiculosBase.filter(v => ['em_rota', 'rota'].includes(v.status_efetivo || v.status)).length,
+                  manutencao: veiculosBase.filter(v => ['manutencao', 'em_manutencao'].includes(v.status_efetivo || v.status)).length,
+                  parados: veiculosBase.filter(v => ['sem_equipe', 'baixa_venda', 'parado', 'falta_equipe', 'aguardando_peca'].includes(v.status_efetivo || v.status)).length
                 };
                 return (
                   <>
@@ -1212,8 +1216,16 @@ export default function CocaColaOperacao() {
                             <div>
                               <p className="font-medium">{v.placa}</p>
                               <p className="text-sm text-muted-foreground">{v.modelo}</p>
+                              {v.observacao_diaria && (
+                                <p className="text-xs text-gray-500 mt-1">{v.observacao_diaria}</p>
+                              )}
                             </div>
-                            {getStatusBadge(v.status)}
+                            <div className="flex flex-col items-end gap-1">
+                              {getStatusBadge(v.status_efetivo || v.status)}
+                              {v.atualizado_hoje && (
+                                <span className="text-[10px] text-green-600">Atualizado hoje</span>
+                              )}
+                            </div>
                           </div>
                         ))
                       )}
