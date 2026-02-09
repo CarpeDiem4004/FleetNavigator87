@@ -657,32 +657,38 @@ const OficinaMurici: React.FC = () => {
     try {
       const pdf = new jsPDF();
       
-      // Configurar fonte
       pdf.setFont('helvetica');
       
-      // Cabeçalho
-      pdf.setFontSize(20);
-      pdf.setTextColor(0, 0, 0);
-      pdf.text('RELATÓRIO DE MANUTENÇÃO', 105, 30, { align: 'center' });
-      
-      pdf.setFontSize(14);
-      pdf.text('Murici On Fleet 2.0 - Oficina', 105, 45, { align: 'center' });
-      
-      // Linha divisória
-      pdf.setLineWidth(0.5);
-      pdf.line(20, 55, 190, 55);
-      
-      // Informações do veículo
       pdf.setFontSize(16);
-      pdf.setTextColor(51, 51, 51);
-      pdf.text('DADOS DO VEÍCULO', 20, 70);
-      
-      pdf.setFontSize(12);
       pdf.setTextColor(0, 0, 0);
-      pdf.text(`Placa: ${manutencao.placa}`, 20, 85);
-      pdf.text(`Quilometragem: ${Number(manutencao.km || 0).toLocaleString('pt-BR')} km`, 20, 95);
+      pdf.text('RELATÓRIO DE MANUTENÇÃO', 105, 20, { align: 'center' });
       
-      // Data da manutenção
+      pdf.setFontSize(10);
+      pdf.text('Murici On Fleet 2.0 - Oficina', 105, 28, { align: 'center' });
+      
+      pdf.setLineWidth(0.5);
+      pdf.line(20, 33, 190, 33);
+      
+      let yPosition = 40;
+      
+      const checkPageBreak = (needed: number) => {
+        if (yPosition + needed > 275) {
+          pdf.addPage();
+          yPosition = 20;
+        }
+      };
+
+      pdf.setFontSize(13);
+      pdf.setTextColor(51, 51, 51);
+      pdf.text('DADOS DO VEÍCULO', 20, yPosition);
+      yPosition += 8;
+      
+      pdf.setFontSize(10);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(`Placa: ${manutencao.placa}`, 20, yPosition);
+      pdf.text(`Quilometragem: ${Number(manutencao.km || 0).toLocaleString('pt-BR')} km`, 110, yPosition);
+      yPosition += 6;
+      
       const dataInicio = manutencao.data_hora_inicio ? 
         format(new Date(manutencao.data_hora_inicio), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 
         'Não informado';
@@ -690,108 +696,124 @@ const OficinaMurici: React.FC = () => {
         format(new Date(manutencao.data_hora_fim), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 
         'Em andamento';
       
-      pdf.text(`Data de Início: ${dataInicio}`, 20, 105);
-      pdf.text(`Data de Conclusão: ${dataFim}`, 20, 115);
+      pdf.text(`Início: ${dataInicio}`, 20, yPosition);
+      pdf.text(`Conclusão: ${dataFim}`, 110, yPosition);
+      yPosition += 6;
       
-      // Status
       const statusMap: Record<string, string> = {
         'em_andamento': 'Em Andamento',
         'aguardando_peca': 'Aguardando Peça',
         'finalizado': 'Finalizado'
       };
-      pdf.text(`Status: ${statusMap[manutencao.status] || manutencao.status}`, 20, 125);
+      pdf.text(`Status: ${statusMap[manutencao.status] || manutencao.status}`, 20, yPosition);
+      yPosition += 10;
       
-      // Informações da manutenção
-      pdf.setFontSize(16);
+      pdf.setLineWidth(0.2);
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(20, yPosition, 190, yPosition);
+      yPosition += 6;
+      
+      pdf.setFontSize(13);
       pdf.setTextColor(51, 51, 51);
-      pdf.text('DETALHES DA MANUTENÇÃO', 20, 145);
+      pdf.text('DETALHES DA MANUTENÇÃO', 20, yPosition);
+      yPosition += 8;
       
-      pdf.setFontSize(12);
+      pdf.setFontSize(10);
       pdf.setTextColor(0, 0, 0);
-      pdf.text(`Mecânico Responsável: ${manutencao.mecanico || 'Não informado'}`, 20, 160);
+      pdf.text(`Mecânico Responsável: ${manutencao.mecanico || 'Não informado'}`, 20, yPosition);
+      yPosition += 7;
       
-      // Descrição da manutenção com quebra de linha
       const descricaoLinhas = pdf.splitTextToSize(`Descrição: ${manutencao.descricao_manutencao}`, 170);
-      pdf.text(descricaoLinhas, 20, 170);
+      checkPageBreak(descricaoLinhas.length * 5);
+      pdf.text(descricaoLinhas, 20, yPosition);
+      yPosition += descricaoLinhas.length * 5 + 4;
       
-      let yPosition = 170 + (descricaoLinhas.length * 10);
-      
-      // Peças utilizadas se houver
       if (manutencao.peças_utilizadas) {
-        pdf.setFontSize(16);
+        pdf.setLineWidth(0.2);
+        pdf.setDrawColor(200, 200, 200);
+        pdf.line(20, yPosition, 190, yPosition);
+        yPosition += 6;
+        
+        pdf.setFontSize(13);
         pdf.setTextColor(51, 51, 51);
-        pdf.text('PEÇAS UTILIZADAS', 20, yPosition + 20);
+        pdf.text('PEÇAS UTILIZADAS', 20, yPosition);
+        yPosition += 8;
+        
+        pdf.setFontSize(9);
+        pdf.setTextColor(0, 0, 0);
+        const pecasLinhas = pdf.splitTextToSize(manutencao.peças_utilizadas, 170);
+        checkPageBreak(pecasLinhas.length * 4 + 5);
+        pdf.text(pecasLinhas, 20, yPosition);
+        yPosition += pecasLinhas.length * 4 + 4;
+      }
+      
+      if (manutencao.used_partner_workshop && manutencao.partner_workshop_name) {
+        pdf.setLineWidth(0.2);
+        pdf.setDrawColor(200, 200, 200);
+        pdf.line(20, yPosition, 190, yPosition);
+        yPosition += 6;
+        
+        pdf.setFontSize(13);
+        pdf.setTextColor(51, 51, 51);
+        pdf.text('OFICINA PARCEIRA', 20, yPosition);
+        yPosition += 8;
         
         pdf.setFontSize(10);
         pdf.setTextColor(0, 0, 0);
-        const pecasLinhas = pdf.splitTextToSize(manutencao.peças_utilizadas, 170);
-        pdf.text(pecasLinhas, 20, yPosition + 35);
-        
-        yPosition += 35 + (pecasLinhas.length * 5);
+        pdf.text(`Oficina: ${manutencao.partner_workshop_name}`, 20, yPosition);
+        pdf.text(`Mão de Obra: ${formatCurrency(manutencao.labor_cost || 0)}`, 110, yPosition);
+        yPosition += 8;
       }
-      
-      // Informações de oficina parceira se houver
-      if (manutencao.used_partner_workshop && manutencao.partner_workshop_name) {
-        pdf.setFontSize(16);
-        pdf.setTextColor(51, 51, 51);
-        pdf.text('OFICINA PARCEIRA', 20, yPosition + 20);
-        
-        pdf.setFontSize(12);
-        pdf.setTextColor(0, 0, 0);
-        pdf.text(`Oficina: ${manutencao.partner_workshop_name}`, 20, yPosition + 35);
-        pdf.text(`Valor da Mão de Obra: ${formatCurrency(manutencao.labor_cost || 0)}`, 20, yPosition + 45);
-        
-        yPosition += 55;
-      }
-      
-      const checkPageBreak = (needed: number) => {
-        if (yPosition + needed > 260) {
-          pdf.addPage();
-          yPosition = 20;
-        }
-      };
 
-      checkPageBreak(40);
-      pdf.setFontSize(16);
-      pdf.setTextColor(51, 51, 51);
-      pdf.text('CUSTOS', 20, yPosition + 20);
+      pdf.setLineWidth(0.2);
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(20, yPosition, 190, yPosition);
+      yPosition += 6;
       
-      pdf.setFontSize(12);
+      pdf.setFontSize(13);
+      pdf.setTextColor(51, 51, 51);
+      pdf.text('CUSTOS', 20, yPosition);
+      yPosition += 8;
+      
+      pdf.setFontSize(10);
       pdf.setTextColor(0, 0, 0);
       const custoTotal = Number(manutencao.custo_total || 0);
-      pdf.text(`Custo Total da Manutenção: ${formatCurrency(custoTotal)}`, 20, yPosition + 35);
-      yPosition += 45;
+      pdf.text(`Custo Total da Manutenção: ${formatCurrency(custoTotal)}`, 20, yPosition);
+      yPosition += 8;
       
       if (manutencao.observacoes) {
         const observacoesLinhas = pdf.splitTextToSize(manutencao.observacoes, 170);
-        checkPageBreak(30 + observacoesLinhas.length * 6);
-        pdf.setFontSize(16);
-        pdf.setTextColor(51, 51, 51);
-        pdf.text('OBSERVAÇÕES', 20, yPosition + 10);
+        checkPageBreak(observacoesLinhas.length * 5 + 15);
+        pdf.setLineWidth(0.2);
+        pdf.setDrawColor(200, 200, 200);
+        pdf.line(20, yPosition, 190, yPosition);
+        yPosition += 6;
         
-        pdf.setFontSize(12);
+        pdf.setFontSize(13);
+        pdf.setTextColor(51, 51, 51);
+        pdf.text('OBSERVAÇÕES', 20, yPosition);
+        yPosition += 8;
+        
+        pdf.setFontSize(10);
         pdf.setTextColor(0, 0, 0);
-        pdf.text(observacoesLinhas, 20, yPosition + 25);
-        yPosition += 25 + (observacoesLinhas.length * 6);
+        pdf.text(observacoesLinhas, 20, yPosition);
+        yPosition += observacoesLinhas.length * 5 + 4;
       }
 
-      checkPageBreak(70);
-      yPosition += 25;
+      checkPageBreak(30);
+      yPosition += 15;
       pdf.setDrawColor(100, 100, 100);
       pdf.setLineWidth(0.3);
-      pdf.line(20, yPosition, 85, yPosition);
-      pdf.line(115, yPosition, 190, yPosition);
+      pdf.line(65, yPosition, 145, yPosition);
       
-      pdf.setFontSize(10);
+      pdf.setFontSize(9);
       pdf.setTextColor(80, 80, 80);
-      pdf.text('Assinatura Cliente', 52.5, yPosition + 6, { align: 'center' });
-      pdf.text('Assinatura Responsável Técnico', 152.5, yPosition + 6, { align: 'center' });
-      yPosition += 20;
+      pdf.text('Assinatura Responsável Técnico', 105, yPosition + 5, { align: 'center' });
+      yPosition += 12;
 
-      checkPageBreak(15);
-      pdf.setFontSize(10);
+      pdf.setFontSize(8);
       pdf.setTextColor(128, 128, 128);
-      pdf.text(`Relatório gerado em ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 105, yPosition + 10, { align: 'center' });
+      pdf.text(`Relatório gerado em ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 105, yPosition + 5, { align: 'center' });
       
       // Salvar o PDF
       const fileName = `relatorio_manutencao_${manutencao.placa}_${format(new Date(), 'ddMMyyyy_HHmm')}.pdf`;
