@@ -1176,36 +1176,38 @@ export default function CocaColaOperacao() {
             <div className="space-y-4">
               {(() => {
                 const veiculosBase = vehicles.filter(v => v.base_id === selectedBaseDetail.id);
+                const getStatus = (v: any) => v.status_efetivo || v.status;
                 const stats = {
                   total: veiculosBase.length,
-                  disponivel: veiculosBase.filter(v => (v.status_efetivo || v.status) === 'disponivel').length,
-                  emRota: veiculosBase.filter(v => ['em_rota', 'rota'].includes(v.status_efetivo || v.status)).length,
-                  manutencao: veiculosBase.filter(v => ['manutencao', 'em_manutencao'].includes(v.status_efetivo || v.status)).length,
-                  parados: veiculosBase.filter(v => ['sem_equipe', 'baixa_venda', 'parado', 'falta_equipe', 'aguardando_peca'].includes(v.status_efetivo || v.status)).length
+                  emRota: veiculosBase.filter(v => ['em_rota', 'rota'].includes(getStatus(v))).length,
+                  semEquipe: veiculosBase.filter(v => ['sem_equipe', 'falta_equipe'].includes(getStatus(v))).length,
+                  manutencao: veiculosBase.filter(v => ['manutencao', 'em_manutencao'].includes(getStatus(v))).length,
+                  baixaVenda: veiculosBase.filter(v => getStatus(v) === 'baixa_venda').length,
+                  dMais1: veiculosBase.filter(v => getStatus(v) === 'd_mais_1').length,
+                  disponivel: veiculosBase.filter(v => getStatus(v) === 'disponivel').length,
+                  outros: veiculosBase.filter(v => !['em_rota', 'rota', 'sem_equipe', 'falta_equipe', 'manutencao', 'em_manutencao', 'baixa_venda', 'd_mais_1', 'disponivel', 'parado', 'aguardando_peca'].includes(getStatus(v))).length,
+                  parados: veiculosBase.filter(v => ['parado', 'aguardando_peca'].includes(getStatus(v))).length,
                 };
+                const allCards = [
+                  { label: 'Total', value: stats.total, bg: 'bg-gray-100', text: 'text-gray-800' },
+                  { label: 'Em Rota', value: stats.emRota, bg: 'bg-green-100', text: 'text-green-700' },
+                  { label: 'Sem Equipe', value: stats.semEquipe, bg: 'bg-yellow-100', text: 'text-yellow-700' },
+                  { label: 'Manutenção', value: stats.manutencao, bg: 'bg-orange-100', text: 'text-orange-700' },
+                  { label: 'Baixa Venda', value: stats.baixaVenda, bg: 'bg-red-100', text: 'text-red-600' },
+                  { label: 'D+1', value: stats.dMais1, bg: 'bg-purple-100', text: 'text-purple-700' },
+                  { label: 'Disponível', value: stats.disponivel, bg: 'bg-blue-100', text: 'text-blue-600' },
+                  { label: 'Parados', value: stats.parados, bg: 'bg-rose-100', text: 'text-rose-600' },
+                  { label: 'Outros', value: stats.outros, bg: 'bg-slate-100', text: 'text-slate-600' },
+                ].filter(c => c.label === 'Total' || c.value > 0);
                 return (
                   <>
-                    <div className="grid grid-cols-5 gap-2 text-center">
-                      <div className="p-2 bg-gray-100 rounded">
-                        <p className="text-lg font-bold">{stats.total}</p>
-                        <p className="text-xs text-muted-foreground">Total</p>
-                      </div>
-                      <div className="p-2 bg-blue-100 rounded">
-                        <p className="text-lg font-bold text-blue-600">{stats.disponivel}</p>
-                        <p className="text-xs text-muted-foreground">Disponível</p>
-                      </div>
-                      <div className="p-2 bg-green-100 rounded">
-                        <p className="text-lg font-bold text-green-600">{stats.emRota}</p>
-                        <p className="text-xs text-muted-foreground">Em Rota</p>
-                      </div>
-                      <div className="p-2 bg-orange-100 rounded">
-                        <p className="text-lg font-bold text-orange-600">{stats.manutencao}</p>
-                        <p className="text-xs text-muted-foreground">Manutenção</p>
-                      </div>
-                      <div className="p-2 bg-red-100 rounded">
-                        <p className="text-lg font-bold text-red-600">{stats.parados}</p>
-                        <p className="text-xs text-muted-foreground">Parados</p>
-                      </div>
+                    <div className="grid grid-cols-4 gap-2 text-center">
+                      {allCards.map(card => (
+                        <div key={card.label} className={`p-2 ${card.bg} rounded`}>
+                          <p className={`text-lg font-bold ${card.text}`}>{card.value}</p>
+                          <p className="text-xs text-muted-foreground">{card.label}</p>
+                        </div>
+                      ))}
                     </div>
                     <div className="space-y-2 max-h-[400px] overflow-y-auto">
                       {veiculosBase.length === 0 ? (
