@@ -83,6 +83,8 @@ export default function CocaColaBaseDashboard() {
   const [observationStatus, setObservationStatus] = useState('');
   const [observationText, setObservationText] = useState('');
   
+  const [expandedDailyStatus, setExpandedDailyStatus] = useState<string | null>(null);
+  
   // Estados para modal de empréstimo
   const [showEmprestimoDialog, setShowEmprestimoDialog] = useState(false);
   const [emprestimoVehicle, setEmprestimoVehicle] = useState<{ id: number; placa: string } | null>(null);
@@ -427,13 +429,36 @@ export default function CocaColaBaseDashboard() {
     }
   };
 
-  const vehicleStats = {
-    total: vehicles.length,
-    emRota: vehicles.filter(v => v.status === 'em_rota').length,
-    disponiveis: vehicles.filter(v => v.status === 'disponivel').length,
-    manutencao: vehicles.filter(v => v.status === 'manutencao').length,
-    parados: vehicles.filter(v => ['sem_equipe', 'baixa_venda'].includes(v.status)).length
-  };
+  const vehicleStats = useMemo(() => {
+    if (dailyStatusData?.statusCount) {
+      const sc = dailyStatusData.statusCount;
+      const total = sc.total || vehicles.length;
+      const emRota = sc.em_rota || 0;
+      const manutencao = sc.em_manutencao || 0;
+      const parado = sc.parado || 0;
+      const semEquipe = sc.sem_equipe || 0;
+      const baixaVenda = sc.baixa_venda || 0;
+      const emprestado = sc.emprestado || 0;
+      const dMais1 = sc.d_mais_1 || 0;
+      const pernoite = sc.pernoite || 0;
+      const naoInformado = sc.nao_informado || 0;
+      const disponiveis = naoInformado + Math.max(0, total - emRota - manutencao - parado - semEquipe - baixaVenda - emprestado - dMais1 - pernoite - naoInformado);
+      return {
+        total,
+        emRota,
+        disponiveis,
+        manutencao,
+        parados: parado + semEquipe + baixaVenda
+      };
+    }
+    return {
+      total: vehicles.length,
+      emRota: vehicles.filter(v => v.status === 'em_rota').length,
+      disponiveis: vehicles.filter(v => v.status === 'disponivel').length,
+      manutencao: vehicles.filter(v => v.status === 'manutencao').length,
+      parados: vehicles.filter(v => ['sem_equipe', 'baixa_venda'].includes(v.status)).length
+    };
+  }, [vehicles, dailyStatusData]);
 
   // Combinar veículos da base com veículos emprestados de outras bases
   const allVehiclesWithLoaned = useMemo(() => {
@@ -510,7 +535,13 @@ export default function CocaColaBaseDashboard() {
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
-  // Status que requerem observação obrigatória (justificativa)
+  const getVehiclesByDailyStatus = (status: string): { placa: string; modelo: string; observacao?: string | null }[] => {
+    if (!dailyStatusData?.data) return [];
+    return dailyStatusData.data
+      .filter(d => d.status === status)
+      .map(d => ({ placa: d.placa, modelo: d.modelo, observacao: d.observacao }));
+  };
+
   const statusRequiresObservation = (status: string) => {
     return ['d_mais_1', 'pernoite', 'sem_equipe'].includes(status);
   };
@@ -913,36 +944,53 @@ export default function CocaColaBaseDashboard() {
           <CardContent>
             {/* Resumo do Dia */}
             {dailyStatusData?.statusCount && (
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 mb-4">
-                <div className="bg-green-50 p-3 rounded-lg border border-green-200 text-center">
-                  <p className="text-xl font-bold text-green-600">{dailyStatusData.statusCount.em_rota}</p>
-                  <p className="text-xs text-green-700">Em Rota</p>
+              <>
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 mb-4">
+                  {[
+                    { key: 'em_rota', label: 'Em Rota', count: dailyStatusData.statusCount.em_rota, bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-600', subtext: 'text-green-700', ring: 'ring-green-400' },
+                    { key: 'em_manutencao', label: 'Manutenção', count: dailyStatusData.statusCount.em_manutencao, bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-600', subtext: 'text-yellow-700', ring: 'ring-yellow-400' },
+                    { key: 'emprestado', label: 'Emprestado', count: dailyStatusData.statusCount.emprestado, bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-600', subtext: 'text-blue-700', ring: 'ring-blue-400' },
+                    { key: 'baixa_venda', label: 'Baixa/Venda', count: dailyStatusData.statusCount.baixa_venda, bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-600', subtext: 'text-orange-700', ring: 'ring-orange-400' },
+                    { key: 'sem_equipe', label: 'Sem Equipe', count: dailyStatusData.statusCount.sem_equipe, bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-600', subtext: 'text-purple-700', ring: 'ring-purple-400' },
+                    { key: 'd_mais_1', label: 'D+1', count: dailyStatusData.statusCount.d_mais_1 || 0, bg: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-600', subtext: 'text-cyan-700', ring: 'ring-cyan-400' },
+                    { key: 'pernoite', label: 'Pernoite', count: dailyStatusData.statusCount.pernoite || 0, bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-600', subtext: 'text-indigo-700', ring: 'ring-indigo-400' }
+                  ].map(item => (
+                    <div
+                      key={item.key}
+                      className={`${item.bg} p-3 rounded-lg border ${item.border} text-center cursor-pointer hover:shadow-md transition-all ${expandedDailyStatus === item.key ? `ring-2 ${item.ring}` : ''}`}
+                      onClick={() => setExpandedDailyStatus(expandedDailyStatus === item.key ? null : item.key)}
+                    >
+                      <p className={`text-xl font-bold ${item.text}`}>{item.count}</p>
+                      <p className={`text-xs ${item.subtext}`}>{item.label}</p>
+                    </div>
+                  ))}
                 </div>
-                <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-center">
-                  <p className="text-xl font-bold text-yellow-600">{dailyStatusData.statusCount.em_manutencao}</p>
-                  <p className="text-xs text-yellow-700">Manutenção</p>
-                </div>
-                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200 text-center">
-                  <p className="text-xl font-bold text-blue-600">{dailyStatusData.statusCount.emprestado}</p>
-                  <p className="text-xs text-blue-700">Emprestado</p>
-                </div>
-                <div className="bg-orange-50 p-3 rounded-lg border border-orange-200 text-center">
-                  <p className="text-xl font-bold text-orange-600">{dailyStatusData.statusCount.baixa_venda}</p>
-                  <p className="text-xs text-orange-700">Baixa/Venda</p>
-                </div>
-                <div className="bg-purple-50 p-3 rounded-lg border border-purple-200 text-center">
-                  <p className="text-xl font-bold text-purple-600">{dailyStatusData.statusCount.sem_equipe}</p>
-                  <p className="text-xs text-purple-700">Sem Equipe</p>
-                </div>
-                <div className="bg-cyan-50 p-3 rounded-lg border border-cyan-200 text-center">
-                  <p className="text-xl font-bold text-cyan-600">{dailyStatusData.statusCount.d_mais_1 || 0}</p>
-                  <p className="text-xs text-cyan-700">D+1</p>
-                </div>
-                <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-200 text-center">
-                  <p className="text-xl font-bold text-indigo-600">{dailyStatusData.statusCount.pernoite || 0}</p>
-                  <p className="text-xs text-indigo-700">Pernoite</p>
-                </div>
-              </div>
+                
+                {expandedDailyStatus && (
+                  <div className="mb-4 p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold text-sm text-gray-700">
+                        Placas - {expandedDailyStatus === 'em_rota' ? 'Em Rota' : expandedDailyStatus === 'em_manutencao' ? 'Manutenção' : expandedDailyStatus === 'baixa_venda' ? 'Baixa/Venda' : expandedDailyStatus === 'sem_equipe' ? 'Sem Equipe' : expandedDailyStatus === 'd_mais_1' ? 'D+1' : expandedDailyStatus === 'pernoite' ? 'Pernoite' : expandedDailyStatus.charAt(0).toUpperCase() + expandedDailyStatus.slice(1)}
+                      </h4>
+                      <Button variant="ghost" size="sm" onClick={() => setExpandedDailyStatus(null)} className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600">
+                        &times;
+                      </Button>
+                    </div>
+                    {getVehiclesByDailyStatus(expandedDailyStatus).length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {getVehiclesByDailyStatus(expandedDailyStatus).map((v, i) => (
+                          <Badge key={i} variant="outline" className="text-sm py-1 px-2">
+                            {v.placa}
+                            {v.observacao && <span className="ml-1 text-xs text-gray-400">({v.observacao})</span>}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-400">Nenhum veículo com este status</p>
+                    )}
+                  </div>
+                )}
+              </>
             )}
 
             {/* Alerta de veículos sem status atualizado */}
