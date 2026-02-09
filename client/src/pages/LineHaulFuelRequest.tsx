@@ -15,22 +15,42 @@ interface VehiclePlate {
   modelo?: string;
 }
 
+function standardizeRouteName(name: string): string {
+  if (!name) return name;
+  let cleaned = name.trim()
+    .replace(/\s*[\u2013\u2014-]\s*/g, ' ')
+    .replace(/\s+/g, ' ');
+  
+  cleaned = cleaned.split(' ').map(word => {
+    if (word.length <= 2) {
+      const prepositions = ['de', 'da', 'do', 'das', 'dos', 'e'];
+      if (prepositions.includes(word.toLowerCase())) {
+        return word.toLowerCase();
+      }
+      return word.toUpperCase();
+    }
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  }).join(' ');
+  
+  return cleaned;
+}
+
 const ROTAS_LINE_HAUL_FALLBACK = [
-  "Aparecida – SP", "Araçatuba – SP", "Araucária – PR", "Araraquara – SP",
-  "Artur Alvim – SP", "Assis – SP", "Bauru – SP", "Belo Horizonte – MG",
-  "Betim – MG", "Campo Grande – MS", "Cascavel – PR", "Cordovil – RJ",
-  "Cravinhos – SP", "Curitiba – PR", "Duque de Caxias – RJ", "Franca – SP",
-  "Franco da Rocha – SP", "Goiânia – GO", "Guaratinguetá – SP", "Guarulhos – SP",
-  "Itajaí – SC", "Itapeva – MG", "Itapeva – SP", "Itaquaquecetuba – SP",
-  "Itirapina – SP", "Itupeva – SP", "Limeira – SP", "Louveira – SP",
-  "Maringá – PR", "Mogi Guaçu – SP", "Mogi Mirim – SP", "Osasco – SP",
-  "Patos de Minas – MG", "Ponta Grossa – PR", "Praia Grande – SP",
-  "Ribeirão Preto – SP", "Rio de Janeiro – RJ", "Santana de Parnaíba – SP",
-  "Santo André – SP", "São Bernardo ABC – SP", "São Bernardo do Campo – SP",
-  "São Carlos – SP", "São João de Meriti – RJ", "São José – SC",
-  "São José do Rio Preto – SP", "São Paulo – SP", "Sete Lagoas – MG",
-  "Tatuí – SP", "Toledo – PR", "Tremembé – MG", "Três Lagoas – MS",
-  "Tuiuti – SP", "Uberaba – MG",
+  "Aparecida GO", "Araçatuba SP", "Araucária PR", "Araraquara SP",
+  "Artur Alvim SP", "Assis SP", "Bauru SP", "Belo Horizonte MG",
+  "Betim MG", "Campo Grande MS", "Cascavel PR", "Cordovil RJ",
+  "Cravinhos SP", "Curitiba PR", "Duque de Caxias RJ", "Franca SP",
+  "Franco da Rocha SP", "Goiânia GO", "Guaratinguetá SP", "Guarulhos SP",
+  "Itajaí SC", "Itapeva MG", "Itapeva SP", "Itaquaquecetuba SP",
+  "Itirapina SP", "Itupeva SP", "Limeira SP", "Louveira SP",
+  "Maringá PR", "Mogi Guaçu SP", "Mogi Mirim SP", "Osasco SP",
+  "Patos de Minas MG", "Ponta Grossa PR", "Praia Grande SP",
+  "Ribeirão Preto SP", "Rio de Janeiro RJ", "Santana de Parnaíba SP",
+  "Santo André SP", "São Bernardo do Campo SP",
+  "São Carlos SP", "São João de Meriti RJ", "São José SC",
+  "São José do Rio Preto SP", "São Paulo SP", "Sete Lagoas MG",
+  "Tatuí SP", "Toledo PR", "Tremembé MG", "Três Lagoas MS",
+  "Tuiuti SP", "Uberaba MG",
 ];
 
 export default function LineHaulFuelRequest() {
@@ -156,7 +176,8 @@ export default function LineHaulFuelRequest() {
         if (response.ok) {
           const data = await response.json();
           if (data.success && Array.isArray(data.points) && data.points.length > 0) {
-            const combined = new Set([...data.points, ...ROTAS_LINE_HAUL_FALLBACK]);
+            const standardizedPoints = data.points.map((p: string) => standardizeRouteName(p));
+            const combined = new Set([...standardizedPoints, ...ROTAS_LINE_HAUL_FALLBACK]);
             setRoutePoints(Array.from(combined).sort());
           }
         }

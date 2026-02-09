@@ -303,6 +303,7 @@ const LineHaulPage = () => {
   const [isCreatingRoute, setIsCreatingRoute] = useState(false);
   const [showRoutes, setShowRoutes] = useState(false);
   const [showRoutesList, setShowRoutesList] = useState(false);
+  const [routesListSearch, setRoutesListSearch] = useState('');
   const [showNewRoute, setShowNewRoute] = useState(false);
   const [editingRoute, setEditingRoute] = useState<any>(null);
   const [showChecklists, setShowChecklists] = useState(false);
@@ -3923,7 +3924,7 @@ const LineHaulPage = () => {
         </Dialog>
 
         {/* Dialog para Ver Rotas */}
-        <Dialog open={showRoutesList} onOpenChange={setShowRoutesList}>
+        <Dialog open={showRoutesList} onOpenChange={(open) => { setShowRoutesList(open); if (!open) setRoutesListSearch(''); }}>
           <DialogContent className="sm:max-w-[900px] max-h-[600px]">
             <DialogHeader>
               <DialogTitle className="flex items-center text-blue-700">
@@ -3934,9 +3935,25 @@ const LineHaulPage = () => {
                 Visualize todas as rotas cadastradas no sistema ({routes.length} rotas)
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4 space-y-3 overflow-y-auto max-h-[400px]">
-              {routes.length > 0 ? (
-                routes.map((route) => (
+            <div className="relative mb-2">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar rota por origem ou destino..."
+                value={routesListSearch}
+                onChange={(e) => setRoutesListSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="py-2 space-y-3 overflow-y-auto max-h-[350px]">
+              {(() => {
+                const filteredRoutes = routesListSearch.trim()
+                  ? routes.filter(r => {
+                      const search = routesListSearch.toLowerCase();
+                      return r.nome_ponto_a.toLowerCase().includes(search) || r.nome_ponto_b.toLowerCase().includes(search);
+                    })
+                  : routes;
+                return filteredRoutes.length > 0 ? (
+                filteredRoutes.map((route) => (
                   <Card key={route.id} className="p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex justify-between items-center">
                       <div className="flex-1">
@@ -3995,10 +4012,13 @@ const LineHaulPage = () => {
               ) : (
                 <div className="text-center py-12">
                   <Route className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma rota cadastrada</h3>
-                  <p className="text-gray-500">Comece cadastrando uma nova rota</p>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    {routesListSearch.trim() ? `Nenhuma rota encontrada para "${routesListSearch}"` : 'Nenhuma rota cadastrada'}
+                  </h3>
+                  <p className="text-gray-500">{routesListSearch.trim() ? 'Tente buscar por outro termo' : 'Comece cadastrando uma nova rota'}</p>
                 </div>
-              )}
+              );
+              })()}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowRoutesList(false)}>

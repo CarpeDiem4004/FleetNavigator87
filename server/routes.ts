@@ -6359,10 +6359,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Função para padronizar nomes de rotas: "Cidade UF"
+  function standardizeRouteName(name) {
+    if (!name) return name;
+    let cleaned = name.trim()
+      .replace(/\s*[–—-]\s*/g, ' ')
+      .replace(/\s+/g, ' ');
+    
+    cleaned = cleaned.split(' ').map(word => {
+      if (word.length <= 2) {
+        const prepositions = ['de', 'da', 'do', 'das', 'dos', 'e'];
+        if (prepositions.includes(word.toLowerCase())) {
+          return word.toLowerCase();
+        }
+        return word.toUpperCase();
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }).join(' ');
+    
+    return cleaned;
+  }
+
   // Criar nova rota do Line Hall Shopee
   app.post('/api/line-hall/routes', isAuthenticated, async (req, res) => {
     try {
-      const { nome_ponto_a, nome_ponto_b, km_total, codigo_origem, codigo_destino } = req.body;
+      let { nome_ponto_a, nome_ponto_b, km_total, codigo_origem, codigo_destino } = req.body;
       
       if (!nome_ponto_a || !nome_ponto_b || !km_total) {
         return res.status(400).json({
@@ -6370,6 +6391,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: 'Todos os campos são obrigatórios'
         });
       }
+
+      nome_ponto_a = standardizeRouteName(nome_ponto_a);
+      nome_ponto_b = standardizeRouteName(nome_ponto_b);
       
       // Verificar se a rota já existe
       const checkQuery = `
@@ -6568,7 +6592,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/line-hall/routes/:id', isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
-      const { nome_ponto_a, nome_ponto_b, km_total, observacoes, codigo_origem, codigo_destino } = req.body;
+      let { nome_ponto_a, nome_ponto_b, km_total, observacoes, codigo_origem, codigo_destino } = req.body;
       
       if (!nome_ponto_a || !nome_ponto_b || !km_total) {
         return res.status(400).json({
@@ -6577,6 +6601,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      nome_ponto_a = standardizeRouteName(nome_ponto_a);
+      nome_ponto_b = standardizeRouteName(nome_ponto_b);
+
       // Verificar se a rota existe
       const checkQuery = `SELECT id FROM line_hall_routes WHERE id = $1`;
       const checkResult = await pool.query(checkQuery, [id]);
