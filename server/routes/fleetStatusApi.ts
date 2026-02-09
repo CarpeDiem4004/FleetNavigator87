@@ -181,14 +181,16 @@ router.get('/api/fleet-status/public/base/:baseId/vehicles', async (req: Request
     
     console.log(`[FLEET-STATUS-PUBLIC] Encontrados ${vehicles.length} veículos no PostgreSQL local`);
     
-    // Buscar status do dia para esses veículos (do PostgreSQL local)
+    // Buscar status do dia para esses veículos (da tabela vehicle_daily_status)
     const vehicleIds = vehicles.map((v: any) => v.id);
     
     let statusData: any[] = [];
     if (vehicleIds.length > 0) {
       const statusResult = await pool.query(
-        `SELECT * FROM fleet_status_daily 
-         WHERE vehicle_id = ANY($1) AND data_atualizacao = $2`,
+        `SELECT id, vehicle_id, base_id, data as data_atualizacao, status, observacao as motivo, 
+                updated_by, updated_by_name, created_at, updated_at, base_emprestimo_id
+         FROM vehicle_daily_status 
+         WHERE vehicle_id = ANY($1) AND data = $2`,
         [vehicleIds, today]
       );
       statusData = statusResult.rows;
@@ -269,24 +271,30 @@ router.get('/api/fleet-status/public/dashboard', async (req: Request, res: Respo
     );
     const veiculosPorBase = veiculosPorBaseResult.rows;
     
-    // Buscar atualizações de hoje
+    // Buscar atualizações de hoje - JOIN com vehicles para resolver mismatch de base_id
+    // vehicle_daily_status pode usar IDs de coca_cola_bases, mas vehicles usa IDs de bases
     const atualizacoesResult = await pool.query(
-      `SELECT base_id, status FROM fleet_status_daily WHERE data_atualizacao = $1`,
+      `SELECT v.base_id, vds.status, vds.observacao, vds.vehicle_id
+       FROM vehicle_daily_status vds
+       JOIN vehicles v ON v.id = vds.vehicle_id
+       WHERE vds.data = $1`,
       [today]
     );
     const atualizacoesHoje = atualizacoesResult.rows;
     
+    console.log(`[FLEET-STATUS-PUBLIC-DASHBOARD] Atualizações hoje: ${atualizacoesHoje.length} registros`);
+    
     // Montar resumo por base
     const resumoPorBase = bases.map((base: any) => {
-      const veiculosBase = veiculosPorBase.find((v: any) => v.base_id === base.id);
+      const veiculosBase = veiculosPorBase.find((v: any) => Number(v.base_id) === Number(base.id));
       const totalVeiculos = veiculosBase ? parseInt(veiculosBase.total) : 0;
-      const atualizados = atualizacoesHoje.filter((a: any) => a.base_id === base.id).length;
+      const atualizados = atualizacoesHoje.filter((a: any) => Number(a.base_id) === Number(base.id)).length;
       const pendentes = totalVeiculos - atualizados;
       const percentual = totalVeiculos > 0 ? ((atualizados / totalVeiculos) * 100) : 0;
       
-      // Contar por status
-      const statusCount = atualizacoesHoje
-        .filter((a: any) => a.base_id === base.id)
+      // Contar por status - buscar observações dos veículos parados
+      const baseUpdates = atualizacoesHoje.filter((a: any) => Number(a.base_id) === Number(base.id));
+      const statusCount = baseUpdates
         .reduce((acc: any, curr: any) => {
           acc[curr.status] = (acc[curr.status] || 0) + 1;
           return acc;
@@ -318,7 +326,7 @@ router.get('/api/fleet-status/public/dashboard', async (req: Request, res: Respo
     // Bases inadimplentes (com pendências)
     const basesInadimplentes = resumoPorBase.filter((b: any) => b.inadimplente);
     
-    console.log(`[FLEET-STATUS-PUBLIC-DASHBOARD] Total: ${totalGeral.totalVeiculos} veículos, ${resumoPorBase.length} bases`);
+    console.log(`[FLEET-STATUS-PUBLIC-DASHBOARD] Total: ${totalGeral.totalVeiculos} veículos, ${totalGeral.atualizados} atualizados, ${resumoPorBase.length} bases`);
     
     res.json({ 
       success: true, 
@@ -408,7 +416,7 @@ router.post('/api/fleet-status/public/daily', async (req: Request, res: Response
     
     // Verificar se já existe registro para este veículo hoje (PostgreSQL local)
     const existingResult = await pool.query(
-      `SELECT id, status FROM fleet_status_daily WHERE vehicle_id = $1 AND data_atualizacao = $2`,
+      `SELECT id, status FROM vehicle_daily_status WHERE vehicle_id = $1 AND data = $2`,
       [vehicle_id, today]
     );
     
@@ -420,33 +428,21 @@ router.post('/api/fleet-status/public/daily', async (req: Request, res: Response
     if (existing) {
       // Atualizar registro existente
       const updateResult = await pool.query(
-        `UPDATE fleet_status_daily SET
-          vehicle_plate = $1,
-          base_id = $2,
-          base_name = $3,
-          status = $4,
-          motivo = $5,
-          local_manutencao = $6,
-          prazo_manutencao = $7,
-          base_emprestada_id = $8,
-          base_emprestada_nome = $9,
-          data_devolucao = $10,
-          updated_by = $11,
-          updated_by_name = $12,
+        `UPDATE vehicle_daily_status SET
+          base_id = $1,
+          status = $2,
+          observacao = $3,
+          base_emprestimo_id = $4,
+          updated_by = $5,
+          updated_by_name = $6,
           updated_at = NOW()
-        WHERE id = $13
+        WHERE id = $7
         RETURNING *`,
         [
-          vehicle_plate || vehicleCheck.plate,
           base_id,
-          base_name,
           status,
           motivo || null,
-          local_manutencao || null,
-          prazo_manutencao || null,
           base_emprestada_id || null,
-          base_emprestada_nome || null,
-          data_devolucao || null,
           user?.id || 1,
           user?.name || 'Sistema',
           existing.id
@@ -456,26 +452,20 @@ router.post('/api/fleet-status/public/daily', async (req: Request, res: Response
     } else {
       // Inserir novo registro
       const insertResult = await pool.query(
-        `INSERT INTO fleet_status_daily (
-          vehicle_id, vehicle_plate, base_id, base_name, data_atualizacao,
-          status, motivo, local_manutencao, prazo_manutencao,
-          base_emprestada_id, base_emprestada_nome, data_devolucao,
-          updated_by, updated_by_name, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+        `INSERT INTO vehicle_daily_status (
+          vehicle_id, base_id, data,
+          status, observacao,
+          base_emprestimo_id,
+          updated_by, updated_by_name
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *`,
         [
           vehicle_id,
-          vehicle_plate || vehicleCheck.plate,
           base_id,
-          base_name,
           today,
           status,
           motivo || null,
-          local_manutencao || null,
-          prazo_manutencao || null,
           base_emprestada_id || null,
-          base_emprestada_nome || null,
-          data_devolucao || null,
           user?.id || 1,
           user?.name || 'Sistema'
         ]
@@ -569,7 +559,7 @@ router.post('/api/fleet-status/daily', isAuthenticated, async (req: Request, res
     
     // Verificar se já existe registro para este veículo hoje (PostgreSQL local)
     const existingResult = await pool.query(
-      `SELECT id, status FROM fleet_status_daily WHERE vehicle_id = $1 AND data_atualizacao = $2`,
+      `SELECT id, status FROM vehicle_daily_status WHERE vehicle_id = $1 AND data = $2`,
       [vehicle_id, today]
     );
     
@@ -581,33 +571,21 @@ router.post('/api/fleet-status/daily', isAuthenticated, async (req: Request, res
     if (existing) {
       // Atualizar registro existente
       const updateResult = await pool.query(
-        `UPDATE fleet_status_daily SET
-          vehicle_plate = $1,
-          base_id = $2,
-          base_name = $3,
-          status = $4,
-          motivo = $5,
-          local_manutencao = $6,
-          prazo_manutencao = $7,
-          base_emprestada_id = $8,
-          base_emprestada_nome = $9,
-          data_devolucao = $10,
-          updated_by = $11,
-          updated_by_name = $12,
+        `UPDATE vehicle_daily_status SET
+          base_id = $1,
+          status = $2,
+          observacao = $3,
+          base_emprestimo_id = $4,
+          updated_by = $5,
+          updated_by_name = $6,
           updated_at = NOW()
-        WHERE id = $13
+        WHERE id = $7
         RETURNING *`,
         [
-          vehicle_plate || vehicleCheck.plate,
           base_id,
-          base_name,
           status,
           motivo || null,
-          local_manutencao || null,
-          prazo_manutencao || null,
           base_emprestada_id || null,
-          base_emprestada_nome || null,
-          data_devolucao || null,
           user?.id || 1,
           user?.name || 'Sistema',
           existing.id
@@ -617,26 +595,20 @@ router.post('/api/fleet-status/daily', isAuthenticated, async (req: Request, res
     } else {
       // Inserir novo registro
       const insertResult = await pool.query(
-        `INSERT INTO fleet_status_daily (
-          vehicle_id, vehicle_plate, base_id, base_name, data_atualizacao,
-          status, motivo, local_manutencao, prazo_manutencao,
-          base_emprestada_id, base_emprestada_nome, data_devolucao,
-          updated_by, updated_by_name, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+        `INSERT INTO vehicle_daily_status (
+          vehicle_id, base_id, data,
+          status, observacao,
+          base_emprestimo_id,
+          updated_by, updated_by_name
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *`,
         [
           vehicle_id,
-          vehicle_plate || vehicleCheck.plate,
           base_id,
-          base_name,
           today,
           status,
           motivo || null,
-          local_manutencao || null,
-          prazo_manutencao || null,
           base_emprestada_id || null,
-          base_emprestada_nome || null,
-          data_devolucao || null,
           user?.id || 1,
           user?.name || 'Sistema'
         ]
@@ -947,24 +919,27 @@ router.get('/api/fleet-status/dashboard', isAuthenticated, async (req: Request, 
     );
     const veiculosPorBase = veiculosPorBaseResult.rows;
     
-    // Buscar atualizações de hoje
+    // Buscar atualizações de hoje - JOIN com vehicles para resolver mismatch de base_id
     const atualizacoesResult = await pool.query(
-      `SELECT base_id, status FROM fleet_status_daily WHERE data_atualizacao = $1`,
+      `SELECT v.base_id, vds.status, vds.observacao, vds.vehicle_id
+       FROM vehicle_daily_status vds
+       JOIN vehicles v ON v.id = vds.vehicle_id
+       WHERE vds.data = $1`,
       [today]
     );
     const atualizacoesHoje = atualizacoesResult.rows;
     
     // Montar resumo por base
     const resumoPorBase = bases.map((base: any) => {
-      const veiculosBase = veiculosPorBase.find((v: any) => v.base_id === base.id);
+      const veiculosBase = veiculosPorBase.find((v: any) => Number(v.base_id) === Number(base.id));
       const totalVeiculos = veiculosBase ? parseInt(veiculosBase.total) : 0;
-      const atualizados = atualizacoesHoje.filter((a: any) => a.base_id === base.id).length;
+      const atualizados = atualizacoesHoje.filter((a: any) => Number(a.base_id) === Number(base.id)).length;
       const pendentes = totalVeiculos - atualizados;
       const percentual = totalVeiculos > 0 ? ((atualizados / totalVeiculos) * 100) : 0;
       
       // Contar por status
-      const statusCount = atualizacoesHoje
-        .filter((a: any) => a.base_id === base.id)
+      const baseUpdates = atualizacoesHoje.filter((a: any) => Number(a.base_id) === Number(base.id));
+      const statusCount = baseUpdates
         .reduce((acc: any, curr: any) => {
           acc[curr.status] = (acc[curr.status] || 0) + 1;
           return acc;
@@ -996,7 +971,7 @@ router.get('/api/fleet-status/dashboard', isAuthenticated, async (req: Request, 
     // Bases inadimplentes (com pendências)
     const basesInadimplentes = resumoPorBase.filter((b: any) => b.inadimplente);
     
-    console.log(`[FLEET-STATUS-DASHBOARD] Total: ${totalGeral.totalVeiculos} veículos, ${resumoPorBase.length} bases`);
+    console.log(`[FLEET-STATUS-DASHBOARD] Total: ${totalGeral.totalVeiculos} veículos, ${totalGeral.atualizados} atualizados, ${resumoPorBase.length} bases`);
     
     res.json({ 
       success: true, 
