@@ -105,10 +105,36 @@ export default function LineHaulFuelRequest() {
   const [filteredDestinations, setFilteredDestinations] = useState<string[]>([]);
   const [showOriginSuggestions, setShowOriginSuggestions] = useState(false);
   const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
+  const [originValidated, setOriginValidated] = useState(false);
+  const [destinationValidated, setDestinationValidated] = useState(false);
+  const [originError, setOriginError] = useState("");
+  const [destinationError, setDestinationError] = useState("");
   const originInputRef = useRef<HTMLInputElement>(null);
   const originSuggestionsRef = useRef<HTMLDivElement>(null);
   const destinationInputRef = useRef<HTMLInputElement>(null);
   const destinationSuggestionsRef = useRef<HTMLDivElement>(null);
+
+  const isRouteValid = (value: string) => {
+    return routePoints.some(r => r.toLowerCase() === value.toLowerCase());
+  };
+
+  const handleOriginBlur = () => {
+    setTimeout(() => {
+      if (form.localInicio && !isRouteValid(form.localInicio)) {
+        setOriginError("Selecione uma rota da lista");
+        setOriginValidated(false);
+      }
+    }, 200);
+  };
+
+  const handleDestinationBlur = () => {
+    setTimeout(() => {
+      if (form.destino && !isRouteValid(form.destino)) {
+        setDestinationError("Selecione uma rota da lista");
+        setDestinationValidated(false);
+      }
+    }, 200);
+  };
 
   useEffect(() => {
     async function loadPlates() {
@@ -251,6 +277,28 @@ export default function LineHaulFuelRequest() {
       toast({
         title: "KM obrigatório",
         description: "Por favor, informe a quilometragem do veículo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!form.localInicio || !isRouteValid(form.localInicio)) {
+      setOriginError("Selecione uma rota da lista");
+      setOriginValidated(false);
+      toast({
+        title: "Local de Início inválido",
+        description: "Selecione o Local de Início da lista de rotas disponíveis.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!form.destino || !isRouteValid(form.destino)) {
+      setDestinationError("Selecione uma rota da lista");
+      setDestinationValidated(false);
+      toast({
+        title: "Destino inválido",
+        description: "Selecione o Destino da lista de rotas disponíveis.",
         variant: "destructive",
       });
       return;
@@ -537,6 +585,10 @@ export default function LineHaulFuelRequest() {
                 });
                 setFotoPainel(null);
                 setFotoCartao(null);
+                setOriginValidated(false);
+                setDestinationValidated(false);
+                setOriginError("");
+                setDestinationError("");
               }}
               className="w-full"
               data-testid="button-new-request"
@@ -705,16 +757,32 @@ export default function LineHaulFuelRequest() {
                   type="text"
                   placeholder="Digite para buscar..."
                   value={form.localInicio}
-                  onChange={(e) => setForm({ ...form, localInicio: e.target.value })}
+                  onChange={(e) => {
+                    setForm({ ...form, localInicio: e.target.value });
+                    setOriginError("");
+                    setOriginValidated(false);
+                  }}
                   onFocus={() => {
                     if (form.localInicio.length >= 1 && filteredOrigins.length > 0) {
                       setShowOriginSuggestions(true);
                     }
                   }}
+                  onBlur={handleOriginBlur}
                   required
                   autoComplete="off"
                   data-testid="input-origin"
+                  className={originValidated ? "border-green-500 bg-green-50" : originError ? "border-red-500 bg-red-50" : ""}
                 />
+                {originError && (
+                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {originError}
+                  </p>
+                )}
+                {originValidated && (
+                  <p className="text-green-600 text-xs mt-1 flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" /> Rota selecionada
+                  </p>
+                )}
                 {showOriginSuggestions && filteredOrigins.length > 0 && (
                   <div
                     ref={originSuggestionsRef}
@@ -727,6 +795,8 @@ export default function LineHaulFuelRequest() {
                         onClick={() => {
                           setForm({ ...form, localInicio: rota });
                           setShowOriginSuggestions(false);
+                          setOriginValidated(true);
+                          setOriginError("");
                         }}
                         className="w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
                       >
@@ -749,16 +819,32 @@ export default function LineHaulFuelRequest() {
                   type="text"
                   placeholder="Digite para buscar..."
                   value={form.destino}
-                  onChange={(e) => setForm({ ...form, destino: e.target.value })}
+                  onChange={(e) => {
+                    setForm({ ...form, destino: e.target.value });
+                    setDestinationError("");
+                    setDestinationValidated(false);
+                  }}
                   onFocus={() => {
                     if (form.destino.length >= 1 && filteredDestinations.length > 0) {
                       setShowDestinationSuggestions(true);
                     }
                   }}
+                  onBlur={handleDestinationBlur}
                   required
                   autoComplete="off"
                   data-testid="input-destination"
+                  className={destinationValidated ? "border-green-500 bg-green-50" : destinationError ? "border-red-500 bg-red-50" : ""}
                 />
+                {destinationError && (
+                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {destinationError}
+                  </p>
+                )}
+                {destinationValidated && (
+                  <p className="text-green-600 text-xs mt-1 flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" /> Rota selecionada
+                  </p>
+                )}
                 {showDestinationSuggestions && filteredDestinations.length > 0 && (
                   <div
                     ref={destinationSuggestionsRef}
@@ -771,6 +857,8 @@ export default function LineHaulFuelRequest() {
                         onClick={() => {
                           setForm({ ...form, destino: rota });
                           setShowDestinationSuggestions(false);
+                          setDestinationValidated(true);
+                          setDestinationError("");
                         }}
                         className="w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
                       >
