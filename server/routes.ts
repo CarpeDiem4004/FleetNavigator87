@@ -10797,6 +10797,182 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Importação COMPLETA de veículos (placa, marca, modelo, base, cartão)
+  // Só atualiza campos preenchidos, campos vazios são ignorados (sem perda de dados)
+  app.post("/api/vehicles/import-complete", isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const { dados } = req.body;
+      
+      if (!Array.isArray(dados) || dados.length === 0) {
+        return res.status(400).json({ message: "Dados inválidos. Envie um array de objetos." });
+      }
+      
+      console.log(`[IMPORT-COMPLETE] Iniciando importação completa de ${dados.length} veículos`);
+      
+      const normalizeBaseName = (name: string): string => {
+        return name.toLowerCase().replace(/[_\-\(\)]/g, ' ').replace(/\s+/g, ' ').trim();
+      };
+      
+      const extractBaseCode = (name: string): string | null => {
+        const match = name.match(/([A-Z]{2,3}\d+)/i);
+        return match ? match[1].toLowerCase() : null;
+      };
+      
+      const basesResult = await pool.query('SELECT id, name, basename FROM bases WHERE active = true ORDER BY name');
+      const bases = basesResult.rows as { id: number; name: string; basename: string | null }[];
+      
+      const basesByNormalizedName = new Map<string, number>();
+      const basesByBasename = new Map<string, number>();
+      const basesByCode = new Map<string, number>();
+      
+      bases.forEach((b) => {
+        basesByNormalizedName.set(normalizeBaseName(b.name), b.id);
+        if (b.basename) {
+          basesByBasename.set(b.basename.toLowerCase(), b.id);
+          basesByBasename.set(normalizeBaseName(b.basename), b.id);
+        }
+        const code = extractBaseCode(b.name);
+        if (code) basesByCode.set(code, b.id);
+        if (b.basename) {
+          const bc = extractBaseCode(b.basename);
+          if (bc) basesByCode.set(bc, b.id);
+        }
+      });
+      
+      const findBaseId = (inputName: string): number | null => {
+        const normalized = normalizeBaseName(inputName);
+        const inputCode = extractBaseCode(inputName);
+        if (basesByNormalizedName.has(normalized)) return basesByNormalizedName.get(normalized)!;
+        const inputAsBasename = inputName.toLowerCase().replace(/\s+/g, '_');
+        if (basesByBasename.has(inputAsBasename)) return basesByBasename.get(inputAsBasename)!;
+        if (basesByBasename.has(normalized.replace(/\s+/g, '_'))) return basesByBasename.get(normalized.replace(/\s+/g, '_'))!;
+        if (inputCode && basesByCode.has(inputCode)) return basesByCode.get(inputCode)!;
+        for (const [baseName, baseId] of basesByNormalizedName.entries()) {
+          if (baseName.includes(normalized) || normalized.includes(baseName)) return baseId;
+        }
+        const keywords = normalized.split(' ').filter(k => k.length > 2);
+        for (const [baseName, baseId] of basesByNormalizedName.entries()) {
+          const baseWords = baseName.split(' ');
+          const matchCount = keywords.filter(k => baseWords.some(bw => bw.includes(k) || k.includes(bw))).length;
+          if (matchCount >= 2 || (keywords.length === 1 && matchCount === 1)) return baseId;
+        }
+        return null;
+      };
+      
+      let atualizados = 0;
+      let criados = 0;
+      const naoEncontrados: string[] = [];
+      const basesNaoEncontradas: string[] = [];
+      const erros: string[] = [];
+      const detalhesAtualizados: { placa: string; campos: string[] }[] = [];
+      
+      for (const row of dados) {
+        const placa = row.placa?.toString().trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+        
+        if (!placa) {
+          erros.push('Linha sem placa válida');
+          continue;
+        }
+        
+        const marca = row.marca?.toString().trim() || null;
+        const modelo = row.modelo?.toString().trim() || null;
+        const baseNome = row.base?.toString().trim() || null;
+        const cartao = row.cartao?.toString().trim() || null;
+        
+        let baseId: number | null = null;
+        if (baseNome) {
+          baseId = findBaseId(baseNome);
+          if (!baseId && !basesNaoEncontradas.includes(baseNome)) {
+            basesNaoEncontradas.push(baseNome);
+          }
+        }
+        
+        try {
+          const existingVehicle = await pool.query(
+            "SELECT id, plate, make, model, base_id, cartao_abastecimento FROM vehicles WHERE UPPER(REPLACE(plate, '-', '')) = $1",
+            [placa]
+          );
+          
+          if (existingVehicle.rows.length > 0) {
+            const updates: string[] = [];
+            const params: any[] = [];
+            let paramIdx = 1;
+            const camposAtualizados: string[] = [];
+            
+            if (marca) {
+              updates.push(`make = $${paramIdx++}`);
+              params.push(marca);
+              camposAtualizados.push('marca');
+            }
+            if (modelo) {
+              updates.push(`model = $${paramIdx++}`);
+              params.push(modelo);
+              camposAtualizados.push('modelo');
+            }
+            if (baseId) {
+              updates.push(`base_id = $${paramIdx++}`);
+              params.push(baseId);
+              camposAtualizados.push('base');
+            }
+            if (cartao) {
+              updates.push(`cartao_abastecimento = $${paramIdx++}`);
+              params.push(cartao);
+              camposAtualizados.push('cartão');
+            }
+            
+            if (updates.length > 0) {
+              updates.push('updated_at = NOW()');
+              params.push(existingVehicle.rows[0].id);
+              await pool.query(
+                `UPDATE vehicles SET ${updates.join(', ')} WHERE id = $${paramIdx}`,
+                params
+              );
+              atualizados++;
+              if (detalhesAtualizados.length < 50) {
+                detalhesAtualizados.push({ placa, campos: camposAtualizados });
+              }
+            }
+          } else {
+            const insertPlate = placa.length === 7 ? placa.substring(0, 3) + placa.substring(3) : placa;
+            await pool.query(
+              `INSERT INTO vehicles (plate, make, model, base_id, cartao_abastecimento, vehicle_type, status, ownership, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, 'truck', 'active', 'murici', NOW(), NOW())`,
+              [insertPlate, marca || 'N/D', modelo || 'N/D', baseId, cartao]
+            );
+            criados++;
+          }
+        } catch (updateError: any) {
+          erros.push(`Erro ao processar ${placa}: ${updateError.message}`);
+        }
+      }
+      
+      console.log(`[IMPORT-COMPLETE] Concluída: ${atualizados} atualizados, ${criados} criados, ${basesNaoEncontradas.length} bases não encontradas`);
+      
+      return res.json({
+        success: true,
+        resumo: {
+          total: dados.length,
+          atualizados,
+          criados,
+          basesNaoEncontradas: basesNaoEncontradas.length,
+          erros: erros.length
+        },
+        detalhes: {
+          atualizados: detalhesAtualizados,
+          basesNaoEncontradas,
+          erros: erros.slice(0, 20)
+        }
+      });
+    } catch (error: any) {
+      console.error("[IMPORT-COMPLETE] Erro na importação:", error);
+      return res.status(500).json({ message: "Erro ao processar importação completa", error: error.message });
+    }
+  });
+
   app.put("/api/vehicles/:id", isAuthenticated, async (req, res) => {
     try {
       if (!req.user) {

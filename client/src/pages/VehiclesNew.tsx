@@ -444,6 +444,18 @@ const VehiclesNew: React.FC = () => {
     detalhes: { placasNaoEncontradas: string[]; erros: string[] };
   } | null>(null);
 
+  // Estados para importação completa de veículos
+  const [isImportCompleteDialogOpen, setIsImportCompleteDialogOpen] = useState(false);
+  const [selectedCompleteFileName, setSelectedCompleteFileName] = useState<string | null>(null);
+  const [parsedCompleteData, setParsedCompleteData] = useState<{placa: string; marca: string; modelo: string; base: string; cartao: string}[] | null>(null);
+  const [isUploadingComplete, setIsUploadingComplete] = useState(false);
+  const [isParsingCompleteFile, setIsParsingCompleteFile] = useState(false);
+  const [importCompleteResult, setImportCompleteResult] = useState<{
+    success: boolean;
+    resumo: { total: number; atualizados: number; criados: number; basesNaoEncontradas: number; erros: number };
+    detalhes: { atualizados: { placa: string; campos: string[] }[]; basesNaoEncontradas: string[]; erros: string[] };
+  } | null>(null);
+
   // Função para carregar veículos usando a API REST
   const fetchVehicles = async () => {
     setIsLoading(true);
@@ -902,6 +914,112 @@ const VehiclesNew: React.FC = () => {
     }
   };
 
+  // Função para processar arquivo de importação completa
+  const handleCompleteFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setSelectedCompleteFileName(null);
+      setParsedCompleteData(null);
+      return;
+    }
+    
+    setSelectedCompleteFileName(file.name);
+    setIsParsingCompleteFile(true);
+    setParsedCompleteData(null);
+    
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const XLSX = await import('xlsx');
+      
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+      
+      const mappedData = jsonData.map((row: any) => {
+        const placa = row.placa || row.Placa || row.PLACA || row.plate || row.Plate || '';
+        const marca = row.marca || row.Marca || row.MARCA || row.make || row.Make || '';
+        const modelo = row.modelo || row.Modelo || row.MODELO || row.model || row.Model || '';
+        const base = row.base || row.Base || row.BASE || row.unidade || row.Unidade || '';
+        const cartao = row.cartao || row.Cartao || row.CARTAO || row['cartão'] || row['Cartão'] || row.cartao_abastecimento || row['placa do cartão'] || row['Placa do Cartão'] || row['placa_cartao'] || row.card || '';
+        return { 
+          placa: String(placa || '').trim().toUpperCase(), 
+          marca: String(marca || '').trim(),
+          modelo: String(modelo || '').trim(),
+          base: String(base || '').trim(),
+          cartao: String(cartao || '').trim()
+        };
+      });
+      
+      const validData = mappedData.filter(item => item.placa);
+      
+      if (validData.length === 0) {
+        throw new Error('Nenhuma linha com placa válida encontrada.');
+      }
+      
+      setParsedCompleteData(validData);
+      toast({
+        title: "Arquivo processado",
+        description: `${validData.length} linhas com placa encontradas`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Erro ao processar arquivo:', error);
+      toast({
+        title: "Erro ao processar arquivo",
+        description: error instanceof Error ? error.message : "Formato inválido",
+        variant: "destructive"
+      });
+      setSelectedCompleteFileName(null);
+    } finally {
+      setIsParsingCompleteFile(false);
+    }
+  };
+
+  const handleImportComplete = async () => {
+    if (!parsedCompleteData || parsedCompleteData.length === 0) {
+      toast({
+        title: "Nenhum dado para importar",
+        description: "Por favor, selecione um arquivo válido primeiro.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUploadingComplete(true);
+    try {
+      const response = await fetchWithAuth('/api/vehicles/import-complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dados: parsedCompleteData }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao importar');
+      }
+
+      const result = await response.json();
+      setImportCompleteResult(result);
+      
+      await fetchVehicles();
+      
+      toast({
+        title: "Importação concluída",
+        description: `${result.resumo.atualizados} atualizados, ${result.resumo.criados} novos veículos`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error("Erro ao importar:", error);
+      toast({
+        title: "Erro na importação",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploadingComplete(false);
+    }
+  };
+
   return (
     <MainLayoutSimple>
       <div className="space-y-6">
@@ -1288,6 +1406,149 @@ const VehiclesNew: React.FC = () => {
                         </>
                       ) : (
                         'Importar Cartões'
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              {/* Importar Planilha Completa */}
+              <Dialog open={isImportCompleteDialogOpen} onOpenChange={(open) => {
+                setIsImportCompleteDialogOpen(open);
+                if (!open) {
+                  setSelectedCompleteFileName(null);
+                  setParsedCompleteData(null);
+                  setImportCompleteResult(null);
+                }
+              }}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2 ml-2">
+                    <Upload className="h-4 w-4" />
+                    Importar Planilha
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Importar Planilha Completa de Veículos</DialogTitle>
+                    <DialogDescription>
+                      Atualize dados dos veículos em massa. Campos vazios na planilha serão ignorados (sem perda de dados existentes).
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="import-complete-file">Arquivo Excel (.xlsx ou .xls)</Label>
+                      <Input
+                        id="import-complete-file"
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={handleCompleteFileSelect}
+                        disabled={isParsingCompleteFile}
+                      />
+                      {isParsingCompleteFile && (
+                        <p className="text-sm text-blue-600 flex items-center gap-2">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600" />
+                          Processando arquivo...
+                        </p>
+                      )}
+                      {selectedCompleteFileName && parsedCompleteData && (
+                        <p className="text-sm text-green-600">
+                          Arquivo: {selectedCompleteFileName} ({parsedCompleteData.length} linhas prontas)
+                        </p>
+                      )}
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div className="flex gap-2">
+                        <FileText className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div className="text-sm text-blue-800">
+                          <p className="font-medium mb-1">Formato do arquivo:</p>
+                          <ul className="list-disc list-inside space-y-1">
+                            <li><strong>Placa</strong> (obrigatório) - Placa do veículo</li>
+                            <li><strong>Marca</strong> - Marca do veículo (ex: VAN, TRUCK)</li>
+                            <li><strong>Modelo</strong> - Modelo do veículo (ex: Sprinter 313)</li>
+                            <li><strong>Base</strong> - Nome da base/unidade</li>
+                            <li><strong>Cartão</strong> - Placa do cartão de abastecimento</li>
+                          </ul>
+                          <p className="mt-2 text-xs text-blue-600">Campos vazios serão ignorados, mantendo os dados atuais do veículo.</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {parsedCompleteData && parsedCompleteData.length > 0 && (
+                      <div className="border rounded-lg p-3 bg-gray-50 max-h-48 overflow-y-auto">
+                        <p className="font-medium text-sm mb-2">Preview (primeiras 5 linhas):</p>
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="text-left py-1 px-1">Placa</th>
+                              <th className="text-left py-1 px-1">Marca</th>
+                              <th className="text-left py-1 px-1">Modelo</th>
+                              <th className="text-left py-1 px-1">Base</th>
+                              <th className="text-left py-1 px-1">Cartão</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {parsedCompleteData.slice(0, 5).map((item, idx) => (
+                              <tr key={idx} className="border-b last:border-0">
+                                <td className="py-1 px-1 font-mono">{item.placa}</td>
+                                <td className="py-1 px-1">{item.marca || '-'}</td>
+                                <td className="py-1 px-1">{item.modelo || '-'}</td>
+                                <td className="py-1 px-1">{item.base || '-'}</td>
+                                <td className="py-1 px-1">{item.cartao || '-'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    
+                    {importCompleteResult && (
+                      <div className={`border rounded-lg p-3 ${importCompleteResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                        <p className="font-medium text-sm mb-2">Resultado da importação:</p>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>Total processado: <strong>{importCompleteResult.resumo.total}</strong></div>
+                          <div>Atualizados: <strong className="text-blue-600">{importCompleteResult.resumo.atualizados}</strong></div>
+                          <div>Novos criados: <strong className="text-green-600">{importCompleteResult.resumo.criados}</strong></div>
+                          <div>Bases não encontradas: <strong className="text-orange-600">{importCompleteResult.resumo.basesNaoEncontradas}</strong></div>
+                        </div>
+                        {importCompleteResult.detalhes.basesNaoEncontradas.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-xs font-medium text-orange-700">Bases não reconhecidas:</p>
+                            <p className="text-xs text-orange-600">{importCompleteResult.detalhes.basesNaoEncontradas.join(', ')}</p>
+                          </div>
+                        )}
+                        {importCompleteResult.detalhes.erros.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-xs font-medium text-red-700">Erros:</p>
+                            {importCompleteResult.detalhes.erros.map((erro, idx) => (
+                              <p key={idx} className="text-xs text-red-600">{erro}</p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setIsImportCompleteDialogOpen(false);
+                        setSelectedCompleteFileName(null);
+                        setParsedCompleteData(null);
+                        setImportCompleteResult(null);
+                      }}
+                    >
+                      Fechar
+                    </Button>
+                    <Button 
+                      onClick={handleImportComplete}
+                      disabled={!parsedCompleteData || isUploadingComplete || isParsingCompleteFile}
+                    >
+                      {isUploadingComplete ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                          Importando...
+                        </>
+                      ) : (
+                        'Importar Dados'
                       )}
                     </Button>
                   </DialogFooter>
