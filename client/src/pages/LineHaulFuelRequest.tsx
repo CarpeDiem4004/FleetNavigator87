@@ -177,8 +177,13 @@ export default function LineHaulFuelRequest() {
           const data = await response.json();
           if (data.success && Array.isArray(data.points) && data.points.length > 0) {
             const standardizedPoints = data.points.map((p: string) => standardizeRouteName(p));
-            const combined = new Set([...standardizedPoints, ...ROTAS_LINE_HAUL_FALLBACK]);
-            setRoutePoints(Array.from(combined).sort());
+            const allPoints = [...standardizedPoints, ...ROTAS_LINE_HAUL_FALLBACK];
+            const seen = new Map<string, string>();
+            allPoints.forEach(p => {
+              const key = p.toLowerCase().trim();
+              if (!seen.has(key)) seen.set(key, p);
+            });
+            setRoutePoints(Array.from(seen.values()).sort());
           }
         }
       } catch (err) {
