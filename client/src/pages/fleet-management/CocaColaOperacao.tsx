@@ -1160,12 +1160,12 @@ export default function CocaColaOperacao() {
         </div>
       </div>
 
-      {/* Dialog para mostrar veículos da base */}
+      {/* Dialog fullscreen para mostrar veículos da base */}
       <Dialog open={baseDetailDialogOpen} onOpenChange={setBaseDetailDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Truck className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Truck className="h-6 w-6" />
               Veículos - {selectedBaseDetail?.nome}
             </DialogTitle>
             <DialogDescription>
@@ -1173,65 +1173,83 @@ export default function CocaColaOperacao() {
             </DialogDescription>
           </DialogHeader>
           {selectedBaseDetail && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {(() => {
                 const veiculosBase = vehicles.filter(v => v.base_id === selectedBaseDetail.id);
                 const getStatus = (v: any) => v.status_efetivo || v.status;
-                const stats = {
-                  total: veiculosBase.length,
-                  emRota: veiculosBase.filter(v => ['em_rota', 'rota'].includes(getStatus(v))).length,
-                  semEquipe: veiculosBase.filter(v => ['sem_equipe', 'falta_equipe'].includes(getStatus(v))).length,
-                  manutencao: veiculosBase.filter(v => ['manutencao', 'em_manutencao'].includes(getStatus(v))).length,
-                  baixaVenda: veiculosBase.filter(v => getStatus(v) === 'baixa_venda').length,
-                  dMais1: veiculosBase.filter(v => getStatus(v) === 'd_mais_1').length,
-                  disponivel: veiculosBase.filter(v => getStatus(v) === 'disponivel').length,
-                  outros: veiculosBase.filter(v => !['em_rota', 'rota', 'sem_equipe', 'falta_equipe', 'manutencao', 'em_manutencao', 'baixa_venda', 'd_mais_1', 'disponivel', 'parado', 'aguardando_peca'].includes(getStatus(v))).length,
-                  parados: veiculosBase.filter(v => ['parado', 'aguardando_peca'].includes(getStatus(v))).length,
-                };
-                const allCards = [
-                  { label: 'Total', value: stats.total, bg: 'bg-gray-100', text: 'text-gray-800' },
-                  { label: 'Em Rota', value: stats.emRota, bg: 'bg-green-100', text: 'text-green-700' },
-                  { label: 'Sem Equipe', value: stats.semEquipe, bg: 'bg-yellow-100', text: 'text-yellow-700' },
-                  { label: 'Manutenção', value: stats.manutencao, bg: 'bg-orange-100', text: 'text-orange-700' },
-                  { label: 'Baixa Venda', value: stats.baixaVenda, bg: 'bg-red-100', text: 'text-red-600' },
-                  { label: 'D+1', value: stats.dMais1, bg: 'bg-purple-100', text: 'text-purple-700' },
-                  { label: 'Disponível', value: stats.disponivel, bg: 'bg-blue-100', text: 'text-blue-600' },
-                  { label: 'Parados', value: stats.parados, bg: 'bg-rose-100', text: 'text-rose-600' },
-                  { label: 'Outros', value: stats.outros, bg: 'bg-slate-100', text: 'text-slate-600' },
-                ].filter(c => c.label === 'Total' || c.value > 0);
+                const statusGroups = [
+                  { key: 'emRota', label: 'Em Rota', statuses: ['em_rota', 'rota'], bg: 'bg-green-50', border: 'border-green-300', text: 'text-green-700', badgeBg: 'bg-green-100' },
+                  { key: 'semEquipe', label: 'Sem Equipe', statuses: ['sem_equipe', 'falta_equipe'], bg: 'bg-yellow-50', border: 'border-yellow-300', text: 'text-yellow-700', badgeBg: 'bg-yellow-100' },
+                  { key: 'manutencao', label: 'Manutenção', statuses: ['manutencao', 'em_manutencao'], bg: 'bg-orange-50', border: 'border-orange-300', text: 'text-orange-700', badgeBg: 'bg-orange-100' },
+                  { key: 'baixaVenda', label: 'Baixa Venda', statuses: ['baixa_venda'], bg: 'bg-red-50', border: 'border-red-300', text: 'text-red-600', badgeBg: 'bg-red-100' },
+                  { key: 'dMais1', label: 'D+1', statuses: ['d_mais_1'], bg: 'bg-purple-50', border: 'border-purple-300', text: 'text-purple-700', badgeBg: 'bg-purple-100' },
+                  { key: 'disponivel', label: 'Disponível', statuses: ['disponivel'], bg: 'bg-blue-50', border: 'border-blue-300', text: 'text-blue-600', badgeBg: 'bg-blue-100' },
+                  { key: 'parados', label: 'Parados', statuses: ['parado', 'aguardando_peca'], bg: 'bg-rose-50', border: 'border-rose-300', text: 'text-rose-600', badgeBg: 'bg-rose-100' },
+                ];
+                const allKnownStatuses = statusGroups.flatMap(g => g.statuses);
+                const outrosVeiculos = veiculosBase.filter(v => !allKnownStatuses.includes(getStatus(v)));
+                const groupedData = statusGroups.map(group => ({
+                  ...group,
+                  vehicles: veiculosBase.filter(v => group.statuses.includes(getStatus(v)))
+                })).filter(g => g.vehicles.length > 0);
+                if (outrosVeiculos.length > 0) {
+                  groupedData.push({
+                    key: 'outros', label: 'Outros', statuses: [], bg: 'bg-slate-50', border: 'border-slate-300', text: 'text-slate-600', badgeBg: 'bg-slate-100',
+                    vehicles: outrosVeiculos
+                  });
+                }
+                const totalVeiculos = veiculosBase.length;
+                const atualizados = veiculosBase.filter(v => v.atualizado_hoje).length;
                 return (
                   <>
-                    <div className="grid grid-cols-4 gap-2 text-center">
-                      {allCards.map(card => (
-                        <div key={card.label} className={`p-2 ${card.bg} rounded`}>
-                          <p className={`text-lg font-bold ${card.text}`}>{card.value}</p>
-                          <p className="text-xs text-muted-foreground">{card.label}</p>
+                    <div className="flex flex-wrap gap-3 items-center">
+                      <div className="p-3 bg-gray-100 rounded-lg text-center min-w-[100px]">
+                        <p className="text-2xl font-bold text-gray-800">{totalVeiculos}</p>
+                        <p className="text-xs text-muted-foreground">Total</p>
+                      </div>
+                      {groupedData.map(group => (
+                        <div key={group.key} className={`p-3 ${group.badgeBg} rounded-lg text-center min-w-[100px]`}>
+                          <p className={`text-2xl font-bold ${group.text}`}>{group.vehicles.length}</p>
+                          <p className="text-xs text-muted-foreground">{group.label}</p>
                         </div>
                       ))}
+                      <div className="ml-auto p-3 bg-emerald-50 rounded-lg text-center min-w-[120px]">
+                        <p className="text-2xl font-bold text-emerald-700">{Math.round((atualizados / totalVeiculos) * 100)}%</p>
+                        <p className="text-xs text-muted-foreground">Atualizado</p>
+                      </div>
                     </div>
-                    <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                      {veiculosBase.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-4">Nenhum veículo cadastrado nesta base.</p>
-                      ) : (
-                        veiculosBase.map(v => (
-                          <div key={v.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div>
-                              <p className="font-medium">{v.placa}</p>
-                              <p className="text-sm text-muted-foreground">{v.modelo}</p>
-                              {v.observacao_diaria && (
-                                <p className="text-xs text-gray-500 mt-1">{v.observacao_diaria}</p>
-                              )}
+                    {veiculosBase.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">Nenhum veículo cadastrado nesta base.</p>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        {groupedData.map(group => (
+                          <div key={group.key} className={`border ${group.border} rounded-lg overflow-hidden`}>
+                            <div className={`${group.badgeBg} px-4 py-2 flex items-center justify-between`}>
+                              <h3 className={`font-semibold ${group.text}`}>{group.label}</h3>
+                              <span className={`text-sm font-bold ${group.text}`}>{group.vehicles.length}</span>
                             </div>
-                            <div className="flex flex-col items-end gap-1">
-                              {getStatusBadge(v.status_efetivo || v.status)}
-                              {v.atualizado_hoje && (
-                                <span className="text-[10px] text-green-600">Atualizado hoje</span>
-                              )}
+                            <div className={`${group.bg} divide-y divide-gray-200 max-h-[300px] overflow-y-auto`}>
+                              {group.vehicles.map(v => (
+                                <div key={v.id} className="px-4 py-2 flex items-center justify-between">
+                                  <div>
+                                    <p className="font-medium text-sm">{v.placa}</p>
+                                    {v.observacao_diaria && (
+                                      <p className="text-xs text-gray-500 flex items-center gap-1">
+                                        <MessageSquare className="h-3 w-3" />
+                                        {v.observacao_diaria}
+                                      </p>
+                                    )}
+                                  </div>
+                                  {v.atualizado_hoje && (
+                                    <span className="text-[10px] text-green-600 whitespace-nowrap">Atualizado</span>
+                                  )}
+                                </div>
+                              ))}
                             </div>
                           </div>
-                        ))
-                      )}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </>
                 );
               })()}
