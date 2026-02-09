@@ -744,7 +744,14 @@ const OficinaMurici: React.FC = () => {
         yPosition += 55;
       }
       
-      // Custos
+      const checkPageBreak = (needed: number) => {
+        if (yPosition + needed > 260) {
+          pdf.addPage();
+          yPosition = 20;
+        }
+      };
+
+      checkPageBreak(40);
       pdf.setFontSize(16);
       pdf.setTextColor(51, 51, 51);
       pdf.text('CUSTOS', 20, yPosition + 20);
@@ -753,23 +760,38 @@ const OficinaMurici: React.FC = () => {
       pdf.setTextColor(0, 0, 0);
       const custoTotal = Number(manutencao.custo_total || 0);
       pdf.text(`Custo Total da Manutenção: ${formatCurrency(custoTotal)}`, 20, yPosition + 35);
+      yPosition += 45;
       
-      // Observações se houver
       if (manutencao.observacoes) {
+        const observacoesLinhas = pdf.splitTextToSize(manutencao.observacoes, 170);
+        checkPageBreak(30 + observacoesLinhas.length * 6);
         pdf.setFontSize(16);
         pdf.setTextColor(51, 51, 51);
-        pdf.text('OBSERVAÇÕES', 20, yPosition + 55);
+        pdf.text('OBSERVAÇÕES', 20, yPosition + 10);
         
         pdf.setFontSize(12);
         pdf.setTextColor(0, 0, 0);
-        const observacoesLinhas = pdf.splitTextToSize(manutencao.observacoes, 170);
-        pdf.text(observacoesLinhas, 20, yPosition + 70);
+        pdf.text(observacoesLinhas, 20, yPosition + 25);
+        yPosition += 25 + (observacoesLinhas.length * 6);
       }
+
+      checkPageBreak(70);
+      yPosition += 25;
+      pdf.setDrawColor(100, 100, 100);
+      pdf.setLineWidth(0.3);
+      pdf.line(20, yPosition, 85, yPosition);
+      pdf.line(115, yPosition, 190, yPosition);
       
-      // Rodapé
+      pdf.setFontSize(10);
+      pdf.setTextColor(80, 80, 80);
+      pdf.text('Assinatura Cliente', 52.5, yPosition + 6, { align: 'center' });
+      pdf.text('Assinatura Responsável Técnico', 152.5, yPosition + 6, { align: 'center' });
+      yPosition += 20;
+
+      checkPageBreak(15);
       pdf.setFontSize(10);
       pdf.setTextColor(128, 128, 128);
-      pdf.text(`Relatório gerado em ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 105, 280, { align: 'center' });
+      pdf.text(`Relatório gerado em ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 105, yPosition + 10, { align: 'center' });
       
       // Salvar o PDF
       const fileName = `relatorio_manutencao_${manutencao.placa}_${format(new Date(), 'ddMMyyyy_HHmm')}.pdf`;
