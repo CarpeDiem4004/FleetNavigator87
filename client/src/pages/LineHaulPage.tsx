@@ -4107,10 +4107,11 @@ const LineHaulPage = () => {
                   <Input
                     id="km_total"
                     type="number"
-                    placeholder="Será calculado automaticamente"
+                    placeholder={distanceStatus.includes('Erro') || distanceStatus.includes('Não foi possível') ? "Digite o KM manualmente" : "Será calculado automaticamente"}
                     value={newRoute.km_total || ''}
-                    readOnly
-                    className="bg-gray-50"
+                    readOnly={!(distanceStatus.includes('Erro') || distanceStatus.includes('Não foi possível')) && !(!distanceStatus && !newRoute.km_total)}
+                    className={distanceStatus.includes('Erro') || distanceStatus.includes('Não foi possível') ? "bg-white border-orange-400" : "bg-gray-50"}
+                    onChange={(e) => setNewRoute(prev => ({ ...prev, km_total: e.target.value ? Number(e.target.value) : 0 }))}
                   />
                   {isCalculatingDistance && (
                     <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-blue-500" />
@@ -4125,6 +4126,8 @@ const LineHaulPage = () => {
                         : 'text-green-600'
                   }`}>
                     {distanceStatus}
+                    {(distanceStatus.includes('Erro') || distanceStatus.includes('Não foi possível')) && 
+                      ' - Insira o KM manualmente abaixo.'}
                   </p>
                 )}
               </div>
