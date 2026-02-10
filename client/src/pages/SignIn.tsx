@@ -35,6 +35,8 @@ export default function SignIn({ oficina = false }: SignInProps) {
         navigate('/line-haul');
       } else if (user.role === 'operador_status_frota') {
         navigate('/fleet-status/base');
+      } else if (user.basename === 'Status Diário da Frota') {
+        navigate('/fleet-status/dashboard');
       } else {
         navigate('/');
       }
@@ -148,6 +150,8 @@ export default function SignIn({ oficina = false }: SignInProps) {
             navigate('/line-haul');
           } else if (userRole === 'operador_status_frota') {
             navigate('/fleet-status/base');
+          } else if (user.basename === 'Status Diário da Frota') {
+            navigate('/fleet-status/dashboard');
           } else if (user.basename === "Gestão de Frotas") {
             navigate('/fleet-management');
           } else {
@@ -189,6 +193,8 @@ export default function SignIn({ oficina = false }: SignInProps) {
             navigate('/line-haul');
           } else if (userRole2 === 'operador_status_frota') {
             navigate('/fleet-status/base');
+          } else if (user.basename === 'Status Diário da Frota') {
+            navigate('/fleet-status/dashboard');
           } else if (user.basename === "Gestão de Frotas") {
             navigate('/fleet-management');
           } else {
