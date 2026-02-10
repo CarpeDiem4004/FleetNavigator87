@@ -744,10 +744,13 @@ export default function CocaColaOperacao() {
                         {bases.filter(b => b.ativo).map(base => {
                           const atualizouHoje = basesAtualizadasHoje.includes(base.id);
                           const veiculosBase = vehicles.filter(v => v.base_id === base.id);
+                          const totalVeiculos = veiculosBase.length;
+                          const veiculosAtualizados = veiculosBase.filter(v => v.atualizado_hoje).length;
+                          const percBase = totalVeiculos > 0 ? Math.round((veiculosAtualizados / totalVeiculos) * 100) : 0;
                           return (
                             <div 
                               key={base.id} 
-                              className={`flex items-center justify-between p-3 rounded-lg cursor-pointer hover:opacity-80 transition-opacity ${atualizouHoje ? 'bg-green-50' : 'bg-red-50'}`}
+                              className={`p-3 rounded-lg cursor-pointer hover:opacity-80 transition-opacity ${atualizouHoje ? 'bg-green-50' : 'bg-red-50'}`}
                               onClick={() => {
                                 setSelectedBaseDetail(base);
                                 setModalDate(format(new Date(), 'yyyy-MM-dd'));
@@ -755,18 +758,33 @@ export default function CocaColaOperacao() {
                                 setBaseDetailDialogOpen(true);
                               }}
                             >
-                              <div>
-                                <p className="font-medium">{base.nome}</p>
-                                <p className="text-sm text-muted-foreground">{base.cidade}/{base.estado} • {veiculosBase.length} veículos</p>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium">{base.nome}</p>
+                                  <p className="text-sm text-muted-foreground">{base.cidade}/{base.estado} • {veiculosBase.length} veículos</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-xs font-bold ${percBase === 100 ? 'text-green-600' : percBase > 0 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                    {percBase}%
+                                  </span>
+                                  {atualizouHoje ? (
+                                    <Badge className="bg-green-100 text-green-800">
+                                      <CheckCircle2 className="h-3 w-3 mr-1" /> Atualizado
+                                    </Badge>
+                                  ) : (
+                                    <Badge className="bg-red-100 text-red-800">
+                                      <Clock className="h-3 w-3 mr-1" /> Pendente
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
-                              {atualizouHoje ? (
-                                <Badge className="bg-green-100 text-green-800">
-                                  <CheckCircle2 className="h-3 w-3 mr-1" /> Atualizado
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-red-100 text-red-800">
-                                  <Clock className="h-3 w-3 mr-1" /> Pendente
-                                </Badge>
+                              {totalVeiculos > 0 && (
+                                <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all duration-500 ${percBase === 100 ? 'bg-green-500' : percBase > 0 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                                    style={{ width: `${percBase}%` }}
+                                  />
+                                </div>
                               )}
                             </div>
                           );
