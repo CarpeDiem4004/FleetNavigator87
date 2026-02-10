@@ -9505,18 +9505,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const destinoNorm = normalizeString(rota_destino);
 
         console.log('[LINEHAUL-PUBLIC-REQUEST] Buscando rota:', origemNorm, '→', destinoNorm);
+      const trExpr = (col) => `LOWER(TRANSLATE(${col}, 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ', 'aaaaaeeeeiiiioooooouuuucAAAAAEEEEIIIIOOOOOUUUUC'))`;
       const routeQuery = `
-        SELECT km_total, origem, destino
+        SELECT km_total, COALESCE(NULLIF(origem,''), nome_ponto_a) as origem, COALESCE(NULLIF(destino,''), nome_ponto_b) as destino
         FROM line_hall_routes 
         WHERE (
-          LOWER(TRANSLATE(origem, 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ', 'aaaaaeeeeiiiioooooouuuucAAAAAEEEEIIIIOOOOOUUUUC')) LIKE $1 
-          AND LOWER(TRANSLATE(destino, 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ', 'aaaaaeeeeiiiioooooouuuucAAAAAEEEEIIIIOOOOOUUUUC')) LIKE $2
+          ${trExpr("COALESCE(NULLIF(origem,''), nome_ponto_a, '')")} LIKE $1 
+          AND ${trExpr("COALESCE(NULLIF(destino,''), nome_ponto_b, '')")} LIKE $2
         ) OR (
-          LOWER(TRANSLATE(origem, 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ', 'aaaaaeeeeiiiioooooouuuucAAAAAEEEEIIIIOOOOOUUUUC')) LIKE $2 
-          AND LOWER(TRANSLATE(destino, 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ', 'aaaaaeeeeiiiioooooouuuucAAAAAEEEEIIIIOOOOOUUUUC')) LIKE $1
+          ${trExpr("COALESCE(NULLIF(origem,''), nome_ponto_a, '')")} LIKE $2 
+          AND ${trExpr("COALESCE(NULLIF(destino,''), nome_ponto_b, '')")} LIKE $1
+        ) OR (
+          ${trExpr("COALESCE(NULLIF(nome_ponto_a,''), origem, '')")} LIKE $1 
+          AND ${trExpr("COALESCE(NULLIF(nome_ponto_b,''), destino, '')")} LIKE $2
+        ) OR (
+          ${trExpr("COALESCE(NULLIF(nome_ponto_a,''), origem, '')")} LIKE $2 
+          AND ${trExpr("COALESCE(NULLIF(nome_ponto_b,''), destino, '')")} LIKE $1
         )
         LIMIT 1
-      `;
+      `
       const routeResult = await pool.query(routeQuery, [`%${origemNorm}%`, `%${destinoNorm}%`]);
 
       if (routeResult.rows.length > 0) {
