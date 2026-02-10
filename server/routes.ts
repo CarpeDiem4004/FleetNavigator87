@@ -26006,7 +26006,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ]
       );
 
-      console.log(`[MaintenanceRequest] Nova solicitação criada id=${result.rows[0].id} placa=${placa} base=${base_origem}`);
+      const newId1 = result.rows[0].id;
+      const numeroOs1 = 'OS-' + String(newId1).padStart(5, '0');
+      await pool.query('UPDATE coca_cola_os_requests SET numero_os = $1 WHERE id = $2', [numeroOs1, newId1]);
+      result.rows[0].numero_os = numeroOs1;
+      console.log(`[MaintenanceRequest] Nova solicitação criada id=${newId1} OS=${numeroOs1} placa=${placa} base=${base_origem}`);
       res.json({ success: true, data: result.rows[0] });
     } catch (error: any) {
       console.error('[MaintenanceRequest] Erro ao criar solicitação:', error);
@@ -29045,7 +29049,11 @@ async function createFuelRequestNotification(fuelRequest) {
         [placa, modelo || null, base_origem, odometro ? parseInt(odometro) : null, relato_problema, urgencia || 'media', fotos || [], responsavel_base || null, telefone_responsavel || null]
       );
 
-      console.log('[CocaCola OS] Nova solicitação criada:', result.rows[0].id, 'Placa:', placa, 'Base:', base_origem);
+      const newId2 = result.rows[0].id;
+      const numeroOs2 = 'OS-' + String(newId2).padStart(5, '0');
+      await pool.query('UPDATE coca_cola_os_requests SET numero_os = $1 WHERE id = $2', [numeroOs2, newId2]);
+      result.rows[0].numero_os = numeroOs2;
+      console.log(`[CocaCola OS] Nova solicitação criada id=${newId2} OS=${numeroOs2} placa=${placa} base=${base_origem}`);
       res.json({ success: true, data: result.rows[0] });
     } catch (error) {
       console.error('[CocaCola OS] Erro ao criar solicitação:', error);
@@ -29201,7 +29209,11 @@ async function createFuelRequestNotification(fuelRequest) {
         ]
       );
 
-      console.log(`[MaintenanceRequest] Nova solicitação criada id=${result.rows[0].id} placa=${placa} base=${base_origem}`);
+      const newId3 = result.rows[0].id;
+      const numeroOs3 = 'OS-' + String(newId3).padStart(5, '0');
+      await pool.query('UPDATE coca_cola_os_requests SET numero_os = $1 WHERE id = $2', [numeroOs3, newId3]);
+      result.rows[0].numero_os = numeroOs3;
+      console.log(`[MaintenanceRequest] Nova solicitação criada id=${newId3} OS=${numeroOs3} placa=${placa} base=${base_origem}`);
       res.json({ success: true, data: result.rows[0] });
     } catch (error) {
       console.error('[MaintenanceRequest] Erro ao criar solicitação:', error);

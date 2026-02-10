@@ -228,6 +228,7 @@ const COLORS = ['#2563eb', '#16a34a', '#eab308', '#dc2626', '#8b5cf6', '#06b6d4'
 
 interface MaintenanceRequest {
   id: number;
+  numero_os: string | null;
   placa: string;
   modelo: string | null;
   base_origem: string;
@@ -448,24 +449,30 @@ function RecebimentoOSTab() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Nº OS</TableHead>
                   <TableHead>Placa</TableHead>
                   <TableHead>Base</TableHead>
                   <TableHead>Problema</TableHead>
                   <TableHead>Urgência</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Data</TableHead>
+                  <TableHead>Abertura</TableHead>
+                  <TableHead>Agendamento</TableHead>
+                  <TableHead>Solicitante</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {requests.map(req => (
                   <TableRow key={req.id}>
+                    <TableCell className="font-mono text-sm font-bold text-blue-700">{req.numero_os || '-'}</TableCell>
                     <TableCell className="font-medium">{req.placa}</TableCell>
                     <TableCell>{req.base_origem}</TableCell>
                     <TableCell className="max-w-[200px] truncate">{req.relato_problema}</TableCell>
                     <TableCell>{getUrgenciaBadge(req.urgencia)}</TableCell>
                     <TableCell>{getStatusBadge(req.status)}</TableCell>
                     <TableCell>{new Date(req.created_at).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>{req.data_agendamento ? new Date(req.data_agendamento + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</TableCell>
+                    <TableCell className="text-sm">{req.responsavel_base || '-'}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button size="sm" onClick={() => handleDirecionar(req)}>
@@ -489,7 +496,10 @@ function RecebimentoOSTab() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Direcionar Veículo - {selectedRequest?.placa}</DialogTitle>
+            <DialogTitle>
+              {selectedRequest?.numero_os && <span className="font-mono text-blue-700">{selectedRequest.numero_os} - </span>}
+              Direcionar Veículo - {selectedRequest?.placa}
+            </DialogTitle>
             <DialogDescription>
               Defina a oficina e a data de agendamento para este veículo.
             </DialogDescription>
@@ -498,12 +508,30 @@ function RecebimentoOSTab() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
                 <div>
+                  <p className="text-sm text-muted-foreground">Nº da OS</p>
+                  <p className="font-mono font-bold text-blue-700">{selectedRequest.numero_os || '-'}</p>
+                </div>
+                <div>
                   <p className="text-sm text-muted-foreground">Base de Origem</p>
                   <p className="font-medium">{selectedRequest.base_origem}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Urgência</p>
                   {getUrgenciaBadge(selectedRequest.urgencia)}
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Solicitante</p>
+                  <p className="font-medium">{selectedRequest.responsavel_base || 'Não informado'}</p>
+                </div>
+                {selectedRequest.telefone_responsavel && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Telefone do Solicitante</p>
+                    <p className="font-medium">{selectedRequest.telefone_responsavel}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm text-muted-foreground">Data de Abertura</p>
+                  <p className="font-medium">{new Date(selectedRequest.created_at).toLocaleDateString('pt-BR')} {new Date(selectedRequest.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-sm text-muted-foreground">Relato do Problema</p>
