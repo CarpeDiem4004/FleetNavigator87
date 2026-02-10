@@ -690,7 +690,35 @@ const FuelCardRequestsPanel: React.FC = () => {
 
 
 
-  const fetchSolicitations = async (page: number = currentPage, limit: number = itemsPerPage) => {
+  const [recalculating, setRecalculating] = useState(false);
+
+  const handleRecalculateLineHaul = async () => {
+    try {
+      setRecalculating(true);
+      const response = await fetch('/api/fuel-card/line-haul/recalculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        if (data.updated > 0) {
+          toast({
+            title: 'Recálculo concluído',
+            description: `${data.updated} solicitação(ões) atualizada(s) com novos valores de rota`,
+          });
+        }
+        await fetchSolicitations();
+      }
+    } catch (error) {
+      console.error('Erro ao recalcular:', error);
+      await fetchSolicitations();
+    } finally {
+      setRecalculating(false);
+    }
+  };
+
+    const fetchSolicitations = async (page: number = currentPage, limit: number = itemsPerPage) => {
     try {
       setLoading(true);
       setError(null);
@@ -3506,7 +3534,9 @@ const FuelCardRequestsPanel: React.FC = () => {
                     </>
                   )}
                 </Button>
-                <Button onClick={fetchSolicitations} variant="outline" size="sm">Atualizar</Button>
+                <Button onClick={handleRecalculateLineHaul} variant="outline" size="sm" disabled={recalculating}>
+                  {recalculating ? 'Recalculando...' : 'Atualizar'}
+                </Button>
               </div>
             </div>
           </CardHeader>

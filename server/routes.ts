@@ -9801,7 +9801,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // GET - Obter detalhes de uma solicitação específica
+  // POST - Recalcular KM e valor para solicitações Line Haul pendentes (quando rota é cadastrada depois)
+  app.post('/api/fuel-card/line-haul/recalculate', isAuthenticated, async (req, res) => {
+    try {
+      // Buscar solicitações Line Haul pendentes com km_total = 0
+      const pendingResult = await pool.query(`
+        SELECT id, rota_origem, rota_destino, veiculo_modelo, placa, 
+               calculo_detalhes, valor_solicitado, valor_calculado
+        FROM solicitacoes_fuel_card 
+        WHERE origem_tipo = 'line_hall' 
+          AND status = 'Pendente' 
+          AND (km_total IS NULL OR km_total = 0)
+      `);
+
+      if (pendingResult.rows.length === 0) {
+        return res.json({ success: true, message: 'Nenhuma solicitação pendente para recalcular', updated: 0 });
+      }
+
+      console.log('[RECALC-LINEHAUL] Encontradas', pendingResult.rows.length, 'solicitações para recalcular');
+
+      function normalizeString(str) {
+        return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+      }
+
+      function getConsumoByModel(modelo) {
+        if (!modelo) return 2.5;
+        const modeloLower = modelo.toLowerCase();
+        const consumos = {
+          'iveco': 2.5, 'volvo': 2.7, 'constellation': 2.0,
+          'mercedes': 2.5, 'man': 2.6, 'scania': 2.7, 'daf': 2.7
+        };
+        for (const [marca, consumo] of Object.entries(consumos)) {
+          if (modeloLower.includes(marca)) return consumo;
+        }
+        return 2.5;
+      }
+
+      const trExpr = (col) => `LOWER(TRANSLATE(${col}, 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ', 'aaaaaeeeeiiiioooooouuuucAAAAAEEEEIIIIOOOOOUUUUC'))`;
+
+      let updatedCount = 0;
+
+      for (const sol of pendingResult.rows) {
+        if (!sol.rota_origem || !sol.rota_destino) continue;
+
+        const origemNorm = normalizeString(sol.rota_origem);
+        const destinoNorm = normalizeString(sol.rota_destino);
+
+        const routeQuery = `
+          SELECT km_total FROM line_hall_routes 
+          WHERE (
+            ${trExpr("COALESCE(NULLIF(origem,''), nome_ponto_a, '')")} LIKE $1 
+            AND ${trExpr("COALESCE(NULLIF(destino,''), nome_ponto_b, '')")} LIKE $2
+          ) OR (
+            ${trExpr("COALESCE(NULLIF(origem,''), nome_ponto_a, '')")} LIKE $2 
+            AND ${trExpr("COALESCE(NULLIF(destino,''), nome_ponto_b, '')")} LIKE $1
+          ) OR (
+            ${trExpr("COALESCE(NULLIF(nome_ponto_a,''), origem, '')")} LIKE $1 
+            AND ${trExpr("COALESCE(NULLIF(nome_ponto_b,''), destino, '')")} LIKE $2
+          ) OR (
+            ${trExpr("COALESCE(NULLIF(nome_ponto_a,''), origem, '')")} LIKE $2 
+            AND ${trExpr("COALESCE(NULLIF(nome_ponto_b,''), destino, '')")} LIKE $1
+          )
+          LIMIT 1
+        `;
+
+        const routeResult = await pool.query(routeQuery, [`%${origemNorm}%`, `%${destinoNorm}%`]);
+
+        if (routeResult.rows.length > 0) {
+          const kmTotal = Math.round(parseFloat(routeResult.rows[0].km_total) || 0);
+          if (kmTotal > 0) {
+            const consumo = getConsumoByModel(sol.veiculo_modelo || '');
+            const precoLitro = 6.50;
+            const kmAcrescimo = 30;
+            let valorCalculado = ((kmTotal + kmAcrescimo) / consumo) * precoLitro;
+
+            // Verificar se tinha ARLA
+            const detalhes = sol.calculo_detalhes || {};
+            if (detalhes.valor_arla && detalhes.valor_arla > 0) {
+              valorCalculado += detalhes.valor_arla;
+            }
+            valorCalculado = parseFloat(valorCalculado.toFixed(2));
+
+            const litrosNecessarios = parseFloat(((kmTotal + kmAcrescimo) / consumo).toFixed(2));
+
+            const newDetalhes = {
+              ...detalhes,
+              km_rota: kmTotal,
+              km_acrescimo: kmAcrescimo,
+              km_total: kmTotal + kmAcrescimo,
+              consumo_medio: consumo,
+              litros_necessarios: litrosNecessarios,
+              valor_por_litro: precoLitro,
+              valor_total: valorCalculado.toFixed(2),
+              fonte_km: 'tabela',
+              recalculado: true,
+              recalculado_em: new Date().toISOString()
+            };
+
+            await pool.query(`
+              UPDATE solicitacoes_fuel_card 
+              SET km_total = $1, 
+                  valor_calculado = $2, 
+                  valor_solicitado = $2,
+                  calculo_detalhes = $3,
+                  litros_solicitados = $4
+              WHERE id = $5
+            `, [kmTotal, valorCalculado, JSON.stringify(newDetalhes), litrosNecessarios, sol.id]);
+
+            updatedCount++;
+            console.log(`[RECALC-LINEHAUL] Solicitação #${sol.id} (${sol.placa}): ${sol.rota_origem} → ${sol.rota_destino} = ${kmTotal}km, R$ ${valorCalculado}`);
+          }
+        }
+      }
+
+      console.log('[RECALC-LINEHAUL] Recálculo concluído:', updatedCount, 'de', pendingResult.rows.length, 'atualizadas');
+      res.json({ 
+        success: true, 
+        message: `${updatedCount} solicitação(ões) recalculada(s) com sucesso`, 
+        updated: updatedCount,
+        total: pendingResult.rows.length
+      });
+    } catch (error) {
+      console.error('[RECALC-LINEHAUL] Erro ao recalcular:', error);
+      res.status(500).json({ error: 'Erro ao recalcular solicitações' });
+    }
+  });
+
+    // GET - Obter detalhes de uma solicitação específica
   app.get('/api/fuel-card/:id', isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
