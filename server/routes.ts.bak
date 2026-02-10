@@ -2671,13 +2671,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ELSE vehicle_daily_status.base_emprestimo_id 
           END,
           oficina = CASE 
-            WHEN $4 = 'em_manutencao' AND $9 IS NOT NULL THEN $9
-            WHEN $4 = 'em_manutencao' THEN vehicle_daily_status.oficina
+            WHEN $4 = 'em_manutencao' THEN $9
             ELSE NULL
           END,
           data_aparada = CASE 
-            WHEN $4 = 'em_manutencao' AND $10 IS NOT NULL THEN $10
-            WHEN $4 = 'em_manutencao' THEN vehicle_daily_status.data_aparada
+            WHEN $4 = 'em_manutencao' THEN $10
             ELSE NULL
           END
         RETURNING *

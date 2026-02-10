@@ -85,6 +85,11 @@ export default function CocaColaBaseDashboard() {
   
   const [expandedDailyStatus, setExpandedDailyStatus] = useState<string | null>(null);
   
+  const [showManutencaoDialog, setShowManutencaoDialog] = useState(false);
+  const [manutencaoVehicle, setManutencaoVehicle] = useState<{ id: number; placa: string } | null>(null);
+  const [manutencaoOficina, setManutencaoOficina] = useState('');
+  const [manutencaoDataAparada, setManutencaoDataAparada] = useState('');
+
   // Estados para modal de empréstimo
   const [showEmprestimoDialog, setShowEmprestimoDialog] = useState(false);
   const [emprestimoVehicle, setEmprestimoVehicle] = useState<{ id: number; placa: string } | null>(null);
@@ -196,7 +201,7 @@ export default function CocaColaBaseDashboard() {
   // Query para status diário dos veículos (sistema de calendário)
   const { data: dailyStatusData, refetch: refetchDailyStatus } = useQuery<{
     success: boolean;
-    data: { vehicle_id: number; placa: string; modelo: string; status: string; observacao: string | null; updated_by_name: string | null; updated_at: string | null; is_emprestado_aqui?: boolean; base_origem_nome?: string | null }[];
+    data: { vehicle_id: number; placa: string; modelo: string; status: string; observacao: string | null; updated_by_name: string | null; updated_at: string | null; is_emprestado_aqui?: boolean; base_origem_nome?: string | null; oficina?: string | null; data_aparada?: string | null }[];
     statusCount: { total: number; em_rota: number; em_manutencao: number; parado: number; emprestado: number; baixa_venda: number; sem_equipe: number; d_mais_1: number; pernoite: number; nao_informado: number };
     dataConsulta: string;
   }>({
@@ -207,7 +212,7 @@ export default function CocaColaBaseDashboard() {
 
   // Mutation para atualizar status diário (só permite data de hoje)
   const updateDailyStatusMutation = useMutation({
-    mutationFn: async (data: { vehicle_id: number; status: string; observacao?: string }) => {
+    mutationFn: async (data: { vehicle_id: number; status: string; observacao?: string; oficina?: string; data_aparada?: string; base_emprestimo_id?: number | null }) => {
       if (!isToday(selectedDate)) {
         throw new Error('Só é possível atualizar o status do dia atual');
       }
@@ -478,8 +483,8 @@ export default function CocaColaBaseDashboard() {
               modelo: d.modelo,
               base_id: 0,
               status: 'disponivel',
-              oficina: null,
-              prazo_estimado: null,
+              oficina: undefined,
+              prazo_estimado: undefined,
               is_emprestado_aqui: true,
               base_origem_nome: d.base_origem_nome || null
             });
@@ -502,6 +507,18 @@ export default function CocaColaBaseDashboard() {
     if (!dailyStatusData?.data) return null;
     const found = dailyStatusData.data.find(d => d.vehicle_id === vehicleId);
     return found?.observacao || null;
+  };
+
+  const getDailyOficina = (vehicleId: number): string | null => {
+    if (!dailyStatusData?.data) return null;
+    const found = dailyStatusData.data.find(d => d.vehicle_id === vehicleId);
+    return found?.oficina || null;
+  };
+
+  const getDailyDataAparada = (vehicleId: number): string | null => {
+    if (!dailyStatusData?.data) return null;
+    const found = dailyStatusData.data.find(d => d.vehicle_id === vehicleId);
+    return found?.data_aparada || null;
   };
 
   // Helper para verificar se o veículo foi emprestado PARA esta base (veio de outra base)
@@ -1072,6 +1089,17 @@ export default function CocaColaBaseDashboard() {
                           </div>
                         )
                       )}
+                      {getDailyStatus(vehicle.id) === 'em_manutencao' && getDailyOficina(vehicle.id) && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-1 text-yellow-800 text-sm">
+                          <Wrench className="w-3 h-3 inline mr-1" />
+                          {getDailyOficina(vehicle.id)}
+                          {getDailyDataAparada(vehicle.id) && (
+                            <span className="ml-2 text-yellow-600">
+                              | Aparada: {new Date(getDailyDataAparada(vehicle.id)! + 'T00:00:00').toLocaleDateString('pt-BR')}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex items-center gap-2 flex-wrap">
@@ -1080,7 +1108,12 @@ export default function CocaColaBaseDashboard() {
                         <Select
                           value={vehicle.is_emprestado_aqui ? 'emprestado' : getDailyStatus(vehicle.id)}
                           onValueChange={(value) => {
-                            if (value === 'emprestado' && !vehicle.is_emprestado_aqui) {
+                            if (value === 'em_manutencao') {
+                              setManutencaoVehicle({ id: vehicle.id, placa: vehicle.placa });
+                              setManutencaoOficina('');
+                              setManutencaoDataAparada('');
+                              setShowManutencaoDialog(true);
+                            } else if (value === 'emprestado' && !vehicle.is_emprestado_aqui) {
                               setEmprestimoVehicle({ id: vehicle.id, placa: vehicle.placa });
                               setEmprestimoBaseId('');
                               setShowEmprestimoDialog(true);
@@ -1415,6 +1448,67 @@ export default function CocaColaBaseDashboard() {
                 className={observationStatus === 'd_mais_1' ? 'bg-cyan-500 hover:bg-cyan-600' : observationStatus === 'sem_equipe' ? 'bg-purple-500 hover:bg-purple-600' : 'bg-indigo-500 hover:bg-indigo-600'}
               >
                 {updateDailyStatusMutation.isPending ? 'Salvando...' : 'Confirmar'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Manutenção - Informar Oficina e Data da Aparada */}
+      <Dialog open={showManutencaoDialog} onOpenChange={setShowManutencaoDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wrench className="w-5 h-5 text-yellow-500" />
+              Em Manutenção - {manutencaoVehicle?.placa}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="font-medium">Oficina *</Label>
+              <Input
+                placeholder="Nome da oficina (ex: Oficina Central, Auto Mecânica Silva)"
+                value={manutencaoOficina}
+                onChange={(e) => setManutencaoOficina(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="font-medium">Data da Aparada (Previsão de Retirada)</Label>
+              <Input
+                type="date"
+                value={manutencaoDataAparada}
+                onChange={(e) => setManutencaoDataAparada(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowManutencaoDialog(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (!manutencaoOficina.trim()) {
+                    toast({
+                      title: 'Oficina obrigatória',
+                      description: 'Por favor, informe o nome da oficina',
+                      variant: 'destructive'
+                    });
+                    return;
+                  }
+                  if (manutencaoVehicle) {
+                    updateDailyStatusMutation.mutate({
+                      vehicle_id: manutencaoVehicle.id,
+                      status: 'em_manutencao',
+                      oficina: manutencaoOficina.trim(),
+                      data_aparada: manutencaoDataAparada || undefined,
+                      observacao: `Oficina: ${manutencaoOficina.trim()}${manutencaoDataAparada ? ` | Aparada: ${new Date(manutencaoDataAparada + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}`
+                    });
+                    setShowManutencaoDialog(false);
+                  }
+                }}
+                disabled={updateDailyStatusMutation.isPending}
+                className="bg-yellow-500 hover:bg-yellow-600"
+              >
+                {updateDailyStatusMutation.isPending ? 'Salvando...' : 'Confirmar Manutenção'}
               </Button>
             </div>
           </div>
