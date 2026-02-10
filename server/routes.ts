@@ -9581,7 +9581,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const destinoNorm = normalizeString(rota_destino);
 
         console.log('[LINEHAUL-PUBLIC-REQUEST] Buscando rota:', origemNorm, '→', destinoNorm);
-      const trExpr = (col) => `LOWER(TRANSLATE(${col}, 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ', 'aaaaaeeeeiiiioooooouuuucAAAAAEEEEIIIIOOOOOUUUUC'))`;
+      const trExpr = (col) => `LOWER(TRANSLATE(${col}, 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ', 'aaaaaeeeeiiiiooooouuuucAAAAAEEEEIIIIOOOOOUUUUC'))`;
       const routeQuery = `
         SELECT km_total, COALESCE(NULLIF(origem,''), nome_ponto_a) as origem, COALESCE(NULLIF(destino,''), nome_ponto_b) as destino
         FROM line_hall_routes 
@@ -9837,7 +9837,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return 2.5;
       }
 
-      const trExpr = (col) => `LOWER(TRANSLATE(${col}, 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ', 'aaaaaeeeeiiiioooooouuuucAAAAAEEEEIIIIOOOOOUUUUC'))`;
+      const trExpr = (col) => `LOWER(TRANSLATE(${col}, 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ', 'aaaaaeeeeiiiiooooouuuucAAAAAEEEEIIIIOOOOOUUUUC'))`;
 
       let updatedCount = 0;
 
