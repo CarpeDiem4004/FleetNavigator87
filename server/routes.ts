@@ -2705,6 +2705,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ]);
 
       console.log('[COCA-COLA STATUS] Atualização realizada com sucesso:', result.rows[0]);
+
+      // SINCRONIZAÇÃO: Atualizar tabela principal coca_cola_vehicles com informações da base
+      try {
+        const statusMap: Record<string, string> = {
+          'em_operacao': 'ativo',
+          'em_manutencao': 'manutencao',
+          'emprestado': 'emprestado',
+          'parado': 'manutencao',
+          'nao_informado': 'ativo'
+        };
+        const mainStatus = statusMap[status] || 'ativo';
+
+        if (status === 'em_manutencao') {
+          await pool.query(
+            `UPDATE coca_cola_vehicles 
+             SET status = $1,
+                 oficina = COALESCE($2, oficina),
+                 prazo_estimado = COALESCE($3, prazo_estimado),
+                 motivo_parado = COALESCE($4, motivo_parado),
+                 updated_at = NOW()
+             WHERE id = $5`,
+            [mainStatus, oficina || null, data_aparada || null, observacao || null, vehicle_id]
+          );
+          console.log(`[COCA-COLA SYNC] Veículo ${vehicle_id} sincronizado para tabela principal: status=${mainStatus}, oficina=${oficina}`);
+        } else {
+          const clearMaintenance = (status === 'em_operacao');
+          if (clearMaintenance) {
+            await pool.query(
+              `UPDATE coca_cola_vehicles 
+               SET status = $1,
+                   oficina = NULL,
+                   prazo_estimado = NULL,
+                   motivo_parado = NULL,
+                   updated_at = NOW()
+               WHERE id = $2`,
+              [mainStatus, vehicle_id]
+            );
+          } else {
+            await pool.query(
+              `UPDATE coca_cola_vehicles 
+               SET status = $1,
+                   updated_at = NOW()
+               WHERE id = $2`,
+              [mainStatus, vehicle_id]
+            );
+          }
+          console.log(`[COCA-COLA SYNC] Veículo ${vehicle_id} sincronizado para tabela principal: status=${mainStatus}`);
+        }
+      } catch (syncError: any) {
+        console.error('[COCA-COLA SYNC] Erro ao sincronizar com tabela principal (não crítico):', syncError?.message);
+      }
+
       res.json({ success: true, data: result.rows[0] });
     } catch (error: any) {
       console.error('[COCA-COLA STATUS] Erro ao atualizar status diário:', error?.message || error);
