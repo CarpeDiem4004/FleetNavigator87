@@ -114,12 +114,17 @@ export default function CocaColaOperacao() {
   const [showPeriodStats, setShowPeriodStats] = useState(false);
 
   const fetchWithCredentials = async (url: string) => {
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('coca_cola_token');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     const response = await fetch(url, {
       method: 'GET',
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

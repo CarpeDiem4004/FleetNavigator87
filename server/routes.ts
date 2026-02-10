@@ -1340,23 +1340,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware de autenticação específico para Coca-Cola (valida JWT ou sessão principal)
   const cocaColaAuth = async (req: any, res: any, next: any) => {
     try {
-      // jwt já importado no topo do arquivo
       const authHeader = req.headers.authorization;
       
-      // Verificar token JWT da base Coca-Cola
       if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.substring(7);
+        
         try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'coca-cola-secret-key');
+          const secret = process.env.JWT_SECRET || 'coca-cola-secret-key';
+          const decoded: any = jwt.verify(token, secret);
+          
+          if (decoded.email && decoded.role) {
+            const allowedRoles = ['admin', 'gestor', 'gestor_frota', 'gestor_equipamentos', 'ceo', 'gerente_geral', 'coordenador'];
+            if (allowedRoles.includes(decoded.role)) {
+              req.cocaColaUser = { userId: decoded.id, tipo: 'admin', baseId: null, email: decoded.email };
+              return next();
+            }
+          }
+          
           req.cocaColaUser = decoded;
-          console.log('[COCA-COLA AUTH] JWT válido para:', decoded);
           return next();
         } catch (jwtError) {
-          console.log('[COCA-COLA AUTH] Token JWT inválido, tentando sessão principal');
+          // Token inválido
         }
       }
       
-      // Fallback para autenticação principal (admin do sistema)
       if (req.isAuthenticated && req.isAuthenticated() && req.user) {
         req.cocaColaUser = { userId: req.user.id, tipo: 'admin', baseId: null };
         return next();
