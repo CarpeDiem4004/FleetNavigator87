@@ -612,18 +612,46 @@ function RecebimentoOSTab() {
               </div>
             </div>
           )}
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 flex-wrap">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handleSaveDirecionamento} disabled={updateMutation.isPending}>
               <Save className="h-4 w-4 mr-2" /> Salvar
             </Button>
-            {selectedRequest?.telefone_responsavel && selectedRequest?.status === 'aprovado' && !selectedRequest?.whatsapp_enviado && (
+            {selectedRequest?.telefone_responsavel && (selectedRequest?.oficina_direcionada || direcionamentoData.oficina_direcionada) && (
               <Button 
-                className="bg-green-600 hover:bg-green-700" 
-                onClick={handleSendWhatsAppManual}
-                disabled={confirmMutation.isPending}
+                className="bg-green-600 hover:bg-green-700 text-white" 
+                onClick={() => {
+                  if (!selectedRequest) return;
+                  const telefone = selectedRequest.telefone_responsavel!.replace(/\D/g, '');
+                  const telefoneFormatado = telefone.startsWith('55') ? telefone : `55${telefone}`;
+                  const oficina = direcionamentoData.oficina_direcionada || selectedRequest.oficina_direcionada || 'A definir';
+                  const dataAgend = direcionamentoData.data_agendamento || selectedRequest.data_agendamento;
+                  const dataFormatada = dataAgend 
+                    ? new Date(dataAgend + 'T12:00:00').toLocaleDateString('pt-BR')
+                    : 'A definir';
+                  const hora = direcionamentoData.hora_agendamento || selectedRequest.hora_agendamento || 'A definir';
+                  const instrucoes = direcionamentoData.instrucoes || selectedRequest.instrucoes || '';
+                  const osNum = selectedRequest.numero_os || '';
+
+                  const mensagem = `🔧 *CONFIRMAÇÃO DE AGENDAMENTO - MANUTENÇÃO*
+${osNum ? `\n📋 *OS:* ${osNum}` : ''}
+Olá! Informamos que o veículo *${selectedRequest.placa}* foi direcionado para manutenção.
+
+📍 *Oficina:* ${oficina}
+📅 *Data:* ${dataFormatada}
+⏰ *Horário:* ${hora}
+${instrucoes ? `\n📝 *Instruções:* ${instrucoes}` : ''}
+
+Por favor, siga as orientações acima para encaminhar o veículo.
+
+_Gestão de Frotas - Murici Transportes_`;
+
+                  const url = `https://wa.me/${telefoneFormatado}?text=${encodeURIComponent(mensagem)}`;
+                  window.open(url, '_blank');
+                  toast({ title: 'WhatsApp aberto', description: 'A mensagem foi preparada para envio.' });
+                }}
               >
-                Enviar WhatsApp
+                <span className="mr-1">📲</span> Enviar WhatsApp
               </Button>
             )}
           </DialogFooter>
