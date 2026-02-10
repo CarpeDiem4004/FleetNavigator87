@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import * as XLSX from 'xlsx';
 import { useLocation } from 'wouter';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -107,6 +108,9 @@ export default function CocaColaOperacao() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
+  const [modalDate, setModalDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [modalVehicleData, setModalVehicleData] = useState<any[] | null>(null);
+  const [loadingModalData, setLoadingModalData] = useState(false);
 
   const hoje = format(new Date(), 'yyyy-MM-dd');
   const [periodoInicio, setPeriodoInicio] = useState('');
@@ -195,6 +199,60 @@ export default function CocaColaOperacao() {
       refetchPeriodStats();
     }
   };
+
+  useEffect(() => {
+    if (!baseDetailDialogOpen || !selectedBaseDetail) return;
+    if (modalDate === hoje) {
+      setModalVehicleData(null);
+      return;
+    }
+    const loadHistoricalData = async () => {
+      setLoadingModalData(true);
+      try {
+        const data = await fetchWithCredentials(
+          `/api/coca-cola/vehicle-daily-status?base_id=${selectedBaseDetail.id}&data=${modalDate}`
+        );
+        const mapped = (data.data || data.vehicles || []).map((v: any) => ({
+          id: v.vehicle_id || v.id,
+          placa: v.placa,
+          modelo: v.modelo || '',
+          status: v.status,
+          status_efetivo: v.status,
+          observacao_diaria: v.observacao || v.observacao_diaria || '',
+          atualizado_por: v.updated_by_name || '',
+          atualizado_hoje: true,
+          base_id: selectedBaseDetail.id,
+        }));
+        setModalVehicleData(mapped);
+      } catch {
+        setModalVehicleData([]);
+      } finally {
+        setLoadingModalData(false);
+      }
+    };
+    loadHistoricalData();
+  }, [modalDate, selectedBaseDetail, baseDetailDialogOpen]);
+
+  const handleExportExcel = useCallback(() => {
+    if (!selectedBaseDetail) return;
+    const isToday = modalDate === hoje;
+    const veiculosBase = isToday
+      ? vehicles.filter(v => v.base_id === selectedBaseDetail.id)
+      : (modalVehicleData || []);
+    const rows = veiculosBase.map((v: any) => ({
+      'Placa': v.placa || '',
+      'Modelo': v.modelo || '',
+      'Status': v.status_efetivo || v.status || '',
+      'Observação': v.observacao_diaria || '',
+      'Atualizado Por': v.atualizado_por || '',
+      'Base': selectedBaseDetail.nome || '',
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Veículos');
+    const baseName = selectedBaseDetail.nome.replace(/[^a-zA-Z0-9]/g, '_');
+    XLSX.writeFile(wb, `veiculos_${baseName}_${modalDate}.xlsx`);
+  }, [selectedBaseDetail, modalDate, vehicles, modalVehicleData, hoje]);
 
   // Refetch quando o usuário mudar (após login)
   useEffect(() => {
@@ -667,6 +725,8 @@ export default function CocaColaOperacao() {
                               className={`flex items-center justify-between p-3 rounded-lg cursor-pointer hover:opacity-80 transition-opacity ${atualizouHoje ? 'bg-green-50' : 'bg-red-50'}`}
                               onClick={() => {
                                 setSelectedBaseDetail(base);
+                                setModalDate(format(new Date(), 'yyyy-MM-dd'));
+                                setModalVehicleData(null);
                                 setBaseDetailDialogOpen(true);
                               }}
                             >
@@ -1169,18 +1229,41 @@ export default function CocaColaOperacao() {
       <Dialog open={baseDetailDialogOpen} onOpenChange={setBaseDetailDialogOpen}>
         <DialogContent className="max-w-[95vw] w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <Truck className="h-6 w-6" />
-              Veículos - {selectedBaseDetail?.nome}
-            </DialogTitle>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Truck className="h-6 w-6" />
+                Veículos - {selectedBaseDetail?.nome}
+              </DialogTitle>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  value={modalDate}
+                  onChange={e => setModalDate(e.target.value)}
+                  className="w-44"
+                />
+                <Button variant="outline" size="sm" onClick={handleExportExcel}>
+                  <Download className="h-4 w-4 mr-2" /> Exportar Excel
+                </Button>
+              </div>
+            </div>
             <DialogDescription>
               {selectedBaseDetail?.cidade}/{selectedBaseDetail?.estado}
+              {modalDate !== hoje && <span className="ml-2 font-medium text-blue-600">— Dados de {format(new Date(modalDate + 'T12:00:00'), 'dd/MM/yyyy')}</span>}
             </DialogDescription>
           </DialogHeader>
-          {selectedBaseDetail && (
+          {selectedBaseDetail && loadingModalData && (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-muted-foreground">Carregando dados...</span>
+            </div>
+          )}
+          {selectedBaseDetail && !loadingModalData && (
             <div className="space-y-6">
               {(() => {
-                const veiculosBase = vehicles.filter(v => v.base_id === selectedBaseDetail.id);
+                const isToday = modalDate === hoje;
+                const veiculosBase = isToday
+                  ? vehicles.filter(v => v.base_id === selectedBaseDetail.id)
+                  : (modalVehicleData || []);
                 const getStatus = (v: any) => v.status_efetivo || v.status;
                 const statusGroups = [
                   { key: 'emRota', label: 'Em Rota', statuses: ['em_rota', 'rota'], bg: 'bg-green-50', border: 'border-green-300', text: 'text-green-700', badgeBg: 'bg-green-100' },
