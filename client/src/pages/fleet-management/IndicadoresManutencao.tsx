@@ -343,11 +343,17 @@ function RecebimentoOSTab() {
     }
   });
 
+  const formatDateForInput = (dateStr: string | null): string => {
+    if (!dateStr) return '';
+    if (dateStr.includes('T')) return dateStr.split('T')[0];
+    return dateStr;
+  };
+
   const handleDirecionar = (request: MaintenanceRequest) => {
     setSelectedRequest(request);
     setDirecionamentoData({
       oficina_direcionada: request.oficina_direcionada || '',
-      data_agendamento: request.data_agendamento || '',
+      data_agendamento: formatDateForInput(request.data_agendamento),
       hora_agendamento: request.hora_agendamento || '',
       instrucoes: request.instrucoes || '',
       observacoes: request.observacoes || ''
@@ -471,7 +477,7 @@ function RecebimentoOSTab() {
                     <TableCell>{getUrgenciaBadge(req.urgencia)}</TableCell>
                     <TableCell>{getStatusBadge(req.status)}</TableCell>
                     <TableCell>{new Date(req.created_at).toLocaleDateString('pt-BR')}</TableCell>
-                    <TableCell>{req.data_agendamento ? new Date(req.data_agendamento + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</TableCell>
+                    <TableCell>{req.data_agendamento ? new Date(req.data_agendamento).toLocaleDateString('pt-BR') : '-'}</TableCell>
                     <TableCell className="text-sm">{req.responsavel_base || '-'}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
