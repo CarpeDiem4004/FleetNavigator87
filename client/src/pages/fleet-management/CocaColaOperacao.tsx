@@ -715,7 +715,32 @@ export default function CocaColaOperacao() {
                         Nenhuma base cadastrada. Adicione bases na aba "Bases".
                       </p>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-4">
+                        {(() => {
+                          const basesAtivas = bases.filter(b => b.ativo);
+                          const totalBases = basesAtivas.length;
+                          const basesPreenchidas = basesAtivas.filter(b => basesAtualizadasHoje.includes(b.id)).length;
+                          const percentual = totalBases > 0 ? Math.round((basesPreenchidas / totalBases) * 100) : 0;
+                          return (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="font-medium text-muted-foreground">
+                                  {basesPreenchidas} de {totalBases} bases atualizadas
+                                </span>
+                                <span className={`font-bold text-lg ${percentual === 100 ? 'text-green-600' : percentual >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                  {percentual}%
+                                </span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-500 ${percentual === 100 ? 'bg-green-500' : percentual >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                                  style={{ width: `${percentual}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })()}
+                        <div className="space-y-2">
                         {bases.filter(b => b.ativo).map(base => {
                           const atualizouHoje = basesAtualizadasHoje.includes(base.id);
                           const veiculosBase = vehicles.filter(v => v.base_id === base.id);
@@ -746,6 +771,7 @@ export default function CocaColaOperacao() {
                             </div>
                           );
                         })}
+                        </div>
                       </div>
                     )}
                   </CardContent>
