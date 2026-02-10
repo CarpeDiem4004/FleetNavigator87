@@ -88,6 +88,7 @@ export default function CocaColaBaseDashboard() {
   const [showManutencaoDialog, setShowManutencaoDialog] = useState(false);
   const [manutencaoVehicle, setManutencaoVehicle] = useState<{ id: number; placa: string } | null>(null);
   const [manutencaoOficina, setManutencaoOficina] = useState('');
+  const [manutencaoDataParada, setManutencaoDataParada] = useState('');
   const [manutencaoDataAparada, setManutencaoDataAparada] = useState('');
 
   // Estados para modal de empréstimo
@@ -201,7 +202,7 @@ export default function CocaColaBaseDashboard() {
   // Query para status diário dos veículos (sistema de calendário)
   const { data: dailyStatusData, refetch: refetchDailyStatus } = useQuery<{
     success: boolean;
-    data: { vehicle_id: number; placa: string; modelo: string; status: string; observacao: string | null; updated_by_name: string | null; updated_at: string | null; is_emprestado_aqui?: boolean; base_origem_nome?: string | null; oficina?: string | null; data_aparada?: string | null }[];
+    data: { vehicle_id: number; placa: string; modelo: string; status: string; observacao: string | null; updated_by_name: string | null; updated_at: string | null; is_emprestado_aqui?: boolean; base_origem_nome?: string | null; oficina?: string | null; data_parada?: string | null; data_aparada?: string | null }[];
     statusCount: { total: number; em_rota: number; em_manutencao: number; parado: number; emprestado: number; baixa_venda: number; sem_equipe: number; d_mais_1: number; pernoite: number; nao_informado: number };
     dataConsulta: string;
   }>({
@@ -212,7 +213,7 @@ export default function CocaColaBaseDashboard() {
 
   // Mutation para atualizar status diário (só permite data de hoje)
   const updateDailyStatusMutation = useMutation({
-    mutationFn: async (data: { vehicle_id: number; status: string; observacao?: string; oficina?: string; data_aparada?: string; base_emprestimo_id?: number | null }) => {
+    mutationFn: async (data: { vehicle_id: number; status: string; observacao?: string; oficina?: string; data_parada?: string; data_aparada?: string; base_emprestimo_id?: number | null }) => {
       if (!isToday(selectedDate)) {
         throw new Error('Só é possível atualizar o status do dia atual');
       }
@@ -513,6 +514,12 @@ export default function CocaColaBaseDashboard() {
     if (!dailyStatusData?.data) return null;
     const found = dailyStatusData.data.find(d => d.vehicle_id === vehicleId);
     return found?.oficina || null;
+  };
+
+  const getDailyDataParada = (vehicleId: number): string | null => {
+    if (!dailyStatusData?.data) return null;
+    const found = dailyStatusData.data.find(d => d.vehicle_id === vehicleId);
+    return found?.data_parada || null;
   };
 
   const getDailyDataAparada = (vehicleId: number): string | null => {
@@ -1093,9 +1100,14 @@ export default function CocaColaBaseDashboard() {
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-1 text-yellow-800 text-sm">
                           <Wrench className="w-3 h-3 inline mr-1" />
                           {getDailyOficina(vehicle.id)}
+                          {getDailyDataParada(vehicle.id) && (
+                            <span className="ml-2 text-yellow-600">
+                              | Parada: {new Date(getDailyDataParada(vehicle.id)! + 'T00:00:00').toLocaleDateString('pt-BR')}
+                            </span>
+                          )}
                           {getDailyDataAparada(vehicle.id) && (
                             <span className="ml-2 text-yellow-600">
-                              | Aparada: {new Date(getDailyDataAparada(vehicle.id)! + 'T00:00:00').toLocaleDateString('pt-BR')}
+                              | Previsão: {new Date(getDailyDataAparada(vehicle.id)! + 'T00:00:00').toLocaleDateString('pt-BR')}
                             </span>
                           )}
                         </div>
@@ -1111,6 +1123,7 @@ export default function CocaColaBaseDashboard() {
                             if (value === 'em_manutencao') {
                               setManutencaoVehicle({ id: vehicle.id, placa: vehicle.placa });
                               setManutencaoOficina('');
+                              setManutencaoDataParada('');
                               setManutencaoDataAparada('');
                               setShowManutencaoDialog(true);
                             } else if (value === 'emprestado' && !vehicle.is_emprestado_aqui) {
@@ -1473,7 +1486,15 @@ export default function CocaColaBaseDashboard() {
               />
             </div>
             <div>
-              <Label className="font-medium">Data da Aparada (Previsão de Retirada)</Label>
+              <Label className="font-medium">Data da Parada</Label>
+              <Input
+                type="date"
+                value={manutencaoDataParada}
+                onChange={(e) => setManutencaoDataParada(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="font-medium">Previsão de Retirada</Label>
               <Input
                 type="date"
                 value={manutencaoDataAparada}
@@ -1495,12 +1516,16 @@ export default function CocaColaBaseDashboard() {
                     return;
                   }
                   if (manutencaoVehicle) {
+                    const parts = [`Oficina: ${manutencaoOficina.trim()}`];
+                    if (manutencaoDataParada) parts.push(`Parada: ${new Date(manutencaoDataParada + 'T00:00:00').toLocaleDateString('pt-BR')}`);
+                    if (manutencaoDataAparada) parts.push(`Previsão: ${new Date(manutencaoDataAparada + 'T00:00:00').toLocaleDateString('pt-BR')}`);
                     updateDailyStatusMutation.mutate({
                       vehicle_id: manutencaoVehicle.id,
                       status: 'em_manutencao',
                       oficina: manutencaoOficina.trim(),
+                      data_parada: manutencaoDataParada || undefined,
                       data_aparada: manutencaoDataAparada || undefined,
-                      observacao: `Oficina: ${manutencaoOficina.trim()}${manutencaoDataAparada ? ` | Aparada: ${new Date(manutencaoDataAparada + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}`
+                      observacao: parts.join(' | ')
                     });
                     setShowManutencaoDialog(false);
                   }

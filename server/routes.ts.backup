@@ -2567,7 +2567,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           s.id as status_id,
           s.oficina,
           s.data_aparada,
-          s.data_parada,
           false as is_emprestado_aqui,
           NULL as base_origem_nome
         FROM coca_cola_vehicles v
@@ -2587,7 +2586,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           s.id as status_id,
           s.oficina,
           s.data_aparada,
-          s.data_parada,
           true as is_emprestado_aqui,
           b.nome as base_origem_nome
         FROM coca_cola_vehicles v
@@ -2636,11 +2634,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Atualizar status diário de um veículo
   app.post('/api/coca-cola/vehicle-daily-status', cocaColaAuth, async (req: any, res) => {
     try {
-      const { vehicle_id, base_id, status, observacao, data, base_emprestimo_id, oficina, data_aparada, data_parada } = req.body;
+      const { vehicle_id, base_id, status, observacao, data, base_emprestimo_id, oficina, data_aparada } = req.body;
       const cocaColaUser = req.cocaColaUser;
       const dataHoje = new Date().toISOString().split('T')[0];
       
-      console.log('[COCA-COLA STATUS] Recebendo atualização:', { vehicle_id, base_id, status, data, dataHoje, base_emprestimo_id, oficina, data_aparada, data_parada });
+      console.log('[COCA-COLA STATUS] Recebendo atualização:', { vehicle_id, base_id, status, data, dataHoje, base_emprestimo_id, oficina, data_aparada });
       
       // Validação: só permite atualizar o dia atual
       const dataEnviada = data || dataHoje;
@@ -2659,8 +2657,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // IMPORTANTE: Preservar base_emprestimo_id existente quando não enviado explicitamente
       const query = `
         INSERT INTO vehicle_daily_status 
-          (vehicle_id, base_id, data, status, observacao, updated_by, updated_by_name, updated_at, base_emprestimo_id, oficina, data_aparada, data_parada)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8, $9, $10, $11)
+          (vehicle_id, base_id, data, status, observacao, updated_by, updated_by_name, updated_at, base_emprestimo_id, oficina, data_aparada)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8, $9, $10)
         ON CONFLICT (vehicle_id, data) 
         DO UPDATE SET 
           status = EXCLUDED.status,
@@ -2681,11 +2679,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             WHEN $4 = 'em_manutencao' AND $10 IS NOT NULL THEN $10
             WHEN $4 = 'em_manutencao' THEN vehicle_daily_status.data_aparada
             ELSE NULL
-          END,
-          data_parada = CASE 
-            WHEN $4 = 'em_manutencao' AND $11 IS NOT NULL THEN $11
-            WHEN $4 = 'em_manutencao' THEN vehicle_daily_status.data_parada
-            ELSE NULL
           END
         RETURNING *
       `;
@@ -2700,8 +2693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cocaColaUser?.nome || 'Sistema',
         base_emprestimo_id !== undefined ? base_emprestimo_id : null,
         oficina || null,
-        data_aparada || null,
-        data_parada || null
+        data_aparada || null
       ]);
 
       console.log('[COCA-COLA STATUS] Atualização realizada com sucesso:', result.rows[0]);
