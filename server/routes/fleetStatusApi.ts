@@ -250,7 +250,10 @@ router.get('/api/fleet-status/public/dashboard', async (req: Request, res: Respo
         success: true, 
         data: {
           dataReferencia: today,
-          totais: { totalVeiculos: 0, atualizados: 0, pendentes: 0, percentualAtualizado: 0, totalBases: 0, basesInadimplentes: 0 },
+          totais: { totalVeiculos: 0, atualizados: 0, pendentes: 0, percentualAtualizado: 0, totalBases: 0, basesInadimplentes: 0, emRota: 0, emManutencao: 0, semEquipe: 0, emprestado: 0, utilizacaoFrota: '0.0', osAbertas: 0 },
+          statusGlobal: {},
+          osStats: {},
+          topOsVehicles: [],
           resumoPorBase: [],
           basesInadimplentes: []
         }
@@ -312,6 +315,36 @@ router.get('/api/fleet-status/public/dashboard', async (req: Request, res: Respo
       };
     });
     
+    // Contagem global por status
+    const statusGlobal: Record<string, number> = {};
+    atualizacoesHoje.forEach((a: any) => {
+      statusGlobal[a.status] = (statusGlobal[a.status] || 0) + 1;
+    });
+    
+    // OS stats - abertas, em andamento, finalizadas
+    const osStatsResult = await pool.query(
+      `SELECT status, COUNT(*) as total FROM coca_cola_os_requests GROUP BY status`
+    );
+    const osStats: Record<string, number> = {};
+    let totalOsAbertas = 0;
+    osStatsResult.rows.forEach((r: any) => {
+      osStats[r.status] = parseInt(r.total);
+      if (!['recusado', 'finalizado'].includes(r.status)) {
+        totalOsAbertas += parseInt(r.total);
+      }
+    });
+
+    // Top veículos que mais abrem OS (all time)
+    const topOsVehiclesResult = await pool.query(
+      `SELECT placa, modelo, base_origem, COUNT(*) as total_os,
+              SUM(CASE WHEN status NOT IN ('recusado', 'finalizado') THEN 1 ELSE 0 END) as os_ativas,
+              MAX(created_at) as ultima_os
+       FROM coca_cola_os_requests
+       GROUP BY placa, modelo, base_origem
+       ORDER BY total_os DESC
+       LIMIT 15`
+    );
+
     // Totais gerais
     const totalGeral = resumoPorBase.reduce((acc: any, base: any) => ({
       totalVeiculos: acc.totalVeiculos + base.totalVeiculos,
@@ -322,6 +355,14 @@ router.get('/api/fleet-status/public/dashboard', async (req: Request, res: Respo
     const percentualGeral = totalGeral.totalVeiculos > 0 
       ? ((totalGeral.atualizados / totalGeral.totalVeiculos) * 100).toFixed(2)
       : 0;
+
+    const emRota = statusGlobal['em_rota'] || 0;
+    const emManutencao = statusGlobal['manutencao'] || 0;
+    const semEquipe = statusGlobal['sem_equipe'] || 0;
+    const emprestado = statusGlobal['emprestado'] || 0;
+    const utilizacaoFrota = totalGeral.totalVeiculos > 0 
+      ? ((emRota / totalGeral.totalVeiculos) * 100).toFixed(1)
+      : '0.0';
     
     // Bases inadimplentes (com pendências)
     const basesInadimplentes = resumoPorBase.filter((b: any) => b.inadimplente);
@@ -336,8 +377,24 @@ router.get('/api/fleet-status/public/dashboard', async (req: Request, res: Respo
           ...totalGeral,
           percentualAtualizado: percentualGeral,
           totalBases: resumoPorBase.length,
-          basesInadimplentes: basesInadimplentes.length
+          basesInadimplentes: basesInadimplentes.length,
+          emRota,
+          emManutencao,
+          semEquipe,
+          emprestado,
+          utilizacaoFrota,
+          osAbertas: totalOsAbertas
         },
+        statusGlobal,
+        osStats,
+        topOsVehicles: topOsVehiclesResult.rows.map((r: any) => ({
+          placa: r.placa,
+          modelo: r.modelo,
+          baseOrigem: r.base_origem,
+          totalOs: parseInt(r.total_os),
+          osAtivas: parseInt(r.os_ativas),
+          ultimaOs: r.ultima_os
+        })),
         resumoPorBase: resumoPorBase.sort((a: any, b: any) => Number(a.percentualAtualizado) - Number(b.percentualAtualizado)),
         basesInadimplentes
       }
