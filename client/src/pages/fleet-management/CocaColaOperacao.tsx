@@ -337,9 +337,9 @@ export default function CocaColaOperacao() {
         base_id: baseId,
         data_atualizacao: hoje,
         total_veiculos: baseVehicles.length,
-        veiculos_rota: baseVehicles.filter(v => ['em_rota', 'rota'].includes(v.status_efetivo || v.status)).length,
+        veiculos_rota: baseVehicles.filter(v => ['em_rota', 'rota', 'em_operacao'].includes(v.status_efetivo || v.status)).length,
         veiculos_manutencao: baseVehicles.filter(v => ['manutencao', 'em_manutencao'].includes(v.status_efetivo || v.status)).length,
-        veiculos_disponiveis: baseVehicles.filter(v => (v.status_efetivo || v.status) === 'disponivel').length,
+        veiculos_disponiveis: baseVehicles.filter(v => ['disponivel', 'ativo'].includes(v.status_efetivo || v.status)).length,
         veiculos_parados: baseVehicles.filter(v => ['sem_equipe', 'baixa_venda', 'falta_equipe', 'aguardando_peca', 'parado', 'outro'].includes(v.status_efetivo || v.status)).length
       });
     },
@@ -1310,12 +1310,16 @@ export default function CocaColaOperacao() {
                   : (modalVehicleData || []);
                 const getStatus = (v: any) => v.status_efetivo || v.status;
                 const statusGroups = [
-                  { key: 'emRota', label: 'Em Rota', statuses: ['em_rota', 'rota'], bg: 'bg-green-50', border: 'border-green-300', text: 'text-green-700', badgeBg: 'bg-green-100' },
+                  { key: 'emRota', label: 'Em Rota', statuses: ['em_rota', 'rota', 'em_operacao'], bg: 'bg-green-50', border: 'border-green-300', text: 'text-green-700', badgeBg: 'bg-green-100' },
                   { key: 'semEquipe', label: 'Sem Equipe', statuses: ['sem_equipe', 'falta_equipe'], bg: 'bg-yellow-50', border: 'border-yellow-300', text: 'text-yellow-700', badgeBg: 'bg-yellow-100' },
                   { key: 'manutencao', label: 'Manutenção', statuses: ['manutencao', 'em_manutencao'], bg: 'bg-orange-50', border: 'border-orange-300', text: 'text-orange-700', badgeBg: 'bg-orange-100' },
                   { key: 'baixaVenda', label: 'Baixa Venda', statuses: ['baixa_venda'], bg: 'bg-red-50', border: 'border-red-300', text: 'text-red-600', badgeBg: 'bg-red-100' },
                   { key: 'dMais1', label: 'D+1', statuses: ['d_mais_1'], bg: 'bg-purple-50', border: 'border-purple-300', text: 'text-purple-700', badgeBg: 'bg-purple-100' },
-                  { key: 'disponivel', label: 'Disponível', statuses: ['disponivel'], bg: 'bg-blue-50', border: 'border-blue-300', text: 'text-blue-600', badgeBg: 'bg-blue-100' },
+                  { key: 'emprestado', label: 'Emprestado', statuses: ['emprestado'], bg: 'bg-indigo-50', border: 'border-indigo-300', text: 'text-indigo-700', badgeBg: 'bg-indigo-100' },
+                  { key: 'devolvido', label: 'Devolvido', statuses: ['devolvido'], bg: 'bg-violet-50', border: 'border-violet-300', text: 'text-violet-700', badgeBg: 'bg-violet-100' },
+                  { key: 'pernoite', label: 'Pernoite', statuses: ['pernoite'], bg: 'bg-sky-50', border: 'border-sky-300', text: 'text-sky-700', badgeBg: 'bg-sky-100' },
+                  { key: 'semRota', label: 'Sem Rota', statuses: ['nao_informado'], bg: 'bg-gray-50', border: 'border-gray-300', text: 'text-gray-600', badgeBg: 'bg-gray-100' },
+                  { key: 'disponivel', label: 'Disponível', statuses: ['disponivel', 'ativo'], bg: 'bg-blue-50', border: 'border-blue-300', text: 'text-blue-600', badgeBg: 'bg-blue-100' },
                   { key: 'parados', label: 'Parados', statuses: ['parado', 'aguardando_peca'], bg: 'bg-rose-50', border: 'border-rose-300', text: 'text-rose-600', badgeBg: 'bg-rose-100' },
                 ];
                 const allKnownStatuses = statusGroups.flatMap(g => g.statuses);
