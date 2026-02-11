@@ -223,6 +223,11 @@ interface BipData {
   observacao: string | null;
   dias_sem_bip: number;
   created_at: string;
+  cadastro_veic: string | null;
+  empresa: string | null;
+  facility: string | null;
+  sync_source: string | null;
+  last_sync_at: string | null;
 }
 
 const COLORS = ['#2563eb', '#16a34a', '#eab308', '#dc2626', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899'];
@@ -3813,6 +3818,7 @@ export default function IndicadoresManutencao() {
                               <TableHead>Último BIP</TableHead>
                               <TableHead>ML BIP</TableHead>
                               <TableHead>DDS BIP</TableHead>
+                              <TableHead>Facility</TableHead>
                               <TableHead className="text-center">Dias Parado</TableHead>
                               <TableHead className="text-center">Dias Rodados</TableHead>
                               <TableHead>Motivo</TableHead>
@@ -3864,6 +3870,7 @@ export default function IndicadoresManutencao() {
                                     <TableCell>{formatDate(item.ultimo_bip)}</TableCell>
                                     <TableCell>{formatDate(item.ml_bip)}</TableCell>
                                     <TableCell>{formatDate(item.dds_bip)}</TableCell>
+                                    <TableCell>{item.facility || '-'}</TableCell>
                                     <TableCell className="text-center">
                                       <span className={`inline-flex items-center justify-center min-w-[60px] px-3 py-1 rounded-full text-sm font-semibold ${bgColor}`}>
                                         {diasParado}
