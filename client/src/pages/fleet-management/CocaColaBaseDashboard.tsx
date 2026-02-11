@@ -528,6 +528,18 @@ export default function CocaColaBaseDashboard() {
     return found?.data_aparada || null;
   };
 
+  const formatDateSafe = (dateStr: string | null): string => {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      const day = String(d.getUTCDate()).padStart(2, '0');
+      const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const year = d.getUTCFullYear();
+      return `${day}/${month}/${year}`;
+    } catch { return ''; }
+  };
+
   // Helper para verificar se o veículo foi emprestado PARA esta base (veio de outra base)
   const isVehicleEmprestadoAqui = (vehicleId: number): boolean => {
     if (!dailyStatusData?.data) return false;
@@ -1102,12 +1114,12 @@ export default function CocaColaBaseDashboard() {
                           {getDailyOficina(vehicle.id)}
                           {getDailyDataParada(vehicle.id) && (
                             <span className="ml-2 text-yellow-600">
-                              | Parada: {new Date(getDailyDataParada(vehicle.id)! + 'T00:00:00').toLocaleDateString('pt-BR')}
+                              | Parada: {formatDateSafe(getDailyDataParada(vehicle.id))}
                             </span>
                           )}
                           {getDailyDataAparada(vehicle.id) && (
                             <span className="ml-2 text-yellow-600">
-                              | Previsão: {new Date(getDailyDataAparada(vehicle.id)! + 'T00:00:00').toLocaleDateString('pt-BR')}
+                              | Previsão: {formatDateSafe(getDailyDataAparada(vehicle.id))}
                             </span>
                           )}
                         </div>
@@ -1517,8 +1529,8 @@ export default function CocaColaBaseDashboard() {
                   }
                   if (manutencaoVehicle) {
                     const parts = [`Oficina: ${manutencaoOficina.trim()}`];
-                    if (manutencaoDataParada) parts.push(`Parada: ${new Date(manutencaoDataParada + 'T00:00:00').toLocaleDateString('pt-BR')}`);
-                    if (manutencaoDataAparada) parts.push(`Previsão: ${new Date(manutencaoDataAparada + 'T00:00:00').toLocaleDateString('pt-BR')}`);
+                    if (manutencaoDataParada) parts.push(`Parada: ${formatDateSafe(manutencaoDataParada)}`);
+                    if (manutencaoDataAparada) parts.push(`Previsão: ${formatDateSafe(manutencaoDataAparada)}`);
                     updateDailyStatusMutation.mutate({
                       vehicle_id: manutencaoVehicle.id,
                       status: 'em_manutencao',
