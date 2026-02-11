@@ -132,19 +132,23 @@ export async function syncBIP(pool: Pool): Promise<{ total: number; inseridos: n
         [item.placa]
       );
 
+      const ultimoBipStr = ultimoBip ? ultimoBip.toISOString().split('T')[0] : null;
+
       if (existing.rows.length > 0) {
         await pool.query(
           `UPDATE indicadores_bip SET
             ultimo_bip = $1,
-            cadastro_veic = $2,
-            empresa = $3,
-            facility = $4,
-            dias_sem_bip = $5,
+            ml_bip = $2,
+            cadastro_veic = $3,
+            empresa = $4,
+            facility = $5,
+            dias_sem_bip = $6,
             sync_source = 'google_sheets',
             last_sync_at = NOW()
-          WHERE placa = $6`,
+          WHERE placa = $7`,
           [
-            ultimoBip ? ultimoBip.toISOString().split('T')[0] : null,
+            ultimoBipStr,
+            ultimoBipStr,
             item.cadastro_veic || null,
             item.empresa || null,
             item.facility || null,
@@ -155,11 +159,12 @@ export async function syncBIP(pool: Pool): Promise<{ total: number; inseridos: n
         atualizados++;
       } else {
         await pool.query(
-          `INSERT INTO indicadores_bip (placa, ultimo_bip, cadastro_veic, empresa, facility, dias_sem_bip, sync_source, last_sync_at, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, 'google_sheets', NOW(), NOW())`,
+          `INSERT INTO indicadores_bip (placa, ultimo_bip, ml_bip, cadastro_veic, empresa, facility, dias_sem_bip, sync_source, last_sync_at, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 'google_sheets', NOW(), NOW())`,
           [
             item.placa,
-            ultimoBip ? ultimoBip.toISOString().split('T')[0] : null,
+            ultimoBipStr,
+            ultimoBipStr,
             item.cadastro_veic || null,
             item.empresa || null,
             item.facility || null,
