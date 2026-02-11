@@ -1280,7 +1280,7 @@ const FuelCardRequestsPanel: React.FC = () => {
         ...(onlyLineHall && { origem: 'line_hall' })
       });
 
-      const response = await apiRequest('GET', `/api/fuel-card-solicitations/export-veloe?${queryParams}`);
+      const response = await fetch(`/api/public/fuel-card-solicitations/export-veloe?${queryParams}`);
       
       if (response.ok) {
         const blob = await response.blob();
@@ -1339,7 +1339,7 @@ const FuelCardRequestsPanel: React.FC = () => {
         ...(onlyLineHall && { origem: 'line_hall' })
       });
 
-      const response = await apiRequest('GET', `/api/fuel-card-solicitations/export-ticket?${queryParams}`);
+      const response = await fetch(`/api/public/fuel-card-solicitations/export-ticket?${queryParams}`);
       
       if (response.ok) {
         const blob = await response.blob();

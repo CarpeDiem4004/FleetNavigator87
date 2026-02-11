@@ -17001,6 +17001,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/fuel-card-solicitations/validate-pending', isAuthenticated, blockFuelCardForOperador1LineHaul, validatePendingSolicitations);
   // Rota pública para validação de planilha (sem autenticação)
   app.post('/api/public/fuel-card-solicitations/validate-pending', validatePendingSolicitations);
+  // Rotas públicas para exportação Ticket e Veloe (sem autenticação - leitura apenas)
+  app.get('/api/public/fuel-card-solicitations/export-ticket', exportTicketCards);
+  app.get('/api/public/fuel-card-solicitations/export-veloe', exportVeloeToExcel);
   app.get('/api/fuel-card-solicitations/:id', isAuthenticated, blockFuelCardForOperador1LineHaul, getFuelCardSolicitationById);
   app.post('/api/fuel-card-solicitations', blockFuelCardForOperador1LineHaul, createFuelCardSolicitation);
   app.put('/api/fuel-card-solicitations/:id/status', isAuthenticated, blockFuelCardForOperador1LineHaul, updateFuelCardSolicitationStatus);
