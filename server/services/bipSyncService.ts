@@ -61,14 +61,15 @@ export async function syncBIP(pool: Pool): Promise<{ total: number; inseridos: n
     return { total: 0, inseridos: 0, atualizados: 0, erros: 0 };
   }
 
-  const headers = rows[0].map((h: string) => h.trim());
-  console.log('[BIP-SYNC] Headers encontrados:', headers);
+  const rawHeaders = rows[0].map((h: string) => h.trim());
+  const headers = rawHeaders.map((h: string) => h.toLowerCase());
+  console.log('[BIP-SYNC] Headers encontrados:', rawHeaders);
 
-  const colPlaca = headers.findIndex((h: string) => h.includes('PLATE') || h.includes('placa') || h === 'SHP_LG_VEHICLE_PLATE_ID');
-  const colCadastro = headers.findIndex((h: string) => h.includes('Cadastro') || h === 'Cadastro_veic');
-  const colEmpresa = headers.findIndex((h: string) => h.includes('COMPANY') || h === 'SHP_COMPANY_NAME');
-  const colFacility = headers.findIndex((h: string) => h.includes('Facility') || h === 'Facility');
-  const colUltimoBip = headers.findIndex((h: string) => h.includes('ULTIMO_BIP') || h.includes('DATA_ULTIMO') || h === 'DATA_ULTIMO_BIP');
+  const colPlaca = headers.findIndex((h: string) => h.includes('plate') || h.includes('placa') || h === 'shp_lg_vehicle_plate_id');
+  const colCadastro = headers.findIndex((h: string) => h.includes('cadastro') || h === 'cadastro_veic');
+  const colEmpresa = headers.findIndex((h: string) => h.includes('company') || h === 'shp_company_name');
+  const colFacility = headers.findIndex((h: string) => h.includes('facility'));
+  const colUltimoBip = headers.findIndex((h: string) => h.includes('ultimo_bip') || h.includes('data_ultimo'));
 
   if (colPlaca === -1) {
     throw new Error('[BIP-SYNC] Coluna de placa não encontrada. Headers: ' + headers.join(', '));
