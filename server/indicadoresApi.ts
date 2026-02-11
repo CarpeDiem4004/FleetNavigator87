@@ -3,6 +3,8 @@ import { pool } from './db';
 import multer from 'multer';
 import xlsx from 'xlsx';
 import { createClient } from '@supabase/supabase-js';
+import { syncBIP } from './services/bipSyncService';
+import cron from 'node-cron';
 
 // Cliente Supabase para sincronização
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
@@ -1377,7 +1379,8 @@ router.get('/bip', isAuthenticated, async (req: Request, res: Response) => {
     const bipResult = await pool.query(`
       SELECT 
         id, placa, ml_bip, dds_bip, base_reserva,
-        ultimo_bip, motivo, observacao, dias_sem_bip, created_at
+        ultimo_bip, motivo, observacao, dias_sem_bip, created_at,
+        cadastro_veic, empresa, facility, sync_source, last_sync_at
       FROM indicadores_bip
       ORDER BY dias_sem_bip DESC NULLS LAST
     `);
@@ -1582,6 +1585,50 @@ router.put('/bip/:id', isAuthenticated, async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: 'Erro ao atualizar registro de BIP' });
   }
 });
+
+// Endpoint para sincronizar BIP com Google Sheets manualmente
+router.post('/bip/sync', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    console.log('[BIP-SYNC] Sincronização manual solicitada');
+    const result = await syncBIP(pool);
+    res.json({ success: true, ...result });
+  } catch (error: any) {
+    console.error('[BIP-SYNC] Erro na sincronização:', error.message);
+    res.status(500).json({ success: false, message: error.message || 'Erro ao sincronizar BIP' });
+  }
+});
+
+// Status da última sincronização
+router.get('/bip/sync-status', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN sync_source = 'google_sheets' THEN 1 END) as synced,
+        MAX(last_sync_at) as last_sync
+      FROM indicadores_bip
+    `);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('[BIP-SYNC] Erro ao buscar status:', error);
+    res.status(500).json({ success: false, message: 'Erro ao buscar status' });
+  }
+});
+
+// Cron job: sincronizar BIP a cada 30 minutos
+if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
+  cron.schedule('*/30 * * * *', async () => {
+    try {
+      console.log('[BIP-CRON] Executando sincronização agendada...');
+      await syncBIP(pool);
+    } catch (error: any) {
+      console.error('[BIP-CRON] Erro na sincronização agendada:', error.message);
+    }
+  });
+  console.log('[BIP-CRON] Job de sincronização agendado (a cada 30 minutos)');
+} else {
+  console.log('[BIP-CRON] GOOGLE_SERVICE_ACCOUNT_KEY não configurada - sincronização automática desabilitada');
+}
 
 // ==================== MANUTENÇÕES FINALIZADAS ====================
 

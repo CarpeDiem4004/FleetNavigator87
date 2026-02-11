@@ -38,7 +38,8 @@ import {
   Filter,
   ArrowDownCircle,
   ArrowUpCircle,
-  Download
+  Download,
+  RefreshCw
 } from 'lucide-react';
 import {
   Dialog,
@@ -2090,6 +2091,35 @@ export default function IndicadoresManutencao() {
     },
   });
 
+  const syncBipMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/indicadores/bip/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao sincronizar');
+      }
+      return response.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: 'Sincronização concluída!',
+        description: `Total: ${data.total}, Inseridos: ${data.inseridos}, Atualizados: ${data.atualizados}${data.erros > 0 ? `, Erros: ${data.erros}` : ''}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/bip'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro na sincronização',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Função para abrir modal de edição BIP
   const handleEditBip = (item: BipData) => {
     setEditingBip(item);
@@ -3753,6 +3783,19 @@ export default function IndicadoresManutencao() {
                             Limpar
                           </Button>
                         )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => syncBipMutation.mutate()}
+                          disabled={syncBipMutation.isPending}
+                          className="bg-blue-50 hover:bg-blue-100 border-blue-200"
+                        >
+                          {syncBipMutation.isPending ? (
+                            <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>Sincronizando...</>
+                          ) : (
+                            <><RefreshCw className="h-4 w-4 mr-2" />Sync Google Sheets</>
+                          )}
+                        </Button>
                       </div>
                     </div>
                   </CardHeader>
