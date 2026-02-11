@@ -166,6 +166,16 @@ export default function CocaColaOperacao() {
     staleTime: 30000
   });
 
+  const { data: allDailyUpdates = [], refetch: refetchAllUpdates } = useQuery<CocaColaDailyUpdate[]>({
+    queryKey: ['/api/coca-cola/daily-updates-all'],
+    queryFn: () => fetchWithCredentials('/api/coca-cola/daily-updates'),
+    refetchOnWindowFocus: false,
+    enabled: !!user,
+    retry: 3,
+    retryDelay: 1000,
+    staleTime: 60000
+  });
+
   const { data: globalDailyStats, refetch: refetchGlobalStats } = useQuery<any>({
     queryKey: ['/api/coca-cola/global-daily-stats', hoje],
     queryFn: () => fetchWithCredentials(`/api/coca-cola/global-daily-stats?data=${hoje}`),
@@ -346,6 +356,8 @@ export default function CocaColaOperacao() {
     onSuccess: () => {
       toast({ title: 'Atualização diária salva!' });
       queryClient.invalidateQueries({ queryKey: ['/api/coca-cola/daily-updates'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/coca-cola/daily-updates-all'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/coca-cola/global-daily-stats'] });
     },
     onError: () => {
       toast({ variant: 'destructive', title: 'Erro ao salvar atualização' });
@@ -1230,7 +1242,7 @@ export default function CocaColaOperacao() {
                   <CardDescription>Registro de atualizações diárias por base</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {dailyUpdates.length === 0 ? (
+                  {allDailyUpdates.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">
                       Nenhum registro de atualização encontrado.
                     </p>
@@ -1245,18 +1257,20 @@ export default function CocaColaOperacao() {
                           <TableHead>Manutenção</TableHead>
                           <TableHead>Disponíveis</TableHead>
                           <TableHead>Parados</TableHead>
+                          <TableHead>Atualizado por</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {dailyUpdates.map(update => (
+                        {allDailyUpdates.map(update => (
                           <TableRow key={update.id}>
-                            <TableCell>{format(new Date(update.data_atualizacao), 'dd/MM/yyyy')}</TableCell>
+                            <TableCell>{format(new Date(update.data_atualizacao + 'T12:00:00'), 'dd/MM/yyyy')}</TableCell>
                             <TableCell>{update.base_nome || bases.find(b => b.id === update.base_id)?.nome || '-'}</TableCell>
                             <TableCell>{update.total_veiculos}</TableCell>
                             <TableCell className="text-blue-600">{update.veiculos_rota}</TableCell>
                             <TableCell className="text-orange-600">{update.veiculos_manutencao}</TableCell>
                             <TableCell className="text-green-600">{update.veiculos_disponiveis}</TableCell>
                             <TableCell className="text-red-600">{update.veiculos_parados}</TableCell>
+                            <TableCell className="text-muted-foreground">{update.atualizado_por || '-'}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
