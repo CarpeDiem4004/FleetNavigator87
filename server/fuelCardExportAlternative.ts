@@ -211,34 +211,10 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
     console.log('[EXPORT-VELOE] Iniciando exportação Veloe');
     console.log('[EXPORT-VELOE] Filtros:', { data_inicio, data_fim, origem });
 
-    // Construir query com filtros de data
-    // Buscar apenas solicitações PENDENTES para realizar as recargas
-    let whereClause = `WHERE LOWER(provedor_cartao) LIKE '%veloe%' AND LOWER(status) = 'pendente'`;
-    const queryParams: any[] = [];
-    
-    // Filtro por origem (line_hall, etc.)
-    if (origem === 'line_hall') {
-      // Quando origem=line_hall, filtrar APENAS line_hall
-      whereClause += ` AND LOWER(COALESCE(origem_tipo, '')) = 'line_hall'`;
-    } else {
-      // Quando não especificado (Todos), EXCLUIR line_hall
-      whereClause += ` AND (LOWER(COALESCE(origem_tipo, '')) != 'line_hall' OR origem_tipo IS NULL)`;
-    }
-    
-    if (data_inicio) {
-      queryParams.push(data_inicio);
-      whereClause += ` AND data_uso >= $${queryParams.length}`;
-    }
-    
-    if (data_fim) {
-      queryParams.push(data_fim);
-      whereClause += ` AND data_uso <= $${queryParams.length}`;
-    }
-
     // Query para buscar solicitações Veloe agrupadas por PLACA DO CARTÃO
     // Prioriza: placa_cartao (Line Haul) -> numero_cartao -> placa (fallback)
-    // Line Haul usa data_solicitacao (data_uso é NULL), então usamos COALESCE
-    // Para Line Haul, a observação mostra a rota (origem → destino); para Bases, mostra o nome da base
+    // IMPORTANTE: Para filtro de data, usar data_solicitacao como referência principal
+    // porque data_uso pode ser do dia seguinte (data do abastecimento real)
     const query = `
       SELECT 
         UPPER(REPLACE(COALESCE(NULLIF(TRIM(placa_cartao), ''), NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')) as placa_cartao,
@@ -253,8 +229,8 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
       WHERE LOWER(provedor_cartao) LIKE '%veloe%' 
         AND LOWER(status) = 'pendente'
         ${origem === 'line_hall' ? `AND LOWER(COALESCE(origem_tipo, '')) = 'line_hall'` : `AND (LOWER(COALESCE(origem_tipo, '')) != 'line_hall' OR origem_tipo IS NULL)`}
-        ${data_inicio ? `AND COALESCE(data_uso, data_solicitacao) >= '${data_inicio}'` : ''}
-        ${data_fim ? `AND COALESCE(data_uso, data_solicitacao) <= '${data_fim}'` : ''}
+        ${data_inicio ? `AND COALESCE(data_solicitacao, data_uso) >= '${data_inicio}'` : ''}
+        ${data_fim ? `AND COALESCE(data_solicitacao, data_uso) <= '${data_fim}'` : ''}
       GROUP BY UPPER(REPLACE(COALESCE(NULLIF(TRIM(placa_cartao), ''), NULLIF(TRIM(numero_cartao), ''), placa), ' ', ''))
       ORDER BY placa_cartao
     `;
@@ -361,33 +337,12 @@ export async function exportTicketCards(req: Request, res: Response) {
     console.log('[EXPORT-TICKET] Iniciando exportação Ticket');
     console.log('[EXPORT-TICKET] Filtros:', { data_inicio, data_fim, origem });
 
-    // Construir query com filtros de data (usando data_uso como referência)
-    let whereClause = `WHERE LOWER(provedor_cartao) LIKE '%ticket%' AND LOWER(status) = 'pendente'`;
-    const queryParams: any[] = [];
-    
-    // Filtro por origem (line_hall, etc.)
-    if (origem === 'line_hall') {
-      // Quando origem=line_hall, filtrar APENAS line_hall
-      whereClause += ` AND LOWER(COALESCE(origem_tipo, '')) = 'line_hall'`;
-    } else {
-      // Quando não especificado (Todos), EXCLUIR line_hall
-      whereClause += ` AND (LOWER(COALESCE(origem_tipo, '')) != 'line_hall' OR origem_tipo IS NULL)`;
-    }
-    
-    if (data_inicio) {
-      queryParams.push(data_inicio);
-      whereClause += ` AND data_uso >= $${queryParams.length}`;
-    }
-    
-    if (data_fim) {
-      queryParams.push(data_fim);
-      whereClause += ` AND data_uso <= $${queryParams.length}`;
-    }
-
     // Buscar solicitações PENDENTES agrupadas por PLACA DO CARTÃO
     // Prioriza: placa_cartao (Line Haul) -> numero_cartao -> placa (fallback)
     // Line Haul usa data_solicitacao (data_uso é NULL), então usamos COALESCE
     // Para Line Haul, a observação mostra a rota (origem → destino); para Bases, mostra o nome da base
+    // IMPORTANTE: Para filtro de data, usar data_solicitacao como referência principal
+    // porque data_uso pode ser do dia seguinte (data do abastecimento real)
     const query = `
       SELECT 
         UPPER(REPLACE(COALESCE(NULLIF(TRIM(placa_cartao), ''), NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')) as placa_cartao,
@@ -402,8 +357,8 @@ export async function exportTicketCards(req: Request, res: Response) {
       WHERE LOWER(provedor_cartao) LIKE '%ticket%' 
         AND LOWER(status) = 'pendente'
         ${origem === 'line_hall' ? `AND LOWER(COALESCE(origem_tipo, '')) = 'line_hall'` : `AND (LOWER(COALESCE(origem_tipo, '')) != 'line_hall' OR origem_tipo IS NULL)`}
-        ${data_inicio ? `AND COALESCE(data_uso, data_solicitacao) >= '${data_inicio}'` : ''}
-        ${data_fim ? `AND COALESCE(data_uso, data_solicitacao) <= '${data_fim}'` : ''}
+        ${data_inicio ? `AND COALESCE(data_solicitacao, data_uso) >= '${data_inicio}'` : ''}
+        ${data_fim ? `AND COALESCE(data_solicitacao, data_uso) <= '${data_fim}'` : ''}
       GROUP BY UPPER(REPLACE(COALESCE(NULLIF(TRIM(placa_cartao), ''), NULLIF(TRIM(numero_cartao), ''), placa), ' ', ''))
       ORDER BY placa_cartao
     `;
