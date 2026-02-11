@@ -24,13 +24,22 @@ function parseServiceAccountKey(): any {
   if (!raw.endsWith('}')) {
     raw = raw + '}';
   }
-  raw = raw.replace(/\\n/g, '\n');
+
   try {
     return JSON.parse(raw);
-  } catch (e: any) {
-    console.error('[BIP-SYNC] Erro ao parsear JSON da Service Account:', e.message);
-    console.error('[BIP-SYNC] Primeiros 100 chars:', raw.substring(0, 100));
-    throw new Error('[BIP-SYNC] GOOGLE_SERVICE_ACCOUNT_KEY não é um JSON válido: ' + e.message);
+  } catch (firstError: any) {
+    try {
+      const fixed = raw.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
+      return JSON.parse(fixed);
+    } catch (secondError: any) {
+      try {
+        const base64Decoded = Buffer.from(raw, 'base64').toString('utf-8');
+        return JSON.parse(base64Decoded);
+      } catch {
+        console.error('[BIP-SYNC] Erro ao parsear JSON da Service Account:', firstError.message);
+        throw new Error('[BIP-SYNC] GOOGLE_SERVICE_ACCOUNT_KEY não é um JSON válido: ' + firstError.message);
+      }
+    }
   }
 }
 
