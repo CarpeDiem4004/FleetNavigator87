@@ -140,8 +140,11 @@ export default function LineHaulFuelRequest() {
 
   const handleOriginBlur = () => {
     setTimeout(() => {
-      if (form.localInicio && !isRouteValid(form.localInicio)) {
-        setOriginError("Selecione uma rota da lista");
+      if (form.localInicio && form.localInicio.length >= 3) {
+        setOriginValidated(true);
+        setOriginError("");
+      } else if (form.localInicio && form.localInicio.length < 3) {
+        setOriginError("Digite pelo menos 3 caracteres");
         setOriginValidated(false);
       }
     }, 200);
@@ -149,8 +152,11 @@ export default function LineHaulFuelRequest() {
 
   const handleDestinationBlur = () => {
     setTimeout(() => {
-      if (form.destino && !isRouteValid(form.destino)) {
-        setDestinationError("Selecione uma rota da lista");
+      if (form.destino && form.destino.length >= 3) {
+        setDestinationValidated(true);
+        setDestinationError("");
+      } else if (form.destino && form.destino.length < 3) {
+        setDestinationError("Digite pelo menos 3 caracteres");
         setDestinationValidated(false);
       }
     }, 200);
@@ -269,27 +275,38 @@ export default function LineHaulFuelRequest() {
     }
   }, [form.destino, routePoints]);
 
-  // Auto-buscar distância quando origem e destino são selecionados
+  // Auto-buscar distância quando origem e destino são preenchidos
   useEffect(() => {
-    if (form.localInicio && form.destino && form.localInicio !== form.destino) {
-      const isOriginFromList = routePoints.some(r => r.toLowerCase() === form.localInicio.toLowerCase());
-      const isDestFromList = routePoints.some(r => r.toLowerCase() === form.destino.toLowerCase());
-      if (isOriginFromList && isDestFromList) {
+    if (form.localInicio && form.destino && form.localInicio !== form.destino && form.localInicio.length >= 3 && form.destino.length >= 3) {
+      const timer = setTimeout(() => {
         setLoadingDistance(true);
         fetch(`/api/public/linehaul/route-distance?origem=${encodeURIComponent(form.localInicio)}&destino=${encodeURIComponent(form.destino)}`)
           .then(res => res.json())
           .then(data => {
             if (data.success && data.distancia_km > 0) {
               setRouteDistance(data.distancia_km);
+              setOriginValidated(true);
+              setDestinationValidated(true);
+              setOriginError("");
+              setDestinationError("");
             } else {
               setRouteDistance(0);
+              if (!isRouteValid(form.localInicio)) {
+                setOriginError("Rota não encontrada no Google Maps");
+                setOriginValidated(false);
+              }
+              if (!isRouteValid(form.destino)) {
+                setDestinationError("Rota não encontrada no Google Maps");
+                setDestinationValidated(false);
+              }
             }
           })
           .catch(() => setRouteDistance(0))
           .finally(() => setLoadingDistance(false));
-      }
+      }, 800);
+      return () => clearTimeout(timer);
     }
-  }, [form.localInicio, form.destino, routePoints]);
+  }, [form.localInicio, form.destino]);
 
   function selectPlate(plate: VehiclePlate) {
     setForm({ ...form, placa: plate.placa });
@@ -308,23 +325,23 @@ export default function LineHaulFuelRequest() {
       return;
     }
 
-    if (!form.localInicio || !isRouteValid(form.localInicio)) {
-      setOriginError("Selecione uma rota da lista");
+    if (!form.localInicio || form.localInicio.length < 3) {
+      setOriginError("Digite pelo menos 3 caracteres");
       setOriginValidated(false);
       toast({
         title: "Local de Início inválido",
-        description: "Selecione o Local de Início da lista de rotas disponíveis.",
+        description: "Informe o Local de Início com pelo menos 3 caracteres.",
         variant: "destructive",
       });
       return;
     }
 
-    if (!form.destino || !isRouteValid(form.destino)) {
-      setDestinationError("Selecione uma rota da lista");
+    if (!form.destino || form.destino.length < 3) {
+      setDestinationError("Digite pelo menos 3 caracteres");
       setDestinationValidated(false);
       toast({
         title: "Destino inválido",
-        description: "Selecione o Destino da lista de rotas disponíveis.",
+        description: "Informe o Destino com pelo menos 3 caracteres.",
         variant: "destructive",
       });
       return;
