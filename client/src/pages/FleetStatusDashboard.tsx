@@ -76,22 +76,31 @@ const STATUS_COLORS: Record<string, string> = {
   nao_informado: 'bg-gray-500'
 };
 
+function getTodayBrasil() {
+  const now = new Date();
+  const br = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+  return `${br.getFullYear()}-${String(br.getMonth() + 1).padStart(2, '0')}-${String(br.getDate()).padStart(2, '0')}`;
+}
+
 export default function FleetStatusDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedDate, setSelectedDate] = useState(getTodayBrasil());
   const { user } = useAuth();
   const userId = user?.id;
 
+  const isToday = selectedDate === getTodayBrasil();
+
   const { data: dashboardData, isLoading, refetch } = useQuery<{ success: boolean; data: DashboardData }>({
-    queryKey: ['/api/fleet-status/public/dashboard', userId],
+    queryKey: ['/api/fleet-status/public/dashboard', userId, selectedDate],
     queryFn: async () => {
-      const response = await fetch(`/api/fleet-status/public/dashboard?userId=${userId || ''}`, {
+      const response = await fetch(`/api/fleet-status/public/dashboard?userId=${userId || ''}&date=${selectedDate}`, {
         credentials: 'include'
       });
       return response.json();
     },
     enabled: !!userId,
-    refetchInterval: 60000
+    refetchInterval: isToday ? 60000 : false
   });
 
   const { data: historyData } = useQuery<{ success: boolean; data: HistoryRecord[] }>({
@@ -106,7 +115,7 @@ export default function FleetStatusDashboard() {
     base.baseName.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const today = new Date().toLocaleDateString('pt-BR');
+  const displayDate = new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR');
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
@@ -120,13 +129,30 @@ export default function FleetStatusDashboard() {
               </CardTitle>
               <CardDescription className="mt-1">
                 <Calendar className="w-4 h-4 inline mr-1" />
-                Monitoramento centralizado - {today}
+                Monitoramento centralizado - {displayDate}
+                {!isToday && (
+                  <span className="ml-2 text-amber-600 font-medium">(Histórico)</span>
+                )}
               </CardDescription>
             </div>
-            <Button onClick={() => refetch()} variant="outline" size="sm">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Atualizar
-            </Button>
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                max={getTodayBrasil()}
+                className="w-[160px]"
+              />
+              {!isToday && (
+                <Button onClick={() => setSelectedDate(getTodayBrasil())} variant="outline" size="sm">
+                  Hoje
+                </Button>
+              )}
+              <Button onClick={() => refetch()} variant="outline" size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Atualizar
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

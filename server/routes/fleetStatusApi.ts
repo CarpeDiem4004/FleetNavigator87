@@ -232,10 +232,10 @@ router.get('/api/fleet-status/public/base/:baseId/vehicles', async (req: Request
 // GET - Dashboard público (permite acesso de qualquer usuário autenticado via localStorage)
 router.get('/api/fleet-status/public/dashboard', async (req: Request, res: Response) => {
   try {
-    const { userId } = req.query;
-    const today = getTodayBrasil();
+    const { userId, date } = req.query;
+    const today = date ? String(date) : getTodayBrasil();
     
-    console.log('[FLEET-STATUS-PUBLIC-DASHBOARD] Buscando dados do PostgreSQL local - userId:', userId);
+    console.log('[FLEET-STATUS-PUBLIC-DASHBOARD] Buscando dados do PostgreSQL local - userId:', userId, '- data:', today);
     
     // Buscar todas as bases com veículos do PostgreSQL local
     const basesComVeiculosResult = await pool.query(
