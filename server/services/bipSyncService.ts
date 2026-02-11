@@ -13,14 +13,24 @@ interface BipRow {
 }
 
 function parseServiceAccountKey(): any {
-  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  let raw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (!raw) {
     throw new Error('[BIP-SYNC] GOOGLE_SERVICE_ACCOUNT_KEY não configurada');
   }
+  raw = raw.trim();
+  if (!raw.startsWith('{')) {
+    raw = '{' + raw;
+  }
+  if (!raw.endsWith('}')) {
+    raw = raw + '}';
+  }
+  raw = raw.replace(/\\n/g, '\n');
   try {
     return JSON.parse(raw);
-  } catch {
-    throw new Error('[BIP-SYNC] GOOGLE_SERVICE_ACCOUNT_KEY não é um JSON válido');
+  } catch (e: any) {
+    console.error('[BIP-SYNC] Erro ao parsear JSON da Service Account:', e.message);
+    console.error('[BIP-SYNC] Primeiros 100 chars:', raw.substring(0, 100));
+    throw new Error('[BIP-SYNC] GOOGLE_SERVICE_ACCOUNT_KEY não é um JSON válido: ' + e.message);
   }
 }
 
