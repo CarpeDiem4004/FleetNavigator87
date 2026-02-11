@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { 
   Truck, 
   CheckCircle, 
@@ -255,6 +255,26 @@ export default function FleetStatusBasePage() {
     onSuccess: () => {
       toast({ title: 'Solicitação enviada!', description: 'A gestão de frotas receberá sua solicitação.' });
       setIsMaintenanceDialogOpen(false);
+      if (selectedVehicle && baseId) {
+        const statusData = {
+          vehicle_id: selectedVehicle.id,
+          vehicle_plate: selectedVehicle.plate,
+          base_id: baseId,
+          base_name: baseName,
+          status: 'manutencao',
+          motivo: maintenanceForm.relato_problema || 'Veículo em manutenção',
+          local_manutencao: '',
+          prazo_manutencao: '',
+        };
+        fetch('/api/fleet-status/public/daily', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(statusData)
+        }).then(() => {
+          queryClient.invalidateQueries({ queryKey: ['/api/fleet-status/vehicles', baseId] });
+        }).catch(() => {});
+      }
       setMaintenanceForm({
         placa: '',
         modelo: '',
@@ -665,7 +685,14 @@ export default function FleetStatusBasePage() {
               <Label>Status do Veículo *</Label>
               <Select
                 value={formData.status}
-                onValueChange={(value) => setFormData({ ...formData, status: value })}
+                onValueChange={(value) => {
+                  if (value === 'manutencao' && selectedVehicle?.statusDiario?.status !== 'manutencao') {
+                    setIsDialogOpen(false);
+                    openMaintenanceDialog(selectedVehicle || undefined);
+                    return;
+                  }
+                  setFormData({ ...formData, status: value });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o status" />
