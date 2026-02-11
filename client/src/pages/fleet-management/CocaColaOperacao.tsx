@@ -1263,7 +1263,7 @@ export default function CocaColaOperacao() {
                       <TableBody>
                         {allDailyUpdates.map(update => (
                           <TableRow key={update.id}>
-                            <TableCell>{format(new Date(update.data_atualizacao + 'T12:00:00'), 'dd/MM/yyyy')}</TableCell>
+                            <TableCell>{(() => { try { const d = new Date(update.data_atualizacao); if (isNaN(d.getTime())) return '-'; return `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}`; } catch { return '-'; } })()}</TableCell>
                             <TableCell>{update.base_nome || bases.find(b => b.id === update.base_id)?.nome || '-'}</TableCell>
                             <TableCell>{update.total_veiculos}</TableCell>
                             <TableCell className="text-blue-600">{update.veiculos_rota}</TableCell>
