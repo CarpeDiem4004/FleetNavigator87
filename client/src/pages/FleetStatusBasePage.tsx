@@ -104,7 +104,7 @@ const STATUS_OPTIONS = [
   { value: 'manutencao', label: 'Em Manutenção', icon: Wrench, color: 'bg-red-500' },
   { value: 'emprestado', label: 'Emprestado', icon: ArrowLeftRight, color: 'bg-blue-500' },
   { value: 'devolvido', label: 'Devolvido', icon: CheckCircle, color: 'bg-purple-500' },
-  { value: 'nao_informado', label: 'Não Informado', icon: AlertCircle, color: 'bg-gray-500' },
+  { value: 'nao_informado', label: 'Sem Rota', icon: AlertCircle, color: 'bg-gray-500' },
 ];
 
 export default function FleetStatusBasePage() {
@@ -319,7 +319,7 @@ export default function FleetStatusBasePage() {
 
   const getStatusBadge = (status: string) => {
     const statusOption = STATUS_OPTIONS.find(s => s.value === status);
-    if (!statusOption) return <Badge variant="secondary">Não Informado</Badge>;
+    if (!statusOption) return <Badge variant="secondary">Sem Rota</Badge>;
     
     const Icon = statusOption.icon;
     return (
