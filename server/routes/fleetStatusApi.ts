@@ -423,10 +423,30 @@ router.post('/api/fleet-status/public/daily', async (req: Request, res: Response
     const existing = existingResult.rows[0] || null;
     const statusAnterior = existing?.status || null;
     
+    const plate = vehicle_plate || vehicleCheck.plate;
+    
+    if (status !== 'manutencao') {
+      const activeOsResult = await pool.query(
+        `SELECT id, numero_os, status FROM coca_cola_os_requests 
+         WHERE placa = $1 AND status NOT IN ('recusado', 'finalizado') 
+         ORDER BY created_at DESC LIMIT 1`,
+        [plate]
+      );
+      if (activeOsResult.rows.length > 0) {
+        const activeOs = activeOsResult.rows[0];
+        console.log(`[FLEET-STATUS-PUBLIC-DAILY] Bloqueado: veículo ${plate} possui OS ativa ${activeOs.numero_os} (status: ${activeOs.status})`);
+        return res.status(400).json({ 
+          success: false, 
+          error: `Não é possível alterar o status. O veículo possui uma OS ativa (${activeOs.numero_os || 'OS-' + String(activeOs.id).padStart(5, '0')}). Aguarde a gestão de frotas finalizar ou negar a OS.`,
+          os_id: activeOs.id,
+          os_status: activeOs.status
+        });
+      }
+    }
+    
     let result;
     
     if (existing) {
-      // Atualizar registro existente
       const updateResult = await pool.query(
         `UPDATE vehicle_daily_status SET
           base_id = $1,
@@ -450,7 +470,6 @@ router.post('/api/fleet-status/public/daily', async (req: Request, res: Response
       );
       result = updateResult.rows[0];
     } else {
-      // Inserir novo registro
       const insertResult = await pool.query(
         `INSERT INTO vehicle_daily_status (
           vehicle_id, base_id, data,
@@ -473,7 +492,6 @@ router.post('/api/fleet-status/public/daily', async (req: Request, res: Response
       result = insertResult.rows[0];
     }
     
-    // Registrar histórico se houve mudança de status (PostgreSQL local)
     if (statusAnterior !== status) {
       await pool.query(
         `INSERT INTO fleet_status_history (
@@ -502,8 +520,62 @@ router.post('/api/fleet-status/public/daily', async (req: Request, res: Response
       );
     }
     
-    console.log(`[FLEET-STATUS-PUBLIC-DAILY] Status atualizado: ${vehicle_plate} -> ${status}`);
-    res.json({ success: true, data: result });
+    let osCreated = null;
+    if (status === 'manutencao' && statusAnterior !== 'manutencao') {
+      const existingOsResult = await pool.query(
+        `SELECT id FROM coca_cola_os_requests 
+         WHERE placa = $1 AND status NOT IN ('recusado', 'finalizado') 
+         ORDER BY created_at DESC LIMIT 1`,
+        [plate]
+      );
+      
+      if (existingOsResult.rows.length === 0) {
+        try {
+          const vehicleInfo = await pool.query(
+            `SELECT make, model FROM vehicles WHERE id = $1`, [vehicle_id]
+          );
+          const vInfo = vehicleInfo.rows[0];
+          const modeloStr = vInfo ? `${vInfo.make || ''} ${vInfo.model || ''}`.trim() : '';
+          
+          const osResult = await pool.query(
+            `INSERT INTO coca_cola_os_requests 
+              (placa, modelo, base_origem, relato_problema, tipo_manutencao, urgencia, responsavel_base, status)
+             VALUES ($1, $2, $3, $4, 'corretiva', 'veiculo_parado', $5, 'pendente')
+             RETURNING *`,
+            [
+              plate,
+              modeloStr || null,
+              base_name || 'Base',
+              motivo || 'Veículo em manutenção - OS criada automaticamente',
+              user?.name || 'Sistema'
+            ]
+          );
+          
+          const newOsId = osResult.rows[0].id;
+          const numeroOs = 'OS-' + String(newOsId).padStart(5, '0');
+          await pool.query('UPDATE coca_cola_os_requests SET numero_os = $1 WHERE id = $2', [numeroOs, newOsId]);
+          osResult.rows[0].numero_os = numeroOs;
+          osCreated = osResult.rows[0];
+          console.log(`[FLEET-STATUS-PUBLIC-DAILY] OS criada automaticamente: ${numeroOs} para veículo ${plate}`);
+        } catch (osError: any) {
+          console.error(`[FLEET-STATUS-PUBLIC-DAILY] Erro ao criar OS automática, revertendo status:`, osError);
+          if (existing) {
+            await pool.query(
+              `UPDATE vehicle_daily_status SET status = $1, updated_at = NOW() WHERE id = $2`,
+              [statusAnterior || 'nao_informado', existing.id]
+            );
+          } else {
+            await pool.query(`DELETE FROM vehicle_daily_status WHERE id = $1`, [result.id]);
+          }
+          return res.status(500).json({ success: false, error: 'Erro ao criar OS de manutenção. O status não foi alterado.' });
+        }
+      } else {
+        console.log(`[FLEET-STATUS-PUBLIC-DAILY] Veículo ${plate} já possui OS ativa, não criou nova`);
+      }
+    }
+    
+    console.log(`[FLEET-STATUS-PUBLIC-DAILY] Status atualizado: ${plate} -> ${status}`);
+    res.json({ success: true, data: result, osCreated });
   } catch (error: any) {
     console.error('[FLEET-STATUS-PUBLIC-DAILY] Erro:', error);
     res.status(500).json({ success: false, error: error.message });

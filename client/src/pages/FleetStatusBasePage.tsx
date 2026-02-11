@@ -215,9 +215,17 @@ export default function FleetStatusBasePage() {
       }
       return result;
     },
-    onSuccess: () => {
-      toast({ title: 'Status atualizado com sucesso!' });
-      queryClient.invalidateQueries({ queryKey: ['/api/fleet-status/public/base', baseId, userId] });
+    onSuccess: (data: any) => {
+      if (data.osCreated) {
+        toast({ 
+          title: 'Status atualizado e OS criada!', 
+          description: `OS ${data.osCreated.numero_os} criada automaticamente. O veículo só será liberado quando a gestão de frotas finalizar ou negar a OS.`
+        });
+      } else {
+        toast({ title: 'Status atualizado com sucesso!' });
+      }
+      queryClient.invalidateQueries({ queryKey: ['/api/fleet-status/public/base', baseId, 'vehicles'] });
+      refetchRequests();
       setIsDialogOpen(false);
       setSelectedVehicle(null);
     },
@@ -304,6 +312,10 @@ export default function FleetStatusBasePage() {
   const handleSubmit = () => {
     if (!formData.status) {
       toast({ title: 'Selecione um status', variant: 'destructive' });
+      return;
+    }
+    if (formData.status === 'manutencao' && selectedVehicle?.statusDiario?.status !== 'manutencao' && !formData.motivo?.trim()) {
+      toast({ title: 'Preencha a observação', description: 'Descreva o problema do veículo para abrir a OS.', variant: 'destructive' });
       return;
     }
     updateMutation.mutate(formData as StatusUpdate);
@@ -521,8 +533,13 @@ export default function FleetStatusBasePage() {
                             )}
                           </div>
                         </div>
-                        <div className="mt-3 flex items-center gap-2">
+                        <div className="mt-3 flex items-center gap-2 flex-wrap">
                           {getStatusBadge(vehicle.statusDiario?.status || 'nao_informado')}
+                          {vehicle.statusDiario?.status === 'manutencao' && (
+                            <Badge className="bg-red-100 text-red-700 text-[10px]">
+                              OS Ativa
+                            </Badge>
+                          )}
                           <Button
                             size="sm"
                             variant="ghost"
@@ -636,6 +653,14 @@ export default function FleetStatusBasePage() {
           </DialogHeader>
           
           <div className="space-y-4">
+            {selectedVehicle?.statusDiario?.status === 'manutencao' && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-red-800">
+                  <strong>Veículo em manutenção com OS ativa.</strong> O status só poderá ser alterado quando a gestão de frotas finalizar ou negar a OS.
+                </div>
+              </div>
+            )}
             <div>
               <Label>Status do Veículo *</Label>
               <Select
@@ -674,6 +699,15 @@ export default function FleetStatusBasePage() {
 
             {formData.status === 'manutencao' && (
               <>
+                {selectedVehicle?.statusDiario?.status !== 'manutencao' && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-amber-800">
+                      <strong>Atenção:</strong> Ao colocar o veículo em manutenção, uma OS será criada automaticamente. 
+                      O veículo só poderá mudar de status quando a gestão de frotas finalizar ou negar a OS.
+                    </div>
+                  </div>
+                )}
                 <div>
                   <Label>Local da Manutenção</Label>
                   <Input
@@ -691,11 +725,11 @@ export default function FleetStatusBasePage() {
                   />
                 </div>
                 <div>
-                  <Label>Observação</Label>
+                  <Label>Observação *</Label>
                   <Textarea
                     value={formData.motivo || ''}
                     onChange={(e) => setFormData({ ...formData, motivo: e.target.value })}
-                    placeholder="Descreva o problema..."
+                    placeholder="Descreva o problema do veículo..."
                   />
                 </div>
               </>

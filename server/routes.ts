@@ -26272,6 +26272,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ success: false, message: 'Solicitação não encontrada' });
       }
 
+
+      const os = result.rows[0];
+
+      // When OS is recusado or finalizado, auto-release vehicle from maintenance in fleet-status
+      if (status === 'recusado' || status === 'finalizado') {
+        try {
+          const now = new Date();
+          const brDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+          const todayStr = `${brDate.getFullYear()}-${String(brDate.getMonth() + 1).padStart(2, '0')}-${String(brDate.getDate()).padStart(2, '0')}`;
+          
+          // Release the most recent manutencao record regardless of date
+          const vehicleReleaseResult = await pool.query(
+            `SELECT vds.id, vds.vehicle_id, vds.base_id, vds.data FROM vehicle_daily_status vds
+             JOIN vehicles v ON v.id = vds.vehicle_id
+             WHERE v.plate = $1 AND vds.status = 'manutencao'
+             ORDER BY vds.data DESC LIMIT 1`,
+            [os.placa]
+          );
+          if (vehicleReleaseResult.rows.length > 0) {
+            const vds = vehicleReleaseResult.rows[0];
+            const obsMsg = status === 'recusado' ? 'OS negada pela gestão de frotas' : 'OS finalizada pela gestão de frotas';
+            await pool.query(
+              `UPDATE vehicle_daily_status SET status = 'nao_informado', observacao = $1, updated_at = NOW(), updated_by_name = 'Gestão de Frotas' WHERE id = $2`,
+              [obsMsg, vds.id]
+            );
+            // Also ensure today has a record releasing the vehicle
+            if (vds.data !== todayStr) {
+              const todayRecord = await pool.query(
+                `SELECT id FROM vehicle_daily_status WHERE vehicle_id = $1 AND data = $2`, [vds.vehicle_id, todayStr]
+              );
+              if (todayRecord.rows.length > 0) {
+                await pool.query(
+                  `UPDATE vehicle_daily_status SET status = 'nao_informado', observacao = $1, updated_at = NOW(), updated_by_name = 'Gestão de Frotas' WHERE id = $2`,
+                  [obsMsg, todayRecord.rows[0].id]
+                );
+              } else {
+                await pool.query(
+                  `INSERT INTO vehicle_daily_status (vehicle_id, base_id, data, status, observacao, updated_by_name) VALUES ($1, $2, $3, 'nao_informado', $4, 'Gestão de Frotas')`,
+                  [vds.vehicle_id, vds.base_id, todayStr, obsMsg]
+                );
+              }
+            }
+            console.log(`[MaintenanceRequest] Veículo ${os.placa} liberado do status manutenção (OS ${status})`);
+          }
+        } catch (syncError) {
+          console.error('[MaintenanceRequest] Erro ao liberar veículo do fleet-status:', syncError);
+        }
+      }
+
       res.json({ success: true, data: result.rows[0] });
     } catch (error: any) {
       console.error('[MaintenanceRequest] Erro ao atualizar solicitação:', error);
@@ -29382,6 +29431,53 @@ async function createFuelRequestNotification(fuelRequest) {
         }
       }
 
+
+      // When OS is recusado or finalizado, auto-release vehicle from maintenance in fleet-status
+      if (status === 'recusado' || status === 'finalizado') {
+        try {
+          const now = new Date();
+          const brDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+          const todayStr = `${brDate.getFullYear()}-${String(brDate.getMonth() + 1).padStart(2, '0')}-${String(brDate.getDate()).padStart(2, '0')}`;
+          
+          // Release the most recent manutencao record regardless of date
+          const vehicleReleaseResult = await pool.query(
+            `SELECT vds.id, vds.vehicle_id, vds.base_id, vds.data FROM vehicle_daily_status vds
+             JOIN vehicles v ON v.id = vds.vehicle_id
+             WHERE v.plate = $1 AND vds.status = 'manutencao'
+             ORDER BY vds.data DESC LIMIT 1`,
+            [os.placa]
+          );
+          if (vehicleReleaseResult.rows.length > 0) {
+            const vds = vehicleReleaseResult.rows[0];
+            const obsMsg = status === 'recusado' ? 'OS negada pela gestão de frotas' : 'OS finalizada pela gestão de frotas';
+            await pool.query(
+              `UPDATE vehicle_daily_status SET status = 'nao_informado', observacao = $1, updated_at = NOW(), updated_by_name = 'Gestão de Frotas' WHERE id = $2`,
+              [obsMsg, vds.id]
+            );
+            // Also ensure today has a record releasing the vehicle
+            if (vds.data !== todayStr) {
+              const todayRecord = await pool.query(
+                `SELECT id FROM vehicle_daily_status WHERE vehicle_id = $1 AND data = $2`, [vds.vehicle_id, todayStr]
+              );
+              if (todayRecord.rows.length > 0) {
+                await pool.query(
+                  `UPDATE vehicle_daily_status SET status = 'nao_informado', observacao = $1, updated_at = NOW(), updated_by_name = 'Gestão de Frotas' WHERE id = $2`,
+                  [obsMsg, todayRecord.rows[0].id]
+                );
+              } else {
+                await pool.query(
+                  `INSERT INTO vehicle_daily_status (vehicle_id, base_id, data, status, observacao, updated_by_name) VALUES ($1, $2, $3, 'nao_informado', $4, 'Gestão de Frotas')`,
+                  [vds.vehicle_id, vds.base_id, todayStr, obsMsg]
+                );
+              }
+            }
+            console.log(`[MaintenanceRequest] Veículo ${os.placa} liberado do status manutenção (OS ${status})`);
+          }
+        } catch (syncError) {
+          console.error('[MaintenanceRequest] Erro ao liberar veículo do fleet-status:', syncError);
+        }
+      }
+
       res.json({ success: true, data: result.rows[0] });
     } catch (error) {
       console.error('[CocaCola OS] Erro ao atualizar:', error);
@@ -29521,6 +29617,53 @@ async function createFuelRequestNotification(fuelRequest) {
           }
         } catch (syncError) {
           console.error('[CocaCola Sync] Erro ao sincronizar status do veículo:', syncError);
+        }
+      }
+
+
+      // When OS is recusado or finalizado, auto-release vehicle from maintenance in fleet-status
+      if (status === 'recusado' || status === 'finalizado') {
+        try {
+          const now = new Date();
+          const brDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+          const todayStr = `${brDate.getFullYear()}-${String(brDate.getMonth() + 1).padStart(2, '0')}-${String(brDate.getDate()).padStart(2, '0')}`;
+          
+          // Release the most recent manutencao record regardless of date
+          const vehicleReleaseResult = await pool.query(
+            `SELECT vds.id, vds.vehicle_id, vds.base_id, vds.data FROM vehicle_daily_status vds
+             JOIN vehicles v ON v.id = vds.vehicle_id
+             WHERE v.plate = $1 AND vds.status = 'manutencao'
+             ORDER BY vds.data DESC LIMIT 1`,
+            [os.placa]
+          );
+          if (vehicleReleaseResult.rows.length > 0) {
+            const vds = vehicleReleaseResult.rows[0];
+            const obsMsg = status === 'recusado' ? 'OS negada pela gestão de frotas' : 'OS finalizada pela gestão de frotas';
+            await pool.query(
+              `UPDATE vehicle_daily_status SET status = 'nao_informado', observacao = $1, updated_at = NOW(), updated_by_name = 'Gestão de Frotas' WHERE id = $2`,
+              [obsMsg, vds.id]
+            );
+            // Also ensure today has a record releasing the vehicle
+            if (vds.data !== todayStr) {
+              const todayRecord = await pool.query(
+                `SELECT id FROM vehicle_daily_status WHERE vehicle_id = $1 AND data = $2`, [vds.vehicle_id, todayStr]
+              );
+              if (todayRecord.rows.length > 0) {
+                await pool.query(
+                  `UPDATE vehicle_daily_status SET status = 'nao_informado', observacao = $1, updated_at = NOW(), updated_by_name = 'Gestão de Frotas' WHERE id = $2`,
+                  [obsMsg, todayRecord.rows[0].id]
+                );
+              } else {
+                await pool.query(
+                  `INSERT INTO vehicle_daily_status (vehicle_id, base_id, data, status, observacao, updated_by_name) VALUES ($1, $2, $3, 'nao_informado', $4, 'Gestão de Frotas')`,
+                  [vds.vehicle_id, vds.base_id, todayStr, obsMsg]
+                );
+              }
+            }
+            console.log(`[MaintenanceRequest] Veículo ${os.placa} liberado do status manutenção (OS ${status})`);
+          }
+        } catch (syncError) {
+          console.error('[MaintenanceRequest] Erro ao liberar veículo do fleet-status:', syncError);
         }
       }
 
