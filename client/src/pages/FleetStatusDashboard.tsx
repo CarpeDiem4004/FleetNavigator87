@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/context/AuthContext';
 import { 
   BarChart3, 
@@ -28,7 +29,9 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Shield,
-  Gauge
+  Gauge,
+  ChevronRight,
+  X
 } from 'lucide-react';
 
 interface BaseResumo {
@@ -110,6 +113,16 @@ const OS_STATUS_LABELS: Record<string, string> = {
   finalizado: 'Finalizado',
   recusado: 'Recusado'
 };
+
+interface BaseVehicle {
+  id: number;
+  plate: string;
+  model: string;
+  make: string;
+  vehicle_type: string;
+  daily_status: string | null;
+  observacao: string | null;
+}
 
 function getTodayBrasil() {
   const now = new Date();
@@ -200,6 +213,7 @@ export default function FleetStatusDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedDate, setSelectedDate] = useState(getTodayBrasil());
+  const [selectedBase, setSelectedBase] = useState<BaseResumo | null>(null);
   const { user } = useAuth();
   const userId = user?.id;
 
@@ -220,6 +234,17 @@ export default function FleetStatusDashboard() {
   const { data: historyData } = useQuery<{ success: boolean; data: HistoryRecord[] }>({
     queryKey: ['/api/fleet-status/history'],
     enabled: activeTab === 'history'
+  });
+
+  const { data: baseVehiclesData, isLoading: isLoadingVehicles } = useQuery<{ success: boolean; data: BaseVehicle[] }>({
+    queryKey: ['/api/fleet-status/public/base-vehicles', selectedBase?.baseId, selectedDate],
+    queryFn: async () => {
+      const response = await fetch(`/api/fleet-status/public/base-vehicles/${selectedBase!.baseId}?date=${selectedDate}`, {
+        credentials: 'include'
+      });
+      return response.json();
+    },
+    enabled: !!selectedBase
   });
 
   const dashboard = dashboardData?.data;
@@ -427,8 +452,8 @@ export default function FleetStatusDashboard() {
                             const manutBase = base.statusCount?.manutencao || 0;
                             const utilizBase = base.totalVeiculos > 0 ? ((emRotaBase / base.totalVeiculos) * 100).toFixed(1) : '0.0';
                             return (
-                              <TableRow key={base.baseId}>
-                                <TableCell className="font-medium">{base.baseName}</TableCell>
+                              <TableRow key={base.baseId} className="cursor-pointer hover:bg-gray-50" onClick={() => setSelectedBase(base)}>
+                                <TableCell className="font-medium text-blue-600">{base.baseName}</TableCell>
                                 <TableCell className="text-center">{base.totalVeiculos}</TableCell>
                                 <TableCell className="text-center">
                                   <span className="text-green-600 font-semibold">{emRotaBase}</span>
@@ -492,7 +517,11 @@ export default function FleetStatusDashboard() {
                         </div>
                         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                           {dashboard?.basesInadimplentes?.map((base) => (
-                            <Card key={base.baseId} className="border-yellow-200 hover:shadow-md transition-shadow">
+                            <Card 
+                              key={base.baseId} 
+                              className="border-yellow-200 hover:shadow-md transition-shadow cursor-pointer hover:border-blue-300"
+                              onClick={() => setSelectedBase(base)}
+                            >
                               <CardContent className="p-4">
                                 <div className="flex items-start justify-between">
                                   <div>
@@ -501,9 +530,12 @@ export default function FleetStatusDashboard() {
                                       {base.pendentes} pendentes de {base.totalVeiculos}
                                     </p>
                                   </div>
-                                  <Badge variant="outline" className="text-yellow-600 border-yellow-300 text-xs">
-                                    {base.percentualAtualizado}%
-                                  </Badge>
+                                  <div className="flex items-center gap-1">
+                                    <Badge variant="outline" className="text-yellow-600 border-yellow-300 text-xs">
+                                      {base.percentualAtualizado}%
+                                    </Badge>
+                                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                                  </div>
                                 </div>
                                 <Progress 
                                   value={Number(base.percentualAtualizado)} 
@@ -520,6 +552,9 @@ export default function FleetStatusDashboard() {
                                     </Badge>
                                   ))}
                                 </div>
+                                <p className="text-[10px] text-blue-500 mt-2 flex items-center gap-1">
+                                  <Search className="w-3 h-3" /> Clique para ver veículos
+                                </p>
                               </CardContent>
                             </Card>
                           ))}
@@ -673,6 +708,71 @@ export default function FleetStatusDashboard() {
           </Card>
         </>
       )}
+
+      {/* Dialog: Veículos da Base */}
+      <Dialog open={!!selectedBase} onOpenChange={(open) => !open && setSelectedBase(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-blue-600" />
+              {selectedBase?.baseName}
+            </DialogTitle>
+            <p className="text-sm text-gray-500">
+              {selectedBase?.totalVeiculos} veículos | {selectedBase?.atualizados} atualizados | {selectedBase?.pendentes} pendentes
+            </p>
+          </DialogHeader>
+
+          {isLoadingVehicles ? (
+            <div className="text-center py-8">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-gray-400" />
+              <p className="mt-2 text-sm text-gray-500">Carregando veículos...</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Placa</TableHead>
+                    <TableHead>Modelo</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Status Hoje</TableHead>
+                    <TableHead>Observação</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(baseVehiclesData?.data || []).map((vehicle) => (
+                    <TableRow key={vehicle.id}>
+                      <TableCell className="font-mono font-bold">{vehicle.plate}</TableCell>
+                      <TableCell className="text-sm">{vehicle.model || vehicle.make || '-'}</TableCell>
+                      <TableCell className="text-sm text-gray-500">{vehicle.vehicle_type || '-'}</TableCell>
+                      <TableCell>
+                        {vehicle.daily_status ? (
+                          <Badge className={`${STATUS_COLORS[vehicle.daily_status] || 'bg-gray-500'} text-white text-xs`}>
+                            {STATUS_LABELS[vehicle.daily_status] || vehicle.daily_status}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-gray-400 border-gray-300 text-xs">
+                            Não Informado
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-500 max-w-[200px] truncate">
+                        {vehicle.observacao || '-'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {(baseVehiclesData?.data || []).length === 0 && (
+                <div className="text-center py-6 text-gray-500">
+                  <Truck className="w-8 h-8 mx-auto mb-2" />
+                  Nenhum veículo encontrado nesta base
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

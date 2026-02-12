@@ -405,6 +405,30 @@ router.get('/api/fleet-status/public/dashboard', async (req: Request, res: Respo
   }
 });
 
+// GET - Veículos por base com status do dia
+router.get('/api/fleet-status/public/base-vehicles/:baseId', async (req: Request, res: Response) => {
+  try {
+    const { baseId } = req.params;
+    const { date } = req.query;
+    const today = date ? String(date) : getTodayBrasil();
+
+    const result = await pool.query(
+      `SELECT v.id, v.plate, v.model, v.make, v.vehicle_type,
+              vds.status as daily_status, vds.observacao
+       FROM vehicles v
+       LEFT JOIN vehicle_daily_status vds ON vds.vehicle_id = v.id AND vds.data = $2
+       WHERE v.base_id = $1
+       ORDER BY v.plate`,
+      [baseId, today]
+    );
+
+    res.json({ success: true, data: result.rows });
+  } catch (error: any) {
+    console.error('[FLEET-STATUS-BASE-VEHICLES] Erro:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST - Atualização pública de status (validação via userId no body)
 router.post('/api/fleet-status/public/daily', async (req: Request, res: Response) => {
   try {
