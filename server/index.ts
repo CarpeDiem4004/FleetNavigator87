@@ -361,7 +361,11 @@ app.post('/api/public/maintenance-requests', async (req, res) => {
       [placa, modelo || null, base_origem, odometro ? parseInt(odometro) : null, relato_problema, urgencia || 'media', fotos || [], responsavel_base || null, telefone_responsavel || null]
     );
 
-    console.log('[CocaCola OS - index.ts] Nova solicitação criada:', result.rows[0].id, 'Placa:', placa, 'Base:', base_origem);
+    const newOsId = result.rows[0].id;
+    const numeroOs = 'OS-' + String(newOsId).padStart(5, '0');
+    await pool.query('UPDATE coca_cola_os_requests SET numero_os = $1 WHERE id = $2', [numeroOs, newOsId]);
+    result.rows[0].numero_os = numeroOs;
+    console.log('[CocaCola OS - index.ts] Nova solicitação criada:', newOsId, 'OS:', numeroOs, 'Placa:', placa, 'Base:', base_origem);
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('[CocaCola OS - index.ts] Erro ao criar solicitação:', error);
