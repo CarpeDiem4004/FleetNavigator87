@@ -7335,6 +7335,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       );
       
+      // AUTO: Liberar veículo da manutenção quando OS é concluída ou cancelada
+      if (status === 'concluida' || status === 'cancelada') {
+        try {
+          const vehiclePlate = currentData.vehicle_plate;
+          const now = new Date();
+          const brDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+          const todayStr = `${brDate.getFullYear()}-${String(brDate.getMonth() + 1).padStart(2, '0')}-${String(brDate.getDate()).padStart(2, '0')}`;
+          
+          const vehicleLookup = await pool.query(
+            `SELECT v.id, v.base_id FROM vehicles v WHERE UPPER(v.plate) = $1 LIMIT 1`,
+            [vehiclePlate.toUpperCase()]
+          );
+          
+          if (vehicleLookup.rows.length > 0) {
+            const veh = vehicleLookup.rows[0];
+            const obsMsg = status === 'cancelada' 
+              ? 'OS cancelada pela gestão de frotas - veículo liberado' 
+              : 'OS concluída pela gestão de frotas - veículo liberado';
+            
+            // Liberar registro mais recente com status manutencao
+            const releaseResult = await pool.query(
+              `SELECT id, data FROM vehicle_daily_status WHERE vehicle_id = $1 AND status = 'manutencao' ORDER BY data DESC LIMIT 1`,
+              [veh.id]
+            );
+            
+            if (releaseResult.rows.length > 0) {
+              await pool.query(
+                `UPDATE vehicle_daily_status SET status = 'nao_informado', observacao = $1, updated_at = NOW(), updated_by_name = 'Gestão de Frotas' WHERE id = $2`,
+                [obsMsg, releaseResult.rows[0].id]
+              );
+            }
+            
+            // Sempre garantir que o registro de hoje reflita a liberação
+            const todayRecord = await pool.query(
+              `SELECT id FROM vehicle_daily_status WHERE vehicle_id = $1 AND data = $2`, [veh.id, todayStr]
+            );
+            if (todayRecord.rows.length > 0) {
+              await pool.query(
+                `UPDATE vehicle_daily_status SET status = 'nao_informado', observacao = $1, updated_at = NOW(), updated_by_name = 'Gestão de Frotas' WHERE id = $2`,
+                [obsMsg, todayRecord.rows[0].id]
+              );
+            } else {
+              await pool.query(
+                `INSERT INTO vehicle_daily_status (vehicle_id, base_id, data, status, observacao, updated_by_name) VALUES ($1, $2, $3, 'nao_informado', $4, 'Gestão de Frotas')`,
+                [veh.id, veh.base_id, todayStr, obsMsg]
+              );
+            }
+            console.log(`[LINEHALL-OS] Veículo ${vehiclePlate} liberado da manutenção (OS ${status})`);
+          }
+        } catch (syncErr) {
+          console.error(`[LINEHALL-OS] Erro ao liberar veículo da manutenção:`, syncErr);
+        }
+      }
+      
       return res.status(200).json({
         success: true,
         data: updatedData,
@@ -7795,6 +7849,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
           description: description
         }
       );
+      
+      // AUTO: Mudar status do veículo para 'manutencao' no fleet status
+      try {
+        const vehicleLookup = await pool.query(
+          `SELECT v.id, v.base_id FROM vehicles v WHERE UPPER(v.plate) = $1 LIMIT 1`,
+          [vehicle_plate.toUpperCase()]
+        );
+        if (vehicleLookup.rows.length > 0) {
+          const veh = vehicleLookup.rows[0];
+          const now = new Date();
+          const brDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+          const todayStr = `${brDate.getFullYear()}-${String(brDate.getMonth() + 1).padStart(2, '0')}-${String(brDate.getDate()).padStart(2, '0')}`;
+          
+          const existingStatus = await pool.query(
+            `SELECT id, status FROM vehicle_daily_status WHERE vehicle_id = $1 AND data = $2`,
+            [veh.id, todayStr]
+          );
+          
+          const obsMsg = `OS aberta - ${description || 'Manutenção'}`;
+          if (existingStatus.rows.length > 0) {
+            await pool.query(
+              `UPDATE vehicle_daily_status SET status = 'manutencao', observacao = $1, updated_at = NOW(), updated_by_name = 'Sistema OS' WHERE id = $2`,
+              [obsMsg, existingStatus.rows[0].id]
+            );
+          } else {
+            await pool.query(
+              `INSERT INTO vehicle_daily_status (vehicle_id, base_id, data, status, observacao, updated_by_name) VALUES ($1, $2, $3, 'manutencao', $4, 'Sistema OS')`,
+              [veh.id, veh.base_id, todayStr, obsMsg]
+            );
+          }
+          console.log(`[LINEHALL-OS] Veículo ${vehicle_plate} status alterado para manutencao automaticamente`);
+        }
+      } catch (syncErr) {
+        console.error(`[LINEHALL-OS] Erro ao sincronizar status do veículo:`, syncErr);
+      }
       
       return res.status(201).json({
         success: true,
@@ -23706,6 +23795,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         prioridade,
         descricao
       });
+
+      // AUTO: Mudar status do veículo para 'manutencao' no fleet status
+      try {
+        const vehicleLookup = await pool.query(
+          `SELECT v.id, v.base_id FROM vehicles v WHERE UPPER(v.plate) = $1 LIMIT 1`,
+          [placa_veiculo.toUpperCase()]
+        );
+        if (vehicleLookup.rows.length > 0) {
+          const veh = vehicleLookup.rows[0];
+          const now = new Date();
+          const brDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+          const todayStr = `${brDate.getFullYear()}-${String(brDate.getMonth() + 1).padStart(2, '0')}-${String(brDate.getDate()).padStart(2, '0')}`;
+          
+          const existingStatus = await pool.query(
+            `SELECT id, status FROM vehicle_daily_status WHERE vehicle_id = $1 AND data = $2`,
+            [veh.id, todayStr]
+          );
+          
+          const obsMsg = `OS aberta - ${descricao || tipo_problema || 'Manutenção'}`;
+          if (existingStatus.rows.length > 0) {
+            await pool.query(
+              `UPDATE vehicle_daily_status SET status = 'manutencao', observacao = $1, updated_at = NOW(), updated_by_name = 'Sistema OS' WHERE id = $2`,
+              [obsMsg, existingStatus.rows[0].id]
+            );
+          } else {
+            await pool.query(
+              `INSERT INTO vehicle_daily_status (vehicle_id, base_id, data, status, observacao, updated_by_name) VALUES ($1, $2, $3, 'manutencao', $4, 'Sistema OS')`,
+              [veh.id, veh.base_id, todayStr, obsMsg]
+            );
+          }
+          console.log(`[LINEHALL-OS-DRIVER] Veículo ${placa_veiculo} status alterado para manutencao automaticamente`);
+        }
+      } catch (syncErr) {
+        console.error(`[LINEHALL-OS-DRIVER] Erro ao sincronizar status do veículo:`, syncErr);
+      }
 
       res.json({
         success: true,

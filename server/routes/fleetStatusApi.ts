@@ -523,6 +523,24 @@ router.post('/api/fleet-status/public/daily', async (req: Request, res: Response
           os_status: activeOs.status
         });
       }
+      
+      // Verificar OS ativa no Line Hall (linehall_maintenance)
+      const activeLineHallOs = await pool.query(
+        `SELECT id, status FROM linehall_maintenance 
+         WHERE UPPER(vehicle_plate) = $1 AND status NOT IN ('concluida', 'cancelada') 
+         ORDER BY created_at DESC LIMIT 1`,
+        [plate.toUpperCase()]
+      );
+      if (activeLineHallOs.rows.length > 0) {
+        const lhOs = activeLineHallOs.rows[0];
+        console.log(`[FLEET-STATUS-PUBLIC-DAILY] Bloqueado: veículo ${plate} possui OS Line Hall ativa #${lhOs.id} (status: ${lhOs.status})`);
+        return res.status(400).json({ 
+          success: false, 
+          error: `Não é possível alterar o status. O veículo possui uma OS de manutenção ativa (#${lhOs.id}). Aguarde a gestão de frotas concluir ou cancelar a OS.`,
+          os_id: lhOs.id,
+          os_status: lhOs.status
+        });
+      }
     }
     
     let result;
@@ -718,6 +736,27 @@ router.post('/api/fleet-status/daily', isAuthenticated, async (req: Request, res
     
     const existing = existingResult.rows[0] || null;
     const statusAnterior = existing?.status || null;
+    
+    const plate = vehicle_plate || vehicleCheck.plate;
+    
+    // Bloquear alteração de status se veículo tem OS ativa no Line Hall
+    if (status !== 'manutencao') {
+      const activeLineHallOs = await pool.query(
+        `SELECT id, status FROM linehall_maintenance 
+         WHERE UPPER(vehicle_plate) = $1 AND status NOT IN ('concluida', 'cancelada') 
+         ORDER BY created_at DESC LIMIT 1`,
+        [plate.toUpperCase()]
+      );
+      if (activeLineHallOs.rows.length > 0) {
+        const lhOs = activeLineHallOs.rows[0];
+        return res.status(400).json({ 
+          success: false, 
+          error: `Não é possível alterar o status. O veículo possui uma OS de manutenção ativa (#${lhOs.id}). Aguarde a gestão de frotas concluir ou cancelar a OS.`,
+          os_id: lhOs.id,
+          os_status: lhOs.status
+        });
+      }
+    }
     
     let result;
     
