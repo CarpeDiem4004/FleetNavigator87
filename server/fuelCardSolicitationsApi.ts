@@ -1450,7 +1450,7 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
     let paramIndex = 1;
     
     if (data_inicio && data_fim) {
-      dateFilter = ` WHERE data_solicitacao >= $${paramIndex}::date AND data_solicitacao <= $${paramIndex + 1}::date`;
+      dateFilter = ` WHERE data_solicitacao >= $${paramIndex}::date AND data_solicitacao < ($${paramIndex + 1}::date + interval '1 day')`;
       queryParams.push(data_inicio, data_fim);
       paramIndex += 2;
     }
@@ -1514,6 +1514,16 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
     
     // 2. Tabela Line Hall (linehall_fuel_card_requests)
     try {
+      let lineHallDateFilter = '';
+      const lineHallParams: any[] = [];
+      let lhParamIndex = 1;
+      
+      if (data_inicio && data_fim) {
+        lineHallDateFilter = ` WHERE created_at >= $${lhParamIndex}::date AND created_at < ($${lhParamIndex + 1}::date + interval '1 day')`;
+        lineHallParams.push(data_inicio, data_fim);
+        lhParamIndex += 2;
+      }
+      
       const lineHallQuery = `
         SELECT 
           id::text as id,
@@ -1540,17 +1550,39 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
           COALESCE(horario_abastecimento, '') as horario_abastecimento,
           'Line Hall Shopee' as base
         FROM linehall_fuel_card_requests
+        ${lineHallDateFilter}
         ORDER BY created_at DESC
       `;
       
-      const lineHallResult = await pool.query(lineHallQuery);
+      const lineHallResult = await pool.query(lineHallQuery, lineHallParams);
       allSolicitations.push(...lineHallResult.rows);
+      console.log('[EXPORT-EXCEL] Registros tabela Line Hall:', lineHallResult.rows.length);
     } catch (err) {
       console.log('Tabela Line Hall não encontrada ou erro:', err);
     }
     
     // 3. Tabela base system (fuel_card_requests) - incluindo informações da base
     try {
+      let baseSystemDateFilter = '';
+      const baseSystemParams: any[] = [];
+      let bsParamIndex = 1;
+      
+      if (data_inicio && data_fim) {
+        baseSystemDateFilter = ` WHERE fcr.requested_at >= $${bsParamIndex}::date AND fcr.requested_at < ($${bsParamIndex + 1}::date + interval '1 day')`;
+        baseSystemParams.push(data_inicio, data_fim);
+        bsParamIndex += 2;
+      }
+      
+      if (base && base !== 'all') {
+        if (baseSystemDateFilter) {
+          baseSystemDateFilter += ` AND LOWER(COALESCE(b.location, fcr.base_name, '')) LIKE LOWER($${bsParamIndex})`;
+        } else {
+          baseSystemDateFilter = ` WHERE LOWER(COALESCE(b.location, fcr.base_name, '')) LIKE LOWER($${bsParamIndex})`;
+        }
+        baseSystemParams.push(`%${base}%`);
+        bsParamIndex++;
+      }
+      
       const baseSystemQuery = `
         SELECT 
           fcr.id::text as id,
@@ -1578,11 +1610,13 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
           COALESCE(b.location, fcr.base_name, 'Base Principal') as base
         FROM fuel_card_requests fcr
         LEFT JOIN bases b ON fcr.base_id = b.id
+        ${baseSystemDateFilter}
         ORDER BY fcr.requested_at DESC
       `;
       
-      const baseSystemResult = await pool.query(baseSystemQuery);
+      const baseSystemResult = await pool.query(baseSystemQuery, baseSystemParams);
       allSolicitations.push(...baseSystemResult.rows);
+      console.log('[EXPORT-EXCEL] Registros tabela Base System:', baseSystemResult.rows.length);
     } catch (err) {
       console.log('Tabela base system não encontrada ou erro:', err);
     }
