@@ -229,8 +229,8 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
       WHERE LOWER(provedor_cartao) LIKE '%veloe%' 
         AND LOWER(status) = 'pendente'
         ${origem === 'line_hall' ? `AND LOWER(COALESCE(origem_tipo, '')) = 'line_hall'` : `AND (LOWER(COALESCE(origem_tipo, '')) != 'line_hall' OR origem_tipo IS NULL)`}
-        ${data_inicio ? `AND COALESCE(data_uso, (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date)::date >= '${data_inicio}'` : ''}
-        ${data_fim ? `AND COALESCE(data_uso, (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date)::date <= '${data_fim}'` : ''}
+        ${data_inicio ? `AND (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date >= '${data_inicio}'` : ''}
+        ${data_fim ? `AND (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date <= '${data_fim}'` : ''}
       GROUP BY UPPER(REPLACE(COALESCE(NULLIF(TRIM(placa_cartao), ''), NULLIF(TRIM(numero_cartao), ''), placa), ' ', ''))
       ORDER BY placa_cartao
     `;
@@ -357,8 +357,8 @@ export async function exportTicketCards(req: Request, res: Response) {
       WHERE LOWER(provedor_cartao) LIKE '%ticket%' 
         AND LOWER(status) = 'pendente'
         ${origem === 'line_hall' ? `AND LOWER(COALESCE(origem_tipo, '')) = 'line_hall'` : `AND (LOWER(COALESCE(origem_tipo, '')) != 'line_hall' OR origem_tipo IS NULL)`}
-        ${data_inicio ? `AND COALESCE(data_uso, (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date)::date >= '${data_inicio}'` : ''}
-        ${data_fim ? `AND COALESCE(data_uso, (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date)::date <= '${data_fim}'` : ''}
+        ${data_inicio ? `AND (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date >= '${data_inicio}'` : ''}
+        ${data_fim ? `AND (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date <= '${data_fim}'` : ''}
       GROUP BY UPPER(REPLACE(COALESCE(NULLIF(TRIM(placa_cartao), ''), NULLIF(TRIM(numero_cartao), ''), placa), ' ', ''))
       ORDER BY placa_cartao
     `;
