@@ -1683,12 +1683,11 @@ router.get('/finalizadas', isAuthenticated, async (req: Request, res: Response) 
     // e não há filtro de operação (também não tem)
     let resultOficinaMurici: any[] = [];
     
-    // Verificar se deve incluir veículos da Oficina Murici
-    const incluirOficinaMurici = !tipo_manutencao && !operacao && 
-      (!oficina || oficina.toString().toUpperCase().includes('MURICI'));
+    // Incluir veículos finalizados de todas as oficinas (indicadores_dados)
+    const incluirIndicadores = !tipo_manutencao && !operacao;
     
-    if (incluirOficinaMurici) {
-      let queryMurici = `
+    if (incluirIndicadores) {
+      let queryIndicadores = `
         SELECT 
           id,
           placa,
@@ -1712,33 +1711,40 @@ router.get('/finalizadas', isAuthenticated, async (req: Request, res: Response) 
           TO_CHAR(updated_at, 'YYYY-MM') as mes_referencia,
           created_at
         FROM indicadores_dados 
-        WHERE status = 'Finalizado' 
-          AND oficina_debito = 'Oficina Murici'
+        WHERE status = 'Finalizado'
       `;
       
-      const paramsMurici: any[] = [];
-      let paramMuriciIdx = 1;
+      const paramsIndicadores: any[] = [];
+      let paramIndicadoresIdx = 1;
       
       if (placa) {
-        queryMurici += ` AND UPPER(placa) LIKE UPPER($${paramMuriciIdx})`;
-        paramsMurici.push(`%${placa}%`);
-        paramMuriciIdx++;
+        queryIndicadores += ` AND UPPER(placa) LIKE UPPER($${paramIndicadoresIdx})`;
+        paramsIndicadores.push(`%${placa}%`);
+        paramIndicadoresIdx++;
+      }
+      if (oficina) {
+        queryIndicadores += ` AND UPPER(oficina_debito) LIKE UPPER($${paramIndicadoresIdx})`;
+        paramsIndicadores.push(`%${oficina}%`);
+        paramIndicadoresIdx++;
       }
       if (mes) {
-        queryMurici += ` AND TO_CHAR(updated_at, 'YYYY-MM') = $${paramMuriciIdx}`;
-        paramsMurici.push(mes);
-        paramMuriciIdx++;
+        queryIndicadores += ` AND TO_CHAR(updated_at, 'YYYY-MM') = $${paramIndicadoresIdx}`;
+        paramsIndicadores.push(mes);
+        paramIndicadoresIdx++;
       }
       
-      queryMurici += ' ORDER BY data_agenda DESC NULLS LAST';
+      queryIndicadores += ' ORDER BY data_agenda DESC NULLS LAST';
       
-      const muriciResult = await pool.query(queryMurici, paramsMurici);
+      const indicadoresResult = await pool.query(queryIndicadores, paramsIndicadores);
       
-      // Filtrar duplicatas: excluir veículos que já existem em manutencoes_finalizadas
-      const placasFinalizadas = new Set(resultFinalizadas.rows.map((r: any) => r.placa?.toUpperCase()));
-      resultOficinaMurici = muriciResult.rows.filter((r: any) => 
-        !placasFinalizadas.has(r.placa?.toUpperCase())
-      );
+      // Filtrar duplicatas: excluir veículos que já existem em manutencoes_finalizadas (por placa+oficina)
+      const finalizadasKeys = new Set(resultFinalizadas.rows.map((r: any) => 
+        `${(r.placa || '').toUpperCase().trim()}|${(r.oficina || '').toUpperCase().trim()}`
+      ));
+      resultOficinaMurici = indicadoresResult.rows.filter((r: any) => {
+        const key = `${(r.placa || '').toUpperCase().trim()}|${(r.oficina || '').toUpperCase().trim()}`;
+        return !finalizadasKeys.has(key);
+      });
     }
     
     // Combinar resultados

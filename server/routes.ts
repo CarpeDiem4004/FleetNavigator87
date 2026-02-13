@@ -15235,6 +15235,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
               );
               console.log(`[OFICINA-UPDATE] indicadores_dados sincronizado via fallback: ${rec.vehicle_plate} -> ${indicadorStatus}`);
             }
+
+            // Inserir em manutencoes_finalizadas quando status = Finalizado
+            if (indicadorStatus === 'Finalizado') {
+              const workshopNameFinal = req.oficina.razao_social || req.oficina.name || 'Oficina Externa';
+              const crFull = await pool.query(
+                'SELECT vehicle_plate, vehicle_model, current_km, service_description, labor_cost, parts_cost, base_id, created_at FROM car_receptions WHERE id = $1',
+                [id]
+              );
+              if (crFull.rows.length > 0) {
+                const crData = crFull.rows[0];
+                // Verificar se já existe em manutencoes_finalizadas para evitar duplicatas
+                const existsCheck = await pool.query(
+                  `SELECT id FROM manutencoes_finalizadas WHERE UPPER(TRIM(placa)) = UPPER(TRIM($1)) AND UPPER(TRIM(oficina)) = UPPER(TRIM($2)) AND data_liberado = CURRENT_DATE`,
+                  [crData.vehicle_plate, workshopNameFinal]
+                );
+                if (existsCheck.rows.length === 0) {
+                  const baseInfo = await pool.query('SELECT name FROM bases WHERE id = $1', [crData.base_id]);
+                  const baseNameFinal = baseInfo.rows[0]?.name || '';
+                  const diasManut = Math.max(0, Math.floor((Date.now() - new Date(crData.created_at).getTime()) / (1000 * 60 * 60 * 24)));
+                  
+                  await pool.query(
+                    `INSERT INTO manutencoes_finalizadas 
+                      (placa, modelo, km, relato, data_agenda, focal, oficina, tipo_manutencao, valor_orcamento, status, data_liberado, dias_manutencao, mes_referencia)
+                     VALUES ($1, $2, $3, $4, $5::date, $6, $7, 'Corretiva', $8, 'Finalizado', CURRENT_DATE, $9, TO_CHAR(CURRENT_DATE, 'YYYY-MM'))`,
+                    [
+                      crData.vehicle_plate,
+                      crData.vehicle_model || '',
+                      crData.current_km || 0,
+                      crData.service_description || '',
+                      crData.created_at,
+                      baseNameFinal,
+                      workshopNameFinal,
+                      (parseFloat(crData.labor_cost) || 0) + (parseFloat(crData.parts_cost) || 0),
+                      diasManut
+                    ]
+                  );
+                  console.log(`[OFICINA-UPDATE] Registro criado em manutencoes_finalizadas para placa: ${crData.vehicle_plate}`);
+                } else {
+                  console.log(`[OFICINA-UPDATE] Registro já existe em manutencoes_finalizadas para placa: ${crData.vehicle_plate}`);
+                }
+              }
+            }
           }
         } catch (syncError) {
           console.error('[OFICINA-UPDATE] Erro ao sincronizar indicadores_dados:', syncError);
@@ -15411,6 +15453,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
               [indicadorStatus, rec.vehicle_plate, workshopName]
             );
             console.log(`[OFICINA-STATUS] indicadores_dados sincronizado via fallback: ${rec.vehicle_plate} -> ${indicadorStatus}`);
+          }
+
+          // Inserir em manutencoes_finalizadas quando status = Finalizado
+          if (indicadorStatus === 'Finalizado') {
+            const workshopNameFinal = req.oficina.razao_social || req.oficina.name || 'Oficina Externa';
+            const crFull = await pool.query(
+              'SELECT vehicle_plate, vehicle_model, current_km, service_description, labor_cost, parts_cost, base_id, created_at FROM car_receptions WHERE id = $1',
+              [id]
+            );
+            if (crFull.rows.length > 0) {
+              const crData = crFull.rows[0];
+              const existsCheck = await pool.query(
+                `SELECT id FROM manutencoes_finalizadas WHERE UPPER(TRIM(placa)) = UPPER(TRIM($1)) AND UPPER(TRIM(oficina)) = UPPER(TRIM($2)) AND data_liberado = CURRENT_DATE`,
+                [crData.vehicle_plate, workshopNameFinal]
+              );
+              if (existsCheck.rows.length === 0) {
+                const baseInfo = await pool.query('SELECT name FROM bases WHERE id = $1', [crData.base_id]);
+                const baseNameFinal = baseInfo.rows[0]?.name || '';
+                const diasManut = Math.max(0, Math.floor((Date.now() - new Date(crData.created_at).getTime()) / (1000 * 60 * 60 * 24)));
+                
+                await pool.query(
+                  `INSERT INTO manutencoes_finalizadas 
+                    (placa, modelo, km, relato, data_agenda, focal, oficina, tipo_manutencao, valor_orcamento, status, data_liberado, dias_manutencao, mes_referencia)
+                   VALUES ($1, $2, $3, $4, $5::date, $6, $7, 'Corretiva', $8, 'Finalizado', CURRENT_DATE, $9, TO_CHAR(CURRENT_DATE, 'YYYY-MM'))`,
+                  [
+                    crData.vehicle_plate,
+                    crData.vehicle_model || '',
+                    crData.current_km || 0,
+                    crData.service_description || '',
+                    crData.created_at,
+                    baseNameFinal,
+                    workshopNameFinal,
+                    (parseFloat(crData.labor_cost) || 0) + (parseFloat(crData.parts_cost) || 0),
+                    diasManut
+                  ]
+                );
+                console.log(`[OFICINA-STATUS] Registro criado em manutencoes_finalizadas para placa: ${crData.vehicle_plate}`);
+              }
+            }
           }
         }
       } catch (syncError) {
