@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Upload, FileSpreadsheet, Download, Calendar, Filter, CheckCircle, XCircle, AlertTriangle, TrendingUp, DollarSign, Droplets, Building2, X, MessageCircle, Send, Phone, Truck } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PieChart, Pie, Tooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -125,11 +125,14 @@ const ConferenciaRotas: React.FC = () => {
     // Lista de todas as bases para o filtro
     const todasBases = Array.from(baseStats.keys()).sort();
 
+    const custoMedioPorLitro = totalLitros > 0 ? totalValor / totalLitros : 0;
+
     return {
       totalValor,
       totalLitros,
       totalRegistros,
       totalBases: baseStats.size,
+      custoMedioPorLitro,
       todasBasesValor,
       todasBasesLitros,
       basesRanking,
@@ -919,7 +922,7 @@ const ConferenciaRotas: React.FC = () => {
                     {dashboardStats && (
                       <div className="mb-6 space-y-6">
                         {/* Cards de Resumo */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                           <Card className="border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-white">
                             <CardContent className="pt-4">
                               <div className="flex items-center justify-between">
@@ -971,159 +974,149 @@ const ConferenciaRotas: React.FC = () => {
                               </div>
                             </CardContent>
                           </Card>
+                          
+                          <Card className="border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-50 to-white">
+                            <CardContent className="pt-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">Custo Médio / Litro</p>
+                                  <p className="text-2xl font-bold text-amber-700">
+                                    R$ {dashboardStats.custoMedioPorLitro.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </p>
+                                </div>
+                                <TrendingUp className="h-10 w-10 text-amber-400" />
+                              </div>
+                            </CardContent>
+                          </Card>
                         </div>
 
                         {/* Gráficos e Rankings */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                          {/* Todas as Bases por Valor */}
+                          {/* Ranking de Gastos por Base - Barras Horizontais */}
                           <Card>
                             <CardHeader className="pb-2">
                               <CardTitle className="text-lg flex items-center gap-2">
                                 <TrendingUp className="h-5 w-5 text-green-600" />
                                 Ranking Bases - Valor (Cartão)
                               </CardTitle>
-                              <CardDescription>Gastos em cartão de combustível por base</CardDescription>
+                              <CardDescription>Gastos em cartão de combustível por base - Top {Math.min(10, dashboardStats.todasBasesValor.length)}</CardDescription>
                             </CardHeader>
                             <CardContent>
                               {dashboardStats.todasBasesValor.length > 0 ? (
-                                <div style={{ height: 350 }}>
-                                  <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                      <Pie
-                                        data={dashboardStats.todasBasesValor}
-                                        dataKey="valor"
-                                        nameKey="base"
-                                        cx="50%"
-                                        cy="50%"
-                                        outerRadius={100}
-                                        innerRadius={50}
-                                        label={({ base, percent }) => `${base.substring(0, 10)}${base.length > 10 ? '...' : ''} (${(percent * 100).toFixed(0)}%)`}
-                                        labelLine={true}
+                                <>
+                                  <div style={{ height: Math.max(250, Math.min(10, dashboardStats.todasBasesValor.length) * 45) }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                      <BarChart
+                                        data={dashboardStats.todasBasesValor.slice(0, 10).map(item => ({
+                                          ...item,
+                                          baseLabel: item.base.length > 18 ? item.base.substring(0, 18) + '...' : item.base
+                                        }))}
+                                        layout="vertical"
+                                        margin={{ top: 5, right: 80, left: 10, bottom: 5 }}
                                       >
-                                        {dashboardStats.todasBasesValor.map((_, index) => (
-                                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                                        ))}
-                                      </Pie>
-                                      <Tooltip 
-                                        content={({ active, payload }) => {
-                                          if (active && payload && payload.length) {
-                                            const data = payload[0].payload;
-                                            return (
-                                              <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                                <p className="font-bold text-sm mb-1">{data.base}</p>
-                                                <p className="text-green-700">Valor: R$ {data.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                                                <p className="text-gray-600">Veículos: {data.count}</p>
-                                              </div>
-                                            );
-                                          }
-                                          return null;
-                                        }}
-                                      />
-                                    </PieChart>
-                                  </ResponsiveContainer>
-                                </div>
+                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                                        <XAxis type="number" tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`} />
+                                        <YAxis type="category" dataKey="baseLabel" width={140} tick={{ fontSize: 11 }} />
+                                        <Tooltip
+                                          content={({ active, payload }) => {
+                                            if (active && payload && payload.length) {
+                                              const data = payload[0].payload;
+                                              const pct = dashboardStats ? ((data.valor / dashboardStats.totalValor) * 100).toFixed(1) : '0';
+                                              return (
+                                                <div className="bg-white p-3 border rounded-lg shadow-lg">
+                                                  <p className="font-bold text-sm mb-1">{data.base}</p>
+                                                  <p className="text-green-700">Valor: R$ {data.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                                  <p className="text-gray-600">{data.count} veículo{data.count !== 1 ? 's' : ''}</p>
+                                                  <p className="text-amber-600 font-medium">{pct}% do total</p>
+                                                </div>
+                                              );
+                                            }
+                                            return null;
+                                          }}
+                                        />
+                                        <Bar dataKey="valor" radius={[0, 6, 6, 0]}
+                                          label={{ position: 'right', formatter: (v: number) => `R$ ${v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v.toFixed(0)}`, fontSize: 11, fill: '#374151' }}
+                                        >
+                                          {dashboardStats.todasBasesValor.slice(0, 10).map((_, index) => (
+                                            <Cell key={`val-${index}`} fill={index === 0 ? '#DC2626' : index < 3 ? '#F59E0B' : '#10B981'} />
+                                          ))}
+                                        </Bar>
+                                      </BarChart>
+                                    </ResponsiveContainer>
+                                  </div>
+                                  {dashboardStats.todasBasesValor.length > 10 && (
+                                    <div className="mt-3 p-2 bg-gray-50 rounded text-xs text-gray-600 text-center">
+                                      + {dashboardStats.todasBasesValor.length - 10} outras bases (R$ {dashboardStats.todasBasesValor.slice(10).reduce((s, b) => s + b.valor, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                                    </div>
+                                  )}
+                                </>
                               ) : (
                                 <p className="text-center text-muted-foreground py-8">Sem dados de valor</p>
                               )}
-                              
-                              {/* Lista completa */}
-                              <div className="mt-4 space-y-2 max-h-80 overflow-y-auto">
-                                {dashboardStats.todasBasesValor.map((item, idx) => (
-                                  <div key={item.base} className="flex items-center justify-between text-sm border-b pb-2">
-                                    <div className="flex items-center gap-2">
-                                      <span className="w-6 h-6 rounded-full text-white text-xs flex items-center justify-center" 
-                                            style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}>
-                                        {idx + 1}
-                                      </span>
-                                      <span className="font-medium text-xs">{item.base}</span>
-                                    </div>
-                                    <div className="text-right flex items-center gap-3">
-                                      <span className="font-bold text-green-700">
-                                        R$ {item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                      </span>
-                                      <span className="text-muted-foreground text-xs bg-gray-100 px-2 py-1 rounded">
-                                        {item.count} veículo{item.count !== 1 ? 's' : ''}
-                                      </span>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
                             </CardContent>
                           </Card>
 
-                          {/* Todas as Bases por Litros */}
+                          {/* Ranking de Consumo por Base - Barras Horizontais */}
                           <Card>
                             <CardHeader className="pb-2">
                               <CardTitle className="text-lg flex items-center gap-2">
                                 <Droplets className="h-5 w-5 text-blue-600" />
                                 Ranking Bases - Litros (Interno)
                               </CardTitle>
-                              <CardDescription>Consumo em postos internos por base</CardDescription>
+                              <CardDescription>Consumo em postos internos por base - Top {Math.min(10, dashboardStats.todasBasesLitros.length)}</CardDescription>
                             </CardHeader>
                             <CardContent>
                               {dashboardStats.todasBasesLitros.length > 0 ? (
-                                <div style={{ height: 350 }}>
-                                  <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                      <Pie
-                                        data={dashboardStats.todasBasesLitros}
-                                        dataKey="litros"
-                                        nameKey="base"
-                                        cx="50%"
-                                        cy="50%"
-                                        outerRadius={100}
-                                        innerRadius={50}
-                                        label={({ base, percent }) => `${base.substring(0, 10)}${base.length > 10 ? '...' : ''} (${(percent * 100).toFixed(0)}%)`}
-                                        labelLine={true}
+                                <>
+                                  <div style={{ height: Math.max(250, Math.min(10, dashboardStats.todasBasesLitros.length) * 45) }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                      <BarChart
+                                        data={dashboardStats.todasBasesLitros.slice(0, 10).map(item => ({
+                                          ...item,
+                                          baseLabel: item.base.length > 18 ? item.base.substring(0, 18) + '...' : item.base
+                                        }))}
+                                        layout="vertical"
+                                        margin={{ top: 5, right: 80, left: 10, bottom: 5 }}
                                       >
-                                        {dashboardStats.todasBasesLitros.map((_, index) => (
-                                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                                        ))}
-                                      </Pie>
-                                      <Tooltip 
-                                        content={({ active, payload }) => {
-                                          if (active && payload && payload.length) {
-                                            const data = payload[0].payload;
-                                            return (
-                                              <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                                <p className="font-bold text-sm mb-1">{data.base}</p>
-                                                <p className="text-blue-700">Litros: {data.litros.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L</p>
-                                                <p className="text-gray-600">Veículos: {data.count}</p>
-                                              </div>
-                                            );
-                                          }
-                                          return null;
-                                        }}
-                                      />
-                                    </PieChart>
-                                  </ResponsiveContainer>
-                                </div>
+                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                                        <XAxis type="number" tickFormatter={(v) => `${(v / 1).toFixed(0)} L`} />
+                                        <YAxis type="category" dataKey="baseLabel" width={140} tick={{ fontSize: 11 }} />
+                                        <Tooltip
+                                          content={({ active, payload }) => {
+                                            if (active && payload && payload.length) {
+                                              const data = payload[0].payload;
+                                              const pct = dashboardStats ? ((data.litros / dashboardStats.totalLitros) * 100).toFixed(1) : '0';
+                                              return (
+                                                <div className="bg-white p-3 border rounded-lg shadow-lg">
+                                                  <p className="font-bold text-sm mb-1">{data.base}</p>
+                                                  <p className="text-blue-700">Litros: {data.litros.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L</p>
+                                                  <p className="text-gray-600">{data.count} veículo{data.count !== 1 ? 's' : ''}</p>
+                                                  <p className="text-amber-600 font-medium">{pct}% do total</p>
+                                                </div>
+                                              );
+                                            }
+                                            return null;
+                                          }}
+                                        />
+                                        <Bar dataKey="litros" radius={[0, 6, 6, 0]}
+                                          label={{ position: 'right', formatter: (v: number) => `${v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v.toFixed(0)} L`, fontSize: 11, fill: '#374151' }}
+                                        >
+                                          {dashboardStats.todasBasesLitros.slice(0, 10).map((_, index) => (
+                                            <Cell key={`lit-${index}`} fill={index === 0 ? '#2563EB' : index < 3 ? '#60A5FA' : '#93C5FD'} />
+                                          ))}
+                                        </Bar>
+                                      </BarChart>
+                                    </ResponsiveContainer>
+                                  </div>
+                                  {dashboardStats.todasBasesLitros.length > 10 && (
+                                    <div className="mt-3 p-2 bg-gray-50 rounded text-xs text-gray-600 text-center">
+                                      + {dashboardStats.todasBasesLitros.length - 10} outras bases ({dashboardStats.todasBasesLitros.slice(10).reduce((s, b) => s + b.litros, 0).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L)
+                                    </div>
+                                  )}
+                                </>
                               ) : (
                                 <p className="text-center text-muted-foreground py-8">Sem dados de litros</p>
                               )}
-                              
-                              {/* Lista completa */}
-                              <div className="mt-4 space-y-2 max-h-80 overflow-y-auto">
-                                {dashboardStats.todasBasesLitros.map((item, idx) => (
-                                  <div key={item.base} className="flex items-center justify-between text-sm border-b pb-2">
-                                    <div className="flex items-center gap-2">
-                                      <span className="w-6 h-6 rounded-full text-white text-xs flex items-center justify-center" 
-                                            style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}>
-                                        {idx + 1}
-                                      </span>
-                                      <span className="font-medium text-xs">{item.base}</span>
-                                    </div>
-                                    <div className="text-right flex items-center gap-3">
-                                      <span className="font-bold text-blue-700">
-                                        {item.litros.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L
-                                      </span>
-                                      <span className="text-muted-foreground text-xs bg-gray-100 px-2 py-1 rounded">
-                                        {item.count} veículo{item.count !== 1 ? 's' : ''}
-                                      </span>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
                             </CardContent>
                           </Card>
                         </div>
