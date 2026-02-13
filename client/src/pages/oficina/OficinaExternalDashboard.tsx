@@ -408,13 +408,11 @@ export default function OficinaExternalDashboard() {
     }
 
     try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token');
-      
+      const token = tokenRef.current;
       if (!token) {
         toast({
           title: "Erro",
-          description: "Token de acesso não encontrado",
+          description: "Token de acesso não encontrado. Recarregue a página.",
           variant: "destructive",
         });
         return;
@@ -530,8 +528,15 @@ export default function OficinaExternalDashboard() {
         }
       }
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token');
+      const token = tokenRef.current;
+      if (!token) {
+        toast({
+          title: "Erro",
+          description: "Token de acesso não encontrado. Recarregue a página.",
+          variant: "destructive",
+        });
+        return;
+      }
       
       const carData = {
         ...carFormData,
@@ -594,11 +599,8 @@ export default function OficinaExternalDashboard() {
         });
         setParts([]);
         
-        // Recarregar dados
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        if (token && workshopData) {
-          await loadWorkshopData(workshopData.id, token);
+        if (tokenRef.current && workshopData) {
+          await loadWorkshopData(workshopData.id, tokenRef.current);
         }
         
         toast({
@@ -634,13 +636,11 @@ export default function OficinaExternalDashboard() {
 
   const handleReceiveCar = async () => {
     try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token');
-      
+      const token = tokenRef.current;
       if (!token || !workshopData) {
         toast({
           title: "Erro",
-          description: "Token de acesso não encontrado",
+          description: "Token de acesso não encontrado. Recarregue a página.",
           variant: "destructive",
         });
         return;
@@ -741,8 +741,7 @@ export default function OficinaExternalDashboard() {
     if (!editingOrder || !workshopData) return;
 
     try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token');
+      const token = tokenRef.current;
       
       // Calcular total das peças
       const totalParts = parts.reduce((sum, part) => sum + part.price, 0);
@@ -1013,16 +1012,7 @@ export default function OficinaExternalDashboard() {
     if (!editingReception) return;
 
     try {
-      const urlParams = new URLSearchParams(window.location.search);
-      let token = urlParams.get('token');
-      
-      // Tentar obter token da URL também (formato /oficina/:token)
-      if (!token) {
-        const pathParts = window.location.pathname.split('/');
-        if (pathParts[1] === 'oficina' && pathParts[2] && pathParts[2] !== 'external') {
-          token = pathParts[2];
-        }
-      }
+      const token = tokenRef.current;
 
       const response = await fetch(`/api/oficina/car-receptions/${editingReception.id}?token=${token}`, {
         method: 'PUT',
@@ -1044,10 +1034,8 @@ export default function OficinaExternalDashboard() {
 
       if (response.ok) {
         setEditingReception(null);
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        if (token && workshopData) {
-          await loadWorkshopData(workshopData.id, token);
+        if (tokenRef.current && workshopData) {
+          await loadWorkshopData(workshopData.id, tokenRef.current);
         }
         toast({
           title: "Sucesso",
@@ -1125,7 +1113,7 @@ export default function OficinaExternalDashboard() {
   const inProgressRequests = allRequests.filter(r => r.status === 'em_andamento' || r.status === 'em_reparo');
   const completedRequests = allRequests.filter(r => r.status === 'concluida' || r.status === 'entregue');
 
-  const token = new URLSearchParams(window.location.search).get('token') || '';
+  const token = tokenRef.current || '';
 
   return (
     <div className="container mx-auto py-8">
