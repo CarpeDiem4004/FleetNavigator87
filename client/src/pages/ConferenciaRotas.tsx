@@ -74,6 +74,7 @@ const ConferenciaRotas: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [selectedBaseFilter, setSelectedBaseFilter] = useState<string>('');
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
+  const [showNaoRodaramDetail, setShowNaoRodaramDetail] = useState(false);
   const [selectedBaseForWhatsapp, setSelectedBaseForWhatsapp] = useState<string>('');
   const [whatsappPhone, setWhatsappPhone] = useState('');
   const [sendingWhatsapp, setSendingWhatsapp] = useState(false);
@@ -781,7 +782,8 @@ const ConferenciaRotas: React.FC = () => {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-orange-200 bg-orange-50">
+                  <Card className="border-orange-200 bg-orange-50 cursor-pointer hover:shadow-lg hover:border-orange-400 transition-all"
+                        onClick={() => setShowNaoRodaramDetail(true)}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm text-orange-700 flex items-center gap-2">
                         <AlertTriangle className="h-4 w-4" />
@@ -792,9 +794,86 @@ const ConferenciaRotas: React.FC = () => {
                       <div className="text-2xl font-bold text-orange-600">
                         {conferenceReport.abasteceram_nao_rodaram.length}
                       </div>
+                      <p className="text-xs text-orange-500 mt-1">Clique para ver detalhes</p>
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* Dialog detalhes Abasteceram Não Rodaram */}
+                <Dialog open={showNaoRodaramDetail} onOpenChange={setShowNaoRodaramDetail}>
+                  <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2 text-orange-700">
+                        <AlertTriangle className="h-5 w-5" />
+                        Abasteceram Não Rodaram - Detalhamento
+                      </DialogTitle>
+                      <DialogDescription>
+                        Veículos que possuem registro de abastecimento mas não têm registro de rotas no período
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                      <div className="bg-orange-50 rounded-lg p-3 text-center">
+                        <p className="text-xs text-gray-500">Total Registros</p>
+                        <p className="text-xl font-bold text-orange-700">{conferenceReport.abasteceram_nao_rodaram.length}</p>
+                      </div>
+                      <div className="bg-green-50 rounded-lg p-3 text-center">
+                        <p className="text-xs text-gray-500">Valor Total</p>
+                        <p className="text-lg font-bold text-green-700">R$ {conferenceReport.abasteceram_nao_rodaram.reduce((s, r) => s + (r.valor || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      </div>
+                      <div className="bg-blue-50 rounded-lg p-3 text-center">
+                        <p className="text-xs text-gray-500">Litros Total</p>
+                        <p className="text-lg font-bold text-blue-700">{conferenceReport.abasteceram_nao_rodaram.reduce((s, r) => s + (r.litros || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L</p>
+                      </div>
+                      <div className="bg-purple-50 rounded-lg p-3 text-center">
+                        <p className="text-xs text-gray-500">Bases</p>
+                        <p className="text-xl font-bold text-purple-700">{new Set(conferenceReport.abasteceram_nao_rodaram.map(r => r.projeto || 'SEM BASE')).size}</p>
+                      </div>
+                    </div>
+                    <div className="overflow-auto flex-1 border rounded-lg">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-orange-50">
+                            <TableHead className="font-bold sticky top-0 bg-orange-50">#</TableHead>
+                            <TableHead className="font-bold sticky top-0 bg-orange-50">Placa</TableHead>
+                            <TableHead className="font-bold sticky top-0 bg-orange-50">Base</TableHead>
+                            <TableHead className="font-bold sticky top-0 bg-orange-50">Motorista</TableHead>
+                            <TableHead className="font-bold sticky top-0 bg-orange-50">Fonte</TableHead>
+                            <TableHead className="font-bold sticky top-0 bg-orange-50 text-right">Valor (R$)</TableHead>
+                            <TableHead className="font-bold sticky top-0 bg-orange-50 text-right">Litros</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {conferenceReport.abasteceram_nao_rodaram
+                            .slice()
+                            .sort((a, b) => (b.valor || 0) - (a.valor || 0))
+                            .map((record, idx) => (
+                            <TableRow key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                              <TableCell className="text-xs text-gray-400">{idx + 1}</TableCell>
+                              <TableCell className="font-mono font-bold text-sm">{record.placa}</TableCell>
+                              <TableCell className="text-sm">{record.projeto || 'SEM BASE'}</TableCell>
+                              <TableCell className="text-sm">{record.motorista || '-'}</TableCell>
+                              <TableCell>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                  record.fonte === 'cartao' || record.tipo?.includes('cartao') || record.tipo?.includes('fuel_card')
+                                    ? 'bg-amber-100 text-amber-700' 
+                                    : 'bg-blue-100 text-blue-700'
+                                }`}>
+                                  {record.fonte === 'cartao' || record.tipo?.includes('cartao') || record.tipo?.includes('fuel_card') ? 'Cartão' : 'Interno'}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right font-medium text-green-700">
+                                {record.valor ? `R$ ${record.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
+                              </TableCell>
+                              <TableCell className="text-right font-medium text-blue-700">
+                                {record.litros ? `${record.litros.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L` : '-'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </DialogContent>
+                </Dialog>
 
                 {/* Export Buttons */}
                 <div className="flex gap-2 justify-end">
