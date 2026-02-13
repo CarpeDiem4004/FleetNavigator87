@@ -26665,6 +26665,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const os = result.rows[0];
 
+      // Quando oficina_direcionada é definida e status aprovado, criar OS na tabela maintenance para dashboard da oficina
+      if (oficina_direcionada && status === 'aprovado') {
+        try {
+          const oficinaNorm = oficina_direcionada.trim();
+          
+          // Mapeamento determinístico para oficinas internas conhecidas
+          const internasMap: Record<string, string> = {
+            'oficina alair': 'Alair Manutenção e Serviços Automotivos Ltda',
+            'oficina autofrei': 'AUTOFREI COMERCIO DE PECAS E ACESSORIOS PARA VEICULOS LTDA',
+            'oficina murici': 'Oficina Teste Ltda'
+          };
+          
+          const lookupName = internasMap[oficinaNorm.toLowerCase()] || oficinaNorm;
+          
+          const oficinaLookup = await pool.query(
+            `SELECT id, name, razao_social FROM oficinas 
+             WHERE name ILIKE $1 OR razao_social ILIKE $1
+             LIMIT 1`,
+            [lookupName]
+          );
+
+          if (oficinaLookup.rows.length > 0) {
+            const oficinaId = oficinaLookup.rows[0].id;
+
+            const existingOS = await pool.query(
+              `SELECT id FROM maintenance WHERE vehicle_plate = $1 AND workshop_id = $2 AND source = $3`,
+              [os.placa, oficinaId, `os_request_${os.id}`]
+            );
+
+            if (existingOS.rows.length === 0) {
+              await pool.query(
+                `INSERT INTO maintenance (vehicle_plate, description, status, priority, workshop_id, source, maintenance_type, created_at)
+                 VALUES ($1, $2, 'pendente', $3, $4, $5, $6, NOW())`,
+                [
+                  os.placa,
+                  os.relato_problema || os.tipo_manutencao || 'Manutenção programada',
+                  os.urgencia || 'media',
+                  oficinaId,
+                  `os_request_${os.id}`,
+                  os.tipo_manutencao || 'corretiva'
+                ]
+              );
+              console.log(`[MaintenanceRequest] OS criada para oficina ${oficinaLookup.rows[0].name} (ID: ${oficinaId}), placa: ${os.placa}`);
+            }
+          } else {
+            console.log(`[MaintenanceRequest] Oficina "${oficina_direcionada}" não encontrada na tabela oficinas`);
+          }
+        } catch (osError) {
+          console.error('[MaintenanceRequest] Erro ao criar OS para oficina:', osError);
+        }
+      }
+
       // When OS is recusado or finalizado, auto-release vehicle from maintenance in fleet-status
       if (status === 'recusado' || status === 'finalizado') {
         try {
