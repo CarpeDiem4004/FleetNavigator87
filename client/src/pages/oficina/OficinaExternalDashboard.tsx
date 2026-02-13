@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -148,6 +148,8 @@ export default function OficinaExternalDashboard() {
   const [newPartPrice, setNewPartPrice] = useState('');
   const [showAllReceptions, setShowAllReceptions] = useState(false);
   const [showAllMaintenance, setShowAllMaintenance] = useState(false);
+  const [isLookingUpPlate, setIsLookingUpPlate] = useState(false);
+  const plateLookupTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Função para formatar valores em moeda brasileira
   const formatCurrency = (value: string) => {
@@ -298,6 +300,76 @@ export default function OficinaExternalDashboard() {
     
     setSelectedProjectBases(selectedProject?.bases || []);
   };
+
+  const getToken = useCallback(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    let token = urlParams.get('token');
+    if (!token) {
+      const pathParts = window.location.pathname.split('/');
+      if (pathParts[1] === 'oficina' && pathParts[2] && pathParts[2] !== 'external') {
+        token = pathParts[2];
+      }
+    }
+    return token;
+  }, []);
+
+  const lookupVehicleByPlate = useCallback(async (plate: string) => {
+    if (plate.length < 7) return;
+    const token = getToken();
+    if (!token) return;
+
+    const normalizedPlate = plate.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (normalizedPlate.length < 7) return;
+
+    try {
+      setIsLookingUpPlate(true);
+      const response = await fetch(`/api/oficina/vehicle-lookup/${normalizedPlate}?token=${token}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.found && data.vehicle) {
+          const v = data.vehicle;
+          setCarFormData(prev => ({
+            ...prev,
+            vehicleModel: v.model || prev.vehicleModel,
+            vehicleType: v.vehicleType || prev.vehicleType,
+            currentKm: v.kmAtual ? v.kmAtual.toString() : prev.currentKm,
+            projectId: v.projectId ? v.projectId.toString() : prev.projectId,
+            baseId: v.baseId ? v.baseId.toString() : prev.baseId,
+          }));
+          if (v.projectId) {
+            const selectedProject = projects.find(p => p.id.toString() === v.projectId.toString());
+            if (selectedProject) {
+              setSelectedProjectBases(selectedProject.bases || []);
+            }
+          }
+          toast({
+            title: "Veículo encontrado",
+            description: `${v.plate} - ${v.model || 'Sem modelo'}${v.projectName ? ` | ${v.projectName}` : ''}${v.baseName ? ` - ${v.baseName}` : ''}`,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao buscar veículo:', error);
+    } finally {
+      setIsLookingUpPlate(false);
+    }
+  }, [projects, toast, getToken]);
+
+  const handlePlateChange = useCallback((value: string) => {
+    const upperValue = value.toUpperCase();
+    setCarFormData(prev => ({ ...prev, vehiclePlate: upperValue }));
+    
+    if (plateLookupTimerRef.current) {
+      clearTimeout(plateLookupTimerRef.current);
+    }
+    
+    const cleanValue = upperValue.replace(/[^A-Z0-9]/g, '');
+    if (cleanValue.length >= 7) {
+      plateLookupTimerRef.current = setTimeout(() => {
+        lookupVehicleByPlate(cleanValue);
+      }, 500);
+    }
+  }, [lookupVehicleByPlate]);
 
   const addPart = () => {
     if (newPartName.trim() && newPartPrice.trim()) {
@@ -1802,13 +1874,21 @@ export default function OficinaExternalDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="plate">Placa do Veículo</Label>
-                    <Input
-                      id="plate"
-                      value={carFormData.vehiclePlate}
-                      onChange={(e) => setCarFormData(prev => ({ ...prev, vehiclePlate: e.target.value }))}
-                      placeholder="ABC1234"
-                      disabled={!!editingReception}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="plate"
+                        value={carFormData.vehiclePlate}
+                        onChange={(e) => editingReception ? null : handlePlateChange(e.target.value)}
+                        placeholder="ABC1234"
+                        disabled={!!editingReception}
+                        className={isLookingUpPlate ? 'pr-10' : ''}
+                      />
+                      {isLookingUpPlate && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="space-y-2">

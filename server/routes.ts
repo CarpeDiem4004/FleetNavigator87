@@ -14808,6 +14808,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/oficina/vehicle-lookup/:plate", async (req, res) => {
+    try {
+      const { plate } = req.params;
+      const token = req.query.token as string;
+      
+      if (!token) {
+        return res.status(401).json({ error: "Token obrigatório" });
+      }
+
+      const workshopResult = await pool.query(
+        'SELECT id FROM workshops WHERE token = $1',
+        [token]
+      );
+      if (workshopResult.rows.length === 0) {
+        return res.status(401).json({ error: "Token inválido" });
+      }
+
+      const normalizedPlate = plate.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      
+      const vehicleResult = await pool.query(`
+        SELECT v.id, v.plate, v.model, v.vehicle_type, v.km_atual, v.base_id, v.project_id,
+               p.name as project_name,
+               b.name as base_name
+        FROM vehicles v
+        LEFT JOIN projects p ON v.project_id = p.id
+        LEFT JOIN bases b ON v.base_id = b.id
+        WHERE UPPER(REPLACE(v.plate, '-', '')) = $1
+        LIMIT 1
+      `, [normalizedPlate]);
+
+      if (vehicleResult.rows.length === 0) {
+        return res.json({ found: false });
+      }
+
+      const vehicle = vehicleResult.rows[0];
+      return res.json({
+        found: true,
+        vehicle: {
+          id: vehicle.id,
+          plate: vehicle.plate,
+          model: vehicle.model || '',
+          vehicleType: vehicle.vehicle_type || '',
+          kmAtual: vehicle.km_atual || 0,
+          baseId: vehicle.base_id,
+          projectId: vehicle.project_id,
+          projectName: vehicle.project_name || '',
+          baseName: vehicle.base_name || ''
+        }
+      });
+    } catch (error) {
+      console.error('[OFICINA] Erro ao buscar veículo:', error);
+      return res.status(500).json({ error: "Erro interno" });
+    }
+  });
+
   // Criar recebimento de veículo
   app.post("/api/oficina/car-receptions", async (req, res) => {
     console.log('[OFICINA-CREATE] Requisição recebida:', {
