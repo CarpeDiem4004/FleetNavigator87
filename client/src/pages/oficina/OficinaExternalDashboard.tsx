@@ -150,6 +150,7 @@ export default function OficinaExternalDashboard() {
   const [showAllMaintenance, setShowAllMaintenance] = useState(false);
   const [isLookingUpPlate, setIsLookingUpPlate] = useState(false);
   const plateLookupTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const tokenRef = useRef<string | null>(null);
 
   // Função para formatar valores em moeda brasileira
   const formatCurrency = (value: string) => {
@@ -226,6 +227,7 @@ export default function OficinaExternalDashboard() {
       return;
     }
 
+    tokenRef.current = token;
     validateTokenAndLoadData(token);
     loadProjects();
   }, []);
@@ -301,28 +303,20 @@ export default function OficinaExternalDashboard() {
     setSelectedProjectBases(selectedProject?.bases || []);
   };
 
-  const getToken = useCallback(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    let token = urlParams.get('token');
-    if (!token) {
-      const pathParts = window.location.pathname.split('/');
-      if (pathParts[1] === 'oficina' && pathParts[2] && pathParts[2] !== 'external') {
-        token = pathParts[2];
-      }
-    }
-    return token;
-  }, []);
-
   const lookupVehicleByPlate = useCallback(async (plate: string) => {
     if (plate.length < 7) return;
-    const token = getToken();
-    if (!token) return;
+    const token = tokenRef.current;
+    if (!token) {
+      console.log('[PLATE-LOOKUP] No token available, aborting lookup');
+      return;
+    }
 
     const normalizedPlate = plate.toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (normalizedPlate.length < 7) return;
 
     try {
       setIsLookingUpPlate(true);
+      console.log('[PLATE-LOOKUP] Looking up plate:', normalizedPlate);
       const response = await fetch(`/api/oficina/vehicle-lookup/${normalizedPlate}?token=${token}`);
       if (response.ok) {
         const data = await response.json();
@@ -353,7 +347,7 @@ export default function OficinaExternalDashboard() {
     } finally {
       setIsLookingUpPlate(false);
     }
-  }, [projects, toast, getToken]);
+  }, [projects, toast]);
 
   const handlePlateChange = useCallback((value: string) => {
     const upperValue = value.toUpperCase();
@@ -364,8 +358,10 @@ export default function OficinaExternalDashboard() {
     }
     
     const cleanValue = upperValue.replace(/[^A-Z0-9]/g, '');
+    console.log('[PLATE-LOOKUP] Plate changed:', cleanValue, 'length:', cleanValue.length);
     if (cleanValue.length >= 7) {
       plateLookupTimerRef.current = setTimeout(() => {
+        console.log('[PLATE-LOOKUP] Triggering lookup for:', cleanValue);
         lookupVehicleByPlate(cleanValue);
       }, 500);
     }
@@ -1273,7 +1269,30 @@ export default function OficinaExternalDashboard() {
             <div className="grid gap-3 md:grid-cols-3">
               {/* Botão Receber Veículo */}
               <Button 
-                onClick={() => setIsCarFormOpen(true)}
+                onClick={() => {
+                  setEditingReception(null);
+                  setCarFormData({
+                    vehiclePlate: '',
+                    vehicleModel: '',
+                    vehicleType: 'carro',
+                    currentKm: '',
+                    baseId: '',
+                    projectId: '',
+                    serviceDescription: '',
+                    replacedParts: '',
+                    laborCost: '',
+                    partsCost: '',
+                    deliveryDeadline: '',
+                    status: 'recebido',
+                    notes: '',
+                    deliveryPersonName: '',
+                    deliveryPersonCpf: '',
+                    deliveryPersonPhone: ''
+                  });
+                  setParts([]);
+                  setSelectedProjectBases([]);
+                  setIsCarFormOpen(true);
+                }}
                 className="flex items-center gap-2 h-auto p-4 justify-start bg-green-600 hover:bg-green-700"
               >
                 <Car className="h-5 w-5" />

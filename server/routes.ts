@@ -14812,6 +14812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { plate } = req.params;
       const token = req.query.token as string;
+      console.log('[VEHICLE-LOOKUP] Plate:', plate, 'Token:', token ? token.substring(0, 15) + '...' : 'NONE');
       
       if (!token) {
         return res.status(401).json({ error: "Token obrigatório" });
