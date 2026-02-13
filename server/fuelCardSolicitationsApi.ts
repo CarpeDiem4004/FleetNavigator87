@@ -1450,7 +1450,7 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
     let paramIndex = 1;
     
     if (data_inicio && data_fim) {
-      dateFilter = ` WHERE data_solicitacao >= $${paramIndex}::date AND data_solicitacao < ($${paramIndex + 1}::date + interval '1 day')`;
+      dateFilter = ` WHERE data_uso IS NOT NULL AND data_uso >= $${paramIndex}::date AND data_uso <= $${paramIndex + 1}::date`;
       queryParams.push(data_inicio, data_fim);
       paramIndex += 2;
     }
@@ -1501,8 +1501,8 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
           '' as horario_abastecimento,
           COALESCE(base, 'Base Principal') as base
         FROM solicitacoes_fuel_card
-        ${dateFilter.replace(/data_solicitacao/g, 'data_solicitacao')}${baseFilter}
-        ORDER BY data_solicitacao DESC
+        ${dateFilter}${baseFilter}
+        ORDER BY data_uso DESC
       `;
       
       const traditionalResult = await pool.query(traditionalQuery, queryParams);
@@ -2106,12 +2106,14 @@ export async function exportFuelCardSolicitationsByDate(req: Request, res: Respo
           '' as rota_destino,
           '' as telefone_motorista,
           '' as horario_abastecimento,
-          COALESCE(base, 'Base Principal') as base
+          COALESCE(base, 'Base Principal') as base,
+          data_uso
         FROM solicitacoes_fuel_card
-        WHERE (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date >= $1::date 
-          AND (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date <= $2::date
+        WHERE data_uso IS NOT NULL
+          AND data_uso >= $1::date 
+          AND data_uso <= $2::date
           ${conditionals}
-        ORDER BY data_solicitacao DESC
+        ORDER BY data_uso DESC
       `;
       
       console.log('[EXPORT-BY-DATE] Query tradicional params:', params);

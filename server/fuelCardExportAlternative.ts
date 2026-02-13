@@ -212,9 +212,13 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
     console.log('[EXPORT-VELOE] Filtros:', { data_inicio, data_fim, origem });
 
     // Query para buscar solicitações Veloe agrupadas por PLACA DO CARTÃO
-    // Prioriza: placa_cartao (Line Haul) -> numero_cartao -> placa (fallback)
-    // IMPORTANTE: Para filtro de data, usar data_solicitacao como referência principal
-    // porque data_uso pode ser do dia seguinte (data do abastecimento real)
+    // Regra de negócio: Base filtra por data_uso, Line Haul filtra por data_solicitacao (atendimento no mesmo dia)
+    const isLineHaul = origem === 'line_hall';
+    const dateField = isLineHaul 
+      ? `(data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date`
+      : `data_uso`;
+    const dateNullCheck = isLineHaul ? '' : `AND data_uso IS NOT NULL`;
+    
     const query = `
       SELECT 
         UPPER(REPLACE(COALESCE(NULLIF(TRIM(placa_cartao), ''), NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')) as placa_cartao,
@@ -228,9 +232,10 @@ export async function exportVeloeToExcel(req: Request, res: Response) {
       FROM solicitacoes_fuel_card
       WHERE LOWER(provedor_cartao) LIKE '%veloe%' 
         AND LOWER(status) = 'pendente'
-        ${origem === 'line_hall' ? `AND LOWER(COALESCE(origem_tipo, '')) = 'line_hall'` : `AND (LOWER(COALESCE(origem_tipo, '')) != 'line_hall' OR origem_tipo IS NULL)`}
-        ${data_inicio ? `AND (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date >= '${data_inicio}'` : ''}
-        ${data_fim ? `AND (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date <= '${data_fim}'` : ''}
+        ${isLineHaul ? `AND LOWER(COALESCE(origem_tipo, '')) = 'line_hall'` : `AND (LOWER(COALESCE(origem_tipo, '')) != 'line_hall' OR origem_tipo IS NULL)`}
+        ${dateNullCheck}
+        ${data_inicio ? `AND ${dateField} >= '${data_inicio}'` : ''}
+        ${data_fim ? `AND ${dateField} <= '${data_fim}'` : ''}
       GROUP BY UPPER(REPLACE(COALESCE(NULLIF(TRIM(placa_cartao), ''), NULLIF(TRIM(numero_cartao), ''), placa), ' ', ''))
       ORDER BY placa_cartao
     `;
@@ -338,11 +343,13 @@ export async function exportTicketCards(req: Request, res: Response) {
     console.log('[EXPORT-TICKET] Filtros:', { data_inicio, data_fim, origem });
 
     // Buscar solicitações PENDENTES agrupadas por PLACA DO CARTÃO
-    // Prioriza: placa_cartao (Line Haul) -> numero_cartao -> placa (fallback)
-    // Line Haul usa data_solicitacao (data_uso é NULL), então usamos COALESCE
-    // Para Line Haul, a observação mostra a rota (origem → destino); para Bases, mostra o nome da base
-    // IMPORTANTE: Para filtro de data, usar data_solicitacao como referência principal
-    // porque data_uso pode ser do dia seguinte (data do abastecimento real)
+    // Regra de negócio: Base filtra por data_uso, Line Haul filtra por data_solicitacao (atendimento no mesmo dia)
+    const isLineHaul = origem === 'line_hall';
+    const dateField = isLineHaul 
+      ? `(data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date`
+      : `data_uso`;
+    const dateNullCheck = isLineHaul ? '' : `AND data_uso IS NOT NULL`;
+    
     const query = `
       SELECT 
         UPPER(REPLACE(COALESCE(NULLIF(TRIM(placa_cartao), ''), NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')) as placa_cartao,
@@ -356,9 +363,10 @@ export async function exportTicketCards(req: Request, res: Response) {
       FROM solicitacoes_fuel_card
       WHERE LOWER(provedor_cartao) LIKE '%ticket%' 
         AND LOWER(status) = 'pendente'
-        ${origem === 'line_hall' ? `AND LOWER(COALESCE(origem_tipo, '')) = 'line_hall'` : `AND (LOWER(COALESCE(origem_tipo, '')) != 'line_hall' OR origem_tipo IS NULL)`}
-        ${data_inicio ? `AND (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date >= '${data_inicio}'` : ''}
-        ${data_fim ? `AND (data_solicitacao AT TIME ZONE 'America/Sao_Paulo')::date <= '${data_fim}'` : ''}
+        ${isLineHaul ? `AND LOWER(COALESCE(origem_tipo, '')) = 'line_hall'` : `AND (LOWER(COALESCE(origem_tipo, '')) != 'line_hall' OR origem_tipo IS NULL)`}
+        ${dateNullCheck}
+        ${data_inicio ? `AND ${dateField} >= '${data_inicio}'` : ''}
+        ${data_fim ? `AND ${dateField} <= '${data_fim}'` : ''}
       GROUP BY UPPER(REPLACE(COALESCE(NULLIF(TRIM(placa_cartao), ''), NULLIF(TRIM(numero_cartao), ''), placa), ' ', ''))
       ORDER BY placa_cartao
     `;
