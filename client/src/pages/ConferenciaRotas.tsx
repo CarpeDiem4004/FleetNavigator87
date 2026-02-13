@@ -829,6 +829,30 @@ const ConferenciaRotas: React.FC = () => {
                         <p className="text-xl font-bold text-purple-700">{new Set(conferenceReport.abasteceram_nao_rodaram.map(r => r.projeto || 'SEM BASE')).size}</p>
                       </div>
                     </div>
+                    <div className="flex justify-end mb-2">
+                      <Button variant="outline" size="sm" onClick={() => {
+                        const data = conferenceReport.abasteceram_nao_rodaram
+                          .slice()
+                          .sort((a, b) => (b.valor || 0) - (a.valor || 0))
+                          .map((r, idx) => ({
+                            '#': idx + 1,
+                            'Placa': r.placa,
+                            'Base': r.projeto || 'SEM BASE',
+                            'Motorista': r.motorista || '-',
+                            'Fonte': r.fonte === 'cartao' || r.tipo?.includes('cartao') || r.tipo?.includes('fuel_card') ? 'Cartão' : 'Interno',
+                            'Valor (R$)': r.valor || 0,
+                            'Litros': r.litros || 0,
+                          }));
+                        const ws = XLSX.utils.json_to_sheet(data);
+                        const wb = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(wb, ws, 'Abasteceram Não Rodaram');
+                        ws['!cols'] = [{ wch: 5 }, { wch: 12 }, { wch: 20 }, { wch: 20 }, { wch: 10 }, { wch: 15 }, { wch: 12 }];
+                        XLSX.writeFile(wb, `abasteceram_nao_rodaram_${selectedDate}.xlsx`);
+                      }}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Exportar Excel
+                      </Button>
+                    </div>
                     <div className="overflow-auto flex-1 border rounded-lg">
                       <Table>
                         <TableHeader>
