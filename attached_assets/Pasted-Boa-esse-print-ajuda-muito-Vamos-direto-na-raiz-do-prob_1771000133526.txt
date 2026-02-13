@@ -1,0 +1,224 @@
+Boa, esse print ajuda **muito** 👍
+Vamos direto **na raiz do problema**, sem enrolação, e depois te digo **como corrigir de forma definitiva**.
+
+---
+
+## 🔴 O erro real (raiz)
+
+O erro **não é no formulário**.
+Ele acontece **na chamada da API**:
+
+```
+PUT /api/oficina/car-receptions/:id?token=...
+→ 401 Unauthorized
+→ "Token não fornecido"
+```
+
+Ou seja:
+
+👉 **O backend está esperando um token**
+👉 **O token não está chegando corretamente**
+👉 **Por isso o servidor devolve 401**
+
+---
+
+## 🧠 O que o console está dizendo (pistas importantes)
+
+### 1️⃣ Log importante
+
+```
+Erro da API (texto):
+{"message":"Token não fornecido"}
+```
+
+Isso significa que **no backend** existe algo como:
+
+```js
+if (!token) {
+  return res.status(401).json({ message: "Token não fornecido" })
+}
+```
+
+Então o backend **nem chega a processar os dados**.
+
+---
+
+### 2️⃣ O token deveria vir de ONDE?
+
+Pelo print da URL:
+
+```
+/oficina/external?token=...
+```
+
+👉 O token **existe na URL**
+👉 Mas **não está sendo enviado para a API**
+
+Isso é o ponto crítico.
+
+---
+
+## 🎯 Onde o erro normalmente acontece (99% dos casos)
+
+### ❌ Erro comum nº 1
+
+Você **lê o token da URL**, mas **não envia no fetch/axios**
+
+Exemplo do erro:
+
+```ts
+fetch('/api/oficina/car-receptions/63', {
+  method: 'PUT',
+  body: JSON.stringify(data)
+})
+```
+
+➡️ Aqui o token **não vai junto**.
+
+---
+
+### ❌ Erro comum nº 2
+
+O backend espera token no **header**, mas você manda como **query**
+
+Backend:
+
+```js
+const token = req.headers.authorization
+```
+
+Frontend:
+
+```ts
+?token=abc123
+```
+
+➡️ Nunca vai bater.
+
+---
+
+### ❌ Erro comum nº 3
+
+O token existe no `useSearchParams`, mas está `undefined` no submit
+
+Muito comum quando:
+
+* a página carrega
+* o estado não foi salvo
+* o submit usa outro escopo
+
+---
+
+## ✅ Como corrigir (do jeito profissional)
+
+Vou te passar **o padrão correto**, usado em produção.
+
+---
+
+## 🟢 PASSO 1 — Capturar o token corretamente
+
+No React (Next / Vite):
+
+```ts
+import { useSearchParams } from "react-router-dom"
+// ou next/navigation
+
+const searchParams = new URLSearchParams(window.location.search)
+const token = searchParams.get("token")
+
+console.log("TOKEN:", token)
+```
+
+⚠️ Se esse `console.log` imprimir `null`, o erro começa aqui.
+
+---
+
+## 🟢 PASSO 2 — Enviar o token no HEADER (recomendado)
+
+### Frontend (fetch)
+
+```ts
+await fetch(`/api/oficina/car-receptions/${id}`, {
+  method: "PUT",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`
+  },
+  body: JSON.stringify(payload)
+})
+```
+
+📌 **Esse é o padrão certo**
+Nada de token solto na URL da API.
+
+---
+
+## 🟢 PASSO 3 — Ajustar o backend para o padrão Bearer
+
+No backend (Express):
+
+```js
+const authHeader = req.headers.authorization
+
+if (!authHeader) {
+  return res.status(401).json({ message: "Token não fornecido" })
+}
+
+const token = authHeader.replace("Bearer ", "")
+```
+
+Ou mais seguro:
+
+```js
+const token = req.headers.authorization?.split(" ")[1]
+```
+
+---
+
+## 🟢 PASSO 4 — (Opcional) aceitar token via query também
+
+Se você **quer manter compatibilidade**:
+
+```js
+const token =
+  req.headers.authorization?.split(" ")[1] ||
+  req.query.token
+
+if (!token) {
+  return res.status(401).json({ message: "Token não fornecido" })
+}
+```
+
+---
+
+## 🧪 Checklist rápido pra você testar agora
+
+✔ O `console.log(token)` mostra valor?
+✔ O token está indo no **header Authorization**?
+✔ O backend lê do **mesmo lugar**?
+✔ Não tem `Bearer Bearer xxx` duplicado?
+
+---
+
+## 💡 Dica profissional (nível sistema corporativo)
+
+🔐 **Nunca confie só em token por query**
+
+* URL vaza em log
+* histórico do navegador
+* prints
+
+✔ Header Authorization é o caminho certo
+
+---
+
+## 🚀 Se quiser, eu faço pra você
+
+Se você quiser:
+
+* cola aqui o **código do fetch**
+* ou o **handler do backend**
+* ou o arquivo `OficinaExternalDashboard.tsx`
+
+👉 eu te devolvo **o código corrigido, pronto pra colar**
+sem achismo, sem gambiarra 😎

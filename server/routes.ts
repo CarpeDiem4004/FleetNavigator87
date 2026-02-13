@@ -14219,24 +14219,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware para verificar token da oficina
   const verificarTokenOficina = async (req: Request, res: Response, next: NextFunction) => {
     try {
+      let token: string | undefined;
+      
       const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
+      
+      if (!token) {
+        token = req.query.token as string;
+      }
+      
+      if (!token) {
         return res.status(401).json({ message: 'Token não fornecido' });
       }
-
-      const token = authHeader.substring(7);
       
       console.log('[OFICINA-AUTH] Verificando token:', token.substring(0, 20) + '...');
       
-      // Buscar oficina pelo external_token (não JWT)
-      const result = await pool.query(
+      // Buscar oficina pelo external_token na tabela oficinas
+      let result = await pool.query(
         'SELECT * FROM oficinas WHERE external_token = $1 AND status = $2',
         [token, 'ativo']
       );
       
       if (result.rows.length === 0) {
-        console.error('[OFICINA-AUTH] Token não encontrado ou oficina inativa');
-        return res.status(401).json({ message: 'Token inválido' });
+        // Tentar na tabela workshops
+        const workshopResult = await pool.query(
+          'SELECT id, name, cnpj, email, phone, token FROM workshops WHERE token = $1',
+          [token]
+        );
+        
+        if (workshopResult.rows.length === 0) {
+          console.error('[OFICINA-AUTH] Token não encontrado em oficinas nem workshops');
+          return res.status(401).json({ message: 'Token inválido' });
+        }
+        
+        const w = workshopResult.rows[0];
+        console.log('[OFICINA-AUTH] Workshop autenticado:', w.name);
+        req.oficina = { id: w.id, razao_social: w.name, cnpj: w.cnpj, email: w.email, telefone: w.phone, external_token: w.token };
+        return next();
       }
 
       console.log('[OFICINA-AUTH] Oficina autenticada:', result.rows[0].razao_social);
@@ -15048,61 +15069,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const data = req.body;
+      const workshopId = req.oficina.id;
 
-      // Verificar se o token é válido - verificar em ambas as tabelas
-      let result;
-      let workshop;
-
-      // Primeiro, verificar na tabela oficinas com external_token
-      const oficinasTokenQuery = `
-        SELECT 
-          o.id,
-          COALESCE(o.nome_fantasia, o.razao_social) as name,
-          o.cnpj,
-          o.email,
-          o.telefone as phone,
-          o.external_token as token,
-          o.status
-        FROM oficinas o
-        WHERE o.external_token = $1
-      `;
-
-      result = await pool.query(oficinasTokenQuery, [token]);
-
-      if (result.rows.length > 0) {
-        workshop = result.rows[0];
-      } else {
-        // Se não encontrou na tabela oficinas, verificar na tabela workshop_access_tokens
-        const accessTokenQuery = `
-          SELECT 
-            o.id,
-            COALESCE(o.nome_fantasia, o.razao_social) as name,
-            o.cnpj,
-            o.email,
-            o.telefone as phone,
-            wat.access_token as token,
-            o.status
-          FROM workshop_access_tokens wat
-          JOIN oficinas o ON wat.workshop_id = o.id
-          WHERE wat.access_token = $1 AND wat.is_active = true AND wat.expires_at > NOW()
-        `;
-
-        result = await pool.query(accessTokenQuery, [token]);
-
-        if (result.rows.length === 0) {
-          return res.status(401).json({
-            success: false,
-            message: "Token inválido ou expirado"
-          });
-        }
-
-        workshop = result.rows[0];
-      }
-      
       // Verificar se a recepção pertence a esta oficina
       const ownershipCheck = await pool.query(
         'SELECT id FROM car_receptions WHERE id = $1 AND workshop_id = $2',
-        [id, workshop.id]
+        [id, workshopId]
       );
       
       if (ownershipCheck.rows.length === 0) {
