@@ -15027,7 +15027,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
       } catch (maintenanceError) {
         console.error('[OFICINA-CREATE] Erro ao criar OS automática:', maintenanceError);
-        // Não bloquear o car_reception se a OS falhar
+      }
+
+      // INSERIR AUTOMATICAMENTE NA TABELA indicadores_dados para aparecer na aba "Em Manutenção"
+      try {
+        const latestUploadResult = await pool.query(
+          `SELECT id FROM indicadores_uploads ORDER BY id DESC LIMIT 1`
+        );
+        const uploadId = latestUploadResult.rows[0]?.id || 1;
+
+        const workshopName = workshop.name || 'Oficina Externa';
+        const baseResult = await pool.query(
+          `SELECT name FROM bases WHERE id = $1`,
+          [data.baseId]
+        );
+        const baseName = baseResult.rows[0]?.name || '';
+
+        const indicadorResult = await pool.query(
+          `INSERT INTO indicadores_dados 
+            (upload_id, placa, modelo, km, relato, data_agenda, focal, oficina_debito, atendimento, status)
+           VALUES ($1, $2, $3, $4, $5, CURRENT_DATE, $6, $7, $8, $9)
+           RETURNING id`,
+          [
+            uploadId,
+            reception.vehiclePlate,
+            reception.vehicleModel || '',
+            reception.currentKm || 0,
+            reception.serviceDescription || 'Recebido pela oficina',
+            baseName,
+            workshopName,
+            'Recebido',
+            'Em Manutenção'
+          ]
+        );
+        
+        // Salvar o ID do indicador no car_reception para sincronização futura
+        const indicadorId = indicadorResult.rows[0]?.id;
+        if (indicadorId) {
+          await pool.query(
+            `UPDATE car_receptions SET description = COALESCE(description, '') || ' [indicador_id:' || $1 || ']' WHERE id = $2`,
+            [indicadorId, reception.id]
+          );
+        }
+        console.log('[OFICINA-CREATE] Registro criado em indicadores_dados ID:', indicadorId, 'para placa:', reception.vehiclePlate);
+
+        await pool.query(
+          `INSERT INTO manutencoes_historico 
+            (placa, tipo, descricao, valor, status, km, data_entrada, oficina, base, data_manutencao)
+           VALUES ($1, 'Corretiva', $2, $3, $4, $5, CURRENT_DATE, $6, $7, CURRENT_DATE)
+           ON CONFLICT DO NOTHING`,
+          [
+            reception.vehiclePlate,
+            reception.serviceDescription || 'Manutenção registrada',
+            (reception.laborCost || 0) + (reception.partsCost || 0),
+            'Em Manutenção',
+            reception.currentKm || 0,
+            workshopName,
+            baseName
+          ]
+        );
+        console.log('[OFICINA-CREATE] Registro criado em manutencoes_historico para placa:', reception.vehiclePlate);
+      } catch (indicadorError) {
+        console.error('[OFICINA-CREATE] Erro ao criar registro em indicadores_dados:', indicadorError);
       }
 
       res.status(201).json({ 
@@ -15129,6 +15190,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
+        // Sincronizar status com indicadores_dados (aba Em Manutenção)
+        try {
+          const receptionData = await pool.query(
+            'SELECT vehicle_plate, status, service_description, description FROM car_receptions WHERE id = $1',
+            [id]
+          );
+          if (receptionData.rows.length > 0) {
+            const rec = receptionData.rows[0];
+            const statusMap: Record<string, string> = {
+              'recebido': 'Em Manutenção',
+              'em_analise': 'Em Manutenção',
+              'aguardando_pecas': 'Aguardando Peças',
+              'em_reparo': 'Em Manutenção',
+              'pronto': 'Finalizado',
+              'entregue': 'Finalizado'
+            };
+            const indicadorStatus = statusMap[rec.status] || 'Em Manutenção';
+
+            // Extrair indicador_id da description do car_reception
+            const indicadorIdMatch = rec.description?.match(/\[indicador_id:(\d+)\]/);
+            
+            if (indicadorIdMatch) {
+              const indicadorId = parseInt(indicadorIdMatch[1]);
+              if (indicadorStatus === 'Finalizado') {
+                await pool.query(
+                  `UPDATE indicadores_dados SET status = $1, data_finalizacao = CURRENT_DATE, updated_at = NOW() WHERE id = $2`,
+                  [indicadorStatus, indicadorId]
+                );
+              } else {
+                await pool.query(
+                  `UPDATE indicadores_dados SET status = $1, relato = COALESCE($2, relato), updated_at = NOW() WHERE id = $3`,
+                  [indicadorStatus, rec.service_description, indicadorId]
+                );
+              }
+              console.log(`[OFICINA-UPDATE] indicadores_dados ID ${indicadorId} sincronizado: ${rec.vehicle_plate} -> ${indicadorStatus}`);
+            } else {
+              // Fallback: buscar pela placa e oficina
+              const workshopName = req.oficina.razao_social || req.oficina.name || 'Oficina Externa';
+              await pool.query(
+                `UPDATE indicadores_dados SET status = $1, updated_at = NOW()
+                 WHERE UPPER(placa) = UPPER($2) AND oficina_debito = $3 AND status != 'Finalizado'`,
+                [indicadorStatus, rec.vehicle_plate, workshopName]
+              );
+              console.log(`[OFICINA-UPDATE] indicadores_dados sincronizado via fallback: ${rec.vehicle_plate} -> ${indicadorStatus}`);
+            }
+          }
+        } catch (syncError) {
+          console.error('[OFICINA-UPDATE] Erro ao sincronizar indicadores_dados:', syncError);
+        }
+
         res.json({ 
           success: true,
           message: 'Recebimento atualizado com sucesso',
@@ -15142,8 +15253,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: updateError instanceof Error ? updateError.message : 'Erro desconhecido'
         });
       }
-
-      console.log(`[OFICINA-UPDATE] Recepção ${id} atualizada com sucesso`);
     } catch (error) {
       console.error("[OFICINA-UPDATE] Erro ao atualizar recebimento:", error);
       res.status(500).json({ 
@@ -15258,6 +15367,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updated = await storage.updateCarReception(parseInt(id), updateData);
       if (!updated) {
         return res.status(404).json({ message: 'Recebimento não encontrado' });
+      }
+
+      // Sincronizar status com indicadores_dados (aba Em Manutenção)
+      try {
+        const receptionInfo = await pool.query(
+          'SELECT vehicle_plate, service_description, description FROM car_receptions WHERE id = $1',
+          [id]
+        );
+        if (receptionInfo.rows.length > 0) {
+          const rec = receptionInfo.rows[0];
+          const statusMap: Record<string, string> = {
+            'recebido': 'Em Manutenção',
+            'em_analise': 'Em Manutenção',
+            'aguardando_pecas': 'Aguardando Peças',
+            'em_reparo': 'Em Manutenção',
+            'pronto': 'Finalizado',
+            'entregue': 'Finalizado'
+          };
+          const indicadorStatus = statusMap[status] || 'Em Manutenção';
+
+          const indicadorIdMatch = rec.description?.match(/\[indicador_id:(\d+)\]/);
+          
+          if (indicadorIdMatch) {
+            const indicadorId = parseInt(indicadorIdMatch[1]);
+            if (indicadorStatus === 'Finalizado') {
+              await pool.query(
+                `UPDATE indicadores_dados SET status = $1, data_finalizacao = CURRENT_DATE, updated_at = NOW() WHERE id = $2`,
+                [indicadorStatus, indicadorId]
+              );
+            } else {
+              await pool.query(
+                `UPDATE indicadores_dados SET status = $1, updated_at = NOW() WHERE id = $2`,
+                [indicadorStatus, indicadorId]
+              );
+            }
+            console.log(`[OFICINA-STATUS] indicadores_dados ID ${indicadorId} sincronizado: ${rec.vehicle_plate} -> ${indicadorStatus}`);
+          } else {
+            const workshopName = req.oficina.razao_social || req.oficina.name || 'Oficina Externa';
+            await pool.query(
+              `UPDATE indicadores_dados SET status = $1, updated_at = NOW()
+               WHERE UPPER(placa) = UPPER($2) AND oficina_debito = $3 AND status != 'Finalizado'`,
+              [indicadorStatus, rec.vehicle_plate, workshopName]
+            );
+            console.log(`[OFICINA-STATUS] indicadores_dados sincronizado via fallback: ${rec.vehicle_plate} -> ${indicadorStatus}`);
+          }
+        }
+      } catch (syncError) {
+        console.error('[OFICINA-STATUS] Erro ao sincronizar indicadores_dados:', syncError);
       }
 
       res.json({ message: 'Status atualizado com sucesso' });
