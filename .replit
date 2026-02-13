@@ -48,3 +48,4 @@ integrations = ["javascript_supabase:1.0.0"]
 
 [userenv.shared]
 GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyJDYtWJv16q-U1UZHcDKfuBay7ehdq8zdyZxAo0G5tIbraedg7rWXZexPfRT9KE6y5/exec"
+MANAGER_DELETE_PASSWORD = "fleet2025@adm"

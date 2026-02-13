@@ -767,6 +767,46 @@ router.get('/liberado', isAuthenticated, async (req: Request, res: Response) => 
   }
 });
 
+// Excluir manutenção com senha de gestor
+router.delete('/dados/:id', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { senha_gestor } = req.body;
+
+    const SENHA_GESTORES = process.env.MANAGER_DELETE_PASSWORD || 'fleet2025@adm';
+
+    if (!senha_gestor || senha_gestor !== SENHA_GESTORES) {
+      return res.status(403).json({ success: false, message: 'Senha de gestor incorreta' });
+    }
+
+    const existing = await pool.query('SELECT * FROM indicadores_dados WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Registro não encontrado' });
+    }
+
+    const registro = existing.rows[0];
+
+    await pool.query('DELETE FROM indicadores_dados WHERE id = $1', [id]);
+
+    try {
+      await pool.query(
+        `INSERT INTO audit_logs (action, entity_type, entity_id, details, user_id)
+         VALUES ('DELETE_MANUTENCAO', 'indicadores_dados', $1, $2, $3)`,
+        [id, JSON.stringify({ placa: registro.placa, oficina: registro.oficina_debito, status: registro.status }), (req as any).user?.id || 0]
+      );
+    } catch (auditErr) {
+      console.error('[INDICADORES] Erro ao registrar audit log:', auditErr);
+    }
+
+    console.log(`[INDICADORES] Manutenção excluída: ID=${id}, Placa=${registro.placa}, por usuário=${(req as any).user?.username || 'unknown'}`);
+
+    res.json({ success: true, message: 'Manutenção excluída com sucesso' });
+  } catch (error) {
+    console.error('[INDICADORES] Erro ao excluir manutenção:', error);
+    res.status(500).json({ success: false, message: 'Erro ao excluir manutenção' });
+  }
+});
+
 // Estatísticas gerais
 router.get('/stats', isAuthenticated, async (req: Request, res: Response) => {
   try {

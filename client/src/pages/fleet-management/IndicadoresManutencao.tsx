@@ -1578,6 +1578,11 @@ export default function IndicadoresManutencao() {
   const [showTimelineModal, setShowTimelineModal] = useState(false);
   const [selectedDadoTimeline, setSelectedDadoTimeline] = useState<Dado | null>(null);
 
+  // Estados para exclusão de manutenção com senha
+  const [showDeleteManutencaoModal, setShowDeleteManutencaoModal] = useState(false);
+  const [deleteManutencaoTarget, setDeleteManutencaoTarget] = useState<Dado | null>(null);
+  const [deleteManutencaoSenha, setDeleteManutencaoSenha] = useState('');
+
   // Estados para modal de movimentações (entradas e saídas)
   const [showMovimentacoesModal, setShowMovimentacoesModal] = useState(false);
   const [movimentacoesPeriodo, setMovimentacoesPeriodo] = useState('30');
@@ -1697,6 +1702,30 @@ export default function IndicadoresManutencao() {
       unsubscribe();
     };
   }, []);
+
+  // Mutation para excluir manutenção com senha de gestor
+  const deleteManutencaoMutation = useMutation({
+    mutationFn: async ({ id, senha_gestor }: { id: number; senha_gestor: string }) => {
+      const res = await apiRequest('DELETE', `/api/indicadores/dados/${id}`, { senha_gestor });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Sucesso', description: 'Manutenção excluída com sucesso!' });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/dados'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/em-manutencao'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/stats'] });
+      setShowDeleteManutencaoModal(false);
+      setDeleteManutencaoTarget(null);
+      setDeleteManutencaoSenha('');
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: 'Erro', 
+        description: error.message || 'Senha incorreta ou erro ao excluir',
+        variant: 'destructive'
+      });
+    }
+  });
 
   // Mutation para atualizar dados em manutenção
   const updateDadoMutation = useMutation({
@@ -3155,6 +3184,20 @@ export default function IndicadoresManutencao() {
                                     data-testid={`btn-edit-dado-${dado.id}`}
                                   >
                                     <Edit className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => {
+                                      setDeleteManutencaoTarget(dado);
+                                      setDeleteManutencaoSenha('');
+                                      setShowDeleteManutencaoModal(true);
+                                    }}
+                                    title="Excluir manutenção"
+                                    data-testid={`btn-delete-dado-${dado.id}`}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
                                   </Button>
                                 </div>
                               </TableCell>
@@ -6056,6 +6099,74 @@ export default function IndicadoresManutencao() {
                   Cadastrar
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Exclusão de Manutenção com Senha */}
+      <Dialog open={showDeleteManutencaoModal} onOpenChange={(open) => {
+        if (!open) {
+          setShowDeleteManutencaoModal(false);
+          setDeleteManutencaoTarget(null);
+          setDeleteManutencaoSenha('');
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              Excluir Manutenção
+            </DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir este registro de manutenção? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteManutencaoTarget && (
+            <div className="space-y-4 py-2">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-1">
+                <p className="text-sm font-medium">Placa: <span className="text-red-700">{deleteManutencaoTarget.placa}</span></p>
+                <p className="text-sm text-muted-foreground">Oficina: {deleteManutencaoTarget.oficina_debito || '-'}</p>
+                <p className="text-sm text-muted-foreground">Status: {deleteManutencaoTarget.status || 'Em Manutenção'}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="senha-gestor" className="text-sm font-medium">
+                  Senha do Gestor
+                </Label>
+                <Input
+                  id="senha-gestor"
+                  type="password"
+                  placeholder="Digite a senha de gestor"
+                  value={deleteManutencaoSenha}
+                  onChange={(e) => setDeleteManutencaoSenha(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && deleteManutencaoSenha && deleteManutencaoTarget) {
+                      deleteManutencaoMutation.mutate({ id: deleteManutencaoTarget.id, senha_gestor: deleteManutencaoSenha });
+                    }
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">Informe a senha fornecida pela gestão de frota para confirmar a exclusão.</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => {
+              setShowDeleteManutencaoModal(false);
+              setDeleteManutencaoTarget(null);
+              setDeleteManutencaoSenha('');
+            }}>
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive"
+              disabled={!deleteManutencaoSenha || deleteManutencaoMutation.isPending}
+              onClick={() => {
+                if (deleteManutencaoTarget && deleteManutencaoSenha) {
+                  deleteManutencaoMutation.mutate({ id: deleteManutencaoTarget.id, senha_gestor: deleteManutencaoSenha });
+                }
+              }}
+            >
+              {deleteManutencaoMutation.isPending ? 'Excluindo...' : 'Excluir'}
             </Button>
           </DialogFooter>
         </DialogContent>
