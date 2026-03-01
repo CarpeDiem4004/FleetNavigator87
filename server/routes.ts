@@ -7269,6 +7269,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Criar nova solicitação de manutenção do Line Haul
+  app.post('/api/line-hall/maintenance-requests', isAuthenticated, async (req, res) => {
+    try {
+      const {
+        vehicle_plate, vehicle_model, vehicle_type, driver_name,
+        maintenance_type, description, priority, urgency,
+        workshop_name, driver_caused, stop_date, expected_completion_at,
+        estimated_cost, labor_cost, parts_cost, other_costs, parts_used,
+        notes, status
+      } = req.body;
+
+      if (!vehicle_plate || !description) {
+        return res.status(400).json({ success: false, message: 'Placa e descrição são obrigatórios' });
+      }
+
+      const protocolo = `LH-${Date.now()}`;
+      const resolvedUrgency = urgency || (priority === 'urgente' ? 'emergencial' : priority === 'alta' ? 'alta' : 'normal');
+
+      const result = await pool.query(`
+        INSERT INTO linehall_maintenance (
+          vehicle_plate, vehicle_model, vehicle_type, motorista_nome,
+          tipo_problema, description, urgency, priority, status,
+          workshop_name, driver_caused, stop_date, expected_completion_at,
+          estimated_cost, labor_cost, parts_cost, other_costs, parts_used,
+          observacoes, protocolo, created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9,
+          $10, $11, $12, $13, $14, $15, $16, $17, $18,
+          $19, $20, NOW(), NOW()
+        ) RETURNING *
+      `, [
+        vehicle_plate, vehicle_model || null, vehicle_type || 'cavalo', driver_name || null,
+        maintenance_type || null, description, resolvedUrgency, priority || 'media', status || 'pendente',
+        workshop_name || null, driver_caused || false, stop_date || null, expected_completion_at || null,
+        estimated_cost || 0, labor_cost || 0, parts_cost || 0, other_costs || 0, parts_used || null,
+        notes || null, protocolo
+      ]);
+
+      return res.status(201).json({ success: true, data: result.rows[0] });
+    } catch (error: any) {
+      console.error('Erro ao criar solicitação de manutenção Line Haul:', error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
   // Atualizar status de solicitação de manutenção do Line Hall
   app.put('/api/line-hall/maintenance-requests/:id/status', isAuthenticated, async (req, res) => {
     try {

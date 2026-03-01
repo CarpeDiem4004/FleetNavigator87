@@ -6040,7 +6040,7 @@ const LineHaulPage = () => {
                       .map(p => `${p.name}: R$ ${parseFloat(p.value || '0').toFixed(2)}`)
                       .join('; ');
 
-                    const response = await fetch('/api/maintenance/orders', {
+                    const response = await fetch('/api/line-hall/maintenance-requests', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       credentials: 'include',
@@ -6061,13 +6061,13 @@ const LineHaulPage = () => {
                         parts_cost: partsTotal,
                         other_costs: otherCosts,
                         parts_used: partsDescription || null,
-                        status: 'pendente',
-                        origem: 'line_hall'
+                        status: 'pendente'
                       })
                     });
 
                     if (!response.ok) {
-                      throw new Error('Erro ao criar manutenção');
+                      const errData = await response.json().catch(() => ({}));
+                      throw new Error(errData.message || 'Erro ao criar manutenção');
                     }
 
                     toast({
@@ -6094,7 +6094,7 @@ const LineHaulPage = () => {
                       other_costs: ''
                     });
                     
-                    queryClient.invalidateQueries({ queryKey: ['/api/maintenance/requests'] });
+                    fetchMaintenanceRequests();
                   } catch (error) {
                     toast({
                       title: "Erro",
