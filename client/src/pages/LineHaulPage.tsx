@@ -1016,8 +1016,8 @@ const LineHaulPage = () => {
       const res = await apiRequest('GET', '/api/line-hall/vehicles');
       const response = await res.json();
       if (response.success && Array.isArray(response.data)) {
-        const mapped = response.data.map((v: any) => ({
-          id: v.id,
+        const mapped = response.data.map((v: any, idx: number) => ({
+          id: idx + 1,
           plate: v.placa || v.plate || '',
           model: v.modelo || v.model || '',
           vehicleType: v.tipo || v.vehicle_type || 'cavalo_mecanico',

@@ -7273,11 +7273,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/line-hall/vehicles', isAuthenticated, async (req, res) => {
     try {
       const result = await pool.query(`
-        SELECT id, COALESCE(placa, plate) as placa, COALESCE(modelo, model) as modelo,
-               COALESCE(tipo, vehicle_type) as tipo, status, km_atual
-        FROM linehall_vehicles
-        WHERE COALESCE(placa, plate) IS NOT NULL
-        ORDER BY COALESCE(placa, plate) ASC
+        SELECT DISTINCT ON (placa) placa, modelo, tipo, status
+        FROM (
+          SELECT COALESCE(lv.placa, lv.plate) as placa,
+                 COALESCE(lv.modelo, lv.model) as modelo,
+                 COALESCE(lv.tipo, lv.vehicle_type) as tipo,
+                 lv.status
+          FROM linehall_vehicles lv
+          WHERE COALESCE(lv.placa, lv.plate) IS NOT NULL
+
+          UNION
+
+          SELECT v.placa,
+                 v.modelo,
+                 COALESCE(v.tipo, v.marca) as tipo,
+                 v.status
+          FROM veiculos v
+          WHERE v.placa IS NOT NULL
+            AND (v.base ILIKE 'LH%' OR v.base_id = 148)
+            AND v.status NOT ILIKE '%desmob%'
+        ) combined
+        ORDER BY placa ASC
       `);
       return res.status(200).json({ success: true, data: result.rows });
     } catch (error: any) {
