@@ -411,6 +411,8 @@ const LineHaulPage = () => {
   // Estados para novo formulário de manutenção
   const [showNewMaintenanceDialog, setShowNewMaintenanceDialog] = useState(false);
   const [isCreatingMaintenance, setIsCreatingMaintenance] = useState(false);
+  const [plateSearchTerm, setPlateSearchTerm] = useState('');
+  const [showPlateDropdown, setShowPlateDropdown] = useState(false);
   const [newMaintenancePartsList, setNewMaintenancePartsList] = useState<Array<{ name: string; value: string }>>([]);
   const [newMaintenanceForm, setNewMaintenanceForm] = useState({
     vehicle_plate: '',
@@ -1011,17 +1013,18 @@ const LineHaulPage = () => {
 
   const fetchVehicles = async () => {
     try {
-      const res = await apiRequest('GET', '/api/vehicles');
+      const res = await apiRequest('GET', '/api/line-hall/vehicles');
       const response = await res.json();
-      if (response && Array.isArray(response)) {
-        const lineHaulVehicles = response.filter(vehicle => 
-          vehicle.operacao_tipo === 'line_hall_shopee' || 
-          vehicle.basename === 'Line Haul Murici' ||
-          vehicle.base_id === 2 ||
-          vehicle.vehicleType === 'cavalo_mecanico' || 
-          vehicle.vehicleType === 'carreta'
-        );
-        setVehicles(lineHaulVehicles);
+      if (response.success && Array.isArray(response.data)) {
+        const mapped = response.data.map((v: any) => ({
+          id: v.id,
+          plate: v.placa || v.plate || '',
+          model: v.modelo || v.model || '',
+          vehicleType: v.tipo || v.vehicle_type || 'cavalo_mecanico',
+          status: v.status || 'ativo',
+          baseId: v.base_id || 0
+        }));
+        setVehicles(mapped);
       }
     } catch (error) {
       console.error('Erro ao buscar veículos:', error);
@@ -5725,7 +5728,7 @@ const LineHaulPage = () => {
         </Dialog>
 
         {/* Dialog de Nova Manutenção */}
-        <Dialog open={showNewMaintenanceDialog} onOpenChange={setShowNewMaintenanceDialog}>
+        <Dialog open={showNewMaintenanceDialog} onOpenChange={(open) => { setShowNewMaintenanceDialog(open); if (!open) { setPlateSearchTerm(''); setShowPlateDropdown(false); } }}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-green-700">
@@ -5742,13 +5745,68 @@ const LineHaulPage = () => {
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="new-vehicle-plate">Placa do Veículo *</Label>
-                  <Input
-                    id="new-vehicle-plate"
-                    value={newMaintenanceForm.vehicle_plate}
-                    onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, vehicle_plate: e.target.value.toUpperCase() }))}
-                    placeholder="ABC1D23"
-                    maxLength={7}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="new-vehicle-plate"
+                      value={newMaintenanceForm.vehicle_plate ? newMaintenanceForm.vehicle_plate : plateSearchTerm}
+                      onChange={(e) => {
+                        const val = e.target.value.toUpperCase();
+                        setPlateSearchTerm(val);
+                        setNewMaintenanceForm(prev => ({ ...prev, vehicle_plate: '' }));
+                        setShowPlateDropdown(true);
+                      }}
+                      onFocus={() => setShowPlateDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowPlateDropdown(false), 150)}
+                      placeholder="Buscar placa..."
+                      autoComplete="off"
+                    />
+                    {showPlateDropdown && (
+                      <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-52 overflow-y-auto mt-1">
+                        {vehicles
+                          .filter(v => !plateSearchTerm || v.plate.toUpperCase().includes(plateSearchTerm.toUpperCase()))
+                          .map((vehicle) => (
+                            <div
+                              key={vehicle.id}
+                              className="px-3 py-2 cursor-pointer hover:bg-blue-50 flex items-center gap-2 text-sm"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                const tipo = vehicle.vehicleType?.includes('carreta') ? 'carreta' : 'cavalo';
+                                setNewMaintenanceForm(prev => ({
+                                  ...prev,
+                                  vehicle_plate: vehicle.plate,
+                                  vehicle_model: vehicle.model || prev.vehicle_model,
+                                  vehicle_type: tipo
+                                }));
+                                setPlateSearchTerm('');
+                                setShowPlateDropdown(false);
+                              }}
+                            >
+                              <span className="font-mono font-semibold text-gray-800">{vehicle.plate}</span>
+                              <span className="text-gray-500">— {vehicle.model}</span>
+                              <span className="ml-auto text-xs text-gray-400 capitalize">{vehicle.vehicleType?.replace('_mecanico','')}</span>
+                            </div>
+                          ))}
+                        {vehicles.filter(v => !plateSearchTerm || v.plate.toUpperCase().includes(plateSearchTerm.toUpperCase())).length === 0 && (
+                          <div className="px-3 py-2 text-sm text-gray-500">Nenhum veículo encontrado</div>
+                        )}
+                      </div>
+                    )}
+                    {newMaintenanceForm.vehicle_plate && (
+                      <button
+                        type="button"
+                        className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 text-xs"
+                        onClick={() => {
+                          setNewMaintenanceForm(prev => ({ ...prev, vehicle_plate: '', vehicle_model: '', vehicle_type: 'cavalo' }));
+                          setPlateSearchTerm('');
+                        }}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                  {newMaintenanceForm.vehicle_plate && (
+                    <p className="text-xs text-green-600 font-medium">✓ {newMaintenanceForm.vehicle_plate} selecionada</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="new-vehicle-model">Modelo do Veículo</Label>

@@ -7269,6 +7269,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Listar veículos do Line Haul
+  app.get('/api/line-hall/vehicles', isAuthenticated, async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT id, COALESCE(placa, plate) as placa, COALESCE(modelo, model) as modelo,
+               COALESCE(tipo, vehicle_type) as tipo, status, km_atual
+        FROM linehall_vehicles
+        WHERE COALESCE(placa, plate) IS NOT NULL
+        ORDER BY COALESCE(placa, plate) ASC
+      `);
+      return res.status(200).json({ success: true, data: result.rows });
+    } catch (error: any) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
   // Criar nova solicitação de manutenção do Line Haul
   app.post('/api/line-hall/maintenance-requests', isAuthenticated, async (req, res) => {
     try {
