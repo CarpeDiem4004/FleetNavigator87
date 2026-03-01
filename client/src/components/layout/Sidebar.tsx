@@ -274,6 +274,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Submenu para Bases com opções específicas para Campinas
     { name: 'Bases', href: '#', icon: Warehouse, subItems: baseItems },
     { name: 'Usuários', href: '/users', icon: Users },
+    { name: 'Permissões Operador', href: '/operator-permissions', icon: KeyRound },
   ];
 
   // Itens específicos para Gestão de Frotas
@@ -426,6 +427,14 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   
   // Verifique se o usuário é Line Hall
   const isLineHallUser = user.role === 'line_hall';
+
+  // Verifique se o usuário é Operador de Frota
+  const isOperatorFrota = user.role === 'operador_frota';
+
+  // Itens do menu para Operador de Frota (minimal - apenas dashboard e acesso direto)
+  const operatorFrotaItems: NavItem[] = [
+    { name: 'Meus Módulos', href: '/operator-dashboard', icon: Gauge },
+  ];
   
   // Para debugging - exiba o tipo de usuário e os menus disponíveis
   console.log(`Tipo de usuário: ${isFleetUser ? 'Gestão de Frotas' : isFuelManager ? 'Gestor de Combustível' : isLineHallUser ? 'Line Hall' : 'Normal'} (${user.role})`);
@@ -459,7 +468,10 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   
   // Selecionando os itens de navegação apropriados
   let navItemsBase;
-  if (isFleetUser) {
+  if (isOperatorFrota) {
+    navItemsBase = operatorFrotaItems;
+    console.log('[MENU DEBUG] Usando operatorFrotaItems');
+  } else if (isFleetUser) {
     navItemsBase = fleetManagementItems;
     console.log('[MENU DEBUG] Usando fleetManagementItems');
   } else if (isFuelManager) {

@@ -12,7 +12,7 @@ export const tireStatusEnum = pgEnum('tire_status', ['em_uso', 'estoque', 'desca
 export const fuelTypeEnum = pgEnum('fuel_type', ['arla', 'diesel']);
 export const fineStatusEnum = pgEnum('fine_status', ['pendente', 'paga', 'contestada']);
 export const tripStatusEnum = pgEnum('trip_status', ['programada', 'carregando', 'aguardando_carga', 'em_transito', 'finalizada']);
-export const userRoleEnum = pgEnum('user_role', ['admin', 'ceo', 'gerente_geral', 'gestor', 'operador', 'oficina', 'pneus', 'gestor_frota', 'posto', 'line_hall', 'gestor_equipamentos', 'operador_status_frota']);
+export const userRoleEnum = pgEnum('user_role', ['admin', 'ceo', 'gerente_geral', 'gestor', 'operador', 'oficina', 'pneus', 'gestor_frota', 'posto', 'line_hall', 'gestor_equipamentos', 'operador_status_frota', 'operador_frota']);
 
 // Enum para roles de usuários em bases específicas (sistema de segurança de links externos)
 export const baseUserRoleEnum = pgEnum('base_user_role', ['admin_base', 'gestor_base', 'operador_base', 'visualizador']);
@@ -255,6 +255,28 @@ export const users = pgTable("users", {
   oficina_id: integer("oficina_id").references(() => workshops.id),
   lastLogin: timestamp("last_login", { mode: "date" }),
   isActive: boolean("is_active").default(true),
+});
+
+// Tabela de cards disponíveis para operador_frota
+export const operatorCards = pgTable("operator_cards", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  icon: text("icon").notNull().default('Wrench'),
+  href: text("href").notNull(),
+  defaultEnabled: boolean("default_enabled").default(false),
+  category: text("category").default('geral'),
+  color: text("color").default('blue'),
+  sortOrder: integer("sort_order").default(0),
+});
+
+// Tabela de permissões por card para cada operador
+export const operatorCardPermissions = pgTable("operator_card_permissions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  cardId: text("card_id").notNull().references(() => operatorCards.id),
+  canView: boolean("can_view").default(true),
+  canAccess: boolean("can_access").default(true),
 });
 
 // Tabela de vínculo usuário-base para controle de acesso a links externos

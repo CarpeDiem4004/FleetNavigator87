@@ -60,7 +60,7 @@ import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
 import ProtectedBaseRoute from "@/components/ProtectedBaseRoute";
 // LineHallRedirect removido conforme solicitação
 import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { SupabaseAuthProvider } from "@/context/SupabaseAuthContext";
 import { FuelCardDraftProvider } from "@/contexts/FuelCardDraftContext";
 
@@ -201,6 +201,8 @@ import CoordinatorManagement from "@/pages/CoordinatorManagement";
 import TestMaintenancePlates from "@/pages/TestMaintenancePlates";
 import TestLoginBase from "@/pages/TestLoginBase";
 import ExternalLinksManager from "@/pages/ExternalLinksManager";
+import OperatorDashboard from "@/pages/OperatorDashboard";
+import OperatorPermissionsManager from "@/pages/OperatorPermissionsManager";
 
 // Importação das páginas de Abastecimento Terceiros
 import AbastecimentoTerceirosLogin from "@/pages/AbastecimentoTerceirosLogin";
@@ -448,6 +450,19 @@ import TestLogout from "@/pages/TestLogout";
 import TestCampinasLogin from "@/pages/TestCampinasLogin";
 import TestOperatorSecurity from "@/pages/TestOperatorSecurity";
 import TestMaintenanceData from "@/pages/TestMaintenanceData";
+
+function RootRedirect() {
+  const { user } = useAuth();
+  const [, navigate] = useLocation();
+  useEffect(() => {
+    if (user?.role === 'operador_frota') {
+      navigate('/operator-dashboard');
+    } else {
+      navigate('/fleet-management');
+    }
+  }, [user?.role]);
+  return null;
+}
 
 function App() {
   // ⚠️ DESABILITADO - Hook de injeção automática de JWT estava causando conflitos
@@ -790,9 +805,9 @@ function App() {
             component={ExecutiveDashboard} 
             allowedRoles={['admin', 'ceo', 'gerente_geral']} 
           />
-          {/* Redirecionar a rota raiz para gestão de frota */}
+          {/* Redirecionar a rota raiz conforme role do usuário */}
           <Route path="/">
-            <Redirect to="/fleet-management" />
+            <RootRedirect />
           </Route>
           <ProtectedRoute path="/painel-operacional" component={PainelOperacional} />
           
@@ -861,6 +876,8 @@ function App() {
           <ProtectedRoute path="/painel-atendimento-saldo" component={MessagesAttendancePage} />
           <ProtectedRoute path="/line-haul/whatsapp" component={LineHaulWhatsAppPanel} />
           <ProtectedRoute path="/users" component={UsersNew} />
+          <ProtectedRoute path="/operator-dashboard" component={OperatorDashboard} />
+          <ProtectedRoute path="/operator-permissions" component={OperatorPermissionsManager} />
           <ProtectedRoute path="/bases" component={Bases} />
           <ProtectedRoute path="/bases/links-externos" component={LinksExternosBases} />
           <ProtectedRoute path="/external-links" component={ExternalLinksManager} />

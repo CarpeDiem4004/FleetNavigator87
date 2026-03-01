@@ -16373,6 +16373,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // LineHall routes removidas conforme solicitação
   
+  // ===== OPERATOR FROTA - CARD PERMISSIONS SYSTEM =====
+
+  // Listar todos os cards disponíveis
+  app.get("/api/operator-cards", isAuthenticated, async (req, res) => {
+    try {
+      const result = await pool.query(`SELECT * FROM operator_cards ORDER BY sort_order, name`);
+      return res.json({ success: true, data: result.rows });
+    } catch (err: any) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // Listar usuários com role operador_frota
+  app.get("/api/operator-frota/users", isAuthenticated, async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT id, name, email, role, basename, is_active FROM users WHERE role = 'operador_frota' ORDER BY name`
+      );
+      return res.json({ success: true, data: result.rows });
+    } catch (err: any) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // Buscar permissões de cards de um usuário (merged: default + custom)
+  app.get("/api/operator-card-permissions/:userId", isAuthenticated, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const result = await pool.query(`
+        SELECT
+          oc.id,
+          oc.name,
+          oc.description,
+          oc.icon,
+          oc.href,
+          oc.category,
+          oc.color,
+          oc.sort_order,
+          COALESCE(ocp.can_view, oc.default_enabled) AS can_view,
+          COALESCE(ocp.can_access, oc.default_enabled) AS can_access
+        FROM operator_cards oc
+        LEFT JOIN operator_card_permissions ocp
+          ON oc.id = ocp.card_id AND ocp.user_id = $1
+        ORDER BY oc.sort_order, oc.name
+      `, [userId]);
+      return res.json({ success: true, data: result.rows });
+    } catch (err: any) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // Salvar permissões de cards de um usuário (admin only)
+  app.put("/api/operator-card-permissions/:userId", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      if (!['admin', 'ceo', 'gerente_geral', 'gestor_frota'].includes(user?.role)) {
+        return res.status(403).json({ success: false, message: 'Acesso não autorizado' });
+      }
+      const { userId } = req.params;
+      const { permissions } = req.body;
+      if (!Array.isArray(permissions)) {
+        return res.status(400).json({ success: false, message: 'permissions deve ser um array' });
+      }
+      // Upsert each permission
+      for (const perm of permissions) {
+        await pool.query(`
+          INSERT INTO operator_card_permissions (user_id, card_id, can_view, can_access)
+          VALUES ($1, $2, $3, $4)
+          ON CONFLICT (user_id, card_id) DO UPDATE
+            SET can_view = EXCLUDED.can_view, can_access = EXCLUDED.can_access
+        `, [userId, perm.cardId, perm.canView, perm.canAccess]);
+      }
+      return res.json({ success: true, message: 'Permissões atualizadas com sucesso' });
+    } catch (err: any) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // ===== FIM OPERATOR FROTA =====
+
   // Users routes (admin only)
   // Rota original com middleware isAuthenticated (mais permissivo) para compatibilidade
   app.get("/api/users", isAuthenticated, async (req, res) => {

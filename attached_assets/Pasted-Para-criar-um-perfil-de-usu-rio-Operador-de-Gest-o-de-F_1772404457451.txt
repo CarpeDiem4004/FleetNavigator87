@@ -1,0 +1,732 @@
+Para criar um perfil de usuário "Operador de Gestão de Frota" com controle de acesso por cards no Replit, vou te ajudar a estruturar isso de forma organizada:
+
+## Estrutura de Pastas Recomendada:
+
+```
+📁 gestao-frota/
+├── 📁 backend/
+│   ├── 📁 models/
+│   │   ├── User.js
+│   │   └── Permission.js
+│   ├── 📁 middleware/
+│   │   └── auth.js
+│   ├── 📁 routes/
+│   │   ├── auth.js
+│   │   └── permissions.js
+│   └── server.js
+├── 📁 frontend/
+│   ├── 📁 src/
+│   │   ├── 📁 components/
+│   │   │   ├── 📁 cards/
+│   │   │   │   ├── CardWrapper.jsx
+│   │   │   │   ├── ManutencaoCard.jsx
+│   │   │   │   ├── OficinaCard.jsx
+│   │   │   │   ├── EstoqueCard.jsx
+│   │   │   │   └── OrcamentosCard.jsx
+│   │   │   ├── 📁 layout/
+│   │   │   │   └── Dashboard.jsx
+│   │   │   └── 📁 auth/
+│   │   │       └── PrivateRoute.jsx
+│   │   ├── 📁 contexts/
+│   │   │   └── AuthContext.jsx
+│   │   ├── 📁 utils/
+│   │   │   └── permissions.js
+│   │   └── App.jsx
+│   └── package.json
+├── 📁 database/
+│   └── schema.sql
+└── .env
+```
+
+## 1. Configuração do Banco de Dados (schema.sql):
+
+```sql
+-- Tabela de usuários
+CREATE TABLE users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    role ENUM('admin', 'operador_frota', 'visualizador') DEFAULT 'visualizador',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabela de permissões por card
+CREATE TABLE card_permissions (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    card_id VARCHAR(50) NOT NULL,
+    can_view BOOLEAN DEFAULT true,
+    can_access BOOLEAN DEFAULT true,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    UNIQUE KEY unique_user_card (user_id, card_id)
+);
+
+-- Cards disponíveis no sistema
+CREATE TABLE cards (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    default_for_operator BOOLEAN DEFAULT false
+);
+
+-- Inserir cards padrão
+INSERT INTO cards (id, name, default_for_operator) VALUES
+('manutencao', 'Sistema de Manutenção', true),
+('oficina_murici', 'Oficina Murici', true),
+('estoque_pecas', 'Estoque de Peças', true),
+('orcamentos_oficinas', 'Orçamentos de Oficinas', false),
+('oficinas_credenciais', 'Oficinas Credenciais', false),
+('parceiros_guincho', 'Parceiros de Guincho', false),
+('status_diario', 'Status Diário da Frota', true),
+('visao_geral', 'Visão Geral da Frota', true);
+```
+
+## 2. Backend - Model de Permissões (Permission.js):
+
+```javascript
+// backend/models/Permission.js
+const db = require('../config/database');
+
+class Permission {
+    static async getUserPermissions(userId) {
+        const [rows] = await db.query(`
+            SELECT c.*, 
+                   COALESCE(cp.can_view, c.default_for_operator) as can_view,
+                   COALESCE(cp.can_access, c.default_for_operator) as can_access
+            FROM cards c
+            LEFT JOIN card_permissions cp ON c.id = cp.card_id AND cp.user_id = ?
+            ORDER BY c.id
+        `, [userId]);
+        
+        return rows;
+    }
+
+    static async updateUserCardPermission(userId, cardId, permissions) {
+        const { can_view, can_access } = permissions;
+        
+        await db.query(`
+            INSERT INTO card_permissions (user_id, card_id, can_view, can_access)
+            VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+            can_view = VALUES(can_view),
+            can_access = VALUES(can_access)
+        `, [userId, cardId, can_view, can_access]);
+    }
+}
+
+module.exports = Permission;
+```
+
+## 3. Componente de Card com Controle de Acesso (CardWrapper.jsx):
+
+```jsx
+// frontend/src/components/cards/CardWrapper.jsx
+import React from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+
+const CardWrapper = ({ cardId, children, title, action }) => {
+  const { userPermissions } = useAuth();
+  
+  const permission = userPermissions?.find(p => p.id === cardId);
+  
+  if (!permission?.can_view) {
+    return null; // Não renderiza o card
+  }
+
+  const handleClick = () => {
+    if (permission?.can_access && action) {
+      action();
+    } else if (!permission?.can_access) {
+      alert('Você não tem permissão para acessar este módulo');
+    }
+  };
+
+  return (
+    <div 
+      className={`card ${!permission?.can_access ? 'card-disabled' : ''}`}
+      onClick={handleClick}
+      style={{
+        opacity: permission?.can_access ? 1 : 0.7,
+        cursor: permission?.can_access ? 'pointer' : 'not-allowed',
+        border: permission?.can_access ? 'none' : '1px dashed #ccc'
+      }}
+    >
+      <div className="card-header">
+        <h3>{title}</h3>
+        {permission?.can_access ? (
+          <span className="access-badge">Acessar →</span>
+        ) : (
+          <span className="access-badge disabled">Acesso restrito</span>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+};
+
+export default CardWrapper;
+```
+
+## 4. Contexto de Autenticação (AuthContext.jsx):
+
+```jsx
+// frontend/src/contexts/AuthContext.jsx
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import api from '../services/api';
+
+const AuthContext = createContext();
+
+export const useAuth = () => useContext(AuthContext);
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [userPermissions, setUserPermissions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadUser();
+  }, []);
+
+  const loadUser = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const response = await api.get('/auth/me');
+        setUser(response.data.user);
+        await loadPermissions(response.data.user.id);
+      } catch (error) {
+        console.error('Erro ao carregar usuário:', error);
+      }
+    }
+    setLoading(false);
+  };
+
+  const loadPermissions = async (userId) => {
+    try {
+      const response = await api.get(`/permissions/user/${userId}`);
+      setUserPermissions(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar permissões:', error);
+    }
+  };
+
+  const login = async (credentials) => {
+    const response = await api.post('/auth/login', credentials);
+    localStorage.setItem('token', response.data.token);
+    setUser(response.data.user);
+    await loadPermissions(response.data.user.id);
+    return response.data;
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+    setUserPermissions([]);
+  };
+
+  return (
+    <AuthContext.Provider value={{ 
+      user, 
+      userPermissions, 
+      login, 
+      logout, 
+      loading,
+      loadPermissions 
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+```
+
+## 5. Dashboard Principal (Dashboard.jsx):
+
+```jsx
+// frontend/src/components/layout/Dashboard.jsx
+import React from 'react';
+import CardWrapper from '../cards/CardWrapper';
+import { useAuth } from '../../contexts/AuthContext';
+import './Dashboard.css';
+
+const Dashboard = () => {
+  const { user } = useAuth();
+
+  const handleCardAction = (cardName) => {
+    console.log(`Acessando: ${cardName}`);
+    // Navegação para o módulo específico
+  };
+
+  return (
+    <div className="dashboard">
+      <header>
+        <h1>Gestão de Frota</h1>
+        <p>Gerencie todos os aspectos da sua frota de veículos</p>
+        <div className="user-info">
+          <span>Bem-vindo, {user?.username}</span>
+          <span className="user-role">({user?.role})</span>
+        </div>
+      </header>
+
+      <div className="cards-grid">
+        {/* Linha 1 - Cards de Manutenção */}
+        <div className="card-row">
+          <CardWrapper 
+            cardId="manutencao" 
+            title="Sistema de Manutenção"
+            action={() => handleCardAction('manutencao')}
+          >
+            <div className="card-content">
+              <div className="indicator">Indicadores de Manutenção</div>
+              <span className="badge">Em breve →</span>
+            </div>
+          </CardWrapper>
+
+          <CardWrapper 
+            cardId="oficina_murici" 
+            title="Oficina Murici"
+            action={() => handleCardAction('oficina_murici')}
+          >
+            <div className="card-content">
+              <div className="sub-card">Operação Coca-Cola</div>
+              <span className="badge">Acessar →</span>
+            </div>
+          </CardWrapper>
+        </div>
+
+        {/* Linha 2 - Cards de Estoque e Status */}
+        <div className="card-row">
+          <CardWrapper 
+            cardId="estoque_pecas" 
+            title="Estoque de Peças"
+            action={() => handleCardAction('estoque_pecas')}
+          >
+            <div className="card-content">
+              <div className="sub-card">Status Diário da Frota</div>
+              <span className="badge">Acessar →</span>
+            </div>
+          </CardWrapper>
+
+          <CardWrapper 
+            cardId="orcamentos_oficinas" 
+            title="Orçamentos de Oficinas"
+            action={() => handleCardAction('orcamentos_oficinas')}
+          >
+            <div className="card-content">
+              <div className="sub-card">Oficinas Credenciais</div>
+              <span className="badge">Acessar →</span>
+            </div>
+          </CardWrapper>
+        </div>
+
+        {/* Linha 3 - Cards de Oficinas e Parceiros */}
+        <div className="card-row">
+          <CardWrapper 
+            cardId="oficinas_credenciais" 
+            title="Oficinas Credenciais"
+            action={() => handleCardAction('oficinas_credenciais')}
+          >
+            <div className="card-content">
+              <div className="sub-card">Parceiros de Guincho</div>
+              <span className="badge">Acessar →</span>
+            </div>
+          </CardWrapper>
+        </div>
+      </div>
+
+      {/* Visão Geral - sempre visível mas com controle de acesso */}
+      <CardWrapper cardId="visao_geral" title="Visão Geral da Frota">
+        <div className="fleet-overview">
+          <div className="stats-grid">
+            <div className="stat-card">
+              <h3>Total de Veículos</h3>
+              <div className="stat-value">2499</div>
+              <span className="stat-label">Frota cadastrada</span>
+              <span className="stat-percent">92% da frota</span>
+            </div>
+            
+            <div className="stat-card">
+              <h3>Veículos Disponíveis</h3>
+              <div className="stat-value">2297</div>
+              <span className="stat-percent">92% da frota</span>
+            </div>
+            
+            <div className="stat-card">
+              <h3>Em Manutenção</h3>
+              <div className="stat-value">202</div>
+              <span className="stat-percent">8% da frota</span>
+            </div>
+          </div>
+
+          <div className="maintenance-status">
+            <div className="status-item">
+              <span>Manutenções pendentes</span>
+              <span className="status-number">0</span>
+              <button className="view-all">Ver todas →</button>
+            </div>
+            
+            <div className="status-item">
+              <span>Manutenções em andamento</span>
+              <span className="status-number">0</span>
+              <button className="view-all">Ver todas →</button>
+            </div>
+          </div>
+        </div>
+      </CardWrapper>
+    </div>
+  );
+};
+
+export default Dashboard;
+```
+
+## 6. Painel Administrativo para Gerenciar Permissões:
+
+```jsx
+// frontend/src/components/admin/PermissionManager.jsx
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
+
+const PermissionManager = () => {
+  const [users, setUsers] = useState([]);
+  const [cards, setCards] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [permissions, setPermissions] = useState({});
+
+  useEffect(() => {
+    loadUsers();
+    loadCards();
+  }, []);
+
+  const loadUsers = async () => {
+    const response = await api.get('/users');
+    setUsers(response.data);
+  };
+
+  const loadCards = async () => {
+    const response = await api.get('/cards');
+    setCards(response.data);
+  };
+
+  const loadUserPermissions = async (userId) => {
+    const response = await api.get(`/permissions/user/${userId}`);
+    const perms = {};
+    response.data.forEach(p => {
+      perms[p.id] = { view: p.can_view, access: p.can_access };
+    });
+    setPermissions(perms);
+  };
+
+  const handleUserSelect = (userId) => {
+    setSelectedUser(userId);
+    loadUserPermissions(userId);
+  };
+
+  const updatePermission = async (cardId, type, value) => {
+    const updatedPerms = {
+      ...permissions[cardId],
+      [type]: value
+    };
+
+    await api.post(`/permissions/update`, {
+      userId: selectedUser,
+      cardId,
+      permissions: {
+        can_view: updatedPerms.view,
+        can_access: updatedPerms.access
+      }
+    });
+
+    setPermissions({
+      ...permissions,
+      [cardId]: updatedPerms
+    });
+  };
+
+  return (
+    <div className="permission-manager">
+      <h2>Gerenciar Permissões de Cards</h2>
+      
+      <div className="user-selector">
+        <label>Selecione o Operador:</label>
+        <select onChange={(e) => handleUserSelect(e.target.value)}>
+          <option value="">Selecione...</option>
+          {users.filter(u => u.role === 'operador_frota').map(user => (
+            <option key={user.id} value={user.id}>
+              {user.username} - {user.email}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {selectedUser && (
+        <div className="permissions-grid">
+          <table>
+            <thead>
+              <tr>
+                <th>Card</th>
+                <th>Visualizar</th>
+                <th>Acessar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cards.map(card => (
+                <tr key={card.id}>
+                  <td>{card.name}</td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={permissions[card.id]?.view || false}
+                      onChange={(e) => updatePermission(card.id, 'view', e.target.checked)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={permissions[card.id]?.access || false}
+                      onChange={(e) => updatePermission(card.id, 'access', e.target.checked)}
+                      disabled={!permissions[card.id]?.view}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default PermissionManager;
+```
+
+## 7. CSS para o Dashboard:
+
+```css
+/* frontend/src/components/layout/Dashboard.css */
+.dashboard {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dashboard header {
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: #f0f0f0;
+  border-radius: 8px;
+}
+
+.user-role {
+  color: #666;
+  font-size: 0.9em;
+}
+
+.cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.card-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.card:hover:not(.card-disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.card-disabled {
+  background: #f9f9f9;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 1.2em;
+  color: #333;
+}
+
+.access-badge {
+  color: #0066cc;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 20px;
+  background: #e6f0ff;
+}
+
+.access-badge.disabled {
+  color: #999;
+  background: #f0f0f0;
+}
+
+.card-content {
+  padding: 10px 0;
+}
+
+.sub-card {
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  margin: 5px 0;
+  font-size: 0.95em;
+}
+
+.indicator {
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: #e0e0e0;
+  border-radius: 16px;
+  font-size: 0.85em;
+  color: #666;
+}
+
+.fleet-overview {
+  margin-top: 20px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 10px;
+}
+
+.stat-card h3 {
+  margin: 0 0 10px 0;
+  font-size: 1em;
+  opacity: 0.9;
+}
+
+.stat-value {
+  font-size: 2.5em;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.9em;
+  opacity: 0.9;
+}
+
+.stat-percent {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 4px 12px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 20px;
+  font-size: 0.85em;
+}
+
+.maintenance-status {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.status-number {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #333;
+  margin-left: auto;
+}
+
+.view-all {
+  padding: 5px 15px;
+  background: none;
+  border: 1px solid #0066cc;
+  color: #0066cc;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.view-all:hover {
+  background: #0066cc;
+  color: white;
+}
+```
+
+## 8. Como Implementar no Replit:
+
+1. **Crie as pastas** conforme a estrutura acima
+2. **Instale as dependências**:
+```bash
+npm install express react react-dom mysql2 jsonwebtoken bcrypt
+npm install -D @types/react
+```
+
+3. **Configure as variáveis de ambiente** no arquivo `.env`:
+```env
+DB_HOST=seu-host
+DB_USER=seu-usuario
+DB_PASSWORD=sua-senha
+DB_NAME=gestao_frota
+JWT_SECRET=seu-segredo-jwt
+```
+
+4. **Execute o script SQL** para criar as tabelas
+
+5. **Crie um usuário administrador** manualmente no banco de dados
+
+## 9. Fluxo de Uso:
+
+1. **Admin cria usuário** com role 'operador_frota'
+2. **Admin acessa o PermissionManager** e configura quais cards cada operador pode ver/acessar
+3. **Operador faz login** e vê apenas os cards liberados
+4. **Cards sem permissão de visualização** não aparecem
+5. **Cards com permissão de visualização mas sem acesso** aparecem "acinzentados" e não podem ser clicados
+
+Esta estrutura te dá controle total sobre o que cada operador pode ver e acessar no sistema de gestão de frota, diretamente do Replit!

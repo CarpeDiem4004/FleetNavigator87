@@ -33,6 +33,7 @@ The system employs a modern SaaS architecture with a React/TypeScript frontend a
 - **Work Safety Module**: Centralized portal for public and administrative routes covering driver registration, accident reporting, training, and deviation tracking. Includes business rules for CPF validation, PGR approval, and base-specific data visibility.
 - **Fuel Card Solicitation System**: Features "Em Rota Vazio" functionality and robust validation for duplicate license plates in fuel requests.
 - **Driver Deviations Module**: Tracks and manages driver behavioral deviations (e.g., speeding, checklist failures), with automatic reoccurrence detection and detailed statistics.
+- **Operador de Gestão de Frota Profile**: New user role (`operador_frota`) with card-based access control. Admins configure which of 15 modules each operator can view/access via `/operator-permissions`. Operators see a visual card dashboard at `/operator-dashboard`, with locked cards for restricted modules. Tables: `operator_cards` (15 modules seeded), `operator_card_permissions` (per-user overrides).
 
 ## External Dependencies
 - **Supabase**: Database, authentication, real-time subscriptions.
