@@ -8,8 +8,9 @@ import { getQueryFn } from '@/lib/queryClient';
 import { 
   Loader2, Search, Plus, KeyRound, FileEdit, 
   Trash2, UserX, UserCircle2, RefreshCw, 
-  Copy, CheckCircle2
+  Copy, CheckCircle2, LayoutGrid, ChevronDown, ChevronRight
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { 
   Table, 
@@ -162,6 +163,38 @@ const UsersNew: React.FC = () => {
   // Estados específicos para coordenadores
   const [selectedProjects, setSelectedProjects] = useState<number[]>([]);
   const [selectedBases, setSelectedBases] = useState<number[]>([]);
+
+  // Estados para permissões de cards do Operador de Frota
+  interface OperatorCard { id: string; name: string; description: string; icon: string; category: string; color: string; sort_order: number; default_enabled: boolean; }
+  interface CardPerm { canView: boolean; canAccess: boolean; }
+  const [operatorCards, setOperatorCards] = useState<OperatorCard[]>([]);
+  const [newUserCardPerms, setNewUserCardPerms] = useState<Record<string, CardPerm>>({});
+  const [cardsLoading, setCardsLoading] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
+    manutencao: true, frota: true, outros: false
+  });
+
+  // Carregar cards quando perfil operador_frota for selecionado
+  useEffect(() => {
+    if (newUser.role === 'operador_frota' && operatorCards.length === 0) {
+      setCardsLoading(true);
+      apiRequest('GET', '/api/operator-cards')
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            setOperatorCards(data.data);
+            // Inicializar permissões com os defaults
+            const perms: Record<string, CardPerm> = {};
+            data.data.forEach((c: OperatorCard) => {
+              perms[c.id] = { canView: c.default_enabled, canAccess: c.default_enabled };
+            });
+            setNewUserCardPerms(perms);
+          }
+        })
+        .catch(console.error)
+        .finally(() => setCardsLoading(false));
+    }
+  }, [newUser.role]);
   
   // Interface para a resposta da API híbrida
   interface HybridApiResponse {
@@ -557,6 +590,20 @@ const UsersNew: React.FC = () => {
       const response = await apiRequest('POST', '/api/users', userData);
       const data = await response.json();
       
+      // Se for operador_frota, salvar as permissões de cards
+      if (newUser.role === 'operador_frota' && data.success && data.user && Object.keys(newUserCardPerms).length > 0) {
+        try {
+          const permissions = Object.entries(newUserCardPerms).map(([cardId, perm]) => ({
+            cardId,
+            canView: perm.canView,
+            canAccess: perm.canAccess,
+          }));
+          await apiRequest('PUT', `/api/operator-card-permissions/${data.user.id}`, { permissions });
+        } catch (e) {
+          console.error('Erro ao salvar permissões de cards:', e);
+        }
+      }
+
       // Se for coordenador, criar os registros de scope (projetos e bases)
       if (newUser.role === 'coordenador' && data.success && data.user) {
         console.log('Criando registros de scope para coordenador:', data.user.id);
@@ -610,6 +657,7 @@ const UsersNew: React.FC = () => {
       setConfirmPassword('');
       setSelectedProjects([]);
       setSelectedBases([]);
+      setNewUserCardPerms({});
       
       // Mostrar mensagem de sucesso
       toast({
@@ -658,7 +706,7 @@ const UsersNew: React.FC = () => {
                 Adicionar Usuário
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Adicionar Novo Usuário</DialogTitle>
                 <DialogDescription>
@@ -836,6 +884,120 @@ const UsersNew: React.FC = () => {
                       </div>
                     </div>
                   </>
+                )}
+
+                {/* ── Permissões de Módulos para Operador de Frota ── */}
+                {newUser.role === 'operador_frota' && (
+                  <div className="col-span-4">
+                    <div className="flex items-center gap-2 mb-3 mt-1">
+                      <LayoutGrid className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-semibold text-gray-800">Permissões de Módulos</span>
+                      <span className="text-xs text-gray-400 ml-auto">
+                        {Object.values(newUserCardPerms).filter(p => p.canView).length} de {operatorCards.length} habilitados
+                      </span>
+                    </div>
+
+                    {cardsLoading ? (
+                      <div className="flex items-center gap-2 text-gray-400 text-sm py-4 justify-center">
+                        <Loader2 className="w-4 h-4 animate-spin" /> Carregando módulos...
+                      </div>
+                    ) : (
+                      <div className="max-h-72 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50">
+                        {/* Header de colunas */}
+                        <div className="sticky top-0 bg-gray-100 border-b border-gray-200 grid grid-cols-[1fr_auto_auto] gap-3 px-3 py-1.5 text-xs font-medium text-gray-500 z-10">
+                          <span>Módulo</span>
+                          <span className="w-16 text-center">Visível</span>
+                          <span className="w-16 text-center">Acessível</span>
+                        </div>
+
+                        {/* Cards agrupados por categoria */}
+                        {(() => {
+                          const CAT_LABELS: Record<string, string> = { manutencao: 'Manutenção', frota: 'Frota', outros: 'Outros' };
+                          const grouped: Record<string, typeof operatorCards> = {};
+                          operatorCards.forEach(c => {
+                            const cat = c.category || 'outros';
+                            if (!grouped[cat]) grouped[cat] = [];
+                            grouped[cat].push(c);
+                          });
+                          return Object.entries(grouped).map(([cat, cards]) => {
+                            const isOpen = expandedCategories[cat] !== false;
+                            const enabledInCat = cards.filter(c => newUserCardPerms[c.id]?.canView).length;
+                            return (
+                              <div key={cat}>
+                                {/* Category header */}
+                                <div
+                                  className="flex items-center gap-2 px-3 py-1.5 bg-white border-b border-gray-100 cursor-pointer hover:bg-gray-50 select-none"
+                                  onClick={() => setExpandedCategories(prev => ({ ...prev, [cat]: !isOpen }))}
+                                >
+                                  {isOpen ? <ChevronDown className="w-3 h-3 text-gray-400" /> : <ChevronRight className="w-3 h-3 text-gray-400" />}
+                                  <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{CAT_LABELS[cat] || cat}</span>
+                                  <span className="text-xs text-gray-400 ml-1">({enabledInCat}/{cards.length})</span>
+                                  <div className="ml-auto flex gap-2" onClick={e => e.stopPropagation()}>
+                                    <button
+                                      type="button"
+                                      className="text-xs text-green-600 hover:underline"
+                                      onClick={() => {
+                                        const next = { ...newUserCardPerms };
+                                        cards.forEach(c => { next[c.id] = { canView: true, canAccess: true }; });
+                                        setNewUserCardPerms(next);
+                                      }}
+                                    >Todos on</button>
+                                    <button
+                                      type="button"
+                                      className="text-xs text-red-500 hover:underline"
+                                      onClick={() => {
+                                        const next = { ...newUserCardPerms };
+                                        cards.forEach(c => { next[c.id] = { canView: false, canAccess: false }; });
+                                        setNewUserCardPerms(next);
+                                      }}
+                                    >Todos off</button>
+                                  </div>
+                                </div>
+
+                                {/* Cards list */}
+                                {isOpen && cards.map(card => {
+                                  const perm = newUserCardPerms[card.id] || { canView: false, canAccess: false };
+                                  return (
+                                    <div key={card.id} className="grid grid-cols-[1fr_auto_auto] gap-3 items-center px-3 py-2 border-b border-gray-100 last:border-0 hover:bg-white transition-colors">
+                                      <div className="min-w-0">
+                                        <p className="text-xs font-medium text-gray-700 truncate">{card.name}</p>
+                                        {card.description && <p className="text-xs text-gray-400 truncate">{card.description}</p>}
+                                      </div>
+                                      <div className="w-16 flex justify-center">
+                                        <Switch
+                                          checked={perm.canView}
+                                          onCheckedChange={v => {
+                                            setNewUserCardPerms(prev => ({
+                                              ...prev,
+                                              [card.id]: { canView: v, canAccess: v ? prev[card.id]?.canAccess ?? false : false }
+                                            }));
+                                          }}
+                                          className="scale-75"
+                                        />
+                                      </div>
+                                      <div className="w-16 flex justify-center">
+                                        <Switch
+                                          checked={perm.canAccess}
+                                          disabled={!perm.canView}
+                                          onCheckedChange={v => {
+                                            setNewUserCardPerms(prev => ({
+                                              ...prev,
+                                              [card.id]: { ...prev[card.id], canAccess: v }
+                                            }));
+                                          }}
+                                          className="scale-75"
+                                        />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 <div className="grid grid-cols-4 items-center gap-4">
