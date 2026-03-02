@@ -353,6 +353,7 @@ export async function exportTicketCards(req: Request, res: Response) {
     const query = `
       SELECT 
         UPPER(REPLACE(COALESCE(NULLIF(TRIM(placa_cartao), ''), NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')) as placa_cartao,
+        COALESCE(UPPER(TRIM(turno)), 'N/I') as turno,
         SUM(COALESCE(valor_solicitado, 0)) as valor_total,
         STRING_AGG(DISTINCT 
           CASE 
@@ -367,8 +368,10 @@ export async function exportTicketCards(req: Request, res: Response) {
         ${dateNullCheck}
         ${data_inicio ? `AND ${dateField} >= '${data_inicio}'` : ''}
         ${data_fim ? `AND ${dateField} <= '${data_fim}'` : ''}
-      GROUP BY UPPER(REPLACE(COALESCE(NULLIF(TRIM(placa_cartao), ''), NULLIF(TRIM(numero_cartao), ''), placa), ' ', ''))
-      ORDER BY placa_cartao
+      GROUP BY 
+        UPPER(REPLACE(COALESCE(NULLIF(TRIM(placa_cartao), ''), NULLIF(TRIM(numero_cartao), ''), placa), ' ', '')),
+        COALESCE(UPPER(TRIM(turno)), 'N/I')
+      ORDER BY placa_cartao, turno
     `;
     
     console.log('[EXPORT-TICKET] Query:', query);
@@ -377,17 +380,18 @@ export async function exportTicketCards(req: Request, res: Response) {
     
     console.log('[EXPORT-TICKET] Registros encontrados:', result.rows.length);
 
-    // Cabeçalho com coluna de Bases
-    const header = ['PLACA', 'VALOR', 'Bases'];
+    // Cabeçalho com coluna de Turno (AM/PM) e Bases
+    const header = ['PLACA', 'TURNO', 'VALOR', 'Bases'];
 
     // Função para normalizar placa: remove espaços e converte para maiúsculas
     const normalizePlaca = (placa: string) => String(placa || '').replace(/\s+/g, '').toUpperCase();
 
-    // Dados das solicitações - PLACA DO CARTÃO normalizada (sem espaços, maiúsculas), VALOR como número, Bases como texto (UPPERCASE)
+    // Dados das solicitações — PLACA | TURNO | VALOR | BASES
     const dataRows = result.rows.map((row: any) => [
-      normalizePlaca(row.placa_cartao),                 // Placa do cartão normalizada (sem espaços, maiúsculas)
-      Math.round(parseFloat(row.valor_total || 0) * 100) / 100,  // Valor com máximo 2 casas decimais
-      String(row.bases || '').toUpperCase()             // Bases em caixa alta
+      normalizePlaca(row.placa_cartao),                                          // Placa do cartão normalizada
+      String(row.turno || 'N/I').toUpperCase(),                                  // Turno AM / PM
+      Math.round(parseFloat(row.valor_total || 0) * 100) / 100,                 // Valor com máximo 2 casas decimais
+      String(row.bases || '').toUpperCase()                                      // Bases em caixa alta
     ]);
 
     // Criar worksheet
@@ -398,16 +402,17 @@ export async function exportTicketCards(req: Request, res: Response) {
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-    // Configurar formato das colunas
+    // Configurar formato das colunas: PLACA | TURNO | VALOR | Bases
     ws['!cols'] = [
       { wch: 12 },  // PLACA
+      { wch: 8  },  // TURNO
       { wch: 12 },  // VALOR
       { wch: 40 }   // Bases
     ];
 
-    // Aplicar formato numérico para coluna VALOR (B)
+    // Aplicar formato numérico para coluna VALOR (agora coluna C, index 2)
     for (let i = 2; i <= result.rows.length + 1; i++) {
-      const cellRef = `B${i}`;
+      const cellRef = `C${i}`;
       if (ws[cellRef]) {
         ws[cellRef].t = 'n';  // Tipo numérico
         ws[cellRef].z = '#,##0.00';  // Formato número com 2 decimais
