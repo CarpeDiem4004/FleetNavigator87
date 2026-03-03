@@ -7292,6 +7292,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           WHERE v.placa IS NOT NULL
             AND (v.base ILIKE 'LH%' OR v.base_id = 148)
             AND v.status NOT ILIKE '%desmob%'
+
+          UNION
+
+          SELECT vh.plate as placa,
+                 vh.model as modelo,
+                 vh.vehicle_type as tipo,
+                 vh.status
+          FROM vehicles vh
+          WHERE vh.plate IS NOT NULL
+            AND vh.base_id = 148
+            AND vh.status NOT ILIKE '%desmob%'
+            AND vh.status NOT ILIKE '%inativ%'
         ) combined
         ORDER BY placa ASC
       `);
