@@ -298,18 +298,20 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
       [uploadId || 0]
     );
 
-    // Buscar OS direcionadas para Oficina Murici (coca_cola_os_requests)
-    // Apenas OS com status em_andamento ou aguardando_peca (não pendentes)
-    const osMuriciResult = await pool.query(
+    // Buscar TODAS as OS aprovadas e direcionadas para qualquer oficina
+    const osAprovadasResult = await pool.query(
       `SELECT 
         os.id,
+        os.numero_os,
         os.placa,
         NULL as modelo,
         CASE 
           WHEN os.status_manutencao = 'finalizado' THEN 'Finalizado'
           WHEN os.status_manutencao = 'aguardando_peca' THEN 'Aguardando Peças'
+          WHEN os.status_manutencao = 'em_andamento' THEN 'Em Manutenção'
           ELSE 'Em Manutenção'
         END as status,
+        os.status_manutencao,
         NULL as orcamento,
         os.oficina_direcionada as oficina,
         os.oficina_direcionada as oficina_debito,
@@ -318,29 +320,39 @@ router.get('/dados', isAuthenticated, async (req: Request, res: Response) => {
         EXTRACT(DAY FROM NOW() - os.created_at)::integer as dias,
         os.mecanico_responsavel as responsavel,
         os.base_origem as base,
+        os.observacoes_oficina as atendimento,
+        os.valor_mao_obra,
+        os.valor_pecas,
+        os.pecas_utilizadas,
+        os.urgencia,
         os.created_at,
+        os.updated_at,
         0 as total_orcamentos,
         0 as orcamentos_pendentes,
         0 as orcamentos_aprovados,
         'coca_cola' as origem_os
        FROM coca_cola_os_requests os
-       WHERE os.oficina_direcionada ILIKE '%murici%'
-         AND os.status_manutencao IN ('em_andamento', 'aguardando_peca')
+       WHERE os.status = 'aprovado'
+         AND os.oficina_direcionada IS NOT NULL
+         AND os.oficina_direcionada != ''
+         AND os.oficina_direcionada != 'Outra'
+         AND (os.status_manutencao IS NULL OR os.status_manutencao != 'finalizado')
        ORDER BY os.created_at DESC`
     );
 
-    console.log('[INDICADORES] OS Murici encontradas:', osMuriciResult.rows.length, osMuriciResult.rows.map(r => r.placa));
+    console.log('[INDICADORES] OS aprovadas e direcionadas encontradas:', osAprovadasResult.rows.length, osAprovadasResult.rows.map(r => r.placa + '→' + r.oficina));
 
-    // Combinar os resultados, colocando OS da Oficina Murici no início
+    // Combinar os resultados, colocando OS direcionadas no início
     const dadosCombinados = [
-      ...osMuriciResult.rows.map(row => ({
+      ...osAprovadasResult.rows.map(row => ({
         ...row,
-        is_oficina_murici_os: true
+        is_os_request: true,
+        is_oficina_murici_os: (row.oficina || '').toLowerCase().includes('murici')
       })),
       ...result.rows
     ];
 
-    console.log('[INDICADORES] Total dados combinados:', dadosCombinados.length, '(indicadores:', result.rows.length, '+ OS Murici:', osMuriciResult.rows.length, ')');
+    console.log('[INDICADORES] Total dados combinados:', dadosCombinados.length, '(indicadores:', result.rows.length, '+ OS aprovadas:', osAprovadasResult.rows.length, ')');
 
     res.json({ success: true, dados: dadosCombinados });
   } catch (error) {
@@ -2710,6 +2722,38 @@ router.get('/fornecedores/oficinas/disponiveis', isAuthenticated, async (req: Re
   } catch (error) {
     console.error('[FORNECEDORES] Erro ao listar oficinas disponíveis:', error);
     res.status(500).json({ success: false, message: 'Erro ao listar oficinas' });
+  }
+});
+
+// Atualizar andamento de OS direcionada (time de frotas)
+router.patch('/os-andamento/:id', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status_manutencao, mecanico_responsavel, observacoes_oficina, pecas_utilizadas, valor_pecas, valor_mao_obra } = req.body;
+
+    const result = await pool.query(
+      `UPDATE coca_cola_os_requests SET
+         status_manutencao = COALESCE($1, status_manutencao),
+         mecanico_responsavel = COALESCE($2, mecanico_responsavel),
+         observacoes_oficina = COALESCE($3, observacoes_oficina),
+         pecas_utilizadas = COALESCE($4, pecas_utilizadas),
+         valor_pecas = COALESCE($5, valor_pecas),
+         valor_mao_obra = COALESCE($6, valor_mao_obra),
+         updated_at = NOW()
+       WHERE id = $7
+       RETURNING *`,
+      [status_manutencao || null, mecanico_responsavel || null, observacoes_oficina || null, pecas_utilizadas || null, valor_pecas || null, valor_mao_obra || null, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'OS não encontrada' });
+    }
+
+    console.log(`[OS-ANDAMENTO] OS id=${id} atualizada: status_manutencao=${status_manutencao}`);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error: any) {
+    console.error('[OS-ANDAMENTO] Erro ao atualizar:', error);
+    res.status(500).json({ success: false, message: 'Erro ao atualizar andamento' });
   }
 });
 

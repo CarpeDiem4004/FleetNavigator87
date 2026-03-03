@@ -1583,6 +1583,18 @@ export default function IndicadoresManutencao() {
   const [deleteManutencaoTarget, setDeleteManutencaoTarget] = useState<Dado | null>(null);
   const [deleteManutencaoSenha, setDeleteManutencaoSenha] = useState('');
 
+  // Estados para modal de atualização de andamento de OS direcionadas
+  const [showAndamentoModal, setShowAndamentoModal] = useState(false);
+  const [andamentoTarget, setAndamentoTarget] = useState<any | null>(null);
+  const [andamentoData, setAndamentoData] = useState({
+    status_manutencao: '',
+    mecanico_responsavel: '',
+    observacoes_oficina: '',
+    pecas_utilizadas: '',
+    valor_pecas: '',
+    valor_mao_obra: ''
+  });
+
   // Estados para modal de movimentações (entradas e saídas)
   const [showMovimentacoesModal, setShowMovimentacoesModal] = useState(false);
   const [movimentacoesPeriodo, setMovimentacoesPeriodo] = useState('30');
@@ -1746,6 +1758,23 @@ export default function IndicadoresManutencao() {
     },
     onError: (error: Error) => {
       toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    }
+  });
+
+  // Mutation para atualizar andamento de OS direcionadas
+  const andamentoMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: typeof andamentoData }) => {
+      const res = await apiRequest('PATCH', `/api/indicadores/os-andamento/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Andamento atualizado', description: 'Status da OS atualizado com sucesso!' });
+      queryClient.invalidateQueries({ queryKey: ['/api/indicadores/dados'] });
+      setShowAndamentoModal(false);
+      setAndamentoTarget(null);
+    },
+    onError: () => {
+      toast({ title: 'Erro', description: 'Não foi possível atualizar o andamento', variant: 'destructive' });
     }
   });
 
@@ -3176,29 +3205,55 @@ export default function IndicadoresManutencao() {
                                   >
                                     <History className="h-3.5 w-3.5" />
                                   </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    className="h-7 w-7 p-0"
-                                    onClick={() => handleEditDado(dado)}
-                                    data-testid={`btn-edit-dado-${dado.id}`}
-                                  >
-                                    <Edit className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                    onClick={() => {
-                                      setDeleteManutencaoTarget(dado);
-                                      setDeleteManutencaoSenha('');
-                                      setShowDeleteManutencaoModal(true);
-                                    }}
-                                    title="Excluir manutenção"
-                                    data-testid={`btn-delete-dado-${dado.id}`}
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
+                                  {(dado as any).is_os_request ? (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                      onClick={() => {
+                                        setAndamentoTarget(dado);
+                                        setAndamentoData({
+                                          status_manutencao: (dado as any).status_manutencao || 'em_andamento',
+                                          mecanico_responsavel: (dado as any).responsavel || '',
+                                          observacoes_oficina: (dado as any).atendimento || '',
+                                          pecas_utilizadas: (dado as any).pecas_utilizadas || '',
+                                          valor_pecas: (dado as any).valor_pecas || '',
+                                          valor_mao_obra: (dado as any).valor_mao_obra || ''
+                                        });
+                                        setShowAndamentoModal(true);
+                                      }}
+                                      title="Atualizar andamento da OS"
+                                    >
+                                      <Edit className="h-3.5 w-3.5 mr-1" />
+                                      Atualizar
+                                    </Button>
+                                  ) : (
+                                    <>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        className="h-7 w-7 p-0"
+                                        onClick={() => handleEditDado(dado)}
+                                        data-testid={`btn-edit-dado-${dado.id}`}
+                                      >
+                                        <Edit className="h-3.5 w-3.5" />
+                                      </Button>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                        onClick={() => {
+                                          setDeleteManutencaoTarget(dado);
+                                          setDeleteManutencaoSenha('');
+                                          setShowDeleteManutencaoModal(true);
+                                        }}
+                                        title="Excluir manutenção"
+                                        data-testid={`btn-delete-dado-${dado.id}`}
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </>
+                                  )}
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -6099,6 +6154,98 @@ export default function IndicadoresManutencao() {
                   Cadastrar
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Atualização de Andamento de OS Direcionada */}
+      <Dialog open={showAndamentoModal} onOpenChange={(open) => {
+        if (!open) { setShowAndamentoModal(false); setAndamentoTarget(null); }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Atualizar Andamento da OS</DialogTitle>
+            <DialogDescription>
+              {andamentoTarget && (
+                <span className="font-medium">
+                  {andamentoTarget.numero_os || `OS #${andamentoTarget.id}`} — Placa: {andamentoTarget.placa} | Oficina: {andamentoTarget.oficina_debito}
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Status do Andamento</Label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={andamentoData.status_manutencao}
+                onChange={(e) => setAndamentoData({ ...andamentoData, status_manutencao: e.target.value })}
+              >
+                <option value="em_andamento">Em Andamento</option>
+                <option value="aguardando_peca">Aguardando Peça</option>
+                <option value="aguardando_aprovacao">Aguardando Aprovação</option>
+                <option value="finalizado">Finalizado</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Mecânico Responsável</Label>
+              <Input
+                value={andamentoData.mecanico_responsavel}
+                onChange={(e) => setAndamentoData({ ...andamentoData, mecanico_responsavel: e.target.value })}
+                placeholder="Nome do mecânico"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Observações / Andamento</Label>
+              <textarea
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={andamentoData.observacoes_oficina}
+                onChange={(e) => setAndamentoData({ ...andamentoData, observacoes_oficina: e.target.value })}
+                placeholder="Descreva o andamento atual..."
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Peças Utilizadas</Label>
+                <Input
+                  value={andamentoData.pecas_utilizadas}
+                  onChange={(e) => setAndamentoData({ ...andamentoData, pecas_utilizadas: e.target.value })}
+                  placeholder="Ex: Filtro óleo, correia..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Valor das Peças (R$)</Label>
+                <Input
+                  type="number"
+                  value={andamentoData.valor_pecas}
+                  onChange={(e) => setAndamentoData({ ...andamentoData, valor_pecas: e.target.value })}
+                  placeholder="0,00"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Valor Mão de Obra (R$)</Label>
+              <Input
+                type="number"
+                value={andamentoData.valor_mao_obra}
+                onChange={(e) => setAndamentoData({ ...andamentoData, valor_mao_obra: e.target.value })}
+                placeholder="0,00"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAndamentoModal(false)}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                if (andamentoTarget) {
+                  andamentoMutation.mutate({ id: andamentoTarget.id, data: andamentoData });
+                }
+              }}
+              disabled={andamentoMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {andamentoMutation.isPending ? 'Salvando...' : 'Salvar Andamento'}
             </Button>
           </DialogFooter>
         </DialogContent>
