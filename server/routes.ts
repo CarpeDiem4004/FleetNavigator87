@@ -26782,6 +26782,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Listar fornecedores/oficinas para dropdown de direcionamento
+  app.get('/api/fornecedores', isAuthenticated, async (req: any, res: any) => {
+    try {
+      const { categoria } = req.query;
+      const result = await pool.query(
+        `SELECT 
+           id,
+           COALESCE(nome_fantasia, razao_social, name) AS nome,
+           COALESCE(nome_fantasia, razao_social, name) AS razao_social,
+           cnpj,
+           telefone,
+           email,
+           tipo AS categoria,
+           status
+         FROM oficinas
+         WHERE status = 'ativo'
+         ORDER BY COALESCE(nome_fantasia, razao_social, name) ASC`
+      );
+      res.json({ success: true, data: result.rows, total: result.rows.length });
+    } catch (error: any) {
+      console.error('[Fornecedores] Erro ao listar:', error);
+      res.status(500).json({ success: false, data: [], total: 0 });
+    }
+  });
+
   // Listar solicitações de OS (autenticado)
   app.get('/api/maintenance-requests', isAuthenticated, async (req: any, res: any) => {
     try {
@@ -26839,24 +26864,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const oficinaNorm = oficina_direcionada.trim();
           
-          // Mapeamento determinístico para oficinas internas conhecidas
+          // Mapeamento para nomes abreviados/apelidos usados no dropdown fixo
           const internasMap: Record<string, string> = {
             'oficina alair': 'Alair Manutenção e Serviços Automotivos Ltda',
-            'oficina autofrei': 'AUTOFREI COMERCIO DE PECAS E ACESSORIOS PARA VEICULOS LTDA',
+            'oficina autofrei': 'AUTOFREI',
             'oficina murici': 'Oficina Teste Ltda'
           };
           
           const lookupName = internasMap[oficinaNorm.toLowerCase()] || oficinaNorm;
           
+          // Busca por nome_fantasia, razao_social ou name (cobre seleção do dropdown dinâmico e fixo)
           const oficinaLookup = await pool.query(
-            `SELECT id, name, razao_social FROM oficinas 
-             WHERE name ILIKE $1 OR razao_social ILIKE $1
+            `SELECT id, COALESCE(nome_fantasia, razao_social, name) AS display_name, razao_social, cnpj
+             FROM oficinas 
+             WHERE nome_fantasia ILIKE $1 
+                OR razao_social ILIKE $1 
+                OR name ILIKE $1
              LIMIT 1`,
-            [lookupName]
+            [`%${lookupName}%`]
           );
+
+          console.log(`[MaintenanceRequest] Lookup oficina "${oficina_direcionada}" → "${lookupName}" → encontrou: ${oficinaLookup.rows.length > 0 ? oficinaLookup.rows[0].display_name : 'NENHUMA'}`);
 
           if (oficinaLookup.rows.length > 0) {
             const oficinaId = oficinaLookup.rows[0].id;
+            const oficinaCnpj = oficinaLookup.rows[0].cnpj;
 
             const existingOS = await pool.query(
               `SELECT id FROM maintenance WHERE vehicle_plate = $1 AND workshop_id = $2 AND source = $3`,
@@ -26865,21 +26897,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             if (existingOS.rows.length === 0) {
               await pool.query(
-                `INSERT INTO maintenance (vehicle_plate, description, status, priority, workshop_id, source, maintenance_type, created_at)
-                 VALUES ($1, $2, 'pendente', $3, $4, $5, $6, NOW())`,
+                `INSERT INTO maintenance (vehicle_plate, description, status, priority, workshop_id, workshop_cnpj, source, maintenance_type, created_at)
+                 VALUES ($1, $2, 'pendente', $3, $4, $5, $6, $7, NOW())`,
                 [
                   os.placa,
                   os.relato_problema || os.tipo_manutencao || 'Manutenção programada',
                   os.urgencia || 'media',
                   oficinaId,
+                  oficinaCnpj || null,
                   `os_request_${os.id}`,
                   os.tipo_manutencao || 'corretiva'
                 ]
               );
-              console.log(`[MaintenanceRequest] OS criada para oficina ${oficinaLookup.rows[0].name} (ID: ${oficinaId}), placa: ${os.placa}`);
+              console.log(`[MaintenanceRequest] OS criada para oficina ${oficinaLookup.rows[0].display_name} (ID: ${oficinaId}), placa: ${os.placa}`);
+            } else {
+              console.log(`[MaintenanceRequest] OS já existe para oficina ID: ${oficinaId}, placa: ${os.placa}`);
             }
           } else {
-            console.log(`[MaintenanceRequest] Oficina "${oficina_direcionada}" não encontrada na tabela oficinas`);
+            console.log(`[MaintenanceRequest] Oficina "${oficina_direcionada}" não encontrada na tabela oficinas — OS não criada automaticamente`);
           }
         } catch (osError) {
           console.error('[MaintenanceRequest] Erro ao criar OS para oficina:', osError);
