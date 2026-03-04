@@ -13,11 +13,20 @@ export const pool = new Pool({
   }
 });
 
+// Garantir que cada nova conexão use o timezone America/Sao_Paulo
+// Isso afeta NOW(), CURRENT_DATE, CURRENT_TIMESTAMP no PostgreSQL
+pool.on('connect', (client) => {
+  client.query("SET timezone = 'America/Sao_Paulo'").catch((err) => {
+    console.error('[DB] Erro ao configurar timezone da sessão:', err.message);
+  });
+});
+
 // Testar conexão
-pool.query('SELECT NOW()', (err, res) => {
+pool.query('SELECT NOW() AT TIME ZONE \'America/Sao_Paulo\' AS hora_brasil', (err, res) => {
   if (err) {
     console.error('Erro ao conectar ao banco de dados:', err);
   } else {
     console.log('Conexão com banco de dados PostgreSQL estabelecida com sucesso!');
+    console.log('[DB] Hora Brasil no banco:', res.rows[0]?.hora_brasil);
   }
 });

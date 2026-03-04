@@ -86,12 +86,12 @@ process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUz
 // IMPORTANTE: Usar SUPABASE_SERVICE_ROLE_KEY para admin (NÃO expor no frontend!)
 process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDg5ODIwNiwiZXhwIjoyMDYwMjc0MjA2fQ.bvwwqQBQVUOlyHYMsX9C5dSQhsQYI2r8qmqRBHgG_0Y';
 
-// CORREÇÃO DEFINITIVA: Configurar timezone como UTC no backend
-// Seguindo as melhores práticas: backend em UTC, frontend converte para local
-process.env.TZ = 'UTC';
-console.log(`[SISTEMA] Timezone configurado para: UTC`);
-console.log(`[SISTEMA] Data atual: ${new Date().toISOString()}`);
-console.log(`[SISTEMA] TZ environment: ${process.env.TZ}`);
+// Configurar timezone do processo Node.js para America/Sao_Paulo
+// Isso garante que new Date(), toLocaleDateString e comparações de data usem o horário de Brasília
+process.env.TZ = 'America/Sao_Paulo';
+console.log(`[SISTEMA] Timezone configurado para: America/Sao_Paulo (UTC-3)`);
+console.log(`[SISTEMA] Data/hora Brasil: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`);
+console.log(`[SISTEMA] ISO UTC: ${new Date().toISOString()}`);
 
 const app = express();
 
