@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/use-auth';
 import * as XLSX from 'xlsx';
 import AppLayout from '@/components/layout/AppLayout';
 import { subscribeToIndicadoresUpdates, syncMaintenanceIndicators, SyncResponse } from '@/services/syncIndicators';
@@ -39,7 +40,8 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   Download,
-  RefreshCw
+  RefreshCw,
+  User
 } from 'lucide-react';
 import {
   Dialog,
@@ -1471,12 +1473,14 @@ function FornecedoresTab() {
 
 export default function IndicadoresManutencao() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedUploadId, setSelectedUploadId] = useState<number | null>(null);
   const [filterTipoManutencao, setFilterTipoManutencao] = useState<string>('');
   const [filterPlaca, setFilterPlaca] = useState<string>('');
   const [searchPlaca, setSearchPlaca] = useState<string>('');
   const [filterPlacaEmManutencao, setFilterPlacaEmManutencao] = useState<string>('');
+  const [filterMinhaResponsabilidade, setFilterMinhaResponsabilidade] = useState<boolean>(false);
   const [dashboardBase, setDashboardBase] = useState<string>('');
   const [activeTab, setActiveTab] = useState('dados');
   const [selectedModeloPeca, setSelectedModeloPeca] = useState<string>('');
@@ -2553,9 +2557,18 @@ export default function IndicadoresManutencao() {
 
   // Função para exportar dados de Em Manutenção para Excel
   const exportEmManutencaoToExcel = () => {
-    const dadosParaExportar = filterPlacaEmManutencao
+    const userName = user?.name?.toLowerCase() || '';
+    let dadosParaExportar = filterPlacaEmManutencao
       ? dados.filter(d => d.placa?.toUpperCase().includes(filterPlacaEmManutencao))
       : dados;
+    if (filterMinhaResponsabilidade && userName) {
+      dadosParaExportar = dadosParaExportar.filter(d => {
+        const focal = (d.focal || '').toLowerCase();
+        const atendimento = (d.atendimento || '').toLowerCase();
+        const responsavel = (d.responsavel || '').toLowerCase();
+        return focal.includes(userName) || atendimento.includes(userName) || responsavel.includes(userName) || (userName.includes(focal) && focal.length > 2);
+      });
+    }
 
     const dataExport = dadosParaExportar.map((dado) => {
       const dataAgenda = dado.data_agenda ? new Date(dado.data_agenda + 'T00:00:00') : null;
@@ -3061,6 +3074,16 @@ export default function IndicadoresManutencao() {
                         data-testid="input-busca-placa-manutencao"
                       />
                     </div>
+                    <Button
+                      variant={filterMinhaResponsabilidade ? 'default' : 'outline'}
+                      onClick={() => setFilterMinhaResponsabilidade(v => !v)}
+                      className={filterMinhaResponsabilidade ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''}
+                      title={filterMinhaResponsabilidade ? 'Mostrando apenas minha responsabilidade' : 'Filtrar pela minha responsabilidade'}
+                      data-testid="btn-minha-responsabilidade"
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      {filterMinhaResponsabilidade ? 'Minha Lista' : 'Minha Responsabilidade'}
+                    </Button>
                     <Button 
                       variant="outline"
                       onClick={exportEmManutencaoToExcel}
@@ -3084,9 +3107,18 @@ export default function IndicadoresManutencao() {
                 </CardHeader>
                 <CardContent>
                   {(() => {
-                    const dadosFiltrados = filterPlacaEmManutencao
+                    const userName = user?.name?.toLowerCase() || '';
+                    let dadosFiltrados = filterPlacaEmManutencao
                       ? dados.filter(d => d.placa?.toUpperCase().includes(filterPlacaEmManutencao))
                       : dados;
+                    if (filterMinhaResponsabilidade && userName) {
+                      dadosFiltrados = dadosFiltrados.filter(d => {
+                        const focal = (d.focal || '').toLowerCase();
+                        const atendimento = (d.atendimento || '').toLowerCase();
+                        const responsavel = (d.responsavel || '').toLowerCase();
+                        return focal.includes(userName) || atendimento.includes(userName) || responsavel.includes(userName) || userName.includes(focal) && focal.length > 2;
+                      });
+                    }
                     return dadosFiltrados.length > 0 ? (
                     <div className="w-full">
                       <Table className="table-fixed w-full">
