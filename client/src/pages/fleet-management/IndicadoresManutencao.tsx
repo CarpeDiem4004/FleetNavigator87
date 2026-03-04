@@ -3139,7 +3139,7 @@ export default function IndicadoresManutencao() {
                         </TableHeader>
                         <TableBody>
                           {dadosFiltrados.map((dado) => (
-                            <TableRow key={dado.id} className={dado.orcamentos_pendentes && dado.orcamentos_pendentes > 0 ? 'bg-amber-50/50' : ''}>
+                            <TableRow key={(dado as any).is_os_request ? `os_${dado.id}` : `ind_${dado.id}`} className={dado.orcamentos_pendentes && dado.orcamentos_pendentes > 0 ? 'bg-amber-50/50' : ''}>
                               <TableCell className="font-medium text-xs">{dado.placa}</TableCell>
                               <TableCell className="text-xs truncate" title={dado.base || '-'}>{dado.base || '-'}</TableCell>
                               <TableCell className="text-xs truncate" title={dado.modelo}>{dado.modelo || '-'}</TableCell>
