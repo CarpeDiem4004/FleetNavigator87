@@ -177,7 +177,7 @@ const ManutencaoPage: React.FC = () => {
         
         const data = await response.json();
         console.log('Bases recebidas:', data);
-        setBases(data || []);
+        setBases(data?.data || data || []);
       } catch (error) {
         console.error('Erro ao buscar bases:', error);
         toast({
