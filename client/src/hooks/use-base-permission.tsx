@@ -719,6 +719,39 @@ export const useBasePermission = (): BasePermissionHook => {
       return hasAccess;
     }
 
+    // Perfil Operador de Gestão de Frota - acesso ao dashboard de operador e configurações
+    if (user.role === 'operador_frota') {
+      const operadorFrotaRoutes = [
+        '/operator-dashboard',          // Dashboard do Operador de Frota
+        '/operator-permissions',        // Configuração de permissões (admin usa)
+        '/vehicles',                    // Veículos
+        '/refueling',                   // Abastecimento
+        '/fuel-card',                   // Cartão de Combustível
+        '/fuel-card-requests',          // Solicitações de Cartão
+        '/maintenance',                 // Manutenção
+        '/manutencao',                  // Alias
+        '/fleet-management',            // Gestão de Frota
+        '/fleet-management/maintenance',
+        '/fleet-management/indicadores-manutencao',
+        '/fleet-management/workshops',
+        '/fleet-management/budgets',
+        '/fleet-management/coca-cola',
+        '/fleet-management/inventory',
+        '/fleet-management/parts-inventory',
+        '/tires',                       // Pneus
+        '/fines',                       // Multas
+        '/accidents',                   // Acidentes
+        '/drivers',                     // Motoristas
+        '/work-safety',                 // Segurança
+        '/executive-dashboard',         // Dashboard Executivo
+        '/painel-operacional',          // Painel Operacional
+        '/line-hall-shopee',            // Line Hall
+      ];
+      const hasAccess = operadorFrotaRoutes.some(r => route === r || route.startsWith(r + '/'));
+      console.log(`Operador Frota permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      return hasAccess;
+    }
+
     // Usuário Micael - acesso específico para Goiânia SGO4
     if (user.email === "micael@muricionfleet.com" || 
         (user.name === "micael" && user.baseId === 101 && user.basename === "Goiânia SGO4")) {
