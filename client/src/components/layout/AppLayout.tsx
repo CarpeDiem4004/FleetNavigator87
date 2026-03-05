@@ -67,8 +67,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     return allowedRoles.includes(user.role);
   };
 
+  // Verifica se é operador de frota (menu restrito)
+  const isOperadorFrota = user?.role === 'operador_frota';
+
   // Links de navegação
-  const navLinks = [
+  const allNavLinks = [
     ...(hasExecutiveDashboardAccess() ? [{ href: '/executive', label: 'Dashboard Executivo', icon: BarChart4 }] : []),
     { href: '/fleet-management', label: 'Gestão de Frota', icon: Truck },
     { href: '/vehicles', label: 'Veículos', icon: Car },
@@ -122,6 +125,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     { href: '/equipment', label: 'Equipamentos', icon: Package },
 
   ];
+
+  // Filtra o menu lateral para operador_frota: apenas Gestão de Frota e Veículos
+  const navLinks = isOperadorFrota
+    ? allNavLinks.filter(link => ['/fleet-management', '/vehicles'].includes(link.href))
+    : allNavLinks;
 
   // Expandir automaticamente Abastecimento se estivermos em uma página de posto
   React.useEffect(() => {
