@@ -719,10 +719,10 @@ export const useBasePermission = (): BasePermissionHook => {
       return hasAccess;
     }
 
-    // Perfil Operador de Gestão de Frota - acesso ao dashboard de operador e configurações
+    // Perfil Operador de Gestão de Frota - acesso ao fleet-management e configurações
     if (user.role === 'operador_frota') {
       const operadorFrotaRoutes = [
-        '/operator-dashboard',          // Dashboard do Operador de Frota
+        '/operator-dashboard',          // Mantido para compatibilidade (redireciona internamente)
         '/operator-permissions',        // Configuração de permissões (admin usa)
         '/vehicles',                    // Veículos
         '/refueling',                   // Abastecimento

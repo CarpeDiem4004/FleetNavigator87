@@ -455,11 +455,7 @@ function RootRedirect() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   useEffect(() => {
-    if (user?.role === 'operador_frota') {
-      navigate('/operator-dashboard');
-    } else {
-      navigate('/fleet-management');
-    }
+    navigate('/fleet-management');
   }, [user?.role]);
   return null;
 }

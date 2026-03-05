@@ -55,10 +55,14 @@ export default function OperatorDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (user?.role === 'operador_frota') {
+      navigate('/fleet-management');
+      return;
+    }
     if (user?.id) {
       loadCards();
     }
-  }, [user?.id]);
+  }, [user?.id, user?.role]);
 
   const loadCards = async () => {
     try {
