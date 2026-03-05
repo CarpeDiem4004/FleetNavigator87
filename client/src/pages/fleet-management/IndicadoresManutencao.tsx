@@ -2033,8 +2033,8 @@ export default function IndicadoresManutencao() {
 
   const movimentacoes = movimentacoesData;
 
-  // Buscar veículos cadastrados
-  const { data: vehiclesData } = useQuery<Array<{id: number, plate: string, model: string}>>({
+  // Buscar veículos cadastrados (base de cadastro de veículos)
+  const { data: vehiclesData } = useQuery<Array<{id: number, plate: string, model: string | null, make: string | null, status: string | null, baseId: number | null}>>({
     queryKey: ['/api/vehicles'],
   });
 
@@ -5466,8 +5466,17 @@ export default function IndicadoresManutencao() {
                                 setShowPlacaDropdown(false);
                               }}
                             >
-                              <span className="font-medium">{vehicle.plate}</span>
-                              <span className="text-muted-foreground ml-2">- {vehicle.model || 'Sem modelo'}</span>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <span className="font-medium">{vehicle.plate}</span>
+                                  <span className="text-muted-foreground ml-2">
+                                    {[vehicle.make, vehicle.model].filter(Boolean).join(' - ') || 'Sem modelo'}
+                                  </span>
+                                </div>
+                                {vehicle.status === 'em_manutencao' && (
+                                  <span className="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded ml-2 shrink-0">Em Manutenção</span>
+                                )}
+                              </div>
                             </div>
                           ))
                         }
