@@ -1783,7 +1783,16 @@ const FuelCardRequestsPanel: React.FC = () => {
         return dateString; // Retorna original se não conseguir converter
       }
       
-      return format(date, "dd/MM/yyyy HH:mm", { locale: ptBR });
+      // Sempre exibe no horário de Brasília (UTC-3) independente do timezone do navegador
+      return date.toLocaleString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }).replace(',', '');
     } catch (error) {
       console.warn('Erro ao formatar data:', dateString, error);
       return dateString; // Retorna a string original em caso de erro
