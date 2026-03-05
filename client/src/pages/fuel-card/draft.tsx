@@ -365,9 +365,7 @@ export default function FuelCardDraft() {
                                     hasError ? 'text-red-600' : 'text-blue-700'
                                   }`}
                                 >
-                                  {request.tipo_cartao === "numero" && request.numero_cartao 
-                                    ? request.numero_cartao 
-                                    : request.placa}
+                                  {request.numero_cartao || request.placa}
                                 </span>
                               </div>
                               {isDuplicate && !isInvalidPlate && (

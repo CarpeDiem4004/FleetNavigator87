@@ -193,7 +193,7 @@ const EditVehicleForm: React.FC<EditVehicleFormProps> = ({ vehicle, onUpdate, on
       vehicleType: vehicle.marca || "cavalo_mecanico",
       status: vehicle.status || "em_operacao",
       baseId: vehicle.base_id || 1,
-      cartaoAbastecimento: vehicle.cartao_combustivel || "",
+      cartaoAbastecimento: vehicle.cartao_abastecimento || vehicle.cartao_combustivel || "",
       isTemporary: vehicle.isTemporary || false,
       deactivationDate: vehicle.deactivationDate || "",
     },
@@ -511,7 +511,8 @@ const VehiclesNew: React.FC = () => {
           modelo: vehicle.model || '',
           base_id: vehicle.baseId,
           status: vehicle.status || '',
-          base_nome: basesMap.get(vehicle.baseId) || 'Sem base'
+          base_nome: basesMap.get(vehicle.baseId) || 'Sem base',
+          cartao_abastecimento: vehicle.cartaoAbastecimento || vehicle.cartao_abastecimento || null,
         };
       });
       
@@ -630,7 +631,7 @@ const VehiclesNew: React.FC = () => {
           modelo: updatedVehicle.model || vehicle.modelo,
           status: updatedVehicle.status || vehicle.status,
           base_id: updatedVehicle.baseId || vehicle.base_id,
-          cartao_combustivel: updatedVehicle.cartaoAbastecimento || vehicle.cartao_combustivel
+          cartao_abastecimento: updatedVehicle.cartaoAbastecimento || vehicle.cartao_abastecimento
         } : vehicle
       ));
       
