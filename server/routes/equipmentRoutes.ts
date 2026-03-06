@@ -672,11 +672,11 @@ router.post('/equipment-responsibility-terms/create-with-pdf', (req, res, next) 
       return res.status(404).json({ success: false, error: 'Equipamento não encontrado' });
     }
 
-    if (equipment[0].status !== 'disponivel') {
+    if (equipment[0].status !== 'disponivel' && equipment[0].status !== 'em_uso') {
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ 
         success: false, 
-        error: `Equipamento não está disponível. Status atual: ${equipment[0].status}` 
+        error: `Não é possível criar termo para equipamento com status: ${equipment[0].status}` 
       });
     }
 
@@ -710,7 +710,7 @@ router.post('/equipment-responsibility-terms/create-with-pdf', (req, res, next) 
       is_active: true,
       assigned_at: new Date(),
       returned_at: null,
-      signed_document_url: fileUrl // PDF já salvo automaticamente!
+      signed_document_url: fileUrl
     };
 
     const newTerm = await db
@@ -721,11 +721,13 @@ router.post('/equipment-responsibility-terms/create-with-pdf', (req, res, next) 
     console.log('[CREATE-WITH-PDF] Termo criado com sucesso! ID:', newTerm[0]?.id);
     console.log('[CREATE-WITH-PDF] PDF salvo em:', fileUrl);
 
-    // Atualizar status do equipamento
-    await db
-      .update(equipments)
-      .set({ status: 'em_uso', updated_at: new Date() })
-      .where(eq(equipments.id, validatedData.equipment_id));
+    // Atualizar status para em_uso (se ainda não estiver)
+    if (equipment[0].status !== 'em_uso') {
+      await db
+        .update(equipments)
+        .set({ status: 'em_uso', updated_at: new Date() })
+        .where(eq(equipments.id, validatedData.equipment_id));
+    }
 
     // Registrar movimentação no histórico
     await db
@@ -800,12 +802,12 @@ router.post('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req
 
     console.log('📊 [CREATE-TERM] Equipamento encontrado:', equipment[0].name, 'Status:', equipment[0].status);
 
-    // Verificar se o equipamento está disponível (não pode estar em uso, manutenção, etc.)
-    if (equipment[0].status !== 'disponivel') {
-      console.error('❌ [CREATE-TERM] Equipamento não disponível. Status:', equipment[0].status);
+    // Verificar se o status permite criação de termo (disponivel ou em_uso)
+    if (equipment[0].status !== 'disponivel' && equipment[0].status !== 'em_uso') {
+      console.error('❌ [CREATE-TERM] Status não permite termo:', equipment[0].status);
       return res.status(400).json({ 
         success: false, 
-        error: `Equipamento não está disponível. Status atual: ${equipment[0].status}. Apenas equipamentos disponíveis podem ter termos de responsabilidade criados.` 
+        error: `Não é possível criar termo para equipamento com status: ${equipment[0].status}.` 
       });
     }
 
@@ -844,14 +846,14 @@ router.post('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req
 
     console.log('[TERMO CRIADO] ID:', newTerm[0]?.id, 'Equipment ID:', validatedData.equipment_id);
 
-    // Atualizar status do equipamento para "em_uso"
-    const equipmentUpdate = await db
-      .update(equipments)
-      .set({ status: 'em_uso', updated_at: new Date() })
-      .where(eq(equipments.id, validatedData.equipment_id))
-      .returning();
-
-    console.log('[EQUIPAMENTO ATUALIZADO] Status:', equipmentUpdate[0]?.status, 'Equipment ID:', validatedData.equipment_id);
+    // Atualizar status para em_uso (somente se ainda não estiver)
+    if (equipment[0].status !== 'em_uso') {
+      await db
+        .update(equipments)
+        .set({ status: 'em_uso', updated_at: new Date() })
+        .where(eq(equipments.id, validatedData.equipment_id));
+    }
+    console.log('[EQUIPAMENTO] Status confirmado como em_uso, Equipment ID:', validatedData.equipment_id);
 
     // Registrar movimentação no histórico automaticamente
     await db

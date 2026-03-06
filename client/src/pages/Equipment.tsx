@@ -561,14 +561,11 @@ export default function Equipment() {
       return;
     }
     
-    // Verificar se o equipamento está disponível para criar termo
-    console.log('🔍 [STATUS-CHECK] Status do equipamento:', equipment.status);
-    
-    if (equipment.status !== 'disponivel') {
-      console.log('❌ [BLOCKED] Status não permite criação de termo:', equipment.status);
+    // Verificar se o status permite criação de termo
+    if (equipment.status !== 'disponivel' && equipment.status !== 'em_uso') {
       toast({
         title: "Equipamento indisponível",
-        description: `Equipamento não está disponível (Status: ${equipment.status}). Apenas equipamentos disponíveis podem ter termos criados.`,
+        description: `Não é possível criar termo para equipamento com status: ${equipmentStatusLabels[equipment.status] || equipment.status}.`,
         variant: "destructive",
       });
       return;
@@ -1262,42 +1259,77 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                               <History className="h-4 w-4" />
                             </Button>
                             
-                            {/* Botões condicionais baseados no status */}
+                            {/* Botões condicionais baseados no status e existência de termo */}
                             {equipment.status === 'em_uso' ? (
-                              <>
-                                {responsibilityTerms?.some(
+                              (() => {
+                                const hasActiveTerm = responsibilityTerms?.some(
                                   (t: any) => t.equipment_id === equipment.id && t.is_active
-                                ) && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleViewTerm(equipment)}
-                                    title="Ver Termo de Responsabilidade"
-                                  >
-                                    <FileText className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleReturnEquipment(equipment)}
-                                  title="Registrar Devolução/Baixa"
-                                >
-                                  <RotateCcw className="h-4 w-4" />
-                                </Button>
-                              </>
+                                );
+                                const activeTerm = responsibilityTerms?.find(
+                                  (t: any) => t.equipment_id === equipment.id && t.is_active
+                                );
+                                return hasActiveTerm ? (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleViewTerm(equipment)}
+                                      title="Ver Termo de Responsabilidade"
+                                    >
+                                      <FileText className="h-4 w-4 text-blue-600" />
+                                    </Button>
+                                    {activeTerm && !activeTerm.signed_document_url && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          setSelectedTermForUpload(activeTerm);
+                                          setIsUploadDialogOpen(true);
+                                        }}
+                                        title="Anexar Documento Assinado"
+                                      >
+                                        <Paperclip className="h-4 w-4 text-orange-500" />
+                                      </Button>
+                                    )}
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleReturnEquipment(equipment)}
+                                      title="Registrar Devolução/Baixa"
+                                    >
+                                      <RotateCcw className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleCreateTerm(equipment)}
+                                      title="Criar Termo de Responsabilidade"
+                                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                    >
+                                      <UserCheck className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleReturnEquipment(equipment)}
+                                      title="Registrar Devolução/Baixa"
+                                    >
+                                      <RotateCcw className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                );
+                              })()
                             ) : (
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => {
-                                  console.log('🔘 [CREATE-TERM-BTN] Equipamento:', equipment.name, 'Status:', equipment.status, 'ID:', equipment.id);
-                                  handleCreateTerm(equipment);
-                                }}
-                                title={equipment.status !== 'disponivel' ? `Apenas equipamentos disponíveis podem ter termos criados (Status atual: ${equipment.status})` : 'Criar Termo de Responsabilidade'}
+                                onClick={() => handleCreateTerm(equipment)}
+                                title={equipment.status === 'disponivel' ? 'Criar Termo de Responsabilidade' : `Não disponível para criação de termo (status: ${equipmentStatusLabels[equipment.status] || equipment.status})`}
                                 disabled={equipment.status !== 'disponivel'}
                                 className={equipment.status !== 'disponivel' ? 'opacity-50 cursor-not-allowed' : ''}
-                                data-testid={`button-create-term-${equipment.id}`}
                               >
                                 <UserCheck className="h-4 w-4" />
                               </Button>
