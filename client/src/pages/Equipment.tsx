@@ -1153,7 +1153,10 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                   >
                     <option value="all">Todos os tipos</option>
                     {Object.entries(equipmentTypeLabels).map(([value, label]) => {
-                      const count = (equipments as any[]).filter((e: any) => e.type === value).length;
+                      const base = statusFilter === 'all'
+                        ? (equipments as any[])
+                        : (equipments as any[]).filter((e: any) => e.status === statusFilter);
+                      const count = base.filter((e: any) => e.type === value).length;
                       return count > 0 ? (
                         <option key={value} value={value}>{label} ({count})</option>
                       ) : null;
