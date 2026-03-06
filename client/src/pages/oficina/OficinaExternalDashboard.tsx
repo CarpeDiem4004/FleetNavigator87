@@ -27,7 +27,10 @@ import {
   Package2,
   Trash2,
   Calculator,
-  DollarSign
+  DollarSign,
+  Search,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -150,7 +153,8 @@ export default function OficinaExternalDashboard() {
   const [newPartPrice, setNewPartPrice] = useState('');
   const [showAllReceptions, setShowAllReceptions] = useState(false);
   const [showAllMaintenance, setShowAllMaintenance] = useState(false);
-  const [showAllCompletedOS, setShowAllCompletedOS] = useState(false);
+  const [completedOSSearch, setCompletedOSSearch] = useState('');
+  const [completedOSPage, setCompletedOSPage] = useState(1);
   const [isLookingUpPlate, setIsLookingUpPlate] = useState(false);
   const plateLookupTimerRef = useRef<NodeJS.Timeout | null>(null);
   const tokenRef = useRef<string | null>(null);
@@ -1534,24 +1538,46 @@ export default function OficinaExternalDashboard() {
       </div>
 
       {/* OS Finalizadas */}
-      {completedRequests.length > 0 && (
+      {completedRequests.length > 0 && (() => {
+        const PAGE_SIZE = 10;
+        const filteredCompleted = completedOSSearch.trim()
+          ? completedRequests.filter(r => r.vehiclePlate?.toUpperCase().includes(completedOSSearch.toUpperCase().trim()))
+          : completedRequests;
+        const totalPages = Math.ceil(filteredCompleted.length / PAGE_SIZE);
+        const pagedCompleted = filteredCompleted.slice((completedOSPage - 1) * PAGE_SIZE, completedOSPage * PAGE_SIZE);
+        return (
         <div className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-700">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                OS Finalizadas
-                <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
-                  {completedRequests.length}
-                </Badge>
-              </CardTitle>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <CardTitle className="flex items-center gap-2 text-green-700">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  OS Finalizadas
+                  <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
+                    {filteredCompleted.length}
+                  </Badge>
+                </CardTitle>
+                <div className="relative w-full sm:w-56">
+                  <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Pesquisar por placa..."
+                    value={completedOSSearch}
+                    onChange={(e) => { setCompletedOSSearch(e.target.value); setCompletedOSPage(1); }}
+                    className="pl-8 h-9 text-sm border-green-200 focus-visible:ring-green-300"
+                  />
+                </div>
+              </div>
               <CardDescription>
                 Ordens de serviço concluídas / entregues
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {(showAllCompletedOS ? completedRequests : completedRequests.slice(0, 5)).map((request) => {
+                {pagedCompleted.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground text-sm">
+                    Nenhuma OS encontrada para a placa pesquisada.
+                  </div>
+                ) : pagedCompleted.map((request) => {
                   const asReception = (request as any).vehicleModel !== undefined ? request as unknown as CarReception : null;
                   return (
                   <div key={request.id} className="p-3 border border-green-100 bg-green-50/30 rounded-lg">
@@ -1596,21 +1622,39 @@ export default function OficinaExternalDashboard() {
                   </div>
                   );
                 })}
-                {completedRequests.length > 5 && (
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    className="w-full border-green-200 text-green-700 hover:bg-green-50"
-                    onClick={() => setShowAllCompletedOS(!showAllCompletedOS)}
-                  >
-                    {showAllCompletedOS ? 'Ver menos' : `Ver todas (${completedRequests.length})`}
-                  </Button>
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-xs text-muted-foreground">
+                      Página {completedOSPage} de {totalPages} ({filteredCompleted.length} registros)
+                    </span>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 border-green-200 text-green-700 hover:bg-green-50"
+                        disabled={completedOSPage === 1}
+                        onClick={() => setCompletedOSPage(p => p - 1)}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 border-green-200 text-green-700 hover:bg-green-50"
+                        disabled={completedOSPage === totalPages}
+                        onClick={() => setCompletedOSPage(p => p + 1)}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </div>
             </CardContent>
           </Card>
         </div>
-      )}
+        );
+      })()}
 
       {/* Informações da Oficina */}
       <div className="mt-6">
