@@ -89,6 +89,8 @@ interface Part {
   price: number;
 }
 
+const COMPLETED_STATUSES = ['concluida', 'entregue', 'finalizado', 'concluido', 'finalizada', 'completed'];
+
 export default function OficinaExternalDashboard() {
   const [workshopData, setWorkshopData] = useState<WorkshopData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -148,6 +150,7 @@ export default function OficinaExternalDashboard() {
   const [newPartPrice, setNewPartPrice] = useState('');
   const [showAllReceptions, setShowAllReceptions] = useState(false);
   const [showAllMaintenance, setShowAllMaintenance] = useState(false);
+  const [showAllCompletedOS, setShowAllCompletedOS] = useState(false);
   const [isLookingUpPlate, setIsLookingUpPlate] = useState(false);
   const plateLookupTimerRef = useRef<NodeJS.Timeout | null>(null);
   const tokenRef = useRef<string | null>(null);
@@ -773,7 +776,7 @@ export default function OficinaExternalDashboard() {
           replacedParts: parts.length > 0 ? JSON.stringify(parts) : undefined,
           currentKm: editForm.km_veiculo ? parseInt(editForm.km_veiculo) : undefined,
           estimatedCompletion: editForm.data_previsao_entrega || undefined,
-          completionDate: editForm.status === 'concluida' || editForm.status === 'entregue' ? new Date().toISOString() : undefined,
+          completionDate: COMPLETED_STATUSES.includes(editForm.status) ? new Date().toISOString() : undefined,
           deliveryPersonName: editForm.entrega_nome || undefined,
           deliveryPersonCpf: editForm.entrega_cpf || undefined,
           deliveryPersonPhone: editForm.entrega_telefone || undefined
@@ -1110,8 +1113,11 @@ export default function OficinaExternalDashboard() {
   ];
 
   const pendingRequests = allRequests.filter(r => r.status === 'pendente' || r.status === 'recebido');
-  const inProgressRequests = allRequests.filter(r => r.status === 'em_andamento' || r.status === 'em_reparo');
-  const completedRequests = allRequests.filter(r => r.status === 'concluida' || r.status === 'entregue');
+  const inProgressRequests = allRequests.filter(r => r.status === 'em_andamento' || r.status === 'em_reparo' || r.status === 'aguardando_pecas');
+  const completedRequests = allRequests.filter(r => COMPLETED_STATUSES.includes(r.status));
+
+  const activeMaintenanceRequests = maintenanceRequests.filter(r => !COMPLETED_STATUSES.includes(r.status));
+  const completedMaintenanceRequests = maintenanceRequests.filter(r => COMPLETED_STATUSES.includes(r.status));
 
   const token = tokenRef.current || '';
 
@@ -1459,7 +1465,7 @@ export default function OficinaExternalDashboard() {
           </CardContent>
         </Card>
 
-        {/* Ordens de Serviço */}
+        {/* Ordens de Serviço - Ativas */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -1467,23 +1473,21 @@ export default function OficinaExternalDashboard() {
                 <FileText className="h-5 w-5" />
                 Ordens de Serviço
               </CardTitle>
-              {/* Botão Nova OS removido - Apenas sistema principal pode criar OS */}
             </div>
             <CardDescription>
-              Serviços em andamento e pendentes
+              Serviços em andamento e pendentes ({activeMaintenanceRequests.length})
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {maintenanceRequests.length === 0 ? (
+              {activeMaintenanceRequests.length === 0 ? (
                 <div className="text-center py-6">
                   <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">Nenhuma OS pendente</p>
-                  {/* Botão Criar Nova OS removido - Apenas sistema principal pode criar OS */}
+                  <p className="text-muted-foreground">Nenhuma OS em aberto</p>
                 </div>
               ) : (
                 <>
-                  {(showAllMaintenance ? maintenanceRequests : maintenanceRequests.slice(0, 3)).map((request) => (
+                  {(showAllMaintenance ? activeMaintenanceRequests : activeMaintenanceRequests.slice(0, 3)).map((request) => (
                     <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">
@@ -1499,38 +1503,31 @@ export default function OficinaExternalDashboard() {
                             </Button>
                             <Badge 
                               variant={
-                                request.status === 'entregue' ? 'default' :
-                                request.status === 'finalizado' ? 'secondary' :
-                                request.status === 'em_andamento' ? 'secondary' : 'outline'
+                                request.status === 'em_andamento' ? 'secondary' :
+                                request.status === 'aguardando_pecas' ? 'secondary' : 'outline'
                               }
                             >
                               {request.status === 'recebido' ? 'Recebido' :
                                request.status === 'em_andamento' ? 'Em Andamento' :
-                               request.status === 'finalizado' ? 'Finalizado' :
-                               request.status === 'aguardando_pecas' ? 'Aguardando Peças' :
-                               request.status === 'entregue' ? 'Entregue' : 'Pendente'}
+                               request.status === 'aguardando_pecas' ? 'Aguardando Peças' : 'Pendente'}
                             </Badge>
                           </div>
                         </div>
                         <p className="text-sm text-muted-foreground">{request.description}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(request.entryDate).toLocaleDateString()}
+                          {new Date(request.entryDate).toLocaleDateString('pt-BR')}
                         </p>
                       </div>
                     </div>
                   ))}
-                  {maintenanceRequests.length > 3 && (
+                  {activeMaintenanceRequests.length > 3 && (
                     <Button 
                       variant="outline" 
                       size="sm" 
                       className="w-full"
-                      onClick={() => {
-                        console.log('Botão OS clicado! Estado atual:', showAllMaintenance);
-                        setShowAllMaintenance(!showAllMaintenance);
-                        console.log('Novo estado será:', !showAllMaintenance);
-                      }}
+                      onClick={() => setShowAllMaintenance(!showAllMaintenance)}
                     >
-                      {showAllMaintenance ? 'Ver menos' : `Ver todas (${maintenanceRequests.length})`}
+                      {showAllMaintenance ? 'Ver menos' : `Ver todas (${activeMaintenanceRequests.length})`}
                     </Button>
                   )}
                 </>
@@ -1539,6 +1536,58 @@ export default function OficinaExternalDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* OS Finalizadas */}
+      {completedMaintenanceRequests.length > 0 && (
+        <div className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-700">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                OS Finalizadas
+                <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
+                  {completedMaintenanceRequests.length}
+                </Badge>
+              </CardTitle>
+              <CardDescription>
+                Ordens de serviço concluídas / entregues
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {(showAllCompletedOS ? completedMaintenanceRequests : completedMaintenanceRequests.slice(0, 5)).map((request) => (
+                  <div key={request.id} className="flex items-center justify-between p-3 border border-green-100 bg-green-50/30 rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium text-sm">OS #{request.id} - {request.vehiclePlate}</p>
+                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                          {request.status === 'finalizado' ? 'Finalizado' :
+                           request.status === 'concluida' || request.status === 'concluido' ? 'Concluído' :
+                           request.status === 'entregue' ? 'Entregue' : request.status}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{request.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(request.entryDate).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {completedMaintenanceRequests.length > 5 && (
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-green-200 text-green-700 hover:bg-green-50"
+                    onClick={() => setShowAllCompletedOS(!showAllCompletedOS)}
+                  >
+                    {showAllCompletedOS ? 'Ver menos' : `Ver todas (${completedMaintenanceRequests.length})`}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Informações da Oficina */}
       <div className="mt-6">

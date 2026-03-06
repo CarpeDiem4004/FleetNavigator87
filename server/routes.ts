@@ -13912,7 +13912,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         FROM maintenance
         WHERE workshop_id = $1
         ORDER BY created_at DESC
-        LIMIT 20
+        LIMIT 200
       `;
       
       const requestsResult = await pool.query(requestsQuery, [workshopId]);
