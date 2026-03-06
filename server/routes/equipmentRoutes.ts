@@ -39,9 +39,8 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    const equipId = req.params.id || req.body?.equipment_id || 'eq';
-    cb(null, `term-${equipId}-${uniqueSuffix}${ext}`);
+    const ext = path.extname(file.originalname) || '.pdf';
+    cb(null, `equip-doc-${uniqueSuffix}${ext}`);
   }
 });
 
