@@ -13907,7 +13907,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Buscar solicitações de manutenção da tabela maintenance (nova estrutura)
       const requestsQuery = `
-        SELECT id, vehicle_plate, description, status, priority, 
+        SELECT id, vehicle_plate, description, status, priority, source,
                created_at as entry_date, updated_at as estimated_completion, cost
         FROM maintenance
         WHERE workshop_id = $1
@@ -13929,7 +13929,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           priority: row.priority || 'media',
           entryDate: row.entry_date,
           estimatedCompletion: row.estimated_completion,
-          cost: row.cost
+          cost: row.cost,
+          source: row.source
         }))
       });
 
@@ -15585,6 +15586,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } catch (syncError) {
         console.error('[OFICINA-STATUS] Erro ao sincronizar indicadores_dados:', syncError);
+      }
+
+      // Sincronizar maintenance auto-criado quando car_reception é finalizado
+      try {
+        const FINAL_STATUSES = ['entregue', 'pronto'];
+        const MAINT_FINAL_STATUS = FINAL_STATUSES.includes(status) ? 'finalizado' : status;
+        const receptionPlate = await pool.query(
+          'SELECT vehicle_plate FROM car_receptions WHERE id = $1',
+          [id]
+        );
+        if (receptionPlate.rows.length > 0) {
+          const plate = receptionPlate.rows[0].vehicle_plate;
+          await pool.query(
+            `UPDATE maintenance
+             SET status = $1, updated_at = NOW()
+             WHERE source = 'auto_created_from_car_reception'
+               AND workshop_id = $2
+               AND UPPER(vehicle_plate) = UPPER($3)
+               AND status NOT IN ('finalizado','concluido','concluida')`,
+            [MAINT_FINAL_STATUS, req.oficina.id, plate]
+          );
+          console.log(`[OFICINA-STATUS] maintenance auto-criada sincronizada: ${plate} -> ${MAINT_FINAL_STATUS}`);
+        }
+      } catch (maintSyncError) {
+        console.error('[OFICINA-STATUS] Erro ao sincronizar maintenance auto-criada:', maintSyncError);
       }
 
       res.json({ message: 'Status atualizado com sucesso' });

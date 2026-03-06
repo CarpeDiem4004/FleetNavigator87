@@ -60,6 +60,7 @@ interface MaintenanceRequest {
   entryDate: string;
   estimatedCompletion?: string;
   customerName?: string;
+  source?: string;
 }
 
 interface CarReception {
@@ -1103,24 +1104,37 @@ export default function OficinaExternalDashboard() {
     );
   }
 
-  // Combinar dados de solicitações de manutenção e recepções de carros
-  const allRequests = [
-    ...maintenanceRequests,
-    ...carReceptions.map(reception => ({
+  // OS dirigidas pelo sistema de gestão (excluem auto-criadas da recepção)
+  const managementOS = maintenanceRequests.filter(
+    r => r.source !== 'auto_created_from_car_reception'
+  );
+
+  // Para os cards de resumo: management OS ativas + car_receptions ativas
+  const pendingRequests = [
+    ...managementOS.filter(r => r.status === 'pendente'),
+    ...carReceptions.filter(r => r.status === 'recebido')
+  ];
+  const inProgressRequests = [
+    ...managementOS.filter(r => ['em_andamento', 'aguardando_pecas'].includes(r.status)),
+    ...carReceptions.filter(r => ['em_reparo', 'em_analise', 'aguardando_pecas'].includes(r.status))
+  ];
+
+  // OS Finalizadas: car_receptions entregues (fonte de verdade para os finalizados)
+  const completedRequests = carReceptions
+    .filter(r => COMPLETED_STATUSES.includes(r.status))
+    .map(reception => ({
       ...reception,
       vehiclePlate: reception.vehiclePlate,
       description: reception.serviceDescription,
       status: reception.status,
       priority: 'media',
       entryDate: reception.created_at
-    }))
-  ];
+    }));
 
-  const pendingRequests = allRequests.filter(r => r.status === 'pendente' || r.status === 'recebido');
-  const inProgressRequests = allRequests.filter(r => r.status === 'em_andamento' || r.status === 'em_reparo' || r.status === 'aguardando_pecas');
-  const completedRequests = allRequests.filter(r => COMPLETED_STATUSES.includes(r.status));
-
-  const activeMaintenanceRequests = maintenanceRequests.filter(r => !COMPLETED_STATUSES.includes(r.status));
+  const activeMaintenanceRequests = maintenanceRequests.filter(r =>
+    !COMPLETED_STATUSES.includes(r.status) &&
+    r.source !== 'auto_created_from_car_reception'
+  );
   const activeCarReceptions = carReceptions.filter(r => !COMPLETED_STATUSES.includes(r.status));
 
   const token = tokenRef.current || '';
