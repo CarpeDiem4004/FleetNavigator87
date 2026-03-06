@@ -1117,7 +1117,7 @@ export default function OficinaExternalDashboard() {
   const completedRequests = allRequests.filter(r => COMPLETED_STATUSES.includes(r.status));
 
   const activeMaintenanceRequests = maintenanceRequests.filter(r => !COMPLETED_STATUSES.includes(r.status));
-  const completedMaintenanceRequests = maintenanceRequests.filter(r => COMPLETED_STATUSES.includes(r.status));
+  const activeCarReceptions = carReceptions.filter(r => !COMPLETED_STATUSES.includes(r.status));
 
   const token = tokenRef.current || '';
 
@@ -1341,14 +1341,14 @@ export default function OficinaExternalDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {carReceptions.length === 0 ? (
+              {activeCarReceptions.length === 0 ? (
                 <div className="text-center py-6">
                   <Car className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">Nenhum veículo recebido hoje</p>
+                  <p className="text-muted-foreground">Nenhum veículo ativo em serviço</p>
                 </div>
               ) : (
                 <>
-                  {(showAllReceptions ? carReceptions : carReceptions.slice(0, 3)).map((reception) => (
+                  {(showAllReceptions ? activeCarReceptions : activeCarReceptions.slice(0, 3)).map((reception) => (
                     <div key={reception.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">
@@ -1445,18 +1445,14 @@ export default function OficinaExternalDashboard() {
                       </div>
                     </div>
                   ))}
-                  {carReceptions.length > 3 && (
+                  {activeCarReceptions.length > 3 && (
                     <Button 
                       variant="outline" 
                       size="sm" 
                       className="w-full"
-                      onClick={() => {
-                        console.log('Botão clicado! Estado atual:', showAllReceptions);
-                        setShowAllReceptions(!showAllReceptions);
-                        console.log('Novo estado será:', !showAllReceptions);
-                      }}
+                      onClick={() => setShowAllReceptions(!showAllReceptions)}
                     >
-                      {showAllReceptions ? 'Ver menos' : `Ver todos (${carReceptions.length})`}
+                      {showAllReceptions ? 'Ver menos' : `Ver todos (${activeCarReceptions.length})`}
                     </Button>
                   )}
                 </>
@@ -1538,7 +1534,7 @@ export default function OficinaExternalDashboard() {
       </div>
 
       {/* OS Finalizadas */}
-      {completedMaintenanceRequests.length > 0 && (
+      {completedRequests.length > 0 && (
         <div className="mt-6">
           <Card>
             <CardHeader>
@@ -1546,7 +1542,7 @@ export default function OficinaExternalDashboard() {
                 <CheckCircle className="h-5 w-5 text-green-600" />
                 OS Finalizadas
                 <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
-                  {completedMaintenanceRequests.length}
+                  {completedRequests.length}
                 </Badge>
               </CardTitle>
               <CardDescription>
@@ -1555,7 +1551,7 @@ export default function OficinaExternalDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {(showAllCompletedOS ? completedMaintenanceRequests : completedMaintenanceRequests.slice(0, 5)).map((request) => (
+                {(showAllCompletedOS ? completedRequests : completedRequests.slice(0, 5)).map((request) => (
                   <div key={request.id} className="flex items-center justify-between p-3 border border-green-100 bg-green-50/30 rounded-lg">
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
@@ -1573,14 +1569,14 @@ export default function OficinaExternalDashboard() {
                     </div>
                   </div>
                 ))}
-                {completedMaintenanceRequests.length > 5 && (
+                {completedRequests.length > 5 && (
                   <Button 
                     variant="outline"
                     size="sm"
                     className="w-full border-green-200 text-green-700 hover:bg-green-50"
                     onClick={() => setShowAllCompletedOS(!showAllCompletedOS)}
                   >
-                    {showAllCompletedOS ? 'Ver menos' : `Ver todas (${completedMaintenanceRequests.length})`}
+                    {showAllCompletedOS ? 'Ver menos' : `Ver todas (${completedRequests.length})`}
                   </Button>
                 )}
               </div>
