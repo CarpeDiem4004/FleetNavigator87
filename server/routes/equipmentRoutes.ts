@@ -38,10 +38,10 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
-    // Gerar nome único para o arquivo
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
-    cb(null, `term-${req.params.id}-${uniqueSuffix}${ext}`);
+    const equipId = req.params.id || req.body?.equipment_id || 'eq';
+    cb(null, `term-${equipId}-${uniqueSuffix}${ext}`);
   }
 });
 
@@ -176,7 +176,7 @@ router.get('/equipment-responsibility-terms', unifiedAuthMiddleware, async (req,
       phone: term.phone,
       department: term.department,
       address: term.address,
-      position: term.position || null,
+      position: null,
       assigned_at: term.assigned_at,
       returned_at: term.returned_at,
       assigned_by: term.assigned_by,

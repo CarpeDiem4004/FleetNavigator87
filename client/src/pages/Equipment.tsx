@@ -484,11 +484,14 @@ export default function Equipment() {
         const filename = `termo_${selectedEquipmentForTerm.id}_${Date.now()}.pdf`;
         formData.append('signed_document', pdfBlob, filename);
         
-        // Enviar para o backend
+        const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('emergencyToken');
         const response = await fetch('/api/equipment/equipment-responsibility-terms/create-with-pdf', {
           method: 'POST',
           body: formData,
           credentials: 'include',
+          headers: {
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
         });
         
         if (!response.ok) {
