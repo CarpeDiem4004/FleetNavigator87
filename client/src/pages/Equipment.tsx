@@ -158,6 +158,7 @@ export default function Equipment() {
   const [selectedEquipmentForTerm, setSelectedEquipmentForTerm] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('equipments');
   const [statusFilter, setStatusFilter] = useState<'all' | 'disponivel' | 'em_uso' | 'manutencao'>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEquipmentForHistory, setSelectedEquipmentForHistory] = useState<any>(null);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
@@ -279,6 +280,9 @@ export default function Equipment() {
     if (statusFilter !== 'all') {
       list = list.filter((e: any) => e.status === statusFilter);
     }
+    if (typeFilter !== 'all') {
+      list = list.filter((e: any) => e.type === typeFilter);
+    }
     if (!searchTerm) return list;
     return list.filter((equipment: any) =>
       equipment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -290,7 +294,7 @@ export default function Equipment() {
       equipmentTypeLabels[equipment.type]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       equipmentStatusLabels[equipment.status]?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [equipments, searchTerm, statusFilter]);
+  }, [equipments, searchTerm, statusFilter, typeFilter]);
 
   // Mutation para criar equipamento
   const createEquipmentMutation = useMutation({
@@ -1097,8 +1101,9 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
             <CardHeader>
               <CardTitle>Lista de Equipamentos</CardTitle>
               <CardDescription>
-                {filteredEquipments.length} de {statusFilter === 'all' ? (equipments as any[]).length : (equipments as any[]).filter((e: any) => e.status === statusFilter).length} equipamentos
-                {statusFilter !== 'all' && ` · filtrando por: ${statusFilter === 'disponivel' ? 'Disponíveis' : statusFilter === 'em_uso' ? 'Em Uso' : 'Em Manutenção'}`}
+                {filteredEquipments.length} equipamentos encontrados
+                {statusFilter !== 'all' && ` · status: ${statusFilter === 'disponivel' ? 'Disponíveis' : statusFilter === 'em_uso' ? 'Em Uso' : 'Em Manutenção'}`}
+                {typeFilter !== 'all' && ` · tipo: ${equipmentTypeLabels[typeFilter] || typeFilter}`}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1129,18 +1134,42 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                 })}
               </div>
 
-              {/* Campo de Busca */}
-              <div className="mb-4">
+              {/* Campo de Busca + Filtro por Tipo */}
+              <div className="mb-4 flex flex-col gap-2">
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input
-                      placeholder="Buscar por nome, tipo, marca, modelo, série ou patrimônio..."
+                      placeholder="Buscar por nome, marca, modelo, série ou patrimônio..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
                     />
                   </div>
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    className="border rounded-md px-3 py-2 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-ring min-w-[150px]"
+                  >
+                    <option value="all">Todos os tipos</option>
+                    {Object.entries(equipmentTypeLabels).map(([value, label]) => {
+                      const count = (equipments as any[]).filter((e: any) => e.type === value).length;
+                      return count > 0 ? (
+                        <option key={value} value={value}>{label} ({count})</option>
+                      ) : null;
+                    })}
+                  </select>
+                  {(typeFilter !== 'all' || searchTerm) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => { setTypeFilter('all'); setSearchTerm(''); }}
+                      title="Limpar filtros de texto/tipo"
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
