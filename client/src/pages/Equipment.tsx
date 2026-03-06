@@ -45,6 +45,7 @@ import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { Laptop, Smartphone, Monitor, Printer, Plus, Edit, Trash2, UserCheck, Settings, FileText, Download, Search, History, Clock, Wrench, Paperclip, Eye, Upload, RefreshCw, ClipboardList, CheckCircle, RotateCcw, Share, Copy, FileSpreadsheet, AlertTriangle, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { Link } from "wouter";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
@@ -1273,24 +1274,34 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      onClick={() => handleViewTerm(equipment)}
-                                      title="Ver Termo de Responsabilidade"
+                                      onClick={() => {
+                                        if (activeTerm?.signed_document_url) {
+                                          window.open(activeTerm.signed_document_url, '_blank');
+                                        } else {
+                                          toast({
+                                            title: "Nenhum documento anexado",
+                                            description: "Este termo não possui documento assinado. Clique em 'Anexar' para adicionar.",
+                                            action: (
+                                              <ToastAction
+                                                altText="Anexar documento assinado"
+                                                onClick={() => {
+                                                  if (activeTerm) {
+                                                    setSelectedTermForUpload(activeTerm);
+                                                    setIsUploadDialogOpen(true);
+                                                  }
+                                                }}
+                                              >
+                                                Anexar
+                                              </ToastAction>
+                                            ),
+                                          });
+                                        }
+                                      }}
+                                      title={activeTerm?.signed_document_url ? "Ver Documento Assinado" : "Sem documento anexado — clique para anexar"}
+                                      className={activeTerm?.signed_document_url ? "" : "text-orange-500 hover:text-orange-600 hover:bg-orange-50"}
                                     >
-                                      <FileText className="h-4 w-4 text-blue-600" />
+                                      <FileText className={`h-4 w-4 ${activeTerm?.signed_document_url ? "text-blue-600" : "text-orange-500"}`} />
                                     </Button>
-                                    {activeTerm && !activeTerm.signed_document_url && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => {
-                                          setSelectedTermForUpload(activeTerm);
-                                          setIsUploadDialogOpen(true);
-                                        }}
-                                        title="Anexar Documento Assinado"
-                                      >
-                                        <Paperclip className="h-4 w-4 text-orange-500" />
-                                      </Button>
-                                    )}
                                     <Button
                                       variant="ghost"
                                       size="sm"
