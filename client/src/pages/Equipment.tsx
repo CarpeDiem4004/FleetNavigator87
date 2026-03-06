@@ -52,7 +52,7 @@ import * as XLSX from "xlsx";
 // Schema para validação do formulário de equipamento
 const equipmentSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
-  type: z.enum(['notebook', 'celular', 'tablet', 'desktop', 'monitor', 'impressora', 'scanner', 'roteador', 'telefone_fixo', 'camera', 'projetor', 'outros']),
+  type: z.enum(['notebook', 'celular', 'tablet', 'desktop', 'monitor', 'impressora', 'scanner', 'roteador', 'telefone_fixo', 'camera', 'projetor', 'email', 'chip', 'outros']),
   ownership_type: z.enum(['proprio', 'alugado']).default('proprio'),
   brand: z.string().optional(),
   model: z.string().optional(),
