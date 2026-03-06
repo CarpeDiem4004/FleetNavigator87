@@ -157,6 +157,7 @@ export default function Equipment() {
   const [isTermDialogOpen, setIsTermDialogOpen] = useState(false);
   const [selectedEquipmentForTerm, setSelectedEquipmentForTerm] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('equipments');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'disponivel' | 'em_uso' | 'manutencao'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEquipmentForHistory, setSelectedEquipmentForHistory] = useState<any>(null);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
@@ -274,19 +275,22 @@ export default function Equipment() {
 
   // Filtrar equipamentos baseado na busca
   const filteredEquipments = useMemo(() => {
-    if (!searchTerm) return equipments;
-    
-    return equipments.filter((equipment: any) =>
+    let list = equipments as any[];
+    if (statusFilter !== 'all') {
+      list = list.filter((e: any) => e.status === statusFilter);
+    }
+    if (!searchTerm) return list;
+    return list.filter((equipment: any) =>
       equipment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       equipment.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (equipment.brand && equipment.brand.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (equipment.model && equipment.model.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (equipment.serial_number && equipment.serial_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (equipment.patrimony_number && equipment.patrimony_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      equipmentTypeLabels[equipment.type].toLowerCase().includes(searchTerm.toLowerCase()) ||
-      equipmentStatusLabels[equipment.status].toLowerCase().includes(searchTerm.toLowerCase())
+      equipmentTypeLabels[equipment.type]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      equipmentStatusLabels[equipment.status]?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [equipments, searchTerm]);
+  }, [equipments, searchTerm, statusFilter]);
 
   // Mutation para criar equipamento
   const createEquipmentMutation = useMutation({
@@ -1093,10 +1097,38 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
             <CardHeader>
               <CardTitle>Lista de Equipamentos</CardTitle>
               <CardDescription>
-                {filteredEquipments.length} de {equipments.length} equipamentos
+                {filteredEquipments.length} de {statusFilter === 'all' ? (equipments as any[]).length : (equipments as any[]).filter((e: any) => e.status === statusFilter).length} equipamentos
+                {statusFilter !== 'all' && ` · filtrando por: ${statusFilter === 'disponivel' ? 'Disponíveis' : statusFilter === 'em_uso' ? 'Em Uso' : 'Em Manutenção'}`}
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Abas de Filtro por Status */}
+              <div className="flex gap-1 mb-4 border-b pb-2">
+                {[
+                  { key: 'all', label: 'Todos', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200', activeColor: 'bg-gray-700 text-white' },
+                  { key: 'disponivel', label: 'Disponíveis', color: 'bg-green-50 text-green-700 hover:bg-green-100', activeColor: 'bg-green-600 text-white' },
+                  { key: 'em_uso', label: 'Em Uso', color: 'bg-blue-50 text-blue-700 hover:bg-blue-100', activeColor: 'bg-blue-600 text-white' },
+                  { key: 'manutencao', label: 'Em Manutenção', color: 'bg-red-50 text-red-700 hover:bg-red-100', activeColor: 'bg-red-600 text-white' },
+                ].map(({ key, label, color, activeColor }) => {
+                  const count = key === 'all'
+                    ? (equipments as any[]).length
+                    : (equipments as any[]).filter((e: any) => e.status === key).length;
+                  const isActive = statusFilter === key;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setStatusFilter(key as any)}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${isActive ? activeColor : color}`}
+                    >
+                      {label}
+                      <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${isActive ? 'bg-white/20' : 'bg-white border'}`}>
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
               {/* Campo de Busca */}
               <div className="mb-4">
                 <div className="flex gap-2">
@@ -1113,12 +1145,8 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                     variant="outline"
                     size="sm"
                     onClick={async () => {
-                      // Forçar atualização mudando a chave
                       setForceRefreshKey(prev => prev + 1);
-                      
-                      // Limpar completamente o cache
                       queryClient.clear();
-                      
                       toast({
                         title: "Lista atualizada",
                         description: "A lista de equipamentos foi atualizada com sucesso!",
