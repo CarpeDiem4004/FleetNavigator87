@@ -1551,24 +1551,51 @@ export default function OficinaExternalDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {(showAllCompletedOS ? completedRequests : completedRequests.slice(0, 5)).map((request) => (
-                  <div key={request.id} className="flex items-center justify-between p-3 border border-green-100 bg-green-50/30 rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-medium text-sm">OS #{request.id} - {request.vehiclePlate}</p>
-                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-                          {request.status === 'finalizado' ? 'Finalizado' :
-                           request.status === 'concluida' || request.status === 'concluido' ? 'Concluído' :
-                           request.status === 'entregue' ? 'Entregue' : request.status}
-                        </Badge>
+                {(showAllCompletedOS ? completedRequests : completedRequests.slice(0, 5)).map((request) => {
+                  const asReception = (request as any).vehicleModel !== undefined ? request as unknown as CarReception : null;
+                  return (
+                  <div key={request.id} className="p-3 border border-green-100 bg-green-50/30 rounded-lg">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <p className="font-medium text-sm">OS #{request.id} - {request.vehiclePlate}</p>
+                          <Badge className="bg-green-100 text-green-800 hover:bg-green-100 shrink-0">
+                            {request.status === 'finalizado' ? 'Finalizado' :
+                             request.status === 'concluida' || request.status === 'concluido' ? 'Concluído' :
+                             request.status === 'entregue' ? 'Entregue' : request.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2">{request.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(request.entryDate).toLocaleDateString('pt-BR')}
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground">{request.description}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(request.entryDate).toLocaleDateString('pt-BR')}
-                      </p>
+                      {asReception && (
+                        <div className="flex gap-2 shrink-0">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-green-200 text-green-700 hover:bg-green-50"
+                            onClick={() => openDetailView(asReception)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Ver
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-green-200 text-green-700 hover:bg-green-50"
+                            onClick={() => generatePDF(asReception)}
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Imprimir
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
                 {completedRequests.length > 5 && (
                   <Button 
                     variant="outline"
