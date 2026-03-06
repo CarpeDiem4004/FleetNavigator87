@@ -1491,9 +1491,9 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => {
-                                    // Criar um link temporário para download
                                     const link = document.createElement('a');
                                     link.href = term.signed_document_url;
+                                    link.target = '_blank';
                                     link.download = `termo_assinado_${term.equipment_name}_${term.full_name}.${term.signed_document_url.split('.').pop()}`;
                                     document.body.appendChild(link);
                                     link.click();

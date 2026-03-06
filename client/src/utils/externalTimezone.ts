@@ -218,7 +218,9 @@ export function interceptAndFixUrls(): void {
             '/dashboard',
             '/fleet-management',
             '/oficina',
-            '/partner'
+            '/partner',
+            '/uploads/',
+            '/api/'
           ];
           
           // Verifica se a rota está na lista de exclusão
