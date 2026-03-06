@@ -1592,7 +1592,7 @@ export default function OficinaExternalDashboard() {
                     Nenhuma OS encontrada para a placa pesquisada.
                   </div>
                 ) : pagedCompleted.map((request) => {
-                  const asReception = (request as any).vehicleModel !== undefined ? request as unknown as CarReception : null;
+                  const asReception = request as unknown as CarReception;
                   return (
                   <div key={request.id} className="p-3 border border-green-100 bg-green-50/30 rounded-lg">
                     <div className="flex items-start justify-between gap-2">
@@ -1610,28 +1610,26 @@ export default function OficinaExternalDashboard() {
                           {new Date(request.entryDate).toLocaleDateString('pt-BR')}
                         </p>
                       </div>
-                      {asReception && (
-                        <div className="flex gap-2 shrink-0">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-green-200 text-green-700 hover:bg-green-50"
-                            onClick={() => openDetailView(asReception)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Ver
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-green-200 text-green-700 hover:bg-green-50"
-                            onClick={() => generatePDF(asReception)}
-                          >
-                            <Download className="h-4 w-4 mr-1" />
-                            Imprimir
-                          </Button>
-                        </div>
-                      )}
+                      <div className="flex gap-2 shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-green-200 text-green-700 hover:bg-green-50"
+                          onClick={() => openDetailView(asReception)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Ver
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-green-200 text-green-700 hover:bg-green-50"
+                          onClick={() => generatePDF(asReception)}
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          Imprimir
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   );
