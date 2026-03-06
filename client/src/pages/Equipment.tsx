@@ -1205,14 +1205,18 @@ Declaro estar ciente de que sou responsável pelo equipamento até sua devoluç�
                             {/* Botões condicionais baseados no status */}
                             {equipment.status === 'em_uso' ? (
                               <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleViewTerm(equipment)}
-                                  title="Ver Termo de Responsabilidade"
-                                >
-                                  <FileText className="h-4 w-4" />
-                                </Button>
+                                {responsibilityTerms?.some(
+                                  (t: any) => t.equipment_id === equipment.id && t.is_active
+                                ) && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleViewTerm(equipment)}
+                                    title="Ver Termo de Responsabilidade"
+                                  >
+                                    <FileText className="h-4 w-4" />
+                                  </Button>
+                                )}
                                 <Button
                                   variant="ghost"
                                   size="sm"
